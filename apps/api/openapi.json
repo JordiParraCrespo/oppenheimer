@@ -5493,7 +5493,7 @@
     },
     "/api/v1/hosts/self/images/{commandId}": {
       "get": {
-        "description": "Called by the runner when a `session.image` arrives on its link. Answers the image once; a second pull, an expired image and another host’s image are all 404.",
+        "description": "Called by the runner when a `session.image` or a `session.create` with files arrives on its link. Answers the file once; a second pull, an expired file and another host’s file are all 404.",
         "operationId": "collectSessionImage",
         "parameters": [
           {
@@ -5507,7 +5507,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The image’s bytes"
+            "description": "The file’s bytes"
           },
           "401": {
             "description": "HOSTS_005 — No valid host assertion was presented",
@@ -5535,7 +5535,7 @@
             "bearer": []
           }
         ],
-        "summary": "Collect an image parked for the calling host",
+        "summary": "Collect a file parked for the calling host",
         "tags": ["Hosts"]
       }
     },
@@ -8555,7 +8555,7 @@
     },
     "/api/v1/sessions/attachments": {
       "post": {
-        "description": "Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.",
+        "description": "An image (PNG, JPEG, GIF, WebP), a PDF, or UTF-8 text (plain, Markdown, CSV, JSON), judged by its bytes; executables, archives, scripts, SVG and HTML are refused. Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it under a name of its own and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.",
         "operationId": "uploadSessionAttachment",
         "parameters": [],
         "requestBody": {
@@ -8587,7 +8587,7 @@
             }
           },
           "400": {
-            "description": "SESSIONS_015 — No image attached",
+            "description": "SESSIONS_015 — No file attached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8617,7 +8617,7 @@
             }
           },
           "413": {
-            "description": "SESSIONS_012 — Image too large",
+            "description": "SESSIONS_012 — File too large",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8627,7 +8627,7 @@
             }
           },
           "415": {
-            "description": "SESSIONS_013 — Not an image",
+            "description": "SESSIONS_013 — Not a type a session takes",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8637,7 +8637,7 @@
             }
           },
           "429": {
-            "description": "RATE_001 — Rate limit reached\n\nSESSIONS_020 — Too many images waiting",
+            "description": "RATE_001 — Rate limit reached\n\nSESSIONS_020 — Too many files waiting",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8652,7 +8652,7 @@
             "bearer": []
           }
         ],
-        "summary": "Attach an image to a first task",
+        "summary": "Attach a file to a first task",
         "tags": ["Sessions"]
       }
     },
@@ -8846,7 +8846,7 @@
     },
     "/api/v1/sessions/{id}/images": {
       "post": {
-        "description": "The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot comes here; the host’s runner pulls it and pastes its path into the window.",
+        "description": "The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot or a dropped file comes here: an image, a PDF, or UTF-8 text, judged by its bytes. The host’s runner pulls it, saves it under a name of its own and pastes its path into the window.",
         "operationId": "pasteSessionImage",
         "parameters": [
           {
@@ -8882,10 +8882,10 @@
         },
         "responses": {
           "202": {
-            "description": "The host has been told to pull the image"
+            "description": "The host has been told to pull the file"
           },
           "400": {
-            "description": "SESSIONS_015 — No image attached",
+            "description": "SESSIONS_015 — No file attached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8925,7 +8925,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_017 — The host’s runner cannot take images\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
+            "description": "SESSIONS_017 — Runner cannot take it\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8935,7 +8935,7 @@
             }
           },
           "413": {
-            "description": "SESSIONS_012 — Image too large",
+            "description": "SESSIONS_012 — File too large",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8945,7 +8945,7 @@
             }
           },
           "415": {
-            "description": "SESSIONS_013 — Not an image",
+            "description": "SESSIONS_013 — Not a file it takes",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8980,7 +8980,7 @@
             "bearer": []
           }
         ],
-        "summary": "Paste an image into a session’s prompt",
+        "summary": "Paste a file into a session’s prompt",
         "tags": ["Sessions"]
       }
     },
@@ -10692,6 +10692,1604 @@
         "tags": ["Automations"]
       }
     },
+    "/api/v1/tasks": {
+      "get": {
+        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).",
+        "operationId": "findTasks",
+        "parameters": [
+          {
+            "name": "dueTo",
+            "required": false,
+            "in": "query",
+            "description": "Due on or before this day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dueFrom",
+            "required": false,
+            "in": "query",
+            "description": "Due on or after this day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "description": "Only the tasks this session is on.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "goalId",
+            "required": false,
+            "in": "query",
+            "description": "Only this goal’s tasks.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "Only this project’s tasks.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the board’s tasks",
+        "tags": ["Tasks"]
+      },
+      "post": {
+        "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a goal brings its own project.",
+        "operationId": "createTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_002 — Goal not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_007 — Goal of another project\n\nTASKS_004 — Project archived or missing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a task to the board",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/tasks/{id}": {
+      "get": {
+        "operationId": "findTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read one task, with the sessions on it",
+        "tags": ["Tasks"]
+      },
+      "patch": {
+        "description": "Title, notes, due date and time, project and goal. Absent fields stay and `null` clears. Choosing a goal files the task under the goal’s project; changing the project drops a goal of another project. The column is a move.",
+        "operationId": "updateTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_002 — Goal not found\n\nTASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_007 — Goal of another project\n\nTASKS_004 — Project archived or missing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change a task",
+        "tags": ["Tasks"]
+      },
+      "delete": {
+        "description": "With its links. The sessions it started or linked are untouched.",
+        "operationId": "deleteTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a task",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/tasks/{id}/move": {
+      "post": {
+        "description": "Into `status`, directly after `afterTaskId` (a task of that column), or first when it is null. Only this task’s place changes; the column is never renumbered.",
+        "operationId": "moveTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_006 — Stale position",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move a task on the board",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/tasks/{id}/sessions": {
+      "post": {
+        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "operationId": "startTaskSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retry with the same key returns the session already started.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTaskSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartTaskSessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nTASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_006 — Project archived",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a session from a task",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/tasks/{id}/sessions/{sessionId}": {
+      "put": {
+        "description": "A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "operationId": "linkTaskSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkTaskSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_005 — Session not found\n\nTASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link a session to a task",
+        "tags": ["Tasks"]
+      },
+      "delete": {
+        "description": "The task stays in its column and the session runs on.",
+        "operationId": "unlinkTaskSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Take a session off a task",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/goals": {
+      "get": {
+        "description": "Of one project or of the workspace, oldest first. Progress counts the goal’s tasks.",
+        "operationId": "findGoals",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "Only this project’s goals.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GoalResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List goals, with their progress",
+        "tags": ["Tasks"]
+      },
+      "post": {
+        "operationId": "createGoal",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_004 — Project archived or missing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a goal to a project",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/goals/{id}": {
+      "patch": {
+        "description": "Its name, target date or project. Moving it to another project moves its tasks.",
+        "operationId": "updateGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_002 — Goal not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_004 — Project archived or missing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change a goal",
+        "tags": ["Tasks"]
+      },
+      "delete": {
+        "description": "Its tasks stay, with no goal.",
+        "operationId": "deleteGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_002 — Goal not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a goal",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/calendar/events": {
+      "get": {
+        "description": "Both days included, at most 62 of them; by day, all-day first, then by start.",
+        "operationId": "findCalendarEvents",
+        "parameters": [
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last day, included.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CalendarEventResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CALENDAR_003 — Range too wide",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s own events between two days",
+        "tags": ["Calendar"]
+      },
+      "post": {
+        "description": "One day: all day, or from a start to a later end on it. Wall-clock, like a task’s due date.",
+        "operationId": "createCalendarEvent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCalendarEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add an event to the calendar",
+        "tags": ["Calendar"]
+      }
+    },
+    "/api/v1/calendar/events/{id}": {
+      "patch": {
+        "description": "Absent fields stay; dragging an event to another day is a change of `date`.",
+        "operationId": "updateCalendarEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCalendarEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CALENDAR_009 — Times do not fit the day",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CALENDAR_001 — Event not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change an event",
+        "tags": ["Calendar"]
+      },
+      "delete": {
+        "operationId": "deleteCalendarEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CALENDAR_001 — Event not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an event",
+        "tags": ["Calendar"]
+      }
+    },
+    "/api/v1/calendar/google/connection": {
+      "get": {
+        "description": "Whether there is one, the account, and whether Google still honours it.",
+        "operationId": "findGoogleCalendarConnection",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s own Google Calendar connection",
+        "tags": ["Calendar"]
+      },
+      "post": {
+        "description": "The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. A new grant replaces the caller’s old one.",
+        "operationId": "connectGoogleCalendar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectGoogleCalendarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CALENDAR_006 — Google refused\n\nCALENDAR_005 — State rejected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CALENDAR_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Finish connecting Google Calendar",
+        "tags": ["Calendar"]
+      },
+      "delete": {
+        "description": "Revokes the grant at Google and forgets it. With no connection, nothing happens.",
+        "operationId": "disconnectGoogleCalendar",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect Google Calendar",
+        "tags": ["Calendar"]
+      }
+    },
+    "/api/v1/calendar/google/connection/start": {
+      "post": {
+        "description": "Google’s consent page, read-only, carrying a single-use state for this caller in this workspace. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.",
+        "operationId": "startGoogleCalendarConnection",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarConnectStartResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CALENDAR_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start connecting Google Calendar",
+        "tags": ["Calendar"]
+      }
+    },
+    "/api/v1/calendar/google/events": {
+      "get": {
+        "description": "Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.",
+        "operationId": "findGoogleCalendarEvents",
+        "parameters": [
+          {
+            "name": "timeZone",
+            "required": true,
+            "in": "query",
+            "description": "The IANA zone to read Google’s times in.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last day, included.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CalendarEventResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CALENDAR_003 — Range too wide",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CALENDAR_007 — Not connected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CALENDAR_008 — Google did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CALENDAR_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s Google Calendar between two days",
+        "tags": ["Calendar"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -11752,6 +13350,10 @@
                 "sessions:write",
                 "automations:read",
                 "automations:write",
+                "tasks:read",
+                "tasks:write",
+                "calendar:read",
+                "calendar:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -11791,6 +13393,10 @@
                 "sessions:write",
                 "automations:read",
                 "automations:write",
+                "tasks:read",
+                "tasks:write",
+                "calendar:read",
+                "calendar:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -11869,6 +13475,10 @@
                 "sessions:write",
                 "automations:read",
                 "automations:write",
+                "tasks:read",
+                "tasks:write",
+                "calendar:read",
+                "calendar:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -11971,6 +13581,10 @@
               "sessions:write",
               "automations:read",
               "automations:write",
+              "tasks:read",
+              "tasks:write",
+              "calendar:read",
+              "calendar:write",
               "repositories:read",
               "repositories:write",
               "flags:read",
@@ -12027,6 +13641,8 @@
               "projects",
               "sessions",
               "automations",
+              "tasks",
+              "calendar",
               "repositories",
               "flags"
             ],
@@ -12093,6 +13709,10 @@
                 "sessions:write",
                 "automations:read",
                 "automations:write",
+                "tasks:read",
+                "tasks:write",
+                "calendar:read",
+                "calendar:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -12143,6 +13763,10 @@
                 "sessions:write",
                 "automations:read",
                 "automations:write",
+                "tasks:read",
+                "tasks:write",
+                "calendar:read",
+                "calendar:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -12225,6 +13849,10 @@
                 "sessions:write",
                 "automations:read",
                 "automations:write",
+                "tasks:read",
+                "tasks:write",
+                "calendar:read",
+                "calendar:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -15248,8 +16876,18 @@
           },
           "mediaType": {
             "type": "string",
-            "enum": ["image/png", "image/jpeg", "image/gif", "image/webp"],
-            "description": "What the bytes are by their magic bytes, never the label the browser gave them."
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/gif",
+              "image/webp",
+              "application/pdf",
+              "text/plain",
+              "text/markdown",
+              "text/csv",
+              "application/json"
+            ],
+            "description": "What the bytes are (magic bytes, or text that is only text), never the label the browser gave them."
           },
           "size": {
             "type": "number",
@@ -16732,6 +18370,559 @@
           }
         }
       },
+      "TaskSessionLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "origin": {
+            "type": "string",
+            "enum": ["started", "linked"],
+            "description": "`started` from this task, or `linked` to it afterwards."
+          },
+          "linkedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["sessionId", "origin", "linkedAt"]
+      },
+      "TaskResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Always set: a task with no project is filed under the Unassigned one."
+          },
+          "goalId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"]
+          },
+          "rank": {
+            "type": "string",
+            "description": "Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.",
+            "example": "V"
+          },
+          "title": {
+            "type": "string",
+            "example": "Biometric unlock on Android"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Free text; empty when there are none."
+          },
+          "dueDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "description": "A calendar day, read in the viewer’s timezone.",
+            "example": "2026-10-07"
+          },
+          "dueTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "09:00"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "sessions": {
+            "description": "Oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSessionLinkResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "status",
+          "rank",
+          "title",
+          "notes",
+          "sessions",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateTaskRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "status": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"],
+            "default": "todo"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "goalId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
+          },
+          "dueTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          }
+        },
+        "required": ["title"]
+      },
+      "UpdateTaskRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "goalId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
+          },
+          "dueTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          }
+        }
+      },
+      "MoveTaskRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"]
+          },
+          "afterTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": ["status", "afterTaskId"]
+      },
+      "StartTaskSessionRequest": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "type": "object",
+            "properties": {
+              "hostId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "agent": {
+                "type": "string",
+                "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+              },
+              "projectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "checkouts": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "installationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "githubRepoId": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": true
+                    },
+                    "baseBranch": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    }
+                  },
+                  "required": ["installationId", "githubRepoId"]
+                }
+              },
+              "cwdGithubRepoId": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "launch": {
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "permission": {
+                    "type": "string",
+                    "enum": ["ask", "auto", "full"]
+                  },
+                  "effort": {
+                    "type": "string",
+                    "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
+                  }
+                }
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "attachmentIds": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "required": ["hostId", "agent", "checkouts"]
+          },
+          "seenStatus": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"]
+          }
+        },
+        "required": ["session", "seenStatus"]
+      },
+      "StartTaskSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskResponseDto"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hints": {
+            "description": "What the control plane could not do just now: `host_offline` when the session waits for its host.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["task", "sessionId", "hints"]
+      },
+      "LinkTaskSessionRequest": {
+        "type": "object",
+        "properties": {
+          "seenStatus": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"]
+          }
+        },
+        "required": ["seenStatus"]
+      },
+      "GoalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ship XRP Mobile 2.0 to TestFlight"
+          },
+          "targetDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-11-01"
+          },
+          "doneCount": {
+            "type": "number",
+            "description": "Its tasks that are Done."
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "All its tasks."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "projectId", "name", "doneCount", "totalCount", "createdAt"]
+      },
+      "CreateGoalRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
+          }
+        },
+        "required": ["name", "projectId"]
+      },
+      "UpdateGoalRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
+          }
+        }
+      },
+      "CalendarEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Ours a uuid; Google’s its own id, with the day for an all-day event spanning several."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["personal", "google"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Empty for Google’s events, which are read-only here."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-07"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "09:30"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "10:00"
+          },
+          "busy": {
+            "type": "boolean",
+            "description": "Busy, or free time drawn muted."
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          }
+        },
+        "required": ["id", "source", "title", "notes", "date", "allDay", "busy"]
+      },
+      "CreateCalendarEventRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "busy": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": ["title", "date", "allDay"]
+      },
+      "UpdateCalendarEventRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "busy": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GoogleCalendarConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "description": "Whether the caller has connected, revoked or not."
+          },
+          "accountEmail": {
+            "type": "string",
+            "nullable": true,
+            "example": "ana@example.com"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["active", "revoked"],
+            "description": "`revoked` when Google dropped the grant: the card offers Reconnect."
+          }
+        },
+        "required": ["connected"]
+      },
+      "GoogleCalendarConnectStartResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Google’s consent page, carrying the single-use state."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["url", "expiresAt"]
+      },
+      "ConnectGoogleCalendarRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": ["code", "state"]
+      },
       "CapabilitiesResponseDto": {
         "type": "object",
         "properties": {
@@ -16747,6 +18938,10 @@
             "type": "boolean",
             "description": "The sessions GitHub App is configured."
           },
+          "google_calendar": {
+            "type": "boolean",
+            "description": "Plan’s calendar can connect a Google Calendar."
+          },
           "github_app_install_url": {
             "type": "string",
             "nullable": true,
@@ -16754,7 +18949,13 @@
             "description": "Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug."
           }
         },
-        "required": ["google_oauth", "github_oauth", "github_app", "github_app_install_url"]
+        "required": [
+          "google_oauth",
+          "github_oauth",
+          "github_app",
+          "google_calendar",
+          "github_app_install_url"
+        ]
       }
     }
   }

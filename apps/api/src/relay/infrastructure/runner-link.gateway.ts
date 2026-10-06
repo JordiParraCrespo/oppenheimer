@@ -4,6 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   helloSchema,
+  knownCapabilities,
   LINK_MAX_FRAME_BYTES,
   PROTOCOL_VERSION,
   type ProtocolMessage,
@@ -204,7 +205,9 @@ export class RunnerLinkGateway {
       hello.runId,
       this.links.nextEpoch(hostId),
       ws,
-      hello.capabilities,
+      // A runner newer than this control plane may name capabilities it has
+      // never heard of; those are dropped, never a reason to refuse the link.
+      knownCapabilities(hello.capabilities),
     );
     const replaced = this.links.register(link);
     if (replaced instanceof SocketRunnerLink) {

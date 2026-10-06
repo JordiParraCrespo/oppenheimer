@@ -196,7 +196,7 @@ would confirm the id.
 | `HOSTS_004` <a id="hosts_004" /> | Hosts are not configured on this server      | 503  |
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
-| `HOSTS_007` <a id="hosts_007" /> | No image is waiting for that command         | 404  |
+| `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -427,15 +427,15 @@ are never reissued.
 | `SESSIONS_009` <a id="sessions_009" /> | A session must name its project (no longer raised) | 400 |
 | `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
-| `SESSIONS_012` <a id="sessions_012" /> | That image is too large to give the session     | 413  |
-| `SESSIONS_013` <a id="sessions_013" /> | That is not an image the session can take       | 415  |
+| `SESSIONS_012` <a id="sessions_012" /> | That file is too large to give the session      | 413  |
+| `SESSIONS_013` <a id="sessions_013" /> | That is not a file the session can take         | 415  |
 | `SESSIONS_014` <a id="sessions_014" /> | That session is stopped                         | 409  |
-| `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
+| `SESSIONS_015` <a id="sessions_015" /> | No file was attached                            | 400  |
 | `SESSIONS_016` <a id="sessions_016" /> | The host is offline                             | 503  |
-| `SESSIONS_017` <a id="sessions_017" /> | The host cannot take images until its runner is updated | 409 |
+| `SESSIONS_017` <a id="sessions_017" /> | The host cannot take that file until its runner is updated | 409 |
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
-| `SESSIONS_019` <a id="sessions_019" /> | An attached image is no longer waiting          | 410  |
-| `SESSIONS_020` <a id="sessions_020" /> | Too many images are waiting to be sent          | 429  |
+| `SESSIONS_019` <a id="sessions_019" /> | An attached file is no longer waiting           | 410  |
+| `SESSIONS_020` <a id="sessions_020" /> | Too many files are waiting to be sent           | 429  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -463,16 +463,19 @@ checked here — that is a hint on the engine button, and the terminal says so.
 session's repositories; a session moves to any project now, because a project is
 metadata. The code stays reserved.
 
-`SESSIONS_012`–`SESSIONS_017` belong to pasting an image into a session's prompt
-(`POST /sessions/{id}/images`). `012` is the upload's cap; `013` is bytes that are not
-an image, whatever the browser labelled them, and `015` a request with no file at all;
-`014` is a stopped session, which has no window to paste into. `016` and `017` are the
-host: no link right now, or a runner too old to take the command. An image is never
-queued for a host that comes back. A runner that refuses the image anyway answers with
-`SESS_005` in the session's log, and `HOSTS_007` is the runner's own pull finding
-nothing waiting.
+`SESSIONS_012`–`SESSIONS_017` belong to pasting a file into a session's prompt
+(`POST /sessions/{id}/images`). A file is an image (PNG, JPEG, GIF, WebP), a PDF, or
+UTF-8 text (plain, Markdown, CSV, JSON), judged by its bytes. `012` is the upload's cap;
+`013` is bytes that are none of those, whatever the browser labelled them or the file
+was named: an executable, an archive, a script with a `#!` line, SVG, HTML, text with
+control bytes. `015` is a request with no file at all; `014` is a stopped session, which
+has no window to paste into. `016` and `017` are the host: no link right now, or a
+runner too old to take the command, or one that takes images but not PDF or text (it did
+not announce `session.files`). A file is never queued for a host that comes back. A
+runner that refuses the file anyway answers with `SESS_005` in the session's log, and
+`HOSTS_007` is the runner's own pull finding nothing waiting.
 
-The same refusals cover images attached to a session's first task. Each is uploaded
+The same refusals cover files attached to a session's first task. Each is uploaded
 with `POST /sessions/attachments`, which answers `012`, `013` and `015` as a paste does,
 and `020` when the caller already has as many uploads waiting as one person may. The
 create that names them in `attachmentIds` answers `016` or `017` before it writes
@@ -529,6 +532,64 @@ A run the owner can no longer start is not an error to the caller: it is recorde
 on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
 `overlapping`, the rate caps, `missed`), and a reason that would repeat every time
 pauses the automation with a `pausedReason`.
+
+## Tasks
+
+Plan's board: tasks, the goals over them, and the sessions a task started or
+links. See `product/versions/mvp/17-plan.md`.
+
+| Code                                 | Title                                    | HTTP |
+| ------------------------------------ | ---------------------------------------- | ---- |
+| `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
+| `TASKS_002` <a id="tasks_002" />     | Goal not found                           | 404  |
+| `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
+| `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
+| `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
+| `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
+| `TASKS_007` <a id="tasks_007" />     | That goal belongs to another project     | 409  |
+
+`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, goal or
+session in another workspace.
+
+`TASKS_004` is a project that is missing or archived: nothing new is filed under a
+retired project.
+
+`TASKS_006` is a move that named a task to land after which is no longer in that
+column, or is the task being moved. The board was stale; reload it.
+
+`TASKS_007` is a request whose goal and project disagree. A goal brings its own
+project, so leave `projectId` out when choosing one.
+
+## Calendar
+
+Plan's calendar: the workspace's own events, and a person's Google Calendar read
+through to Google and never stored. See `product/versions/mvp/20-plan-calendar.md`.
+
+| Code                                     | Title                                               | HTTP |
+| ---------------------------------------- | --------------------------------------------------- | ---- |
+| `CALENDAR_001` <a id="calendar_001" />   | Event not found                                     | 404  |
+| `CALENDAR_002` <a id="calendar_002" />   | The calendar belongs to an organization             | 400  |
+| `CALENDAR_003` <a id="calendar_003" />   | That range of days is too wide                      | 400  |
+| `CALENDAR_004` <a id="calendar_004" />   | Google Calendar is not configured on this server    | 503  |
+| `CALENDAR_005` <a id="calendar_005" />   | That Google Calendar connection was not started here | 400 |
+| `CALENDAR_006` <a id="calendar_006" />   | Google did not grant read access to the calendar    | 400  |
+| `CALENDAR_007` <a id="calendar_007" />   | Google Calendar is not connected                    | 409  |
+| `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
+| `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
+
+`CALENDAR_003` is a range that runs backwards or covers more than 62 days.
+
+`CALENDAR_004` needs the Google sign-in client (`GOOGLE_CLIENT_ID`/`_SECRET`) and
+`CALENDAR_TOKEN_KEY`; without them the calendar shows everything but Google.
+
+`CALENDAR_005` is a connect `state` that is missing, expired, used, or someone
+else's. Start again from Connect Google Calendar.
+
+`CALENDAR_006` is Google refusing the code, returning no refresh token, or a
+consent screen where the calendar permission was left unticked.
+
+`CALENDAR_007` is no connection, or one Google has since revoked (or one sealed
+under a `CALENDAR_TOKEN_KEY` that was replaced): connect again.
 
 ## Inbound events
 
@@ -599,7 +660,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
-| `SESS_005` <a id="sess_005" />         | The image cannot be given to the session     | 415  |
+| `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

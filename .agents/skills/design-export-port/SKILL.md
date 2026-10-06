@@ -29,6 +29,16 @@ approved. Write that decision down in the token file.
 
 ## 0. Plan, then confirm
 
+First decide which kind of run this is. A **first port** maps a whole
+export onto the package. A **delta sync** is a later export that changes a
+few screens: its README names the delta, the diff against the previous sync
+shows the rest, and the job is the components that delta needs, on top of
+what is there. A delta sync walks only the changed states (§3), but still
+asks the questions those states raise. Above all: when the frames offer a
+switch between two drawings of one thing (a prop like `offlineStyle`), ask
+which one the product keeps, and model it as one component with the other
+as a form, never two components.
+
 Users ask for less than the job needs ("just the colours") and widen it
 once they see the screens. Read everything, write a short plan, and ask
 the questions that change the work before writing a line:
@@ -71,13 +81,29 @@ page throws, so a blank capture is never silent.
 ```bash
 node .agents/skills/design-export-port/scripts/render-artboards.mjs \
   --design <export root> --version <artboards dir> --out /tmp/shots \
-  [--only SignIn,AddHost] [--click SignIn:.some-trigger] [--escape]
+  [--only SignIn,AddHost] [--click SignIn:.some-trigger] [--escape] \
+  [--props 'SessionsConsole:{"hostLink":"offline"}'] [--drag SessionsConsole] [--tag offline]
 ```
+
+Most new states hide behind a page's **props**, not a click: the knobs
+Claude Design shows in its side panel, declared in the page's
+`data-props` attribute (read it: `grep -o 'data-props="[^"]*"'`). `--props`
+sets them through the runtime's own `__dcSetProps`, so the page runs its
+update path. A prop the page only reads in `componentDidMount` (a starting
+`page`) does not take after mount; click to that state instead. `--drag`
+holds a file over the window for drag-only overlays, and `--tag` names the
+capture so one page's states sit side by side. Run it once per state.
+
+A page whose diff lands in markup can still be checked without a browser:
+read its `sc-if` conditions and the script's derived values, which is
+where the copy and the states live.
 
 ## 3. Review page by page, with the user
 
 Walk the screens **one per turn**, in flow order, and wait before moving
-on. Send the light and dark capture, then list only what is new on that
+on. In a delta sync, walk the changed states instead, and when the user has
+already agreed the inventory, present them together rather than one per
+turn. Send the light and dark capture, then list only what is new on that
 page:
 
 - find the export's class prefix in the markup and grep for it: that is
@@ -147,6 +173,17 @@ Keep the JS `tailwind.config.ts` preset in sync with the same values.
 - In the app, a dialog lives in the feature whose surfaces open it and is
   mounted once by the layout's dialog owner (`useConsoleDialog`); chrome
   two features draw identically goes to the kit, with its hook.
+- Behaviour the frames implement on `window` or `document` (a drag over the
+  whole pane, a key chord) is a generic hook in the package's `src/hooks/`
+  plus the component that draws it; the feature only passes a callback.
+  Read the frame's script for the edge cases it already handles (counting
+  `dragenter`/`dragleave`, ignoring drags without files) and keep them.
+- Behaviour the frames hand-write twice (two drags, two month grids) is
+  one primitive the surfaces compose. Port the frame's numbers onto the
+  token ramp, not its script.
+- Stay in the package. A frame that implies new behaviour in the app, the
+  API or the runner (an upload for files that are not images) is listed as
+  out of scope in the PR, not built in it, unless the user asked for it.
 
 `references/modelling.md` also lists the Base UI traps that recur (typing
 `useRender` props, `nativeButton` when rendering an anchor, Select
@@ -164,8 +201,13 @@ what was dropped. Pages that hold state are client components.
 
 Build, then `scripts/shoot-showcase.mjs` starts the built app, captures
 the top and the section ids you name in light and dark, applies both theme
-selectors, and exits non-zero on console errors or a server that never
-answers.
+selectors, and exits non-zero on console errors (a hydration mismatch
+included) or a server that never answers. `--state 'section:tag:steps'`
+captures one state of a section's demo after clicks or a held drag, as an
+element shot; raise `--height` for a tall section.
+
+A demo that renders a clock on a prerendered page mismatches on hydration;
+mark that one node `suppressHydrationWarning`, never the section.
 
 ## 7. Verify
 
@@ -177,6 +219,11 @@ answers.
   optional app is listed under that app's feature in
   `scripts/starter/features.json`; if the repo tracks the export as a
   design record, the manifest check skips it.
+
+When the person reviewing wants to compare without running anything,
+`scripts/build-compare.mjs --manifest compare.json --out <dir>` lays each
+frame capture beside the showcase capture that ports it, light and dark.
+It is a local helper, not a step: build it when asked.
 
 ## 8. Docs, in the same PR
 

@@ -18,6 +18,9 @@
  * on a map: a DB-IP Lite (or MaxMind) database on disk. Without one a network
  * is still recorded, by address, and no new-network email is ever sent,
  * because "moved country" cannot be told.
+ *
+ * `google_calendar` says whether Plan's calendar can show a person's Google
+ * Calendar: the Google client and the key its refresh tokens are sealed under.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -28,6 +31,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'hosts',
   'session_namer',
   'ip_geolocation',
+  'google_calendar',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
@@ -55,6 +59,8 @@ export const CLIENT_CAPABILITIES = [
   // deployment has no App, so Connect GitHub will fail" — and the App slug the
   // install link is built from only exists when the capability is on.
   'github_app',
+  // Plan's calendar offers Connect Google Calendar only when it can work.
+  'google_calendar',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

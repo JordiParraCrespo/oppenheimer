@@ -95,6 +95,50 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   tones are the only two.
 - **A dialog has three widths**, `md`, `form` and `lg`, and a caller never
   sets one.
+- **A host that goes away is a phase of the terminal, not an error.**
+  `Terminal` takes `hostLink`: the phase (`live`, `reconnecting`, `offline`,
+  `catching-up`, `reconnected`), the host's name, and the form. The phase
+  table in the package decides what each phase shows; the terminal locks the
+  prompt and fades the scrollback itself, and `HostLinkChrome`, in the
+  status bar's place, draws the rest. The **banner** is the console's form;
+  the **notice** (a card over the scrollback) is the frames' other drawing
+  of the same phases, not a second design. The session comes back on its
+  own because the runner dials out, so the only control is the fix (How to
+  fix), for when it does not. An offline host keeps its place in the host
+  picker as a disabled option whose description says so, and the composer's
+  `sendBlockedReason` says why send is off.
+- **The fix for a machine is a command to copy, not a block to read.**
+  `CommandRow` is one `$ command` with an icon copy button (Copy command →
+  Copied), stacked in a `CommandRowList`; it is the fix in the host-link
+  chrome and in an offline `HostCard`. `CodeBlock` stays for what is read
+  before it is copied (the install command and agent prompt). Both copy
+  through `useCopy`.
+- **Files are dropped on the pane.** `DropZone` wraps New session and a
+  running terminal: a drag carrying files draws the 3px action-blue outline
+  around the whole pane, square and flush, with no fill and no label. It is
+  its own box; `listen="window"` only on a page
+  with one zone.
+- **Things move by dragging on one layer.** `drag.tsx` is headless and
+  product-free: `useDraggable` / `useDroppable` (with `accepts` by
+  `data.type`), and `SortableGroup` / `SortableItem` / `useSortableGroups`
+  for order across groups, all inside one `DragProvider` per surface that
+  the page owns. A component that drags (the month) draws sources and
+  targets and never mounts its own provider. It wraps dnd-kit, which no app
+  imports. The motion lives in the layer, on the token ramp (`--drag-lift`,
+  the fast and base durations); a sortable item's own place is the drop
+  slot. Keyboard and announcements come with it; a surface translates the
+  words through `labels`. A control inside a draggable spreads
+  `dragIgnore`. Files from the desktop stay `DropZone`'s.
+- **Plan composes the system's own vocabulary.** A task's status is the
+  run-state dot (`TASK_STATUS_STATE`), its done toggle a `Checkbox`, a
+  calendar source a `Checkbox` row, and a page that opens on its own name
+  `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
+  is given at its parent's width; `MonthCalendar` and `DatePicker` are the
+  two faces of one month grid.
+- **A sidebar row's actions are its ellipsis.** `SessionItem` and
+  `RoutineItem` take `action` and `menuOpen` through one row shell; a
+  routine row adds `lastRun`, a dot before the meta for how the last run
+  ended, from the same table as `RoutineRun`'s.
 
 ## Conventions
 

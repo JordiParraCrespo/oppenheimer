@@ -31,10 +31,12 @@ import { auth } from './auth/infrastructure/better-auth.config';
 import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-storage.adapter';
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
+import { CalendarModule } from './calendar/calendar.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
   automationsConfig,
+  calendarConfig,
   databaseConfig,
   emailConfig,
   githubAppConfig,
@@ -69,6 +71,7 @@ import { RedisModule } from './redis/redis.module';
 import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { TasksModule } from './tasks/tasks.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
@@ -90,6 +93,7 @@ import { UsersModule } from './users/user.module';
         llmConfig,
         sessionsConfig,
         automationsConfig,
+        calendarConfig,
         retentionConfig,
         throttlingConfig,
       ],
@@ -236,6 +240,8 @@ import { UsersModule } from './users/user.module';
     ProjectsModule,
     SessionsModule,
     AutomationsModule,
+    TasksModule,
+    CalendarModule,
     RelayModule,
     HealthModule,
     QueueModule,

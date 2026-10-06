@@ -321,3 +321,36 @@ func TestASessionLaunchesWiderThanTmuxsDefault(t *testing.T) {
 		t.Fatalf("a detached session launched at %s, want 132x40 (tmux's own default is 80x24)", got)
 	}
 }
+
+func TestLaunchReplacesTheShellWithTheProgramInPlace(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	worktree := t.TempDir()
+	if err := s.Create(ctx, "opp-launch", t.TempDir(), "", map[string]string{"OPPENHEIMER_SESSION": "launched-session"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SendKeys(ctx, "opp-launch:0", "echo typed-before-the-launch\n"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, s, "opp-launch:0", "typed-before-the-launch")
+
+	// The program is the pane's own process, started in dir with the
+	// session's environment, and what the shell held is gone with it.
+	if err := s.Launch(ctx, "opp-launch:0", worktree, `sh -c 'pwd; echo "agent-for-$OPPENHEIMER_SESSION"; sleep 30'`); err != nil {
+		t.Fatal(err)
+	}
+	screen := waitFor(t, s, "opp-launch:0", "agent-for-launched-session")
+	if !strings.Contains(screen, worktree) {
+		t.Fatalf("the program did not start in the worktree:\n%s", screen)
+	}
+	// Scrollback too: a reader who scrolls up finds the program's first
+	// line, not the shell it replaced.
+	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
+	history, err := exec.Command("tmux", "-L", socket, "capture-pane", "-p", "-S", "-", "-t", "opp-launch:0").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if all := screen + string(history); strings.Contains(all, "typed-before-the-launch") || strings.Contains(all, "sleep 30") {
+		t.Fatalf("the pane still holds what came before the program, or how it was started:\n%s", all)
+	}
+}

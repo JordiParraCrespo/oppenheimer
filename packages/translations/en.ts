@@ -1,5 +1,6 @@
 import auth from './en/auth.json';
 import automations from './en/automations.json';
+import calendar from './en/calendar.json';
 import common from './en/common.json';
 import consent from './en/consent.json';
 import emails from './en/emails.json';
@@ -12,6 +13,7 @@ import projects from './en/projects.json';
 import publicCopy from './en/public.json';
 import sessions from './en/sessions.json';
 import settings from './en/settings.json';
+import tasks from './en/tasks.json';
 import theme from './en/theme.json';
 import toasts from './en/toasts.json';
 import validation from './en/validation.json';
@@ -30,6 +32,8 @@ const en = {
   projects,
   sessions,
   automations,
+  tasks,
+  calendar,
   hosts,
   settings,
   theme,

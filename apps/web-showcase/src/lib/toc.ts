@@ -5,15 +5,18 @@ import {
   AtSignIcon,
   BarChart3Icon,
   BotIcon,
+  CalendarDaysIcon,
   ChevronDownCircleIcon,
   CircleCheckIcon,
   CircleDotIcon,
   CircleUserRoundIcon,
   CodeIcon,
   CpuIcon,
+  FileUpIcon,
   HeadingIcon,
   PanelTopIcon,
   ImageIcon,
+  KanbanIcon,
   KeyboardIcon,
   LayersIcon,
   LayoutGridIcon,
@@ -29,6 +32,7 @@ import {
   MessageSquareWarningIcon,
   MinusIcon,
   MousePointerClickIcon,
+  MoveIcon,
   PaletteIcon,
   PanelLeftIcon,
   RectangleHorizontalIcon,
@@ -52,6 +56,7 @@ import {
   ToggleLeftIcon,
   type LucideIcon,
   TypeIcon,
+  UnplugIcon,
   WavesIcon,
   ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
@@ -120,6 +125,8 @@ export const TOC: TocGroup[] = [
       { id: 'reporows', label: 'RepositoryAddField · RepositoryRowList', icon: ListChecksIcon, components: ['repository-add-field', 'repository-row-list', 'repository-select'] },
       { id: 'fieldselect', label: 'FieldSelect', icon: SquareChevronDownIcon, components: ['field-select'] },
       { id: 'composer', label: 'Composer', icon: MessageSquareIcon, components: ['composer'] },
+      { id: 'dropzone', label: 'DropZone', icon: FileUpIcon, components: ['drop-zone'] },
+      { id: 'datepicker', label: 'DatePicker', icon: CalendarDaysIcon, components: ['date-picker'] },
       { id: 'engine', label: 'AgentModelSelect', icon: BotIcon, components: ['agent-model-select'] },
       { id: 'effort', label: 'EffortSlider', icon: SlidersHorizontalIcon, components: ['effort-slider'] },
       { id: 'permission', label: 'PermissionMenu', icon: ShieldCheckIcon, components: ['permission-menu'] },
@@ -159,6 +166,15 @@ export const TOC: TocGroup[] = [
     ],
   },
   {
+    group: 'Plan',
+    items: [
+      { id: 'drag', label: 'Drag layer', icon: MoveIcon, components: ['drag'] },
+      { id: 'taskboard', label: 'TaskBoard · GoalCard', icon: KanbanIcon, components: ['task-board', 'goal-card'] },
+      { id: 'calendar', label: 'MonthCalendar', icon: CalendarDaysIcon, components: ['month-calendar', 'calendar-source'] },
+      { id: 'plandialogs', label: 'Task & session dialogs', icon: AppWindowIcon, components: [] },
+    ],
+  },
+  {
     group: 'Settings',
     items: [
       { id: 'settingsshell', label: 'SettingsShell', icon: PanelTopIcon, components: ['settings-shell'] },
@@ -169,7 +185,11 @@ export const TOC: TocGroup[] = [
   },
   {
     group: 'Terminal',
-    items: [{ id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] }],
+    items: [
+      { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
+      { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
+      { id: 'sessionpane', label: 'SessionPaneHeader', icon: PanelTopIcon, components: ['session-pane-header'] },
+    ],
   },
   {
     group: 'Media',

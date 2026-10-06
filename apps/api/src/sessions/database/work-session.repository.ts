@@ -5,7 +5,7 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
-import type { SessionLaunchImage } from '../domain/session-launch-image.types';
+import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
@@ -348,13 +348,13 @@ export class WorkSessionRepository
         select: { sessionId: true, payload: true },
       }),
     ]);
-    const firstPrompts = new Map<string, { prompt: string; images: SessionLaunchImage[] }>();
+    const firstPrompts = new Map<string, { prompt: string; images: SessionLaunchFile[] }>();
     for (const event of prompts) {
       const text = (event.payload as { text?: unknown } | null)?.text;
       if (typeof text === 'string' && !firstPrompts.has(event.sessionId)) {
         firstPrompts.set(event.sessionId, {
           prompt: text,
-          images: WorkSessionMapper.imagesOf(event.payload),
+          images: WorkSessionMapper.filesOf(event.payload),
         });
       }
     }

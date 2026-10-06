@@ -42,6 +42,10 @@ type Terminals interface {
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
 	SendKeys(ctx context.Context, target, keys string) error
+	// Launch replaces the program in a window with command, run in dir: the
+	// program becomes the pane's own process on a fresh screen, and nothing
+	// is typed to start it. An empty command is a plain shell.
+	Launch(ctx context.Context, target, dir, command string) error
 	// Paste pastes text into a window as a bracketed paste when the program
 	// there asked for one, which is how a dropped file's path reaches an
 	// agent in a local terminal. The id names the paste, so two at once
@@ -83,6 +87,9 @@ type Worktrees interface {
 	// Ensure makes sure the repository's store exists on this host and that
 	// ref, the branch a worktree is about to be made from, is fresh in it.
 	Ensure(ctx context.Context, repo, remote, ref string) error
+	// Has reports whether the repository's store is on this host, whole: the
+	// difference between an Ensure that fetches and one that downloads it.
+	Has(repo string) bool
 	// Add creates a worktree at path, on branch, cut from base.
 	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
 	// Prepare makes the directory this repository's worktrees are created in
@@ -98,15 +105,15 @@ type Worktrees interface {
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)
 }
 
-// Images is where a session's pasted images are kept on this host: under the
+// Files is where a session's pasted files are kept on this host: under the
 // runner's own home, never in the worktree, so an agent cannot commit one by
 // accident and closing the session can drop them all.
-type Images interface {
-	// Save writes one image for a session and returns its absolute path.
+type Files interface {
+	// Save writes one file for a session and returns its absolute path.
 	Save(sessionID, name string, data []byte) (string, error)
-	// Delete removes one image, when the paste it was written for failed.
+	// Delete removes one file, when the paste it was written for failed.
 	Delete(sessionID, name string) error
-	// Discard removes every image a session was given.
+	// Discard removes every file a session was given.
 	Discard(sessionID string) error
 }
 

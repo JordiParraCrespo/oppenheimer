@@ -34,6 +34,8 @@ type Terminals struct {
 	// Titles is the terminal title per target, the signal an agent sets
 	// through an escape sequence.
 	Titles map[string]string
+	// Launches is what each window was last launched with.
+	Launches map[string]Launched
 
 	sessions map[string]*fakeSession
 	// Attached counts live attachments.
@@ -45,20 +47,20 @@ type Terminals struct {
 	FailPaste bool
 }
 
-// Images is app.Images in memory.
-type Images struct {
+// Files is app.Files in memory.
+type Files struct {
 	mu sync.Mutex
-	// Saved is each session's images by name.
+	// Saved is each session's files by name.
 	Saved map[string]map[string][]byte
-	// Discarded names the sessions whose images were dropped.
+	// Discarded names the sessions whose files were dropped.
 	Discarded []string
 }
 
-// NewImages returns an empty image store.
-func NewImages() *Images { return &Images{Saved: map[string]map[string][]byte{}} }
+// NewFiles returns an empty file store.
+func NewFiles() *Files { return &Files{Saved: map[string]map[string][]byte{}} }
 
-// Save implements app.Images; the path is a fixed fake root.
-func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
+// Save implements app.Files; the path is a fixed fake root.
+func (i *Files) Save(sessionID, name string, data []byte) (string, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	if i.Saved[sessionID] == nil {
@@ -68,16 +70,16 @@ func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
 	return "/home/jordi/.oppenheimer/images/" + sessionID + "/" + name, nil
 }
 
-// Delete implements app.Images.
-func (i *Images) Delete(sessionID, name string) error {
+// Delete implements app.Files.
+func (i *Files) Delete(sessionID, name string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	delete(i.Saved[sessionID], name)
 	return nil
 }
 
-// Discard implements app.Images.
-func (i *Images) Discard(sessionID string) error {
+// Discard implements app.Files.
+func (i *Files) Discard(sessionID string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	delete(i.Saved, sessionID)
@@ -243,6 +245,23 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 	return nil
 }
 
+// Launched is what a window was last launched with.
+type Launched struct {
+	Dir     string
+	Command string
+}
+
+// Launch implements app.Terminals by recording the launch on the target.
+func (t *Terminals) Launch(_ context.Context, target, dir, command string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.Launches == nil {
+		t.Launches = map[string]Launched{}
+	}
+	t.Launches[target] = Launched{Dir: dir, Command: command}
+	return nil
+}
+
 // Paste implements app.Terminals by appending to the screen and recording
 // the paste, so a test can tell it from typed keys.
 func (t *Terminals) Paste(_ context.Context, target, _ string, text string) error {
@@ -381,6 +400,13 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	w.Mirrors[repo]++
 	w.Fetched = append(w.Fetched, ref)
 	return nil
+}
+
+// Has implements app.Worktrees: a repository is on the host once Ensure ran for it.
+func (w *Worktrees) Has(repo string) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Mirrors[repo] > 0
 }
 
 // Prepare implements app.Worktrees. Nothing is made on disk: a fake session's

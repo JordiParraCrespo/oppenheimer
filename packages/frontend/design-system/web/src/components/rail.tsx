@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 
 /**
  * Rail — the 56px strip left of the sidebar that switches the console between
- * its two lists: sessions and automations. A round wordmark on top, then one
+ * its areas: sessions, automations and Plan (tasks and the calendar). A round wordmark on top, then one
  * 40px round link per list — the app hands each item the router's link
  * through `render` — muted at rest, the hover wash on hover, and the same
  * wash held while it is the current one. Hovering or focusing a button shows

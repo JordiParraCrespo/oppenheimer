@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
-import type { SessionLaunchImage } from '../domain/session-launch-image.types';
+import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { SessionLaunchSpec } from './session-dispatch.port';
@@ -22,7 +22,7 @@ export class SessionLaunchSpecFactory {
 
   async build(
     session: WorkSessionEntity,
-    extra: { prompt?: string; images?: SessionLaunchImage[] } = {},
+    extra: { prompt?: string; images?: SessionLaunchFile[] } = {},
   ): Promise<SessionLaunchSpec> {
     const organizationSlug = await this.workspaces.slugOf(session.organizationId);
     // The session row was written in this workspace; a missing slug is a broken

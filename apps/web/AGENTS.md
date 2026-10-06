@@ -64,7 +64,9 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
   own at `/settings/hosts/new`. New project, Project settings and the
   automation editor are dialogs too, not pages
-  (`product/versions/mvp/05-screens.md`, `13-automations.md`).
+  (`product/versions/mvp/05-screens.md`, `13-automations.md`). Plan's task,
+  goal and Start session dialogs open from the address (`?task=`, `?start=`)
+  so "Back to task" is a link (`product/versions/mvp/18-plan-product.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `src/features/projects/components/project-save-button.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:

@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+html,body{margin:0;height:100%;background:var(--canvas,#f5f5f7)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+[data-dl]:hover>[data-dlplus],[data-dlplus]:focus-visible{opacity:1!important}
+@keyframes op-spin{to{transform:rotate(360deg)}}
+@keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+<script src="./rail-order.js"></script>
+</helmet>
+<div style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
+
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<a class="op-rail__btn" href="./SessionsConsole.dc.html" aria-label="Sessions" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></a>
+<button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Pull requests"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests<span class="op-nav__count">{{ queueN }}</span></span></button>
+<a class="op-rail__btn" href="./Routines.dc.html" aria-label="Automations" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></a>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
+</nav>
+
+<nav class="op-sidebar" style="width:264px;min-width:264px;overflow:hidden">
+<div class="op-sidebar__head">
+<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Pull requests</span></span>
+</div>
+<div class="op-sidebar__scroll">
+<div class="op-sessionlist">
+<sc-for list="{{ views }}" as="v" hint-placeholder-count="4">
+<button class="op-session" type="button" data-active="{{ v.on }}" onClick="{{ v.pick }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ v.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ v.name }}</span><span class="op-session__age" style="opacity:1">{{ v.n }}</span></button>
+</sc-for>
+</div>
+</div>
+<div class="op-sidebar__foot" style="border-top:0">
+<div class="op-accountwrap">
+<button class="op-navitem" type="button" data-active="{{ accountOpen }}" onClick="{{ toggleAccount }}"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span><span class="op-navitem__meta" style="display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+<sc-if value="{{ accountOpen }}">
+<div class="op-menu op-accountmenu" role="menu" onClick="{{ stop }}">
+
+<sc-if value="{{ accountRoot }}">
+<div class="op-accountmenu__id">jordiparra99@gmail.com</div>
+<div class="op-menu__sep"></div>
+<a class="op-menu__item" href="./Settings.dc.html" style="text-decoration:none;color:inherit">
+<span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="15" hint-size="15px,15px"></x-import></span>
+<span class="op-menu__label-text">Settings</span>
+</a>
+<button class="op-menu__item" type="button" onClick="{{ openTheme }}">
+<span class="op-menu__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></span>
+<span class="op-menu__label-text">Appearance</span><span class="op-menu__value">{{ themeLabel }}</span><span class="op-menu__shortcut">›</span>
+</button>
+<button class="op-menu__item" type="button" onClick="{{ openLang }}">
+<span class="op-menu__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
+<span class="op-menu__label-text">Language</span><span class="op-menu__value">{{ langLabel }}</span><span class="op-menu__shortcut">›</span>
+</button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" data-variant="danger">
+<span class="op-menu__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg></span>
+<span class="op-menu__label-text">Log out</span>
+</button>
+</sc-if>
+
+<sc-if value="{{ accountTheme }}">
+<button class="op-menu__item" type="button" onClick="{{ backToAccount }}"><span class="op-menu__shortcut">‹</span><span class="op-menu__label-text">Appearance</span></button>
+<div class="op-menu__sep"></div>
+<sc-for list="{{ themeOptions }}" as="t" hint-placeholder-count="3">
+<button class="op-menu__item" type="button" onClick="{{ t.pick }}"><span class="op-menu__label-text">{{ t.label }}</span><span class="op-menu__tick">{{ t.check }}</span></button>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ accountLang }}">
+<button class="op-menu__item" type="button" onClick="{{ backToAccount }}"><span class="op-menu__shortcut">‹</span><span class="op-menu__label-text">Language</span></button>
+<div class="op-menu__sep"></div>
+<sc-for list="{{ langOptions }}" as="l" hint-placeholder-count="3">
+<button class="op-menu__item" type="button" onClick="{{ l.pick }}"><span class="op-menu__label-text">{{ l.label }}</span><span class="op-menu__tick">{{ l.check }}</span></button>
+</sc-for>
+</sc-if>
+
+</div>
+</sc-if>
+</div>
+</div>
+</nav>
+
+<main data-prmain="true" style="position:relative;flex:1;min-width:0;display:flex;overflow:hidden;background:var(--canvas)">
+<sc-if value="{{ listMode }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ isAnalytics }}">
+<div style="flex:1;min-width:0;overflow-y:auto">
+<div style="max-width:1100px;margin:0 auto;padding:44px 32px 80px;display:flex;flex-direction:column;gap:24px">
+<header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">{{ an.title }}</h1>
+<span style="font-size:13px;color:var(--fg-muted)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ an.rangeLabel }}</span> compared with the {{ an.prevLabel }} · all repositories</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+<div style="position:relative"><div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ anRanges }}" as="g" hint-placeholder-count="3"><button type="button" onClick="{{ g.pick }}" style="height:28px;padding:0 12px;border:0;border-radius:980px;background:{{ g.bg }};color:{{ g.fg }};font:inherit;font-size:12.5px;font-weight:500;white-space:nowrap;cursor:pointer">{{ g.name }}</button></sc-for></div>
+<sc-if value="{{ dp.open }}">
+<div onClick="{{ dp.stop }}" style="position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:min(300px,calc(100vw - 48px));box-sizing:border-box;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ dp.presets }}" as="p" hint-placeholder-count="4"><button class="op-pill" type="button" data-on="{{ p.on }}" onClick="{{ p.pick }}">{{ p.name }}</button></sc-for></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px"><button type="button" onClick="{{ dp.fromFocus }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:7px 10px;border:1px solid {{ dp.fromBorder }};border-radius:10px;background:var(--background);box-shadow:{{ dp.fromRing }};color:var(--fg);font:inherit;text-align:left;cursor:pointer"><span style="font-size:11.5px;color:var(--fg-muted)">From</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;color:{{ dp.fromFg }};white-space:nowrap">{{ dp.fromLabel }}</span></button><button type="button" onClick="{{ dp.toFocus }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:7px 10px;border:1px solid {{ dp.toBorder }};border-radius:10px;background:var(--background);box-shadow:{{ dp.toRing }};color:var(--fg);font:inherit;text-align:left;cursor:pointer"><span style="font-size:11.5px;color:var(--fg-muted)">To</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;color:{{ dp.toFg }};white-space:nowrap">{{ dp.toLabel }}</span></button></div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="display:flex;align-items:center;gap:2px"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous month" disabled="{{ dp.monthPrevDis }}" onClick="{{ dp.monthPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import></button><span style="min-width:34px;text-align:center;font-size:13px;font-weight:500;">{{ dp.monthLabel }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next month" disabled="{{ dp.monthNextDis }}" onClick="{{ dp.monthNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></button></div><div style="display:flex;align-items:center;gap:2px"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous year" disabled="{{ dp.yearPrevDis }}" onClick="{{ dp.yearPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import></button><span style="min-width:38px;text-align:center;font-size:13px;font-weight:500;font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ dp.yearLabel }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next year" disabled="{{ dp.yearNextDis }}" onClick="{{ dp.yearNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></button></div></div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))"><sc-for list="{{ dp.wd }}" as="w" hint-placeholder-count="7"><span style="height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--fg-subtle)">{{ w }}</span></sc-for></div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:2px">
+<sc-for list="{{ dp.cells }}" as="c" hint-placeholder-count="35"><button type="button" disabled="{{ c.dis }}" onClick="{{ c.pick }}" style="height:34px;padding:0;border:0;display:flex;align-items:center;justify-content:center;background:{{ c.band }};border-radius:{{ c.bandR }};font:inherit;cursor:{{ c.cur }};opacity:{{ c.op }}"><span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:980px;background:{{ c.dot }};color:{{ c.fg }};font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:{{ c.fw }};box-shadow:{{ c.today }}" style-hover="box-shadow:inset 0 0 0 1px var(--border)">{{ c.d }}</span></button></sc-for>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;font-size:12px;color:{{ dp.sumFg }};text-wrap:pretty">{{ dp.summary }}</span><button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ dp.invalid }}" onClick="{{ dp.apply }}">Apply</button></div>
+</div>
+</sc-if>
+</div>
+
+
+</div>
+</header>
+
+<sc-if value="{{ isAnalytics }}" hint-placeholder-val="{{ true }}">
+<div style="background:var(--card);border-radius:18px;padding:22px 24px 18px;display:flex;flex-direction:column;gap:18px;min-width:0">
+<div style="display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap">
+<sc-for list="{{ an.heroStats }}" as="k" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--fg-muted)"><span style="width:8px;height:8px;border-radius:980px;background:{{ k.color }}"></span>{{ k.label }}</span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:40px;font-weight:500;letter-spacing:-0.024em;line-height:1">{{ k.value }}</span>
+<span style="display:flex;gap:6px;font-size:12.5px;white-space:nowrap"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:{{ k.deltaFg }}">{{ k.delta }}</span><span style="color:var(--fg-subtle)">from {{ k.prev }} {{ an.prevWord }}</span></span>
+</div>
+</sc-for>
+<span style="flex:1"></span>
+<div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ an.heroModes }}" as="m" hint-placeholder-count="3"><button type="button" onClick="{{ m.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ m.bg }};color:{{ m.fg }};font:inherit;font-size:12.5px;font-weight:500;white-space:nowrap;cursor:pointer">{{ m.name }}</button></sc-for></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div onMouseLeave="{{ an.heroLeave }}" style="display:flex;align-items:flex-end;gap:5px;height:220px">
+<sc-for list="{{ an.heroCols }}" as="c" hint-placeholder-count="7">
+<div title="{{ c.tip }}" onMouseEnter="{{ c.enter }}" style="flex:1;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px">
+<sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="2"><div style="flex:1;min-width:0;max-width:16px;height:{{ b.h }};border-radius:980px;background:{{ b.color }};opacity:{{ c.op }};transition:height 400ms cubic-bezier(.16,1,.3,1),opacity 140ms cubic-bezier(.4,0,.2,1)"></div></sc-for>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;gap:5px">
+<sc-for list="{{ an.heroAxis }}" as="x" hint-placeholder-count="7"><div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;overflow:visible;white-space:nowrap;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11px;line-height:14px"><span style="color:{{ x.fg }}">{{ x.d }}</span><span style="color:var(--fg-muted);font-family:var(--font-sans)">{{ x.m }}</span></div></sc-for>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--fg-muted)"><sc-for list="{{ an.heroLegend }}" as="l" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:980px;background:{{ l.color }}"></span>{{ l.label }}</span></sc-for><sc-if value="{{ an.hasAvg }}"><span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:1px;background-image:linear-gradient(to right,var(--primary) 50%,transparent 0);background-size:4px 1px"></span>{{ an.avgLabel }}</span></sc-if><span style="flex:1"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg)">{{ an.heroReadout }}</span></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+<sc-for list="{{ an.tiles }}" as="t" hint-placeholder-count="4">
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0;gap:10px">
+<span style="font-size:13px;color:var(--fg-muted)">{{ t.label }}</span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:30px;font-weight:500;letter-spacing:-0.02em;line-height:1">{{ t.value }}</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:{{ t.deltaFg }}">{{ t.delta }}</span><span style="color:var(--fg-subtle)">from {{ t.prev }}</span></span>
+</div>
+</sc-for>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px">
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Median wait for your review</span><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap">vs {{ an.prevWord }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
+<sc-for list="{{ an.waitRows }}" as="w" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:14px;background:var(--canvas);min-width:0">
+<span style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)"><span style="width:8px;height:8px;flex:none;border-radius:980px;background:{{ w.color }}"></span>{{ w.label }}<span style="display:flex;margin-left:auto;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ w.icon }}" size="14" hint-size="14px,14px"></x-import></span></span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:26px;font-weight:500;letter-spacing:-0.015em;line-height:1">{{ w.now }}</span>
+<span style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:12.5px"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:{{ w.deltaFg }}">{{ w.delta }}</span><span style="color:var(--fg-subtle)">from <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ w.prev }}</span></span></span>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;justify-content:flex-end;min-height:16px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg)">{{ an.wReadout }}</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 34px;column-gap:10px">
+<div style="position:relative;height:160px" onMouseLeave="{{ an.wLeave }}">
+<sc-for list="{{ an.wTicks }}" as="t" hint-placeholder-count="4"><span style="position:absolute;left:0;right:0;bottom:{{ t.pos }};height:1px;background:var(--border-subtle)"></span></sc-for>
+<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible" aria-hidden="true">
+<path d="{{ an.wHumanD }}" fill="none" stroke="var(--chart-2)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round"></path>
+<path d="{{ an.wAgentD }}" fill="none" stroke="var(--chart-1)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round"></path>
+</svg>
+<sc-if value="{{ an.wHasHover }}">
+<span style="position:absolute;top:0;bottom:0;left:{{ an.wHX }};width:1px;background:var(--border);pointer-events:none"></span>
+<span style="position:absolute;left:{{ an.wHX }};bottom:{{ an.wHA }};width:9px;height:9px;margin:0 0 -4.5px -4.5px;border-radius:980px;background:var(--chart-1);box-shadow:0 0 0 2px var(--card);pointer-events:none"></span>
+<span style="position:absolute;left:{{ an.wHX }};bottom:{{ an.wHH }};width:9px;height:9px;margin:0 0 -4.5px -4.5px;border-radius:980px;background:var(--chart-2);box-shadow:0 0 0 2px var(--card);pointer-events:none"></span>
+</sc-if>
+<div style="position:absolute;inset:0;display:flex"><sc-for list="{{ an.wHit }}" as="x" hint-placeholder-count="7"><span onMouseEnter="{{ x.enter }}" style="flex:1;height:100%"></span></sc-for></div>
+</div>
+<div style="position:relative;height:160px"><sc-for list="{{ an.wTicks }}" as="t" hint-placeholder-count="4"><span style="position:absolute;left:0;bottom:{{ t.pos }};transform:translateY(50%);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11px;color:var(--fg-subtle)">{{ t.v }}</span></sc-for></div>
+</div>
+<div style="display:flex;justify-content:space-between;padding-right:44px;font-size:11px;color:var(--fg-subtle)"><span>{{ an.axFrom }}</span><span>{{ an.axTo }}</span></div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px">
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0;gap:16px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Lane mix</span><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap">vs {{ an.prevWord }}</span></div>
+<div style="position:relative;width:148px;height:148px;align-self:center">
+<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg)" aria-hidden="true"><sc-for list="{{ an.ring }}" as="g" hint-placeholder-count="3"><circle cx="50" cy="50" r="44" fill="none" stroke="{{ g.color }}" strokeWidth="7" strokeLinecap="round" strokeDasharray="{{ g.dash }}" strokeDashoffset="{{ g.off }}" pathLength="100"></circle></sc-for></svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-size:12px;color:var(--fg-muted)">Merged</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:26px;font-weight:500;letter-spacing:-0.02em;line-height:1">{{ an.mergedTotal }}</span></div>
+</div>
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ an.lanes }}" as="l" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) auto 44px 52px;gap:10px;align-items:center;min-height:38px;border-top:1px solid var(--border-subtle);font-size:13.5px">
+<span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:980px;background:{{ l.color }}"></span>{{ l.name }}</span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:500">{{ l.now }}</span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-muted);text-align:right">{{ l.share }}</span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:{{ l.deltaFg }};text-align:right">{{ l.delta }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0;gap:16px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Automation and quality</span><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap">vs {{ an.prevWord }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:1">
+<sc-for list="{{ an.quality }}" as="x" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--canvas);min-width:0">
+<span style="font-size:12.5px;line-height:1.35;color:var(--fg-muted);text-wrap:pretty">{{ x.label }}</span>
+<span style="margin-top:auto;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;min-width:0"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:22px;font-weight:500;letter-spacing:-0.01em">{{ x.now }}</span><sc-if value="{{ x.sub }}"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-subtle)">{{ x.sub }}</span></sc-if></span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:{{ x.deltaFg }}">{{ x.delta }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0;gap:16px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">PR size</span><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap">vs {{ an.prevWord }}</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;flex:1">
+<sc-for list="{{ an.sizes }}" as="z" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:64px minmax(0,1fr) 36px;gap:12px;align-items:center">
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-muted);white-space:nowrap">{{ z.label }}</span>
+<div style="position:relative;height:10px;border-radius:980px;background:var(--hover-surface)"><div style="height:100%;width:{{ z.pctNow }};border-radius:980px;background:var(--chart-1)"></div><span title="{{ z.prevTip }}" style="position:absolute;top:-3px;bottom:-3px;left:{{ z.pctPrev }};width:2px;margin-left:-1px;border-radius:980px;background:var(--fg-muted)"></span></div>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:13px;text-align:right">{{ z.now }}</span>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--fg-muted)"><span>Median <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ an.sizeMed }}</span> lines, from <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ an.sizeMedPrev }}</span></span><span style="flex:1"></span><span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:10px;border-radius:980px;background:var(--fg-muted)"></span>{{ an.prevWord }}</span></div>
+</div>
+</div>
+
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:15px;font-weight:500">Why PRs waited on GitHub</span><span style="flex:1"></span><span style="font-size:12.5px;color:var(--fg-muted)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ an.waitedN }}</span> PRs {{ an.nowWord }} · <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ an.waitedPrev }}</span> {{ an.prevWord }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+<sc-for list="{{ an.reasons }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:14px;background:var(--canvas)"><span style="font-size:13px;color:var(--fg-muted)">{{ r.label }}</span><span style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:22px;font-weight:500">{{ r.now }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-subtle)">from {{ r.prev }}</span></span><span style="font-size:12px;color:var(--fg-subtle)">Median hold <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ r.hold }}</span></span></div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ isQueueView }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-width:0;overflow-y:auto">
+<div style="max-width:1100px;margin:0 auto;padding:44px 32px 80px;display:flex;flex-direction:column;gap:28px">
+<header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">{{ pageTitle }}</h1>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)">
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ readyN }}</span> ready to merge</span><span style="color:var(--fg-subtle)">·</span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ conflictN }}</span> with conflicts</span><span style="color:var(--fg-subtle)">·</span>
+<span>oldest waiting <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ oldest }}</span></span>
+</div>
+</div>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ reviewNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="15" hint-size="15px,15px"></x-import>Review next<span style="margin-left:4px;font-family:var(--font-mono);font-size:11px;opacity:.75">N</span></button>
+</header>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface);align-self:flex-start;max-width:100%;overflow-x:auto">
+<sc-for list="{{ scopes }}" as="sc" hint-placeholder-count="3"><button type="button" onClick="{{ sc.pick }}" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 16px;border:0;border-radius:980px;background:{{ sc.bg }};color:{{ sc.fg }};font:inherit;font-size:13.5px;font-weight:500;white-space:nowrap;cursor:pointer">{{ sc.name }}<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-subtle)">{{ sc.n }}</span></button></sc-for>
+</div>
+<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ scopeDesc }}</span>
+<sc-if value="{{ wt.show }}">
+<div data-wt="true" style="position:relative;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+<sc-for list="{{ wt.on }}" as="r" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 12px;border-radius:980px;background:var(--card);font-size:12.5px"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px">{{ r.name }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Stop watching" title="Stop watching" onClick="{{ r.toggle }}" style="width:20px;height:20px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="11" hint-size="11px,11px"></x-import></button></span></sc-for>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ wt.toggleOpen }}" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import>Manage repositories</button>
+<sc-if value="{{ wt.open }}">
+<div style="position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:min(380px,calc(100vw - 48px));box-sizing:border-box;padding:8px;display:flex;flex-direction:column;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;font-weight:500">Watched repositories</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Repositories you can push to on GitHub. Open pull requests from watched ones show up here.</span></div>
+<sc-for list="{{ wt.all }}" as="r" hint-placeholder-count="5">
+<button type="button" role="switch" aria-checked="{{ r.onS }}" onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:13px">{{ r.full }}</span><span style="font-size:12px;color:var(--fg-muted)">{{ r.sub }}</span></span>
+<span style="flex:none;width:32px;height:20px;box-sizing:border-box;padding:2px;border-radius:980px;background:{{ r.track }};display:flex;justify-content:{{ r.knob }};transition:background 80ms cubic-bezier(.4,0,.2,1)"><span style="width:16px;height:16px;border-radius:980px;background:#fff"></span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+<section class="op-rtable">
+<div class="op-runs__filters">
+<div style="display:flex;align-items:center;gap:8px;height:32px;width:min(260px,100%);padding:0 12px;box-sizing:border-box;border-radius:980px;background:var(--hover-surface)" style-focus-within="box-shadow:0 0 0 3px var(--ring)">
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span>
+<input data-prq="true" type="text" placeholder="Search title, repo, #number, author" value="{{ prQ }}" onChange="{{ onPrQ }}" onKeyDown="{{ prQKey }}" style="flex:1;min-width:0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:13px">
+<sc-if value="{{ prQOn }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Clear search" onClick="{{ prQClear }}" style="width:20px;height:20px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="12" hint-size="12px,12px"></x-import></button></sc-if>
+</div>
+<span style="flex:1"></span>
+<div class="op-rp__tabs">
+<sc-for list="{{ lanes }}" as="l" hint-placeholder-count="4"><button class="op-rp__tab" type="button" data-on="{{ l.on }}" onClick="{{ l.pick }}" style="gap:6px">{{ l.name }}<span class="op-runs__n">{{ l.n }}</span></button></sc-for>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:{{ cols }};gap:16px;align-items:center;height:36px;padding:0 12px;font-size:12.5px;color:var(--fg-subtle)">
+<span>Lane</span><span>Pull request</span><sc-if value="{{ wide }}"><span style="text-align:right">Size</span><span>Checks</span><span>Conflicts</span></sc-if><span style="text-align:right">Waiting</span><sc-if value="{{ wide }}"><span></span></sc-if>
+</div>
+<sc-for list="{{ rows }}" as="p" hint-placeholder-count="7">
+<div role="button" tabindex="0" data-on="{{ p.onS }}" onClick="{{ p.pick }}" style="display:grid;grid-template-columns:{{ cols }};gap:16px;align-items:center;min-height:62px;padding:10px 12px;box-sizing:border-box;border-radius:10px;background:{{ p.bg }};cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--hover-surface)">
+<span style="justify-self:start;display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:980px;background:{{ p.laneBg }};color:{{ p.laneFg }};font-size:12px;font-weight:500">{{ p.lane }}</span>
+<div style="min-width:0;display:flex;flex-direction:column;gap:4px">
+<span style="font-size:14px;font-weight:500;letter-spacing:-0.006em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.title }}</span>
+<span style="display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap;min-width:0;font-size:12.5px;color:var(--fg-muted)">
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ p.ref }}</span><span style="color:var(--fg-subtle)">·</span>
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ p.authorIcon }}" size="12" hint-size="12px,12px"></x-import></span><span style="overflow:hidden;text-overflow:ellipsis">{{ p.author }}</span>
+<sc-if value="{{ p.hasNote }}"><span style="color:var(--fg-subtle)">·</span><span style="color:{{ p.noteFg }}">{{ p.note }}</span></sc-if>
+</span>
+<sc-if value="{{ narrow }}"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-muted);white-space:nowrap"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ p.ckDot }}"></span>{{ p.ck }}<span style="color:var(--fg-subtle)">·</span><span style="color:{{ p.cfFg }}">{{ p.cf }}</span><span style="color:var(--fg-subtle)">·</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="color:var(--success)">+{{ p.add }}</span> <span style="color:var(--danger)">−{{ p.del }}</span></span></span></sc-if>
+</div>
+<sc-if value="{{ wide }}">
+<span style="text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap"><span style="color:var(--success)">+{{ p.add }}</span> <span style="color:var(--danger)">−{{ p.del }}</span></span>
+<span style="display:flex;align-items:center;gap:7px;font-size:12.5px;white-space:nowrap"><span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ p.ckDot }}"></span>{{ p.ck }}</span>
+<span style="display:flex;align-items:center;gap:7px;font-size:12.5px;white-space:nowrap;color:{{ p.cfFg }}"><span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ p.cfDot }}"></span>{{ p.cf }}</span>
+</sc-if>
+<span style="text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:{{ p.waitFg }}">{{ p.wait }}</span>
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:2px;grid-column:{{ actCol }}">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Open changes" title="Changes" onClick="{{ p.goChanges }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="15" hint-size="15px,15px"></x-import></button>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" aria-label="{{ p.sessLabel }}" title="{{ p.sessLabel }}" onClick="{{ p.goSession }}" style="gap:6px;white-space:nowrap"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="13" hint-size="13px,13px"></x-import><sc-if value="{{ wide }}">Review</sc-if></button>
+<sc-if value="{{ p.isMerged }}"><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;font-size:12.5px;color:var(--fg-muted);white-space:nowrap"><span style="width:7px;height:7px;border-radius:980px;background:var(--success)"></span>Merged</span></sc-if>
+<sc-if value="{{ p.showMerge }}"><button class="op-btn op-btn--secondary op-btn--sm" type="button" disabled="{{ p.mergeDis }}" title="{{ p.mergeTip }}" onClick="{{ p.merge }}" style="gap:6px;white-space:nowrap"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import>Merge</button></sc-if>
+<sc-if value="{{ p.confirming }}"><div style="display:flex;align-items:center;gap:2px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Cancel merge" title="Cancel" onClick="{{ p.cancelMerge }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button><button class="op-btn op-btn--primary op-btn--sm" type="button" title="Squash and merge into main" onClick="{{ p.confirmMerge }}" style="gap:6px;white-space:nowrap"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import>Confirm merge</button></div></sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ hasPages }}"><div class="op-runs__foot"><span class="op-mono">{{ pgRange }}</span><span style="flex:1"></span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous page" disabled="{{ pgPrevOff }}" onClick="{{ pgPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next page" disabled="{{ pgNextOff }}" onClick="{{ pgNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></button>
+</div></sc-if>
+<sc-if value="{{ empty }}">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:40px 18px">
+<span style="font-size:15px;font-weight:500">{{ emptyTitle }}</span>
+<span style="font-size:13px;color:var(--fg-muted)">{{ emptySub }}</span>
+</div>
+</sc-if>
+</section>
+</div>
+</div>
+
+</sc-if>
+<sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+<aside style="width:{{ asideW }};flex:none;overflow-y:auto;background:var(--background);border-left:1px solid var(--border-subtle);display:flex;flex-direction:column;position:{{ asidePos }};top:0;right:0;bottom:0;z-index:20;box-shadow:{{ asideShadow }}">
+<div style="padding:22px 24px 20px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)">
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ s.ref }}</span>
+<span style="flex:1"></span>
+<button type="button" onClick="{{ openDiff }}" style="display:flex;align-items:center;gap:4px;padding:0;border:0;background:none;color:var(--link);font:inherit;font-size:12.5px;cursor:pointer">Open<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="12" hint-size="12px,12px"></x-import></button>
+<a href="#" style="display:flex;align-items:center;gap:4px;font-size:12.5px">GitHub<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up-right" size="12" hint-size="12px,12px"></x-import></a>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeSel }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<h2 style="margin:0;font-size:19px;font-weight:600;letter-spacing:-0.014em;line-height:1.3;text-wrap:pretty">{{ s.title }}</h2>
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--fg-muted)">
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="12" hint-size="12px,12px"></x-import></span>
+<span style="font-family:var(--font-mono);font-size:12px">{{ s.branch }}</span><span style="color:var(--fg-subtle)">→</span><span style="font-family:var(--font-mono);font-size:12px">main</span>
+<span style="color:var(--fg-subtle)">·</span><span>{{ s.author }}</span>
+</div>
+</div>
+
+<div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Lane</span>
+<span style="flex:1"></span>
+<div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<sc-for list="{{ s.laneOpts }}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{ o.pick }}" style="height:24px;padding:0 10px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer">{{ o.name }}</button></sc-for>
+</div>
+</div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">{{ s.why }}</span>
+</div>
+
+<div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--border-subtle)">
+<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Brief</span>
+<span style="font-size:14px;line-height:1.55;text-wrap:pretty">{{ s.brief }}</span>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ s.prep }}" as="x" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ x.dot }}"></span>
+<span style="flex:1;min-width:0;color:var(--fg-muted)">{{ x.label }}</span>
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ x.val }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ s.hasFindings }}">
+<div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Pending comments</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ s.findN }}</span></div>
+<sc-for list="{{ s.findings }}" as="f" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:14px;background:var(--card)">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-muted)">{{ f.at }}</span>
+<span style="font-size:13px;line-height:1.45;text-wrap:pretty">{{ f.text }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="margin-top:auto;padding:18px 24px 22px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px">
+<button class="op-btn op-btn--primary op-btn--md" type="button" style="flex:1" onClick="{{ s.primaryAct }}">{{ s.primary }}</button>
+<button class="op-btn op-btn--secondary op-btn--md" type="button">Skip</button>
+</div>
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="12" hint-size="12px,12px"></x-import>{{ s.footnote }}</span>
+</div>
+</aside>
+</sc-if>
+</sc-if>
+<sc-if value="{{ detailMode }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--background)">
+<div style="display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;flex:none;min-width:0;border-bottom:1px solid var(--border-subtle)">
+<sc-if value="{{ isChanges }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Toggle file tree" title="Files" aria-pressed="{{ treeOnS }}" onClick="{{ toggleTree }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="panel-left" size="16" hint-size="16px,16px"></x-import></button></sc-if>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Back to queue" title="Back to queue (Esc)" onClick="{{ closeDiff }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="16" hint-size="16px,16px"></x-import></button>
+<div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface)">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><button type="button" onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:8px;height:28px;padding:0 14px;border:0;border-radius:980px;background:{{ t.bg }};color:{{ t.fg }};font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer"><sc-if value="{{ t.dot }}"><span style="width:7px;height:7px;border-radius:980px;background:{{ t.dot }}"></span></sc-if>{{ t.name }}<sc-if value="{{ t.stat }}"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px"><span style="color:var(--success)">+{{ d.add }}</span> <span style="color:var(--danger)">−{{ d.del }}</span></span></sc-if></button></sc-for>
+</div>
+<sc-if value="{{ showMode }}">
+<div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface)">
+<sc-for list="{{ modes }}" as="m" hint-placeholder-count="2"><button type="button" onClick="{{ m.pick }}" style="height:24px;padding:0 10px;border:0;border-radius:980px;background:{{ m.bg }};color:{{ m.fg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer">{{ m.name }}</button></sc-for>
+</div>
+</sc-if>
+<span style="flex:1"></span>
+<sc-if value="{{ d.hasVerdict }}"><span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:980px;background:var(--hover-surface);font-size:12.5px;white-space:nowrap"><span style="width:7px;height:7px;border-radius:980px;background:{{ d.verdictDot }}"></span>{{ d.verdict }}</span></sc-if>
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ ses.go }}" title="Opens in Sessions" style="gap:8px;white-space:nowrap;flex:none"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="15" hint-size="15px,15px"></x-import><sc-if value="{{ d.wideBar }}">{{ ses.goLabel }}</sc-if></button>
+<a class="op-iconbtn op-iconbtn--sm" href="#" aria-label="Open on GitHub" title="Open on GitHub" style="color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="15" hint-size="15px,15px"></x-import></a>
+<sc-if value="{{ d.notReview }}"><button class="op-btn op-btn--primary op-btn--md" type="button" style="white-space:nowrap;flex:none">{{ d.primary }}</button></sc-if>
+<sc-if value="{{ d.canReview }}">
+<div data-rv="true" style="position:relative;flex:none">
+<button class="op-btn op-btn--primary op-btn--md" type="button" aria-haspopup="dialog" aria-expanded="{{ rv.openS }}" onClick="{{ rv.toggle }}" style="white-space:nowrap;gap:8px">{{ rv.trigger }}<sc-if value="{{ rv.hasN }}"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;opacity:.8">· {{ rv.n }}</span></sc-if><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></button>
+<sc-if value="{{ rv.open }}">
+<div role="dialog" aria-label="Submit review" style="position:absolute;top:calc(100% + 8px);right:0;z-index:70;width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 80px);overflow-y:auto;box-sizing:border-box;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;flex-direction:column;gap:4px">
+<span style="font-size:14px;font-weight:500;padding-bottom:4px">Review decision</span>
+<sc-for list="{{ rv.opts }}" as="o" hint-placeholder-count="3">
+<button type="button" role="radio" aria-checked="{{ o.onS }}" onClick="{{ o.pick }}" style="display:flex;align-items:flex-start;gap:12px;width:100%;padding:7px 10px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="flex:none;margin-top:2px;width:16px;height:16px;box-sizing:border-box;border-radius:980px;border:{{ o.ring }};display:flex;align-items:center;justify-content:center"><span style="width:6px;height:6px;border-radius:980px;background:{{ o.dot }}"></span></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:13.5px;font-weight:500">{{ o.name }}</span><span style="font-size:12.5px;line-height:1.4;color:var(--fg-muted);text-wrap:pretty">{{ o.desc }}</span></span>
+</button>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:14px;font-weight:500">Review comment</span><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-subtle)">{{ rv.commentHint }}</span></div>
+<textarea data-rvtext="true" placeholder="{{ rv.placeholder }}" value="{{ rv.text }}" onChange="{{ rv.onText }}" onKeyDown="{{ rv.onKey }}" rows="2" style="width:100%;box-sizing:border-box;min-height:64px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--fg);font:inherit;font-size:13.5px;line-height:1.5;resize:vertical;outline:0" style-focus="border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)"></textarea>
+<sc-if value="{{ rv.agentNote }}"><span style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:1.45;color:var(--fg-muted)"><span style="display:flex;margin-top:1px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="12" hint-size="12px,12px"></x-import></span>{{ rv.agentNote }}</span></sc-if>
+</div>
+<span style="font-size:12px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ rv.pendingNote }} Posts as @jordiparra.</span>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+<sc-if value="{{ rv.hasN }}"><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ rv.discard }}" style="color:var(--danger)">Discard</button></sc-if>
+<span style="flex:1"></span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" title="Close (Esc)" onClick="{{ rv.close }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ rv.submitDis }}" onClick="{{ rv.submit }}" title="⌘⏎">{{ rv.submitLabel }}</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ isChanges }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-height:0;display:flex">
+<div data-diffscroll="true" style="position:relative;flex:1;min-width:0;overflow-y:auto;background:var(--card);padding:0 0 80px;box-sizing:border-box;display:flex;flex-direction:column;gap:0">
+<sc-for list="{{ files }}" as="f" hint-placeholder-count="3">
+<section data-file="{{ f.idx }}" style="flex:none;background:var(--card);border-bottom:1px solid var(--border-subtle);overflow:clip">
+<div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px 0 10px;background:var(--card);border-bottom:1px solid {{ f.headBorder }}">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Collapse file" onClick="{{ f.toggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ f.chev }}" size="15" hint-size="15px,15px"></x-import></button>
+<sc-if value="{{ f.img }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:15px;height:15px;flex:none;background:center / contain no-repeat;background-image:{{ f.img }}"></span></sc-if>
+<span role="button" tabindex="0" title="Collapse or expand" onClick="{{ f.toggle }}" style="min-width:0;flex:1;font-family:var(--font-mono);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;user-select:none"><span style="color:var(--fg-muted)">{{ f.dir }}</span>{{ f.name }}</span>
+<sc-if value="{{ f.tag }}"><span style="flex:none;display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:980px;background:var(--hover-surface);font-size:11.5px;color:var(--fg-muted)">{{ f.tag }}</span></sc-if>
+<sc-if value="{{ f.hasNotes }}"><span style="flex:none;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mail" size="12" hint-size="12px,12px"></x-import><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ f.notesN }}</span></span></sc-if>
+<span style="flex:none;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap"><span style="color:var(--success)">+{{ f.add }}</span> <span style="color:var(--danger)">−{{ f.del }}</span></span>
+<button type="button" onClick="{{ f.view }}" aria-pressed="{{ f.viewed }}" style="flex:none;display:flex;align-items:center;gap:7px;height:28px;padding:0 10px;border:0;border-radius:980px;background:transparent;color:var(--fg-muted);font:inherit;font-size:12.5px;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;align-items:center;justify-content:center;width:15px;height:15px;box-sizing:border-box;border-radius:6px;border:1.5px solid {{ f.boxBorder }};background:{{ f.boxBg }};color:var(--background)"><sc-if value="{{ f.viewedV }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="10" hint-size="10px,10px"></x-import></sc-if></span>Viewed</button>
+</div>
+<sc-if value="{{ f.open }}">
+<div style="font-family:var(--font-mono);font-size:12.5px;line-height:20px;tab-size:4;padding-bottom:4px">
+<sc-for list="{{ f.rows }}" as="r" hint-placeholder-count="8">
+<sc-if value="{{ r.isHunk }}"><div style="display:flex;align-items:center;min-height:30px;padding:0 16px;background:var(--hover-surface);color:var(--fg-muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.text }}</div></sc-if>
+<sc-if value="{{ r.isGap }}"><div style="display:flex;align-items:center;gap:8px;min-height:28px;padding:0 16px;color:var(--fg-subtle);font-family:var(--font-sans);font-size:12px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="13" hint-size="13px,13px"></x-import><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ r.n }}</span> unchanged lines</div></sc-if>
+<sc-if value="{{ r.isLine }}"><div data-dl="true" style="position:relative;display:grid;grid-template-columns:48px 48px 22px minmax(0,1fr);background:{{ r.bg }};box-shadow:{{ r.bar }}"><span onClick="{{ r.comment }}" style="padding-right:10px;text-align:right;color:var(--fg-subtle);background:{{ r.numBg }};user-select:none;cursor:pointer">{{ r.o }}</span><span onClick="{{ r.comment }}" style="padding-right:10px;text-align:right;color:var(--fg-subtle);background:{{ r.numBg }};user-select:none;cursor:pointer">{{ r.n }}</span><span style="text-align:center;color:{{ r.signFg }};user-select:none">{{ r.sign }}</span><span style="white-space:pre-wrap;overflow-wrap:anywhere;padding-right:16px">{{ r.t }}</span><button data-dlplus="true" type="button" aria-label="Comment on this line" title="Comment on this line" onClick="{{ r.comment }}" style="position:absolute;left:98px;top:1px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;opacity:0;transition:opacity 80ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="12" hint-size="12px,12px"></x-import></button></div></sc-if>
+<sc-if value="{{ r.isPair }}"><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+<div data-dl="true" style="position:relative;display:grid;grid-template-columns:44px 20px minmax(0,1fr);background:{{ r.lBg }};box-shadow:{{ r.lBar }};border-right:1px solid var(--border-subtle)"><sc-if value="{{ r.lCan }}"><button data-dlplus="true" type="button" aria-label="Comment on this line" title="Comment on this line" onClick="{{ r.lComment }}" style="position:absolute;left:45px;top:1px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;opacity:0;transition:opacity 80ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="12" hint-size="12px,12px"></x-import></button></sc-if><span onClick="{{ r.lComment }}" style="padding-right:8px;text-align:right;color:var(--fg-subtle);background:{{ r.lNumBg }};user-select:none;cursor:pointer">{{ r.lN }}</span><span style="text-align:center;color:var(--danger);user-select:none">{{ r.lSign }}</span><span style="white-space:pre-wrap;overflow-wrap:anywhere;padding-right:12px">{{ r.lT }}</span></div>
+<div data-dl="true" style="position:relative;display:grid;grid-template-columns:44px 20px minmax(0,1fr);background:{{ r.rBg }};box-shadow:{{ r.rBar }}"><sc-if value="{{ r.rCan }}"><button data-dlplus="true" type="button" aria-label="Comment on this line" title="Comment on this line" onClick="{{ r.rComment }}" style="position:absolute;left:45px;top:1px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;opacity:0;transition:opacity 80ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="12" hint-size="12px,12px"></x-import></button></sc-if><span onClick="{{ r.rComment }}" style="padding-right:8px;text-align:right;color:var(--fg-subtle);background:{{ r.rNumBg }};user-select:none;cursor:pointer">{{ r.rN }}</span><span style="text-align:center;color:var(--success);user-select:none">{{ r.rSign }}</span><span style="white-space:pre-wrap;overflow-wrap:anywhere;padding-right:12px">{{ r.rT }}</span></div>
+</div></sc-if>
+<sc-if value="{{ r.isNote }}"><div style="padding:8px 16px 10px {{ r.indent }};font-family:var(--font-sans);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
+<div style="max-width:640px;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--canvas)">
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><sc-if value="{{ r.isBot }}"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="13" hint-size="13px,13px"></x-import></span></sc-if><sc-if value="{{ r.isUser }}"><span class="op-avatar op-avatar--sm op-avatar--accent" style="width:20px;height:20px;font-size:9px">JP</span></sc-if><span style="font-weight:500">{{ r.who }}</span><span style="color:var(--fg-subtle)">·</span><span style="color:var(--fg-muted)">{{ r.sub }}</span><span style="flex:1"></span><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ r.discard }}">{{ r.act }}</button></div>
+<span style="font-size:13.5px;line-height:1.5;text-wrap:pretty;white-space:pre-wrap">{{ r.text }}</span>
+</div>
+</div></sc-if>
+<sc-if value="{{ r.isDraft }}"><div style="padding:10px 16px 12px {{ r.indent }};font-family:var(--font-sans);background:var(--card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
+<div style="max-width:640px;display:flex;gap:10px;align-items:flex-start">
+<span class="op-avatar op-avatar--sm op-avatar--accent" style="flex:none;margin-top:6px">JP</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+<textarea data-draft="true" placeholder="Leave a comment" value="{{ r.val }}" onChange="{{ r.onText }}" onKeyDown="{{ r.onKey }}" rows="3" style="width:100%;box-sizing:border-box;min-height:76px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--fg);font:inherit;font-size:13.5px;line-height:1.5;resize:vertical;outline:0" style-focus="border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)"></textarea>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="op-btn op-btn--secondary op-btn--sm" type="button" disabled="{{ r.empty }}" onClick="{{ r.review }}">{{ r.reviewLabel }}</button><button class="op-btn op-btn--ghost op-btn--sm" type="button" disabled="{{ r.empty }}" onClick="{{ r.single }}">Add single comment</button><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-subtle)">⌘⏎ adds to review</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Cancel" onClick="{{ r.cancel }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button></div>
+</div>
+</div>
+</div></sc-if>
+</sc-for>
+</div>
+</sc-if>
+</section>
+</sc-for>
+<sc-if value="{{ noFiles }}"><div style="display:flex;flex-direction:column;gap:6px;padding:32px 8px"><span style="font-size:15px;font-weight:500">No changes loaded</span><span style="font-size:13px;color:var(--fg-muted)">This pull request has no diff in the sample data.</span></div></sc-if>
+</div>
+<sc-if value="{{ showTree }}">
+<div style="width:clamp(200px,32%,272px);flex:none;overflow-y:auto;border-left:1px solid var(--border-subtle);background:var(--card);padding:14px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:8px;padding:0 10px 8px"><span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Files</span><span style="flex:1"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--fg-subtle)">{{ d.viewedN }} / {{ d.fileN }} viewed</span></div>
+<div style="padding:0 0 8px"><div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border-subtle);background:var(--card)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input type="text" placeholder="Filter files" value="{{ treeQ }}" onChange="{{ onTreeQ }}" style="flex:1;min-width:0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:13px"></div></div>
+<sc-for list="{{ tree }}" as="t" hint-placeholder-count="6">
+<button type="button" onClick="{{ t.pick }}" title="{{ t.path }}" style="flex:none;display:flex;align-items:center;gap:8px;width:100%;height:30px;padding:0 10px 0 {{ t.pad }};border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<sc-if value="{{ t.img }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:15px;height:15px;flex:none;background:center / contain no-repeat;background-image:{{ t.img }};opacity:{{ t.imgOp }}"></span></sc-if><sc-if value="{{ t.noImg }}"><span style="display:flex;flex:none;width:15px;justify-content:center;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ t.icon }}" size="13" hint-size="13px,13px"></x-import></span></sc-if>
+<span style="flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ t.fg }}">{{ t.name }}</span>
+<sc-if value="{{ t.isFile }}"><span style="flex:none;display:flex;gap:5px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11.5px;white-space:nowrap"><sc-if value="{{ t.hasAdd }}"><span style="color:var(--success)">+{{ t.add }}</span></sc-if><sc-if value="{{ t.hasDel }}"><span style="color:var(--danger)">−{{ t.del }}</span></sc-if></span></sc-if>
+</button>
+</sc-for>
+<sc-if value="{{ treeEmpty }}"><span style="padding:8px 10px;font-size:12.5px;color:var(--fg-subtle)">No files match</span></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTerminal }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;background:var(--term-bg)">
+<div style="flex:none;display:flex;align-items:center;gap:10px;height:40px;padding:0 12px 0 16px;border-bottom:1px solid var(--term-border);color:var(--term-dim);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px">
+<span style="width:7px;height:7px;border-radius:980px;background:{{ ses.dot }}"></span><span style="color:var(--term-fg)">review · {{ d.ref }}</span><span>{{ ses.where }}</span>
+<span style="flex:1"></span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close terminal" title="Back to briefing" onClick="{{ ses.close }}" style="color:var(--term-dim)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+<div style="flex:1;min-height:0">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Terminal" lines="{{ term.lines }}" value="{{ term.value }}" on-change="{{ term.onChange }}" prompt-placeholder="Ask the review agent, or run a command" status="{{ term.status }}" onKeyDown="{{ term.onKey }}" hint-size="100%,100%"></x-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDesc }}">
+<div style="flex:1;min-height:0;overflow-y:auto">
+<article style="max-width:760px;margin:0 auto;padding:36px 32px 80px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ d.authorIcon }}" size="13" hint-size="13px,13px"></x-import></span><span style="color:var(--fg)">{{ d.author }}</span><span style="color:var(--fg-subtle)">·</span><span>opened {{ desc.opened }}</span></div>
+<h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;text-wrap:pretty">{{ d.title }}</h1>
+<sc-for list="{{ desc.sections }}" as="sec" hint-placeholder-count="3">
+<section style="display:flex;flex-direction:column;gap:10px">
+<h2 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em">{{ sec.title }}</h2>
+<sc-if value="{{ sec.body }}"><p style="margin:0;font-size:15px;line-height:1.6;text-wrap:pretty">{{ sec.body }}</p></sc-if>
+<sc-if value="{{ sec.items }}"><ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.55"><sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="3"><li style="text-wrap:pretty">{{ it }}</li></sc-for></ul></sc-if>
+<sc-if value="{{ sec.code }}"><pre style="margin:0;padding:12px 14px;border-radius:10px;background:var(--card);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;line-height:1.6;white-space:pre-wrap">{{ sec.code }}</pre></sc-if>
+</section>
+</sc-for>
+</article>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSummary }}">
+<div style="flex:1;min-height:0;overflow-y:auto">
+<div style="max-width:980px;margin:0 auto;padding:32px 32px 80px;display:flex;flex-direction:column;gap:16px">
+
+<div style="display:flex;flex-direction:column;gap:10px;padding-bottom:8px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:980px;background:var(--card);color:var(--fg);font-size:12.5px;font-weight:500"><span style="width:7px;height:7px;border-radius:980px;background:{{ d.stateDot }}"></span>{{ d.state }}</span><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:980px;background:{{ bv.laneBg }};color:{{ bv.laneFg }};font-size:12.5px;font-weight:500">{{ bv.lane }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">{{ d.ref }}</span></div>
+<h1 style="margin:0;font-family:var(--font-display);font-size:30px;font-weight:600;letter-spacing:-0.022em;line-height:1.18;text-wrap:pretty">{{ d.title }}</h1>
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ d.authorIcon }}" size="13" hint-size="13px,13px"></x-import></span><span style="color:var(--fg)">{{ d.author }}</span><span style="color:var(--fg-subtle)">·</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">{{ d.branch }}</span><span style="color:var(--fg-subtle)">→</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">main</span></div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:13px;color:var(--fg-muted)">Size</span>
+<span style="display:flex;align-items:baseline;gap:8px;font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="font-size:24px;font-weight:500;letter-spacing:-0.015em;color:var(--success)">+{{ d.add }}</span><span style="font-size:15px;color:var(--danger)">−{{ d.del }}</span></span>
+<div style="display:flex;gap:3px;height:6px"><div style="width:{{ bv.addPct }};border-radius:980px;background:var(--success)"></div><div style="flex:1;border-radius:980px;background:var(--danger)"></div></div>
+</div>
+<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:13px;color:var(--fg-muted)">Files</span>
+<span style="display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:24px;font-weight:500;letter-spacing:-0.015em">{{ d.fileN }}</span><span style="font-size:13px;color:var(--fg-muted);white-space:nowrap">in {{ bv.dirN }}</span></span>
+<div style="display:flex;gap:3px;height:6px"><sc-for list="{{ bv.dirs }}" as="x" hint-placeholder-count="3"><div style="width:{{ x.pct }};min-width:4px;border-radius:980px;background:{{ x.color }}"></div></sc-for></div>
+</div>
+<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:13px;color:var(--fg-muted)">Checks</span>
+<span style="display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:24px;font-weight:500;letter-spacing:-0.015em">{{ bv.ckVal }}</span><span style="font-size:13px;color:{{ bv.ckFg }};white-space:nowrap">{{ bv.ckLabel }}</span></span>
+<div style="height:6px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><div style="height:100%;width:{{ bv.ckPct }};border-radius:980px;background:{{ bv.ckColor }};transition:width 400ms cubic-bezier(.16,1,.3,1)"></div></div>
+</div>
+<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:13px;color:var(--fg-muted)">Conflicts</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:980px;background:{{ bv.cfBg }};color:{{ bv.cfColor }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ bv.cfIcon }}" size="15" hint-size="15px,15px"></x-import></span><span style="font-size:16px;font-weight:500">{{ bv.cfLabel }}</span></span>
+<span style="font-size:12.5px;color:var(--fg-muted)">{{ bv.cfSub }}</span>
+</div>
+</div>
+
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Path to merge</span><span style="flex:1"></span><span style="font-size:12.5px;color:var(--fg-muted)">{{ bv.readyLabel }}</span></div>
+<div style="display:grid;grid-template-columns:repeat({{ bv.stepN }},minmax(0,1fr))">
+<sc-for list="{{ bv.steps }}" as="x" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<div style="display:flex;align-items:center"><span style="flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:980px;background:{{ x.bg }};color:{{ x.fg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ x.icon }}" size="13" hint-size="13px,13px"></x-import></span><span style="flex:1;height:2px;margin:0 6px;border-radius:980px;background:{{ x.line }};opacity:{{ x.lineOp }}"></span></div>
+<span style="display:flex;flex-direction:column;gap:2px;padding-right:12px"><span style="font-size:13.5px;font-weight:500">{{ x.label }}</span><span style="font-size:12.5px;line-height:1.4;color:var(--fg-muted);text-wrap:pretty">{{ x.sub }}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border-subtle)">
+<span style="flex:1;min-width:180px;font-size:12.5px;color:var(--fg-muted);text-wrap:pretty">{{ bv.mergeNote }}</span>
+<sc-if value="{{ bv.merged }}"><span style="display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;font-size:13px;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--success)"></span>Merged into main</span></sc-if>
+<sc-if value="{{ bv.notMerged }}">
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ bv.review }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="eye" size="15" hint-size="15px,15px"></x-import>Review changes</button>
+<sc-if value="{{ bv.showMerge }}"><button class="op-btn op-btn--secondary op-btn--md" type="button" disabled="{{ bv.mergeDis }}" title="{{ bv.mergeTip }}" onClick="{{ bv.merge }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="15" hint-size="15px,15px"></x-import>Merge</button></sc-if>
+<sc-if value="{{ bv.confirming }}"><div style="display:flex;align-items:center;gap:6px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ bv.cancelMerge }}">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ bv.confirmMerge }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="15" hint-size="15px,15px"></x-import>Confirm merge</button></div></sc-if>
+</sc-if>
+</div>
+</div>
+
+<div style="background:var(--card);border-radius:18px;padding:22px 24px;display:flex;flex-direction:column;gap:16px">
+<span style="font-size:15px;font-weight:500">Brief</span>
+<p style="margin:0;max-width:72ch;font-size:16px;line-height:1.65;text-wrap:pretty">{{ d.brief }}</p>
+<ul style="margin:0;padding:0;list-style:none;max-width:72ch;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ d.bp }}" as="x" hint-placeholder-count="4"><li style="display:flex;gap:12px;font-size:15px;line-height:1.55;text-wrap:pretty"><span style="flex:none;width:6px;height:6px;margin-top:9px;border-radius:980px;background:var(--fg-subtle)"></span><span>{{ x }}</span></li></sc-for>
+</ul>
+<ul style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+<sc-for list="{{ bv.points }}" as="x" hint-placeholder-count="3"><li style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--canvas)"><span style="font-size:12px;color:var(--fg-muted)">{{ x.k }}</span><span style="font-size:13.5px;line-height:1.45;text-wrap:pretty">{{ x.v }}</span></li></sc-for>
+</ul>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border-subtle)"><span style="font-size:13px;color:var(--fg-muted)">Lane</span><span style="flex:1"></span>
+<div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ d.laneOpts }}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{ o.pick }}" style="height:24px;padding:0 10px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer">{{ o.name }}</button></sc-for></div>
+</div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">{{ d.why }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:stretch">
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:980px;background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="15" hint-size="15px,15px"></x-import></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500"><sc-if value="{{ ses.dot }}"><span style="width:7px;height:7px;border-radius:980px;background:{{ ses.dot }}"></span></sc-if>{{ ses.title }}</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ ses.where }}</span></div>
+</div>
+<sc-if value="{{ ses.ready }}"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><sc-for list="{{ d.prep }}" as="x" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:14px;background:var(--canvas);min-width:0"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-muted)"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ x.dot }}"></span>{{ x.label }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ x.val }}</span></div></sc-for></div></sc-if>
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ ses.go }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="15" hint-size="15px,15px"></x-import>{{ ses.goLabel }}</button>
+</div>
+<sc-if value="{{ d.hasPending }}">
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;height:100%;box-sizing:border-box">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Pending comments</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-subtle)">{{ d.pendingN }}</span><span style="flex:1"></span><span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="12" hint-size="12px,12px"></x-import>From the review agent</span></div>
+<sc-for list="{{ d.notes }}" as="n" hint-placeholder-count="2">
+<button type="button" onClick="{{ n.go }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px;border:0;border-radius:14px;background:var(--canvas);color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;align-items:center;gap:6px;min-width:0;max-width:100%"><sc-if value="{{ n.img }}"><span aria-hidden="true" style="width:14px;height:14px;flex:none;background:center / contain no-repeat;background-image:{{ n.img }}"></span></sc-if><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--link);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ n.at }}</span></span><span style="font-size:13.5px;line-height:1.5;text-wrap:pretty">{{ n.text }}</span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:stretch">
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Where it changes</span><span style="flex:1"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-subtle)">{{ bv.totalLines }} lines</span></div>
+<div style="display:flex;gap:3px;height:10px"><sc-for list="{{ bv.dirs }}" as="x" hint-placeholder-count="3"><div title="{{ x.name }}" style="width:{{ x.pct }};min-width:6px;border-radius:980px;background:{{ x.color }}"></div></sc-for></div>
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ bv.dirs }}" as="x" hint-placeholder-count="3">
+<button type="button" onClick="{{ x.go }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto 44px;gap:10px;align-items:center;min-height:36px;padding:0 6px;margin:0 -6px;border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;flex:none;border-radius:980px;background:{{ x.color }}"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ x.name }}</span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap">{{ x.files }}</span></span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap"><span style="color:var(--success)">+{{ x.add }}</span> <span style="color:var(--danger)">−{{ x.del }}</span></span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-muted);text-align:right">{{ x.pct }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+<span style="font-size:15px;font-weight:500">Reviewers</span>
+<sc-for list="{{ d.reviewers }}" as="v" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:10px;font-size:13.5px"><span class="op-avatar op-avatar--sm">{{ v.ini }}</span><span style="flex:1;min-width:0">{{ v.name }}</span><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:{{ v.dot }}"></span>{{ v.state }}</span></div></sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PRS = [
+  { id: 1, view: 'queue', bp: ['Adds a keychain store on the runner and moves every token read and write behind it.','Migrates existing tokens from the token file on first start, then deletes the file.','Guards the migration with an epoch so it runs once, even if the runner restarts mid-way.','Web client checks the runner version and falls back to the token file on older runners.','No change to the token format or to how sessions authenticate.'], scope: 'mine', conflict: false, lane: 'Deep', repo: 'oppenheimer', num: 482, title: 'Move session tokens to the runner keychain', author: 'Session · auth-hardening', agent: true, add: 612, del: 248, ck: 'pass', wait: 26.5, branch: 'agent/auth-keychain',
+    why: 'Deep by policy: touches auth/ and changes 860 lines. The full-review agent prepared a review session on mac-studio.',
+    brief: 'Replaces the token file with the macOS keychain on the runner and migrates existing tokens on first start. The migration runs once and is guarded by an epoch.',
+    prep: [['Checkout built', '1m 42s', 'ok'], ['Affected checks', '214 / 214', 'ok'], ['App started', 'localhost:5173', 'ok'], ['Context pack', '9 callers · 3 rules', 'ok']],
+    findings: [['runner/internal/keychain/keychain.go:87', 'The token file is removed before the keychain writes below are confirmed. A crash between the two loses every token. Write first, then remove.'], ['web/src/session/reconnect.ts:131', 'Versions are compared as strings, so 0.1.10 sorts before 0.1.8 and falls back to the token file. Use the semver helper.']] },
+  { id: 2, view: 'queue', bp: ['Splits a workspace move into checkpoints written after each batch of files.','An interrupted move resumes from the last checkpoint instead of starting over.','Adds a MoveResume message to the shared protocol package.','Runners without support ignore resumes and restart the move, as today.','One check fails: the protocol compatibility test for older runners.'], scope: 'requested', conflict: true, lane: 'Deep', repo: 'oppenheimer', num: 479, title: 'Resumable migration stream for workspace moves', author: 'Marta Vidal', agent: false, add: 1204, del: 391, ck: 'fail', wait: 19.2, branch: 'marta/resumable-moves', note: '1 check failing', noteFg: 'var(--danger)',
+    why: 'Deep by policy: over 1,000 lines and a new protocol message.',
+    brief: 'Splits workspace moves into checkpoints so an interrupted move resumes instead of restarting. Adds a MoveResume message to the shared protocol.',
+    prep: [['Checkout built', '2m 05s', 'ok'], ['Affected checks', '187 / 188', 'fail'], ['App started', 'localhost:5173', 'ok'], ['Context pack', '14 callers · 2 rules', 'ok']],
+    findings: [['packages/protocol/src/move.ts:52', 'MoveResume has no version field; older runners will reject it silently.']] },
+  { id: 3, view: 'queue', bp: ['Parses OSC 2 title sequences from the terminal stream.','Shows the latest title under the session name in the sidebar.','Falls back to the running command when the program sets no title.','Titles are trimmed to 80 characters and stripped of control codes.'], scope: 'mine', conflict: false, lane: 'Medium', repo: 'oppenheimer', num: 486, title: 'Show the terminal title in the session row', author: 'Session · term-title', agent: true, add: 64, del: 12, ck: 'pass', wait: 3.1, branch: 'agent/term-title',
+    why: 'Quick: 76 lines in web/ only, checks pass, no new dependencies.',
+    brief: 'Reads OSC 2 titles from the terminal stream and shows them under the session name. Falls back to the command when no title is set.',
+    prep: [['Affected checks', '48 / 48', 'ok'], ['Verification agent', 'No issues', 'ok']], findings: [] },
+  { id: 4, view: 'queue', bp: ['Adds a disk probe to the runner health loop, checked every tick.','Emits a disk.pressure event once usage passes 90% of the data volume.','The console shows the event as a warning on the host.','No new dependencies; uses syscall.Statfs.'], scope: 'mine', conflict: false, lane: 'Medium', repo: 'runner', num: 131, title: 'Report disk pressure above 90%', author: 'Session · disk-pressure', agent: true, add: 118, del: 7, ck: 'running', wait: 1.4, branch: 'agent/disk-pressure', note: 'Checks running', noteFg: 'var(--fg-muted)',
+    why: 'Quick: small, isolated to runner/health, matches an existing pattern.',
+    brief: 'Adds a disk usage probe to the health loop and emits a warning event above 90% so the console can show it on the host.',
+    prep: [['Affected checks', '31 / 40', 'run'], ['Verification agent', 'Waiting on checks', 'run']], findings: [] },
+  { id: 5, view: 'queue', bp: ['New docs page that explains the Quick, Medium and Deep lanes.','Describes the default lane policy and how to move a pull request.','Adds the page to the docs sidebar under Sessions.'], scope: 'watching', conflict: false, lane: 'Quick', repo: 'docs', num: 57, title: 'Document the review lanes', author: 'Pau Serra', agent: false, add: 142, del: 3, ck: 'pass', wait: 0.6, branch: 'pau/lanes-docs',
+    why: 'Quick: docs only, one new page.',
+    brief: 'A new page explaining Quick, Medium and Deep with the default policy.', prep: [['Link check', '0 broken', 'ok']], findings: [] },
+  { id: 6, view: 'waiting', bp: ['Bumps vite from 6.3.1 to 6.3.2.','Changelog lists two bug fixes and no breaking changes.','Lockfile updated; no other dependency moves.'], scope: 'mine', conflict: false, lane: 'Quick', repo: 'oppenheimer', num: 474, title: 'Bump vite to 6.3.2', author: 'Session · deps', agent: true, add: 18, del: 18, ck: 'pass', wait: 5.8, branch: 'agent/vite-6.3.2', note: 'Waiting · needs a code owner', noteFg: 'var(--warning)', block: 'Blocked: a code owner must approve package.json.', waitAct: 'Request code owner', others: [['MV', 'Marta Vidal · code owner', 'Requested']],
+    why: 'Quick: a minor dependency bump. Approved by you; GitHub requires a code owner for package.json.',
+    brief: 'Patch bump. Changelog lists two bug fixes and no breaking changes.', prep: [['Affected checks', '312 / 312', 'ok'], ['Approved', 'by you, 5h ago', 'ok']], findings: [] },
+  { id: 7, view: 'auto', scope: 'mine', conflict: false, lane: 'Quick', repo: 'oppenheimer', num: 485, title: 'Fix typos in session empty states', author: 'Session · copy-pass', agent: true, add: 6, del: 6, ck: 'pass', wait: 0, branch: 'agent/copy-typos', note: 'Merged 10:42', noteFg: 'var(--fg-muted)',
+    why: 'Auto: copy only, matches the "text-only change" rule.',
+    brief: 'Six string fixes in empty states.', prep: [['Affected checks', '22 / 22', 'ok'], ['Merged', 'in your name, 10:42', 'ok']], findings: [] },
+  { id: 8, view: 'auto', scope: 'mine', conflict: false, lane: 'Quick', repo: 'runner', num: 130, title: 'Add tests for the reconnect epoch guard', author: 'Session · tests', agent: true, add: 204, del: 0, ck: 'pass', wait: 0, branch: 'agent/epoch-tests', note: 'Merged 09:15', noteFg: 'var(--fg-muted)',
+    why: 'Auto: tests only.', brief: 'Adds eight cases covering stale epochs after a reconnect.', prep: [['Affected checks', '40 / 40', 'ok'], ['Merged', 'in your name, 09:15', 'ok']], findings: [] },
+  { id: 9, view: 'waiting', bp: ['Adds a deploy step that creates a new GitHub App private key.','Stores the new key in the vault before anything uses it.','Revokes the old key only after the next healthy deploy.','Replaces the manual rotation every 90 days.'], scope: 'requested', conflict: false, lane: 'Deep', repo: 'oppenheimer', num: 471, title: 'Rotate the GitHub App private key on deploy', author: 'Pau Serra', agent: false, add: 60, del: 2, ck: 'pass', wait: 9.4, branch: 'pau/rotate-app-key', note: 'Waiting · needs 2 approvals', noteFg: 'var(--warning)',
+    block: 'Blocked: the branch rule needs 2 approvals and has 1 (yours).', waitAct: 'Request review', others: [['MV', 'Marta Vidal', 'Requested']],
+    why: 'Deep by policy: touches deploy/ and secrets. You approved it after the review session.',
+    brief: 'Adds a deploy step that rotates the GitHub App key, stores the new key in the vault and revokes the old one after the next healthy deploy.',
+    prep: [['Checkout built', '58s', 'ok'], ['Affected checks', '36 / 36', 'ok'], ['Approved', 'by you, 9h ago', 'ok']], findings: [] },
+  { id: 10, view: 'waiting', bp: ['Pins the Go toolchain in CI to 1.23.4.','Matches the version used for the runner release build.'], scope: 'mine', conflict: false, lane: 'Quick', repo: 'runner', num: 128, title: 'Pin Go 1.23.4 in CI', author: 'Session · ci-go', agent: true, add: 3, del: 3, ck: 'pass', wait: 0.8, branch: 'agent/ci-go-1.23.4', note: 'Waiting · 2 ahead in merge queue', noteFg: 'var(--fg-muted)',
+    block: 'In the merge queue with 2 pull requests ahead. Merges in your name when it reaches the front.', waitAct: 'View merge queue', others: [],
+    why: 'Quick: CI config only, 6 lines.', brief: 'Pins the Go toolchain so CI matches the runner release build.',
+    prep: [['Affected checks', '12 / 12', 'ok'], ['Approved', 'by you, 48m ago', 'ok']], findings: [] },
+  { id: 12, view: 'queue', bp: ['Adds a metrics frame to the control socket.','The console shows host CPU and memory live, without polling.','Frames are sent every 2 seconds and only while a console is attached.','Branch is 6 commits behind main and conflicts in protocol/frames.go.'], scope: 'watching', conflict: true, lane: 'Medium', repo: 'runner', num: 133, title: 'Stream host metrics over the control socket', author: 'Lena Ortiz', agent: false, add: 214, del: 38, ck: 'pass', wait: 30.2, branch: 'lena/metrics-stream', note: 'Behind main by 6 commits', noteFg: 'var(--fg-muted)',
+    why: 'Medium: new protocol message, no auth or migration changes.', brief: 'Adds a metrics frame to the control socket so the console can show host CPU and memory without polling.',
+    prep: [['Affected checks', '48 / 48', 'ok']], findings: [] },
+  { id: 13, view: 'queue', bp: ['Adds a copy button next to the run ID in the session header.','Shows a short confirmation after copying.'], scope: 'requested', conflict: false, lane: 'Quick', repo: 'oppenheimer', num: 488, title: 'Copy run ID from the session header', author: 'Marta Vidal', agent: false, add: 22, del: 4, ck: 'running', wait: 1.6, branch: 'marta/copy-run-id', note: 'Requested your review', noteFg: 'var(--fg-muted)',
+    why: 'Quick: one component, 26 lines.', brief: 'Adds a copy button next to the run ID in the session header.',
+    prep: [['Affected checks', '9 / 14 running', 'run']], findings: [] },
+  { id: 20, view: 'queue', scope: 'mine', conflict: false, lane: 'Quick', repo: 'oppenheimer', num: 490, title: 'Persist sidebar collapse per workspace', author: 'Session · ui-prefs', agent: true, add: 34, del: 6, ck: 'pass', wait: 3.2, branch: 'agent/ui-prefs',
+    why: 'Quick: picked by the lane policy.', brief: 'Persist sidebar collapse per workspace.', prep: [['Affected checks', 'all passing', 'ok']], findings: [] },
+  { id: 21, view: 'queue', scope: 'mine', conflict: false, lane: 'Medium', repo: 'runner', num: 134, title: 'Retry host registration with backoff', author: 'Session · host-retry', agent: true, add: 96, del: 22, ck: 'pass', wait: 7.5, branch: 'agent/host-retry',
+    why: 'Medium: picked by the lane policy.', brief: 'Retry host registration with backoff.', prep: [['Affected checks', 'all passing', 'ok']], findings: [] },
+  { id: 22, view: 'queue', scope: 'mine', conflict: false, lane: 'Medium', repo: 'oppenheimer', num: 491, title: 'Paginate the automation run log', author: 'Session · runs-paging', agent: true, add: 142, del: 40, ck: 'running', wait: 0.6, branch: 'agent/runs-paging',
+    why: 'Medium: picked by the lane policy.', brief: 'Paginate the automation run log.', prep: [['Affected checks', 'running', 'run']], findings: [] },
+  { id: 23, view: 'queue', scope: 'mine', conflict: true, lane: 'Deep', repo: 'runner', num: 135, title: 'Drop the legacy token file reader', author: 'Session · auth-cleanup', agent: true, add: 58, del: 310, ck: 'pass', wait: 18.4, branch: 'agent/auth-cleanup',
+    why: 'Deep: picked by the lane policy.', brief: 'Drop the legacy token file reader.', prep: [['Affected checks', 'all passing', 'ok']], findings: [] },
+  { id: 24, view: 'queue', scope: 'mine', conflict: false, lane: 'Quick', repo: 'docs', num: 58, title: 'Explain review sessions', author: 'Session · docs-review', agent: true, add: 88, del: 2, ck: 'pass', wait: 2.1, branch: 'agent/docs-review',
+    why: 'Quick: picked by the lane policy.', brief: 'Explain review sessions.', prep: [['Affected checks', 'all passing', 'ok']], findings: [] },
+  { id: 25, view: 'queue', scope: 'mine', conflict: false, lane: 'Medium', repo: 'oppenheimer', num: 492, title: 'Group sessions by project in search results', author: 'Session · search-groups', agent: true, add: 176, del: 31, ck: 'fail', wait: 4.8, branch: 'agent/search-groups', note: 'Checks failing', noteFg: 'var(--danger)',
+    why: 'Medium: picked by the lane policy.', brief: 'Group sessions by project in search results.', prep: [['Affected checks', '2 failing', 'fail']], findings: [] },
+  { id: 26, view: 'queue', scope: 'mine', conflict: false, lane: 'Quick', repo: 'protocol-spec', num: 12, title: 'Add the metrics frame to the spec', author: 'Session · spec-metrics', agent: true, add: 41, del: 0, ck: 'pass', wait: 1.2, branch: 'agent/spec-metrics',
+    why: 'Quick: picked by the lane policy.', brief: 'Add the metrics frame to the spec.', prep: [['Affected checks', 'all passing', 'ok']], findings: [] },
+  { id: 27, view: 'queue', scope: 'mine', conflict: false, lane: 'Quick', repo: 'oppenheimer', num: 493, title: 'Keyboard shortcut to merge from the queue', author: 'Session · merge-key', agent: true, add: 27, del: 3, ck: 'pass', wait: 0.4, branch: 'agent/merge-key',
+    why: 'Quick: picked by the lane policy.', brief: 'Keyboard shortcut to merge from the queue.', prep: [['Affected checks', 'all passing', 'ok']], findings: [] },
+  { id: 11, view: 'auto', scope: 'mine', conflict: false, lane: 'Quick', repo: 'oppenheimer', num: 483, title: 'Format the protocol package', author: 'Session · fmt', agent: true, add: 14, del: 14, ck: 'pass', wait: 0, branch: 'agent/fmt-protocol', note: 'Merged 08:02', noteFg: 'var(--fg-muted)',
+    why: 'Auto: formatting only. The formatter proved no syntax tree changed.', brief: 'Runs the formatter over packages/protocol. No behaviour change.',
+    prep: [['Syntax tree unchanged', '14 / 14 files', 'ok'], ['Merged', 'in your name, 08:02', 'ok']], findings: [] },
+];
+
+const DIFFS = {
+  1: [
+    { path: 'runner/internal/keychain/keychain.go', add: 318, del: 40, hunks: [
+'@@ -72,12 +72,27 @@ func (k *Keychain) Migrate(ctx context.Context) error {\n     path := filepath.Join(k.dir, "tokens.json")\n     raw, err := os.ReadFile(path)\n     if errors.Is(err, fs.ErrNotExist) {\n         return nil\n     }\n     if err != nil {\n-        return err\n+        return fmt.Errorf("read token file: %w", err)\n     }\n-    var tokens map[string]string\n-    json.Unmarshal(raw, &tokens)\n+    var tokens map[string]Token\n+    if err := json.Unmarshal(raw, &tokens); err != nil {\n+        return fmt.Errorf("parse token file: %w", err)\n+    }\n+    if k.epoch.Load() != k.startEpoch {\n+        return ErrStaleEpoch\n+    }\n+    if err := os.Remove(path); err != nil {\n+        return err\n+    }\n+    for id, t := range tokens {\n+        if err := k.store.Set(id, t.Secret); err != nil {\n+            return fmt.Errorf("store %s: %w", id, err)\n+        }\n+    }\n     k.log.Info("migrated tokens", "count", len(tokens))\n     return nil\n }',
+'@@ -131,6 +146,11 @@ func (k *Keychain) Get(id string) (string, error) {\n     k.mu.RLock()\n     defer k.mu.RUnlock()\n-    return k.cache[id], nil\n+    if s, ok := k.cache[id]; ok {\n+        return s, nil\n+    }\n+    return k.store.Get(id)\n+}\n+\n+func (k *Keychain) Epoch() uint64 { return k.epoch.Load() }'
+    ] },
+    { path: 'runner/internal/tokens/tokens.go', tag: 'Deleted', add: 0, del: 96, hunks: [
+'@@ -1,14 +0,0 @@\n-package runner\n-\n-// TokenFile stores session tokens on disk.\n-// Deprecated: replaced by Keychain in 0.1.8.\n-type TokenFile struct {\n-    path string\n-    mu   sync.Mutex\n-}\n-\n-func (t *TokenFile) Read() (map[string]string, error) {\n-    t.mu.Lock()\n-    defer t.mu.Unlock()\n-    return readJSON(t.path)\n-}'
+    ] },
+    { path: 'web/src/session/reconnect.ts', add: 58, del: 112, hunks: [
+'@@ -126,11 +126,15 @@ export async function reconnect(s: Session, runner: RunnerInfo) {\n   const epoch = s.epoch + 1;\n   s.epoch = epoch;\n-  const token = readTokenFile(runner.dataDir);\n+  const token = runner.version >= \'0.1.8\'\n+    ? await runner.keychain.get(s.id)\n+    : readTokenFile(runner.dataDir);\n   if (!token) {\n     return fail(s, \'missing-token\');\n   }\n+  if (s.epoch !== epoch) {\n+    return; // a newer reconnect won\n+  }\n   return openStream(s, runner, token, epoch);\n }'
+    ] },
+    { path: 'runner/internal/keychain/keychain_test.go', tag: 'New', add: 236, del: 0, hunks: [
+'@@ -0,0 +1,16 @@\n+package runner\n+\n+func TestMigrateKeepsTokensOnCrash(t *testing.T) {\n+    dir := t.TempDir()\n+    writeTokens(t, dir, map[string]Token{"s1": {Secret: "abc"}})\n+    k := newTestKeychain(dir, failingStore{})\n+\n+    if err := k.Migrate(context.Background()); err == nil {\n+        t.Fatal("expected store error")\n+    }\n+    if _, err := os.Stat(filepath.Join(dir, "tokens.json")); err != nil {\n+        t.Fatalf("token file removed after failed migration: %v", err)\n+    }\n+}\n+\n+func TestMigrateStaleEpoch(t *testing.T) {'
+    ] },
+  ],
+  2: [
+    { path: 'packages/protocol/src/move.ts', add: 84, del: 6, hunks: [
+'@@ -44,8 +44,20 @@ export type MoveMessage =\n   | MoveStart\n   | MoveChunk\n-  | MoveDone;\n+  | MoveDone\n+  | MoveResume;\n+\n+export interface MoveResume {\n+  kind: \'move.resume\';\n+  moveId: string;\n+  checkpoint: number;\n+  sha256: string;\n+}\n+\n+export const isResume = (m: MoveMessage): m is MoveResume =>\n+  m.kind === \'move.resume\';\n \n export function encode(m: MoveMessage): Uint8Array {'
+    ] },
+  ],
+  3: [
+    { path: 'web/src/term/title.ts', tag: 'New', add: 38, del: 0, hunks: [
+'@@ -0,0 +1,14 @@\n+// OSC 0 and OSC 2 set the window title: ESC ] 2 ; title BEL\n+const OSC_TITLE = /\x1b\](?:0|2);([^\x07\x1b]*)(?:\x07|\x1b\\)/g;\n+\n+export function readTitle(chunk: string, prev: string | null) {\n+  let title = prev;\n+  for (const m of chunk.matchAll(OSC_TITLE)) title = m[1].trim() || null;\n+  return title;\n+}\n+\n+export function displayTitle(s: { title: string | null; command: string }) {\n+  return s.title ?? s.command;\n+}\n+\n+export const MAX_TITLE = 80;'
+    ] },
+    { path: 'web/src/sessions/SessionRow.tsx', add: 26, del: 12, hunks: [
+'@@ -18,9 +18,11 @@ export function SessionRow({ session, active }: Props) {\n   return (\n     <button className="op-session" data-active={active}>\n       <StatusDot state={session.state} />\n-      <span className="op-session__name">{session.name}</span>\n+      <span className="op-session__stack">\n+        <span className="op-session__name">{session.name}</span>\n+        <span className="op-session__sub">{displayTitle(session)}</span>\n+      </span>\n       <span className="op-session__age">{ago(session.updatedAt)}</span>\n     </button>\n   );'
+    ] },
+  ],
+  4: [
+    { path: 'runner/internal/health/disk.go', tag: 'New', add: 96, del: 0, hunks: ['@@ -0,0 +1,12 @@\n+package health\n+\n+const diskPressureAt = 0.90\n+\n+func probeDisk(path string) (Event, bool) {\n+    var st syscall.Statfs_t\n+    if err := syscall.Statfs(path, &st); err != nil {\n+        return Event{}, false\n+    }\n+    used := 1 - float64(st.Bavail)/float64(st.Blocks)\n+    return Event{Kind: "disk.pressure", Value: used}, used >= diskPressureAt\n+}'] },
+    { path: 'runner/internal/health/loop.go', add: 22, del: 7, hunks: ['@@ -40,4 +40,7 @@ func (l *Loop) tick(ctx context.Context) {\n     l.probeCPU()\n     l.probeMemory()\n+    if ev, hot := probeDisk(l.dataDir); hot {\n+        l.emit(ev)\n+    }\n     l.lastTick = time.Now()\n }'] },
+  ],
+  5: [
+    { path: 'docs/review/lanes.md', tag: 'New', add: 138, del: 0, hunks: ['@@ -0,0 +1,10 @@\n+# Review lanes\n+\n+Every pull request lands in one lane.\n+\n+- **Quick** takes one look and a merge.\n+- **Medium** gets a read of the diff and the agent notes.\n+- **Deep** opens a review session with the checks already run.\n+\n+The lane agent picks a lane when the pull request opens.\n+You can move it to another lane at any time.'] },
+    { path: 'docs/sidebar.json', add: 4, del: 3, hunks: ['@@ -12,4 +12,5 @@\n   { "title": "Sessions", "path": "sessions" },\n-  { "title": "Automations", "path": "automations" }\n+  { "title": "Automations", "path": "automations" },\n+  { "title": "Review lanes", "path": "review/lanes" }\n ]'] },
+  ],
+  6: [
+    { path: 'package.json', add: 1, del: 1, hunks: ['@@ -38,5 +38,5 @@\n     "typescript": "^5.6.3",\n-    "vite": "6.3.1",\n+    "vite": "6.3.2",\n     "vitest": "^3.1.2"'] },
+    { path: 'pnpm-lock.yaml', add: 17, del: 17, hunks: ['@@ -2104,5 +2104,5 @@\n-  vite@6.3.1:\n-    resolution: {integrity: sha512-6dE3kq9…}\n+  vite@6.3.2:\n+    resolution: {integrity: sha512-9fQ1mT2…}\n     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}'] },
+  ],
+  7: [
+    { path: 'web/src/sessions/EmptyState.tsx', add: 6, del: 6, hunks: ['@@ -8,6 +8,6 @@ export function EmptyState() {\n     <div className="op-empty">\n-      <h3>No sesions yet</h3>\n-      <p>Start a sesion on any host you have conected.</p>\n+      <h3>No sessions yet</h3>\n+      <p>Start a session on any host you have connected.</p>\n     </div>'] },
+  ],
+  8: [
+    { path: 'runner/internal/session/epoch_test.go', tag: 'New', add: 204, del: 0, hunks: ['@@ -0,0 +1,13 @@\n+package session\n+\n+func TestStaleEpochIsDropped(t *testing.T) {\n+    s := newSession()\n+    first := s.BeginReconnect()\n+    second := s.BeginReconnect()\n+\n+    if s.Accept(first) {\n+        t.Fatal("stale epoch accepted")\n+    }\n+    if !s.Accept(second) {\n+        t.Fatal("current epoch rejected")\n+    }'] },
+  ],
+  9: [
+    { path: 'deploy/github-app/rotate.sh', tag: 'New', add: 48, del: 0, hunks: ['@@ -0,0 +1,9 @@\n+#!/usr/bin/env bash\n+set -euo pipefail\n+\n+new_key=$(gh api -X POST "/app/keys" --jq .key)\n+vault kv put secret/github-app private_key="$new_key"\n+\n+# Revoke the old key only after the next healthy deploy.\n+echo "$OLD_KEY_ID" > /var/run/oppenheimer/revoke-after-deploy\n+echo "rotated"'] },
+    { path: 'deploy/github-app/README.md', add: 12, del: 2, hunks: ['@@ -4,2 +4,3 @@\n The deploy uses a GitHub App to act in the user\'s name.\n-Rotate the key by hand every 90 days.\n+The key rotates on every production deploy.\n+The old key is revoked after the next healthy deploy.'] },
+  ],
+  10: [
+    { path: '.github/workflows/ci.yml', add: 3, del: 3, hunks: ['@@ -14,5 +14,5 @@ jobs:\n       - uses: actions/setup-go@v5\n         with:\n-          go-version: "1.23"\n+          go-version: "1.23.4"\n       - run: go test ./...'] },
+  ],
+  11: [
+    { path: 'packages/protocol/src/encode.ts', add: 14, del: 14, hunks: ['@@ -3,4 +3,4 @@\n-export function encode(m:MoveMessage):Uint8Array{\n-  return enc.encode(JSON.stringify( m ))\n+export function encode(m: MoveMessage): Uint8Array {\n+  return enc.encode(JSON.stringify(m));\n }'] },
+  ],
+};
+const parseHunk = txt => {
+  const L = txt.split('\n'); const m = L[0].match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+  let o = +m[1], n = +m[2]; if (o === 0) o = 1; if (n === 0) n = 1;
+  const o0 = o, lines = [];
+  for (const l of L.slice(1)) { const s = l[0] || ' ', t = l.slice(1); if (s === '+') lines.push({ k: 'add', n: n++, t }); else if (s === '-') lines.push({ k: 'del', o: o++, t }); else lines.push({ k: 'ctx', o: o++, n: n++, t }); }
+  return { head: L[0], o0, oEnd: o, lines };
+};
+const FT = { go: 'go', ts: 'ts', tsx: 'tsx', jsx: 'tsx', md: 'md', json: 'json', yaml: 'yaml', yml: 'yaml', sh: 'sh' };
+const ftIcon = path => { const name = path.split('/').pop(); if (/^pnpm-lock/.test(name)) return 'url(./assets/filetypes/pnpm.svg)'; const ext = (name.split('.').pop() || '').toLowerCase(); return FT[ext] ? 'url(./assets/filetypes/' + FT[ext] + '.svg)' : null; };
+const TINT = { add: 'color-mix(in oklch, var(--success) 11%, transparent)', del: 'color-mix(in oklch, var(--danger) 10%, transparent)' };
+const TINT2 = { add: 'color-mix(in oklch, var(--success) 18%, transparent)', del: 'color-mix(in oklch, var(--danger) 16%, transparent)' };
+const LANE_ORDER = { Deep: 0, Medium: 1, Quick: 2 };
+const REPOS = [
+  { name: 'oppenheimer', org: 'oppenheimer-ai', role: 'Maintainer', commits: 214 },
+  { name: 'runner', org: 'oppenheimer-ai', role: 'Write', commits: 88 },
+  { name: 'docs', org: 'oppenheimer-ai', role: 'Write', commits: 31 },
+  { name: 'protocol-spec', org: 'oppenheimer-ai', role: 'Write', commits: 6 },
+  { name: 'xrp-mobile', org: 'peersyst', role: 'Contributor', commits: 12 },
+];
+const THEMES = [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'Match system' }];
+const LANGUAGES = [{ value: 'en', label: 'English' }, { value: 'es', label: 'Español' }, { value: 'ca', label: 'Català' }];
+const SCOPES = [
+  { id: 'mine', name: 'Mine', desc: 'Opened by you or your sessions. The review agent reviews each one first, so you check its notes and merge.' },
+  { id: 'requested', name: 'Review requests', desc: 'Pull requests where someone asked for your review.' },
+  { id: 'watching', name: 'Watching', desc: 'Open pull requests in repositories you watch, where nobody asked for your review.' },
+];
+const VIEWS = [
+  { id: 'all', name: 'PR queue', icon: 'git-pull-request', title: 'PR queue' },
+  { id: 'analytics', name: 'Analytics', icon: 'activity', title: 'Analytics' },
+];
+const sessUrl = (p, notes) => { const host = p.prep.some(x => /checkout/i.test(x[0])) ? 'mac-studio' : 'optimus';
+  const q = new URLSearchParams({ session: 'Review #' + p.num + ' ' + p.title, state: 'running', repo: p.repo, host, review: '1', branch: p.branch,
+    meta: 'Claude Code · Sonnet 4.6 · ' + p.repo + '/' + p.branch, prompt: 'Review ' + p.repo + ' #' + p.num + ': ' + p.title,
+    checks: p.prep.filter(x => x[2] === 'ok' && !/approved/i.test(x[0])).map(x => x[0] + '  ' + x[1]).join('|'),
+    notes: (notes || p.findings.map(f => f[0] + '  ' + f[1])).join('|') });
+  return './SessionsConsole.dc.html?' + q.toString(); };
+const openSess = (p, notes) => { window.location.href = sessUrl(p, notes); };
+const fmtWait = h => h <= 0 ? '—' : h < 1 ? Math.round(h * 60) + 'm' : h < 24 ? Math.floor(h) + 'h ' + String(Math.round((h % 1) * 60)).padStart(2, '0') + 'm' : Math.floor(h / 24) + 'd ' + Math.round(h % 24) + 'h';
+const DOT = { ok: 'var(--success)', fail: 'var(--danger)', run: 'var(--warning)' };
+const CK = { pass: ['Passing', 'var(--success)'], fail: ['Failing', 'var(--danger)'], running: ['Running', 'var(--warning)'] };
+
+class Component extends DCLogic {
+  state = { view: 'all', lane: 'All', repo: null, sel: null, thread: {}, sess: {}, envLoc: {}, chatText: '', typing: null, lanes: {}, open: null, tab: 'changes', mode: 'unified', viewed: {}, collapsed: {}, discarded: {}, comments: {}, draft: null, treeQ: '', treeClosed: {}, w: Math.max(0, window.innerWidth - 324) };
+  measure = () => { const el = document.querySelector('[data-prmain]'); const w = Math.round(el ? el.getBoundingClientRect().width : window.innerWidth - 324); if (Math.abs(w - this.state.w) > 4) this.setState({ w }); };
+  watched() { return this.state.watched || { runner: true, docs: true }; }
+  applyTheme(theme) { const dark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light'); }
+  accountVals() {
+    const s = this.state, find = (l, v) => ((l.find(o => o.value === v) || l[0]).label);
+    return {
+      accountOpen: s.accountOpen ? 'true' : undefined,
+      accountRoot: s.accountOpen && !s.accountMenu ? 'true' : undefined,
+      accountTheme: s.accountMenu === 'theme' ? 'true' : undefined, accountLang: s.accountMenu === 'lang' ? 'true' : undefined,
+      toggleAccount: e => { e.stopPropagation(); this.setState(st => ({ accountOpen: !st.accountOpen, accountMenu: null })); },
+      stop: e => e.stopPropagation(),
+      openTheme: e => { e.stopPropagation(); this.setState({ accountMenu: 'theme' }); }, openLang: e => { e.stopPropagation(); this.setState({ accountMenu: 'lang' }); },
+      backToAccount: e => { e.stopPropagation(); this.setState({ accountMenu: null }); },
+      themeLabel: find(THEMES, s.theme || 'system'), langLabel: find(LANGUAGES, s.lang || 'en'),
+      themeOptions: THEMES.map(o => ({ label: o.label, check: (s.theme || 'system') === o.value ? '✓' : '', pick: e => { e.stopPropagation(); this.applyTheme(o.value); this.setState({ theme: o.value, accountMenu: null }); } })),
+      langOptions: LANGUAGES.map(o => ({ label: o.label, check: (s.lang || 'en') === o.value ? '✓' : '', pick: e => { e.stopPropagation(); this.setState({ lang: o.value, accountMenu: null }); } })),
+    };
+  }
+  canMerge(p) { return !p.conflict && p.ck === 'pass' && p.view !== 'waiting'; }
+  mergeWhy(p) { return p.conflict ? 'Resolve conflicts with main first' : p.ck === 'running' ? 'Checks still running' : p.ck === 'fail' ? 'Checks failing' : p.view === 'waiting' ? (p.block || 'Blocked by a branch rule') : 'Squash and merge into main'; }
+  laneOf(p) { return this.state.lanes[p.id] || p.lane; }
+  list() {
+    const s = this.state;
+    const q = (s.prQ || '').trim().toLowerCase().replace(/^#/, '');
+    return PRS.filter(p => p.view !== 'auto' && p.scope === (s.scope || 'mine') && (p.scope !== 'watching' || this.watched()[p.repo]) && (!s.repo || p.repo === s.repo) && (s.lane === 'All' || this.laneOf(p) === s.lane)
+      && (!q || (p.title + ' ' + p.repo + ' ' + p.num + ' ' + p.author + ' ' + p.branch).toLowerCase().includes(q)))
+      .sort((a, b) => LANE_ORDER[this.laneOf(a)] - LANE_ORDER[this.laneOf(b)] || b.wait - a.wait);
+  }
+  componentDidUpdate() { if (!VIEWS.some(v => v.id === this.state.view)) this.setState({ view: 'all' }); }
+  componentDidMount() {
+    if (!VIEWS.some(v => v.id === this.state.view)) this.setState({ view: 'all' });
+    this.onKey = e => {
+      if (/input|textarea/i.test(e.target.tagName)) return;
+      if (this.state.open) { if (e.key === 'Escape') { if (this.state.rvOpen) this.setState({ rvOpen: false }); else this.setState({ open: null }); } return; }
+      if (e.key === 'Enter' && this.state.sel) { this.setState({ open: this.state.sel, tab: 'brief' }); return; }
+      const l = this.list(); const i = l.findIndex(p => p.id === this.state.sel);
+      if (e.key === 'j' || e.key === 'ArrowDown') { const n = l[Math.min(l.length - 1, i + 1)]; if (n) this.setState({ sel: n.id }); e.preventDefault(); }
+      if (e.key === 'k' || e.key === 'ArrowUp') { const n = l[Math.max(0, i - 1)]; if (n) this.setState({ sel: n.id }); e.preventDefault(); }
+      if (e.key === 'n') this.next();
+      if (e.key === '/') { const el = document.querySelector('[data-prq]'); if (el) { e.preventDefault(); el.focus(); } }
+      if (e.key === 'Escape') this.setState({ sel: null });
+    };
+    window.addEventListener('keydown', this.onKey);
+    window.addEventListener('resize', this.measure);
+    this.onDoc = e => { if (this.state.rvOpen && !e.target.closest('[data-rv]')) this.setState({ rvOpen: false }); if (this.state.wtOpen && !e.target.closest('[data-wt]')) this.setState({ wtOpen: false }); if (this.state.accountOpen && !e.target.closest('.op-accountwrap')) this.setState({ accountOpen: false, accountMenu: null }); };
+    document.addEventListener('mousedown', this.onDoc);
+    this.measure(); this.t = setTimeout(this.measure, 300);
+    const el = document.querySelector('[data-prmain]');
+    if (el && window.ResizeObserver) { this.ro = new ResizeObserver(this.measure); this.ro.observe(el); }
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); if (this.ro) this.ro.disconnect(); window.removeEventListener('resize', this.measure); document.removeEventListener('mousedown', this.onDoc); clearTimeout(this.t); }
+  next() {
+    const q = this.list().filter(p => p.view === 'queue' && !(this.state.merged || {})[p.id]).sort((a, b) => LANE_ORDER[this.laneOf(a)] - LANE_ORDER[this.laneOf(b)] || b.wait - a.wait);
+    const i = q.findIndex(p => p.id === this.state.sel);
+    const n = q[(i + 1) % q.length];
+    if (n) this.setState({ sel: n.id, open: n.id, tab: 'brief' });
+  }
+  scrollToFile(i, line) {
+    setTimeout(() => {
+      const box = document.querySelector('[data-diffscroll]'); const el = box && box.querySelector('[data-file="' + i + '"]');
+      if (box && el) box.scrollTop = el.offsetTop - 16 + (line || 0);
+    }, 30);
+  }
+  detailVals() {
+    const s = this.state; const p = PRS.find(x => x.id === s.open);
+    if (!p) return { listMode: 'true' };
+    const lane = this.laneOf(p);
+    const files = DIFFS[p.id] || [];
+    const agentNotes = p.findings.map(([at, text]) => ({ at, text, path: at.split(':')[0], key: 'R' + at.split(':')[1], dkey: p.id + at, posted: !!(s.postedAgent || {})[p.id + at] })).filter(n => !s.discarded[n.dkey]);
+    const userNotes = (s.comments[p.id] || []).map(c => ({ ...c, at: c.path + ':' + c.key.slice(1) }));
+    const notes = agentNotes.filter(n => !n.posted).concat(userNotes.filter(c => c.mode === 'review'));
+    const split = s.mode === 'split' && s.w >= 900;
+    const showTree = (s.filesPane ?? true) && s.w >= 420;
+    const vk = path => p.id + ':' + path;
+    const hasReview = notes.length > 0;
+    const addComment = mode => this.setState(st => {
+      const d = st.draft; if (!d || !d.text.trim()) return null;
+      const list = (st.comments[d.pr] || []).concat([{ id: Date.now(), path: d.path, key: d.key, text: d.text.trim(), mode }]);
+      return { comments: { ...st.comments, [d.pr]: list }, draft: null };
+    });
+    const openDraft = (path, key) => { this.setState({ draft: { pr: p.id, path, key, text: '' } }); setTimeout(() => { const t = document.querySelector('[data-draft]'); if (t) t.focus(); }, 40); };
+    const noteRows = (path, key, indent) => {
+      const out = [];
+      agentNotes.filter(n => n.path === path && n.key === key).forEach(n => out.push({ isNote: 'true', isBot: 'true', who: 'Full-review agent', sub: n.posted ? 'Posted with your review' : 'Pending, posts with your review', act: n.posted ? 'Hide' : 'Discard', text: n.text, indent, discard: () => this.setState(st => ({ discarded: { ...st.discarded, [n.dkey]: true } })) }));
+      userNotes.filter(c => c.path === path && c.key === key).forEach(c => out.push({ isNote: 'true', isUser: 'true', who: 'Jordi Parra', sub: c.mode === 'review' ? 'Pending, posts with your review' : 'Posted to GitHub', act: 'Delete', text: c.text, indent, discard: () => this.setState(st => ({ comments: { ...st.comments, [p.id]: (st.comments[p.id] || []).filter(x => x.id !== c.id) } })) }));
+      const d = s.draft;
+      if (d && d.pr === p.id && d.path === path && d.key === key) out.push({ isDraft: 'true', indent, val: d.text, empty: !d.text.trim(),
+        reviewLabel: hasReview ? 'Add to review' : 'Start a review',
+        onText: e => { const v = e.target.value; this.setState(st => ({ draft: st.draft && { ...st.draft, text: v } })); },
+        onKey: e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addComment('review'); } if (e.key === 'Escape') { e.stopPropagation(); this.setState({ draft: null }); } },
+        review: () => addComment('review'), single: () => addComment('single'), cancel: () => this.setState({ draft: null }) });
+      return out;
+    };
+    const BAR = { add: 'inset 3px 0 0 var(--success)', del: 'inset 3px 0 0 var(--danger)' };
+    const fileRows = (f) => {
+      const hunks = f.hunks.map(parseHunk); const rows = [];
+      hunks.forEach((hk, hi) => {
+        if (hi > 0) { const gap = hk.o0 - hunks[hi - 1].oEnd; if (gap > 0) rows.push({ isGap: 'true', n: gap }); }
+        rows.push({ isHunk: 'true', text: hk.head });
+        if (!split) {
+          hk.lines.forEach(l => {
+            const key = l.k === 'del' ? 'L' + l.o : 'R' + l.n;
+            rows.push({ isLine: 'true', o: l.k === 'add' ? '' : l.o, n: l.k === 'del' ? '' : l.n, sign: l.k === 'add' ? '+' : l.k === 'del' ? '−' : '', t: l.t || ' ',
+              bg: TINT[l.k] || 'transparent', numBg: TINT2[l.k] || 'transparent', bar: BAR[l.k] || 'none', signFg: l.k === 'add' ? 'var(--success)' : 'var(--danger)', comment: () => openDraft(f.path, key) });
+            rows.push(...noteRows(f.path, key, '118px'));
+          });
+        } else {
+          const L = hk.lines; let i = 0;
+          const side = (l, k) => l ? { N: k === 'l' ? l.o : l.n, T: l.t || ' ', Sign: l.k === 'ctx' ? '' : k === 'l' ? '−' : '+', Bg: TINT[l.k] || 'transparent', NumBg: TINT2[l.k] || 'transparent', Bar: BAR[l.k] || 'none', Can: 'true', Key: (k === 'l' ? 'L' + l.o : 'R' + l.n) } : { N: '', T: '', Sign: '', Bg: 'var(--hover-surface)', NumBg: 'transparent', Bar: 'none', Can: undefined, Key: null };
+          const pair = (a, b, ctx) => {
+            const A = side(a, 'l'), B = side(b, 'r');
+            if (ctx) { A.Key = null; A.Can = undefined; }
+            rows.push({ isPair: 'true', lN: A.N, lT: A.T, lSign: A.Sign, lBg: A.Bg, lNumBg: A.NumBg, lBar: A.Bar, lCan: A.Can, rN: B.N, rT: B.T, rSign: B.Sign, rBg: B.Bg, rNumBg: B.NumBg, rBar: B.Bar, rCan: B.Can,
+              lComment: () => A.Key && openDraft(f.path, A.Key), rComment: () => B.Key && openDraft(f.path, B.Key) });
+            if (A.Key) rows.push(...noteRows(f.path, A.Key, '16px'));
+            if (B.Key) rows.push(...noteRows(f.path, B.Key, 'calc(50% + 16px)'));
+          };
+          while (i < L.length) {
+            if (L[i].k === 'ctx') { pair(L[i], L[i], true); i++; continue; }
+            const dels = [], adds = [];
+            while (i < L.length && L[i].k === 'del') dels.push(L[i++]);
+            while (i < L.length && L[i].k === 'add') adds.push(L[i++]);
+            for (let j = 0; j < Math.max(dels.length, adds.length); j++) pair(dels[j], adds[j]);
+          }
+        }
+      });
+      return { rows, notesN: agentNotes.concat(userNotes).filter(n => n.path === f.path).length };
+    };
+    const fileVals = files.map((f, idx) => {
+      const viewed = !!s.viewed[vk(f.path)]; const open = !viewed && !s.collapsed[vk(f.path)];
+      const cut = f.path.lastIndexOf('/') + 1; const fr = open ? fileRows(f) : { rows: [], notesN: agentNotes.concat(userNotes).filter(n => n.path === f.path).length };
+      return { idx, img: ftIcon(f.path), path: f.path, dir: f.path.slice(0, cut), name: f.path.slice(cut), tag: f.tag, add: f.add, del: f.del,
+        open: open ? 'true' : undefined, chev: open ? 'chevron-down' : 'chevron-right', headBorder: open ? 'var(--border-subtle)' : 'transparent',
+        rows: fr.rows, hasNotes: fr.notesN ? 'true' : undefined, notesN: fr.notesN,
+        viewed: viewed ? 'true' : 'false', viewedV: viewed ? 'true' : undefined, boxBorder: viewed ? 'var(--primary)' : 'var(--border)', boxBg: viewed ? 'var(--primary)' : 'transparent',
+        toggle: () => this.setState(st => viewed ? { viewed: { ...st.viewed, [vk(f.path)]: false } } : { collapsed: { ...st.collapsed, [vk(f.path)]: !st.collapsed[vk(f.path)] } }),
+        view: () => this.setState(st => ({ viewed: { ...st.viewed, [vk(f.path)]: !viewed } })),
+        icon: viewed ? 'check-circle' : 'file-text', iconFg: viewed ? 'var(--fg-subtle)' : 'var(--fg-muted)', op: viewed ? 0.55 : 1,
+        pick: () => { this.setState(st => ({ collapsed: { ...st.collapsed, [vk(f.path)]: false }, viewed: { ...st.viewed, [vk(f.path)]: false } })); this.scrollToFile(idx); } };
+    });
+    const q = s.treeQ.trim().toLowerCase();
+    const root = { dirs: {}, files: [] };
+    files.forEach((f, idx) => { if (q && !f.path.toLowerCase().includes(q)) return; const parts = f.path.split('/'); let n = root; parts.slice(0, -1).forEach(d => { n.dirs[d] = n.dirs[d] || { dirs: {}, files: [] }; n = n.dirs[d]; }); n.files.push({ idx, name: parts[parts.length - 1] }); });
+    const treeRows = [];
+    const walk = (node, depth, prefix) => {
+      Object.keys(node.dirs).sort().forEach(name => {
+        let d = node.dirs[name], label = name, path = prefix + name;
+        while (Object.keys(d.dirs).length === 1 && d.files.length === 0) { const k = Object.keys(d.dirs)[0]; label += '/' + k; path += '/' + k; d = d.dirs[k]; }
+        const key = p.id + '#' + path; const isOpen = q || !s.treeClosed[key];
+        treeRows.push({ name: label, path, pad: (10 + depth * 14) + 'px', noImg: 'true', icon: isOpen ? 'chevron-down' : 'chevron-right', fg: 'var(--fg-muted)', isFile: undefined,
+          pick: () => this.setState(st => ({ treeClosed: { ...st.treeClosed, [key]: !st.treeClosed[key] } })) });
+        if (isOpen) walk(d, depth + 1, path + '/');
+      });
+      node.files.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach(x => { const fv = fileVals[x.idx]; treeRows.push({ name: x.name, path: fv.path, pad: (10 + depth * 14) + 'px', icon: fv.icon, img: fv.img || undefined, noImg: fv.img ? undefined : 'true', imgOp: fv.viewedV ? 0.45 : 1, fg: fv.viewedV ? 'var(--fg-subtle)' : 'var(--fg)', isFile: 'true', hasAdd: fv.add ? 'true' : undefined, hasDel: fv.del ? 'true' : undefined, add: fv.add, del: fv.del, pick: fv.pick }); });
+    };
+    walk(root, 0, '');
+    const isQueue = p.view === 'queue';
+    const hasCheckout = p.prep.some(x => /checkout/i.test(x[0]));
+    const sst = (s.sess || {})[p.id] || (hasCheckout ? 'ready' : 'idle');
+    const loc = (s.envLoc || {})[p.id] || (hasCheckout ? 'mac-studio' : 'Cloud');
+    const ENVS = ['Default', 'Node 22 · Go 1.23', 'Full stack'];
+    const envI = (s.envIdx || {})[p.id] || 0;
+    const startSess = () => openSess(p, agentNotes.map(n => n.at + '  ' + n.text));
+    const ses = {
+      ready: sst === 'ready' ? 'true' : undefined, idle: sst === 'idle' ? 'true' : undefined, booting: sst === 'booting' ? 'true' : undefined,
+      dot: sst === 'ready' ? 'var(--success)' : sst === 'booting' ? 'var(--warning)' : undefined,
+      title: sst === 'ready' ? 'Review session ready' : sst === 'booting' ? 'Preparing review session' : 'No review session yet',
+      sub: (hasCheckout ? 'The full-review agent checked out ' + p.branch + ' and ran the affected checks.' : 'Checks out ' + p.branch + ' and runs the affected checks.') + ' Opens in Sessions under Oppenheimer.',
+      where: p.branch + ' · ' + loc + ' · ' + ENVS[envI],
+      showSteps: sst !== 'idle' ? 'true' : undefined,
+      steps: sst === 'booting' ? [{ label: 'Checkout', val: 'running', dot: 'var(--warning)' }, { label: 'Affected checks', val: 'queued', dot: 'var(--border)' }]
+        : hasCheckout ? p.prep.map(([label, val, st]) => ({ label, val, dot: DOT[st] })) : [{ label: 'Checkout built', val: '41s', dot: 'var(--success)' }, { label: 'Affected checks', val: 'all passing', dot: 'var(--success)' }],
+      start: startSess,
+      go: startSess,
+      close: () => this.setState({ tab: 'brief' }),
+      goLabel: 'Open review session', goIcon: 'terminal',
+    };
+    const seeded = (() => {
+      if (sst !== 'ready' || !hasCheckout) return [];
+      const first = { id: 'seed', role: 'agent', text: agentNotes.length ? 'I reviewed all ' + files.length + ' files. ' + agentNotes.length + ' thing' + (agentNotes.length > 1 ? 's' : '') + ' worth your attention; I drafted ' + (agentNotes.length > 1 ? 'them' : 'it') + ' as pending comments.' : 'I reviewed all ' + files.length + ' files and found nothing that needs a comment. Checks pass.', drafts: agentNotes.map(n => ({ kind: 'agent', n })) };
+      return [first];
+    })();
+    const thread = seeded.concat((s.thread || {})[p.id] || []);
+    const goLine = path => { const idx = files.findIndex(f => f.path === path); this.setState({ tab: 'changes' }); setTimeout(() => { const el = document.querySelector('[data-file="' + idx + '"]'); const sc = document.querySelector('[data-diffscroll]'); if (el && sc) sc.scrollTop = el.offsetTop - 16; }, 60); };
+    const chat = thread.map(m => ({
+      isUser: m.role === 'user' ? 'true' : undefined, isAgent: m.role === 'agent' ? 'true' : undefined, text: m.text,
+      cta: m.cta, ctaAct: m.cta ? () => this.setState({ rvOpen: true, rvDecision: m.decision || s.rvDecision }) : undefined,
+      drafts: (m.drafts || []).map(d => {
+        if (d.kind === 'agent') { const n = d.n; return { at: n.at, text: n.text, state: n.posted ? 'Posted' : 'In your review', dot: n.posted ? 'var(--success)' : 'var(--primary)', canRemove: n.posted ? undefined : 'true', remove: () => this.setState(st => ({ discarded: { ...st.discarded, [n.dkey]: true } })), go: () => goLine(n.path) }; }
+        const c = userNotes.find(x => x.id === d.cid);
+        return { at: d.path + ':' + d.key.slice(1), text: d.text, state: c ? (c.mode === 'review' ? 'In your review' : 'Posted') : 'Draft', dot: c ? 'var(--primary)' : 'var(--border)', canAdd: c ? undefined : 'true', canRemove: c && c.mode === 'review' ? 'true' : undefined,
+          add: () => this.setState(st => ({ comments: { ...st.comments, [p.id]: (st.comments[p.id] || []).concat([{ id: d.cid, path: d.path, key: d.key, text: d.text, mode: 'review' }]) } })),
+          remove: () => this.setState(st => ({ comments: { ...st.comments, [p.id]: (st.comments[p.id] || []).filter(x => x.id !== d.cid) } })), go: () => goLine(d.path) };
+      }),
+    }));
+    const reply = text => {
+      const t = text.toLowerCase();
+      const f = files.find(x => x.hunks && x.hunks.length) || files[0];
+      if (/summary|summari|write the review|approve/.test(t)) {
+        const sum = agentNotes.length || userNotes.length ? 'Looks good overall. Left ' + (agentNotes.length + userNotes.length) + ' comment' + (agentNotes.length + userNotes.length > 1 ? 's' : '') + ' inline; none block the merge.' : 'Read through the change and ran the affected checks. Looks good to merge.';
+        this.setState({ rvText: sum });
+        return { role: 'agent', text: 'I wrote a review summary and put it in Submit review:\n\n“' + sum + '”', cta: 'Open Submit review' };
+      }
+      if (/comment|draft|risk|flag|issue|bug/.test(t) && f) {
+        const hk = parseHunk(f.hunks[0]); const ln = hk.lines.find(l => l.k === 'add') || hk.lines[0];
+        const key = ln.k === 'del' ? 'L' + ln.o : 'R' + ln.n;
+        return { role: 'agent', text: 'One more worth raising. Add it to your review if you agree.', drafts: [{ kind: 'draft', cid: Date.now() + 1, path: f.path, key, text: /test/.test(t) ? 'No test covers this path. Add a case for the failure branch before merging.' : 'This runs on every call. Cache the result or move it behind the existing guard so it only happens once.' }] };
+      }
+      return { role: 'agent', text: p.brief + (f ? ' Most of the change is in ' + f.path.split('/').pop() + '.' : '') };
+    };
+    const sendChat = (txt) => {
+      const text = (txt ?? s.chatText).trim(); if (!text) return;
+      const push = m => this.setState(st => ({ thread: { ...st.thread, [p.id]: ((st.thread || {})[p.id] || []).concat([m]) } }));
+      push({ id: Date.now(), role: 'user', text }); this.setState({ chatText: '', typing: p.id });
+      const go = () => { const sc = document.querySelector('[data-chatscroll]'); if (sc) sc.scrollTop = sc.scrollHeight; };
+      setTimeout(go, 30);
+      setTimeout(() => { push({ id: Date.now(), ...reply(text) }); this.setState({ typing: null }); setTimeout(go, 30); }, 900);
+    };
+    const tl = (text, tone, kind) => ({ text, tone, kind });
+    const termBase = sst === 'idle' ? [] : [
+      tl('git fetch origin ' + p.branch + ' && git checkout ' + p.branch, null, 'cmd'),
+      tl("Switched to branch '" + p.branch + "'", 'dim'),
+      ...(sst === 'booting' ? [tl('Building checkout on ' + loc + '…', 'dim')] : [
+        tl('Checkout built on ' + loc + ' · ' + files.length + ' files changed, +' + p.add + ' −' + p.del, 'dim'),
+        tl('', null, 'spacer'),
+        tl('oppenheimer review --pr ' + p.num, null, 'cmd'),
+        ...(p.prep.length ? p.prep.map(([l, v, st]) => tl((st === 'ok' ? '✓ ' : st === 'fail' ? '✗ ' : '… ') + l + '  ' + v, st === 'ok' ? 'success' : st === 'fail' ? 'danger' : 'warning')) : [tl('✓ Affected checks  all passing', 'success')]),
+        tl('', null, 'spacer'),
+        tl(agentNotes.length ? 'Review agent drafted ' + agentNotes.length + ' comment' + (agentNotes.length > 1 ? 's' : '') + ' (pending in your review):' : 'Review agent found nothing to comment on.', 'strong'),
+        ...agentNotes.map(n => tl('  ' + n.at + '  ' + n.text, 'dim')),
+        tl('', null, 'spacer'),
+        tl('Session ready. Ask the agent about the change, or run any command.', 'accent'),
+      ])];
+    const termExtra = (s.termLog || {})[p.id] || [];
+    const term = {
+      lines: termBase.concat(termExtra),
+      value: s.termIn || '', onChange: e => this.setState({ termIn: e.target.value }),
+      onKey: e => { if (e.key !== 'Enter' || !e.target.classList.contains('op-term__input')) return; const v = (s.termIn || '').trim(); if (!v) return;
+        const out = /^(go|pnpm|npm|make|git|ls|cat)\b/.test(v) ? [tl(v, null, 'cmd'), tl('ok', 'success')] : [tl(v, null, 'cmd'), tl(reply(v).text, null)];
+        this.setState(st => ({ termIn: '', termLog: { ...(st.termLog || {}), [p.id]: ((st.termLog || {})[p.id] || []).concat(out) } })); },
+      status: [p.branch, loc, ENVS[envI], notes.length + ' pending'],
+    };
+    const ageH = p.wait || 1;
+    const desc = { opened: ageH < 1 ? Math.round(ageH * 60) + 'm ago' : ageH < 24 ? Math.round(ageH) + 'h ago' : Math.round(ageH / 24) + 'd ago',
+      sections: [
+        { title: 'Summary', body: p.brief },
+        { title: 'Changes', items: files.slice(0, 6).map(f => (f.tag === 'New' ? 'Add ' : 'Update ') + f.path) },
+        { title: 'How to test', code: (p.repo === 'runner' ? 'go test ./...' : 'pnpm test') + (files.some(f => /\.go$/.test(f.path)) && p.repo !== 'runner' ? '\ngo test ./runner/...' : '') },
+        { title: 'Notes', body: p.agent ? 'Opened by the ' + p.author.replace('Session · ', '') + ' session. Changes requested here are sent back to the session.' : p.why },
+      ] };
+    const chatVals = { term, desc,
+      chat, chatTyping: s.typing === p.id ? 'true' : undefined, chatEmpty: !chat.length && s.typing !== p.id ? 'true' : undefined,
+      chatSuggest: sst === 'ready' && !((s.thread || {})[p.id] || []).length ? 'true' : undefined,
+      suggestions: ['Look for risks and draft comments', 'Explain the main change', 'Write the review summary'].map(text => ({ text, pick: () => sendChat(text) })),
+      chatText: s.chatText, onChat: e => this.setState({ chatText: e.target.value }),
+      onChatKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (sst === 'idle') startSess(); sendChat(); } },
+      sendChat: () => { if (sst === 'idle') startSess(); sendChat(); }, chatEmptyIn: !s.chatText.trim(), sendBg: s.chatText.trim() ? 'var(--primary)' : 'var(--fg-subtle)',
+      env: { project: p.repo, loc, locIcon: loc === 'Cloud' ? 'globe' : 'cpu', env: ENVS[envI],
+        toggleLoc: () => this.setState(st => ({ envLoc: { ...st.envLoc, [p.id]: loc === 'Cloud' ? 'mac-studio' : 'Cloud' } })),
+        cycleEnv: () => this.setState(st => ({ envIdx: { ...(st.envIdx || {}), [p.id]: (envI + 1) % ENVS.length } })),
+        pendingLabel: notes.length ? notes.length + ' pending in your review' : '' },
+    };
+    const ck = p.ck === 'fail' ? ['One required check is failing.', 'var(--danger)'] : p.ck === 'running' ? ['Checks are still running.', 'var(--warning)'] : p.view === 'waiting' ? [p.block, 'var(--warning)'] : p.view === 'auto' ? ['Merged in your name.', 'var(--success)'] : ['Ready to merge once approved.', 'var(--success)'];
+    return {
+      listMode: undefined, detailMode: 'true', ...chatVals,
+      isChanges: s.tab === 'changes' ? 'true' : undefined, isSummary: s.tab === 'brief' || s.tab === 'summary' || s.tab === 'session' ? 'true' : undefined, isDesc: s.tab === 'desc' ? 'true' : undefined, isTerminal: s.tab === 'terminal' ? 'true' : undefined,
+      showMode: s.tab === 'changes' && s.w >= 900 ? 'true' : undefined, showTree: showTree ? 'true' : undefined,
+      tabs: [['brief', 'Briefing'], ['desc', 'Description'], ['changes', 'Changes']].map(([id, name]) => { const on = s.tab === id || (id === 'brief' && (s.tab === 'summary' || s.tab === 'session')); return { name, stat: id === 'changes' && s.w >= 820 ? 'true' : undefined, dot: undefined, bg: on ? 'var(--card)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ tab: id }) }; }),
+      ses,
+      modes: [['unified', 'Unified'], ['split', 'Split']].map(([id, name]) => ({ name, bg: s.mode === id ? 'var(--card)' : 'transparent', fg: s.mode === id ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ mode: id }) })),
+      tree: treeRows, treeEmpty: q && !treeRows.length ? 'true' : undefined, treeQ: s.treeQ, onTreeQ: e => this.setState({ treeQ: e.target.value }), files: fileVals, noFiles: files.length ? undefined : 'true',
+      sumCols: 'minmax(0,1fr)',
+      closeDiff: () => this.setState({ open: null }), treeOnS: showTree ? 'true' : 'false', toggleTree: () => this.setState({ filesPane: !showTree }),
+      rv: (() => {
+        const dec = s.rvDecision || 'approve'; const n = notes.length; const agentN = agentNotes.filter(x => !x.posted).length;
+        const close = () => this.setState({ rvOpen: false });
+        const submit = () => this.setState(st => {
+          const pa = { ...(st.postedAgent || {}) }; agentNotes.forEach(x => { pa[x.dkey] = true; });
+          const list = (st.comments[p.id] || []).map(c => c.mode === 'review' ? { ...c, mode: 'single' } : c);
+          if ((st.rvText || '').trim()) list.push({ id: Date.now(), path: '', key: '', text: st.rvText.trim(), mode: 'summary' });
+          return { postedAgent: pa, comments: { ...st.comments, [p.id]: list }, reviews: { ...(st.reviews || {}), [p.id]: st.rvDecision || 'approve' }, rvOpen: false, rvText: '' };
+        });
+        const O = [['comment', 'Comment', 'Post your comments without a verdict.'], ['approve', 'Approve and merge', 'Approves as you and merges once required checks pass.'], ['changes', 'Request changes', p.agent ? 'Sends your comments back to ' + p.author.replace('Session · ', 'the ') + ' session to fix.' : 'Ask ' + p.author.split(' ')[0] + ' for revisions before merging.']];
+        return { open: s.rvOpen ? 'true' : undefined, openS: s.rvOpen ? 'true' : 'false', n, hasN: n ? 'true' : undefined,
+          trigger: s.w < 760 ? 'Review' : 'Submit review',
+          toggle: e => { e.stopPropagation(); this.setState(st => ({ rvOpen: !st.rvOpen })); setTimeout(() => { const t = document.querySelector('[data-rvtext]'); if (t && this.state.rvOpen) t.focus(); }, 40); },
+          opts: O.map(([id, name, desc]) => ({ name, desc, onS: dec === id ? 'true' : 'false', bg: dec === id ? 'var(--selected-surface)' : 'transparent', ring: dec === id ? '5px solid var(--primary)' : '1.5px solid var(--border)', dot: dec === id ? 'var(--background)' : 'transparent', pick: () => this.setState({ rvDecision: id }) })),
+          text: s.rvText || '', onText: e => this.setState({ rvText: e.target.value }),
+          onKey: e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); if (!(dec === 'changes' && !n && !(s.rvText || '').trim())) submit(); } },
+          commentHint: dec === 'changes' && !n ? 'Required' : 'Optional',
+          placeholder: dec === 'approve' ? 'Anything to add for the author' : dec === 'changes' ? 'What needs to change' : 'Leave a summary',
+          agentNote: dec === 'changes' && p.agent ? 'The session gets your comments as its next prompt and pushes a fix to ' + p.branch + '.' : undefined,
+          pendingNote: n ? n + ' pending comment' + (n > 1 ? 's' : '') + (agentN ? ', ' + agentN + ' from the full-review agent' : '') + '. Only you can see them until you submit.' : 'No pending comments. Hover a line in Changes to add one.',
+          discard: () => this.setState(st => { const dd = { ...st.discarded }; agentNotes.forEach(x => { if (!x.posted) dd[x.dkey] = true; }); return { discarded: dd, comments: { ...st.comments, [p.id]: (st.comments[p.id] || []).filter(c => c.mode !== 'review') } }; }),
+          close, submit, submitDis: dec === 'changes' && !n && !(s.rvText || '').trim(),
+          submitLabel: dec === 'comment' ? 'Comment' : dec === 'approve' ? 'Approve and merge' : 'Request changes' };
+      })(),
+      d: {
+        add: p.add.toLocaleString('en-US'), del: p.del.toLocaleString('en-US'), ref: p.repo + ' #' + p.num, title: p.title, author: p.author, authorIcon: p.agent ? 'bot' : 'user', branch: p.branch, brief: p.brief, bp: p.bp || files.slice(0, 4).map(f => (f.tag === 'New' ? 'Adds ' : 'Updates ') + f.path + ' (+' + f.add + ' −' + f.del + ').'),
+        why: s.lanes[p.id] ? 'Moved to ' + lane + ' by you. The policy picked ' + p.lane + '.' : p.why,
+        state: p.view === 'auto' ? 'Merged' : 'Open', stateDot: p.view === 'auto' ? 'var(--fg-subtle)' : 'var(--success)',
+        viewedN: files.filter(f => s.viewed[vk(f.path)]).length, fileN: files.length,
+        hasPending: notes.length ? 'true' : undefined, pendingN: notes.length,
+        notes: notes.map(n => ({ at: n.at, text: n.text, img: ftIcon(n.at.split(':')[0]) || undefined, go: () => { const i = files.findIndex(f => f.path === n.at.split(':')[0]); this.setState({ tab: 'changes' }); if (i >= 0) this.scrollToFile(i); } })),
+        wideBar: s.w >= 820 ? 'true' : undefined, canReview: isQueue ? 'true' : undefined, notReview: isQueue ? undefined : 'true',
+        ...(() => { const v = (s.reviews || {})[p.id]; if (!v) return { hasVerdict: undefined }; const M = { comment: ['Commented', 'var(--fg-muted)'], approve: ['Approved · merges when checks pass', 'var(--success)'], changes: [p.agent ? 'Changes requested · sent to the session' : 'Changes requested', 'var(--warning)'] }[v]; return { hasVerdict: s.w >= 900 || v !== 'approve' ? 'true' : undefined, verdict: s.w >= 900 ? M[0] : M[0].split(' · ')[0], verdictDot: M[1] }; })(),
+        showPending: notes.length && s.w >= 900 ? 'true' : undefined,
+        primary: p.view === 'auto' ? 'View on GitHub' : p.view === 'waiting' ? p.waitAct : s.w < 760 ? 'Approve' : notes.length ? 'Approve with comments' : 'Approve and merge',
+        laneOpts: ['Quick', 'Medium', 'Deep'].map(n => ({ name: n, bg: n === lane ? 'var(--card)' : 'transparent', fg: n === lane ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState(st => ({ lanes: { ...st.lanes, [p.id]: n === p.lane ? undefined : n } })) })),
+        merge: ck[0], mergeDot: ck[1],
+        prep: p.prep.map(([label, val, st]) => ({ label, val, dot: DOT[st] })),
+        reviewers: [{ ini: 'JP', name: 'Jordi Parra', state: p.view === 'waiting' || p.view === 'auto' ? 'Approved' : 'Reviewing' }].concat((p.others || []).map(([ini, name, state]) => ({ ini, name, state }))).map(v => ({ ...v, dot: v.state === 'Approved' ? 'var(--success)' : v.state === 'Requested' ? 'var(--border)' : 'var(--warning)' })),
+      },
+      bv: (() => {
+        const tot = p.add + p.del || 1;
+        const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
+        const g = {};
+        (files.length ? files : [{ path: p.repo + '/', add: p.add, del: p.del }]).forEach((f, idx) => { const parts = f.path.split('/'); const k = parts.length > 2 ? parts.slice(0, 2).join('/') + '/' : parts.length > 1 ? parts[0] + '/' : '(root)'; g[k] = g[k] || { name: k, add: 0, del: 0, n: 0, idx }; g[k].add += f.add; g[k].del += f.del; g[k].n++; });
+        const list = Object.values(g).sort((x, y) => (y.add + y.del) - (x.add + x.del));
+        const lt = list.reduce((s2, x) => s2 + x.add + x.del, 0) || 1;
+        const dirs = list.map((x, i) => ({ name: x.name, add: x.add, del: x.del, files: x.n + (x.n === 1 ? ' file' : ' files'), pct: Math.max(1, Math.round((x.add + x.del) / lt * 100)) + '%', color: COLORS[i % 5], go: () => { this.setState({ tab: 'changes' }); this.scrollToFile(x.idx); } }));
+        const ckRow = p.prep.find(x => /checks/i.test(x[0]));
+        const m = ckRow && /(\d+)\s*\/\s*(\d+)/.exec(ckRow[1]);
+        const ckPctN = m ? Math.round(+m[1] / +m[2] * 100) : p.ck === 'pass' ? 100 : p.ck === 'running' ? 60 : 90;
+        const ckColor = p.ck === 'pass' ? 'var(--success)' : p.ck === 'running' ? 'var(--warning)' : 'var(--danger)';
+        const approved = p.view === 'waiting' || (s.reviews || {})[p.id] === 'approve';
+        const blocked = p.view === 'waiting';
+        const STEP = (label, sub, st) => ({ label, sub, bg: st === 'ok' ? 'color-mix(in oklch, var(--success) 16%, transparent)' : st === 'bad' ? 'color-mix(in oklch, var(--danger) 14%, transparent)' : st === 'run' ? 'color-mix(in oklch, var(--warning) 16%, transparent)' : 'var(--hover-surface)', fg: st === 'ok' ? 'var(--success)' : st === 'bad' ? 'var(--danger)' : st === 'run' ? 'var(--warning)' : 'var(--fg-subtle)', icon: st === 'ok' ? 'check' : st === 'bad' ? 'alert-circle' : st === 'run' ? 'loader' : 'minus', line: st === 'ok' ? 'var(--success)' : 'var(--border)', lineOp: 1 });
+        const steps = [
+          STEP('Checks', p.ck === 'pass' ? 'All passing' : p.ck === 'running' ? 'Still running' : 'Failing', p.ck === 'pass' ? 'ok' : p.ck === 'running' ? 'run' : 'bad'),
+          STEP('Conflicts', p.conflict ? 'Rebase on main' : 'Merges cleanly', p.conflict ? 'bad' : 'ok'),
+          STEP('Review', approved ? 'Approved by you' : notes.length ? notes.length + ' pending comment' + (notes.length > 1 ? 's' : '') : 'Waiting for you', approved ? 'ok' : 'todo'),
+          STEP('Merge', blocked ? (p.block || '').replace(/^Blocked: /, '') : p.view === 'auto' ? 'Merged' : this.canMerge(p) && approved ? 'Ready' : 'Squash into main', p.view === 'auto' ? 'ok' : blocked ? 'run' : 'todo'),
+        ];
+        steps[steps.length - 1].lineOp = 0;
+        const done = steps.filter(x => x.icon === 'check').length;
+        return {
+          lane, laneBg: lane === 'Deep' ? 'var(--fg)' : 'var(--card)', laneFg: lane === 'Deep' ? 'var(--background)' : 'var(--fg)',
+          addPct: Math.round(p.add / tot * 100) + '%', dirs, dirN: dirs.length + (dirs.length === 1 ? ' folder' : ' folders'), totalLines: (p.add + p.del).toLocaleString('en-US'),
+          ckVal: ckRow ? ckRow[1].replace(/ running$/, '') : CK[p.ck][0], ckLabel: CK[p.ck][0], ckFg: ckColor, ckColor, ckPct: ckPctN + '%',
+          cfLabel: p.conflict ? 'Conflicts' : 'None', cfSub: p.conflict ? 'With main · rebase before merging' : 'Merges cleanly into main', cfIcon: p.conflict ? 'alert-triangle' : 'check',
+          cfBg: p.conflict ? 'color-mix(in oklch, var(--danger) 14%, transparent)' : 'color-mix(in oklch, var(--success) 16%, transparent)', cfColor: p.conflict ? 'var(--danger)' : 'var(--success)',
+          merged: (s.merged || {})[p.id] || p.view === 'auto' ? 'true' : undefined, notMerged: (s.merged || {})[p.id] || p.view === 'auto' ? undefined : 'true',
+          showMerge: s.confirmId !== p.id ? 'true' : undefined, confirming: s.confirmId === p.id ? 'true' : undefined,
+          mergeDis: !this.canMerge(p), mergeTip: this.mergeWhy(p),
+          mergeNote: (s.merged || {})[p.id] ? 'Squashed into main as Jordi Parra (@jordiparra).' : s.confirmId === p.id ? 'Squash ' + p.branch + ' into main as @jordiparra?' : this.canMerge(p) ? 'Squash and merge into main as @jordiparra.' : this.mergeWhy(p) + '.',
+          review: () => this.setState({ tab: 'changes' }),
+          merge: () => { if (!this.canMerge(p)) return; this.setState({ confirmId: p.id }); clearTimeout(this._cm); this._cm = setTimeout(() => { if (this.state.confirmId === p.id) this.setState({ confirmId: null }); }, 6000); },
+          cancelMerge: () => this.setState({ confirmId: null }),
+          confirmMerge: () => this.setState(st => ({ confirmId: null, merged: { ...(st.merged || {}), [p.id]: true } })),
+          steps, stepN: steps.length, readyLabel: done + ' of ' + steps.length + ' done',
+          points: [
+            { k: 'What changes', v: dirs.length ? 'Mostly ' + dirs[0].name + (dirs[1] ? ', plus ' + dirs[1].name : '') + ' · ' + files.length + ' file' + (files.length === 1 ? '' : 's') : files.length + ' files' },
+            { k: 'Risk', v: lane === 'Deep' ? 'High: ' + (p.why.split(':')[1] || '').split('. ')[0].trim().replace(/\.$/, '') : lane === 'Medium' ? 'Moderate: read the diff and the agent notes' : 'Low: small, contained change' },
+            { k: 'Review agent', v: notes.length ? notes.length + ' comment' + (notes.length > 1 ? 's' : '') + ' drafted, pending in your review' : 'Nothing flagged' },
+          ],
+        };
+      })(),
+    };
+  }
+  customRange(from, to) {
+    const a = new Date(from + 'T00:00'), b = new Date(to + 'T00:00');
+    const days = Math.round((b - a) / 864e5) + 1;
+    const f = days / 30;
+    let sd = a.getTime() / 864e5 % 1000; const j = () => { sd = (sd * 9301 + 49297) % 233280; return 0.85 + sd / 233280 * 0.3; };
+    const cnt = (x, y) => [Math.max(1, Math.round(x * f * j())), Math.max(1, Math.round(y * f * j()))];
+    const med = (x, y) => [Math.round(x * j() * 100) / 100, Math.round(y * j() * 100) / 100];
+    const pctp = (x, y) => [Math.round(x * j()), Math.round(y * j())];
+    const fd = (d, o) => d.toLocaleDateString('en-US', o);
+    const sameYear = a.getFullYear() === b.getFullYear();
+    const rangeLabel = fd(a, { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) }) + ' – ' + fd(b, { month: 'short', day: 'numeric', year: 'numeric' });
+    let full = [], step;
+    if (days <= 31) { step = 1; } else if (days <= 182) { step = 7; } else { step = 0; }
+    const dates = [];
+    if (step) { for (let t = new Date(a); t <= b; t.setDate(t.getDate() + step)) { full.push(fd(t, { month: 'short', day: 'numeric' })); dates.push(new Date(t)); } }
+    else { for (let t = new Date(a.getFullYear(), a.getMonth(), 1); t <= b; t.setMonth(t.getMonth() + 1)) { full.push(fd(t, { month: 'short', year: '2-digit' })); dates.push(new Date(t)); } }
+    const n = full.length; const every = n > 14 ? Math.ceil(n / 7) : 1;
+    const created = cnt(248, 221), merged = [Math.round(created[0] * 0.86), Math.round(created[1] * 0.85)];
+    const lane = merged.map(m => { const auto = Math.round(m * 0.28), deep = Math.round(m * 0.3); return [auto, m - auto - deep, deep]; });
+    const kept = Math.round(112 * f * j());
+    const sizes = [[70, 66, 49, 29].map(x => Math.round(x * f * j())), [52, 60, 46, 29].map(x => Math.round(x * f * j()))];
+    return { n, dates, monthly: !step, weekly: step !== 1, labels: full.map((l, i) => i % every === 0 ? l : ''), full: full.map(l => (step === 7 ? 'Week of ' : '') + l),
+      title: 'Your review period', rangeLabel, short: rangeLabel, prevLabel: days + ' days before', nowWord: 'this period', prevWord: 'previous period', nowCol: 'This period', prevCol: 'Previous period', sparkHead: '',
+      created, merged, reviewed: cnt(152, 139), wait: med(2.6, 3.1), merge: med(7.8, 9.4), agent: med(3.1, 3.9), human: med(1.5, 1.6),
+      lanes: lane, auto: pctp(29, 24), rev: [Math.round(2 * f * j()), Math.round(1 * f * j())], kept: [Math.round(kept * 0.72), kept, Math.round(66 * j())], failing: pctp(16, 18),
+      sizes, size: [Math.round(190 * j()), Math.round(221 * j())], reasons: [[15, 12, 9, 8].map(x => Math.round(x * f * j())), [19, 14, 6, 10].map(x => Math.round(x * f * j()))] };
+  }
+  dpVals() {
+    const s = this.state;
+    if (!s.dpOpen) return { open: undefined };
+    const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const parse = v => v ? new Date(v + 'T00:00') : null;
+    const MIN = new Date(2023, 0, 1), MAX = new Date(2026, 9, 4);
+    const from = s.dpFrom, to = s.dpTo, pick = s.dpPick || 'from';
+    const F = parse(from), T = parse(to);
+    const view = s.dpView ? new Date(s.dpView + 'T00:00') : new Date((T || F || MAX).getFullYear(), (T || F || MAX).getMonth(), 1);
+    const setView = d => { const c = d < new Date(MIN.getFullYear(), MIN.getMonth(), 1) ? new Date(MIN.getFullYear(), MIN.getMonth(), 1) : d > new Date(MAX.getFullYear(), MAX.getMonth(), 1) ? new Date(MAX.getFullYear(), MAX.getMonth(), 1) : d; this.setState({ dpView: iso(c) }); };
+    const shift = (m) => setView(new Date(view.getFullYear(), view.getMonth() + m, 1));
+    const start = new Date(view); start.setDate(1 - ((view.getDay() + 6) % 7));
+    const weeks = Math.ceil((((view.getDay() + 6) % 7) + new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate()) / 7);
+    const cells = Array.from({ length: weeks * 7 }, (_, i) => {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const v = iso(d), inMonth = d.getMonth() === view.getMonth(), dis = d < MIN || d > MAX;
+      const isF = v === from, isT = v === to, inR = F && T && d > F && d < T;
+      const edge = isF || isT;
+      const col = i % 7;
+      return { d: d.getDate(), dis, op: dis ? 0.3 : inMonth ? 1 : 0.45, cur: dis ? 'default' : 'pointer',
+        band: inR || (edge && F && T && from !== to) ? 'var(--selected-surface)' : 'transparent',
+        bandR: isF && T ? '980px 0 0 980px' : isT && F ? '0 980px 980px 0' : inR && col === 0 ? '980px 0 0 980px' : inR && col === 6 ? '0 980px 980px 0' : '0',
+        dot: edge ? 'var(--primary)' : 'transparent', fg: edge ? '#fff' : 'var(--fg)', fw: edge ? 600 : 400,
+        today: v === iso(MAX) && !edge ? 'inset 0 0 0 1px var(--border)' : 'none',
+        pick: () => { if (dis) return; this.setState(st => {
+          const cf = st.dpFrom, ct = st.dpTo, p = st.dpPick || 'from';
+          if (p === 'from') return { dpFrom: v, dpTo: ct && v <= ct ? ct : null, dpPick: 'to' };
+          if (cf && v < cf) return { dpFrom: v, dpPick: 'to' };
+          return { dpTo: v, dpPick: 'from' };
+        }); } };
+    });
+    const days = F && T ? Math.round((T - F) / 864e5) + 1 : 0;
+    const invalid = !F || !T || days > 731;
+    const applyRange = (f, t) => this.setState({ anRange: 'custom', cFrom: f, cTo: t, dpOpen: false, dpView: null });
+    const P = [['This year', '2026-01-01', '2026-10-04'], ['Last year', '2025-01-01', '2025-12-31'], ['2024', '2024-01-01', '2024-12-31']];
+    const fmt = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Pick a date';
+    const fld = (k, D) => ({ [k + 'Label']: fmt(D), [k + 'Fg']: D ? 'var(--fg)' : 'var(--fg-subtle)', [k + 'Border']: pick === k ? 'var(--primary)' : 'var(--border)', [k + 'Ring']: pick === k ? '0 0 0 3px var(--ring)' : 'none',
+      [k + 'Focus']: () => { this.setState({ dpPick: k }); if (D) setView(new Date(D.getFullYear(), D.getMonth(), 1)); } });
+    const minV = new Date(MIN.getFullYear(), MIN.getMonth(), 1), maxV = new Date(MAX.getFullYear(), MAX.getMonth(), 1);
+    return {
+      open: 'true', invalid, ...fld('from', F), ...fld('to', T),
+      monthLabel: view.toLocaleDateString('en-US', { month: 'short' }), yearLabel: String(view.getFullYear()),
+      monthPrev: () => shift(-1), monthNext: () => shift(1), yearPrev: () => shift(-12), yearNext: () => shift(12),
+      monthPrevDis: view <= minV, monthNextDis: view >= maxV, yearPrevDis: view.getFullYear() <= MIN.getFullYear(), yearNextDis: view.getFullYear() >= MAX.getFullYear(),
+      wd: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], cells,
+      summary: !F ? 'Pick a start date' : !T ? 'Pick an end date' : days > 731 ? 'Two years at most' : days + ' days vs the ' + days + ' before',
+      sumFg: F && T && days > 731 ? 'var(--danger)' : 'var(--fg-muted)',
+      presets: P.map(([name, f, t]) => ({ name, on: s.anRange === 'custom' && s.cFrom === f && s.cTo === t ? 'true' : 'false', pick: () => applyRange(f, t) })),
+      stop: e => e.stopPropagation(),
+      apply: () => !invalid && applyRange(from, to),
+    };
+  }
+  analyticsVals() {
+    const s = this.state;
+    if (s.view !== 'analytics') return { isAnalytics: undefined, isQueueView: 'true' };
+    const lay = s.anLayout || 'a', rg = s.anRange || 'month';
+    const hm = h => { const m = Math.round(h * 60); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; };
+    const pct = (a, b) => Math.round((a - b) / b * 100);
+    const dl = (now, prev, lowerBetter, kind) => {
+      const d = kind === 'pt' ? Math.round(now - prev) : pct(now, prev);
+      const good = lowerBetter ? d < 0 : d > 0;
+      return { delta: (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d) + (kind === 'pt' ? ' pt' : '%'), deltaFg: d === 0 ? 'var(--fg-muted)' : good ? 'var(--success)' : 'var(--danger)' };
+    };
+    const cnt = (n, p) => n === p ? { delta: '0', deltaFg: 'var(--fg-muted)' } : { delta: (n > p ? '+' : '−') + Math.abs(n - p), deltaFg: n > p ? 'var(--danger)' : 'var(--success)' };
+    let seed = rg.length * 97;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const D = new Date(2026, 9, 4);
+    const lab = (back, opt) => { const d = new Date(D); d.setDate(d.getDate() - back); return d.toLocaleDateString('en-US', opt); };
+    const spread = (total, n, weekly) => { const w = Array.from({ length: n }, (_, i) => { const dow = weekly ? 1 : (new Date(D.getTime() - (n - 1 - i) * 864e5)).getDay(); const base = weekly ? 1 : (dow === 0 || dow === 6 ? 0.4 : 1.15); return base * (0.75 + rnd() * 0.5); }); const sum = w.reduce((a, b) => a + b, 0); const out = w.map(x => Math.round(x / sum * total)); out[n - 1] += total - out.reduce((a, b) => a + b, 0); return out; };
+    const wave = (med, n) => Array.from({ length: n }, () => Math.round(med * (0.75 + rnd() * 0.5) * 10) / 10);
+    const R = {
+      week: { n: 7, weekly: false, title: 'Your review week', rangeLabel: 'Sep 28 – Oct 4', prevLabel: '7 days before', nowWord: 'this week', prevWord: 'last week', nowCol: 'This week', prevCol: 'Last week', sparkHead: 'Mon – Sun',
+        created: [61, 55], merged: [52, 44], reviewed: [38, 31], wait: [2.17, 3.42], merge: [6.67, 9.08], agent: [2.67, 4.17], human: [1.33, 1.75],
+        lanes: [[16, 21, 15], [11, 19, 14]], auto: [31, 24], rev: [1, 0], kept: [22, 29, 63], failing: [14, 19], sizes: [[18, 15, 12, 7], [12, 13, 11, 8]], size: [184, 236], reasons: [[4, 3, 2, 2], [6, 4, 1, 3]] },
+      month: { n: 30, weekly: false, title: 'Your review month', rangeLabel: 'Sep 5 – Oct 4', prevLabel: '30 days before', nowWord: 'this month', prevWord: 'last month', nowCol: 'This month', prevCol: 'Last month', sparkHead: 'Last 30 days',
+        created: [248, 221], merged: [214, 187], reviewed: [152, 139], wait: [2.6, 3.1], merge: [7.8, 9.4], agent: [3.1, 3.9], human: [1.5, 1.6],
+        lanes: [[62, 88, 64], [44, 82, 61]], auto: [29, 24], rev: [2, 1], kept: [81, 112, 66], failing: [16, 18], sizes: [[70, 66, 49, 29], [52, 60, 46, 29]], size: [190, 221], reasons: [[15, 12, 9, 8], [19, 14, 6, 10]] },
+      quarter: { n: 13, weekly: true, title: 'Your review quarter', rangeLabel: 'Jul 6 – Oct 4', prevLabel: '13 weeks before', nowWord: 'this quarter', prevWord: 'last quarter', nowCol: 'This quarter', prevCol: 'Last quarter', sparkHead: 'Weekly, 13 weeks',
+        created: [712, 604], merged: [641, 538], reviewed: [455, 402], wait: [2.9, 4.4], merge: [8.6, 12.1], agent: [3.5, 5.6], human: [1.6, 1.9],
+        lanes: [[176, 270, 195], [98, 252, 188]], auto: [27, 18], rev: [5, 3], kept: [236, 341, 58], failing: [17, 22], sizes: [[205, 198, 150, 88], [150, 170, 130, 88]], size: [196, 244], reasons: [[41, 35, 22, 25], [52, 40, 12, 30]] },
+    }[rg] || this.customRange(s.cFrom, s.cTo);
+    const n = R.n;
+    const labels0 = R.labels || (rg === 'week' ? ['Mon 28', 'Tue 29', 'Wed 30', 'Thu 1', 'Fri 2', 'Sat 3', 'Sun 4']
+      : rg === 'month' ? Array.from({ length: 30 }, (_, i) => (29 - i) % 5 === 0 ? lab(29 - i, { month: 'short', day: 'numeric' }) : '')
+      : Array.from({ length: 13 }, (_, i) => lab((12 - i) * 7 + 6, { month: 'short', day: 'numeric' })));
+    const chartW = Math.max(200, Math.min(s.w, 1100) - 64 - 48 - 42);
+    const fullLabels = labels0.map((l, i) => l || (R.full ? R.full[i] : lab(n - 1 - i, { month: 'short', day: 'numeric' })));
+    const every = Math.max(1, Math.ceil(n * 52 / chartW));
+    const labels = n * 52 <= chartW && !R.labels && rg !== 'month' ? labels0 : fullLabels.map((l, i) => (n - 1 - i) % every === 0 ? l.replace('Week of ', '') : '');
+    const created = rg === 'week' ? [9, 10, 8, 12, 11, 5, 6] : spread(R.created[0], n, R.weekly), createdPrev = rg === 'week' ? [8, 8, 9, 10, 9, 4, 7] : spread(R.created[1], n, R.weekly);
+    const merged = rg === 'week' ? [8, 9, 7, 11, 10, 3, 4] : spread(R.merged[0], n, R.weekly), mergedPrev = rg === 'week' ? [7, 6, 8, 9, 8, 2, 4] : spread(R.merged[1], n, R.weekly);
+    const agentW = wave(R.agent[0], n), humanW = wave(R.human[0], n);
+    const hmode = s.heroMode || 'both';
+    const C1 = 'var(--chart-1)', C2 = 'var(--chart-2)', PREV = 'var(--border)';
+    const heroSeries = hmode === 'both' ? [{ label: 'Created', data: created, color: C1 }, { label: 'Merged', data: merged, color: C2 }]
+      : hmode === 'created' ? [{ label: R.nowCol, data: created, color: C1 }, { label: R.prevCol, data: createdPrev, color: PREV }]
+      : [{ label: R.nowCol, data: merged, color: C2 }, { label: R.prevCol, data: mergedPrev, color: PREV }];
+    const heroStats = [{ label: 'PRs created', value: String(R.created[0]), prev: String(R.created[1]), color: C1, ...dl(R.created[0], R.created[1]), m: 'created' }, { label: 'PRs merged', value: String(R.merged[0]), prev: String(R.merged[1]), color: C2, ...dl(R.merged[0], R.merged[1]), m: 'merged' }].filter(k => hmode === 'both' || k.m === hmode);
+    const tiles = [
+      { label: 'Reviewed by you', value: String(R.reviewed[0]), prev: String(R.reviewed[1]), ...dl(R.reviewed[0], R.reviewed[1]) },
+      { label: 'Median wait for review', value: hm(R.wait[0]), prev: hm(R.wait[1]), ...dl(R.wait[0], R.wait[1], true) },
+      { label: 'Median time to merge', value: hm(R.merge[0]), prev: hm(R.merge[1]), ...dl(R.merge[0], R.merge[1], true) },
+    ];
+    const laneNames = [['Quick', 'var(--chart-3)'], ['Medium', 'var(--chart-2)'], ['Deep', 'var(--chart-1)']];
+    const autoN = R.lanes[0][0], autoPrev = R.lanes[1][0];
+    const keptPct = Math.round(R.kept[0] / R.kept[1] * 100);
+    const quality = [
+      { label: 'Merged on first review', now: R.auto[0] + '%', p: R.auto[0], ...dl(R.auto[0], R.auto[1], false, 'pt'), bar: 'var(--chart-3)' },
+      { label: 'Reverted after merge', now: String(R.rev[0]), sub: 'of ' + autoN, p: Math.max(2, Math.round(R.rev[0] / autoN * 100)), ...cnt(R.rev[0], R.rev[1]), bar: 'var(--danger)' },
+      { label: 'Agent findings you kept', now: keptPct + '%', sub: R.kept[0] + ' of ' + R.kept[1], p: keptPct, ...dl(keptPct, R.kept[2], false, 'pt'), bar: 'var(--chart-1)' },
+      { label: 'Opened with failing checks', now: R.failing[0] + '%', p: R.failing[0], ...dl(R.failing[0], R.failing[1], true, 'pt'), bar: 'var(--warning)' },
+    ].map(x => ({ ...x, pct: x.p + '%' }));
+    const sizeLabels = ['< 50', '50–200', '200–500', '500+'];
+    const smax = Math.max(...R.sizes[0], ...R.sizes[1]);
+    const reasonNames = ['Code owner review', 'More approvals needed', 'In the merge queue', 'Required check failing'], holds = ['3h 10m', '5h 40m', '35m', '1h 50m'];
+    const sp = (med, isCount) => isCount ? spread(med, n, R.weekly) : wave(med, n);
+    const row = (label, now, prev, d, spark, sub) => ({ label, now, prev, ...d, spark, sub });
+    const groups = [
+      { name: 'Volume', rows: [
+        row('PRs created', String(R.created[0]), String(R.created[1]), dl(R.created[0], R.created[1]), created),
+        row('PRs merged', String(R.merged[0]), String(R.merged[1]), dl(R.merged[0], R.merged[1]), merged),
+        row('Reviewed by you', String(R.reviewed[0]), String(R.reviewed[1]), dl(R.reviewed[0], R.reviewed[1]), sp(R.reviewed[0], true)),
+        row('Median PR size', String(R.size[0]), String(R.size[1]), dl(R.size[0], R.size[1], true), sp(R.size[0]), 'Lines changed') ] },
+      { name: 'Speed', rows: [
+        row('Median wait for review', hm(R.wait[0]), hm(R.wait[1]), dl(R.wait[0], R.wait[1], true), sp(R.wait[0])),
+        row('Agent PRs', hm(R.agent[0]), hm(R.agent[1]), dl(R.agent[0], R.agent[1], true), agentW, 'Wait for review'),
+        row('Human PRs', hm(R.human[0]), hm(R.human[1]), dl(R.human[0], R.human[1], true), humanW, 'Wait for review'),
+        row('Median time to merge', hm(R.merge[0]), hm(R.merge[1]), dl(R.merge[0], R.merge[1], true), sp(R.merge[0])) ] },
+      { name: 'Lanes and automation', rows: laneNames.slice().reverse().map(([nm], i) => { const k = 2 - i; return row(nm, String(R.lanes[0][k]), String(R.lanes[1][k]), dl(R.lanes[0][k], R.lanes[1][k]), sp(R.lanes[0][k], true)); }).concat([
+        row('Merged on first review', R.auto[0] + '%', R.auto[1] + '%', dl(R.auto[0], R.auto[1], false, 'pt'), sp(R.auto[0])),
+        row('Reverted after merge', String(R.rev[0]), String(R.rev[1]), cnt(R.rev[0], R.rev[1]), null)]) },
+      { name: 'Quality', rows: [
+        row('Agent findings you kept', keptPct + '%', R.kept[2] + '%', dl(keptPct, R.kept[2], false, 'pt'), sp(keptPct), R.kept[0] + ' of ' + R.kept[1] + ' findings'),
+        row('Opened with failing checks', R.failing[0] + '%', R.failing[1] + '%', dl(R.failing[0], R.failing[1], true, 'pt'), sp(R.failing[0])) ] },
+      { name: 'Waiting on GitHub', rows: reasonNames.map((l, i) => row(l, String(R.reasons[0][i]), String(R.reasons[1][i]), cnt(R.reasons[0][i], R.reasons[1][i]), null, 'Median hold ' + holds[i])) },
+    ];
+    const wide = s.w >= 760;
+    const seg = (list, cur, key) => list.map(([id, name]) => ({ name, bg: cur === id ? 'var(--card)' : 'transparent', fg: cur === id ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ [key]: id }) }));
+    return {
+      isAnalytics: 'true', isQueueView: undefined,
+      anA: lay === 'a' ? 'true' : undefined, anB: lay === 'b' ? 'true' : undefined,
+            anRanges: seg([['week', 'Week'], ['month', 'Month'], ['quarter', 'Quarter']], rg, 'anRange').map(x => ({ ...x, pick: e => { e.stopPropagation(); x.pick(); this.setState({ dpOpen: false }); } })).concat([{ name: rg === 'custom' ? R.short : 'Custom', bg: rg === 'custom' || s.dpOpen ? 'var(--card)' : 'transparent', fg: rg === 'custom' || s.dpOpen ? 'var(--fg)' : 'var(--fg-muted)', pick: e => { e.stopPropagation(); this.setState(st => ({ dpOpen: !st.dpOpen, dpFrom: st.cFrom || '2024-08-01', dpTo: st.cTo || '2024-08-31', dpPick: 'from', dpView: null })); } }]),
+      dp: this.dpVals(),
+      anWide: wide ? 'true' : undefined, anCols: wide ? 'minmax(0,1fr) 92px 92px 72px 128px' : 'minmax(0,1fr) 72px 72px 56px',
+      an: {
+        title: R.title, rangeLabel: R.rangeLabel, prevLabel: R.prevLabel, nowWord: R.nowWord, prevWord: R.prevWord, nowCol: R.nowCol, prevCol: R.prevCol, sparkHead: R.sparkHead,
+        heroStats, heroSeries,
+        ...(() => { const mx = Math.max(...heroSeries.flatMap(x => x.data)); const raw = mx / 4; const mag = Math.pow(10, Math.floor(Math.log10(raw))); const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(v => v >= raw); const top = step * 4;
+          const hv = s.anHover; const prim = heroSeries[0].data; const avg = prim.reduce((x, y) => x + y, 0) / prim.length;
+          const full = i => R.full ? R.full[i] : (rg === 'quarter' ? 'Week of ' : '') + (labels[i] || lab(n - 1 - i, { month: 'short', day: 'numeric' }));
+          return { heroTicks: [0, 1, 2, 3, 4].map(i => ({ v: Math.round(step * i), pos: (i * 25) + '%', op: i === 0 ? 1 : 0.9 })),
+            hasAvg: undefined, avgPos: (avg / top * 100) + '%', avgV: avg >= 10 ? Math.round(avg) : avg.toFixed(1), avgLabel: 'Average ' + heroSeries[0].label.toLowerCase().replace('this ', '') + ' per ' + (R.weekly ? 'week' : 'day'),
+            heroReadout: hv != null && hv < n ? full(hv) + ' · ' + heroSeries.map(x => x.data[hv] + ' ' + x.label.toLowerCase()).join(' · ') : '',
+            heroLeave: () => this.setState({ anHover: null }),
+            heroCols: labels.map((l, i) => ({ label: hv === i ? (full(i).replace('Week of ', '')) : l, labBg: hv === i ? 'var(--selected-surface)' : 'transparent', labFg: hv === i ? 'var(--link)' : 'var(--fg-subtle)', op: hv == null || hv === i ? 1 : 0.35, enter: () => this.setState({ anHover: i }), tip: R.full ? R.full[i] + ': ' + heroSeries.map(x => x.label + ' ' + x.data[i]).join(', ') : (rg === 'quarter' ? 'Week of ' : '') + (l || lab(n - 1 - i, { month: 'short', day: 'numeric' })) + ': ' + heroSeries.map(x => x.label + ' ' + x.data[i]).join(', '), bars: heroSeries.map(x => ({ h: x.data[i] ? Math.max(4, x.data[i] / top * 100) + '%' : '3px', color: x.data[i] ? x.color : 'var(--border)' })) })),
+            axFrom: full(0).replace('Week of ', ''), axTo: full(n - 1).replace('Week of ', ''),
+            heroAxis: (() => { const dt = i => R.dates ? R.dates[i] : rg === 'quarter' ? (() => { const d = new Date(D); d.setDate(d.getDate() - ((12 - i) * 7 + 6)); return d; })() : (() => { const d = new Date(D); d.setDate(d.getDate() - (n - 1 - i)); return d; })();
+              const pitch = Math.max(heroSeries.length * 16 + (heroSeries.length - 1) * 3, (Math.min(s.w, 1100) - 112) / n); const every = Math.max(1, Math.ceil(28 / pitch));
+              return Array.from({ length: n }, (_, i) => { const d = dt(i), p = i > 0 ? dt(i - 1) : null; const newM = !p || p.getMonth() !== d.getMonth(); const show = i % every === 0 || i === n - 1;
+                return { d: R.monthly ? d.toLocaleDateString('en-US', { month: 'short' }) : show ? String(d.getDate()) : '', m: R.monthly ? (newM && (!p || p.getFullYear() !== d.getFullYear()) ? String(d.getFullYear()) : '') : newM ? d.toLocaleDateString('en-US', { month: 'short' }) : '', fg: hv === i ? 'var(--link)' : 'var(--fg-subtle)' }; }); })(),
+            heroGap: '5px', colMax: (heroSeries.length * 16 + (heroSeries.length - 1) * 3) + 'px' }; })(),
+        heroLegend: heroSeries.map(x => ({ label: x.label, color: x.color })),
+        heroModes: seg([['both', 'Created and merged'], ['created', 'Created'], ['merged', 'Merged']], hmode, 'heroMode'),
+        tiles, days: labels, chartH: 200, chartHs: Math.round(Math.max(280, Math.min(s.w, 1100) - 104) * 140 / 640), donutSize: 132, donutThick: 14, sparkW: 112, sparkH: 28, hFmt: v => v + 'h', waitTicks: 3,
+        ...(() => { const mx = Math.max(...agentW, ...humanW); const step = mx > 6 ? 2 : 1; const top = Math.ceil(mx / step) * step || 1; const tk = Array.from({ length: top / step + 1 }, (_, i) => i * step);
+          const X = i => (n > 1 ? i / (n - 1) * 100 : 50);
+          const pts = d => d.map((v, i) => X(i).toFixed(2) + ',' + (100 - v / top * 100).toFixed(2)).join(' ');
+          const x0 = X(0).toFixed(2), x1 = X(n - 1).toFixed(2);
+          const smooth = d => { const P = d.map((v, i) => [X(i), 100 - v / top * 100]); if (P.length < 2) return ''; let s = 'M' + P[0][0].toFixed(2) + ',' + P[0][1].toFixed(2);
+            const m = P.map((p, i) => { if (i === 0) return (P[1][1] - p[1]) / (P[1][0] - p[0]); if (i === P.length - 1) return (p[1] - P[i - 1][1]) / (p[0] - P[i - 1][0]);
+              const a = (p[1] - P[i - 1][1]) / (p[0] - P[i - 1][0]), b = (P[i + 1][1] - p[1]) / (P[i + 1][0] - p[0]); return a * b <= 0 ? 0 : (a + b) / 2; });
+            for (let i = 0; i < P.length - 1; i++) { const dx = (P[i + 1][0] - P[i][0]) / 3; s += ' C' + (P[i][0] + dx).toFixed(2) + ',' + (P[i][1] + m[i] * dx).toFixed(2) + ' ' + (P[i + 1][0] - dx).toFixed(2) + ',' + (P[i + 1][1] - m[i + 1] * dx).toFixed(2) + ' ' + P[i + 1][0].toFixed(2) + ',' + P[i + 1][1].toFixed(2); }
+            return s; };
+          return { wTicks: tk.map(v => ({ v: v + 'h', pos: (v / top * 100) + '%' })), wAgent: pts(agentW), wHuman: pts(humanW), wCols: labels.map((l, i) => ({ l, left: X(i) + '%', tx: i === 0 ? '0' : i === n - 1 ? '-100%' : '-50%' })).filter(c => c.l),
+            wAgentD: smooth(agentW), wHumanD: smooth(humanW), wAgentArea: x0 + ',100 ' + pts(agentW) + ' ' + x1 + ',100', wHumanArea: x0 + ',100 ' + pts(humanW) + ' ' + x1 + ',100',
+            ...(() => { const wh = s.wHover; const hmF = v => { const m = Math.round(v * 60); return (m >= 60 ? Math.floor(m / 60) + 'h ' : '') + String(m % 60).padStart(m >= 60 ? 2 : 1, '0') + 'm'; };
+              const dayL = i => (R.full ? R.full[i] : (labels[i] || lab(n - 1 - i, { month: 'short', day: 'numeric' }))).replace('Week of ', '');
+              const on = wh != null && wh < n;
+              return { wHasHover: on ? 'true' : undefined, wHX: on ? X(wh) + '%' : '0%', wHA: on ? (agentW[wh] / top * 100) + '%' : '0%', wHH: on ? (humanW[wh] / top * 100) + '%' : '0%',
+                wReadout: on ? dayL(wh) + ' · agent ' + hmF(agentW[wh]) + ' · people ' + hmF(humanW[wh]) : 'Median ' + hmF(agentW.reduce((a, b) => a + b, 0) / n) + ' agent · ' + hmF(humanW.reduce((a, b) => a + b, 0) / n) + ' people',
+                wLeave: () => this.setState({ wHover: null }), wHit: agentW.map((_, i) => ({ enter: () => this.setState({ wHover: i }) })) }; })(), wEndX: x1 + '%', wAgentEnd: (agentW[n - 1] / top * 100) + '%', wHumanEnd: (humanW[n - 1] / top * 100) + '%' }; })(),
+        waitSeries: [{ label: 'Agent', data: agentW, color: C1 }, { label: 'Human', data: humanW, color: C2 }],
+        waitRows: [{ icon: 'bot', color: C1, label: 'Agent sessions', now: hm(R.agent[0]), prev: hm(R.agent[1]), ...dl(R.agent[0], R.agent[1], true) }, { icon: 'user', color: C2, label: 'People', now: hm(R.human[0]), prev: hm(R.human[1]), ...dl(R.human[0], R.human[1], true) }],
+        mergedTotal: String(R.merged[0]),
+        laneDonut: laneNames.map(([label, color], i) => ({ label, value: R.lanes[0][i], color })),
+        ring: (() => { const tot = R.lanes[0].reduce((x, y) => x + y, 0) || 1; let acc = 0; const GAP = 3.2;
+          return laneNames.map(([, color], i) => { const len = R.lanes[0][i] / tot * 100; const seg = Math.max(0.5, len - GAP); const g = { color, dash: seg.toFixed(2) + ' ' + (100 - seg).toFixed(2), off: (-(acc + GAP / 2)).toFixed(2) }; acc += len; return g; }); })(),
+        lanes: laneNames.map(([name, color], i) => { const tot = R.lanes[0].reduce((a, b) => a + b, 0); return { name, now: R.lanes[0][i], prev: R.lanes[1][i], color, share: Math.round(R.lanes[0][i] / tot * 100) + '%', ...dl(R.lanes[0][i], R.lanes[1][i]) }; }),
+        quality,
+        sizes: sizeLabels.map((label, i) => ({ label, now: R.sizes[0][i], prevTip: R.prevCol + ': ' + R.sizes[1][i], pctNow: Math.round(R.sizes[0][i] / smax * 100) + '%', pctPrev: Math.round(R.sizes[1][i] / smax * 100) + '%' })),
+        sizeMed: R.size[0], sizeMedPrev: R.size[1],
+        waitedN: R.reasons[0].reduce((a, b) => a + b, 0), waitedPrev: R.reasons[1].reduce((a, b) => a + b, 0),
+        reasons: reasonNames.map((label, i) => ({ label, now: R.reasons[0][i], prev: R.reasons[1][i], hold: holds[i] })),
+        groups,
+      },
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const queue = PRS.filter(p => p.view === 'queue');
+    const q0 = (s.prQ || '').trim().toLowerCase().replace(/^#/, '');
+    const base = PRS.filter(p => p.view !== 'auto' && p.scope === (s.scope || 'mine') && (p.scope !== 'watching' || this.watched()[p.repo]) && (!s.repo || p.repo === s.repo) && (!q0 || (p.title + ' ' + p.repo + ' ' + p.num + ' ' + p.author + ' ' + p.branch).toLowerCase().includes(q0)));
+    const all = this.list();
+    const PAGE = 10, pages = Math.max(1, Math.ceil(all.length / PAGE)), pg = Math.min(s.pg || 0, pages - 1);
+    const rows = all.slice(pg * PAGE, pg * PAGE + PAGE);
+    const sel = PRS.find(p => p.id === s.sel);
+    const repoNames = [...new Set(PRS.map(p => p.repo))];
+    let sv = {};
+    if (sel) {
+      const lane = this.laneOf(sel);
+      sv = {
+        ref: sel.repo + ' #' + sel.num, title: sel.title, branch: sel.branch, author: sel.author, why: s.lanes[sel.id] ? 'Moved to ' + lane + ' by you. The policy picked ' + sel.lane + '.' : sel.why, brief: sel.brief,
+        laneOpts: ['Quick', 'Medium', 'Deep'].map(n => ({ name: n, bg: n === lane ? 'var(--card)' : 'transparent', fg: n === lane ? 'var(--fg)' : 'var(--fg-muted)',
+          pick: () => this.setState(st => ({ lanes: { ...st.lanes, [sel.id]: n === sel.lane ? undefined : n } })) })),
+        prep: sel.prep.map(([label, val, st]) => ({ label, val, dot: DOT[st] })),
+        hasFindings: sel.findings.length ? 'true' : undefined, findN: sel.findings.length,
+        findings: sel.findings.map(([at, text]) => ({ at, text })),
+        primaryAct: () => { if (lane === 'Deep' && sel.view === 'queue') this.setState({ open: sel.id, tab: 'changes' }); },
+        primary: sel.view === 'auto' ? 'View on GitHub' : sel.view === 'waiting' ? sel.waitAct : lane === 'Deep' ? 'Open review session' : lane === 'Quick' ? 'Approve and merge' : 'Merge',
+        footnote: sel.view === 'waiting' ? sel.block : 'Approves and merges as Jordi Parra (@jordiparra).',
+      };
+    }
+    const overlay = s.w < 1040;
+    const qw = s.w - (sel && !overlay ? 400 : 0);
+    const isWide = qw >= 680;
+    return {
+      asideW: overlay ? 'min(400px, 100%)' : '400px', asidePos: overlay ? 'absolute' : 'relative', asideShadow: overlay ? 'var(--shadow-modal)' : 'none',
+      wide: isWide ? 'true' : undefined, actCol: isWide ? 'auto' : '2 / -1', narrow: isWide ? undefined : 'true',
+      cols: isWide ? '76px minmax(0,1fr) 84px 92px 116px 60px 200px' : '68px minmax(0,1fr) 52px',
+      queueN: queue.length, readyN: base.filter(p => this.canMerge(p) && !(s.merged || {})[p.id]).length, conflictN: base.filter(p => p.conflict && !(s.merged || {})[p.id]).length,
+      oldest: fmtWait(Math.max(0, ...base.map(p => p.wait))),
+      pageTitle: (VIEWS.find(v => v.id === s.view) || VIEWS[0]).title,
+      views: VIEWS.map(v => ({ ...v, on: s.view === v.id ? 'true' : 'false', n: v.id === 'analytics' ? '' : PRS.filter(p => v.id === 'all' ? p.view !== 'auto' : p.view === v.id).length, pick: () => this.setState({ view: v.id, lane: 'All' }) })),
+      repoCount: repoNames.length,
+      repos: [{ id: null, name: 'All repositories', icon: 'layers' }].concat(repoNames.map(r => ({ id: r, name: r, icon: 'folder' }))).map(r => ({ ...r, on: s.repo === r.id ? 'true' : 'false', n: PRS.filter(p => p.view === 'queue' && (!r.id || p.repo === r.id)).length, pick: () => this.setState({ repo: r.id }) })),
+      scopes: SCOPES.map(x => { const on = (s.scope || 'mine') === x.id; return { name: x.name, n: PRS.filter(p => p.view !== 'auto' && p.scope === x.id && (x.id !== 'watching' || this.watched()[p.repo]) && !(s.merged || {})[p.id]).length, bg: on ? 'var(--card)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ scope: x.id, lane: 'All', sel: null, pg: 0 }) }; }),
+      wt: (() => { const w = this.watched(); const tg = name => () => this.setState(st => ({ watched: { ...this.watched(), [name]: !w[name] } }));
+        const openN = name => PRS.filter(p => p.view !== 'auto' && p.repo === name && p.scope === 'watching').length;
+        return { show: (s.scope || 'mine') === 'watching' ? 'true' : undefined, open: s.wtOpen ? 'true' : undefined,
+          toggleOpen: e => { e.stopPropagation(); this.setState(st => ({ wtOpen: !st.wtOpen })); },
+          on: REPOS.filter(r => w[r.name]).map(r => ({ name: r.name, toggle: tg(r.name) })),
+          all: REPOS.map(r => ({ full: r.org + '/' + r.name, sub: r.role + ' · ' + r.commits + ' commits by you' + (openN(r.name) ? ' · ' + openN(r.name) + ' open' : ''), onS: w[r.name] ? 'true' : 'false', track: w[r.name] ? 'var(--primary)' : 'var(--border)', knob: w[r.name] ? 'flex-end' : 'flex-start', toggle: tg(r.name) })) }; })(),
+      scopeDesc: SCOPES.find(x => x.id === (s.scope || 'mine')).desc,
+      lanes: ['All', 'Deep', 'Medium', 'Quick'].map(n => ({ name: n, on: s.lane === n ? 'true' : 'false', n: base.filter(p => n === 'All' || this.laneOf(p) === n).length, pick: () => this.setState({ pg: 0, lane: n }) })),
+      rows: rows.map(p => {
+        const lane = this.laneOf(p); const on = p.id === s.sel;
+        return { title: p.title, ref: p.repo + ' #' + p.num, author: p.author, authorIcon: p.agent ? 'bot' : 'user', add: p.add.toLocaleString('en-US'), del: p.del.toLocaleString('en-US'),
+          lane, laneBg: lane === 'Deep' ? 'var(--fg)' : 'var(--hover-surface)', laneFg: lane === 'Deep' ? 'var(--background)' : 'var(--fg)',
+          ck: CK[p.ck][0], ckDot: CK[p.ck][1], wait: fmtWait(p.wait), waitFg: p.wait >= 12 ? 'var(--fg)' : 'var(--fg-muted)',
+          hasNote: p.note ? 'true' : undefined, note: p.note, noteFg: p.noteFg,
+          cf: p.conflict ? 'Conflicts' : 'No conflicts', cfDot: p.conflict ? 'var(--danger)' : 'var(--success)', cfFg: p.conflict ? 'var(--fg)' : 'var(--fg-muted)',
+          isMerged: (s.merged || {})[p.id] ? 'true' : undefined, notMerged: (s.merged || {})[p.id] ? undefined : 'true',
+          mergeDis: !this.canMerge(p), mergeTip: this.mergeWhy(p),
+          showMerge: !(s.merged || {})[p.id] && s.confirmId !== p.id ? 'true' : undefined, confirming: !(s.merged || {})[p.id] && s.confirmId === p.id ? 'true' : undefined,
+          merge: e => { e.stopPropagation(); if (!this.canMerge(p)) return; this.setState({ confirmId: p.id }); clearTimeout(this._cm); this._cm = setTimeout(() => { if (this.state.confirmId === p.id) this.setState({ confirmId: null }); }, 5000); },
+          cancelMerge: e => { e.stopPropagation(); this.setState({ confirmId: null }); },
+          confirmMerge: e => { e.stopPropagation(); this.setState(st => ({ confirmId: null, merged: { ...(st.merged || {}), [p.id]: true } })); },
+          onS: on ? 'true' : 'false', bg: on ? 'var(--selected-surface)' : 'transparent', pick: () => this.setState({ sel: p.id, open: p.id, tab: 'brief' }),
+          goChanges: e => { e.stopPropagation(); this.setState({ sel: p.id, open: p.id, tab: 'changes' }); },
+          sessLabel: 'Open review session',
+          goSession: e => { e.stopPropagation(); openSess(p); },
+          goGh: e => { e.preventDefault(); e.stopPropagation(); } };
+      }),
+      empty: rows.length ? undefined : 'true',
+      prQ: s.prQ || '', prQOn: s.prQ ? 'true' : undefined,
+      onPrQ: e => this.setState({ prQ: e.target.value, pg: 0 }), prQClear: () => this.setState({ prQ: '', pg: 0 }),
+      prQKey: e => { if (e.key === 'Escape') { this.setState({ prQ: '', pg: 0 }); e.target.blur(); } },
+      hasPages: all.length ? 'true' : undefined,
+      pgRange: (pg * PAGE + 1) + '–' + Math.min(all.length, pg * PAGE + PAGE) + ' of ' + all.length,
+      pgPrevOff: pg === 0, pgNextOff: pg >= pages - 1,
+      pgPrev: () => this.setState({ pg: Math.max(0, pg - 1) }), pgNext: () => this.setState({ pg: Math.min(pages - 1, pg + 1) }),
+      emptyTitle: s.prQ ? 'No pull requests match "' + s.prQ + '"' : (s.scope || 'mine') === 'watching' && !Object.values(this.watched()).some(Boolean) ? 'You are not watching any repositories' : 'Nothing in this view',
+      emptySub: (s.scope || 'mine') === 'watching' ? 'Pick repositories in Manage repositories. Their open pull requests show up here.' : 'Pull requests opened by your sessions or teammates land here with a lane already picked.',
+      hasSel: undefined,
+      ...this.analyticsVals(), ...this.accountVals(), s: sv,
+      ...this.detailVals(),
+      openDiff: () => sel && this.setState({ open: sel.id, tab: 'changes' }),
+      closeSel: () => this.setState({ sel: null }), reviewNext: () => this.next(),
+    };
+  }
+}
+</script>
+</body>
+</html>

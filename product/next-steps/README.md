@@ -13,7 +13,7 @@ there.
 |---------|----------|-------|
 | 0.1 | [`../versions/mvp/`](../versions/mvp/README.md) | The MVP: hosts you own, sessions as worktrees with a tmux terminal, Claude Code first |
 | 0.2 | [Git and GitHub](0.2-git-and-github.md) | Git, aka GitHub support: diff, review, commit, push and PRs from the console |
-| 0.3 | [Kanban](0.3-kanban.md) | A kanban board linked to projects and everything else: sessions, branches, PRs |
+| 0.3 | — | Kanban moved into the MVP as Plan ([`../versions/mvp/17-plan.md`](../versions/mvp/17-plan.md)) | Plan: a task board with goals, tasks that start or link sessions, and a calendar beside Google Calendar |
 | 0.4 | [Slack](0.4-slack.md) | The Slack integration |
 | 0.5 | [Mobile](0.5-mobile.md) | Mobile |
 | 0.6 | [MCP, CLI and agent](0.6-mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |

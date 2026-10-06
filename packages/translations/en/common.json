@@ -17,5 +17,27 @@
     "year": "{{count}}y"
   },
   "dismiss": "Dismiss",
-  "breadcrumb": "Breadcrumb"
+  "breadcrumb": "Breadcrumb",
+  "dateField": {
+    "none": "No date",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "clear": "Clear",
+    "choose": "Choose a date"
+  },
+  "timeField": {
+    "none": "No time",
+    "hour": "Hour",
+    "minute": "Minute",
+    "clear": "Clear"
+  },
+  "drag": {
+    "instructions": "To pick up an item, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+    "pickedUp": "Picked up {{name}}.",
+    "over": "{{name}} is over {{target}}.",
+    "nowhere": "{{name}} is not over a place it can go.",
+    "dropped": "{{name}} was dropped on {{target}}.",
+    "droppedNowhere": "{{name}} was dropped.",
+    "cancelled": "Moving {{name}} was cancelled."
+  }
 }

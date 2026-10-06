@@ -29,4 +29,5 @@ type SessionStepPayload struct {
 	Step       SessionStep       `json:"step"`
 	Status     SessionStepStatus `json:"status"`
 	DurationMs *int64            `json:"durationMs,omitempty"`
+	Download   bool              `json:"download,omitempty"`
 }

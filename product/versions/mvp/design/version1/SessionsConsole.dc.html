@@ -9,13 +9,16 @@
 <x-dc>
 <helmet><script src="./ds-base.js"></script>
 <link rel="stylesheet" href="./console.css">
+<script src="./rail-order.js"></script>
 </helmet>
 <div data-bare="{{ bare }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
 <button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations<span class="op-nav__count">{{ routineTotal }}</span></span></button>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
 </nav>
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
 <div class="op-sidebar__head">
@@ -121,19 +124,22 @@
 </div>
 <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ g.items }}" as="r" hint-placeholder-count="2">
+<div class="op-srow" data-menu="{{ r.menuS }}">
 <button class="op-session op-rrow" type="button" data-active="{{ r.active }}" data-state="{{ r.state }}" data-paused="{{ r.paused }}" onClick="{{ r.select }}">
 <span class="op-session__glyph" style="display:flex"><sc-if value="{{ r.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></sc-if><sc-if value="{{ r.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:13px;height:13px;filter:var(--brand-glyph-filter,none);opacity:.8"></sc-if></span>
 <span class="op-session__name">{{ r.name }}</span>
-<span class="op-session__age" style="opacity:1">{{ r.meta }}</span>
+<span class="op-session__age" style="opacity:1;display:flex;align-items:center;gap:6px"><sc-if value="{{ r.hasLast }}"><span title="{{ r.lastLabel }}" style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ r.lastColor }}"></span></sc-if>{{ r.meta }}</span>
 </button>
-<sc-if value="{{ r.expanded }}">
-<div class="op-rruns">
-<sc-for list="{{ r.runs }}" as="u" hint-placeholder-count="3">
-<button class="op-rrun" type="button" key="{{ u.key }}" data-state="{{ u.state }}" data-active="{{ u.active }}" title="{{ u.stateLabel }}" onClick="{{ u.open }}"><span class="op-rrun__dot"></span><span class="op-rrun__title">{{ u.title }}</span><span class="op-rrun__ago">{{ u.ago }}</span></button>
-</sc-for>
-<sc-if value="{{ r.noRuns }}"><p class="op-rrun__none">No runs yet.</p></sc-if>
+<button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Automation actions" aria-haspopup="menu" onClick="{{ r.toggleMenu }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button>
+<sc-if value="{{ r.menuOpen }}"><div class="op-menu" role="menu" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 2px);right:4px;left:auto;bottom:auto;z-index:60;min-width:188px">
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.runNow }}"><span class="op-menu__label-text">Run now</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.edit }}"><span class="op-menu__label-text">Edit</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.togglePause }}"><span class="op-menu__label-text">{{ r.pauseLabel }}</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.duplicate }}"><span class="op-menu__label-text">Duplicate</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ r.remove }}"><span class="op-menu__label-text">Delete</span></button>
+</div></sc-if>
 </div>
-</sc-if>
 </sc-for>
 <sc-if value="{{ g.empty }}"><p class="op-pempty">No automations yet. <button type="button" onClick="{{ g.newHere }}">Create one</button></p></sc-if>
 </sc-if>
@@ -706,10 +712,7 @@ Waiting for the host to connect…
 <sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
 <div class="op-newsession">
 <div class="op-newsession__inner" data-composer="tabbed">
-<div>
-<h1 class="op-newsession__title">New session</h1>
-<p class="op-newsession__sub">{{ newSub }}</p>
-</div>
+<h1 style="margin:0;text-align:center;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:var(--fg);text-wrap:balance">Ready when you are.</h1>
 
 <div class="op-cstack">
 <div class="op-chiprow">
@@ -740,7 +743,7 @@ Waiting for the host to connect…
 <input type="text" placeholder="Search hosts…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
 </div>
 <sc-for list="{{ hostOptions }}" as="h" hint-placeholder-count="3">
-<button class="op-option" type="button" role="option" data-selected="{{ h.selected }}" onClick="{{ h.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
+<button class="op-option" type="button" role="option" data-selected="{{ h.selected }}" aria-disabled="{{ h.off }}" onClick="{{ h.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35;opacity:{{ h.opacity }};cursor:{{ h.cursor }}">
 <span class="op-option__stack"><span>{{ h.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ h.desc }}</span></span>
 <span class="op-option__check">✓</span>
 </button>
@@ -964,7 +967,7 @@ Waiting for the host to connect…
 </div>
 </sc-if>
 
-<button class="op-composer__send" type="button" aria-label="Start session" onClick="{{ startSession }}">
+<button class="op-composer__send" type="button" aria-label="Start session" title="{{ sendTitle }}" disabled="{{ sendOff }}" onClick="{{ startSession }}" style="opacity:{{ sendOpacity }}">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
 </button>
 </div>
@@ -997,7 +1000,7 @@ Waiting for the host to connect…
 <sc-for list="{{ bootSteps }}" as="b" hint-placeholder-count="4">
 <div class="op-step" data-state="{{ b.state }}">
 <span class="op-step__rail"><span class="op-step__mark">{{ b.mark }}</span><span class="op-step__line"></span></span>
-<span class="op-step__body"><span class="op-step__label">{{ b.label }}</span><span class="op-step__meta">{{ b.meta }}</span></span>
+<span class="op-step__body"><span class="op-step__label">{{ b.label }}</span><span class="op-step__meta">{{ b.meta }}</span><sc-if value="{{ b.note }}"><span style="display:block;max-width:340px;margin-top:6px;font-family:var(--font-sans);font-size:12.5px;line-height:1.45;letter-spacing:-0.004em;color:var(--fg-muted);text-wrap:pretty;animation:op-effort-in 220ms cubic-bezier(.16,1,.3,1)">{{ b.note }}</span></sc-if></span>
 </div>
 </sc-for>
 </div>
@@ -1015,8 +1018,19 @@ Waiting for the host to connect…
 <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:{{ framePad }};transition:padding 220ms cubic-bezier(.4,0,.2,1)">
 <div style="flex:1;min-height:0;width:100%;max-width:{{ frameMax }};margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card);transition:max-width 220ms cubic-bezier(.4,0,.2,1)">
 
-<div class="op-term" style="flex:1;min-height:0">
-<div class="op-term__scroll" ref="{{ termScrollRef }}">
+<div style="flex:none;display:flex;align-items:center;gap:10px;min-width:0;height:46px;padding:0 12px 0 14px;border-bottom:1px solid var(--border-subtle)">
+<sc-if value="{{ fromTask }}">
+<a class="op-btn op-btn--ghost op-btn--sm" href="{{ taskHref }}" title="Back to task" style="flex:none;max-width:240px;gap:6px;text-decoration:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="13" hint-size="13px,13px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ taskTitle }}</span></a>
+<span style="flex:none;color:var(--fg-subtle)">/</span>
+</sc-if>
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ paneDot }}"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:13px">{{ attachName }}</span>
+<span style="flex:none;font-size:12.5px;color:var(--fg-muted)">{{ paneState }}</span>
+<span style="flex:1"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ paneMeta }}</span>
+</div>
+<div class="op-term" style="flex:1;min-height:0;position:relative">
+<div class="op-term__scroll" ref="{{ termScrollRef }}" style="opacity:{{ termDim }};transition:opacity 220ms cubic-bezier(.4,0,.2,1)">
 <sc-for list="{{ feed }}" as="f" hint-placeholder-count="4">
 <sc-if value="{{ f.you }}">
 <div class="op-term__you"><span class="op-term__youchev">❯</span><span class="op-term__youtext">{{ f.text }}</span></div>
@@ -1042,16 +1056,71 @@ Waiting for the host to connect…
 </div>
 <div class="op-term__prompt">
 <span class="op-term__chev">❯</span>
-<input class="op-term__input" placeholder="{{ termPlaceholder }}" value="{{ termDraft }}" onChange="{{ setTermDraft }}" onKeyDown="{{ termKey }}">
+<input class="op-term__input" placeholder="{{ termPlaceholder }}" value="{{ termDraft }}" onChange="{{ setTermDraft }}" onKeyDown="{{ termKey }}" disabled="{{ termLocked }}">
 </div>
+<sc-if value="{{ statusNormal }}" hint-placeholder-val="{{ true }}">
 <div class="op-term__status">
-<span class="op-term__statusitem op-link" data-link="{{ linkState }}"><span class="op-link__dot"></span><span class="op-link__label" key="{{ linkState }}">{{ linkLabel }}</span></span>
+<span class="op-term__statusitem op-link" data-link="{{ linkState }}"><span class="op-link__dot"></span><span class="op-link__label" key="{{ linkLabel }}">{{ linkLabel }}</span></span>
 <span class="op-term__statusitem">6% used · 4h 2m</span>
 <span class="op-term__statusitem">51% used · 4d 3h</span>
 <span class="op-term__statusitem">763.4 MB</span>
 <span class="op-term__statusitem">bypass permissions on</span>
 <span class="op-term__statusitem">1 host</span>
 </div>
+</sc-if>
+<sc-if value="{{ offBar }}">
+<div class="op-term__status" role="status" style="gap:10px;padding:0 6px 0 20px;background:color-mix(in srgb, var(--term-warning) 9%, var(--term-bg));color:var(--term-fg);font-family:var(--font-sans);font-size:12px;letter-spacing:-0.004em;overflow:hidden">
+<span class="op-link" data-link="{{ bandLink }}" style="flex:none"><span class="op-link__dot"></span></span>
+<span style="flex:none;font-weight:500" key="{{ bandTitle }}" class="op-link__label">{{ bandTitle }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--term-dim)">{{ bandSub }}</span>
+<sc-if value="{{ bandElapsed }}"><span style="flex:none;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--term-dim)">{{ bandElapsed }}</span></sc-if>
+<sc-if value="{{ bandCanFix }}"><button type="button" aria-expanded="{{ fixOpenS }}" onClick="{{ toggleFix }}" style="flex:none;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px 0 10px;border:0;border-radius:980px;background:transparent;color:var(--term-fg);font:inherit;font-weight:500;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--hover-surface)">How to fix<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ fixIcon }}" size="13" hint-size="13px,13px"></x-import></button></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ fixOpen }}">
+<div style="position:absolute;left:0;right:0;bottom:28px;z-index:5;display:flex;flex-direction:column;gap:14px;padding:16px 20px 18px;background:var(--term-bg);border-top:1px solid var(--term-border);font-family:var(--font-sans);color:var(--term-fg);animation:op-effort-in 140ms cubic-bezier(.16,1,.3,1)">
+<p style="margin:0;max-width:62ch;font-size:13.5px;line-height:1.5;letter-spacing:-0.006em;text-wrap:pretty">Scrollback is kept and input is paused. The session picks up on its own the moment the runner on {{ sessHost }} reconnects — nothing to press here.</p>
+<div style="display:flex;flex-direction:column;gap:10px;max-width:560px">
+<sc-for list="{{ offCmds }}" as="c" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12.5px;color:var(--term-dim)">{{ c.lead }}</span>
+<div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px">
+<span style="flex:none;color:var(--term-dim)">$</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.cmd }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ c.aria }}" title="{{ c.aria }}" onClick="{{ c.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ c.icon }}" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+</div>
+</sc-for>
+</div>
+<a href="./Settings.dc.html?section=hosts" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--link);text-decoration:none" style-hover="text-decoration:underline">Settings → Hosts<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></a>
+</div>
+</sc-if>
+<sc-if value="{{ offCard }}">
+<div style="position:absolute;top:0;left:0;right:0;bottom:28px;z-index:5;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none">
+<div role="status" style="pointer-events:auto;width:100%;max-width:420px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:22px 24px 20px;background:var(--card);border:1px solid var(--border);border-radius:18px;font-family:var(--font-sans);color:var(--fg);animation:op-effort-in 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--term-dim)"><span class="op-link" data-link="{{ bandLink }}"><span class="op-link__dot"></span></span>{{ cardEyebrow }}</span>
+<h2 key="{{ cardTitle }}" class="op-link__label" style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.016em;line-height:1.3">{{ cardTitle }}</h2>
+<p style="margin:0;font-size:13.5px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ cardBody }}</p>
+</div>
+<sc-if value="{{ cardFix }}">
+<div style="display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid var(--border-subtle)">
+<sc-for list="{{ offCmds }}" as="c" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12.5px;color:var(--fg-muted)">{{ c.lead }}</span>
+<div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px">
+<span style="flex:none;color:var(--fg-subtle)">$</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.cmd }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ c.aria }}" title="{{ c.aria }}" onClick="{{ c.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ c.icon }}" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+</div>
+</sc-for>
+<a href="./Settings.dc.html?section=hosts" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:12.5px;color:var(--link);text-decoration:none" style-hover="text-decoration:underline">Settings → Hosts<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></a>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
 </div>
 </div>
 </div>
@@ -1095,9 +1164,9 @@ Waiting for the host to connect…
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;emptyAccount&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sessions&quot;,&quot;routines&quot;],&quot;default&quot;:&quot;sessions&quot;,&quot;tsType&quot;:&quot;'sessions' | 'routines'&quot;,&quot;section&quot;:&quot;State&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;emptyAccount&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sessions&quot;,&quot;routines&quot;],&quot;default&quot;:&quot;sessions&quot;,&quot;tsType&quot;:&quot;'sessions' | 'routines'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostLink&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;reconnecting&quot;,&quot;offline&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;'live' | 'reconnecting' | 'offline'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;offlineStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bar&quot;,&quot;card&quot;],&quot;default&quot;:&quot;bar&quot;,&quot;tsType&quot;:&quot;'bar' | 'card'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;firstClone&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Host link&quot;}}">
 const ALL = [
-  { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus', active: 'true' },
+  { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus' },
   { name: 'nightly ingest', state: 'running', age: '9m', mins: 9, repo: 'atlas', agent: 'claude-code', host: 'fable' },
   { name: 'invoice triage', state: 'waiting', age: '18m', mins: 18, repo: 'atlas', agent: 'codex', host: 'optimus' },
   { name: 'XRP Mobile API cleanup', state: 'waiting', age: '3h', mins: 180, repo: 'xrp-mobile', agent: 'opencode', host: 'mac-studio' },
@@ -1115,9 +1184,10 @@ const PROJECT_SEED = [
   { id: 'mobile', name: 'XRP Mobile', repos: [{ repo: 'xrp-mobile', base: 'main', def: true }], host: 'optimus', agent: 'claude-code',
     instructions: 'Run pnpm test before every commit. Never touch packages/legacy-wallet.' },
   { id: 'atlas', name: 'Atlas', repos: [{ repo: 'atlas', base: 'main', def: true }, { repo: 'flama-ai', base: 'main', def: false }], host: 'fable', agent: 'claude-code', instructions: '' },
+  { id: 'opp', name: 'Oppenheimer', repos: [{ repo: 'oppenheimer', base: 'main', def: true }, { repo: 'runner', base: 'main', def: true }], host: 'mac-studio', agent: 'claude-code', instructions: '' },
   { id: 'web', name: 'Client sites', repos: [{ repo: 'flama-ai', base: 'main', def: true }, { repo: 'adri-rodriguez', base: 'main', def: true }, { repo: 'xrp-mobile', base: 'main', def: false }], host: 'optimus', agent: 'codex', instructions: '' },
 ];
-const REPO_PROJECT = { 'xrp-mobile': 'mobile', atlas: 'atlas', 'flama-ai': 'web', 'adri-rodriguez': 'web' };
+const REPO_PROJECT = { 'xrp-mobile': 'mobile', atlas: 'atlas', 'flama-ai': 'web', 'adri-rodriguez': 'web', oppenheimer: 'opp', runner: 'opp' };
 
 const PROJECTS = [
   { value: 'all', label: 'All repositories' },
@@ -1642,8 +1712,34 @@ class Component extends DCLogic {
   patchDraft(patch) { this.setState(st => ({ draft: { ...st.draft, ...patch } })); }
 
   componentDidMount() {
+    this.initDrop();
+    this.initLink();
     if (this.props.page === 'routines') this.setState({ section: 'routines', view: 'routine' });
     else if (this.props.emptyAccount) this.setState({ view: 'new', session: null });
+    // Deep link from Plan: ?session=<name>&state=<state>&meta=<agent · model · repo>
+    const dq = new URLSearchParams(window.location.search);
+    if (dq.get('session') && this.props.page !== 'routines') {
+      const name = dq.get('session'), sst = dq.get('state') || 'running', repo = dq.get('repo') || 'xrp-mobile', qHost = dq.get('host') || 'optimus', isReview = !!dq.get('review');
+      const known = ALL.some(x => x.name === name);
+      const prompt = dq.get('prompt') || name;
+      const tail = isReview
+        ? [{ text: 'Checked out ' + (dq.get('branch') || 'the branch') + ' on ' + qHost + '.' }].concat((dq.get('checks') || '').split('|').filter(Boolean).map(t => ({ text: '✓ ' + t, tone: 'ok' }))).concat((dq.get('notes') || '').split('|').filter(Boolean).map(t => ({ text: '• ' + t }))).concat([{ text: 'Ready. Ask me about the change, or tell me what to check.' }])
+        : sst === 'waiting'
+        ? [{ text: 'Plan ready. Two approaches fit; which do you want?' }, { text: '  1. Patch the existing module and keep the public API' }, { text: '  2. Replace it behind a feature flag' }]
+        : sst === 'failed' ? [{ text: 'Tests failed in 2 files. Stopped before committing.', tone: 'err' }]
+        : [{ text: 'Working on it. Edited 3 files so far.' }];
+      this.setState(s => ({
+        view: 'terminal', open: null, linking: true,
+        session: { label: name, state: sst, meta: dq.get('meta') || '' },
+        fromTask: dq.get('task') ? { id: dq.get('task'), title: dq.get('taskTitle') || 'Task' } : null,
+        mine: known || s.mine.some(x => x.name === name) ? s.mine : [{ name, state: sst === 'running' || sst === 'waiting' || sst === 'failed' ? sst : 'idle', age: 'now', mins: 0, repo, agent: 'claude-code', host: qHost, project: REPO_PROJECT[repo] }].concat(s.mine),
+        feed: known && name.indexOf('PR #121') === 0 ? s.feed : [
+          { you: 'true', text: prompt },
+          { agent: 'true', lines: (isReview ? [] : [{ text: 'Reading ' + repo + ' and the files the prompt mentions.' }]).concat(tail) },
+        ],
+      }));
+      if (this.runAttach) this.runAttach();
+    }
     this._away = () => {
       const { open, filterOpen, modelOpen, accountOpen, permOpen, effortOpen } = this.state;
       if (this.state.sessionMenu) this.setState({ sessionMenu: null });
@@ -1714,7 +1810,50 @@ class Component extends DCLogic {
     this._at4 = setTimeout(() => this.setState({ linking: false }), 1400);
   }
 
+  initDrop() {
+    const ov = document.createElement('div');
+    ov.setAttribute('aria-hidden', 'true');
+    ov.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;opacity:0;transition:opacity 140ms cubic-bezier(.4,0,.2,1);box-sizing:border-box;border:3px solid var(--primary);border-radius:18px;background:color-mix(in srgb,var(--primary) 7%,transparent);display:flex;align-items:center;justify-content:center';
+    ov.innerHTML = '<span style="padding:8px 16px;border-radius:980px;background:var(--primary);color:#fff;font-size:14px;font-weight:500">Drop to attach</span>';
+    document.body.appendChild(ov);
+    let n = 0;
+    const has = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') !== -1;
+    const show = v => {
+      if (v) {
+        const t = document.querySelector('.op-newsession') || document.querySelector('.op-term');
+        if (!t) { ov.style.opacity = '0'; return; }
+        const r = t.getBoundingClientRect(), pad = -8;
+        Object.assign(ov.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' });
+      }
+      ov.style.opacity = v ? '1' : '0';
+    };
+    this._dz = {
+      ov,
+      enter: e => { if (!has(e)) return; e.preventDefault(); n++; show(true); },
+      over: e => { if (has(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } },
+      leave: e => { if (!has(e)) return; n = Math.max(0, n - 1); if (!n) show(false); },
+      drop: e => {
+        if (!has(e)) return;
+        e.preventDefault(); n = 0; show(false);
+        const names = Array.from(e.dataTransfer.files || []).map(f => f.name);
+        if (!names.length) return;
+        const st = this.state;
+        if (st.view === 'new') this.setState(s => ({ files: s.files.concat(names) }));
+        else {
+          const k = st.view === 'terminal' ? 'termDraft' : 'runDraft';
+          this.setState(s => ({ [k]: ((s[k] || '') + (s[k] ? ' ' : '') + names.map(x => '@' + x).join(' ')) }));
+        }
+      },
+    };
+    [['dragenter', 'enter'], ['dragover', 'over'], ['dragleave', 'leave'], ['drop', 'drop']].forEach(([t, k]) => window.addEventListener(t, this._dz[k]));
+  }
+
   componentWillUnmount() {
+    clearInterval(this._linkTick); clearTimeout(this._lk1); clearTimeout(this._lk2); clearTimeout(this._cpy);
+    if (this._dz) {
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((t, i) => window.removeEventListener(t, this._dz[['enter', 'over', 'leave', 'drop'][i]]));
+      this._dz.ov.remove();
+    }
     clearTimeout(this._at4);
     document.removeEventListener('click', this._away);
     document.removeEventListener('click', this._rAway);
@@ -1816,7 +1955,82 @@ class Component extends DCLogic {
       requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
     }
   }
+  // Host link. The runner dials out to us, so the console can only wait for
+  // it: offline holds until the runner is back, then a short catch-up phase
+  // replays missed output before the pane goes live again.
+  initLink() {
+    if ((this.props.hostLink || 'live') === 'offline') this.setState({ offAt: Date.now() - 134000 });
+    this._linkTick = setInterval(() => { if ((this.props.hostLink || 'live') === 'offline') this.forceUpdate(); }, 1000);
+  }
+  syncLink(prev) {
+    const was = (prev && prev.hostLink) || 'live', now = this.props.hostLink || 'live';
+    if (was === now) return;
+    clearTimeout(this._lk1); clearTimeout(this._lk2);
+    if (now === 'offline') { this.setState({ offAt: Date.now() - 134000, linkPhase: null }); return; }
+    if (was === 'offline') {
+      this.setState({ linkPhase: 'resync', fixOpen: false });
+      this._lk1 = setTimeout(() => this.setState({ linkPhase: 'restored' }), 1600);
+      this._lk2 = setTimeout(() => this.setState({ linkPhase: null }), 3800);
+    }
+  }
+  sessHostId() { const s = this.state.session; return (s && s.host) || 'optimus'; }
+  offlineHosts() {
+    const out = ['fable'];
+    if ((this.props.hostLink || 'live') === 'offline') out.push(this.sessHostId());
+    return out;
+  }
+  copyCmd(key, text) {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    this.setState({ cmdCopied: key });
+    clearTimeout(this._cpy);
+    this._cpy = setTimeout(() => this.setState({ cmdCopied: null }), 1600);
+  }
+  linkVals() {
+    const st = this.state, hl = this.props.hostLink || 'live', ph = st.linkPhase;
+    const hf = HOST_FILTER.find(o => o.value === this.sessHostId());
+    const h = hf ? hf.label : 'the host';
+    const mode = hl === 'offline' ? 'offline' : ph ? ph : (hl === 'reconnecting' || st.linking) ? 'blip' : 'live';
+    const card = this.props.offlineStyle === 'card';
+    const secs = Math.max(0, Math.floor((Date.now() - (st.offAt || Date.now())) / 1000));
+    const elapsed = secs < 60 ? secs + 's' : Math.floor(secs / 60) + 'm ' + String(secs % 60).padStart(2, '0') + 's';
+    const offBar = !card && (mode === 'offline' || mode === 'resync' || mode === 'restored');
+    const offCard = card && (mode === 'offline' || mode === 'resync');
+    const cmd = (key, lead, text) => ({ key, lead, cmd: text, aria: st.cmdCopied === key ? 'Copied' : 'Copy command',
+      icon: st.cmdCopied === key ? 'check' : 'copy', copy: e => { e.stopPropagation(); this.copyCmd(key, text); } });
+    const fixOpen = !card && mode === 'offline' && st.fixOpen;
+    return {
+      sessHost: h,
+      statusNormal: offBar ? undefined : 'true',
+      offBar: offBar ? 'true' : undefined,
+      offCard: offCard ? 'true' : undefined,
+      linkState: mode === 'offline' ? 'offline' : (mode === 'blip' || mode === 'resync') ? 'reconnecting' : 'live',
+      linkLabel: mode === 'offline' ? 'Host offline' : mode === 'blip' ? 'Reconnecting to ' + h + '…' : mode === 'resync' ? 'Catching up on ' + h + '…' : mode === 'restored' ? 'Reconnected' : 'Live',
+      termPlaceholder: mode === 'offline' ? 'Read-only while ' + h + ' is offline' : mode === 'resync' ? 'Catching up — input opens once live' : mode === 'blip' ? 'Reconnecting — input sends once live' : 'Ask the agent, or run a command',
+      termLocked: mode === 'offline' || mode === 'resync',
+      termDim: offCard ? (mode === 'offline' ? 0.28 : 0.6) : 1,
+      bandLink: mode === 'offline' ? 'offline' : mode === 'resync' ? 'reconnecting' : 'live',
+      bandTitle: mode === 'offline' ? h + ' is offline' : mode === 'resync' ? 'Runner is back' : 'Reconnected',
+      bandSub: mode === 'offline' ? 'Reconnects on its own when the runner is back' : mode === 'resync' ? 'Catching up on output from ' + h + '…' : 'Scrollback is up to date',
+      bandElapsed: mode === 'offline' ? elapsed : '',
+      bandCanFix: mode === 'offline' ? 'true' : undefined,
+      fixOpen: fixOpen ? 'true' : undefined,
+      fixOpenS: fixOpen ? 'true' : 'false',
+      fixIcon: fixOpen ? 'chevron-down' : 'chevron-up',
+      toggleFix: e => { e.stopPropagation(); this.setState(s => ({ fixOpen: !s.fixOpen })); },
+      cardEyebrow: mode === 'offline' ? 'offline · ' + elapsed : 'reconnecting',
+      cardTitle: mode === 'offline' ? h + ' is offline' : 'Runner is back',
+      cardBody: mode === 'offline'
+        ? 'The runner lost its link to Oppenheimer. Scrollback is kept, and this session reconnects on its own as soon as the runner is back.'
+        : 'Catching up on output from ' + h + '. Input opens once the stream is live.',
+      cardFix: mode === 'offline' ? 'true' : undefined,
+      offCmds: [
+        cmd('install', 'If it stays offline, reinstall and start the runner on ' + h + ':', 'oppenheimer-runner install'),
+        cmd('status', 'To see what went wrong:', 'oppenheimer-runner status'),
+      ],
+    };
+  }
   componentDidUpdate(prev) {
+    this.syncLink(prev);
     if (this.props.page !== 'routines' && this.props.emptyAccount && !(prev && prev.emptyAccount) && this.state.view !== 'new') this.setState({ view: 'new', session: null });
     this.syncEffort();
     this.pinTerm();
@@ -2193,9 +2407,13 @@ class Component extends DCLogic {
           active: selR && selR.id === x.id ? 'true' : 'false',
           meta: rw.st === 'running' ? 'Running' : rw.st === 'paused' ? 'Paused' : rw.nextRel ? relShort(nextFor(x) - now) : runs.length ? String(runs.length) : '',
           select: e => { e.stopPropagation(); this.setState(s => ({ selRun: null, view: 'routine', section: 'routines', selR: s.selR === x.id && s.view === 'routine' ? null : x.id, runPage: 0, histHover: null, rMenu: null })); },
-          expanded: selR && selR.id === x.id ? 'true' : undefined,
-          runs: runs.slice(0, 6).map(u => ({ key: u.key, state: u.state, stateLabel: stL[u.state], title: u.title, ago: ago(u.t), active: st.selRun === u.key ? 'true' : 'false', open: openRun(u.key) })),
-          noRuns: runs.length ? undefined : 'true' };
+          ...(() => {
+            const sk = 'side:' + x.id, last = runs[0];
+            return { edit: rw.edit, runNow: rw.runNow, togglePause: rw.togglePause, pauseLabel: rw.pauseLabel, duplicate: rw.duplicate, remove: rw.remove,
+              menuOpen: menu === sk ? 'true' : undefined, menuS: menu === sk ? 'true' : 'false', toggleMenu: tog(sk),
+              hasLast: last ? 'true' : undefined, lastLabel: last ? 'Last run: ' + stL[last.state].toLowerCase() : '',
+              lastColor: last ? (last.state === 'failed' ? 'var(--danger)' : last.state === 'running' ? 'var(--success)' : 'var(--fg-subtle)') : 'transparent' };
+          })() };
       });
       const open = !!rq || !st.rCollapsed[p.id];
       return { key: p.id, name: p.name, count: items.length, items, open: open ? 'true' : undefined, openS: open ? 'true' : 'false',
@@ -2262,8 +2480,7 @@ class Component extends DCLogic {
             if (thinking) out.push({ pending: 'true' });
             return out;
           };
-          const head = [{ out: 'true', lines: [T('opp automation run · ' + x.name, 'dim'), T('trigger: ' + tr.ev.kind + (tr.ev.ref ? ' · ' + tr.ev.ref : ''), 'dim'), T('branch: opp/' + runSel.key.slice(-6), 'dim')] },
-            { you: 'true', text: tr.prompt || 'Run the automation.' }];
+          const head = [{ you: 'true', text: tr.prompt || 'Run the automation.' }];
           let feed = head.concat(block(tr.steps, tr.text, runSel.state === 'running'));
           if (tr.link) feed.push({ out: 'true', lines: [T('  ⎿  ' + tr.link + ' · ' + tr.linkMeta, 'success')] });
           extra.forEach(m => { feed = m.role === 'user' ? feed.concat([{ you: 'true', text: m.text }]) : feed.concat(block(m.steps || [], m.text, m.thinking)); });
@@ -2509,7 +2726,9 @@ class Component extends DCLogic {
       rModelSel: withQ('sel:model', 'Search models', listTok('sel:model', ((HARNESS_MODELS[r.agent] || { primary: [] }).primary.find(m => m.value === r.model) || {}).label || 'Choose a model',
         (HARNESS_MODELS[r.agent] || { primary: [] }).primary.map(m => ({ value: m.value, label: m.label, desc: m.desc, selected: m.value === r.model })),
         v => this.patchR(x => ({ ...x, model: v })))),
-      rHostSel: withQ('sel:host', 'Search hosts', listTok('sel:host', findL(HOSTS, r.host), HOSTS.map(o => ({ ...o, selected: o.value === r.host })), v => this.patchR(x => ({ ...x, host: v })))),
+      // Automations may target an offline host: runs that come due wait as
+      // Queued until its runner is back, so the picker says that up front.
+      rHostSel: withQ('sel:host', 'Search hosts', listTok('sel:host', findL(HOSTS, r.host), HOSTS.map(o => ({ ...o, desc: this.offlineHosts().indexOf(o.value) > -1 ? 'Offline · runs queue until it’s back' : o.desc, selected: o.value === r.host })), v => this.patchR(x => ({ ...x, host: v })))),
       rReady: valid ? 'true' : 'false',
       rRecap: !r.name.trim() ? 'Name the automation to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.'
         : findL(AGENTS, r.agent) + ' runs in ' + repoL + ', ' + trigL.charAt(0).toLowerCase() + trigL.slice(1) + (r.triggers.length > 1 ? ' and ' + (r.triggers.length - 1) + ' more' : '') + '.',
@@ -2603,6 +2822,7 @@ class Component extends DCLogic {
     const hasSession = !!session;
     const start = e => {
       if (e) e.stopPropagation();
+      if (this.offlineHosts().indexOf(this.state.host) > -1) return;
       clearInterval(this._tick);
       const row = {
         name: this.scopeShort(),
@@ -2624,9 +2844,14 @@ class Component extends DCLogic {
 
         ...x,
 
+        active: this.state.session && this.state.session.label === x.name ? 'true' : 'false',
+
         editing: this.state.editing === x.key ? 'true' : undefined,
 
         notEditing: this.state.editing === x.key ? undefined : 'true',
+
+        // Last known state stays on the glyph; the age slot says why it's stale.
+        age: this.offlineHosts().indexOf(x.host) > -1 ? 'offline' : x.age,
 
         menuOpen: this.state.sessionMenu === x.key ? 'true' : undefined,
 
@@ -2826,6 +3051,11 @@ class Component extends DCLogic {
         meta: i < this.state.bootStep ? b.done : i === this.state.bootStep ? b.doing : '',
         state: i < this.state.bootStep ? 'done' : i === this.state.bootStep ? 'running' : 'pending',
         mark: i < this.state.bootStep ? '✓' : '',
+        // The first clone on a host is the one slow step — say so where it
+        // happens, and only while it is happening.
+        note: i === 1 && i === this.state.bootStep && this.props.firstClone !== false
+          ? 'First session on ' + this.hostName() + ' with this repository, so it downloads in full once. Later sessions here start in about a second.'
+          : '',
       })),
       openNew: e => { if (e) e.stopPropagation(); this.setState({ view: 'new', open: null, filterOpen: false, accountOpen: false }); },
       openTerminal: e => {
@@ -2841,9 +3071,7 @@ class Component extends DCLogic {
 
       // Cached scrollback renders at once; this names the gap until the live
       // stream has caught up, then settles into a quiet "Live".
-      linkState: this.state.linking ? 'reconnecting' : 'live',
-      linkLabel: this.state.linking ? 'Reconnecting to ' + find(HOST_FILTER, host) + '…' : 'Live',
-      termPlaceholder: this.state.linking ? 'Reconnecting — input sends once live' : 'Ask the agent, or run a command',
+      ...this.linkVals(),
       attachName: this.state.session ? this.state.session.label : '',
       attachHost: find(HOST_FILTER, host),
 
@@ -2860,6 +3088,16 @@ class Component extends DCLogic {
       frameRadius: this.state.zoom ? '0px' : '18px',
       toggleZoom: e => { if (e) e.stopPropagation(); this.setState(s => ({ zoom: !s.zoom })); },
       closePane: e => { if (e) e.stopPropagation(); this.setState({ session: null, zoom: false }); },
+      ...(() => {
+        const ss = (this.state.session || {}).state;
+        const ft = this.state.fromTask;
+        return {
+          paneDot: { running: 'var(--success)', waiting: 'var(--warning)', failed: 'var(--danger)' }[ss] || 'var(--fg-subtle)',
+          paneState: { running: 'Running', waiting: 'Needs input', failed: 'Failed', queued: 'Queued', completed: 'Completed' }[ss] || 'Idle',
+          paneMeta: (this.state.session || {}).meta || '',
+          fromTask: ft ? 'true' : undefined, taskTitle: ft ? ft.title : '', taskHref: ft ? 'Tasks.dc.html?task=' + encodeURIComponent(ft.id) : '',
+        };
+      })(),
 
 
       renameRef: this._renameRef,
@@ -2908,8 +3146,15 @@ class Component extends DCLogic {
       sortLabel: find(SORTS, sort),
       activeFilters,
 
-      hostLabel: bare ? 'Add a host' : find(HOSTS, host),
-      hostOptions: bare ? [] : this.options(HOSTS, 'host'),
+      hostLabel: bare ? 'Add a host' : find(HOSTS, host) + (this.offlineHosts().indexOf(host) > -1 ? ' · offline' : ''),
+      // Offline hosts stay listed so the choice is visible, but can't be
+      // picked: a session needs a live runner to start.
+      hostOptions: bare ? [] : this.options(HOSTS, 'host').map(o => this.offlineHosts().indexOf(o.value) > -1
+        ? { ...o, desc: 'Offline · last seen ' + (o.value === 'fable' ? '2 days ago' : '2 min ago'), off: 'true', opacity: 0.45, cursor: 'not-allowed', pick: e => { if (e) e.stopPropagation(); } }
+        : { ...o, off: undefined, opacity: 1, cursor: 'pointer' }),
+      sendOff: this.offlineHosts().indexOf(host) > -1,
+      sendOpacity: this.offlineHosts().indexOf(host) > -1 ? 0.4 : 1,
+      sendTitle: this.offlineHosts().indexOf(host) > -1 ? find(HOSTS, host) + ' is offline — pick another host' : 'Start session',
       hostOpen: open === 'host',
       toggleHost: e => this.toggle('host', e),
 

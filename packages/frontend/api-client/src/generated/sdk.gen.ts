@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AddCheckoutData, AddCheckoutErrors, AddCheckoutResponses, AddMemberData, AddMemberErrors, AddMemberResponses, AddWorkspaceMemberData, AddWorkspaceMemberErrors, AddWorkspaceMemberResponses, AdminUpdateUserData, AdminUpdateUserErrors, AdminUpdateUserResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignUserRolesData, AssignUserRolesErrors, AssignUserRolesResponses, BanUserData, BanUserErrors, BanUserResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, CreateAccessGrantData, CreateAccessGrantErrors, CreateAccessGrantResponses, CreateApiTokenData, CreateApiTokenErrors, CreateApiTokenResponses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateRoleData, CreateRoleErrors, CreateRoleResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkspaceData, CreateWorkspaceErrors, CreateWorkspaceResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DeleteWorkspaceData, DeleteWorkspaceErrors, DeleteWorkspaceResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAccessGrantsData, FindAccessGrantsErrors, FindAccessGrantsResponses, FindApiTokensData, FindApiTokensErrors, FindApiTokensResponses, FindAuthzCatalogData, FindAuthzCatalogErrors, FindAuthzCatalogResponses, FindAutomationData, FindAutomationErrors, FindAutomationResponses, FindAutomationRunData, FindAutomationRunErrors, FindAutomationRunResponses, FindAutomationRunsData, FindAutomationRunsErrors, FindAutomationRunsResponses, FindAutomationsData, FindAutomationsErrors, FindAutomationSettingsData, FindAutomationSettingsErrors, FindAutomationSettingsResponses, FindAutomationsResponses, FindCurrentCredentialData, FindCurrentCredentialErrors, FindCurrentCredentialResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindGrantablePermissionsData, FindGrantablePermissionsErrors, FindGrantablePermissionsResponses, FindHostData, FindHostErrors, FindHostResponses, FindHostsData, FindHostsErrors, FindHostsResponses, FindHostTimelineData, FindHostTimelineErrors, FindHostTimelineResponses, FindInstallationsData, FindInstallationsErrors, FindInstallationsResponses, FindPairingTokenData, FindPairingTokenErrors, FindPairingTokenResponses, FindPairingTokensData, FindPairingTokensErrors, FindPairingTokensResponses, FindProfileSessionsData, FindProfileSessionsErrors, FindProfileSessionsResponses, FindProjectData, FindProjectErrors, FindProjectResponses, FindProjectsData, FindProjectsErrors, FindProjectsResponses, FindRoleByIdData, FindRoleByIdErrors, FindRoleByIdResponses, FindRolesData, FindRolesErrors, FindRolesResponses, FindRunHistoryData, FindRunHistoryErrors, FindRunHistoryResponses, FindSessionData, FindSessionErrors, FindSessionEventsData, FindSessionEventsErrors, FindSessionEventsResponses, FindSessionResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetInvitationData, GetInvitationErrors, GetInvitationResponses, GetMeData, GetMeErrors, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetMeResponses, GetMyPermissionsData, GetMyPermissionsErrors, GetMyPermissionsResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetUserData, GetUserErrors, GetUserResponses, GetUserSettingsData, GetUserSettingsErrors, GetUserSettingsResponses, ImpersonateUserData, ImpersonateUserErrors, ImpersonateUserResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMyInvitationsData, ListMyInvitationsErrors, ListMyInvitationsResponses, ListMyWorkspacesData, ListMyWorkspacesErrors, ListMyWorkspacesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, ListWorkspaceMembersData, ListWorkspaceMembersErrors, ListWorkspaceMembersResponses, ListWorkspacesData, ListWorkspacesErrors, ListWorkspacesResponses, MintPairingTokenData, MintPairingTokenErrors, MintPairingTokenResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, PrepareSessionData, PrepareSessionErrors, PrepareSessionResponses, PreviewTriggerData, PreviewTriggerErrors, PreviewTriggerResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterHostData, RegisterHostErrors, RegisterHostResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveCheckoutData, RemoveCheckoutErrors, RemoveCheckoutResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RemoveWorkspaceMemberData, RemoveWorkspaceMemberErrors, RemoveWorkspaceMemberResponses, RenameHostData, RenameHostErrors, RenameHostResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RenameWorkspaceData, RenameWorkspaceErrors, RenameWorkspaceResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, RevokeAccessGrantData, RevokeAccessGrantErrors, RevokeAccessGrantResponses, RevokeApiTokenData, RevokeApiTokenErrors, RevokeApiTokenResponses, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokePairingTokenData, RevokePairingTokenErrors, RevokePairingTokenResponses, RevokeProfileSessionData, RevokeProfileSessionErrors, RevokeProfileSessionResponses, RevokeUserSessionData, RevokeUserSessionErrors, RevokeUserSessionResponses, RevokeUserSessionsData, RevokeUserSessionsErrors, RevokeUserSessionsResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetActiveWorkspaceData, SetActiveWorkspaceErrors, SetActiveWorkspaceResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, SetUserRoleData, SetUserRoleErrors, SetUserRoleResponses, StartInstallationData, StartInstallationErrors, StartInstallationResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanUserData, UnbanUserErrors, UnbanUserResponses, UninstallHostData, UninstallHostErrors, UninstallHostResponses, UnpairHostData, UnpairHostErrors, UnpairHostResponses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdateMemberRoleData, UpdateMemberRoleErrors, UpdateMemberRoleResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateRoleData, UpdateRoleErrors, UpdateRolePermissionsData, UpdateRolePermissionsErrors, UpdateRolePermissionsResponses, UpdateRoleResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateUserSettingsData, UpdateUserSettingsErrors, UpdateUserSettingsResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses, UploadSessionAttachmentData, UploadSessionAttachmentErrors, UploadSessionAttachmentResponses } from './types.gen';
+import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AddCheckoutData, AddCheckoutErrors, AddCheckoutResponses, AddMemberData, AddMemberErrors, AddMemberResponses, AddWorkspaceMemberData, AddWorkspaceMemberErrors, AddWorkspaceMemberResponses, AdminUpdateUserData, AdminUpdateUserErrors, AdminUpdateUserResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignUserRolesData, AssignUserRolesErrors, AssignUserRolesResponses, BanUserData, BanUserErrors, BanUserResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectGoogleCalendarData, ConnectGoogleCalendarErrors, ConnectGoogleCalendarResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, CreateAccessGrantData, CreateAccessGrantErrors, CreateAccessGrantResponses, CreateApiTokenData, CreateApiTokenErrors, CreateApiTokenResponses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateCalendarEventData, CreateCalendarEventErrors, CreateCalendarEventResponses, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateGoalData, CreateGoalErrors, CreateGoalResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateRoleData, CreateRoleErrors, CreateRoleResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateTaskData, CreateTaskErrors, CreateTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkspaceData, CreateWorkspaceErrors, CreateWorkspaceResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteCalendarEventData, DeleteCalendarEventErrors, DeleteCalendarEventResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteGoalData, DeleteGoalErrors, DeleteGoalResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleResponses, DeleteTaskData, DeleteTaskErrors, DeleteTaskResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DeleteWorkspaceData, DeleteWorkspaceErrors, DeleteWorkspaceResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectGoogleCalendarData, DisconnectGoogleCalendarErrors, DisconnectGoogleCalendarResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAccessGrantsData, FindAccessGrantsErrors, FindAccessGrantsResponses, FindApiTokensData, FindApiTokensErrors, FindApiTokensResponses, FindAuthzCatalogData, FindAuthzCatalogErrors, FindAuthzCatalogResponses, FindAutomationData, FindAutomationErrors, FindAutomationResponses, FindAutomationRunData, FindAutomationRunErrors, FindAutomationRunResponses, FindAutomationRunsData, FindAutomationRunsErrors, FindAutomationRunsResponses, FindAutomationsData, FindAutomationsErrors, FindAutomationSettingsData, FindAutomationSettingsErrors, FindAutomationSettingsResponses, FindAutomationsResponses, FindCalendarEventsData, FindCalendarEventsErrors, FindCalendarEventsResponses, FindCurrentCredentialData, FindCurrentCredentialErrors, FindCurrentCredentialResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindGoalsData, FindGoalsErrors, FindGoalsResponses, FindGoogleCalendarConnectionData, FindGoogleCalendarConnectionErrors, FindGoogleCalendarConnectionResponses, FindGoogleCalendarEventsData, FindGoogleCalendarEventsErrors, FindGoogleCalendarEventsResponses, FindGrantablePermissionsData, FindGrantablePermissionsErrors, FindGrantablePermissionsResponses, FindHostData, FindHostErrors, FindHostResponses, FindHostsData, FindHostsErrors, FindHostsResponses, FindHostTimelineData, FindHostTimelineErrors, FindHostTimelineResponses, FindInstallationsData, FindInstallationsErrors, FindInstallationsResponses, FindPairingTokenData, FindPairingTokenErrors, FindPairingTokenResponses, FindPairingTokensData, FindPairingTokensErrors, FindPairingTokensResponses, FindProfileSessionsData, FindProfileSessionsErrors, FindProfileSessionsResponses, FindProjectData, FindProjectErrors, FindProjectResponses, FindProjectsData, FindProjectsErrors, FindProjectsResponses, FindRoleByIdData, FindRoleByIdErrors, FindRoleByIdResponses, FindRolesData, FindRolesErrors, FindRolesResponses, FindRunHistoryData, FindRunHistoryErrors, FindRunHistoryResponses, FindSessionData, FindSessionErrors, FindSessionEventsData, FindSessionEventsErrors, FindSessionEventsResponses, FindSessionResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindTaskData, FindTaskErrors, FindTaskResponses, FindTasksData, FindTasksErrors, FindTasksResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetInvitationData, GetInvitationErrors, GetInvitationResponses, GetMeData, GetMeErrors, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetMeResponses, GetMyPermissionsData, GetMyPermissionsErrors, GetMyPermissionsResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetUserData, GetUserErrors, GetUserResponses, GetUserSettingsData, GetUserSettingsErrors, GetUserSettingsResponses, ImpersonateUserData, ImpersonateUserErrors, ImpersonateUserResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkTaskSessionData, LinkTaskSessionErrors, LinkTaskSessionResponses, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMyInvitationsData, ListMyInvitationsErrors, ListMyInvitationsResponses, ListMyWorkspacesData, ListMyWorkspacesErrors, ListMyWorkspacesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, ListWorkspaceMembersData, ListWorkspaceMembersErrors, ListWorkspaceMembersResponses, ListWorkspacesData, ListWorkspacesErrors, ListWorkspacesResponses, MintPairingTokenData, MintPairingTokenErrors, MintPairingTokenResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, MoveTaskData, MoveTaskErrors, MoveTaskResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, PrepareSessionData, PrepareSessionErrors, PrepareSessionResponses, PreviewTriggerData, PreviewTriggerErrors, PreviewTriggerResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterHostData, RegisterHostErrors, RegisterHostResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveCheckoutData, RemoveCheckoutErrors, RemoveCheckoutResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RemoveWorkspaceMemberData, RemoveWorkspaceMemberErrors, RemoveWorkspaceMemberResponses, RenameHostData, RenameHostErrors, RenameHostResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RenameWorkspaceData, RenameWorkspaceErrors, RenameWorkspaceResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, RevokeAccessGrantData, RevokeAccessGrantErrors, RevokeAccessGrantResponses, RevokeApiTokenData, RevokeApiTokenErrors, RevokeApiTokenResponses, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokePairingTokenData, RevokePairingTokenErrors, RevokePairingTokenResponses, RevokeProfileSessionData, RevokeProfileSessionErrors, RevokeProfileSessionResponses, RevokeUserSessionData, RevokeUserSessionErrors, RevokeUserSessionResponses, RevokeUserSessionsData, RevokeUserSessionsErrors, RevokeUserSessionsResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetActiveWorkspaceData, SetActiveWorkspaceErrors, SetActiveWorkspaceResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, SetUserRoleData, SetUserRoleErrors, SetUserRoleResponses, StartGoogleCalendarConnectionData, StartGoogleCalendarConnectionErrors, StartGoogleCalendarConnectionResponses, StartInstallationData, StartInstallationErrors, StartInstallationResponses, StartTaskSessionData, StartTaskSessionErrors, StartTaskSessionResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanUserData, UnbanUserErrors, UnbanUserResponses, UninstallHostData, UninstallHostErrors, UninstallHostResponses, UnlinkTaskSessionData, UnlinkTaskSessionErrors, UnlinkTaskSessionResponses, UnpairHostData, UnpairHostErrors, UnpairHostResponses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateCalendarEventData, UpdateCalendarEventErrors, UpdateCalendarEventResponses, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdateGoalData, UpdateGoalErrors, UpdateGoalResponses, UpdateMemberRoleData, UpdateMemberRoleErrors, UpdateMemberRoleResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateRoleData, UpdateRoleErrors, UpdateRolePermissionsData, UpdateRolePermissionsErrors, UpdateRolePermissionsResponses, UpdateRoleResponses, UpdateTaskData, UpdateTaskErrors, UpdateTaskResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateUserSettingsData, UpdateUserSettingsErrors, UpdateUserSettingsResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses, UploadSessionAttachmentData, UploadSessionAttachmentErrors, UploadSessionAttachmentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -872,9 +872,9 @@ export const uninstallHost = <ThrowOnError extends boolean = false>(options?: Op
 });
 
 /**
- * Collect an image parked for the calling host
+ * Collect a file parked for the calling host
  *
- * Called by the runner when a `session.image` arrives on its link. Answers the image once; a second pull, an expired image and another host’s image are all 404.
+ * Called by the runner when a `session.image` or a `session.create` with files arrives on its link. Answers the file once; a second pull, an expired file and another host’s file are all 404.
  */
 export const collectSessionImage = <ThrowOnError extends boolean = false>(options: Options<CollectSessionImageData, ThrowOnError>): RequestResult<CollectSessionImageResponses, CollectSessionImageErrors, ThrowOnError> => (options.client ?? client).get<CollectSessionImageResponses, CollectSessionImageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1291,9 +1291,9 @@ export const createSession = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
- * Attach an image to a first task
+ * Attach a file to a first task
  *
- * Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.
+ * An image (PNG, JPEG, GIF, WebP), a PDF, or UTF-8 text (plain, Markdown, CSV, JSON), judged by its bytes; executables, archives, scripts, SVG and HTML are refused. Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it under a name of its own and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.
  */
 export const uploadSessionAttachment = <ThrowOnError extends boolean = false>(options: Options<UploadSessionAttachmentData, ThrowOnError>): RequestResult<UploadSessionAttachmentResponses, UploadSessionAttachmentErrors, ThrowOnError> => (options.client ?? client).post<UploadSessionAttachmentResponses, UploadSessionAttachmentErrors, ThrowOnError>({
     ...formDataBodySerializer,
@@ -1333,9 +1333,9 @@ export const issueAttachTicket = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Paste an image into a session’s prompt
+ * Paste a file into a session’s prompt
  *
- * The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot comes here; the host’s runner pulls it and pastes its path into the window.
+ * The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot or a dropped file comes here: an image, a PDF, or UTF-8 text, judged by its bytes. The host’s runner pulls it, saves it under a name of its own and pastes its path into the window.
  */
 export const pasteSessionImage = <ThrowOnError extends boolean = false>(options: Options<PasteSessionImageData, ThrowOnError>): RequestResult<PasteSessionImageResponses, PasteSessionImageErrors, ThrowOnError> => (options.client ?? client).post<PasteSessionImageResponses, PasteSessionImageErrors, ThrowOnError>({
     ...formDataBodySerializer,
@@ -1640,6 +1640,282 @@ export const updateAutomationSettings = <ThrowOnError extends boolean = false>(o
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * List the board’s tasks
+ *
+ * In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).
+ */
+export const findTasks = <ThrowOnError extends boolean = false>(options?: Options<FindTasksData, ThrowOnError>): RequestResult<FindTasksResponses, FindTasksErrors, ThrowOnError> => (options?.client ?? client).get<FindTasksResponses, FindTasksErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks',
+    ...options
+});
+
+/**
+ * Add a task to the board
+ *
+ * At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a goal brings its own project.
+ */
+export const createTask = <ThrowOnError extends boolean = false>(options: Options<CreateTaskData, ThrowOnError>): RequestResult<CreateTaskResponses, CreateTaskErrors, ThrowOnError> => (options.client ?? client).post<CreateTaskResponses, CreateTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a task
+ *
+ * With its links. The sessions it started or linked are untouched.
+ */
+export const deleteTask = <ThrowOnError extends boolean = false>(options: Options<DeleteTaskData, ThrowOnError>): RequestResult<DeleteTaskResponses, DeleteTaskErrors, ThrowOnError> => (options.client ?? client).delete<DeleteTaskResponses, DeleteTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}',
+    ...options
+});
+
+/**
+ * Read one task, with the sessions on it
+ */
+export const findTask = <ThrowOnError extends boolean = false>(options: Options<FindTaskData, ThrowOnError>): RequestResult<FindTaskResponses, FindTaskErrors, ThrowOnError> => (options.client ?? client).get<FindTaskResponses, FindTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}',
+    ...options
+});
+
+/**
+ * Change a task
+ *
+ * Title, notes, due date and time, project and goal. Absent fields stay and `null` clears. Choosing a goal files the task under the goal’s project; changing the project drops a goal of another project. The column is a move.
+ */
+export const updateTask = <ThrowOnError extends boolean = false>(options: Options<UpdateTaskData, ThrowOnError>): RequestResult<UpdateTaskResponses, UpdateTaskErrors, ThrowOnError> => (options.client ?? client).patch<UpdateTaskResponses, UpdateTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Move a task on the board
+ *
+ * Into `status`, directly after `afterTaskId` (a task of that column), or first when it is null. Only this task’s place changes; the column is never renumbered.
+ */
+export const moveTask = <ThrowOnError extends boolean = false>(options: Options<MoveTaskData, ThrowOnError>): RequestResult<MoveTaskResponses, MoveTaskErrors, ThrowOnError> => (options.client ?? client).post<MoveTaskResponses, MoveTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}/move',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Start a session from a task
+ *
+ * New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
+ */
+export const startTaskSession = <ThrowOnError extends boolean = false>(options: Options<StartTaskSessionData, ThrowOnError>): RequestResult<StartTaskSessionResponses, StartTaskSessionErrors, ThrowOnError> => (options.client ?? client).post<StartTaskSessionResponses, StartTaskSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}/sessions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Take a session off a task
+ *
+ * The task stays in its column and the session runs on.
+ */
+export const unlinkTaskSession = <ThrowOnError extends boolean = false>(options: Options<UnlinkTaskSessionData, ThrowOnError>): RequestResult<UnlinkTaskSessionResponses, UnlinkTaskSessionErrors, ThrowOnError> => (options.client ?? client).delete<UnlinkTaskSessionResponses, UnlinkTaskSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}/sessions/{sessionId}',
+    ...options
+});
+
+/**
+ * Link a session to a task
+ *
+ * A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
+ */
+export const linkTaskSession = <ThrowOnError extends boolean = false>(options: Options<LinkTaskSessionData, ThrowOnError>): RequestResult<LinkTaskSessionResponses, LinkTaskSessionErrors, ThrowOnError> => (options.client ?? client).put<LinkTaskSessionResponses, LinkTaskSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/tasks/{id}/sessions/{sessionId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List goals, with their progress
+ *
+ * Of one project or of the workspace, oldest first. Progress counts the goal’s tasks.
+ */
+export const findGoals = <ThrowOnError extends boolean = false>(options?: Options<FindGoalsData, ThrowOnError>): RequestResult<FindGoalsResponses, FindGoalsErrors, ThrowOnError> => (options?.client ?? client).get<FindGoalsResponses, FindGoalsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/goals',
+    ...options
+});
+
+/**
+ * Add a goal to a project
+ */
+export const createGoal = <ThrowOnError extends boolean = false>(options: Options<CreateGoalData, ThrowOnError>): RequestResult<CreateGoalResponses, CreateGoalErrors, ThrowOnError> => (options.client ?? client).post<CreateGoalResponses, CreateGoalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/goals',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a goal
+ *
+ * Its tasks stay, with no goal.
+ */
+export const deleteGoal = <ThrowOnError extends boolean = false>(options: Options<DeleteGoalData, ThrowOnError>): RequestResult<DeleteGoalResponses, DeleteGoalErrors, ThrowOnError> => (options.client ?? client).delete<DeleteGoalResponses, DeleteGoalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/goals/{id}',
+    ...options
+});
+
+/**
+ * Change a goal
+ *
+ * Its name, target date or project. Moving it to another project moves its tasks.
+ */
+export const updateGoal = <ThrowOnError extends boolean = false>(options: Options<UpdateGoalData, ThrowOnError>): RequestResult<UpdateGoalResponses, UpdateGoalErrors, ThrowOnError> => (options.client ?? client).patch<UpdateGoalResponses, UpdateGoalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/goals/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the workspace’s own events between two days
+ *
+ * Both days included, at most 62 of them; by day, all-day first, then by start.
+ */
+export const findCalendarEvents = <ThrowOnError extends boolean = false>(options: Options<FindCalendarEventsData, ThrowOnError>): RequestResult<FindCalendarEventsResponses, FindCalendarEventsErrors, ThrowOnError> => (options.client ?? client).get<FindCalendarEventsResponses, FindCalendarEventsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/events',
+    ...options
+});
+
+/**
+ * Add an event to the calendar
+ *
+ * One day: all day, or from a start to a later end on it. Wall-clock, like a task’s due date.
+ */
+export const createCalendarEvent = <ThrowOnError extends boolean = false>(options: Options<CreateCalendarEventData, ThrowOnError>): RequestResult<CreateCalendarEventResponses, CreateCalendarEventErrors, ThrowOnError> => (options.client ?? client).post<CreateCalendarEventResponses, CreateCalendarEventErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/events',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete an event
+ */
+export const deleteCalendarEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteCalendarEventData, ThrowOnError>): RequestResult<DeleteCalendarEventResponses, DeleteCalendarEventErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCalendarEventResponses, DeleteCalendarEventErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/events/{id}',
+    ...options
+});
+
+/**
+ * Change an event
+ *
+ * Absent fields stay; dragging an event to another day is a change of `date`.
+ */
+export const updateCalendarEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateCalendarEventData, ThrowOnError>): RequestResult<UpdateCalendarEventResponses, UpdateCalendarEventErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCalendarEventResponses, UpdateCalendarEventErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/events/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Disconnect Google Calendar
+ *
+ * Revokes the grant at Google and forgets it. With no connection, nothing happens.
+ */
+export const disconnectGoogleCalendar = <ThrowOnError extends boolean = false>(options?: Options<DisconnectGoogleCalendarData, ThrowOnError>): RequestResult<DisconnectGoogleCalendarResponses, DisconnectGoogleCalendarErrors, ThrowOnError> => (options?.client ?? client).delete<DisconnectGoogleCalendarResponses, DisconnectGoogleCalendarErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/google/connection',
+    ...options
+});
+
+/**
+ * The caller’s own Google Calendar connection
+ *
+ * Whether there is one, the account, and whether Google still honours it.
+ */
+export const findGoogleCalendarConnection = <ThrowOnError extends boolean = false>(options?: Options<FindGoogleCalendarConnectionData, ThrowOnError>): RequestResult<FindGoogleCalendarConnectionResponses, FindGoogleCalendarConnectionErrors, ThrowOnError> => (options?.client ?? client).get<FindGoogleCalendarConnectionResponses, FindGoogleCalendarConnectionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/google/connection',
+    ...options
+});
+
+/**
+ * Finish connecting Google Calendar
+ *
+ * The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. A new grant replaces the caller’s old one.
+ */
+export const connectGoogleCalendar = <ThrowOnError extends boolean = false>(options: Options<ConnectGoogleCalendarData, ThrowOnError>): RequestResult<ConnectGoogleCalendarResponses, ConnectGoogleCalendarErrors, ThrowOnError> => (options.client ?? client).post<ConnectGoogleCalendarResponses, ConnectGoogleCalendarErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/google/connection',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Start connecting Google Calendar
+ *
+ * Google’s consent page, read-only, carrying a single-use state for this caller in this workspace. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.
+ */
+export const startGoogleCalendarConnection = <ThrowOnError extends boolean = false>(options?: Options<StartGoogleCalendarConnectionData, ThrowOnError>): RequestResult<StartGoogleCalendarConnectionResponses, StartGoogleCalendarConnectionErrors, ThrowOnError> => (options?.client ?? client).post<StartGoogleCalendarConnectionResponses, StartGoogleCalendarConnectionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/google/connection/start',
+    ...options
+});
+
+/**
+ * The caller’s Google Calendar between two days
+ *
+ * Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.
+ */
+export const findGoogleCalendarEvents = <ThrowOnError extends boolean = false>(options: Options<FindGoogleCalendarEventsData, ThrowOnError>): RequestResult<FindGoogleCalendarEventsResponses, FindGoogleCalendarEventsErrors, ThrowOnError> => (options.client ?? client).get<FindGoogleCalendarEventsResponses, FindGoogleCalendarEventsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/calendar/google/events',
+    ...options
 });
 
 /**

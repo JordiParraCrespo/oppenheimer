@@ -8,9 +8,14 @@ import { useEffect, useState } from 'react';
  * The interval is the point: a provisioning pane whose clock is frozen reads
  * as a hung app, and the one number that says "the host is still being waited
  * on" is the one nobody has to refresh to see move. It stops when `ticking`
- * goes false — a failed start has a duration, not a clock.
+ * goes false — a failed start has a duration, not a clock. `format` writes it;
+ * a stopwatch (`formatElapsed`) unless the caller's frame says otherwise.
  */
-export function useElapsed(since: Date, ticking = true): string {
+export function useElapsed(
+  since: Date,
+  ticking = true,
+  format: (ms: number) => string = formatElapsed,
+): string {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -22,5 +27,5 @@ export function useElapsed(since: Date, ticking = true): string {
     return () => clearInterval(id);
   }, [ticking]);
 
-  return formatElapsed(now - since.getTime());
+  return format(now - since.getTime());
 }

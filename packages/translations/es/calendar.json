@@ -1,0 +1,58 @@
+{
+  "sidebar": {
+    "layers": "Mostrar"
+  },
+  "layers": {
+    "events": "Mis eventos",
+    "google": "Google Calendar",
+    "tasks": "Tareas que vencen",
+    "automations": "Ejecuciones de automatizaciones"
+  },
+  "header": {
+    "previous": "Mes anterior",
+    "next": "Mes siguiente",
+    "today": "Hoy",
+    "newEvent": "Nuevo evento"
+  },
+  "grid": {
+    "more_one": "{{count}} más",
+    "more_other": "{{count}} más",
+    "eventsFailed": "No se han podido cargar tus eventos.",
+    "googleFailed": "No se ha podido leer Google Calendar.",
+    "moveFailed": "No se ha podido mover a otro día."
+  },
+  "event": {
+    "newTitle": "Nuevo evento",
+    "editTitle": "Editar evento",
+    "title": "Título",
+    "allDay": "Todo el día",
+    "notes": "Notas",
+    "add": "Añadir evento",
+    "save": "Guardar",
+    "delete": "Eliminar evento",
+    "deleteTitle": "¿Eliminar este evento?",
+    "deleteDescription": "Se elimina «{{title}}».",
+    "saveFailed": "No se ha podido guardar el evento.",
+    "deleteFailed": "No se ha podido eliminar el evento.",
+    "gone": "Este evento no está en el mes que se muestra o ya no existe."
+  },
+  "google": {
+    "title": "Google Calendar",
+    "description": "Muestra tus eventos de Google junto a los tuyos. Solo lectura: no se escribe nada en Google.",
+    "connect": "Conectar Google Calendar",
+    "reconnect": "Volver a conectar",
+    "revoked": "Google ya no nos deja leer este calendario. Vuelve a conectarlo para verlo.",
+    "connectedAs": "Conectado como {{email}}",
+    "disconnect": "Desconectar",
+    "disconnectTitle": "¿Desconectar Google Calendar?",
+    "disconnectDescription": "Sus eventos dejan de mostrarse. Puedes volver a conectarlo cuando quieras.",
+    "disconnectFailed": "No se ha podido desconectar Google Calendar.",
+    "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
+    "loadFailed": "No se ha podido comprobar la conexión con Google Calendar.",
+    "connecting": "Conectando Google Calendar…",
+    "connectFailed": "No se ha podido conectar Google Calendar.",
+    "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
+    "back": "Volver al calendario",
+    "readOnly": "Solo lectura"
+  }
+}

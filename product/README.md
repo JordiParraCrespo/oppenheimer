@@ -22,7 +22,7 @@ for the detail and sources.
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | 14 | [Session boot time, measured](14-session-boot-time.md) | A measurement note, not `versions/mvp/14`: each hop from Send to the agent's first byte, measured from the browser on one host, beside how Orca prepares a checkout before the click. It decides nothing; its questions are 02 open question 9 and 05 open question 8 |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -321,3 +321,15 @@ earlier note:
   started sending `repository.prepare` when a host and a repository are
   picked, so the clone and the spare worktree are made while the prompt is
   written (02 §5, 01, 05; measured in 14).
+- 03, 01 and 05 let a session take images only; on 2026-10-04 it takes files
+  (images, PDF, text) judged by their bytes, and a runner that does not
+  announce `session.files` is still sent images only (01, 02, 03, 05, 07).
+- `next-steps/` placed a kanban board in 0.3. On 2026-10-05 the design
+  export drew it as Plan (tasks, goals, a calendar) and the owner put it
+  in the MVP (`versions/mvp/17-plan.md`); 0.2 with pull requests is next.
+- 17 and 19 put Plan behind a `plan` release flag, with a task summary
+  endpoint, a `'task'` session origin and an automation occurrences
+  endpoint. The first version shipped with none of them: no flag, the
+  board's one read serves every count, a task's session is a person's and
+  its link records the task, and the console computes automation runs
+  (`versions/mvp/17-plan.md`, "As built").

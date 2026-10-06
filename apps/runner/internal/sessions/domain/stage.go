@@ -35,6 +35,9 @@ type StageEvent struct {
 	Stage Stage
 	Done  bool
 	Took  time.Duration
+	// Download is set on StageClone starting when the repository is not on
+	// this host yet: the stage is its first download, not a fetch.
+	Download bool
 	// Session is the session as it stands at this stage. It is what lets the
 	// link report `session.started` off StageTerminal landing, rather than
 	// through a second lifecycle callback saying the same thing.

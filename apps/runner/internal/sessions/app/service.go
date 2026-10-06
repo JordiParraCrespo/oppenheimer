@@ -19,8 +19,8 @@ type Options struct {
 	Classifier Classifier
 	Store      Store
 	Publisher  Publisher
-	// Images keeps the pictures pasted into a session's prompt.
-	Images Images
+	// Files keeps the files (images, PDF, text) pasted into a session's prompt.
+	Files Files
 	// Layout is where repositories and worktrees live on this host.
 	Layout domain.Layout
 	// Env is added to every session's tmux environment, inherited by every
@@ -60,7 +60,7 @@ type Service struct {
 	classifier Classifier
 	store      Store
 	publisher  Publisher
-	images     Images
+	files      Files
 	layout     domain.Layout
 	env        func(domain.Session) map[string]string
 	gate       LaunchGate
@@ -86,7 +86,7 @@ func New(opts Options) (*Service, error) {
 		revs: map[string]uint64{}, busy: map[string]int{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		images: opts.Images, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
+		files: opts.Files, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -137,20 +137,20 @@ type CreateInput struct {
 	// repository, kept for the credential helper.
 	CheckoutID   string
 	GithubRepoID int64
-	// Images are the pictures attached to the first task, already pulled.
+	// Files are the files attached to the first task, already pulled.
 	// Each is saved outside the worktree just before the agent starts, and
 	// its path appended to the prompt the agent is launched with.
-	Images []CreateImage
+	Files []CreateFile
 	// Progress, when set, hears each stage start and land, in order, with the
 	// session as it stands at each. StageTerminal landing is what says the
 	// session has a pane to attach to. It must not block.
 	Progress func(domain.StageEvent)
 }
 
-// CreateImage is one picture attached to a session's first task.
-type CreateImage struct {
+// CreateFile is one file attached to a session's first task.
+type CreateFile struct {
 	// ID names the file on disk, so it is a plain name: the control plane's
-	// image id, checked at the link.
+	// file id, checked at the link.
 	ID        string
 	MediaType string
 	Data      []byte
@@ -197,7 +197,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	if err := domain.ValidateBranch(base); err != nil {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
-	if err := s.checkImages(in.Images, in.Launch.Prompt); err != nil {
+	if err := s.checkFiles(in.Files, in.Launch.Prompt); err != nil {
 		return domain.Session{}, err
 	}
 
@@ -245,10 +245,11 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
 	// Every stage runs through run, so "started, then landed or failed" is
 	// the one shape a stage can have, and a new stage cannot report half of it.
-	run := func(stage domain.Stage, fn func() error) error {
-		started := s.now()
+	run := func(start domain.StageEvent, fn func() error) error {
+		stage, started := start.Stage, s.now()
 		if in.Progress != nil {
-			in.Progress(domain.StageEvent{Stage: stage, Session: session.Clone()})
+			start.Session = session.Clone()
+			in.Progress(start)
 		}
 		if err := fn(); err != nil {
 			return err
@@ -269,8 +270,10 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	// waiting and working.
 	//
 	// It starts in the directory the worktree will be made in — the worktree
-	// itself is not there yet — and the agent is sent once it is.
-	if err := run(domain.StageTerminal, func() error {
+	// itself is not there yet. Once it is, the pane's shell is replaced by
+	// the agent started in the worktree (Terminals.Launch), so nothing typed
+	// to start it is ever on the screen.
+	if err := run(domain.StageEvent{Stage: domain.StageTerminal}, func() error {
 		parent, err := s.worktrees.Prepare(ctx, in.Repo)
 		if err != nil {
 			return err
@@ -290,25 +293,28 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	// still see the session only once it has landed.
 	s.paneReady(session)
 
-	if err := run(domain.StageClone, func() error {
+	// A repository this host has never held is downloaded, which is the one
+	// stage that can take tens of seconds; the reader is told so.
+	download := !s.worktrees.Has(in.Repo)
+	if err := run(domain.StageEvent{Stage: domain.StageClone, Download: download}, func() error {
 		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, in.fetchRef())
 	}); err != nil {
 		return abandon(err)
 	}
-	if err := run(domain.StageWorktree, func() error {
+	if err := run(domain.StageEvent{Stage: domain.StageWorktree}, func() error {
 		return s.worktrees.Add(ctx, in.Repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
 	}); err != nil {
 		return abandon(err)
 	}
 	session.State = domain.StateStarting
-	if err := run(domain.StageAgent, func() error {
-		launch, err := s.saveImages(session.ID, in)
+	if err := run(domain.StageEvent{Stage: domain.StageAgent}, func() error {
+		launch, err := s.saveFiles(session.ID, in)
 		if err != nil {
 			return err
 		}
 		defer s.holdLaunch(ctx, session.Agent)()
-		if err := s.terminals.SendKeys(ctx, session.TmuxName(), enterWorktree(session.Worktree, launch.CommandLine(session.Agent))); err != nil {
-			s.discardImages(session.ID)
+		if err := s.terminals.Launch(ctx, session.Target(0), session.Worktree, launch.CommandLine(session.Agent)); err != nil {
+			s.discardFiles(session.ID)
 			return err
 		}
 		return nil
@@ -320,73 +326,55 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	return session, nil
 }
 
-// enterWorktree is the line window 0 is sent once the worktree is there: move
-// into it, then become the agent. `exec` is what makes the agent the pane's
-// own process rather than a child of a shell, so the window ends when the
-// agent does and every reader of a pane's process still reads the agent. A
-// session with no agent (a plain terminal) is left at its shell, in place.
-func enterWorktree(worktree, command string) string {
-	cd := "cd " + shellQuote(worktree)
-	if command == "" {
-		return cd + "\n"
-	}
-	return cd + " && exec " + command + "\n"
-}
-
-// shellQuote wraps a path for the shell window 0 runs, so a directory with a
-// space or a quote in it is one word.
-func shellQuote(value string) string {
-	return "'" + strings.ReplaceAll(value, "'", `'\''`) + "'"
-}
-
-// checkImages refuses a first task's images before anything is made: too
+// checkFiles refuses a first task's files before anything is made: too
 // many, a type a session does not take, or bytes that are not the type they
-// claim. A create that would launch the task without its pictures is refused
-// rather than started, since the task talks about them.
-func (s *Service) checkImages(images []CreateImage, prompt string) error {
-	if len(images) == 0 {
+// claim (domain.FileIs: magic bytes, or text that is only text). A create
+// that would launch the task without its files is refused rather than
+// started, since the task talks about them.
+func (s *Service) checkFiles(files []CreateFile, prompt string) error {
+	if len(files) == 0 {
 		return nil
 	}
-	if s.images == nil {
-		return domain.ErrImage.WithDetail("this runner keeps no images")
+	if s.files == nil {
+		return domain.ErrFile.WithDetail("this runner keeps no files")
 	}
 	if prompt == "" {
-		return domain.ErrInvalidInput.WithDetail("attached images ride a first task, and this create has none")
+		return domain.ErrInvalidInput.WithDetail("attached files ride a first task, and this create has none")
 	}
-	if len(images) > domain.CreateMaxImages {
-		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d images; this one carried %d", domain.CreateMaxImages, len(images))
+	if len(files) > domain.CreateMaxFiles {
+		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d files; this one carried %d", domain.CreateMaxFiles, len(files))
 	}
-	for _, image := range images {
-		if _, ok := domain.ImageExtension(image.MediaType); !ok {
-			return domain.ErrImage.WithDetail("%q is not an image type a session takes", image.MediaType)
+	for _, file := range files {
+		if _, ok := domain.FileExtension(file.MediaType); !ok {
+			return domain.ErrFile.WithDetail("%q is not a type a session takes", file.MediaType)
 		}
-		if domain.SniffImage(image.Data) != image.MediaType {
-			return domain.ErrImage.WithDetail("the bytes are not a %s image", image.MediaType)
+		if !domain.FileIs(file.Data, file.MediaType) {
+			return domain.ErrFile.WithDetail("the bytes are not %s", file.MediaType)
 		}
 	}
 	return nil
 }
 
-// saveImages writes the first task's images where pasted ones go and returns
+// saveFiles writes the first task's files where pasted ones go and returns
 // the launch that names them. Only the command line gets the paths:
 // session.Launch keeps the task as typed, so a restart, by which time the
-// images have been discarded with the tmux session, names no file that is gone.
-func (s *Service) saveImages(id string, in CreateInput) (domain.Launch, error) {
+// files have been discarded with the tmux session, names no file that is gone.
+func (s *Service) saveFiles(id string, in CreateInput) (domain.Launch, error) {
 	launch := in.Launch
-	if len(in.Images) == 0 {
+	if len(in.Files) == 0 {
 		return launch, nil
 	}
-	paths := make([]string, 0, len(in.Images))
-	for _, image := range in.Images {
-		ext, _ := domain.ImageExtension(image.MediaType)
-		path, err := s.images.Save(id, image.ID+ext, image.Data)
+	paths := make([]string, 0, len(in.Files))
+	for _, file := range in.Files {
+		ext, _ := domain.FileExtension(file.MediaType)
+		path, err := s.files.Save(id, file.ID+ext, file.Data)
 		if err != nil {
-			s.discardImages(id)
-			return launch, domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
+			s.discardFiles(id)
+			return launch, domain.ErrFile.WithDetail("write the file: %v", err).WithCause(err)
 		}
 		paths = append(paths, path)
 	}
-	launch.Prompt = domain.PromptWithImages(launch.Prompt, paths)
+	launch.Prompt = domain.PromptWithFiles(launch.Prompt, paths)
 	return launch, nil
 }
 
@@ -648,13 +636,13 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 	return s.terminals.SendKeys(ctx, session.Target(window), keys)
 }
 
-// PasteImage gives a window's program an image: it is written to the host
-// and its path pasted into the window, as a drag-and-drop does in a local
-// terminal — the agent reads its host's clipboard, never the browser's. The
-// bytes must be the type they claim to be, the file is named by the command
+// PasteFile gives a window's program a file (an image, a PDF, text): it is
+// written to the host and its path pasted into the window, as a drag-and-drop
+// does in a local terminal — the agent reads its host's clipboard, never the
+// browser's. The bytes must be the type they claim to be, the file is named by the command
 // id (checked at the link, and refused by the store if it is not a plain
 // name), and a paste that does not land takes its file with it.
-func (s *Service) PasteImage(ctx context.Context, id string, window int, commandID, mediaType string, data []byte) (string, error) {
+func (s *Service) PasteFile(ctx context.Context, id string, window int, commandID, mediaType string, data []byte) (string, error) {
 	session, err := s.recorded(id)
 	if err != nil {
 		return "", err
@@ -665,23 +653,23 @@ func (s *Service) PasteImage(ctx context.Context, id string, window int, command
 	if _, ok := session.Window(window); !ok {
 		return "", domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
 	}
-	if s.images == nil {
-		return "", domain.ErrImage.WithDetail("this runner keeps no images")
+	if s.files == nil {
+		return "", domain.ErrFile.WithDetail("this runner keeps no files")
 	}
-	ext, ok := domain.ImageExtension(mediaType)
+	ext, ok := domain.FileExtension(mediaType)
 	if !ok {
-		return "", domain.ErrImage.WithDetail("%q is not an image type a session takes", mediaType)
+		return "", domain.ErrFile.WithDetail("%q is not a type a session takes", mediaType)
 	}
-	if sniffed := domain.SniffImage(data); sniffed != mediaType {
-		return "", domain.ErrImage.WithDetail("the bytes are not a %s image", mediaType)
+	if !domain.FileIs(data, mediaType) {
+		return "", domain.ErrFile.WithDetail("the bytes are not %s", mediaType)
 	}
 	name := commandID + ext
-	path, err := s.images.Save(session.ID, name, data)
+	path, err := s.files.Save(session.ID, name, data)
 	if err != nil {
-		return "", domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
+		return "", domain.ErrFile.WithDetail("write the file: %v", err).WithCause(err)
 	}
 	if err := s.terminals.Paste(ctx, session.Target(window), commandID, path); err != nil {
-		_ = s.images.Delete(session.ID, name)
+		_ = s.files.Delete(session.ID, name)
 		return "", err
 	}
 	return path, nil
@@ -1033,7 +1021,7 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 		return next, !known || !reflect.DeepEqual(next, cur)
 	})
 	if ended {
-		s.discardImages(next.ID)
+		s.discardFiles(next.ID)
 	}
 	if announce {
 		publisher.SessionChanged(next)
@@ -1070,19 +1058,19 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 	// Only a live session is ever observed, so a non-live state here is
 	// the moment it ended.
 	if !state.Live() {
-		s.discardImages(next.ID)
+		s.discardFiles(next.ID)
 	}
 	publisher.SessionChanged(next)
 	return next
 }
 
-// discardImages drops a session's pasted images. They were for the agent in
+// discardFiles drops a session's pasted files. They were for the agent in
 // the tmux session; once it is gone (stopped, closed, lost to a reboot)
 // nothing will read them. decide and observe call it as a session stops, and
 // a create whose agent never started drops what it saved.
-func (s *Service) discardImages(id string) {
-	if s.images != nil {
-		_ = s.images.Discard(id)
+func (s *Service) discardFiles(id string) {
+	if s.files != nil {
+		_ = s.files.Discard(id)
 	}
 }
 

@@ -110,9 +110,10 @@
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
-  (the paperclip, or an image pasted into the field, attaches it to the
-  first task as a removable chip under the text; a file it cannot take
-  is refused under the field with the reason, never dropped)
+  (the paperclip, a file pasted into the field or dropped on the pane
+  attaches it to the first task as a removable chip under the text —
+  an image, a PDF or a text file; a file it cannot take is refused under
+  the field with the reason, never dropped)
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
@@ -258,6 +259,18 @@
   under it, and the title to "The session did not start". A refusal
   the console can name reads in its words: `SESS_002` is "This host
   makes sessions with one repository".
+- A first session on a repository its host has never held downloads it,
+  and the pane says so above the steps: the host is downloading the
+  repository first, this one takes a bit longer, and later sessions
+  start in about a second. The clone step reads "Downloading the
+  repository…" instead of the fetch's wording. Both come from the
+  clone step's `download` flag (01).
+- The provisioning pane stays until the `agent` step lands, not until the
+  row reads `open`. The host makes the session's pane before it clones, so
+  the row opens with the clone still to run (01), and a terminal shown then
+  is a shell in an empty directory. The hold covers a start this console
+  sent or watched; a session opened from a link or a reload after it opened
+  goes straight to its terminal, without reading the log.
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the
@@ -297,8 +310,8 @@
   pointer on that grey is a turn. Those cells are repainted in the
   terminal's own ramp, because Claude's theme is not the console's (its dark
   grey on a light console is a black bar), and the tint is laid over them.
-- **An image pasted or dropped onto the terminal becomes a path in the
-  prompt**, as a drag-and-drop does in a local terminal (01
+- **A file pasted or dropped onto the terminal becomes a path in the
+  prompt** (an image, a PDF or a text file), as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
   stays on screen until dismissed.
 - Settings → Hosts (above): each host a card with its status and running

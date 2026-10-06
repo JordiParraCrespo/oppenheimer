@@ -4,6 +4,7 @@
     "failedTitle": "La sesión no se inició",
     "failedLead": "El host no pudo iniciar esta sesión.",
     "working": "Trabajando…",
+    "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
     "took": "{{seconds}} s",
     "steps": {
@@ -16,7 +17,8 @@
       },
       "clone": {
         "label": "Clonar {{repo}}",
-        "doing": "Descargando el repositorio…"
+        "doing": "Descargando el repositorio…",
+        "downloading": "Descargando el repositorio por primera vez…"
       },
       "worktree": {
         "label": "Crear el worktree",
@@ -131,23 +133,22 @@
       "placeholder": "Describe una tarea o haz una pregunta",
       "send": "Enviar",
       "stop": "Detener",
-      "attach": "Adjuntar imágenes",
+      "attach": "Adjuntar archivos",
       "removeAttachment": "Quitar {{name}}",
-      "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
-      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} archivos.",
+      "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto."
     },
     "failed": "No se pudo crear la sesión."
   },
   "session": {
     "status": {
-      "connecting": "Conectando",
-      "live": "En vivo",
-      "offline": "Host desconectado",
       "closed": "Desconectado"
     },
-    "image": {
-      "sending": "Enviando imagen",
-      "failedTitle": "La imagen no llegó a la sesión"
+    "file": {
+      "sending": "Enviando archivo",
+      "notSupported": "Ninguno de los archivos soltados es uno que el agente pueda recibir. Suelta una imagen, un PDF o un archivo de texto.",
+      "failedTitle": "El archivo no llegó a la sesión"
     },
     "retryNow": "Reintentar ahora",
     "retry": "Intentar de nuevo",
@@ -158,6 +159,36 @@
     "starting": {
       "title": "Todavía no hay nada en pantalla",
       "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
+    },
+    "hostLink": {
+      "thisHost": "este host",
+      "status": {
+        "live": "En directo",
+        "reconnecting": "Conectando con {{host}}…",
+        "offline": "Host desconectado",
+        "catchingUp": "Poniéndose al día con {{host}}…",
+        "reconnected": "Reconectado"
+      },
+      "title": {
+        "offline": "{{host}} está desconectado",
+        "catchingUp": "El runner ha vuelto",
+        "reconnected": "Reconectado"
+      },
+      "line": {
+        "offline": "Se reconecta solo cuando vuelva el runner",
+        "catchingUp": "Recuperando la salida de {{host}}…",
+        "reconnected": "El historial está al día"
+      },
+      "fix": "Cómo arreglarlo",
+      "fixIntro": "Ejecútalos en {{host}}, no en este terminal, o pásale el prompt a Claude Code o Codex en esa máquina.",
+      "install": "Si está parado, reinstálalo y arráncalo:",
+      "statusCommand": "Mira qué falla:",
+      "hosts": "Ajustes → Hosts",
+      "copy": "Copiar comando",
+      "copied": "Copiado",
+      "logCommand": "Lee el log reciente del runner:",
+      "copyPrompt": "Copiar prompt de diagnóstico",
+      "prompt": "El runner de Oppenheimer en {{host}} ha perdido la conexión con Oppenheimer. Ayúdame a recuperarlo.\n\n- Primero dime en qué máquina estás (uname -n, whoami). Si no es {{host}}, para.\n- Ejecuta ~/.local/bin/oppenheimer-runner status y enséñame lo que imprime.\n- Lee las últimas 50 líneas de ~/.oppenheimer/log/runner.log y ~/.oppenheimer/log/runner.err.log\n  y dime qué ha fallado.\n- No reinstales, desinstales ni ejecutes nada como root salvo que te lo diga. Si el servicio\n  está parado, propón ~/.local/bin/oppenheimer-runner install y espera a que te dé el visto bueno."
     }
   },
   "sidebar": {

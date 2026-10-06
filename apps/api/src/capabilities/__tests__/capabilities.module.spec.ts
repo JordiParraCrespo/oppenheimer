@@ -17,7 +17,24 @@ describe('resolveCapabilities', () => {
       hosts: false,
       session_namer: false,
       ip_geolocation: false,
+      google_calendar: false,
     });
+  });
+
+  it('reports Google Calendar only with the Google client and a 32-byte sealing key', () => {
+    const client = { 'oauth.google.clientId': 'id', 'oauth.google.clientSecret': 'secret' };
+    const key = Buffer.alloc(32, 7).toString('base64');
+    expect(resolveCapabilities(configWith(client)).google_calendar).toBe(false);
+    expect(
+      resolveCapabilities(configWith({ ...client, 'calendar.tokenKey': 'too-short' }))
+        .google_calendar,
+    ).toBe(false);
+    expect(resolveCapabilities(configWith({ 'calendar.tokenKey': key })).google_calendar).toBe(
+      false,
+    );
+    expect(
+      resolveCapabilities(configWith({ ...client, 'calendar.tokenKey': key })).google_calendar,
+    ).toBe(true);
   });
 
   it('reports IP geolocation once either database is named', () => {

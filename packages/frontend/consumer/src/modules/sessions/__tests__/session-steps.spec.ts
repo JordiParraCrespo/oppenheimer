@@ -17,7 +17,8 @@ const step = (
   id: 'host' | 'clone' | 'worktree' | 'agent',
   status: 'running' | 'done',
   durationMs: number | null = null,
-): SessionStartEntry => ({ seq: ++seq, kind: 'step', step: id, status, durationMs });
+  download = false,
+): SessionStartEntry => ({ seq: ++seq, kind: 'step', step: id, status, durationMs, download });
 const started = (): SessionStartEntry => ({ seq: ++seq, kind: 'started' });
 const failedEntry = (detail: string | null = null): SessionStartEntry => ({
   seq: ++seq,
@@ -65,10 +66,82 @@ describe('deriveSessionStartProgress', () => {
     expect(steps.find((s) => s.id === 'worktree')?.durationMs).toBeNull();
   });
 
-  it('is all done and settled once the session started, even from a runner that logs no steps', () => {
+  it('keeps going after the session started: that is the pane, before the clone', () => {
+    // The row opens here; the start pane must not, or it shows a shell in a
+    // directory with nothing in it while the clone is still running.
+    const progress = deriveSessionStartProgress(
+      [step('host', 'done'), started(), step('clone', 'running')],
+      { failed: false },
+    );
+    expect(progress.steps.map((s) => `${s.id}:${s.state}`)).toEqual([
+      'host:done',
+      'clone:running',
+      'worktree:pending',
+      'agent:pending',
+    ]);
+    expect(progress.settled).toBe(false);
+  });
+
+  it('is all done and settled once the agent step landed', () => {
+    const progress = deriveSessionStartProgress(
+      [
+        step('host', 'done'),
+        started(),
+        step('clone', 'done'),
+        step('worktree', 'done'),
+        step('agent', 'running'),
+        step('agent', 'done', 40),
+      ],
+      { failed: false },
+    );
+    expect(progress.steps.every((s) => s.state === 'done')).toBe(true);
+    expect(progress.settled).toBe(true);
+  });
+
+  it('is settled by the session starting on a runner that logs no steps', () => {
     const progress = deriveSessionStartProgress([started()], { failed: false });
     expect(progress.steps.every((s) => s.state === 'done')).toBe(true);
     expect(progress.settled).toBe(true);
+  });
+
+  it('says the host is downloading the repository while a first clone runs, and stops once settled', () => {
+    const downloading = deriveSessionStartProgress(
+      [step('host', 'done'), started(), step('clone', 'running', null, true)],
+      { failed: false },
+    );
+    expect(downloading.downloading).toBe(true);
+    expect(downloading.steps[1].download).toBe(true);
+
+    // The checkout after a first download is slow too: still the same wait.
+    const checkingOut = deriveSessionStartProgress(
+      [
+        step('clone', 'running', null, true),
+        step('clone', 'done', 6000),
+        step('worktree', 'running'),
+      ],
+      { failed: false },
+    );
+    expect(checkingOut.downloading).toBe(true);
+
+    const up = deriveSessionStartProgress(
+      [
+        step('clone', 'running', null, true),
+        step('clone', 'done', 6000),
+        step('agent', 'done', 40),
+      ],
+      { failed: false },
+    );
+    expect(up.downloading).toBe(false);
+  });
+
+  it('does not say it is downloading a repository the host already had, or once the start failed', () => {
+    expect(
+      deriveSessionStartProgress([step('clone', 'running')], { failed: false }).downloading,
+    ).toBe(false);
+    expect(
+      deriveSessionStartProgress([step('clone', 'running', null, true)], { failed: true })
+        .downloading,
+    ).toBe(false);
   });
 
   it('fails the step in hand and carries the host’s reason', () => {
@@ -117,7 +190,14 @@ describe('toStartEntry', () => {
         kind: 'session.step',
         payload: { step: 'clone', status: 'done', durationMs: 5 },
       }),
-    ).toEqual({ seq: 1, kind: 'step', step: 'clone', status: 'done', durationMs: 5 });
+    ).toEqual({
+      seq: 1,
+      kind: 'step',
+      step: 'clone',
+      status: 'done',
+      durationMs: 5,
+      download: false,
+    });
     expect(
       toStartEntry({ seq: 2, kind: 'session.failed', payload: { detail: ' no repo ' } }),
     ).toEqual({
@@ -128,6 +208,16 @@ describe('toStartEntry', () => {
     });
   });
 
+  it('reads the download flag a first clone carries', () => {
+    expect(
+      toStartEntry({
+        seq: 1,
+        kind: 'session.step',
+        payload: { step: 'clone', status: 'running', download: true },
+      }),
+    ).toMatchObject({ step: 'clone', status: 'running', download: true });
+  });
+
   it('drops a step the schema does not know, and every other kind', () => {
     expect(
       toStartEntry({ seq: 1, kind: 'session.step', payload: { step: 'warm', status: 'done' } }),
@@ -135,11 +225,38 @@ describe('toStartEntry', () => {
     expect(toStartEntry({ seq: 2, kind: 'agent.observed', payload: {} })).toBeNull();
   });
 
-  it('knows which entries settle a start', () => {
-    expect(settlesStart({ seq: 1, kind: 'started' })).toBe(true);
-    expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(true);
+  it('knows which entries settle a start: the agent running, or a failure', () => {
     expect(
-      settlesStart({ seq: 1, kind: 'step', step: 'host', status: 'done', durationMs: 1 }),
+      settlesStart({
+        seq: 1,
+        kind: 'step',
+        step: 'agent',
+        status: 'done',
+        durationMs: 1,
+        download: false,
+      }),
+    ).toBe(true);
+    expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(true);
+    expect(settlesStart({ seq: 1, kind: 'started' })).toBe(false);
+    expect(
+      settlesStart({
+        seq: 1,
+        kind: 'step',
+        step: 'agent',
+        status: 'running',
+        durationMs: null,
+        download: false,
+      }),
+    ).toBe(false);
+    expect(
+      settlesStart({
+        seq: 1,
+        kind: 'step',
+        step: 'host',
+        status: 'done',
+        durationMs: 1,
+        download: false,
+      }),
     ).toBe(false);
   });
 });
