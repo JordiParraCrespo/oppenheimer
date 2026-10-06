@@ -1,14 +1,31 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
-import { EmailService } from '@oppenheimer/backend-email';
+import { EmailRateLimitedError, EmailService } from '@oppenheimer/backend-email';
 import { I18nService, type LocalizedFormatter } from '@oppenheimer/backend-i18n';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
-import type { Job } from 'bullmq';
+import { type Job, type Queue, Worker } from 'bullmq';
 import type { LocaleResolverPort } from '../../profile/application/locale-resolver.port';
 import { LOCALE_RESOLVER } from '../../profile/profile.di-tokens';
 import { EmailJobMapper, type EmailLocaleTarget } from '../email-job.mapper';
 
-@Processor(QUEUE_NAMES.EMAIL)
+/**
+ * Sends at most this many emails per second, across every worker on the queue:
+ * Resend's default rate limit for a team. The limiter is also what lets
+ * {@link EmailProcessor.holdQueue} hold the queue at all — BullMQ only honours
+ * a manual rate limit on a worker that has one.
+ */
+const SENDS_PER_SECOND = 2;
+
+/**
+ * Sends the queued transactional mail.
+ *
+ * A provider that refuses for rate or quota (`EmailRateLimitedError`) holds the
+ * whole queue until it said it will take mail again, and the job goes back to
+ * waiting without spending an attempt: retrying each job on its own backoff
+ * would spend all five against the same refusal and drop the mail
+ * (`.agents/rules/integrations.md`).
+ */
+@Processor(QUEUE_NAMES.EMAIL, { limiter: { max: SENDS_PER_SECOND, duration: 1_000 } })
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
 
@@ -18,13 +35,34 @@ export class EmailProcessor extends WorkerHost {
     @Inject(LOCALE_RESOLVER)
     private readonly locales: LocaleResolverPort,
     private readonly mapper: EmailJobMapper,
+    @InjectQueue(QUEUE_NAMES.EMAIL)
+    private readonly queue: Queue,
   ) {
     super();
   }
 
   async process(job: Job): Promise<void> {
     this.logger.log(`Processing email job ${job.id}: ${job.name}`);
+    try {
+      await this.send(job);
+    } catch (error) {
+      if (error instanceof EmailRateLimitedError) await this.holdQueue(job, error.resetAt);
+      throw error;
+    }
+  }
 
+  /**
+   * Hold every job on the queue until `resetAt`, and put this one back to wait
+   * for it. `Worker.RateLimitError` is how BullMQ is told the job did not fail.
+   */
+  private async holdQueue(job: Job, resetAt: Date): Promise<never> {
+    const ms = Math.max(1_000, resetAt.getTime() - Date.now());
+    this.logger.warn(`Email provider rate limit: holding the queue ${ms}ms (job ${job.id})`);
+    await this.queue.rateLimit(ms);
+    throw Worker.RateLimitError();
+  }
+
+  private async send(job: Job): Promise<void> {
     switch (job.name) {
       case 'password-reset': {
         const target = this.mapper.toLocaleTarget(job.data);

@@ -54,7 +54,9 @@ reference implementation, and the Google Calendar gateway is the minimal one.
   such as GitHub's "secondary rate limit" sentence or Google's
   `rateLimitExceeded` reason, are checked in the adapter, because only the
   adapter knows the provider's body shape.
-- **A rate limit is its own error code, a `429`.** Build it with
+- **A rate limit is its own error code, a `429`.** A package that throws its
+  own errors (`backend-llm`, `backend-email`) instead gives them their own
+  type or `code`, carrying `resetAt`. In the API, build it with
   `upstreamRateLimited(Errors.X_RATE_LIMITED, { system, resetAt })`.
   `AllExceptionsFilter` then sends `Retry-After`, and the problem document
   carries `retryAfterSeconds`. Never let it fold into the call site's mapping
@@ -70,8 +72,11 @@ reference implementation, and the Google Calendar gateway is the minimal one.
   `Promise.all`s fan out above it.
 - **No silent retries on the request path.** A user-facing read fails fast
   with the `429` and the reset time. A background job (BullMQ) does not retry
-  on its own schedule: it is re-queued with its delay set to the reset. Never
-  `sleep` inside a request.
+  on its own schedule. When the limit covers the whole provider, the worker
+  holds the queue with `queue.rateLimit(ms)` and throws
+  `Worker.RateLimitError()`, which needs a `limiter` on the `@Processor`. The
+  email worker is the example. When the limit covers one job, it is moved to
+  delayed until the reset. Never `sleep` inside a request.
 - **Spend less before you limit more.** Cache reads with
   `CacheService.getOrSet` (single-flight per key), take webhooks over polling,
   reuse credentials for their lifetime (one minted token per hour, not per
@@ -98,8 +103,8 @@ At the adapter's own boundary, against a `fetch` double:
 | --------------- | ------------------------------------------------------- | ----------------------------------------------- | ------ |
 | GitHub REST     | `apps/api/src/github/infrastructure/`                   | `app`, `installation:<id>`, `oauth`, `token:<hash>` | Pause and in-flight cap (8 per process), `GITHUB_015` |
 | Google Calendar | `apps/api/src/calendar/infrastructure/google-calendar.gateway.ts` | `grant:<hash>`                                  | Pause per grant, `CALENDAR_010` |
-| LLM providers   | `packages/backend/llm/src/http.ts`                      | the provider key                                | **Gap.** `LlmError` keeps `status`, so a `429` is distinguishable, but nothing pauses. The only caller, session naming, is one best-effort call per session. Adopt the pause before any caller fans out |
-| Email (Resend)  | `packages/backend/email/src/resend-email.service.ts`    | the API key                                     | **Gap.** Sends go through the BullMQ email queue; a `429` should re-queue at the reset |
+| LLM providers   | `packages/backend/llm/src/rate-limit.ts`                | the provider (one per `LlmService`)             | A `429` is `LlmError` `rate_limited` with `resetAt`, and the provider is paused until its `Retry-After`. The pause is per process, because this package depends on nothing in the workspace and every caller has a fallback. No concurrency cap: the only caller, session naming, makes one call per session. Add a cap before any caller fans out |
+| Email (Resend)  | `packages/backend/email/src/resend-email.service.ts`, `apps/api/src/queue/infrastructure/email.processor.ts` | the team (the queue)                            | Paced at 2 sends a second by the worker's BullMQ `limiter`. A refusal for rate or quota is `EmailRateLimitedError`, and the worker holds the whole queue until the reset (`queue.rateLimit`) without spending the job's attempt |
 | S3 storage      | `packages/backend/storage/src/s3-storage.service.ts`    | the bucket                                      | The AWS SDK's own retry and backoff |
 | Runner releases | `apps/runner/internal/updates/adapters/release/`        | the release host                                | Our own host. One manifest read per update check |
 

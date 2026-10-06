@@ -9,7 +9,9 @@ Pluggable transactional email for the API, with templates authored in
 - Implementations:
   - `ConsoleEmailService` — logs emails to stdout (local dev / tests).
   - `NodemailerEmailService` — SMTP via `nodemailer`.
-  - `ResendEmailService` — [Resend](https://resend.com/) API.
+  - `ResendEmailService` — [Resend](https://resend.com/) API. A refusal for
+    rate or quota throws `EmailRateLimitedError` with `resetAt`, which the
+    API's email worker turns into a hold on the whole queue.
 - `EmailModule` — selects the implementation from config and binds it to
   `EmailService`.
 

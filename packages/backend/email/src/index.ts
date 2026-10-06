@@ -1,4 +1,5 @@
 export { ConsoleEmailService } from './console-email.service';
+export { EmailRateLimitedError } from './email.errors';
 export { EmailModule } from './email.module';
 export {
   type ActionEmailParams,
