@@ -2234,7 +2234,11 @@ export type PullRequestRowDto = {
     laneReason: PullRequestLaneReasonDto;
     additions: number;
     deletions: number;
-    checks: 'passing' | 'failing' | 'running' | 'none';
+    /**
+     * `unavailable`: GitHub would not show them, and `checksRefusal` says why.
+     */
+    checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+    checksRefusal?: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
     /**
      * False on a conflict with the base; true while GitHub is still computing it.
      */
@@ -2263,6 +2267,18 @@ export type PullRequestLaneCountsDto = {
     quick: number;
 };
 
+export type UnreadableRepositoryDto = {
+    fullName: string;
+    /**
+     * Why: no access, gone, GitHub asked to wait, or did not answer.
+     */
+    refusal: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+    /**
+     * True when some of its pull requests were read and some were not.
+     */
+    partial: boolean;
+};
+
 export type PullRequestQueueResponseDto = {
     /**
      * Longest wait first.
@@ -2283,6 +2299,14 @@ export type PullRequestQueueResponseDto = {
      * The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name.
      */
     viewerLogin?: string | null;
+    /**
+     * Watched repositories this read could not fully answer.
+     */
+    unreadable: Array<UnreadableRepositoryDto>;
+    /**
+     * GitHub refused a pull request’s checks for want of access: the App lacks Checks or Commit statuses read.
+     */
+    checksRefused: boolean;
 };
 
 export type AnalyticsFigureDto = {
@@ -2354,6 +2378,15 @@ export type PullRequestAnalyticsResponseDto = {
      * What holds the open pull requests now.
      */
     waiting: Array<AnalyticsWaitingDto>;
+    /**
+     * False when more pull requests closed in the window than one read takes in full; the figures then count the most recent.
+     */
+    complete: boolean;
+    /**
+     * How many closed pull requests one read takes in full.
+     */
+    closedCeiling: number;
+    unreadable: Array<UnreadableRepositoryDto>;
 };
 
 export type WatchedRepositoryDto = {
@@ -2372,7 +2405,7 @@ export type SetRepositoryWatchRequest = {
 };
 
 export type PullRequestChecksDto = {
-    state: 'passing' | 'failing' | 'running' | 'none';
+    state: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
     total: number;
     passed: number;
     failed: number;
@@ -2412,7 +2445,11 @@ export type PullRequestDetailResponseDto = {
     laneReason: PullRequestLaneReasonDto;
     additions: number;
     deletions: number;
-    checks: 'passing' | 'failing' | 'running' | 'none';
+    /**
+     * `unavailable`: GitHub would not show them, and `checksRefusal` says why.
+     */
+    checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+    checksRefusal?: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
     /**
      * False on a conflict with the base; true while GitHub is still computing it.
      */
@@ -8576,7 +8613,7 @@ export type FindPullRequestsErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8627,7 +8664,7 @@ export type FindPullRequestAnalyticsErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8673,7 +8710,7 @@ export type FindWatchedRepositoriesErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8722,7 +8759,7 @@ export type SetRepositoryWatchErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8772,7 +8809,7 @@ export type FindPullRequestErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8822,7 +8859,7 @@ export type FindPullRequestFilesErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8872,7 +8909,7 @@ export type FindPullRequestCommentsErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8922,7 +8959,7 @@ export type AddPullRequestCommentErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -8972,7 +9009,7 @@ export type SubmitPullRequestReviewErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };
@@ -9022,7 +9059,7 @@ export type MergePullRequestErrors = {
      */
     502: ProblemDetailsDto;
     /**
-     * GITHUB_002 — The GitHub App is not configured on this server
+     * GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds
      */
     503: ProblemDetailsDto;
 };

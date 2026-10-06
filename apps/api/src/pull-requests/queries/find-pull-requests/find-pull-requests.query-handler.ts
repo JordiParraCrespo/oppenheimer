@@ -29,13 +29,14 @@ export class FindPullRequestsQueryHandler
       this.watched.watched(scope),
       this.access.viewerLogin(scope.userId),
     ]);
-    const snapshots = (
-      await Promise.all(
-        repositories.map((repository) => this.access.openPullRequests(scope, repository)),
-      )
-    ).flat();
+    // A repository GitHub will not answer costs its own rows, not the queue (#244).
+    const reads = await Promise.all(
+      repositories.map((repository) => this.access.openPullRequests(scope, repository)),
+    );
     const now = new Date();
-    const rows = snapshots.map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now));
-    return this.mapper.toQueue(rows, queue, viewerLogin);
+    const rows = reads.flatMap((read) =>
+      read.snapshots.map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now)),
+    );
+    return this.mapper.toQueue(rows, queue, viewerLogin, reads);
   }
 }

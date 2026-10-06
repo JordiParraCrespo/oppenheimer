@@ -1,6 +1,13 @@
 import type { PullRequestAnalyticsRange } from '@oppenheimer/shared';
 
 const DAY_MS = 86_400_000;
+
+/**
+ * The most closed pull requests one Analytics read takes in full, newest
+ * first: what keeps a page view's cost bounded by the window rather than by
+ * the installation (#247). Past it the answer says it is not complete.
+ */
+export const CLOSED_CEILING = 150;
 const RANGE_DAYS: Record<PullRequestAnalyticsRange, number> = { week: 7, month: 30, quarter: 90 };
 
 /** The period on screen and the one before it, both ending on `now`'s side. */

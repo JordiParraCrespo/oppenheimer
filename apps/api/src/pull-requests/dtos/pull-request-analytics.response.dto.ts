@@ -5,6 +5,7 @@ import {
   type PullRequestAnalyticsRange,
   type PullRequestLane,
 } from '@oppenheimer/shared';
+import { UnreadableRepositoryDto } from './pull-request.response.dto';
 
 /** A figure this period and the one before it. */
 export class AnalyticsFigureDto {
@@ -120,4 +121,16 @@ export class PullRequestAnalyticsResponseDto {
     description: 'What holds the open pull requests now.',
   })
   waiting!: AnalyticsWaitingDto[];
+
+  @ApiProperty({
+    description:
+      'False when more pull requests closed in the window than one read takes in full; the figures then count the most recent.',
+  })
+  complete!: boolean;
+
+  @ApiProperty({ description: 'How many closed pull requests one read takes in full.' })
+  closedCeiling!: number;
+
+  @ApiProperty({ type: [UnreadableRepositoryDto] })
+  unreadable!: UnreadableRepositoryDto[];
 }

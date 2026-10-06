@@ -151,6 +151,7 @@
       "GITHUB_012": "Vuelve a conectar GitHub para que las revisiones y los merges se hagan en tu nombre.",
       "GITHUB_013": "No se ha encontrado esa pull request.",
       "GITHUB_014": "GitHub todavía no fusionará esta pull request. Espera hasta que pueda.",
+      "GITHUB_015": "GitHub nos pidió ir más despacio. Vuelve a intentarlo en un minuto.",
       "PROJECTS_001": "No se ha encontrado ese proyecto.",
       "PROJECTS_002": "Elige un espacio de trabajo antes de trabajar con proyectos.",
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",

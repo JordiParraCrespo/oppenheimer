@@ -14,6 +14,12 @@ import type {
   GithubReviewComment,
   GithubReviewInput,
 } from './github-pulls.port';
+import {
+  GithubRequestGate,
+  MAX_WAIT_MS,
+  readRateLimit,
+  withJitter,
+} from './github-rate-limit.util';
 import type { GithubFetch } from './github-rest.adapter';
 
 const API_VERSION = '2022-11-28';
@@ -22,6 +28,8 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const PAGE_SIZE = 100;
 /** A pull request's files, reviews and comments: GitHub stops listing files at 3,000 anyway. */
 const MAX_PAGES = 30;
+/** Times one request waits out a limit before the refusal is the caller's. */
+const MAX_LIMIT_RETRIES = 2;
 
 interface RawUser {
   login: string;
@@ -99,6 +107,8 @@ interface RawCombinedStatus {
 export class GithubPullsAdapter implements GithubPullsPort {
   private readonly logger = new Logger(GithubPullsAdapter.name);
   private readonly http: GithubFetch;
+  /** Every pull request read and write, paced per token (#247). */
+  private readonly gate = new GithubRequestGate();
 
   constructor(
     private readonly configService: ConfigService,
@@ -346,9 +356,64 @@ export class GithubPullsAdapter implements GithubPullsPort {
       onStatus?: Partial<Record<number, ErrorDefinition>>;
     },
   ): Promise<{ body: T; link: string | null }> {
-    let response: Response;
+    for (let attempt = 0; ; attempt += 1) {
+      const response = await this.gate.run(options.token, () => this.send(url, options));
+      const upstreamMessage = response.ok ? null : ((await messageOf(response)) ?? null);
+      const limit = readRateLimit(response.status, response.headers, upstreamMessage);
+      if (limit.resumeAt) {
+        const now = Date.now();
+        this.gate.pause(options.token, now + withJitter(Math.max(0, limit.resumeAt - now)));
+      }
+
+      if (limit.limited) {
+        const wait = (limit.resumeAt ?? Date.now()) - Date.now();
+        this.logger.warn({
+          message: 'GitHub asked to wait',
+          url: pathOf(url),
+          status: response.status,
+          wait,
+        });
+        // The gate holds the next attempt until GitHub's pause is over.
+        if (attempt < MAX_LIMIT_RETRIES && wait <= MAX_WAIT_MS) continue;
+        throw new AppError(GithubErrors.RATE_LIMITED, {
+          detail: upstreamMessage ?? 'GitHub asked to wait before the next request.',
+          extensions: {
+            upstreamStatus: response.status,
+            retryAfterSeconds: Math.max(1, Math.ceil(wait / 1000)),
+          },
+        });
+      }
+
+      if (!response.ok) {
+        this.logger.warn({
+          message: 'GitHub rejected a request',
+          url: pathOf(url),
+          status: response.status,
+        });
+        const named = options.onStatus?.[response.status];
+        throw new AppError(
+          named ??
+            (response.status === 401
+              ? GithubErrors.USER_NOT_CONNECTED
+              : GithubErrors.UPSTREAM_FAILED),
+          {
+            detail: upstreamMessage ?? 'GitHub answered this request with an error.',
+            extensions: { upstreamStatus: response.status },
+          },
+        );
+      }
+
+      const text = await response.text();
+      return { body: (text ? JSON.parse(text) : {}) as T, link: response.headers.get('link') };
+    }
+  }
+
+  private async send(
+    url: string,
+    options: { token: string; method?: string; body?: unknown },
+  ): Promise<Response> {
     try {
-      response = await this.http(url, {
+      return await this.http(url, {
         method: options.method ?? 'GET',
         headers: {
           accept: 'application/vnd.github+json',
@@ -367,29 +432,6 @@ export class GithubPullsAdapter implements GithubPullsPort {
         extensions: { upstreamStatus: null },
       });
     }
-
-    if (!response.ok) {
-      this.logger.warn({
-        message: 'GitHub rejected a request',
-        url: pathOf(url),
-        status: response.status,
-      });
-      const upstreamMessage = await messageOf(response);
-      const named = options.onStatus?.[response.status];
-      throw new AppError(
-        named ??
-          (response.status === 401
-            ? GithubErrors.USER_NOT_CONNECTED
-            : GithubErrors.UPSTREAM_FAILED),
-        {
-          detail: upstreamMessage ?? 'GitHub answered this request with an error.',
-          extensions: { upstreamStatus: response.status },
-        },
-      );
-    }
-
-    const text = await response.text();
-    return { body: (text ? JSON.parse(text) : {}) as T, link: response.headers.get('link') };
   }
 }
 

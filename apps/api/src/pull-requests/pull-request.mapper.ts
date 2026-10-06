@@ -6,6 +6,7 @@ import type {
 } from '@oppenheimer/shared';
 import type {
   PullRequestSnapshot,
+  RepositoryPulls,
   WorkspaceRepository,
 } from '../github/application/pull-request-access.port';
 import type {
@@ -36,6 +37,7 @@ import type {
   PullRequestQueueResponseDto,
   PullRequestReviewerDto,
   PullRequestRowDto,
+  UnreadableRepositoryDto,
   WatchedRepositoryDto,
 } from './dtos/pull-request.response.dto';
 import type { PullRequestAnalyticsResponseDto } from './dtos/pull-request-analytics.response.dto';
@@ -66,6 +68,7 @@ export class PullRequestMapper {
       additions: pull.additions,
       deletions: pull.deletions,
       checks: snapshot.checks.state,
+      checksRefusal: snapshot.checks.refusal ?? null,
       mergeable: pull.mergeable !== false && pull.mergeableState !== 'dirty',
       blocker: mergeBlocker(this.factsOf(snapshot)),
       waitingSeconds: Math.max(
@@ -81,6 +84,7 @@ export class PullRequestMapper {
     rows: PullRequestRowDto[],
     scope: PullRequestScope,
     viewerLogin: string | null,
+    reads: RepositoryPulls[],
   ): PullRequestQueueResponseDto {
     const items = rows
       .filter((row) => row.scope === scope)
@@ -103,7 +107,23 @@ export class PullRequestMapper {
       withConflicts: count((row) => row.blocker === 'conflicts'),
       oldestWaitingSeconds: items[0]?.waitingSeconds ?? null,
       viewerLogin,
+      unreadable: this.toUnreadable(reads),
+      checksRefused: rows.some((row) => row.checksRefusal === 'forbidden'),
     };
+  }
+
+  /** The repositories a read could not fully answer, by name and why (#244). */
+  toUnreadable(reads: RepositoryPulls[]): UnreadableRepositoryDto[] {
+    const byName = new Map<string, UnreadableRepositoryDto>();
+    for (const read of reads) {
+      if (!(read.refusal || read.partial) || byName.has(read.repository.fullName)) continue;
+      byName.set(read.repository.fullName, {
+        fullName: read.repository.fullName,
+        refusal: read.refusal ?? 'failed',
+        partial: read.partial,
+      });
+    }
+    return [...byName.values()];
   }
 
   toDetail(
@@ -176,6 +196,9 @@ export class PullRequestMapper {
     closed: PullRequestSnapshot[];
     viewerLogin: string | null;
     now: Date;
+    complete: boolean;
+    closedCeiling: number;
+    unreadable: UnreadableRepositoryDto[];
   }): PullRequestAnalyticsResponseDto {
     const { window, viewerLogin, now } = input;
     const all = dedupe([...input.open, ...input.closed]);
@@ -258,6 +281,9 @@ export class PullRequestMapper {
       waiting: [...waiting.entries()]
         .map(([reason, hours]) => ({ reason, value: hours.length, medianHours: median(hours) }))
         .sort((a, b) => b.value - a.value),
+      complete: input.complete,
+      closedCeiling: input.closedCeiling,
+      unreadable: input.unreadable,
     };
   }
 

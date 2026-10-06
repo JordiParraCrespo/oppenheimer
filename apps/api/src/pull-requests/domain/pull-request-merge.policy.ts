@@ -8,7 +8,8 @@ export interface MergeFacts {
   /** Null while GitHub is still computing it. */
   mergeable: boolean | null;
   mergeableState: string;
-  checks: 'passing' | 'failing' | 'running' | 'none';
+  /** `unavailable` holds nothing here: GitHub refuses the merge itself if a required check is missing. */
+  checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
   /** Each reviewer's latest verdict. */
   verdicts: readonly ('APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED')[];
 }
@@ -44,7 +45,12 @@ export function mergeGates(
   const approved =
     facts.verdicts.includes('APPROVED') && !facts.verdicts.includes('CHANGES_REQUESTED');
   return {
-    checks: facts.checks === 'failing' ? 'failed' : facts.checks === 'running' ? 'pending' : 'done',
+    checks:
+      facts.checks === 'failing'
+        ? 'failed'
+        : facts.checks === 'running' || facts.checks === 'unavailable'
+          ? 'pending'
+          : 'done',
     conflicts:
       facts.mergeable === false || facts.mergeableState === 'dirty'
         ? 'failed'

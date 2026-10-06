@@ -22,7 +22,8 @@ const BLOCKERS = [
   'behind',
   'approval_required',
 ] as const;
-const CHECK_STATES = ['passing', 'failing', 'running', 'none'] as const;
+const CHECK_STATES = ['passing', 'failing', 'running', 'none', 'unavailable'] as const;
+const REFUSALS = ['forbidden', 'not_found', 'rate_limited', 'failed'] as const;
 const GATE_STATES = ['done', 'failed', 'pending'] as const;
 
 /** Why the lane policy put a pull request where it is; the console words it. */
@@ -84,8 +85,14 @@ export class PullRequestRowDto {
   @ApiProperty()
   deletions!: number;
 
-  @ApiProperty({ enum: CHECK_STATES })
+  @ApiProperty({
+    enum: CHECK_STATES,
+    description: '`unavailable`: GitHub would not show them, and `checksRefusal` says why.',
+  })
   checks!: (typeof CHECK_STATES)[number];
+
+  @ApiPropertyOptional({ enum: REFUSALS, nullable: true })
+  checksRefusal!: (typeof REFUSALS)[number] | null;
 
   @ApiProperty({
     description: 'False on a conflict with the base; true while GitHub is still computing it.',
@@ -131,6 +138,21 @@ export class PullRequestLaneCountsDto {
   quick!: number;
 }
 
+/** A repository GitHub answered only in part, or not at all, on this read. */
+export class UnreadableRepositoryDto {
+  @ApiProperty({ example: 'acme-labs/xrp-mobile' })
+  fullName!: string;
+
+  @ApiProperty({
+    enum: REFUSALS,
+    description: 'Why: no access, gone, GitHub asked to wait, or did not answer.',
+  })
+  refusal!: (typeof REFUSALS)[number];
+
+  @ApiProperty({ description: 'True when some of its pull requests were read and some were not.' })
+  partial!: boolean;
+}
+
 /** `GET /pulls`: one scope's queue, with what the header and the scope and lane controls count. */
 export class PullRequestQueueResponseDto {
   @ApiProperty({ type: [PullRequestRowDto], description: 'Longest wait first.' })
@@ -158,6 +180,18 @@ export class PullRequestQueueResponseDto {
       'The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name.',
   })
   viewerLogin!: string | null;
+
+  @ApiProperty({
+    type: [UnreadableRepositoryDto],
+    description: 'Watched repositories this read could not fully answer.',
+  })
+  unreadable!: UnreadableRepositoryDto[];
+
+  @ApiProperty({
+    description:
+      'GitHub refused a pull request’s checks for want of access: the App lacks Checks or Commit statuses read.',
+  })
+  checksRefused!: boolean;
 }
 
 export class PullRequestGateDto {

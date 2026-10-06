@@ -1135,6 +1135,7 @@ export type {
   UnpairHostErrors,
   UnpairHostResponse,
   UnpairHostResponses,
+  UnreadableRepositoryDto,
   UpdateAutomationData,
   UpdateAutomationError,
   UpdateAutomationErrors,

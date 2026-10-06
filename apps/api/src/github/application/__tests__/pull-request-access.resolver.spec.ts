@@ -1,0 +1,198 @@
+import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { CacheService } from '@oppenheimer/backend-cache';
+import { AppError } from '@oppenheimer/backend-core';
+import { Some } from 'oxide.ts';
+import { describe, expect, it, vi } from 'vitest';
+import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
+import { GithubErrors } from '../../domain/github.errors';
+import { GithubInstallationEntity } from '../../domain/github-installation.entity';
+import type { GithubAppPort } from '../../infrastructure/github-app.port';
+import type { GithubPullsPort } from '../../infrastructure/github-pulls.port';
+import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
+import type { WorkspaceRepository } from '../pull-request-access.port';
+import { PullRequestAccessResolver } from '../pull-request-access.resolver';
+
+/**
+ * #244: one repository's checks refused with a 403 took the whole queue down
+ * to an error card. A refused part costs that part, a refused repository
+ * costs that repository, and a snapshot missing a part is not kept as if it
+ * were whole.
+ */
+const SCOPE = { userId: 'ana', organizationId: 'org-acme' } as unknown as AccessScope;
+
+function installation() {
+  return GithubInstallationEntity.connect({
+    organizationId: 'org-acme',
+    githubInstallationId: 45678901,
+    accountLogin: 'acme-labs',
+    accountType: 'Organization',
+    repositorySelection: 'all',
+    installedByUserId: 'ana',
+    suspendedAt: null,
+  });
+}
+
+const PULL = {
+  number: 12,
+  title: 'Store wallet tokens in the Keychain',
+  htmlUrl: 'https://github.com/acme-labs/xrp/pull/12',
+  authorLogin: 'ana',
+  draft: false,
+  state: 'open' as const,
+  merged: false,
+  mergedAt: null,
+  headRef: 'oppenheimer/keychain',
+  headSha: 'abc',
+  baseRef: 'main',
+  createdAt: '2026-10-01T00:00:00Z',
+  updatedAt: '2026-10-01T00:00:00Z',
+  closedAt: null,
+  requestedReviewers: [],
+  body: '',
+  additions: 10,
+  deletions: 2,
+  changedFiles: 1,
+  mergeable: true,
+  mergeableState: 'clean',
+};
+
+const refused = (status: number) =>
+  new AppError(GithubErrors.UPSTREAM_FAILED, {
+    detail: 'refused',
+    extensions: { upstreamStatus: status },
+  });
+
+function build(pulls: Partial<Record<keyof GithubPullsPort, unknown>>) {
+  const connected = installation();
+  const store = new Map<string, { value: unknown; ttl?: number }>();
+  const cache = {
+    get: vi.fn(async (key: string) => store.get(key)?.value),
+    set: vi.fn(
+      async (key: string, value: unknown, ttl?: number) => void store.set(key, { value, ttl }),
+    ),
+    getOrSet: vi.fn(async (_key: string, _ttl: number, load: () => Promise<unknown>) => load()),
+    del: vi.fn(),
+  };
+  const resolver = new PullRequestAccessResolver(
+    {
+      findOneById: vi.fn().mockResolvedValue(Some(connected)),
+    } as unknown as GithubInstallationRepositoryPort,
+    {
+      mintInstallationToken: vi
+        .fn()
+        .mockResolvedValue({ token: 'ghs_read', expiresAt: new Date(Date.now() + 3_600_000) }),
+    } as unknown as GithubAppPort,
+    pulls as unknown as GithubPullsPort,
+    {} as GithubUserGrantResolver,
+    cache as unknown as CacheService,
+  );
+  const repository: WorkspaceRepository = {
+    installationId: connected.id,
+    githubRepoId: 821374923,
+    name: 'xrp',
+    fullName: 'acme-labs/xrp',
+    defaultBranch: 'main',
+    private: true,
+    pushedAt: null,
+  };
+  return { resolver, repository, store };
+}
+
+describe('a pull request GitHub answers only in part', () => {
+  it('keeps the pull request, its files and reviews when its checks are refused, and says why', async () => {
+    const { resolver, repository, store } = build({
+      listPullRequests: vi.fn().mockResolvedValue([PULL]),
+      readPullRequest: vi.fn().mockResolvedValue(PULL),
+      listFiles: vi.fn().mockResolvedValue([{ path: 'src/auth/keychain.ts' }]),
+      readChecks: vi.fn().mockRejectedValue(refused(403)),
+      listReviews: vi.fn().mockResolvedValue([]),
+    });
+
+    const read = await resolver.openPullRequests(SCOPE, repository);
+
+    expect(read.refusal).toBeNull();
+    expect(read.snapshots).toHaveLength(1);
+    const [snapshot] = read.snapshots;
+    expect(snapshot?.filePaths).toEqual(['src/auth/keychain.ts']);
+    expect(snapshot?.checks).toMatchObject({ state: 'unavailable', refusal: 'forbidden' });
+    expect(snapshot?.missing).toEqual(['checks']);
+    // Kept only briefly, so the next read asks GitHub again.
+    expect([...store.values()][0]?.ttl).toBe(15);
+  });
+
+  it('names a repository whose listing GitHub refuses instead of failing the read', async () => {
+    const { resolver, repository } = build({
+      listPullRequests: vi.fn().mockRejectedValue(refused(404)),
+    });
+
+    await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
+      snapshots: [],
+      refusal: 'not_found',
+      partial: false,
+    });
+  });
+
+  it('reads a rate limit as "wait", not as GitHub failing', async () => {
+    const { resolver, repository } = build({
+      listPullRequests: vi
+        .fn()
+        .mockRejectedValue(
+          new AppError(GithubErrors.RATE_LIMITED, { extensions: { upstreamStatus: 429 } }),
+        ),
+    });
+
+    await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
+      refusal: 'rate_limited',
+    });
+  });
+});
+
+describe('the closed pull requests Analytics reads', () => {
+  it('reads only the most recently closed up to the ceiling, and says the answer is not complete', async () => {
+    const closed = Array.from({ length: 5 }, (_, i) => ({
+      ...PULL,
+      number: 100 + i,
+      state: 'closed' as const,
+      closedAt: `2026-10-0${i + 1}T00:00:00Z`,
+      updatedAt: `2026-10-0${i + 1}T00:00:00Z`,
+    }));
+    const readPullRequest = vi.fn(async (_t: string, _r: string, number: number) => ({
+      ...PULL,
+      number,
+    }));
+    const { resolver, repository } = build({
+      listPullRequests: vi.fn().mockResolvedValue(closed),
+      readPullRequest,
+      listFiles: vi.fn().mockResolvedValue([]),
+      readChecks: vi
+        .fn()
+        .mockResolvedValue({ state: 'passing', total: 1, passed: 1, failed: 0, pending: 0 }),
+      listReviews: vi.fn().mockResolvedValue([]),
+    });
+
+    const { pulls, complete } = await resolver.closedPullRequests(
+      SCOPE,
+      [repository],
+      new Date('2026-09-01T00:00:00Z'),
+      2,
+    );
+
+    expect(complete).toBe(false);
+    expect(pulls[0]?.snapshots.map((s) => s.pull.number).sort()).toEqual([103, 104]);
+    expect(readPullRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips a repository nobody has pushed to since the window began', async () => {
+    const listPullRequests = vi.fn().mockResolvedValue([]);
+    const { resolver, repository } = build({ listPullRequests });
+
+    await resolver.closedPullRequests(
+      SCOPE,
+      [{ ...repository, pushedAt: '2026-01-01T00:00:00Z' }],
+      new Date('2026-09-01T00:00:00Z'),
+      150,
+    );
+
+    expect(listPullRequests).not.toHaveBeenCalled();
+  });
+});

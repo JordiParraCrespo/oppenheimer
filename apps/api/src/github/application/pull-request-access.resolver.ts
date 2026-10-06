@@ -8,9 +8,12 @@ import type { GithubInstallationEntity } from '../domain/github-installation.ent
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type {
+  GithubChecks,
   GithubPullRequestDetail,
   GithubPullRequestFile,
+  GithubPullRequestSummary,
   GithubPullsPort,
+  GithubRefusal,
   GithubReviewComment,
 } from '../infrastructure/github-pulls.port';
 import { type GithubActor, GithubUserGrantResolver } from './github-user-grant.resolver';
@@ -18,14 +21,18 @@ import type {
   PullRequestAccessPort,
   PullRequestAddress,
   PullRequestSnapshot,
+  RepositoryPulls,
   ReviewSubmission,
+  SnapshotPart,
   WorkspaceRepository,
 } from './pull-request-access.port';
 
 /** A repository's open list: short, so a merge or a new push shows on the next look. */
 const OPEN_TTL_SECONDS = 30;
-/** A snapshot is keyed by the PR's `updated_at`, so it can live until GitHub says it changed. */
-const SNAPSHOT_TTL_SECONDS = 600;
+/** A closed pull request no longer changes: its snapshot is kept for most of a day. */
+const CLOSED_SNAPSHOT_TTL_SECONDS = 6 * 3600;
+/** A snapshot GitHub answered only in part is kept briefly, so the next read asks again (#244). */
+const PARTIAL_TTL_SECONDS = 15;
 const REPOSITORIES_TTL_SECONDS = 60;
 /** An installation token is reused until this close to GitHub's one-hour expiry. */
 const TOKEN_MARGIN_MS = 5 * 60_000;
@@ -71,6 +78,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
             fullName: repository.fullName,
             defaultBranch: repository.defaultBranch,
             private: repository.private,
+            pushedAt: repository.pushedAt,
           }));
       }),
     );
@@ -84,37 +92,76 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async openPullRequests(
     scope: AccessScope,
     repository: WorkspaceRepository,
-  ): Promise<PullRequestSnapshot[]> {
-    const token = await this.readToken(scope, repository.installationId);
-    const open = await this.cache.getOrSet(
-      `github:pulls:open:${repository.installationId}:${repository.githubRepoId}`,
-      OPEN_TTL_SECONDS,
-      () => this.pulls.listPullRequests(token, repository.fullName, 'open', 1),
-    );
-    return Promise.all(
-      open.map((pull) =>
-        this.snapshot(token, repository, pull.number, pull.updatedAt, OPEN_TTL_SECONDS),
-      ),
-    );
+  ): Promise<RepositoryPulls> {
+    let token: string;
+    let open: GithubPullRequestSummary[];
+    try {
+      token = await this.readToken(scope, repository.installationId);
+      open = await this.cache.getOrSet(
+        `github:pulls:open:${repository.installationId}:${repository.githubRepoId}`,
+        OPEN_TTL_SECONDS,
+        () => this.pulls.listPullRequests(token, repository.fullName, 'open', 1),
+      );
+    } catch (error) {
+      return { repository, snapshots: [], refusal: refusalOf(error), partial: false };
+    }
+    return this.snapshotsOf(token, repository, open, OPEN_TTL_SECONDS);
   }
 
   async closedPullRequests(
     scope: AccessScope,
-    repository: WorkspaceRepository,
+    repositories: WorkspaceRepository[],
     since: Date,
-  ): Promise<PullRequestSnapshot[]> {
-    const token = await this.readToken(scope, repository.installationId);
-    const closed = await this.cache.getOrSet(
-      `github:pulls:closed:${repository.installationId}:${repository.githubRepoId}`,
-      OPEN_TTL_SECONDS * 4,
-      () => this.pulls.listPullRequests(token, repository.fullName, 'closed', CLOSED_PAGES),
+    limit: number,
+  ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }> {
+    // A repository not pushed to since the window began merged nothing in it.
+    const active = repositories.filter((r) => !r.pushedAt || new Date(r.pushedAt) >= since);
+    const listed = await Promise.all(
+      active.map(async (repository) => {
+        try {
+          const token = await this.readToken(scope, repository.installationId);
+          const closed = await this.cache.getOrSet(
+            `github:pulls:closed:${repository.installationId}:${repository.githubRepoId}`,
+            OPEN_TTL_SECONDS * 4,
+            () => this.pulls.listPullRequests(token, repository.fullName, 'closed', CLOSED_PAGES),
+          );
+          const recent = closed.filter(
+            (pull) => new Date(pull.closedAt ?? pull.updatedAt) >= since,
+          );
+          return { repository, token, recent, refusal: null };
+        } catch (error) {
+          return { repository, token: '', recent: [], refusal: refusalOf(error) };
+        }
+      }),
     );
-    const recent = closed.filter((pull) => new Date(pull.closedAt ?? pull.updatedAt) >= since);
-    return Promise.all(
-      recent.map((pull) =>
-        this.snapshot(token, repository, pull.number, pull.updatedAt, SNAPSHOT_TTL_SECONDS),
+    // The ceiling: the most recently closed across every repository, so one busy repository cannot spend it all.
+    const closedAt = (pull: GithubPullRequestSummary) => pull.closedAt ?? pull.updatedAt;
+    const kept = new Set(
+      listed
+        .flatMap(({ repository, recent }) =>
+          recent.map((pull) => ({
+            key: `${repository.githubRepoId}:${pull.number}`,
+            at: closedAt(pull),
+          })),
+        )
+        .sort((a, b) => b.at.localeCompare(a.at))
+        .slice(0, limit)
+        .map((entry) => entry.key),
+    );
+    const total = listed.reduce((sum, entry) => sum + entry.recent.length, 0);
+    const pulls = await Promise.all(
+      listed.map(({ repository, token, recent, refusal }) =>
+        refusal
+          ? { repository, snapshots: [], refusal, partial: false }
+          : this.snapshotsOf(
+              token,
+              repository,
+              recent.filter((pull) => kept.has(`${repository.githubRepoId}:${pull.number}`)),
+              CLOSED_SNAPSHOT_TTL_SECONDS,
+            ),
       ),
     );
+    return { pulls, complete: total <= limit };
   }
 
   async pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot> {
@@ -198,6 +245,37 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     );
   }
 
+  /** Each pull request's snapshot; one GitHub will not give is left out and the repository marked partial. */
+  private async snapshotsOf(
+    token: string,
+    repository: WorkspaceRepository,
+    pulls: GithubPullRequestSummary[],
+    ttlSeconds: number,
+  ): Promise<RepositoryPulls> {
+    const settled = await Promise.allSettled(
+      pulls.map((pull) =>
+        this.snapshot(token, repository, pull.number, pull.updatedAt, ttlSeconds),
+      ),
+    );
+    const snapshots = settled.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : [],
+    );
+    const failed = settled.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    return {
+      repository,
+      snapshots,
+      refusal: failed && snapshots.length === 0 ? refusalOf(failed.reason) : null,
+      partial: Boolean(failed) && snapshots.length > 0,
+    };
+  }
+
+  /**
+   * The pull request and its three parts. The pull request itself must be
+   * read; files, checks and reviews each fail on their own, and a snapshot
+   * missing one is cached only briefly (#244).
+   */
   private async snapshot(
     token: string,
     repository: WorkspaceRepository,
@@ -207,17 +285,30 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     known?: GithubPullRequestDetail,
   ): Promise<PullRequestSnapshot> {
     const key = `github:pulls:snapshot:${repository.installationId}:${repository.githubRepoId}:${number}:${updatedAt}`;
-    const read = async (): Promise<PullRequestSnapshot> => {
-      const pull = known ?? (await this.pulls.readPullRequest(token, repository.fullName, number));
-      const [files, checks, reviews] = await Promise.all([
-        this.pulls.listFiles(token, repository.fullName, number),
-        this.pulls.readChecks(token, repository.fullName, pull.headSha),
-        this.pulls.listReviews(token, repository.fullName, number),
-      ]);
-      return { repository, pull, filePaths: files.map((file) => file.path), checks, reviews };
+    const cached = await this.cache.get<PullRequestSnapshot>(key);
+    if (cached) return cached;
+
+    const pull = known ?? (await this.pulls.readPullRequest(token, repository.fullName, number));
+    const [files, checks, reviews] = await Promise.allSettled([
+      this.pulls.listFiles(token, repository.fullName, number),
+      this.pulls.readChecks(token, repository.fullName, pull.headSha),
+      this.pulls.listReviews(token, repository.fullName, number),
+    ]);
+    const missing: SnapshotPart[] = [];
+    if (files.status === 'rejected') missing.push('files');
+    if (checks.status === 'rejected') missing.push('checks');
+    if (reviews.status === 'rejected') missing.push('reviews');
+    const snapshot: PullRequestSnapshot = {
+      repository,
+      pull,
+      filePaths: files.status === 'fulfilled' ? files.value.map((file) => file.path) : [],
+      checks:
+        checks.status === 'fulfilled' ? checks.value : unavailableChecks(refusalOf(checks.reason)),
+      reviews: reviews.status === 'fulfilled' ? reviews.value : [],
+      missing,
     };
-    // Checks move without `updated_at` moving, so an open PR's snapshot is short-lived.
-    return this.cache.getOrSet(key, ttlSeconds, read);
+    await this.cache.set(key, snapshot, missing.length ? PARTIAL_TTL_SECONDS : ttlSeconds);
+    return snapshot;
   }
 
   private async repositoryOf(
@@ -245,6 +336,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
       fullName: repository.fullName,
       defaultBranch: repository.defaultBranch,
       private: repository.private,
+      pushedAt: repository.pushedAt,
     };
   }
 
@@ -278,4 +370,24 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     }
     return installation;
   }
+}
+
+function unavailableChecks(refusal: GithubRefusal): GithubChecks {
+  return { state: 'unavailable', refusal, total: 0, passed: 0, failed: 0, pending: 0 };
+}
+
+/** What a failed read means to a reader: no access, gone, wait, or GitHub did not answer. */
+function refusalOf(error: unknown): GithubRefusal {
+  if (!(error instanceof AppError)) return 'failed';
+  if (error.code === GithubErrors.RATE_LIMITED.code) return 'rate_limited';
+  if (
+    error.code === GithubErrors.INSTALLATION_SUSPENDED.code ||
+    error.code === GithubErrors.INSTALLATION_NOT_FOUND.code
+  ) {
+    return 'forbidden';
+  }
+  const status = error.extensions.upstreamStatus;
+  if (status === 401 || status === 403) return 'forbidden';
+  if (status === 404 || error.code === GithubErrors.PULL_REQUEST_NOT_FOUND.code) return 'not_found';
+  return 'failed';
 }

@@ -4,6 +4,7 @@ import type {
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
+  GithubRefusal,
   GithubReviewComment,
 } from '../infrastructure/github-pulls.port';
 
@@ -16,6 +17,8 @@ export interface WorkspaceRepository {
   fullName: string;
   defaultBranch: string;
   private: boolean;
+  /** ISO 8601; a repository not pushed to since a window began merged nothing in it. */
+  pushedAt: string | null;
 }
 
 /** The address of one pull request. */
@@ -35,6 +38,22 @@ export interface PullRequestSnapshot {
   filePaths: string[];
   checks: GithubChecks;
   reviews: GithubPullRequestReview[];
+  /** The parts GitHub would not give; the rest of the snapshot stands without them (#244). */
+  missing: SnapshotPart[];
+}
+
+export type SnapshotPart = 'files' | 'checks' | 'reviews';
+
+/**
+ * One repository's pull requests as far as GitHub answered: a refusal of the
+ * listing itself leaves `snapshots` empty and names why, and pull requests
+ * that could not be read leave the rest, with `partial` set.
+ */
+export interface RepositoryPulls {
+  repository: WorkspaceRepository;
+  snapshots: PullRequestSnapshot[];
+  refusal: GithubRefusal | null;
+  partial: boolean;
 }
 
 export interface ReviewSubmission {
@@ -55,17 +74,19 @@ export interface PullRequestAccessPort {
   repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
   /** The caller's GitHub login, when they have connected GitHub with a stored grant. */
   viewerLogin(userId: string): Promise<string | null>;
-  /** One repository's open pull requests, each with its paths, checks and reviews. */
-  openPullRequests(
-    scope: AccessScope,
-    repository: WorkspaceRepository,
-  ): Promise<PullRequestSnapshot[]>;
-  /** One repository's pull requests closed since a moment, newest first, each with its reviews. */
+  /** One repository's open pull requests, each with its paths, checks and reviews. Never throws for GitHub's refusals. */
+  openPullRequests(scope: AccessScope, repository: WorkspaceRepository): Promise<RepositoryPulls>;
+  /**
+   * The pull requests closed since a moment across the repositories, the
+   * `limit` most recently closed of them read in full; `complete` is false
+   * when there were more.
+   */
   closedPullRequests(
     scope: AccessScope,
-    repository: WorkspaceRepository,
+    repositories: WorkspaceRepository[],
     since: Date,
-  ): Promise<PullRequestSnapshot[]>;
+    limit: number,
+  ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }>;
   pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot>;
   files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]>;
   reviewComments(scope: AccessScope, address: PullRequestAddress): Promise<GithubReviewComment[]>;

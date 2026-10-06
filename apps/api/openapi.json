@@ -12378,7 +12378,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12485,7 +12485,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12584,7 +12584,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12700,7 +12700,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12821,7 +12821,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12945,7 +12945,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13069,7 +13069,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13191,7 +13191,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13322,7 +13322,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13446,7 +13446,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20194,7 +20194,13 @@
           },
           "checks": {
             "type": "string",
-            "enum": ["passing", "failing", "running", "none"]
+            "enum": ["passing", "failing", "running", "none", "unavailable"],
+            "description": "`unavailable`: GitHub would not show them, and `checksRefusal` says why."
+          },
+          "checksRefusal": {
+            "type": "string",
+            "enum": ["forbidden", "not_found", "rate_limited", "failed"],
+            "nullable": true
           },
           "mergeable": {
             "type": "boolean",
@@ -20277,6 +20283,25 @@
         },
         "required": ["deep", "medium", "quick"]
       },
+      "UnreadableRepositoryDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/xrp-mobile"
+          },
+          "refusal": {
+            "type": "string",
+            "enum": ["forbidden", "not_found", "rate_limited", "failed"],
+            "description": "Why: no access, gone, GitHub asked to wait, or did not answer."
+          },
+          "partial": {
+            "type": "boolean",
+            "description": "True when some of its pull requests were read and some were not."
+          }
+        },
+        "required": ["fullName", "refusal", "partial"]
+      },
       "PullRequestQueueResponseDto": {
         "type": "object",
         "properties": {
@@ -20313,9 +20338,28 @@
             "type": "string",
             "nullable": true,
             "description": "The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name."
+          },
+          "unreadable": {
+            "description": "Watched repositories this read could not fully answer.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnreadableRepositoryDto"
+            }
+          },
+          "checksRefused": {
+            "type": "boolean",
+            "description": "GitHub refused a pull request’s checks for want of access: the App lacks Checks or Commit statuses read."
           }
         },
-        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts"]
+        "required": [
+          "items",
+          "scopes",
+          "lanes",
+          "readyToMerge",
+          "withConflicts",
+          "unreadable",
+          "checksRefused"
+        ]
       },
       "AnalyticsFigureDto": {
         "type": "object",
@@ -20482,6 +20526,20 @@
             "items": {
               "$ref": "#/components/schemas/AnalyticsWaitingDto"
             }
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "False when more pull requests closed in the window than one read takes in full; the figures then count the most recent."
+          },
+          "closedCeiling": {
+            "type": "number",
+            "description": "How many closed pull requests one read takes in full."
+          },
+          "unreadable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnreadableRepositoryDto"
+            }
           }
         },
         "required": [
@@ -20497,7 +20555,10 @@
           "timeToMerge",
           "days",
           "lanes",
-          "waiting"
+          "waiting",
+          "complete",
+          "closedCeiling",
+          "unreadable"
         ]
       },
       "WatchedRepositoryDto": {
@@ -20538,7 +20599,7 @@
         "properties": {
           "state": {
             "type": "string",
-            "enum": ["passing", "failing", "running", "none"]
+            "enum": ["passing", "failing", "running", "none", "unavailable"]
           },
           "total": {
             "type": "number"
@@ -20635,7 +20696,13 @@
           },
           "checks": {
             "type": "string",
-            "enum": ["passing", "failing", "running", "none"]
+            "enum": ["passing", "failing", "running", "none", "unavailable"],
+            "description": "`unavailable`: GitHub would not show them, and `checksRefusal` says why."
+          },
+          "checksRefusal": {
+            "type": "string",
+            "enum": ["forbidden", "not_found", "rate_limited", "failed"],
+            "nullable": true
           },
           "mergeable": {
             "type": "boolean",

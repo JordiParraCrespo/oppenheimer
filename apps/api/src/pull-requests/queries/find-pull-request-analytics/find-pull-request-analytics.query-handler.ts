@@ -3,7 +3,7 @@ import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
 import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
 import { WatchedRepositoriesResolver } from '../../application/watched-repositories.resolver';
-import { analyticsWindow } from '../../domain/pull-request-analytics.policy';
+import { analyticsWindow, CLOSED_CEILING } from '../../domain/pull-request-analytics.policy';
 import type { PullRequestAnalyticsResponseDto } from '../../dtos/pull-request-analytics.response.dto';
 import { PullRequestMapper } from '../../pull-request.mapper';
 import { FindPullRequestAnalyticsQuery } from './find-pull-request-analytics.query';
@@ -35,23 +35,23 @@ export class FindPullRequestAnalyticsQueryHandler
       this.watched.watched(scope),
       this.access.viewerLogin(scope.userId),
     ]);
+    // The closed reads are capped, newest first, so a page view costs the window and not the installation (#247).
     const [open, closed] = await Promise.all([
       Promise.all(
         repositories.map((repository) => this.access.openPullRequests(scope, repository)),
       ),
-      Promise.all(
-        repositories.map((repository) =>
-          this.access.closedPullRequests(scope, repository, window.previousFrom),
-        ),
-      ),
+      this.access.closedPullRequests(scope, repositories, window.previousFrom, CLOSED_CEILING),
     ]);
     return this.mapper.toAnalytics({
       range,
       window,
-      open: open.flat(),
-      closed: closed.flat(),
+      open: open.flatMap((read) => read.snapshots),
+      closed: closed.pulls.flatMap((read) => read.snapshots),
       viewerLogin,
       now,
+      complete: closed.complete,
+      closedCeiling: CLOSED_CEILING,
+      unreadable: this.mapper.toUnreadable([...open, ...closed.pulls]),
     });
   }
 }

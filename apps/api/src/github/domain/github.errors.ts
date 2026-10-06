@@ -122,4 +122,13 @@ export const GithubErrors = {
     message: 'GitHub would not merge this pull request yet',
     httpStatus: 409,
   },
+  /**
+   * GitHub asked this token to wait (a 429, a spent budget or a secondary
+   * limit) for longer than one request will hold. `retryAfterSeconds` says when.
+   */
+  RATE_LIMITED: {
+    code: 'GITHUB_015',
+    message: 'GitHub asked to wait before the next request',
+    httpStatus: 503,
+  },
 } as const satisfies Record<string, ErrorDefinition>;
