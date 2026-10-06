@@ -186,6 +186,7 @@ export class HostEntity extends AggregateRoot<HostProps> {
     this.addEvent(
       new HostRenamedDomainEvent({
         aggregateId: this.id,
+        ownerUserId: this.props.ownerUserId,
         from,
         to: name,
         reason: 'A person renamed the host; its timeline records it',

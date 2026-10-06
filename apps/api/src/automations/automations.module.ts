@@ -171,5 +171,7 @@ const queryHandlers: Provider[] = [
     { provide: AUTOMATION_RUN_REPOSITORY, useClass: AutomationRunRepository },
     { provide: AUTOMATION_SETTINGS_REPOSITORY, useClass: AutomationSettingsRepository },
   ],
+  // The run a session was started for, so the workspace feed can say that run moved.
+  exports: [AUTOMATION_RUN_REPOSITORY],
 })
 export class AutomationsModule {}

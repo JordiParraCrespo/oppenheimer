@@ -10692,6 +10692,45 @@
         "tags": ["Automations"]
       }
     },
+    "/api/v1/events": {
+      "get": {
+        "description": "Server-Sent Events. A `ready` event once the stream is subscribed, then one `change` event per change the caller may read, whose data is `{ type, id, … }` (`@oppenheimer/shared/workspace-events`): an invalidation, never the row, so the client re-reads it through its own endpoint. A `keepalive` event keeps an idle stream under proxy timeouts, and the API ends a stream after a while so the redial is authenticated again.",
+        "operationId": "streamWorkspaceEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The event stream"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"workspace_event_stream\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stream what changes in the caller’s workspace",
+        "tags": ["Workspace events"]
+      }
+    },
     "/api/v1/tasks": {
       "get": {
         "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).",

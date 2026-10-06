@@ -7807,6 +7807,33 @@ export type UpdateAutomationSettingsResponses = {
 
 export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses[keyof UpdateAutomationSettingsResponses];
 
+export type StreamWorkspaceEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events';
+};
+
+export type StreamWorkspaceEventsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "workspace_event_stream" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+};
+
+export type StreamWorkspaceEventsError = StreamWorkspaceEventsErrors[keyof StreamWorkspaceEventsErrors];
+
+export type StreamWorkspaceEventsResponses = {
+    /**
+     * The event stream
+     */
+    200: unknown;
+};
+
 export type FindTasksData = {
     body?: never;
     path?: never;
