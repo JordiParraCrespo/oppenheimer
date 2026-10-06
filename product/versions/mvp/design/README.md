@@ -163,6 +163,10 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   2026-10-05 evening export, but `../00-scope.md` keeps "Create PR and
   diff view" out of the MVP and `../../../next-steps/0.2-git-and-github.md`
   is where reviewing and merging a pull request from the console lives.
-  The rail's drag-to-reorder is in no note either.
+  The rail's drag-to-reorder is in no note either. Both landed in the
+  design system ahead of that slice (the showcase's Pull requests group,
+  and the rail's sortable items); the diff and the file tree are
+  @pierre/diffs and @pierre/trees, and the tree's published icon set
+  stands in for `version1/assets/filetypes/`.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

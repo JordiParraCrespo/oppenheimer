@@ -5,6 +5,7 @@ import {
 import type { Metadata } from "next";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
+import { ShowcaseThemeProvider } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,13 +39,15 @@ export default function RootLayout({
             rather than `-hidden`: a hidden box is still scrollable
             programmatically, so `scrollIntoView` on a section would drag the
             topbar out of view. Clip creates no scroll container at all. */}
-        <SidebarProvider className="h-svh overflow-clip">
-          <AppSidebar />
-          <SidebarInset className="h-svh min-h-0 overflow-clip">
-            <TopBar />
-            {children}
-          </SidebarInset>
-        </SidebarProvider>
+        <ShowcaseThemeProvider>
+          <SidebarProvider className="h-svh overflow-clip">
+            <AppSidebar />
+            <SidebarInset className="h-svh min-h-0 overflow-clip">
+              <TopBar />
+              {children}
+            </SidebarInset>
+          </SidebarProvider>
+        </ShowcaseThemeProvider>
       </body>
     </html>
   );

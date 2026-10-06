@@ -45,12 +45,19 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   things composes (`DragProvider`, `useDraggable`, `useDroppable`,
   `SortableGroup`, `SortableItem`, `useSortableGroups`, `DropSlot`), over
   `@dnd-kit/core` and `@dnd-kit/sortable`, with the motion built in.
+- `src/components/diff-view.tsx` and `diff-file-tree.tsx` — a pull
+  request's diff and its file tree, over `@pierre/diffs` and
+  `@pierre/trees` (Shiki highlighting, the trees' file-type icon set,
+  which `file-icon.tsx` also draws), themed to the tokens.
 - `src/components/` — the public components, one file each. The grouped
   inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names
   every file under the section that draws it.
 - `src/internal/` — the building blocks only those components import
   (`Checkbox`, `Label`, `Empty`, `Sheet`, the month helpers and the one
-  month grid `MonthCalendar` and `DatePicker` share); not exported.
+  month grid `MonthCalendar` and `DatePicker` share, `AuthorMark` (a
+  session's or a person's glyph), `DataTone` (the one tone set charts and
+  stat bars take) and `CommentField` (the review's and the diff draft's
+  comment box)); not exported.
 - `src/lib/utils` — `cn()`.
 
 The rules are in [`../AGENTS.md`](../AGENTS.md); the rendered reference is the

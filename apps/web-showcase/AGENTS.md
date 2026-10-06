@@ -22,6 +22,10 @@ src/components/
 ├── calendar-demos.tsx # the month in the page's DragProvider, its sidebar, the date picker
 ├── plan-dialog-demos.tsx # the task and Start session dialogs (visual states only) and the session pane header
 ├── plan-fixtures.ts  # what the Plan demos share: the fixed today and the columns
+├── pull-request-demos.tsx # the PR queue, a pull request's briefing (and held by a conflict), the review decision, the description
+├── diff-demos.tsx    # a pull request's Changes: two files, unified or split, comments, the file tree, the file-type marks
+├── pr-analytics-demos.tsx # the review month: bars, tiles, the wait lines, the lane ring, why PRs waited
+├── pull-request-fixtures.ts # one pull request's patches and changed files
 ├── feedback.tsx      # Alert, Badge, Skeleton, the toast, the command palette's parts
 ├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
 ├── app-sidebar.tsx   # the TOC with scroll-spy

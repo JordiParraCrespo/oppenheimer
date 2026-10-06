@@ -18,6 +18,12 @@ const dotVariants = cva('inline-block size-1.5 shrink-0 rounded-pill', {
       // beside the run states above. Paused is muted, not coloured.
       active: 'bg-success',
       paused: 'bg-fg-subtle',
+      // The gate vocabulary: a condition something waits on (checks, a clean
+      // merge, a review), beside the run states. Met is green, not met red,
+      // still being decided amber.
+      passing: 'bg-success',
+      blocked: 'bg-danger',
+      waiting: 'bg-warning',
     },
   },
   defaultVariants: { state: 'idle' },
@@ -35,13 +41,19 @@ const STATUS_LABEL: Record<StatusState, string> = {
   pending: 'Pending',
   active: 'Active',
   paused: 'Paused',
+  passing: 'Passing',
+  blocked: 'Blocked',
+  waiting: 'Waiting',
 };
 
 /**
  * StatusDot — status is a dot, not an icon. A 6px coloured dot plus a word,
  * which is how run state reads everywhere: the session list, the host pairing
  * step, the terminal tab. These states are the vocabulary; do not invent
- * "In progress" or "Error" alongside them.
+ * "In progress" or "Error" alongside them. A run's states describe work
+ * that happens; `passing` / `blocked` / `waiting` describe a gate (a pull
+ * request's checks, whether it merges cleanly), so a passing check never
+ * reads as a running session.
  *
  * `completed` swaps the dot for a small green check (the connected-host and
  * connected-GitHub rows). `meta` adds a muted second line under the label.

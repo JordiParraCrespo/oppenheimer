@@ -4,6 +4,7 @@ import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { useSortableItem } from './drag';
 
 /**
  * Rail — the 56px strip left of the sidebar that switches the console between
@@ -17,6 +18,12 @@ import { cn } from '../lib/utils';
  * The rail is console chrome and sits on the sidebar's surface, with a
  * hairline on its right. The kit composes it beside `Sidebar`; the showcase
  * renders it on its own.
+ *
+ * A reader can put the items in their own order by dragging them, on the
+ * drag layer: wrap the items in a vertical `SortableGroup` inside the
+ * shell's `DragProvider` and render each as a `SortableRailItem` (a
+ * `RailItem` that is also a sortable item; a press still navigates, a drag
+ * starts after 5px). Where the order is kept is the app's.
  */
 function Rail({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
@@ -54,6 +61,7 @@ function RailItem({
   className,
   children,
   render,
+  ref,
   ...props
 }: useRender.ComponentProps<'button'> & {
   /** The accessible name, and what the tip beside the button reads ("Sessions"). */
@@ -69,6 +77,7 @@ function RailItem({
   return useRender({
     defaultTagName: 'button',
     render,
+    ref,
     props: {
       type: render ? undefined : 'button',
       'data-slot': 'rail-item',
@@ -125,4 +134,35 @@ function RailTip({
   );
 }
 
-export { Rail, RailItem, RailMark };
+/**
+ * A `RailItem` the reader can drag into another place. While it moves its
+ * own place is the drop slot (round, on the selected wash) and the lifted
+ * copy is the caller's overlay; the neighbours slide.
+ */
+function SortableRailItem({
+  id,
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<typeof RailItem>, 'ref' | 'onPointerDown' | 'onKeyDown'> & { id: string }) {
+  const { ref, handleProps, style: slide, isDragging } = useSortableItem({
+    id,
+    data: { type: 'rail-item', label: props.label },
+  });
+  // The drag contract goes last: the caller's props never replace the ref, the listeners or the slide.
+  return (
+    <RailItem
+      {...props}
+      data-dragging={isDragging || undefined}
+      className={cn(
+        'touch-none data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible',
+        className,
+      )}
+      {...handleProps}
+      ref={ref}
+      style={{ ...style, ...slide }}
+    />
+  );
+}
+
+export { Rail, RailItem, RailMark, SortableRailItem };
