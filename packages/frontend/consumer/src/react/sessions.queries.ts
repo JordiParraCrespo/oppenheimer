@@ -38,9 +38,8 @@ export const sessionsKeys = {
  * and dies with the cache it keeps polling, and two clients never share one.
  *
  * A close is answered by the host, not by the request, so the row stays `open`
- * for a beat after Delete — "not settled", like a starting session. The
- * workspace stream announces the host's answer when it is live; otherwise the
- * list polls for it on `LIVE_POLL.sessionStarting`.
+ * for a beat after Delete — "not settled, and nothing pushes it", like a
+ * starting session, and the list polls for it on `LIVE_POLL.sessionStarting`.
  * An id leaves when its row leaves the list, or after {@link CLOSE_WATCH_MS}.
  */
 const closeWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();

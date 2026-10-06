@@ -2,14 +2,8 @@
  * Every poll the console runs against the API: how often it asks, and whether
  * it keeps asking while the tab is hidden. A query hook in this package spreads
  * {@link pollWhile}; nothing else names an interval, and a feature asks for the
- * hook that already polls (`useHostPresence`).
- *
- * Every fact a poll watches is also on the workspace's change feed
- * (`useWorkspaceEvents`, `product/versions/mvp/21-workspace-events.md`).
- * While that stream is live the poll stands down and the feed's events
- * refetch the same queries; when it drops, each poll comes back on its next
- * read. Polling is the fallback until the stream has proven itself, and then
- * each poll goes.
+ * hook that already polls (`useHostPresence`). Each poll goes when the console
+ * streams that fact instead.
  *
  * `inBackground` keeps TanStack Query's interval running on a hidden document,
  * where it pauses by default. A poll that watches something finish keeps going:
@@ -57,7 +51,7 @@ export type LivePollKind = keyof typeof LIVE_POLL;
 export type PollKeys = 'refetchInterval' | 'refetchIntervalInBackground';
 
 export interface Poll<TData> {
-  refetchInterval: (query: PollQuery<TData>) => number | false;
+  refetchInterval: number | false | ((query: PollQuery<TData>) => number | false);
   refetchIntervalInBackground: boolean;
 }
 
@@ -65,22 +59,6 @@ export interface Poll<TData> {
 interface PollQuery<TData> {
   queryHash: string;
   state: { data?: TData };
-}
-
-/**
- * The poll kinds the workspace stream covers right now: every kind while it
- * is live, none while it is down or switched off. One per tab, like the
- * stream; `useWorkspaceEvents` is the only writer.
- */
-let streamed: ReadonlySet<LivePollKind> = new Set();
-
-/**
- * Hand the kinds the stream now covers to every poll. A poll reads this on
- * its next tick; the caller refetches the covered queries after calling it,
- * which is that tick for a poll that had stood down.
- */
-export function setStreamedPolls(kinds: readonly LivePollKind[]): void {
-  streamed = new Set(kinds);
 }
 
 /**
@@ -120,21 +98,27 @@ export function pollWhile<TData>(
   const poll = LIVE_POLL[kind];
   const { inBackground } = poll;
   const opens = 'openingInterval' in poll;
+  // A poll with no opening phase stays a number, which is what it means: one
+  // pace, whoever asks.
+  const paced = (query: PollQuery<TData>) =>
+    opens ? intervalFor(kind, query.queryHash) : poll.interval;
   return {
-    // Always a function, so a poll that stood down for the stream is asked
-    // again after its next read and comes back when the stream has dropped.
-    refetchInterval: (query) => {
-      const moving = typeof active === 'function' ? active(query.state.data) : active;
-      if (!moving || streamed.has(kind)) {
-        // Settled, or the stream says when it moves: forget when it started,
-        // so the next thing this query waits on opens fast rather than
-        // continuing an old clock.
-        if (opens) askingSince.delete(query.queryHash);
-        return false;
-      }
-      // A poll with no opening phase is one pace, whoever asks.
-      return opens ? intervalFor(kind, query.queryHash) : poll.interval;
-    },
+    refetchInterval:
+      typeof active === 'function'
+        ? (query) => {
+            if (!active(query.state.data)) {
+              // Settled: forget when it started, so the next thing this query
+              // waits on opens fast rather than continuing an old clock.
+              if (opens) askingSince.delete(query.queryHash);
+              return false;
+            }
+            return paced(query);
+          }
+        : active
+          ? opens
+            ? paced
+            : poll.interval
+          : false,
     refetchIntervalInBackground: inBackground,
   };
 }

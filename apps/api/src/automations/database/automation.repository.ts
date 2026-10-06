@@ -1,12 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
-import type { WorkspaceEventsPort } from '../../workspace-events/application/workspace-events.port';
-import { WORKSPACE_EVENTS } from '../../workspace-events/workspace-events.di-tokens';
 import { AutomationMapper, workspaceLimitsOf } from '../automation.mapper';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
@@ -21,7 +19,6 @@ import type {
 } from './automation.repository.port';
 import { AutomationRevisionOrmEntity } from './automation-revision.orm-entity';
 import {
-  announceRun,
   countRecentByWorkspaceWithin,
   insertRunWithin,
   lockWorkspaceFiring,
@@ -50,8 +47,6 @@ export class AutomationRepository
     private readonly outbox: OutboxService,
     private readonly mapper: AutomationMapper,
     private readonly runMapper: AutomationRunMapper,
-    @Inject(WORKSPACE_EVENTS)
-    private readonly events: WorkspaceEventsPort,
   ) {
     super();
   }
@@ -182,7 +177,7 @@ export class AutomationRepository
     // Every statement of the tick runs on this transaction's connection: it
     // borrows no other from the pool while it holds the claim, and its counts
     // see the runs it has just inserted.
-    const queued = await this.outbox.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       // IDX_automation_trigger_due. SKIP LOCKED: two replicas ticking in the
       // same minute claim disjoint triggers, and the firing key makes a slot
       // one run even if a claim were ever repeated. NO KEY UPDATE, not UPDATE:
@@ -250,8 +245,6 @@ export class AutomationRepository
       }
       return runs;
     });
-    for (const run of queued) announceRun(this.events, run);
-    return queued;
   }
 
   async findLiveOnHostForSystem(hostId: string): Promise<AutomationEntity[]> {

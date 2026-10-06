@@ -214,9 +214,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       }),
     }),
     OutboxModule,
-    // The console's change feed, global like the outbox: modules publish to it
-    // after a commit (`product/versions/mvp/21-workspace-events.md`).
-    WorkspaceEventsModule,
     // The bundles are the same JSON the web app loads, so a string
     // is written once and a translator edits one file — and an email, which
     // has no request to negotiate a language from, renders from the
@@ -245,6 +242,8 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     ProjectsModule,
     SessionsModule,
     AutomationsModule,
+    // The console's change feed, published from the outbox after each commit.
+    WorkspaceEventsModule,
     TasksModule,
     CalendarModule,
     PullRequestsModule,

@@ -9,22 +9,17 @@ import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
 export type WorkspaceEventAudience = { organizationId: string } | { userId: string };
 
 /**
- * What a module calls once a change has **committed**: the console's streams
- * then refetch what it names (`product/versions/mvp/21-workspace-events.md`).
+ * The channel between the replica that saw a change commit and the replicas
+ * holding the console streams it concerns.
  *
- * Fire and forget. An event is an invalidation, never the data, so one that is
- * lost costs a screen the time until its poll or its next refetch, never a
- * wrong answer; `publish` never throws and never makes its caller wait.
+ * Only this module's domain-event handlers publish, and they run from the
+ * outbox: `publish` rejects when the change did not reach the channel, and the
+ * outbox delivers the event again. A change is therefore announced at least
+ * once, after its commit, whatever process wrote it.
  */
-export interface WorkspaceEventsPort {
-  publish(audience: WorkspaceEventAudience, event: WorkspaceEvent): void;
-}
+export interface WorkspaceEventBusPort {
+  publish(audience: WorkspaceEventAudience, event: WorkspaceEvent): Promise<void>;
 
-/**
- * What the stream endpoint subscribes through, on every replica: an event
- * published on one reaches the streams held by all of them.
- */
-export interface WorkspaceEventFeedPort {
   /**
    * Resolves once the subscription is in place, so an event published after
    * that is delivered. The returned function ends it.

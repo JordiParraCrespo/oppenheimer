@@ -1,12 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
-import type { WorkspaceEventsPort } from '../../workspace-events/application/workspace-events.port';
-import { WORKSPACE_EVENTS } from '../../workspace-events/workspace-events.di-tokens';
-import {
-  HOST_ONLINE_WINDOW_SECONDS,
-  type HostRepositoryPort,
-} from '../database/host.repository.port';
+import type { HostRepositoryPort } from '../database/host.repository.port';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
 import { HostNetworkChangedDomainEvent } from '../domain/events/host-network-changed.domain-event';
 import { inventoryFromFacts } from '../domain/host-inventory.policy';
@@ -29,13 +24,6 @@ const INVENTORY_MEMO_MAX_HOSTS = 10_000;
  * minute.
  */
 export const OWNER_RECHECK_MS = 60_000;
-
-/**
- * How long after a link closes its owner's console is told to look again:
- * just past the window `online` is derived from, so the read finds the host
- * offline unless it has come back.
- */
-export const OFFLINE_ANNOUNCE_DELAY_MS = (HOST_ONLINE_WINDOW_SECONDS + 1) * 1000;
 
 /** What this process last recorded as a host's inventory: the two things `unchanged` compares. */
 interface RecordedInventory {
@@ -67,8 +55,6 @@ export class HostPresenceResolver implements HostPresencePort {
     private readonly geolocation: IpGeolocationPort,
     @Inject(CREDENTIAL_OWNER)
     private readonly owners: CredentialOwnerPort,
-    @Inject(WORKSPACE_EVENTS)
-    private readonly events: WorkspaceEventsPort,
   ) {}
 
   async observe(
@@ -101,10 +87,6 @@ export class HostPresenceResolver implements HostPresencePort {
       this.ownerChecks.delete(hostId);
       return 'unpaired';
     }
-
-    // A hello is a link opening, which is a host coming online; a beat on a
-    // link that was already up changes nothing the console shows.
-    if (hello) this.announce(hostId);
 
     const inventory = inventoryFromFacts(report.facts, report.channel ?? null);
     const recorded = this.recordedInventory.get(hostId);
@@ -147,33 +129,6 @@ export class HostPresenceResolver implements HostPresencePort {
       if (oldest !== undefined) this.ownerChecks.delete(oldest);
     }
     return 'recorded';
-  }
-
-  disconnected(hostId: string): void {
-    setTimeout(() => {
-      void this.ownerOf(hostId)
-        .then((ownerUserId) => {
-          if (ownerUserId) this.publish(ownerUserId, hostId);
-        })
-        .catch(() => undefined);
-    }, OFFLINE_ANNOUNCE_DELAY_MS).unref();
-  }
-
-  /** Tell the owner's console the host's presence moved, once the owner is known. */
-  private announce(hostId: string): void {
-    const ownerUserId = this.ownerChecks.get(hostId)?.ownerUserId;
-    if (ownerUserId) this.publish(ownerUserId, hostId);
-  }
-
-  private publish(ownerUserId: string, hostId: string): void {
-    this.events.publish({ userId: ownerUserId }, { type: 'host.changed', id: hostId });
-  }
-
-  private async ownerOf(hostId: string): Promise<string | null> {
-    const memo = this.ownerChecks.get(hostId)?.ownerUserId;
-    if (memo) return memo;
-    const found = await this.hosts.findOneByIdForMachine(hostId);
-    return found.isSome() ? found.unwrap().ownerUserId : null;
   }
 
   async connectedFrom(hostId: string, address: string, at: Date = new Date()): Promise<void> {

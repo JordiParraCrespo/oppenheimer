@@ -10,14 +10,15 @@ import type { ReactNode } from 'react';
  * cache still holds `[]`) or failed, the children render, or a network blip
  * would bounce every reader out of the app or back to onboarding.
  *
- * Past the gate the console is in a workspace, so this is also where the
+ * Past the gate the console is in a workspace, so this is also where that
  * workspace's change feed is held open, once, for every screen inside.
  */
 export function WorkspaceGate({ children }: { children: ReactNode }) {
   const organizations = useOrganizations();
-  useWorkspaceEvents();
   const settledEmpty =
     organizations.isSuccess && !organizations.isFetching && organizations.data.length === 0;
+  // None until there is a workspace to follow, so the onboarding redirect holds no stream.
+  useWorkspaceEvents(organizations.data?.[0]?.id);
 
   if (settledEmpty) return <Navigate to="/onboarding" replace />;
   return children;

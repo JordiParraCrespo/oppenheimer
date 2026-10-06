@@ -34,88 +34,78 @@ class FakeSource implements EventSourceLike {
   }
 }
 
-function setup() {
+function setup(apiBaseUrl = '') {
   const sources: FakeSource[] = [];
-  const timers: (() => void)[] = [];
   const stream = new WorkspaceEventStream({
-    apiBaseUrl: 'https://api.test',
+    apiBaseUrl,
     sourceFactory: (url) => {
       const source = new FakeSource(url);
       sources.push(source);
       return source;
-    },
-    schedule: (fn) => {
-      timers.push(fn);
-      return () => timers.splice(timers.indexOf(fn), 1);
     },
   });
   const statuses: WorkspaceStreamStatus[] = [];
   stream.onStatus((status) => statuses.push(status));
   const events = vi.fn();
   stream.onEvent(events);
-  return { stream, sources, timers, statuses, events };
+  return { stream, sources, statuses, events };
 }
 
 describe('WorkspaceEventStream', () => {
-  it('dials the API on construction', () => {
-    const { sources } = setup();
-    expect(sources.map((source) => source.url)).toEqual(['https://api.test/v1/events']);
+  /**
+   * The regression: the path was `/v1/events`, which the SPA served in place
+   * of the API, so the stream never once said `ready`.
+   */
+  it('dials the API under its /api prefix, and only when opened', () => {
+    const same = setup();
+    expect(same.sources).toHaveLength(0);
+    same.stream.open();
+    expect(same.sources.map((source) => source.url)).toEqual(['/api/v1/events']);
+
+    const cross = setup('https://api.example.com');
+    cross.stream.open();
+    expect(cross.sources[0].url).toBe('https://api.example.com/api/v1/events');
   });
 
-  /**
-   * The regression: a stream that counted as live from the moment it dialled
-   * would stand the polls down before the API had subscribed it, and an event
-   * in that gap would be lost with nothing left asking.
-   */
-  it('is live only from the ready frame, and delivers changes only then', () => {
-    const { sources, statuses, events } = setup();
-    const change = JSON.stringify({ type: 'host.changed', id: 'h-1' });
-
-    sources[0].emit('change', change);
-    expect(statuses).toEqual(['down']);
-    expect(events).not.toHaveBeenCalled();
-
+  it('is live from the ready frame and delivers each change it knows', () => {
+    const { stream, sources, statuses, events } = setup();
+    stream.open();
     sources[0].emit('ready');
-    sources[0].emit('change', change);
+    sources[0].emit('change', JSON.stringify({ type: 'host.changed', id: 'h-1' }));
+    sources[0].emit('change', '{not json');
+    sources[0].emit('change', JSON.stringify({ type: 'invoice.paid', id: 'x' }));
+
     expect(statuses).toEqual(['down', 'live']);
+    expect(events).toHaveBeenCalledTimes(1);
     expect(events).toHaveBeenCalledWith({ type: 'host.changed', id: 'h-1' });
   });
 
-  it('drops a frame that is not one of the events it knows', () => {
-    const { sources, events } = setup();
-    sources[0].emit('ready');
-    sources[0].emit('change', '{not json');
-    sources[0].emit('change', JSON.stringify({ type: 'invoice.paid', id: 'x' }));
-    expect(events).not.toHaveBeenCalled();
-  });
-
-  it('goes down on a drop and leaves the redial to the browser', () => {
-    const { sources, timers, statuses } = setup();
+  it('goes down on a drop and is live again once the browser has redialled', () => {
+    const { stream, sources, statuses } = setup();
+    stream.open();
     sources[0].emit('ready');
     sources[0].fail(0);
-    expect(statuses.at(-1)).toBe('down');
-    expect(timers).toHaveLength(0);
     sources[0].emit('ready');
-    expect(statuses.at(-1)).toBe('live');
+    expect(statuses).toEqual(['down', 'live', 'down', 'live']);
+    expect(sources).toHaveLength(1);
   });
 
-  /** An expired cookie or a deploy is a refused stream, which the browser never retries. */
-  it('dials again on its own ladder once the API refused the stream', () => {
-    const { sources, timers } = setup();
+  /** A 401, the flag off, nothing the caller may read: the browser gives up, and so does this. */
+  it('stays closed once the API refused the stream', () => {
+    const { stream, sources, statuses } = setup();
+    stream.open();
     sources[0].fail(2);
-    expect(sources[0].closed).toBe(true);
-    expect(timers).toHaveLength(1);
-    timers[0]();
-    expect(sources).toHaveLength(2);
+    stream.open();
+    expect(statuses.at(-1)).toBe('closed');
+    expect(sources).toHaveLength(1);
   });
 
   it('closes for good on dispose', () => {
-    const { stream, sources, timers, statuses } = setup();
+    const { stream, sources, statuses } = setup();
+    stream.open();
     sources[0].emit('ready');
     stream.dispose();
     expect(sources[0].closed).toBe(true);
-    expect(statuses.at(-1)).toBe('down');
-    sources[0].fail(2);
-    expect(timers).toHaveLength(0);
+    expect(statuses.at(-1)).toBe('closed');
   });
 });

@@ -349,9 +349,8 @@ earlier note:
   2026-09-28 the owner changed that: we approve and merge in the user's
   name, with their own authorization, and when GitHub will not allow it
   the PR waits.
-- `versions/mvp/05-screens.md` and the 2026-10-01 entry had the console poll
-  for every change it does not cause, with a faster opening poll for a
-  starting session. On 2026-10-06 one Server-Sent Events stream per tab
-  became the trigger, behind the `workspace_event_stream` flag, with the
-  polls kept as its fallback; issue #239's question of which version it
-  belongs to was answered as the MVP (`versions/mvp/21-workspace-events.md`).
+- `versions/mvp/05-screens.md` had the console learn of every change it
+  does not cause by polling. On 2026-10-06 a workspace event stream was
+  added beside the polls, behind the `workspace_event_stream` flag
+  (`versions/mvp/03-control-plane.md`, 05). Issue #239 asked which version
+  it belongs to: the MVP, since the polls it speeds up are the MVP's own.

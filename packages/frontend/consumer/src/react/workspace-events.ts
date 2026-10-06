@@ -7,94 +7,81 @@ import { useEffect } from 'react';
 import { automationsKeys } from './automations.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
-import { LIVE_POLL, type LivePollKind, setStreamedPolls } from './live-poll';
 import { sessionsKeys } from './sessions.queries';
 
-/** Every poll the stream stands in for while it is live. */
-const STREAMED = Object.keys(LIVE_POLL) as LivePollKind[];
-
 /**
- * Refetch what one change touched: the reads that already exist for it, at
- * their own keys. A pairing detail is never named, since its `queryFn` mints
- * a new token (`hostsKeys`).
+ * The reads a change touches, at the keys they already have. A pairing
+ * detail is never named: its `queryFn` mints a new token (`hostsKeys`).
  */
-function invalidateFor(queryClient: QueryClient, event: WorkspaceEvent): void {
+function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
   switch (event.type) {
     case 'session.changed':
-      // The detail's prefix holds its start log too, so a landed step redraws the stepper.
-      void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(event.id) });
-      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-      return;
+      // The detail's prefix holds its start log. A host's status and running
+      // count are read from its sessions, so the host list moves with them.
+      return [sessionsKeys.detail(event.id), sessionsKeys.lists(), hostsKeys.lists()];
     case 'host.changed':
-      void queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
-      return;
+      return [hostsKeys.lists()];
     case 'pairing.spent':
-      void queryClient.invalidateQueries({ queryKey: hostsKeys.pairingLists() });
-      void queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
-      return;
+      return [hostsKeys.pairingLists(), hostsKeys.lists()];
     case 'automationRun.changed':
-      void queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: automationsKeys.runs() });
-      if (event.automationId) {
-        void queryClient.invalidateQueries({
-          queryKey: automationsKeys.detail(event.automationId),
-        });
-      }
-      return;
+      return [
+        automationsKeys.lists(),
+        automationsKeys.runs(),
+        automationsKeys.detail(event.automationId),
+      ];
   }
 }
 
-/**
- * Refetch everything the stream covers: what a gap in it may have missed.
- * One refetch per open screen, as a window refocus does; a closed screen's
- * queries are only marked stale.
- */
-function invalidateCovered(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
-  void queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
-  void queryClient.invalidateQueries({ queryKey: hostsKeys.pairingLists() });
-  void queryClient.invalidateQueries({ queryKey: automationsKeys.lists() });
-  void queryClient.invalidateQueries({ queryKey: automationsKeys.details() });
-  void queryClient.invalidateQueries({ queryKey: automationsKeys.runs() });
+/** Everything a gap in the stream may have missed: one refetch per open screen. */
+const COVERED = [
+  sessionsKeys.all,
+  hostsKeys.lists(),
+  hostsKeys.pairingLists(),
+  automationsKeys.lists(),
+  automationsKeys.details(),
+  automationsKeys.runs(),
+];
+
+function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[])[]): void {
+  for (const queryKey of keys) void queryClient.invalidateQueries({ queryKey });
 }
 
 /**
- * The workspace's change feed, for as long as the console is mounted and the
+ * The workspace's change feed, while `workspaceId` names one and the
  * `workspace_event_stream` flag is on: one stream per tab, whose events
- * refetch the queries they name.
+ * refetch the queries they name the moment the change commits.
  *
- * Live, every poll in `LIVE_POLL` stands down. On every change of state the
- * covered queries are refetched: going live catches what happened before the
- * stream subscribed, and going down is the read that brings each poll back.
- * It renders nothing and re-renders nothing; the state it keeps is the
- * polls'.
+ * It sits beside the polls in `LIVE_POLL`, which run as they always do: the
+ * stream makes a change arrive sooner, never later. After a reconnect the
+ * covered queries are refetched once, for what the gap may have missed. A
+ * flag read off, or a workspace that changes, closes the stream.
  */
-export function useWorkspaceEvents(): void {
+export function useWorkspaceEvents(workspaceId: string | undefined): void {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   const enabled = useFeatureFlag('workspace_event_stream');
 
-  // Subscribes to the API's event stream, an outside system, for as long as the flag is on.
+  // Subscribes to the API's event stream, an outside system, while the flag and a workspace hold.
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !workspaceId) return;
     const stream = app.organizations.openEvents();
-    let live = false;
+    // Live once already, then down: the next `live` is a reconnect.
+    let wasLive = false;
+    let dropped = false;
     const offStatus = stream.onStatus((status) => {
-      const next = status === 'live';
-      if (next === live) return;
-      live = next;
-      setStreamedPolls(next ? STREAMED : []);
-      invalidateCovered(queryClient);
+      if (status !== 'live') {
+        dropped = wasLive;
+        return;
+      }
+      if (dropped) invalidate(queryClient, COVERED);
+      wasLive = true;
+      dropped = false;
     });
-    const offEvent = stream.onEvent((event) => invalidateFor(queryClient, event));
+    const offEvent = stream.onEvent((event) => invalidate(queryClient, keysFor(event)));
     return () => {
       offStatus();
       offEvent();
       stream.dispose();
-      if (live) {
-        setStreamedPolls([]);
-        invalidateCovered(queryClient);
-      }
     };
-  }, [app, queryClient, enabled]);
+  }, [app, queryClient, enabled, workspaceId]);
 }

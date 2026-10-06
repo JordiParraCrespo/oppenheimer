@@ -8,7 +8,6 @@ import { TOKENS } from '../../di/tokens';
 import type { WorkspaceStreamStatus } from '../../modules/organizations';
 import { automationsKeys } from '../automations.queries';
 import { hostsKeys } from '../hosts.queries';
-import { LIVE_POLL, pollWhile } from '../live-poll';
 import { sessionsKeys } from '../sessions.queries';
 import { useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
@@ -61,50 +60,34 @@ function setup() {
   return { ...fake, openEvents, wrapper, invalidated };
 }
 
-const presenceTick = () =>
-  pollWhile('hostPresence', true).refetchInterval({ queryHash: 'hosts', state: {} });
-
 afterEach(() => {
   flag.on = true;
 });
 
 describe('useWorkspaceEvents', () => {
-  it('opens nothing while the flag is off, and the polls keep asking', () => {
+  it('opens nothing while the flag is off or there is no workspace', () => {
     flag.on = false;
-    const { openEvents, wrapper } = setup();
-    renderHook(() => useWorkspaceEvents(), { wrapper });
-    expect(openEvents).not.toHaveBeenCalled();
-    expect(presenceTick()).toBe(LIVE_POLL.hostPresence.interval);
-  });
+    const off = setup();
+    renderHook(() => useWorkspaceEvents('org-1'), { wrapper: off.wrapper });
+    expect(off.openEvents).not.toHaveBeenCalled();
 
-  /**
-   * The whole point, and both halves of it: while the stream is live no poll
-   * asks, and the moment it drops every poll is back, with one refetch to
-   * cover what the gap may have missed.
-   */
-  it('stands the polls down while live and brings them back when it drops', async () => {
-    const { status, wrapper, invalidated } = setup();
-    renderHook(() => useWorkspaceEvents(), { wrapper });
-
-    await status('live');
-    expect(presenceTick()).toBe(false);
-    expect(invalidated).toContainEqual(sessionsKeys.all);
-    expect(invalidated).toContainEqual(hostsKeys.pairingLists());
-
-    invalidated.length = 0;
-    await status('down');
-    expect(presenceTick()).toBe(LIVE_POLL.hostPresence.interval);
-    expect(invalidated).toContainEqual(hostsKeys.lists());
+    flag.on = true;
+    const none = setup();
+    renderHook(() => useWorkspaceEvents(undefined), { wrapper: none.wrapper });
+    expect(none.openEvents).not.toHaveBeenCalled();
   });
 
   it('refetches the reads an event names, and never mints a pairing token', async () => {
     const { status, send, wrapper, invalidated } = setup();
-    renderHook(() => useWorkspaceEvents(), { wrapper });
+    renderHook(() => useWorkspaceEvents('org-1'), { wrapper });
     await status('live');
-    invalidated.length = 0;
 
     await send({ type: 'session.changed', id: 's-1' });
-    expect(invalidated).toEqual([sessionsKeys.detail('s-1'), sessionsKeys.lists()]);
+    expect(invalidated).toEqual([
+      sessionsKeys.detail('s-1'),
+      sessionsKeys.lists(),
+      hostsKeys.lists(),
+    ]);
 
     invalidated.length = 0;
     await send({ type: 'pairing.spent', id: 'p-1', hostId: 'h-1' });
@@ -120,12 +103,31 @@ describe('useWorkspaceEvents', () => {
     ]);
   });
 
-  it('closes the stream on unmount and leaves the polls asking', async () => {
-    const { stream, status, wrapper } = setup();
-    const { unmount } = renderHook(() => useWorkspaceEvents(), { wrapper });
+  /**
+   * Once per gap. Going live the first time refetches nothing (the screens
+   * just read), and a drop refetches nothing (the polls never stopped); only
+   * the reconnect after a drop catches up, once.
+   */
+  it('catches up once after a reconnect, and not on the first connect or the drop', async () => {
+    const { status, wrapper, invalidated } = setup();
+    renderHook(() => useWorkspaceEvents('org-1'), { wrapper });
+
     await status('live');
+    await status('down');
+    expect(invalidated).toEqual([]);
+
+    await status('live');
+    expect(invalidated).toContainEqual(sessionsKeys.all);
+    expect(invalidated).toContainEqual(automationsKeys.details());
+    const once = invalidated.length;
+    await status('live');
+    expect(invalidated).toHaveLength(once);
+  });
+
+  it('closes the stream on unmount', () => {
+    const { stream, wrapper } = setup();
+    const { unmount } = renderHook(() => useWorkspaceEvents('org-1'), { wrapper });
     unmount();
     expect(stream.dispose).toHaveBeenCalled();
-    expect(presenceTick()).toBe(LIVE_POLL.hostPresence.interval);
   });
 });

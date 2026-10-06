@@ -17,14 +17,6 @@ export const CONSUMER_CONFIG = {
     /** The delays between reconnect attempts, with jitter on top (`product/12-lessons-from-grok-bot.md`). */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
   },
-  /** The workspace's change feed (`product/versions/mvp/21-workspace-events.md`). */
-  events: {
-    /**
-     * The delays between dials once the API refused the stream outright (a
-     * 401, a deploy); a dropped connection is redialled by the browser itself.
-     */
-    reconnectLadderMs: [1_000, 2_000, 5_000, 10_000, 30_000, 60_000],
-  },
   automations: {
     /** How long a GitHub trigger's "would have matched" preview stays fresh. */
     triggerPreviewStaleMs: 30_000,

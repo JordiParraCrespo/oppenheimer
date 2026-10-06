@@ -10,6 +10,7 @@ import type { SessionGroup, SessionState } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
+import { SessionUpdatedDomainEvent } from './events/session-updated.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
@@ -330,9 +331,9 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   /**
    * Apply one log entry: the aggregate's only mutator of the fold.
    *
-   * It runs the pure fold, advances the projection, and raises
-   * `SessionStateChanged` only on a real transition — a heartbeat that moves
-   * nothing but `lastEventAt` owes nobody a notification.
+   * It runs the pure fold, advances the projection, raises `SessionUpdated`
+   * once per write, and `SessionStateChanged` only on a real transition — a
+   * heartbeat that moves nothing but `lastEventAt` owes nobody that one.
    */
   recordEvent(entry: SessionLogEntry): void {
     const before = this.props.state;
@@ -346,6 +347,18 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.foldTurn(entry);
     this.setUpdatedAt(new Date());
     this.validate();
+
+    // One per write, however many entries it lands: the row is re-read once.
+    if (!this.domainEvents.some((event) => event instanceof SessionUpdatedDomainEvent)) {
+      this.addEvent(
+        new SessionUpdatedDomainEvent({
+          aggregateId: this.id,
+          reason: `the session log took a ${entry.kind} entry`,
+          organizationId: this.props.organizationId,
+          origin: this.props.origin,
+        }),
+      );
+    }
 
     if (folded.state !== before) {
       this.addEvent(

@@ -6,9 +6,8 @@ import { type RedisConfig, redisConnectionOptions } from '../../config/redis.con
 import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
 import type {
   WorkspaceEventAudience,
-  WorkspaceEventFeedPort,
-  WorkspaceEventsPort,
-} from '../application/workspace-events.port';
+  WorkspaceEventBusPort,
+} from '../application/workspace-event-bus.port';
 
 /** The Redis channel an audience's events are published on. */
 export function channelOf(audience: WorkspaceEventAudience): string {
@@ -19,26 +18,30 @@ export function channelOf(audience: WorkspaceEventAudience): string {
 
 type Listener = (event: WorkspaceEvent) => void;
 
+/** One channel this replica listens on: who hears it, and its `SUBSCRIBE` while in flight. */
+interface Channel {
+  listeners: Set<Listener>;
+  subscribed: Promise<unknown>;
+}
+
 /**
  * Redis pub/sub: publish on the shared command client, subscribe on one
  * connection of its own per replica, opened the first time a stream asks.
  *
- * A subscriber connection can do nothing else, and it must not fail fast the
- * way the command client does (`redisCommandClientOptions`): a subscription
- * waits for Redis rather than being refused, and a stream says `ready` only
- * once it is in place, so while Redis is down the console keeps polling. The
- * connection resubscribes on its own after a reconnect; the streams that were
- * open saw nothing in between and are told so by their reconnect.
+ * A publish that Redis refuses rejects, so the outbox delivers the event
+ * again. A subscriber connection can do nothing else, and it must not fail
+ * fast the way the command client does (`redisCommandClientOptions`): a
+ * subscription waits for Redis rather than being refused, and a stream says
+ * `ready` only once it is in place.
  *
  * Every stream on this replica shares the connection: a channel is subscribed
- * when its first listener arrives and unsubscribed when its last one leaves.
+ * when its first listener arrives, every later listener waits for that same
+ * `SUBSCRIBE`, and the channel is unsubscribed when its last listener leaves.
  */
 @Injectable()
-export class RedisWorkspaceEventsAdapter
-  implements WorkspaceEventsPort, WorkspaceEventFeedPort, OnApplicationShutdown
-{
+export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApplicationShutdown {
   private readonly logger = new Logger(RedisWorkspaceEventsAdapter.name);
-  private readonly listeners = new Map<string, Set<Listener>>();
+  private readonly channels = new Map<string, Channel>();
   private subscriber: Redis | null = null;
 
   constructor(
@@ -47,14 +50,8 @@ export class RedisWorkspaceEventsAdapter
     private readonly configService: ConfigService,
   ) {}
 
-  publish(audience: WorkspaceEventAudience, event: WorkspaceEvent): void {
-    this.redis.publish(channelOf(audience), JSON.stringify(event)).catch((error: Error) => {
-      this.logger.warn({
-        message: 'a workspace event was not published',
-        type: event.type,
-        error: error.message,
-      });
-    });
+  async publish(audience: WorkspaceEventAudience, event: WorkspaceEvent): Promise<void> {
+    await this.redis.publish(channelOf(audience), JSON.stringify(event));
   }
 
   async subscribe(
@@ -62,30 +59,26 @@ export class RedisWorkspaceEventsAdapter
     listener: Listener,
   ): Promise<() => void> {
     const subscriber = this.connection();
-    const channels = [...new Set(audiences.map(channelOf))];
-    const fresh: string[] = [];
-    for (const channel of channels) {
-      let set = this.listeners.get(channel);
-      if (!set) {
-        set = new Set();
-        this.listeners.set(channel, set);
-        fresh.push(channel);
+    const names = [...new Set(audiences.map(channelOf))];
+    const joined = names.map((name) => {
+      let channel = this.channels.get(name);
+      if (!channel) {
+        channel = { listeners: new Set(), subscribed: subscriber.subscribe(name) };
+        this.channels.set(name, channel);
       }
-      set.add(listener);
-    }
+      channel.listeners.add(listener);
+      return channel;
+    });
     const unsubscribe = () => {
-      const gone: string[] = [];
-      for (const channel of channels) {
-        const set = this.listeners.get(channel);
-        if (!set?.delete(listener) || set.size > 0) continue;
-        this.listeners.delete(channel);
-        gone.push(channel);
+      for (const name of names) {
+        const channel = this.channels.get(name);
+        if (!channel?.listeners.delete(listener) || channel.listeners.size > 0) continue;
+        this.channels.delete(name);
+        void subscriber.unsubscribe(name).catch(() => undefined);
       }
-      if (gone.length > 0) void subscriber.unsubscribe(...gone).catch(() => undefined);
     };
     try {
-      // A channel another stream already holds is subscribed: only the new ones wait.
-      if (fresh.length > 0) await subscriber.subscribe(...fresh);
+      await Promise.all(joined.map((channel) => channel.subscribed));
     } catch (error) {
       unsubscribe();
       throw error;
@@ -110,8 +103,8 @@ export class RedisWorkspaceEventsAdapter
         error: error.message,
       });
     });
-    subscriber.on('message', (channel: string, message: string) => {
-      const listeners = this.listeners.get(channel);
+    subscriber.on('message', (name: string, message: string) => {
+      const listeners = this.channels.get(name)?.listeners;
       if (!listeners) return;
       let event: unknown;
       try {

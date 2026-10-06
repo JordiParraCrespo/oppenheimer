@@ -52,9 +52,9 @@ export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>)
 }
 
 /**
- * The hosts, for a view that shows whether each is online. The workspace
- * stream announces presence when it is live; otherwise the list polls on
- * `LIVE_POLL.hostPresence` while `watching` holds: for as long as Settings → Hosts is mounted, and for
+ * The hosts, for a view that shows whether each is online. Presence is not
+ * streamed to the console yet, so the list polls on `LIVE_POLL.hostPresence`
+ * while `watching` holds: for as long as Settings → Hosts is mounted, and for
  * as long as a session's terminal is told its host is offline. `select` reads
  * less than the whole list, as on `useHosts`.
  */

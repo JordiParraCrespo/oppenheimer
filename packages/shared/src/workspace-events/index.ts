@@ -1,14 +1,15 @@
 /**
  * The workspace event stream's vocabulary: what `GET /v1/events` sends the
- * console, one Server-Sent Event per change (`product/versions/mvp/21-workspace-events.md`).
+ * console, one Server-Sent Event per change (`product/versions/mvp/03-control-plane.md`).
  *
  * An event says **that** something changed, never what it now is. The console
  * answers one by re-reading the endpoint it already reads for that thing, so
  * every read keeps its cache key, its authorization and its shape, and a
  * missed event costs one refetch rather than a wrong screen.
  *
- * Each event is scoped to one workspace: the API publishes it on that
- * workspace's channel and only that workspace's streams receive it.
+ * A session's and a run's changes go to the streams of their workspace. A
+ * host and its pairing tokens belong to the person who paired them, not to a
+ * workspace, so theirs go to that person's streams.
  */
 export const WORKSPACE_EVENT_TYPES = [
   /** A session's row changed: created, a start step landed, opened, failed, stopped, restarted, closed. */
@@ -27,25 +28,31 @@ export type WorkspaceEvent =
   | { type: 'session.changed'; id: string }
   | { type: 'host.changed'; id: string }
   | { type: 'pairing.spent'; id: string; hostId: string }
-  | { type: 'automationRun.changed'; id: string; automationId: string | null };
+  | { type: 'automationRun.changed'; id: string; automationId: string };
 
 /**
  * The SSE `event:` name of the frame the API sends once a stream is
- * subscribed, before any change. The console treats the stream as covering
- * the workspace only from this frame on, so an event published between the
- * request and the subscription is never assumed seen.
+ * subscribed, before any change: from here on, every change is delivered.
  */
 export const WORKSPACE_STREAM_READY = 'ready';
 
 /** The SSE `event:` name every {@link WorkspaceEvent} is sent under; its `data` is the JSON. */
 export const WORKSPACE_STREAM_EVENT = 'change';
 
+/** Whether a parsed frame is one of {@link WorkspaceEvent}'s variants, with every field it names. */
 export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
   if (typeof value !== 'object' || value === null) return false;
-  const { type, id } = value as { type?: unknown; id?: unknown };
-  return (
-    typeof id === 'string' &&
-    typeof type === 'string' &&
-    (WORKSPACE_EVENT_TYPES as readonly string[]).includes(type)
-  );
+  const event = value as Record<string, unknown>;
+  if (typeof event.id !== 'string') return false;
+  switch (event.type) {
+    case 'session.changed':
+    case 'host.changed':
+      return true;
+    case 'pairing.spent':
+      return typeof event.hostId === 'string';
+    case 'automationRun.changed':
+      return typeof event.automationId === 'string';
+    default:
+      return false;
+  }
 }

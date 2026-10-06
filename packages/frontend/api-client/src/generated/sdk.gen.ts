@@ -228,17 +228,6 @@ export const updateUser = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
- * Stream what changes in the caller’s workspace
- *
- * Server-Sent Events. A `ready` event once the stream is subscribed, then one `change` event per change, whose data is `{ type, id, … }` (`@oppenheimer/shared/workspace-events`): an invalidation, never the row, so the client re-reads it through its own endpoint. A `keepalive` event comes every 25 s, and the stream ends after 15 minutes so the client redials and is authenticated again.
- */
-export const streamWorkspaceEvents = <ThrowOnError extends boolean = false>(options?: Options<StreamWorkspaceEventsData, ThrowOnError>): RequestResult<StreamWorkspaceEventsResponses, StreamWorkspaceEventsErrors, ThrowOnError> => (options?.client ?? client).get<StreamWorkspaceEventsResponses, StreamWorkspaceEventsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/events',
-    ...options
-});
-
-/**
  * List every declared resource and what the caller may grant
  *
  * Drives the role builder. Resources are contributed by the modules that own them, so a new module appears here without editing a central catalog.
@@ -1651,6 +1640,17 @@ export const updateAutomationSettings = <ThrowOnError extends boolean = false>(o
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Stream what changes in the caller’s workspace
+ *
+ * Server-Sent Events. A `ready` event once the stream is subscribed, then one `change` event per change the caller may read, whose data is `{ type, id, … }` (`@oppenheimer/shared/workspace-events`): an invalidation, never the row, so the client re-reads it through its own endpoint. A `keepalive` event keeps an idle stream under proxy timeouts, and the API ends a stream after a while so the redial is authenticated again.
+ */
+export const streamWorkspaceEvents = <ThrowOnError extends boolean = false>(options?: Options<StreamWorkspaceEventsData, ThrowOnError>): RequestResult<StreamWorkspaceEventsResponses, StreamWorkspaceEventsErrors, ThrowOnError> => (options?.client ?? client).get<StreamWorkspaceEventsResponses, StreamWorkspaceEventsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/events',
+    ...options
 });
 
 /**

@@ -1,9 +1,9 @@
-import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
+import type { WorkspaceEvent, WorkspaceEventType } from '@oppenheimer/shared/workspace-events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   WorkspaceEventAudience,
-  WorkspaceEventFeedPort,
-} from '../application/workspace-events.port';
+  WorkspaceEventBusPort,
+} from '../application/workspace-event-bus.port';
 import { StreamWorkspaceEventsQuery } from '../queries/stream-workspace-events/stream-workspace-events.query';
 import {
   STREAM_KEEPALIVE_MS,
@@ -18,7 +18,8 @@ function fakeFeed() {
   let resolve: (off: () => void) => void = () => {};
   const off = vi.fn();
   const audiences: WorkspaceEventAudience[][] = [];
-  const feed: WorkspaceEventFeedPort = {
+  const feed: WorkspaceEventBusPort = {
+    publish: async () => undefined,
     subscribe: (asked, listener) => {
       audiences.push([...asked]);
       deliver = listener;
@@ -40,12 +41,18 @@ function fakeFeed() {
   };
 }
 
-async function open(fake: ReturnType<typeof fakeFeed>, organizationId: string | null = 'org-1') {
+async function open(
+  fake: ReturnType<typeof fakeFeed>,
+  organizationId: string | null = 'org-1',
+  types: WorkspaceEventType[] = ['session.changed', 'host.changed'],
+) {
   const handler = new StreamWorkspaceEventsQueryHandler(fake.feed);
   const frames: WorkspaceStreamFrame[] = [];
   let completed = false;
   const subscription = (
-    await handler.execute(new StreamWorkspaceEventsQuery({ userId: 'u-1', organizationId }))
+    await handler.execute(
+      new StreamWorkspaceEventsQuery({ userId: 'u-1', organizationId, types: new Set(types) }),
+    )
   ).subscribe({
     next: (frame) => frames.push(frame),
     complete: () => {
@@ -90,6 +97,15 @@ describe('StreamWorkspaceEventsQueryHandler', () => {
     ]);
   });
 
+  /** The feed is opened to anyone who may read one kind of change; the rest stay theirs. */
+  it('drops a kind of change the caller may not read', async () => {
+    const fake = fakeFeed();
+    const { frames } = await open(fake, 'org-1', ['session.changed']);
+    await fake.subscribed();
+    fake.deliver({ type: 'automationRun.changed', id: 'r-1', automationId: 'a-1' });
+    expect(frames).toEqual([{ kind: 'ready' }]);
+  });
+
   it('ends the subscription when the client goes', async () => {
     const fake = fakeFeed();
     const { subscription } = await open(fake);
@@ -108,10 +124,12 @@ describe('StreamWorkspaceEventsQueryHandler', () => {
   });
 
   /** An expired session keeps nothing streaming past this: the redial is authenticated again. */
-  it('keeps an idle stream alive and ends it after its lifetime', async () => {
+  it('keeps an idle stream alive and ends it after its lifetime, both from the subscription', async () => {
     vi.useFakeTimers();
     const fake = fakeFeed();
     const { frames, completed } = await open(fake);
+    vi.advanceTimersByTime(STREAM_KEEPALIVE_MS);
+    expect(frames).toEqual([]);
     await fake.subscribed();
 
     vi.advanceTimersByTime(STREAM_KEEPALIVE_MS);

@@ -43,13 +43,14 @@ export const FEATURE_FLAGS = {
   },
   /**
    * The console's workspace change feed (`GET /v1/events`). On, each console
-   * tab holds one Server-Sent Events stream and the polls in `LIVE_POLL` stand
-   * down while it is live; off, the API refuses the stream (`FLAG_003`) and
-   * the console polls as before. Rolled out by workspace; removed once the
-   * polls it replaces are gone (`product/versions/mvp/21-workspace-events.md`).
+   * tab holds one Server-Sent Events stream and refetches what a change
+   * names as it happens; off, the API refuses the stream (`FLAG_003`). The
+   * console's polls run either way. Rolled out by workspace. A tab that is
+   * already streaming closes it the next time it reads the flag off (a
+   * refocus refetches flags); until then the API keeps serving the open one.
    */
   workspace_event_stream: {
-    description: 'Push workspace changes to the console over one event stream instead of polling.',
+    description: 'Push workspace changes to the console over one event stream, beside its polls.',
     kind: 'release',
     owner: 'console',
     type: 'boolean',

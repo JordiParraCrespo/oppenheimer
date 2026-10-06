@@ -26,11 +26,13 @@ export class OrganizationsService {
   ) {}
 
   /**
-   * The caller's workspace, live: what changed in it, as it changes. Nothing
-   * is opened until this is called, and `dispose()` closes it.
+   * The caller's workspace, live: what changed in it, as it changes. This
+   * dials; `dispose()` closes it.
    */
   openEvents(): WorkspaceEventStream {
-    return new WorkspaceEventStream({ apiBaseUrl: this.apiBaseUrl });
+    const stream = new WorkspaceEventStream({ apiBaseUrl: this.apiBaseUrl });
+    stream.open();
+    return stream;
   }
 
   findAll(): Promise<OrganizationEntity[]> {

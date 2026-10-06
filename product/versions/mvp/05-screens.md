@@ -341,6 +341,15 @@
   half a minute to about a second when Send comes ten seconds after the
   pick (2026-10-02).
 
+- **The console hears about changes it did not make from the workspace
+  event stream (03), beside its polls.** Each change refetches the reads it
+  names, at the keys they already have, so a session's start step, a run
+  finishing or a host being paired shows the moment it commits. The polls
+  run as before and stay the fallback: the stream makes a change arrive
+  sooner, never later, and a tab whose stream drops refetches what it
+  covers once when it is back. Behind the `workspace_event_stream` flag
+  (2026-10-06).
+
 ## Open questions
 
 1. ~~Session naming: user-typed, derived from the first task, or from
@@ -375,6 +384,6 @@
    Should the pane attach as soon as the create returns, which changes
    01's attach ticket and 03's relay? Or should the console be told of
    `open` another way?
-   *2026-10-06:* the other way exists — `session.changed` on the workspace
-   event stream (21) reaches the pane as soon as the host appends
-   `session.started`, behind the `workspace_event_stream` flag.
+   *2026-10-06:* the other way exists: `session.changed` on the workspace
+   event stream (03) reaches the pane when the host appends
+   `session.started`, behind its flag.

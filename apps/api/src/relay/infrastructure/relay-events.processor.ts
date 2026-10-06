@@ -105,11 +105,6 @@ export class RelayEventsProcessor {
     }
   }
 
-  /** The link this process held is gone; the host's presence says what that means. */
-  onLinkDown(link: RunnerLink): void {
-    this.presence.disconnected(link.hostId);
-  }
-
   private closeRefused(link: RunnerLink, why: 'unpaired' | 'owner_refused'): void {
     if (why === 'unpaired') {
       this.logger.log({ message: 'closing the link of an unpaired host', hostId: link.hostId });

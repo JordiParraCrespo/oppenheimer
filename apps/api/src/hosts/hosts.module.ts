@@ -7,7 +7,6 @@ import { LinksModule } from '../links/links.module';
 import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
 import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
-import { HostPairedOrUnpairedDomainEventHandler } from './application/event-handlers/host-paired-or-unpaired.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAccountErasure } from './application/host-account-erasure.resolver';
@@ -177,7 +176,6 @@ const resolvers: Provider[] = [
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
     HostNetworkChangedDomainEventHandler,
-    HostPairedOrUnpairedDomainEventHandler,
     HostRetentionProcessor,
   ],
   // The application ports, and nothing else. A consumer that could inject

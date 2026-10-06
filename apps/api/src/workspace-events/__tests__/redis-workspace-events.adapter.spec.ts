@@ -9,13 +9,17 @@ import {
 
 /** The subscriber connection the adapter opens: what it subscribed, and a way to deliver. */
 const subscriber = vi.hoisted(() => {
-  const state = { last: null as null | (EventEmitter & Record<string, unknown>) };
+  const state = {
+    last: null as null | (EventEmitter & Record<string, unknown>),
+    /** When set, a `SUBSCRIBE` waits for it, as one Redis has not acknowledged yet does. */
+    gate: null as null | Promise<void>,
+  };
   return state;
 });
 
 vi.mock('ioredis', () => ({
   default: class {
-    readonly subscribe = vi.fn(async () => undefined);
+    readonly subscribe = vi.fn(() => subscriber.gate ?? Promise.resolve());
     readonly unsubscribe = vi.fn(async () => undefined);
     readonly quit = vi.fn(async () => undefined);
     readonly disconnect = vi.fn();
@@ -47,9 +51,9 @@ function setup() {
 }
 
 describe('RedisWorkspaceEventsAdapter', () => {
-  it("publishes on the audience's channel", () => {
+  it("publishes on the audience's channel", async () => {
     const { adapter, publish } = setup();
-    adapter.publish({ organizationId: 'org-1' }, { type: 'session.changed', id: 's-1' });
+    await adapter.publish({ organizationId: 'org-1' }, { type: 'session.changed', id: 's-1' });
     expect(publish).toHaveBeenCalledWith(
       'workspace-events:org:org-1',
       JSON.stringify({ type: 'session.changed', id: 's-1' }),
@@ -57,13 +61,13 @@ describe('RedisWorkspaceEventsAdapter', () => {
     expect(channelOf({ userId: 'u-1' })).toBe('workspace-events:user:u-1');
   });
 
-  it('never throws at a caller when Redis refuses the publish', async () => {
+  /** The outbox delivers again only if it hears the publish failed. */
+  it('rejects when Redis refuses the publish', async () => {
     const { adapter, publish } = setup();
     publish.mockRejectedValueOnce(new Error('down'));
-    expect(() =>
+    await expect(
       adapter.publish({ userId: 'u-1' }, { type: 'host.changed', id: 'h-1' }),
-    ).not.toThrow();
-    await Promise.resolve();
+    ).rejects.toThrow('down');
   });
 
   it("delivers a channel's messages to its listeners only", async () => {
@@ -89,10 +93,40 @@ describe('RedisWorkspaceEventsAdapter', () => {
     const offA = await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn());
     const offB = await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn());
     expect(connection().subscribe).toHaveBeenCalledTimes(1);
+    expect(connection().subscribe).toHaveBeenCalledWith('workspace-events:org:org-1');
 
     offA();
     expect(connection().unsubscribe).not.toHaveBeenCalled();
     offB();
     expect(connection().unsubscribe).toHaveBeenCalledWith('workspace-events:org:org-1');
+  });
+
+  /**
+   * The regression: the second of two tabs opening at once saw the channel
+   * already listed, skipped the `SUBSCRIBE` and said `ready` before Redis had
+   * acknowledged it, so a change in that gap never reached it.
+   */
+  it('makes a later listener wait for the subscription already in flight', async () => {
+    const { adapter, connection } = setup();
+    let acknowledge: () => void = () => {};
+    subscriber.gate = new Promise<void>((resolve) => {
+      acknowledge = resolve;
+    });
+    try {
+      const first = adapter.subscribe([{ organizationId: 'org-1' }], vi.fn());
+      let secondReady = false;
+      const second = adapter.subscribe([{ organizationId: 'org-1' }], vi.fn()).then(() => {
+        secondReady = true;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(secondReady).toBe(false);
+
+      acknowledge();
+      await Promise.all([first, second]);
+      expect(secondReady).toBe(true);
+      expect(connection().subscribe).toHaveBeenCalledTimes(1);
+    } finally {
+      subscriber.gate = null;
+    }
   });
 });

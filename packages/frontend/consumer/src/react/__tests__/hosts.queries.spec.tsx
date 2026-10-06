@@ -54,10 +54,7 @@ function setup(service: Record<string, unknown>) {
 /** The interval each observer of a query asks it to poll at. */
 function observerIntervals(queryClient: QueryClient, queryKey: readonly unknown[]) {
   const query = queryClient.getQueryCache().find({ queryKey, exact: true }) as Query;
-  return query.observers.map((observer) => {
-    const interval = observer.options.refetchInterval;
-    return typeof interval === 'function' ? interval(query) : interval;
-  });
+  return query.observers.map((observer) => observer.options.refetchInterval);
 }
 
 describe('useHosts', () => {

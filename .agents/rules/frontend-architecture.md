@@ -273,13 +273,6 @@ name the jobs and split *those*.
   presence, which never settles, does not. `pnpm check:structure` fails a
   `refetchInterval` anywhere but that file.
 
-  Polling is also the **fallback**. While the workspace event stream is live
-  (`useWorkspaceEvents`, `product/versions/mvp/21-workspace-events.md`)
-  `pollWhile` returns `false` for every kind and the stream's events
-  refetch the same keys; when it drops, each poll comes back. A new fact the
-  console must follow gets an event (`@oppenheimer/shared/workspace-events`)
-  mapped to its keys in `workspace-events.ts`, not a new poll kind.
-
 ## Routing is its own skill
 
 `apps/web` routes with TanStack Router, where a file's
