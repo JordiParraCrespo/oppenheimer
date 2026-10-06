@@ -46,9 +46,15 @@ export class StreamWorkspaceEventsQueryHandler
       let closed = false;
       let teardown = () => {};
       this.bus
-        .subscribe(audiences, (event) => {
-          if (query.types.has(event.type)) subscriber.next({ kind: 'change', event });
-        })
+        .subscribe(
+          audiences,
+          (event) => {
+            if (query.types.has(event.type)) subscriber.next({ kind: 'change', event });
+          },
+          // The bus dropped this replica's subscription: end the stream so the
+          // browser dials again, rather than leave it open and deaf.
+          () => subscriber.complete(),
+        )
         .then((unsubscribe) => {
           if (closed) {
             unsubscribe();

@@ -354,6 +354,7 @@ earlier note:
   each page at the route's measure (`versions/mvp/README.md`).
 - `versions/mvp/05-screens.md` had the console learn of every change it
   does not cause by polling. On 2026-10-06 a workspace event stream was
-  added beside the polls, behind the `workspace_event_stream` flag
+  added, behind the `workspace_event_stream` flag, and the polls it covers
+  stand down while it is live and poll again when it drops
   (`versions/mvp/03-control-plane.md`, 05). Issue #239 asked which version
   it belongs to: the MVP, since the polls it speeds up are the MVP's own.

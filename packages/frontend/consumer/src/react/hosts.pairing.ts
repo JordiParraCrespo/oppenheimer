@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
 import {
+  hostsKeys,
   useCurrentPairing,
   useHostList,
   usePairingTokens,
   useReplacePairing,
 } from './hosts.queries';
-import { pollWhile } from './live-poll';
+import { usePollWhile } from './live-poll';
 
 /** The longest delay `setTimeout` honours; a later one fires at once. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -75,10 +76,12 @@ export function useHostPairing(hostName: string): HostPairingFlow {
 
   // Stops once this token names a host, and once it has expired: a dead token
   // can pair nothing, so polling past that is a request every three seconds
-  // that can only answer "no".
+  // that can only answer "no". A spent token is `pairing.spent` on the
+  // workspace event stream, so the poll stands down while that is live; the
+  // host coming online below is presence, which the stream does not carry.
   const { data: tokens } = usePairingTokens(
     { enabled: Boolean(pairing) && !expired },
-    pollWhile('pairing', (rows) => {
+    usePollWhile('pairing', hostsKeys.pairingList(), (rows) => {
       if (!pairing || expired) return false;
       return !rows?.find((token) => token.id === pairing.id)?.redeemedHostId;
     }),
@@ -90,7 +93,7 @@ export function useHostPairing(hostName: string): HostPairingFlow {
   // starting, so the caller decides what `online` means for its primary action.
   const { data: hosts } = useHostList(
     { enabled: Boolean(redeemedHostId) },
-    pollWhile('pairing', (rows) => {
+    usePollWhile('pairing', hostsKeys.list(), (rows) => {
       if (!redeemedHostId) return false;
       return !rows?.find((row) => row.id === redeemedHostId)?.online;
     }),

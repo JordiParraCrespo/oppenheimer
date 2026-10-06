@@ -44,13 +44,15 @@ export const FEATURE_FLAGS = {
   /**
    * The console's workspace change feed (`GET /v1/events`). On, each console
    * tab holds one Server-Sent Events stream and refetches what a change
-   * names as it happens; off, the API refuses the stream (`FLAG_003`). The
-   * console's polls run either way. Rolled out by workspace. A tab that is
+   * names as it happens; off, the API refuses the stream (`FLAG_003`). While
+   * a stream is live, the polls whose facts it carries stand down; they poll
+   * again the moment it drops. Rolled out by workspace. A tab that is
    * already streaming closes it the next time it reads the flag off (a
    * refocus refetches flags); until then the API keeps serving the open one.
    */
   workspace_event_stream: {
-    description: 'Push workspace changes to the console over one event stream, beside its polls.',
+    description:
+      'Push workspace changes to the console over one event stream; the polls it covers stand down while it is live.',
     kind: 'release',
     owner: 'console',
     type: 'boolean',
