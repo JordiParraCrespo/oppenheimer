@@ -86,8 +86,29 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     return lists.flat();
   }
 
-  viewerLogin(userId: string): Promise<string | null> {
-    return this.userGrants.loginOf(userId);
+  /**
+   * Who the reader is on GitHub, which is what sorts a pull request into
+   * theirs, asked of them, or merely watched.
+   *
+   * Their stored grant answers it when they have connected GitHub through the
+   * console. Without one — an installation connected before the console kept a
+   * user token, or an account that signs in with another provider — a
+   * **personal** installation still answers it: GitHub lets nobody but the
+   * account itself install an App on a user account, so the account this
+   * person connected is this person. An organization's installation says
+   * nothing of the kind, and is not read as identity.
+   */
+  async viewerLogin(scope: AccessScope): Promise<string | null> {
+    const granted = await this.userGrants.loginOf(scope.userId);
+    if (granted) return granted;
+    const installations = await this.installations.findAll(scope);
+    return (
+      installations.find(
+        (installation) =>
+          installation.accountType === 'User' &&
+          installation.installedByUserId === scope.userId,
+      )?.accountLogin ?? null
+    );
   }
 
   async openPullRequests(

@@ -78,8 +78,8 @@ export interface ReviewSubmission {
 export interface PullRequestAccessPort {
   /** Every repository the workspace's usable installations cover. */
   repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
-  /** The caller's GitHub login, when they have connected GitHub with a stored grant. */
-  viewerLogin(userId: string): Promise<string | null>;
+  /** The caller's GitHub login: their stored grant's, or the account of a personal installation they connected. */
+  viewerLogin(scope: AccessScope): Promise<string | null>;
   /** One repository's open pull requests, each with its paths, checks and reviews. Never throws for GitHub's refusals. */
   openPullRequests(scope: AccessScope, repository: WorkspaceRepository): Promise<RepositoryPulls>;
   /**

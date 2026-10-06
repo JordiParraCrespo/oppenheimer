@@ -47,7 +47,7 @@ export class FindPullRequestAnalyticsQueryHandler
     }
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.watched(scope),
-      this.access.viewerLogin(scope.userId),
+      this.access.viewerLogin(scope),
     ]);
     // The closed reads are capped, newest first, so a page view costs the window and not the installation (#247).
     const [open, closed] = await Promise.all([

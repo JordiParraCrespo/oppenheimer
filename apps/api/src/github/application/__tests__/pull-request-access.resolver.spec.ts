@@ -199,3 +199,60 @@ describe('the closed pull requests Analytics reads', () => {
     expect(readPullRequest).toHaveBeenCalledTimes(2);
   });
 });
+
+/**
+ * Who the reader is on GitHub decides whether a pull request is theirs, asked
+ * of them, or merely watched. Without it every row falls to `watching` and the
+ * queue opens on an empty Mine, which is what an account whose installation
+ * predates the stored user grant saw.
+ */
+describe('who the reader is on GitHub', () => {
+  const viewerResolver = (grantLogin: string | null, installations: GithubInstallationEntity[]) =>
+    new PullRequestAccessResolver(
+      {
+        findAll: vi.fn().mockResolvedValue(installations),
+      } as unknown as GithubInstallationRepositoryPort,
+      {} as GithubAppPort,
+      {} as GithubPullsPort,
+      { loginOf: vi.fn().mockResolvedValue(grantLogin) } as unknown as GithubUserGrantResolver,
+      {} as CacheService,
+    );
+
+  const personal = (installedByUserId: string) =>
+    GithubInstallationEntity.connect({
+      organizationId: 'org-acme',
+      githubInstallationId: 11,
+      accountLogin: 'ana-dev',
+      accountType: 'User',
+      repositorySelection: 'all',
+      installedByUserId,
+      suspendedAt: null,
+    });
+
+  it('is the login their stored grant carries', async () => {
+    const resolver = viewerResolver('ana-dev', [personal('ana')]);
+
+    expect(await resolver.viewerLogin(SCOPE)).toBe('ana-dev');
+  });
+
+  // GitHub lets nobody but the account install an App on a user account, so the
+  // personal installation this person connected is this person.
+  it('is the account of a personal installation they connected, with no grant', async () => {
+    const resolver = viewerResolver(null, [personal('ana')]);
+
+    expect(await resolver.viewerLogin(SCOPE)).toBe('ana-dev');
+  });
+
+  it('is nobody when the only installation is an organization’s', async () => {
+    const resolver = viewerResolver(null, [installation()]);
+
+    expect(await resolver.viewerLogin(SCOPE)).toBeNull();
+  });
+
+  // Another person's personal installation says who *they* are, never who asked.
+  it('is nobody when the personal installation is somebody else’s', async () => {
+    const resolver = viewerResolver(null, [personal('bruno')]);
+
+    expect(await resolver.viewerLogin(SCOPE)).toBeNull();
+  });
+});

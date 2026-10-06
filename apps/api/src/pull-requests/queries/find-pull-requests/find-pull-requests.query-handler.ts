@@ -42,7 +42,7 @@ export class FindPullRequestsQueryHandler
     }
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.watched(scope),
-      this.access.viewerLogin(scope.userId),
+      this.access.viewerLogin(scope),
     ]);
     // A repository GitHub will not answer costs its own rows, not the queue (#244).
     const reads = await Promise.all(
