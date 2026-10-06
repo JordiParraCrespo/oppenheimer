@@ -23,5 +23,11 @@
   "taskDeleted": "Task deleted.",
   "goalAdded": "Goal added.",
   "taskSessionStarted": "Session started.",
-  "taskSessionQueued": "Session queued. It starts when its host reconnects."
+  "taskSessionQueued": "Session queued. It starts when its host reconnects.",
+  "pullRequestsSlowedDown": "GitHub asked us to slow down, so some rows are missing a part. They fill on the next read.",
+  "pullRequestsRefused": "GitHub refused part of what this view shows.",
+  "pullRequestsGone": "GitHub no longer finds part of what this view shows.",
+  "pullRequestsUnanswered": "GitHub did not answer for part of what this view shows.",
+  "pullRequestsIncomplete": "Some rows are missing a part GitHub did not give.",
+  "pullRequestsChecksPermission": "GitHub refused the checks: the App needs Checks: read and Commit statuses: read."
 }

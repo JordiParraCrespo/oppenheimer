@@ -1907,7 +1907,13 @@
     "taskDeleted": "Tarea eliminada.",
     "goalAdded": "Objetivo añadido.",
     "taskSessionStarted": "Sesión iniciada.",
-    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar."
+    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar.",
+    "pullRequestsSlowedDown": "GitHub nos pidió ir más despacio, así que a algunas filas les falta una parte. Aparecerá en la siguiente lectura.",
+    "pullRequestsRefused": "GitHub rechazó parte de lo que muestra esta vista.",
+    "pullRequestsGone": "GitHub ya no encuentra parte de lo que muestra esta vista.",
+    "pullRequestsUnanswered": "GitHub no respondió a parte de lo que muestra esta vista.",
+    "pullRequestsIncomplete": "A algunas filas les falta una parte que GitHub no dio.",
+    "pullRequestsChecksPermission": "GitHub rechazó las comprobaciones: la App necesita Checks: read y Commit statuses: read."
   },
   "emails": {
     "common": {

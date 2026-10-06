@@ -15,8 +15,8 @@ import { PULL_REQUEST_LANES } from '@oppenheimer/shared/schemas/pull-request';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueueSearchField } from '../components/queue-search-field';
-import { ReadNotices } from '../components/read-notices';
 import { useQueueSearch } from '../hooks/use-queue-search';
+import { useReadNotices } from '../hooks/use-read-notices';
 import { filterQueue, inRepository, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
 import { QueueRow } from './queue-row';
 
@@ -29,6 +29,7 @@ export function QueueTable() {
   const { t } = useTranslation();
   const { scope, lane, repo, setLane } = useQueueSearch();
   const queue = usePullRequestQueue(scope);
+  useReadNotices(queue.data?.unreadable);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
 
@@ -45,12 +46,10 @@ export function QueueTable() {
         const pages = Math.max(1, Math.ceil(rows.length / QUEUE_PAGE_SIZE));
         const current = Math.min(page, pages - 1);
         const shown = rows.slice(current * QUEUE_PAGE_SIZE, (current + 1) * QUEUE_PAGE_SIZE);
-        const notices = <ReadNotices unreadable={data.unreadable} />;
         if (!data.items.length) {
           const watching = scope === 'watching';
           return (
             <div className="flex flex-col gap-3">
-              {notices}
               <div className="rounded-xl bg-card py-6">
                 <EmptyState>
                   <EmptyState.Header>
@@ -79,7 +78,6 @@ export function QueueTable() {
         }
         return (
           <div className="flex flex-col gap-3">
-            {notices}
             <PullRequestTable>
               <div className="flex flex-wrap items-center gap-2 px-1.5 pt-1.5 pb-2">
                 <QueueSearchField

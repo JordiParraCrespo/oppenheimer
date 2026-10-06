@@ -31,6 +31,20 @@ export class FindPullRequestAnalyticsQueryHandler
   }: FindPullRequestAnalyticsQuery): Promise<PullRequestAnalyticsResponseDto> {
     const now = new Date();
     const window = analyticsWindow(range, now);
+    // A period over no repository is a period of nothing, and our own rows say
+    // so before GitHub is asked anything (#247).
+    if (!(await this.watched.anyWatched(scope))) {
+      return this.mapper.toAnalytics({
+        range,
+        window,
+        open: [],
+        closed: [],
+        viewerLogin: null,
+        now,
+        complete: true,
+        unreadable: [],
+      });
+    }
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.watched(scope),
       this.access.viewerLogin(scope.userId),

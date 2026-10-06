@@ -27,6 +27,12 @@ export class FindPullRequestsQueryHandler
   ) {}
 
   async execute({ scope, queue }: FindPullRequestsQuery): Promise<PullRequestQueueResponseDto> {
+    // Nothing watched is where every workspace starts, and it is answered from
+    // our own rows: a queue drawn before the reader has picked a repository
+    // asks GitHub for nothing at all (#247).
+    if (!(await this.watched.anyWatched(scope))) {
+      return this.mapper.toQueue([], queue, null, []);
+    }
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.all(scope),
       this.access.viewerLogin(scope.userId),
