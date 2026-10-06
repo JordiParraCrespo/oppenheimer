@@ -14,22 +14,21 @@ export function QueueScopes() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="flex flex-wrap items-center gap-3">
-        <SegmentedControl
-          size="lg"
-          value={scope}
-          onValueChange={(value) => setScope(value as PullRequestScope)}
-          aria-label={t('pullRequests.queue.scopesLabel')}
-        >
-          {PULL_REQUEST_SCOPES.map((value) => (
-            <SegmentedControlItem key={value} value={value} count={scopes?.[value]}>
-              {t(`pullRequests.queue.scopes.${value}`)}
-            </SegmentedControlItem>
-          ))}
-        </SegmentedControl>
-        {scope === 'watching' ? <WatchedRepositories /> : null}
-      </div>
+      <SegmentedControl
+        size="lg"
+        value={scope}
+        onValueChange={(value) => setScope(value as PullRequestScope)}
+        aria-label={t('pullRequests.queue.scopesLabel')}
+        className="self-start"
+      >
+        {PULL_REQUEST_SCOPES.map((value) => (
+          <SegmentedControlItem key={value} value={value} count={scopes?.[value]}>
+            {t(`pullRequests.queue.scopes.${value}`)}
+          </SegmentedControlItem>
+        ))}
+      </SegmentedControl>
       <p className="m-0 text-sm text-fg-muted">{t(`pullRequests.queue.scopeHint.${scope}`)}</p>
+      {scope === 'watching' ? <WatchedRepositories /> : null}
     </div>
   );
 }

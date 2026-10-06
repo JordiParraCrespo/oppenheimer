@@ -39,5 +39,9 @@
     "dropped": "{{name}} se ha soltado en {{target}}.",
     "droppedNowhere": "{{name}} se ha soltado.",
     "cancelled": "Se ha cancelado mover {{name}}."
+  },
+  "repositoryAccess": {
+    "manage": "Gestionar el acceso a repositorios",
+    "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
   }
 }

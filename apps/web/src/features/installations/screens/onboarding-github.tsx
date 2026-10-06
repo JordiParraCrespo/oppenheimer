@@ -1,5 +1,6 @@
 import {
   Button,
+  Callout,
   Card,
   Skeleton,
   StepHeader,
@@ -22,11 +23,17 @@ import { useStartGithubInstall } from '@/features/installations/hooks/use-start-
  * empty until it is done. The button mints the install state before leaving
  * for GitHub, and `useConnectInstallationCallback` exchanges what comes back;
  * a callback without a state is refused on screen rather than posted.
+ *
+ * A requested install (`useConnectInstallationCallback`'s `requested`) is said
+ * over the Connect button, never over an older installation and Continue: once
+ * an owner approves, Connect GitHub again is what reaches it (the App's
+ * "Redirect on update" sends the picker back here with it).
  */
 export function OnboardingGithubScreen({
   githubInstallationId,
   code,
   state,
+  setupAction,
   installUrlFor,
   onExchanged,
   step,
@@ -41,6 +48,8 @@ export function OnboardingGithubScreen({
   code?: string;
   /** The install state GitHub echoed, nonce only. */
   state?: string;
+  /** What GitHub did (`install`, `update`, `request`), from the same redirect. */
+  setupAction?: string;
   /**
    * The minted install URL as this visit should use it. The route pins what
    * must survive the round trip through github.com; this screen only sends the
@@ -68,8 +77,9 @@ export function OnboardingGithubScreen({
     isExchanging,
     connected,
     unstarted,
+    requested,
     error: connectError,
-  } = useConnectInstallationCallback(githubInstallationId, code, state, onExchanged);
+  } = useConnectInstallationCallback(githubInstallationId, code, state, setupAction, onExchanged);
   const { data: installations, isPending, error: listError } = useInstallations();
 
   // The installation this visit connected, when there was one — the callback
@@ -77,11 +87,15 @@ export function OnboardingGithubScreen({
   // who installed on a previous visit and came back; matching on
   // `githubInstallationId` rather than taking the first row means an account
   // with more than one connection still sees the one it just made.
-  const installation =
-    (connected && installations?.find((row) => row.id === connected.id)) ??
-    connected ??
-    installations?.find((row) => row.githubInstallationId === githubInstallationId) ??
-    installations?.[0];
+  //
+  // A requested install has no installation yet, and the previous one is not
+  // the answer to it.
+  const installation = requested
+    ? undefined
+    : ((connected && installations?.find((row) => row.id === connected.id)) ??
+      connected ??
+      installations?.find((row) => row.githubInstallationId === githubInstallationId) ??
+      installations?.[0]);
   // The card shows the count, but a `components/` file never fetches, so the
   // screen that renders it asks. Skipped entirely for an installation that
   // covers the whole account, which has no number to show.
@@ -132,6 +146,9 @@ export function OnboardingGithubScreen({
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">
+          {requested ? (
+            <Callout tone="info">{t('onboarding.flow.github.requested')}</Callout>
+          ) : null}
           <Button
             size="lg"
             block

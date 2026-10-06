@@ -81,6 +81,14 @@ test.describe('Pull requests', () => {
     const held = page.getByRole('row').filter({ hasText: 'Migrate the sessions table' });
     await expect(held.getByRole('button', { name: 'Merge' })).toBeDisabled();
 
+    // ── Watched repositories: a chip each, a search for the rest ─────────────
+    await page.getByRole('button', { name: 'Stop watching acme-labs/xrp-web' }).click();
+    await expect(held).toHaveCount(0, { timeout: 30_000 });
+    await page.getByRole('button', { name: 'Watch a repository' }).click();
+    await page.getByRole('textbox', { name: 'Search repositories' }).fill('web');
+    await page.getByRole('option', { name: 'acme-labs/xrp-web' }).click();
+    await expect(held).toHaveCount(1, { timeout: 30_000 });
+
     // ── Analytics ────────────────────────────────────────────────────────────
     // The sidebar's rows are the design system's routine items: list items that navigate.
     await page.locator('[data-slot="routine-item"]', { hasText: 'Analytics' }).click();

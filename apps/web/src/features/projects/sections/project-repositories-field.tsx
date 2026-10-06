@@ -6,6 +6,11 @@ import {
   type RepositoryRowValue,
   Skeleton,
 } from '@oppenheimer/design-system-web';
+import {
+  useRefreshInstallations,
+  useStartInstallation,
+} from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert, useManageRepositoryAccess } from '@oppenheimer/frontend-web';
 import { type Control, useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useProjectRepositoryOptions } from '../hooks/use-project-repository-options';
@@ -15,13 +20,16 @@ import type { ProjectFormValues } from '../lib/project-draft';
  * Repositories, in the project dialog: a field that adds one at a time from
  * the App's list, the added ones listed under it with an X. It binds the
  * form's rows and reads the list it draws; nothing above it subscribes to
- * either.
+ * either. Its pane ends in "Manage repository access", as the session chip's
+ * does: an organization's repositories appear once the App is installed there,
+ * which is decided on GitHub, not here.
  */
 export function ProjectRepositoriesField({ control }: { control: Control<ProjectFormValues> }) {
   const { t } = useTranslation();
   const { field } = useController({ control, name: 'rows' });
   const rows = field.value;
   const { options, loading } = useProjectRepositoryOptions(rows);
+  const manageAccess = useManageRepositoryAccess(useStartInstallation(), useRefreshInstallations());
 
   /**
    * The add field's ids, reconciled with the rows: a new one is cloned by
@@ -56,8 +64,15 @@ export function ProjectRepositoriesField({ control }: { control: Control<Project
             query ? t('projects.dialog.noMatch', { query }) : t('projects.dialog.allAdded')
           }
           removeLabel={(name) => t('projects.dialog.remove', { name })}
+          onManage={manageAccess.onManage}
+          manageLabel={t('common.repositoryAccess.manage')}
         />
       )}
+      <ErrorAlert
+        error={manageAccess.error}
+        fallback={t('common.repositoryAccess.failed')}
+        onDismiss={manageAccess.dismiss}
+      />
       {rows.length === 0 ? (
         <FieldDescription>{t('projects.dialog.repositoriesHint')}</FieldDescription>
       ) : null}

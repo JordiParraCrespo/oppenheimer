@@ -81,8 +81,6 @@
       "branchEmpty": "No branch matches.",
       "branchPane": "Branch for {{name}}",
       "changeBranch": "Change branch",
-      "manage": "Manage repository access",
-      "manageFailed": "Could not open GitHub. Try again in a moment.",
       "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
       "archived": "Archived",
       "failed": "Could not load your repositories."
