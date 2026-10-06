@@ -366,12 +366,16 @@ function DragProvider({
   );
 }
 
-/** The lifted copy: tilted, a touch larger, on the popover shadow. */
+/**
+ * The lifted copy: tilted, a touch larger, on the popover shadow. A rail
+ * item is round, so its lift is a pill on the card surface rather than the
+ * card-shaped box.
+ */
 function DragLift({ children }: { children: React.ReactNode }) {
   return (
     <div
       data-slot="drag-lift"
-      className="cursor-grabbing rounded-md shadow-popover motion-safe:animate-drag-lift"
+      className="cursor-grabbing rounded-md shadow-popover motion-safe:animate-drag-lift has-[>[data-slot=rail-item]]:rounded-pill has-[>[data-slot=rail-item]]:bg-card"
     >
       {children}
     </div>
