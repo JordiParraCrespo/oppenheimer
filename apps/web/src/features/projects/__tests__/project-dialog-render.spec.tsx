@@ -59,12 +59,14 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false, error: null }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false, error: null }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
+  useManageGithubAccess: () => ({ manage: vi.fn(), error: null, dismiss: vi.fn() }),
   useHosts: () => ({ data: [{ id: 'host-1', name: 'mac-studio' }], isPending: false }),
   useSessions: () => ({ data: 0 }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', async (original) => ({
   ...(await original<typeof import('@oppenheimer/frontend-core/react')>()),
+  useDeploymentCapabilities: () => ({ data: null, isPending: false }),
   useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
 }));
 

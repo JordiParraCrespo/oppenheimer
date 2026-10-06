@@ -5,7 +5,14 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { BrandGlyph } from './brand-glyph';
-import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import {
+  type ChipSelectAction,
+  ChipSelectActionRow,
+  ChipSelectEmpty,
+  ChipSelectItem,
+  ChipSelectPopup,
+  ChipSelectSearch,
+} from './chip-select';
 import { IconButton } from './icon-button';
 import { Popover, PopoverTrigger } from './popover';
 
@@ -31,7 +38,8 @@ const defaultEmptyText = (query: string): React.ReactNode =>
  *
  * Ids in, ids out: the caller owns `value` (the ids added, in order) and the
  * label and hint around it. The pane is `ChipSelect`'s parts, as the branch
- * pill's is, so the two repository controls share one picker.
+ * pill's is, so the two repository controls share one picker; `action` is the
+ * same pinned foot row ("Manage repository access").
  *
  * ```tsx
  * <RepositoryAddField
@@ -48,6 +56,7 @@ function RepositoryAddField({
   placeholder = 'Add a repository…',
   emptyText: emptyTextProp,
   removeLabel: removeLabelProp,
+  action,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onChange'> & {
@@ -57,6 +66,8 @@ function RepositoryAddField({
   placeholder?: string;
   emptyText?: (query: string) => React.ReactNode;
   removeLabel?: (name: string) => string;
+  /** A pinned row at the pane's foot, under the list. */
+  action?: ChipSelectAction;
 }) {
   // Not a default parameter: the React Compiler skips a function-valued one.
   const emptyText = emptyTextProp ?? defaultEmptyText;
@@ -123,6 +134,7 @@ function RepositoryAddField({
               <ChipSelectEmpty>{emptyText(query)}</ChipSelectEmpty>
             )}
           </div>
+          {action ? <ChipSelectActionRow action={action} onClose={() => setOpen(false)} /> : null}
         </ChipSelectPopup>
       </Popover>
 

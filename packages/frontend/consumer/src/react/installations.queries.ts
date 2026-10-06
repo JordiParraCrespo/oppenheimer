@@ -96,6 +96,40 @@ export function useStartInstallation(options?: UseMutationOptions<InstallationSt
 }
 
 /**
+ * "Manage repository access": open the GitHub App's install page in a new tab
+ * with a minted install state (`POST /installations` refuses a callback
+ * without one). It is how a workspace reaches an organization's repositories:
+ * the App is installed on that organization, or an owner is asked to.
+ *
+ * Minted on click, not render: every mint is a Redis key and the pickers that
+ * offer this render on every dialog. The tab opens **before** the mint, in the
+ * click, because popup blockers refuse a `window.open` after an `await`; it
+ * starts blank with `opener` cut and is pointed at GitHub once the URL
+ * arrives. A failed mint closes it and leaves the error to the caller.
+ */
+export function useManageGithubAccess() {
+  const { mutate, error, reset } = useStartInstallation();
+
+  return {
+    manage: () => {
+      const tab = window.open('', '_blank');
+      if (tab) tab.opener = null;
+      mutate(undefined, {
+        onSuccess: ({ url }) => {
+          // A blocked popup leaves nowhere to send the reader but here.
+          if (tab) tab.location.href = url;
+          else window.location.assign(url);
+        },
+        onError: () => tab?.close(),
+      });
+    },
+    /** Why the last mint failed, until `dismiss`. */
+    error,
+    dismiss: reset,
+  };
+}
+
+/**
  * The list is invalidated on success because the step that called this renders
  * straight off it — without that, a reader who has just connected is told they
  * have not.

@@ -1,5 +1,6 @@
 import {
   Button,
+  Callout,
   Card,
   Skeleton,
   StepHeader,
@@ -22,11 +23,19 @@ import { useStartGithubInstall } from '@/features/installations/hooks/use-start-
  * empty until it is done. The button mints the install state before leaving
  * for GitHub, and `useConnectInstallationCallback` exchanges what comes back;
  * a callback without a state is refused on screen rather than posted.
+ *
+ * A member who is not an owner of the organization they picked can only
+ * *request* the install: GitHub comes back with `setup_action=request` and no
+ * installation, and the approval later goes to the owner. The screen says so
+ * instead of looking as if nothing happened; once approved, Connect GitHub
+ * again reaches the installation (the App's "Redirect on update" sends the
+ * picker back here with it).
  */
 export function OnboardingGithubScreen({
   githubInstallationId,
   code,
   state,
+  requested,
   installUrlFor,
   onExchanged,
   step,
@@ -41,6 +50,8 @@ export function OnboardingGithubScreen({
   code?: string;
   /** The install state GitHub echoed, nonce only. */
   state?: string;
+  /** GitHub came back with `setup_action=request`: an owner has to approve the install. */
+  requested?: boolean;
   /**
    * The minted install URL as this visit should use it. The route pins what
    * must survive the round trip through github.com; this screen only sends the
@@ -105,6 +116,7 @@ export function OnboardingGithubScreen({
 
       <ErrorAlert error={error} fallback={t('onboarding.flow.github.failed')} />
       <ErrorAlert message={unstarted ? t('onboarding.flow.github.unstarted') : null} />
+      {requested ? <Callout tone="info">{t('onboarding.flow.github.requested')}</Callout> : null}
 
       {isPending || isExchanging ? (
         <Card>

@@ -1,6 +1,7 @@
 import {
   useInstallationRepositoriesFor,
   useInstallations,
+  useManageGithubAccess,
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities, useErrorMessage } from '@oppenheimer/frontend-core/react';
@@ -8,7 +9,6 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
-import { useManageGithubAccess } from '../hooks/use-manage-github-access';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { parseRepositoryKey, toRepositoryOptions } from '../lib/session-options';
 
