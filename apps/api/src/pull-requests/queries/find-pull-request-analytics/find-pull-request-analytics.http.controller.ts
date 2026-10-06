@@ -1,8 +1,9 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import { PULL_REQUEST_ANALYTICS_RANGES } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -32,6 +33,12 @@ export class FindPullRequestAnalyticsHttpController {
     summary: 'Pull request analytics',
     description:
       'The watched repositories over a week, a month or a quarter against the period before: created and merged per day, what you reviewed, median waits for review (sessions and people apart) and to merge, the lane mix, and what holds the open pull requests now.',
+  })
+  @ApiQuery({
+    name: 'range',
+    required: false,
+    enum: PULL_REQUEST_ANALYTICS_RANGES,
+    description: 'Default `month`',
   })
   @ApiResponse({ status: 200, type: PullRequestAnalyticsResponseDto })
   async find(

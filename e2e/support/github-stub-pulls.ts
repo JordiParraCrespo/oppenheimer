@@ -166,7 +166,7 @@ function pullOf(repository: PullsRepository, seed: Seed, now: number): StubPull 
     head: { ref: seed.head, sha: shaOf(repository.id, seed.number) },
     base: { ref: repository.default_branch },
     requested_reviewers: (seed.requested ?? []).map(person),
-    mergeable: state === 'dirty' ? false : true,
+    mergeable: state !== 'dirty',
     mergeable_state: seed.draft ? 'draft' : state,
     files: seed.files,
     reviews,

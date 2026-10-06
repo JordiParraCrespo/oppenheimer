@@ -1,5 +1,5 @@
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web';
-import { CircleCheck, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import { CircleCheck, GitPullRequest, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +31,13 @@ export function ConsoleRail() {
         render={<Link to="/sessions/new" />}
       >
         <Terminal />
+      </RailItem>
+      <RailItem
+        label={t('nav.pullRequests')}
+        active={list === 'pulls'}
+        render={<Link to="/pulls" />}
+      >
+        <GitPullRequest />
       </RailItem>
       <RailItem
         label={t('nav.automations')}

@@ -12294,7 +12294,18 @@
       "get": {
         "description": "Open pull requests of the watched repositories, read live through the workspace’s installations: yours and your sessions’ (`mine`), review requests (`requested`) or the rest (`watching`), longest wait first, each with its lane and what holds it.",
         "operationId": "findPullRequests",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Whose queue; default `mine`",
+            "schema": {
+              "enum": ["mine", "requested", "watching"],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -12390,7 +12401,18 @@
       "get": {
         "description": "The watched repositories over a week, a month or a quarter against the period before: created and merged per day, what you reviewed, median waits for review (sessions and people apart) and to merge, the lane mix, and what holds the open pull requests now.",
         "operationId": "findPullRequestAnalytics",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Default `month`",
+            "schema": {
+              "enum": ["week", "month", "quarter"],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

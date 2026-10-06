@@ -8541,7 +8541,12 @@ export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses
 export type FindPullRequestsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Whose queue; default `mine`
+         */
+        scope?: 'mine' | 'requested' | 'watching';
+    };
     url: '/api/v1/pulls';
 };
 
@@ -8587,7 +8592,12 @@ export type FindPullRequestsResponse = FindPullRequestsResponses[keyof FindPullR
 export type FindPullRequestAnalyticsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Default `month`
+         */
+        range?: 'week' | 'month' | 'quarter';
+    };
     url: '/api/v1/pulls/analytics';
 };
 

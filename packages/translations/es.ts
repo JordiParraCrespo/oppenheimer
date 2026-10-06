@@ -11,6 +11,7 @@ import nav from './es/nav.json';
 import onboarding from './es/onboarding.json';
 import projects from './es/projects.json';
 import publicCopy from './es/public.json';
+import pullRequests from './es/pullRequests.json';
 import sessions from './es/sessions.json';
 import settings from './es/settings.json';
 import tasks from './es/tasks.json';
@@ -31,6 +32,7 @@ const es = {
   projects,
   sessions,
   automations,
+  pullRequests,
   tasks,
   calendar,
   hosts,
