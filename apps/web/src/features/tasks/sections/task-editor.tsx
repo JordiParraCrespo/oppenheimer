@@ -1,4 +1,4 @@
-import { FieldDescription, Skeleton, toast } from '@oppenheimer/design-system-web';
+import { FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
 import {
   useCreateTask,
   useDeleteTask,
@@ -8,7 +8,7 @@ import {
   useUpdateTask,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TaskForm } from '../forms/task-form';
@@ -33,14 +33,14 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
   const [deleting, setDeleting] = useState(false);
   const create = useCreateTask({
     onSuccess: () => {
-      toast.success(t('toasts.taskAdded'));
+      notifySuccess('taskAdded');
       onClose();
     },
   });
   const update = useUpdateTask({ onSuccess: onClose });
   const remove = useDeleteTask({
     onSuccess: () => {
-      toast.success(t('toasts.taskDeleted'));
+      notifySuccess('taskDeleted');
       onClose();
     },
   });

@@ -15,7 +15,7 @@ import { useConsoleList } from '@/lib/console';
  */
 export function ConsoleRail() {
   const { t } = useTranslation();
-  const { data: sessions } = useSessions();
+  const { data: sessionCount } = useSessions({ select: (rows) => rows.length });
   const { data: openTasks } = useTasks({
     select: (rows) => rows.filter((row) => !row.isDone).length,
   });
@@ -26,7 +26,7 @@ export function ConsoleRail() {
       <RailMark aria-hidden>O</RailMark>
       <RailItem
         label={t('nav.sessions')}
-        count={sessions?.length}
+        count={sessionCount}
         active={list === 'sessions'}
         render={<Link to="/sessions/new" />}
       >
