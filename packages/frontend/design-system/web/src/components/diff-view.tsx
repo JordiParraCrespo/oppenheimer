@@ -32,14 +32,15 @@ import { IconButton } from './icon-button';
  *   agent's (the bot glyph) or a person's (their avatar), and the field for
  *   a new one.
  *
- * The colours are the system's: the code on the card (the library's ground,
- * so every wash mixes from it, not from black or white), additions and
- * deletions as a wash of the success and danger hues that deepens under the
- * pointer, with a 3px bar in the gutter (solid for an addition, dotted for a
- * deletion where the two share a column), the gutter numbers subtle, and the
- * hunk line a hint of the info blue. `colorScheme` is the app's resolved theme (the
- * kit's `useTheme().resolvedTheme`), so the code follows the app's switch,
- * not the OS.
+ * The colours are the system's, set through the library's custom properties
+ * (`DIFF_TOKENS`): the card is its ground (`--diffs-light-bg`,
+ * `--diffs-dark-bg`), so every wash mixes from the card; additions and
+ * deletions mix toward `--success` and `--danger`, with the library's bar in
+ * the gutter (`diffIndicators: 'bars'`); the gutter numbers are
+ * `--fg-subtle`; the hunk line is the card with a hint of `--info`.
+ * `colorScheme` is the app's resolved theme (the kit's
+ * `useTheme().resolvedTheme`), so the code follows the app's switch, not the
+ * OS.
  */
 
 type DiffLayout = 'unified' | 'split';
@@ -56,6 +57,7 @@ const DIFF_TOKENS = {
   '--diffs-font-size': '12.5px',
   '--diffs-line-height': '20px',
   '--diffs-bg-context-override': 'var(--card)',
+  // Split view leaves the missing side blank, as the frames do: its hatching is drawn in the card.
   '--diffs-bg-buffer-override': 'var(--card)',
   '--diffs-bg-separator-override': 'color-mix(in oklab, var(--card) 94%, var(--info))',
   // The hues lines mix toward; the library sets how far for each theme.
@@ -68,51 +70,6 @@ const DIFF_TOKENS = {
   '--diffs-bg-selection-override': 'var(--selected-surface)',
   '--diffs-annotation-bg': 'var(--card)',
 } as React.CSSProperties;
-
-/** What the custom properties cannot reach, inside the library's shadow root. */
-const DIFF_CSS = `
-/* Split view leaves the missing side blank, as the frames do, not hatched. */
-[data-content-buffer] { background-image: none; }
-
-/* Each split pane takes its whole half; a scrollbar appears only when one is needed. */
-[data-code] { scrollbar-gutter: auto; }
-
-/* The bar in the gutter, 3px. */
-[data-indicators='bars'] [data-column-number]::before { width: 3px !important; }
-
-/* Split view has a column for each side, so a deletion needs no pattern to tell it apart. */
-[data-diff-type='split'] [data-line-type='change-deletion'][data-column-number]::before {
-  background-color: var(--diffs-deletion-base);
-  background-image: none;
-}
-
-/* A run of solid bars reads as one, without hairlines where rows meet at fractional pixels. */
-[data-line-type='change-addition'][data-column-number] + [data-line-type='change-addition'][data-column-number]::before,
-[data-diff-type='split'] [data-line-type='change-deletion'][data-column-number] + [data-line-type='change-deletion'][data-column-number]::before {
-  contain: none;
-  top: -1px;
-  height: calc(100% + 1px);
-}
-
-/* A changed line under the pointer deepens its own hue instead of greying. */
-@media (pointer: fine) {
-  [data-line-type='change-addition'][data-hovered]:not([data-selected-line]) {
-    --diffs-computed-hovered-line-bg: light-dark(
-      color-mix(in lab, var(--diffs-bg) 80%, var(--diffs-addition-base)),
-      color-mix(in lab, var(--diffs-bg) 72%, var(--diffs-addition-base))
-    );
-  }
-  [data-line-type='change-deletion'][data-hovered]:not([data-selected-line]) {
-    --diffs-computed-hovered-line-bg: light-dark(
-      color-mix(in lab, var(--diffs-bg) 80%, var(--diffs-deletion-base)),
-      color-mix(in lab, var(--diffs-bg) 72%, var(--diffs-deletion-base))
-    );
-  }
-}
-
-/* A comment under a selected line keeps the card. */
-[data-selected-line][data-line-annotation] { background-color: var(--diffs-bg); }
-`;
 
 function DiffView<T>({
   patch,
@@ -151,7 +108,6 @@ function DiffView<T>({
           diffIndicators: 'bars',
           lineDiffType: 'word',
           hunkSeparators: 'line-info',
-          unsafeCSS: DIFF_CSS,
           enableGutterUtility: Boolean(onCommentLine),
           onGutterUtilityClick: onCommentLine
             ? (range) =>
