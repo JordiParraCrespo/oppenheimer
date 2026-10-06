@@ -47,26 +47,25 @@ const TASK_STATUS_STATE: Record<TaskStatus, StatusState> = {
 };
 
 function TaskBoard({
-  gutter = false,
+  gutter,
   className,
   children,
   ...props
 }: React.ComponentProps<'div'> & {
   /**
-   * Bleed out to the page's edge and pad the same amount back, so the columns
-   * still line up with the header above them while a card scrolled past the
-   * edge passes under the gutter instead of starting in it.
+   * The page's gutter, and the margin that cancels it, as the page states
+   * them (`-mx-8 px-8`). It is a prop rather than the caller's `className`
+   * because the padding has to sit on the element that scrolls: that is what
+   * keeps the columns on the page's measure while a card scrolled past the
+   * edge passes under the gutter instead of starting in it. The board holds
+   * no gutter of its own — whose it is, and how wide, is the page's.
    */
-  gutter?: boolean;
+  gutter?: string;
 }) {
   return (
     <div
       data-slot="task-board"
-      className={cn(
-        'overflow-x-auto overscroll-x-contain [scrollbar-width:none]',
-        gutter && '-mx-4 px-4 sm:-mx-8 sm:px-8',
-        className,
-      )}
+      className={cn('overflow-x-auto overscroll-x-contain [scrollbar-width:none]', gutter, className)}
       {...props}
     >
       <div className="grid auto-cols-[minmax(272px,1fr)] grid-flow-col items-start gap-3">{children}</div>

@@ -22,12 +22,15 @@ export function BoardScreen() {
   return (
     // The pane is `full`, so the screen keeps its own scroll.
     <div className="min-h-0 flex-1 overflow-y-auto">
-      {/* One gutter for the whole page, the columns included; the board's own
-          scroller is what reaches into it (`BoardColumns`). */}
+      {/* One gutter, this page's, stated here with the margin that cancels it
+          for the board: the columns keep the measure the header and the strip
+          are on, and the board scrolls to the page's edge rather than from
+          it. The pair goes on the board's scroller, which is why it travels
+          as a prop. */}
       <div className="mx-auto flex w-full max-w-310 flex-col gap-7 px-4 py-7 sm:px-8">
         <BoardHeader onNew={openNew} />
         <GoalsStrip />
-        <BoardColumns />
+        <BoardColumns gutter="-mx-4 px-4 sm:-mx-8 sm:px-8" />
         <TaskDialog />
         <StartSessionDialog />
       </div>

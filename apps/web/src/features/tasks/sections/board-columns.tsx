@@ -42,7 +42,7 @@ const board = getRouteApi('/_authenticated/plan/');
  * card at once and the server's answer settles it; a refused move puts it
  * back and says why above the columns.
  */
-export function BoardColumns() {
+export function BoardColumns({ gutter }: { gutter?: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
   const dragLabels = useDragLabels();
@@ -161,7 +161,7 @@ export function BoardColumns() {
           return task ? card(task, true) : null;
         }}
       >
-        <TaskBoard gutter>
+        <TaskBoard gutter={gutter}>
           {COLUMNS.map((status) => {
             const ids = drag.groups[status] ?? [];
             const label = t(`tasks.columns.${status}`);
