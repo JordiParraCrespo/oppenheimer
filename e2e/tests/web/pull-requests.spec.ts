@@ -69,6 +69,12 @@ test.describe('Pull requests', () => {
     ).toBeChecked();
     await expect(page.getByRole('cell', { name: 'Spinner' })).toBeVisible();
     await expect(page.getByText('What did you change')).toHaveCount(0);
+    // Its conversation: the commit, the review asked of the viewer, and both comments.
+    await expect(page.getByRole('heading', { name: 'Activity' })).toBeVisible();
+    await expect(page.getByText('1 commit', { exact: true })).toBeVisible();
+    await expect(page.getByText('lucia-m requested a review from ana-dev')).toBeVisible();
+    await expect(page.getByText('archived accounts are filtered out first')).toBeVisible();
+    await expect(page.getByText('@ana-dev').first()).toBeVisible();
 
     // Its changes, from GitHub's patch.
     await page.getByRole('button', { name: /^Changes/ }).click();

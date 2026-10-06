@@ -12,6 +12,7 @@ import {
 import type {
   LineCommentInput,
   MergeMethod,
+  PullRequestActivityItem,
   PullRequestAddress,
   PullRequestAnalytics,
   PullRequestAnalyticsRange,
@@ -33,7 +34,7 @@ import { useConsumerApp } from './context';
  * ```
  * ['pullRequests', 'queue', scope]
  * ['pullRequests', 'detail', installationId, githubRepoId, number]
- * ['pullRequests', 'detail', …, 'files' | 'comments']
+ * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity']
  * ['pullRequests', 'repositories']
  * ['pullRequests', 'analytics', range]
  * ```
@@ -54,6 +55,8 @@ export const pullRequestsKeys = {
     [...pullRequestsKeys.detail(address), 'files'] as const,
   comments: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'comments'] as const,
+  activity: (address: PullRequestAddress | undefined) =>
+    [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
   analytics: (range: PullRequestAnalyticsRange) =>
     [...pullRequestsKeys.all, 'analytics', range] as const,
@@ -100,6 +103,15 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
   return useQuery<PullRequestComment[], Error>({
     queryKey: pullRequestsKeys.comments(address),
     queryFn: address ? () => app.pullRequests.comments(address) : skipToken,
+  });
+}
+
+/** Its conversation: comments, commits, reviews and events, drawn under the description. */
+export function usePullRequestActivity(address: PullRequestAddress | undefined) {
+  const app = useConsumerApp();
+  return useQuery<PullRequestActivityItem[], Error>({
+    queryKey: pullRequestsKeys.activity(address),
+    queryFn: address ? () => app.pullRequests.activity(address) : skipToken,
   });
 }
 

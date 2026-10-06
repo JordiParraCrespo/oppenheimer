@@ -21,10 +21,17 @@ function railSection(label: string, children?: ReactNode, aside?: ReactNode) {
 
 /**
  * Beside a description, what decides whether it can go in: whether it merges
- * cleanly, who is reviewing it and what its checks say, each a quiet section
+ * cleanly, who has commented, who is reviewing it and what its checks say, each a quiet section
  * under a muted label, the way the Codex app's pull request page reads.
  */
-export function PullRequestRail({ pull }: { pull: PullRequestDetailEntity }) {
+export function PullRequestRail({
+  pull,
+  comments,
+}: {
+  pull: PullRequestDetailEntity;
+  /** The Comments section's body, which reads the conversation itself. */
+  comments: ReactNode;
+}) {
   const { t } = useTranslation();
   const base = pull.baseRef;
   const merge =
@@ -57,6 +64,7 @@ export function PullRequestRail({ pull }: { pull: PullRequestDetailEntity }) {
           {merge.text}
         </p>,
       )}
+      {railSection(t('pullRequests.detail.rail.comments'), comments)}
       {railSection(
         t('pullRequests.detail.rail.reviews'),
         <div className="flex flex-col gap-3">

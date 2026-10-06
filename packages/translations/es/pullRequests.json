@@ -176,9 +176,37 @@
       "closed": "Cerrada sin fusionar",
       "reviews": "Revisiones",
       "checksSummary": "{{passed}} de {{total}} correctas",
-      "noChecks": "Sin comprobaciones"
+      "noChecks": "Sin comprobaciones",
+      "comments": "Comentarios",
+      "noComments": "Sin comentarios",
+      "commentCount_one": "{{count}} comentario",
+      "commentCount_other": "{{count}} comentarios",
+      "commentCount_many": "{{count}} comentarios"
     },
-    "editOnGithub": "Editar en GitHub"
+    "editOnGithub": "Editar en GitHub",
+    "activity": {
+      "title": "Actividad",
+      "empty": "Aún no ha pasado nada aquí.",
+      "loadFailed": "No se pudo cargar la actividad.",
+      "commits_one": "{{count}} commit",
+      "commits_other": "{{count}} commits",
+      "commits_many": "{{count}} commits",
+      "review": {
+        "approved": "{{author}} aprobó estos cambios",
+        "changes_requested": "{{author}} pidió cambios",
+        "commented": "{{author}} revisó",
+        "dismissed": "Se descartó la revisión de {{author}}"
+      },
+      "event": {
+        "review_requested": "{{author}} pidió una revisión a {{subject}}",
+        "merged": "{{author}} fusionó esta pull request",
+        "closed": "{{author}} cerró esta pull request",
+        "reopened": "{{author}} reabrió esta pull request",
+        "ready_for_review": "{{author}} la marcó como lista para revisar",
+        "convert_to_draft": "{{author}} la convirtió en borrador",
+        "head_ref_force_pushed": "{{author}} hizo force-push de la rama"
+      }
+    }
   },
   "review": {
     "submit": "Enviar revisión",

@@ -40,6 +40,14 @@ interface StubComment {
   created_at: string;
 }
 
+/** A comment on the conversation tab, not on a line. */
+interface StubIssueComment {
+  id: number;
+  user: StubUser;
+  body: string;
+  created_at: string;
+}
+
 type CheckOutcome = 'success' | 'failure' | 'in_progress';
 
 interface StubPull {
@@ -62,6 +70,7 @@ interface StubPull {
   files: StubFile[];
   reviews: StubReview[];
   comments: StubComment[];
+  discussion: StubIssueComment[];
   checks: CheckOutcome[];
 }
 
@@ -132,6 +141,49 @@ interface Seed {
   draft?: boolean;
   mergeableState?: 'clean' | 'blocked' | 'dirty' | 'behind' | 'unstable';
   mergedHoursAgo?: number;
+  discussion?: { login: string; body: string; hoursAgo: number }[];
+}
+
+/** A pull request's timeline: its one commit, review requests, comments, reviews and merge, by time. */
+function timelineOf(pull: StubPull): Record<string, unknown>[] {
+  const entries: { at: string; entry: Record<string, unknown> }[] = [
+    {
+      at: pull.created_at,
+      entry: {
+        event: 'committed',
+        sha: pull.head.sha,
+        message: pull.title,
+        author: { name: pull.user.login, date: pull.created_at },
+      },
+    },
+    ...pull.requested_reviewers.map((reviewer) => ({
+      at: pull.created_at,
+      entry: {
+        event: 'review_requested',
+        id: nextId(),
+        actor: pull.user,
+        requested_reviewer: reviewer,
+        created_at: pull.created_at,
+      },
+    })),
+    ...pull.discussion.map((comment) => ({
+      at: comment.created_at,
+      entry: { event: 'commented', ...comment },
+    })),
+    ...pull.reviews.map((review) => ({
+      at: review.submitted_at,
+      entry: { event: 'reviewed', ...review, state: review.state.toLowerCase() },
+    })),
+    ...(pull.merged && pull.merged_at
+      ? [
+          {
+            at: pull.merged_at,
+            entry: { event: 'merged', id: nextId(), actor: pull.user, created_at: pull.merged_at },
+          },
+        ]
+      : []),
+  ];
+  return entries.sort((a, b) => a.at.localeCompare(b.at)).map(({ entry }) => entry);
 }
 
 function pullOf(repository: PullsRepository, seed: Seed, now: number): StubPull {
@@ -171,6 +223,12 @@ function pullOf(repository: PullsRepository, seed: Seed, now: number): StubPull 
     files: seed.files,
     reviews,
     comments: [],
+    discussion: (seed.discussion ?? []).map((comment) => ({
+      id: nextId(),
+      user: person(comment.login),
+      body: comment.body,
+      created_at: at(comment.hoursAgo),
+    })),
     checks: seed.checks,
   };
 }
@@ -263,6 +321,14 @@ function firstRepositorySeeds(viewer: string): Seed[] {
         '- Pixel 8, light',
         '</details>',
       ].join('\n'),
+      discussion: [
+        {
+          login: 'ana-dev',
+          body: 'Does the prompt also show when **every** account is archived?',
+          hoursAgo: 4,
+        },
+        { login: 'lucia-m', body: 'Yes: archived accounts are filtered out first.', hoursAgo: 3 },
+      ],
       author: 'lucia-m',
       head: 'fix/wallet-empty-state',
       hoursAgo: 5,
@@ -445,6 +511,7 @@ export function createPullsStub(
       files: _files,
       reviews: _reviews,
       comments: _comments,
+      discussion: _discussion,
       checks: _checks,
       ...rest
     } = pull;
@@ -522,6 +589,14 @@ export function createPullsStub(
           .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
           .map((pull) => summary(fullName, pull));
         return { status: 200, body: listed };
+      }
+
+      // The conversation tab, as GitHub's issue timeline gives it: oldest first.
+      const timeline = /^issues\/(\d+)\/timeline$/.exec(rest);
+      if (timeline && method === 'GET') {
+        const pull = pulls.find((candidate) => candidate.number === Number(timeline[1]));
+        if (!pull) return { status: 404, body: { message: 'Not Found' } };
+        return { status: 200, body: timelineOf(pull) };
       }
 
       const route = /^pulls\/(\d+)(?:\/(files|reviews|comments|merge))?$/.exec(rest);

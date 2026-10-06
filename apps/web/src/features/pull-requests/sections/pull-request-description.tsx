@@ -8,11 +8,14 @@ import { LaneBadge } from '../components/lane-badge';
 import { MarkdownBody } from '../components/markdown-body';
 import { PullRequestRail } from '../components/pull-request-rail';
 import { pullState } from '../lib/briefing';
+import { PullRequestActivity } from './pull-request-activity';
+import { PullRequestCommentsSummary } from './pull-request-comments-summary';
 
 /**
  * The description, as its author wrote it, laid out the way the Codex app
  * lays out a pull request: the header, the description under it with a way
- * to edit it on GitHub, and beside it the rail of what decides the merge.
+ * to edit it on GitHub and its conversation under that, and beside it the
+ * rail of what decides the merge.
  */
 export function PullRequestDescription({ address }: { address: PullRequestAddress }) {
   const { t } = useTranslation();
@@ -58,8 +61,12 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
                   {t('pullRequests.detail.editOnGithub')}
                 </a>
               </div>
+              <PullRequestActivity address={address} base={pull.htmlUrl} />
             </div>
-            <PullRequestRail pull={pull} />
+            <PullRequestRail
+              pull={pull}
+              comments={<PullRequestCommentsSummary address={address} />}
+            />
           </div>
         );
       }}

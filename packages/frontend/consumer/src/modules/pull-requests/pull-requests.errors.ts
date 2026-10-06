@@ -16,4 +16,5 @@ export const PullRequestsErrors = {
   FETCH_REPOSITORIES_FAILED: { code: 'PULLS_CLIENT_007', message: 'Failed to load repositories' },
   WATCH_FAILED: { code: 'PULLS_CLIENT_008', message: 'Failed to update the watched repositories' },
   FETCH_ANALYTICS_FAILED: { code: 'PULLS_CLIENT_009', message: 'Failed to load analytics' },
+  FETCH_ACTIVITY_FAILED: { code: 'PULLS_CLIENT_010', message: 'Failed to load the activity' },
 } as const satisfies Record<string, ErrorDefinition>;
