@@ -57,6 +57,11 @@ export class FindGoogleCalendarEventsHttpController {
     description: 'The IANA zone to read Google’s times in.',
   })
   @ApiResponse({ status: 200, type: [CalendarEventResponseDto] })
+  @ApiProblemResponse({
+    status: 429,
+    description: "Google Calendar's rate limit was reached; try again after Retry-After",
+    code: 'CALENDAR_010',
+  })
   @ApiProblemResponse({ status: 400, description: 'Range too wide', code: 'CALENDAR_003' })
   @ApiProblemResponse({ status: 409, description: 'Not connected', code: 'CALENDAR_007' })
   @ApiProblemResponse({ status: 502, description: 'Google did not answer', code: 'CALENDAR_008' })

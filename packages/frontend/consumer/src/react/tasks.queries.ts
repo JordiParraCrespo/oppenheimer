@@ -149,12 +149,16 @@ export function useMoveTask(
     mutationFn: ({ id, status, afterTaskId }: MoveTaskVariables) =>
       app.tasks.move(id, { status, afterTaskId }),
     onMutate: async (move) => {
-      await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
+      // Written before anything is awaited: the board lets go of its drag order in the
+      // drop's own handler, and a read that lands later shows the card back home for a
+      // frame. Cancelling first reverts a read on its way now, so it cannot undo this.
+      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
       const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
       const previous = rows?.find((row) => row.id === move.id);
       queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) =>
         current?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, current) : row)),
       );
+      await cancelled;
       return { previous };
     },
     onError: (error, move, context, mutation) => {

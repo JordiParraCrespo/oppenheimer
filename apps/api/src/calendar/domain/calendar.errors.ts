@@ -57,4 +57,13 @@ export const CalendarErrors = {
     message: 'An event ends after it starts, on its day',
     httpStatus: 400,
   },
+  /**
+   * Google's quota stopped the read, or an earlier answer already said to wait.
+   * A 429 with `Retry-After`; Google is not asked again until then.
+   */
+  GOOGLE_RATE_LIMITED: {
+    code: 'CALENDAR_010',
+    message: "Google Calendar's rate limit was reached; try again shortly",
+    httpStatus: 429,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

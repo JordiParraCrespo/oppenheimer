@@ -32,6 +32,7 @@ import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
 import { AesUserTokenSealerAdapter } from './infrastructure/aes-user-token-sealer.adapter';
 import { GithubEventSource } from './infrastructure/github-event-source.adapter';
+import { GithubHttp } from './infrastructure/github-http.adapter';
 import { GithubPullsAdapter } from './infrastructure/github-pulls.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
@@ -77,6 +78,8 @@ const adapters: Provider[] = [
   { provide: USER_TOKEN_SEALER, useClass: AesUserTokenSealerAdapter },
   { provide: GITHUB_PULLS, useClass: GithubPullsAdapter },
   { provide: PULL_REQUEST_ACCESS, useClass: PullRequestAccessResolver },
+  // The one client both GitHub adapters send through: one in-flight cap, one pause per bucket.
+  GithubHttp,
   InstallStateResolver,
   GithubUserGrantResolver,
 ];

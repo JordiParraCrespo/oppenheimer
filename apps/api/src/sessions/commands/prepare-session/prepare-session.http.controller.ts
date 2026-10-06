@@ -54,7 +54,7 @@ export class PrepareSessionHttpController {
     description: 'That repository is not one this GitHub installation covers',
     code: 'GITHUB_010',
   })
-  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit', code: ['RATE_001', 'GITHUB_015'] })
   async prepare(
     @CurrentAccessScope() scope: AccessScope,
     @Body() body: PrepareSessionRequest,

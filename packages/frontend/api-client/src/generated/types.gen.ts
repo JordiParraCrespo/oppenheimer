@@ -4932,6 +4932,10 @@ export type ConnectInstallationErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
      * GITHUB_002 — The GitHub App is not configured on this server
      */
     503: ProblemDetailsDto;
@@ -5006,6 +5010,10 @@ export type ListInstallationRepositoriesErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
      * GITHUB_009 — GitHub could not be reached or rejected the request
      */
     502: ProblemDetailsDto;
@@ -5050,6 +5058,10 @@ export type ListRepositoryBranchesErrors = {
      * GITHUB_008 — The installation is suspended or no longer installed
      */
     409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
     /**
      * GITHUB_009 — GitHub could not be reached or rejected the request
      */
@@ -6528,6 +6540,10 @@ export type CreateProjectErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
 };
 
 export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
@@ -6642,6 +6658,10 @@ export type UpdateProjectErrors = {
      * PROJECTS_008 — The Unassigned project cannot be renamed or archived
      */
     409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
 };
 
 export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
@@ -6753,7 +6773,7 @@ export type CreateSessionErrors = {
      */
     410: ProblemDetailsDto;
     /**
-     * RATE_001 — Rate limit reached
+     * RATE_001 / GITHUB_015 — Rate limit
      */
     429: ProblemDetailsDto;
     /**
@@ -7029,7 +7049,7 @@ export type PrepareSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * RATE_001 — Rate limit reached
+     * RATE_001 / GITHUB_015 — Rate limit
      */
     429: ProblemDetailsDto;
 };
@@ -7112,6 +7132,10 @@ export type AddCheckoutErrors = {
      * SESSIONS_004 — That repository is already checked out here
      */
     409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
 };
 
 export type AddCheckoutError = AddCheckoutErrors[keyof AddCheckoutErrors];
@@ -7359,6 +7383,10 @@ export type CreateAutomationErrors = {
      * AUTOMATIONS_007 — That project cannot hold automations
      */
     422: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
 };
 
 export type CreateAutomationError = CreateAutomationErrors[keyof CreateAutomationErrors];
@@ -7485,6 +7513,10 @@ export type UpdateAutomationErrors = {
      * AUTOMATIONS_003 — The automation was changed by someone else
      */
     409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
 };
 
 export type UpdateAutomationError = UpdateAutomationErrors[keyof UpdateAutomationErrors];
@@ -8510,6 +8542,10 @@ export type ConnectGoogleCalendarErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
      * CALENDAR_004 — Not configured
      */
     503: ProblemDetailsDto;
@@ -8591,6 +8627,10 @@ export type FindGoogleCalendarEventsErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
      * CALENDAR_008 — Google did not answer
      */
     502: ProblemDetailsDto;
@@ -8642,6 +8682,8 @@ export type FindPullRequestsErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -8697,6 +8739,8 @@ export type FindPullRequestAnalyticsErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -8747,6 +8791,8 @@ export type FindWatchedRepositoriesErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -8800,6 +8846,8 @@ export type SetRepositoryWatchErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -8854,6 +8902,8 @@ export type FindPullRequestErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -8908,6 +8958,8 @@ export type FindPullRequestFilesErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -8962,6 +9014,8 @@ export type FindPullRequestCommentsErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -9016,6 +9070,8 @@ export type AddPullRequestCommentErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -9070,6 +9126,8 @@ export type SubmitPullRequestReviewErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
@@ -9124,6 +9182,8 @@ export type MergePullRequestErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
      * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;

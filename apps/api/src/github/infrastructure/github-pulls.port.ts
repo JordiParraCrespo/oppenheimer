@@ -83,42 +83,63 @@ export interface GithubReviewInput {
   comments: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }[];
 }
 
+/**
+ * What GitHub counts a call against, which is what a rate-limit pause covers:
+ * the App's own JWT, the OAuth exchange, an installation (every token minted
+ * for it shares one budget), or a person (every token of theirs shares one).
+ */
+export type GithubBucket = 'app' | 'oauth' | `installation:${number}` | `user:${number}`;
+
+/** A token and the budget GitHub counts it against, which only the caller knows. */
+export interface GithubCredential {
+  token: string;
+  bucket: GithubBucket;
+}
+
 export interface GithubPullsPort {
   /** Newest first; `maxPages` of a hundred bounds a busy repository. */
   listPullRequests(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     state: 'open' | 'closed',
     maxPages: number,
   ): Promise<GithubPullRequestSummary[]>;
   readPullRequest(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
   ): Promise<GithubPullRequestDetail>;
-  listFiles(token: string, fullName: string, number: number): Promise<GithubPullRequestFile[]>;
-  listReviews(token: string, fullName: string, number: number): Promise<GithubPullRequestReview[]>;
+  listFiles(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+  ): Promise<GithubPullRequestFile[]>;
+  listReviews(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+  ): Promise<GithubPullRequestReview[]>;
   listReviewComments(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
   ): Promise<GithubReviewComment[]>;
-  readChecks(token: string, fullName: string, sha: string): Promise<GithubChecks>;
+  readChecks(credential: GithubCredential, fullName: string, sha: string): Promise<GithubChecks>;
   createReview(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
     review: GithubReviewInput,
   ): Promise<void>;
   createReviewComment(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
     comment: { commitId: string; path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void>;
   /** Merges at `sha` only, so a push that lands meanwhile is never merged unseen. */
   merge(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
     method: 'squash' | 'merge' | 'rebase',

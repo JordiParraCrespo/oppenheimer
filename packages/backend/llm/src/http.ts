@@ -1,5 +1,6 @@
 import { LlmError } from './llm.errors';
 import type { LlmProviderId } from './llm.types';
+import type { ProviderPause } from './rate-limit';
 
 /**
  * One JSON POST with a deadline, and every way it can fail turned into an
@@ -17,8 +18,10 @@ export async function postJson(
   url: string,
   headers: Record<string, string>,
   body: unknown,
-  options: { timeoutMs?: number; signal?: AbortSignal },
+  options: { timeoutMs?: number; signal?: AbortSignal; pause?: ProviderPause },
 ): Promise<unknown> {
+  options.pause?.assertOpen(provider);
+
   const signals: AbortSignal[] = [];
   if (options.signal) signals.push(options.signal);
   if (options.timeoutMs && options.timeoutMs > 0) {
@@ -49,6 +52,8 @@ export async function postJson(
       // cancellation, not an HTTP failure a caller might retry on status.
       if (signal?.aborted) throw failureFrom(provider, error, options);
     }
+    const limited = options.pause?.refusal(provider, response, detail.slice(0, 300));
+    if (limited) throw limited;
     throw new LlmError(
       'http',
       provider,

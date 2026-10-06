@@ -4,6 +4,7 @@ import type {
   LlmProviderId,
   LlmProviderSetting,
 } from './llm.types';
+import { ProviderPause } from './rate-limit';
 
 /**
  * The shared contract every provider implements, and the DI token consumers
@@ -19,6 +20,9 @@ import type {
  */
 export abstract class LlmService {
   abstract readonly provider: LlmProviderId | LlmProviderSetting;
+
+  /** The provider's rate-limit pause, for the lifetime of this service (`rate-limit.ts`). */
+  protected readonly pause = new ProviderPause();
 
   /** Whether a call can be made at all. False for the no-op service. */
   abstract isConfigured(): boolean;

@@ -40,6 +40,11 @@ export class CreateAutomationHttpController {
   })
   @ApiResponse({ status: 201, type: AutomationResponseDto })
   @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
+  @ApiProblemResponse({
     status: 422,
     description: 'That project cannot hold automations',
     code: 'AUTOMATIONS_007',

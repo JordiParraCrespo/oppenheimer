@@ -123,12 +123,13 @@ export const GithubErrors = {
     httpStatus: 409,
   },
   /**
-   * GitHub asked this token to wait (a 429, a spent budget or a secondary
-   * limit) for longer than one request will hold. `retryAfterSeconds` says when.
+   * GitHub's rate limit stopped the call — primary or secondary — or an earlier
+   * answer already said to wait, and GitHub was not asked again. A 429 with
+   * `Retry-After` and `retryAfterSeconds`; nothing is retried behind the caller's back.
    */
   RATE_LIMITED: {
     code: 'GITHUB_015',
-    message: 'GitHub asked to wait before the next request',
+    message: "GitHub's rate limit was reached; try again shortly",
     httpStatus: 429,
   },
 } as const satisfies Record<string, ErrorDefinition>;
