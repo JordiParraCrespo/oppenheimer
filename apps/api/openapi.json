@@ -12331,7 +12331,7 @@
     },
     "/api/v1/pulls": {
       "get": {
-        "description": "Open pull requests of the watched repositories, read live through the workspace’s installations: yours and your sessions’ (`mine`), review requests (`requested`) or the rest (`watching`), longest wait first, each with its lane and what holds it.",
+        "description": "Open pull requests read live through the workspace’s installations: yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
         "operationId": "findPullRequests",
         "parameters": [
           {

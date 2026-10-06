@@ -1932,7 +1932,7 @@ export const findGoogleCalendarEvents = <ThrowOnError extends boolean = false>(o
 /**
  * The pull request queue
  *
- * Open pull requests of the watched repositories, read live through the workspace’s installations: yours and your sessions’ (`mine`), review requests (`requested`) or the rest (`watching`), longest wait first, each with its lane and what holds it.
+ * Open pull requests read live through the workspace’s installations: yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.
  */
 export const findPullRequests = <ThrowOnError extends boolean = false>(options?: Options<FindPullRequestsData, ThrowOnError>): RequestResult<FindPullRequestsResponses, FindPullRequestsErrors, ThrowOnError> => (options?.client ?? client).get<FindPullRequestsResponses, FindPullRequestsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

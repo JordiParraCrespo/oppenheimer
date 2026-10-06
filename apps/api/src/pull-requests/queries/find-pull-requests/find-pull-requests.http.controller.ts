@@ -32,7 +32,7 @@ export class FindPullRequestsHttpController {
   @ApiOperation({
     summary: 'The pull request queue',
     description:
-      'Open pull requests of the watched repositories, read live through the workspace’s installations: yours and your sessions’ (`mine`), review requests (`requested`) or the rest (`watching`), longest wait first, each with its lane and what holds it.',
+      'Open pull requests read live through the workspace’s installations: yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.',
   })
   @ApiQuery({
     name: 'scope',
