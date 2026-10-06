@@ -132,34 +132,37 @@ export interface MoveTaskVariables extends TaskMove {
 /**
  * A drag or a tick. The card moves on the drop: the board is written at once with
  * a provisional key just after the task it landed below (or before every key, at
- * the top), and the server's key replaces it. A refusal puts the board back.
+ * the top), and the server's key replaces it. A refusal puts that card back and
+ * reads the board again, since other writes may have settled while it was out.
  */
 export function useMoveTask(
-  options?: UseMutationOptions<TaskEntity, Error, MoveTaskVariables, { previous?: TaskEntity[] }>,
+  options?: UseMutationOptions<TaskEntity, Error, MoveTaskVariables, { previous?: TaskEntity }>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    ...withCacheOnSuccess(options, (task, move, context) =>
-      settleTask(
-        queryClient,
-        task.id,
-        task,
-        context?.previous?.find((row) => row.id === move.id),
-      ),
+    ...withCacheOnSuccess(options, (task, _move, context) =>
+      settleTask(queryClient, task.id, task, context?.previous),
     ),
     mutationFn: ({ id, status, afterTaskId }: MoveTaskVariables) =>
       app.tasks.move(id, { status, afterTaskId }),
     onMutate: async (move) => {
       await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
-      const previous = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
-      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
-        rows?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, rows) : row)),
+      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
+      const previous = rows?.find((row) => row.id === move.id);
+      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) =>
+        current?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, current) : row)),
       );
       return { previous };
     },
     onError: (error, move, context, mutation) => {
-      if (context?.previous) queryClient.setQueryData(tasksKeys.list(BOARD), context.previous);
+      const previous = context?.previous;
+      if (previous) {
+        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
+          rows?.map((row) => (row.id === previous.id ? previous : row)),
+        );
+      }
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.list(BOARD) });
       return options?.onError?.(error, move, context, mutation);
     },
   });

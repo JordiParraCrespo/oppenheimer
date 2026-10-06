@@ -54,10 +54,12 @@ function task(
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((done) => {
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((done, fail) => {
     resolve = done;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 /** The repository methods these hooks call, so a renamed one fails to compile here. */
@@ -104,6 +106,34 @@ describe('useMoveTask', () => {
     );
     expect(columnOf(result.current.tasks.data, 'b')).toBe('doing');
     expect(findAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('puts back only its own card when refused, keeping a write that settled meanwhile', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([task('a'), task('b')])
+      .mockReturnValue(new Promise(() => {}));
+    const refusal = deferred<TaskEntity>();
+    const { wrapper } = setup({
+      findAll,
+      findGoals: vi.fn().mockResolvedValue([]),
+      move: vi.fn(() => refusal.promise),
+      update: vi.fn().mockResolvedValue(task('b', { title: 'Renamed' })),
+    });
+    const { result } = renderHook(
+      () => ({ tasks: useTasks(), move: useMoveTask(), update: useUpdateTask() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+
+    act(() => result.current.move.mutate({ id: 'a', status: 'doing', afterTaskId: null }));
+    await act(() => result.current.update.mutateAsync({ id: 'b', input: { title: 'Renamed' } }));
+    await act(async () => refusal.reject(new Error('refused')));
+
+    await waitFor(() => expect(result.current.move.isError).toBe(true));
+    expect(columnOf(result.current.tasks.data, 'a')).toBe('todo');
+    expect(result.current.tasks.data?.find((row) => row.id === 'b')?.title).toBe('Renamed');
+    expect(findAll).toHaveBeenCalledTimes(2);
   });
 
   it("reads the goals again when a goal's task turns Done", async () => {
