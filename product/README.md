@@ -356,11 +356,7 @@ earlier note:
   (`versions/mvp/README.md`).
 - `versions/mvp/05-screens.md` had the console learn of every change it
   does not cause by polling. On 2026-10-06 a workspace event stream was
-  added beside the polls, behind the `workspace_event_stream` flag
+  added, behind the `workspace_event_stream` flag, and the polls it covers
+  stand down while it is live and poll again when it drops
   (`versions/mvp/03-control-plane.md`, 05). Issue #239 asked which version
   it belongs to: the MVP, since the polls it speeds up are the MVP's own.
-- The workspace event stream went in beside the polls, which kept running
-  (2026-10-06). The same day the polls it covers were made to stand down
-  while it is live, and poll again when it drops; the stream ends with its
-  Redis connection so it is never live and deaf (`versions/mvp/05-screens.md`,
-  `versions/mvp/03-control-plane.md`).

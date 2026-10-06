@@ -24,7 +24,7 @@ function fakeFeed() {
     subscribe: (asked, listener, onLost) => {
       audiences.push([...asked]);
       deliver = listener;
-      lose = onLost ?? (() => {});
+      lose = onLost;
       return new Promise((done) => {
         resolve = done;
       });

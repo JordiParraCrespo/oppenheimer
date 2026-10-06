@@ -2,13 +2,13 @@
 
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
-import { type QueryClient, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { automationsKeys } from './automations.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
 import { sessionsKeys } from './sessions.queries';
-import { setWorkspaceStreamLive } from './workspace-stream-status';
+import { setWorkspaceStream } from './workspace-stream-status';
 
 /**
  * The reads a change touches, at the keys they already have. A pairing
@@ -33,15 +33,40 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
   }
 }
 
-/** Everything a gap in the stream may have missed: one refetch per open screen. */
-const COVERED = [
-  sessionsKeys.all,
-  hostsKeys.lists(),
-  hostsKeys.pairingLists(),
-  automationsKeys.lists(),
-  automationsKeys.details(),
-  automationsKeys.runs(),
+/**
+ * What the stream covers, and the one table that says so: each time it comes
+ * up, every key here is refetched once for what the gap may have missed, and
+ * while it is live the polls under a key that `pollStandsDown` stand down
+ * (`usePollWhile`).
+ *
+ * - Sessions: the list, each detail and its start log. Every write that lands
+ *   a start step raises `session.changed`, so the stepper moves on it too.
+ * - Pairing lists: `pairing.spent` is the token being spent.
+ * - The host list catches up but keeps its poll: presence is a heartbeat the
+ *   stream does not carry.
+ * - Automations catch up but keep the run poll: a run's status follows its
+ *   session, and `session.changed` does not name automation reads.
+ */
+const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
+  { key: sessionsKeys.all, pollStandsDown: true },
+  { key: hostsKeys.pairingLists(), pollStandsDown: true },
+  { key: hostsKeys.lists(), pollStandsDown: false },
+  { key: automationsKeys.lists(), pollStandsDown: false },
+  { key: automationsKeys.details(), pollStandsDown: false },
+  { key: automationsKeys.runs(), pollStandsDown: false },
 ];
+
+const CATCH_UP = COVERAGE.map((entry) => entry.key);
+const STANDS_DOWN = COVERAGE.filter((entry) => entry.pollStandsDown).map((entry) => entry.key);
+
+function startsWith(queryKey: QueryKey, prefix: QueryKey): boolean {
+  return prefix.every((part, index) => Object.is(part, queryKey[index]));
+}
+
+/** Whether the stream announces every change to `queryKey`, so its poll may stand down. */
+function covers(queryKey: QueryKey): boolean {
+  return STANDS_DOWN.some((prefix) => startsWith(queryKey, prefix));
+}
 
 function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[])[]): void {
   for (const queryKey of keys) void queryClient.invalidateQueries({ queryKey });
@@ -53,7 +78,7 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
  * refetch the queries they name the moment the change commits.
  *
  * While it is live, the polls whose facts it carries stand down
- * (`useWorkspaceStreamLive`); the moment it is not, they poll again. Each time
+ * (`usePollWhile`); the moment it is not, they poll again. Each time
  * it comes up — the first connect included, since a change can land between a
  * screen's read and the subscription — the covered queries are refetched
  * once, for what the gap may have missed. A flag read off, or a workspace that
@@ -71,16 +96,16 @@ export function useWorkspaceEvents(workspaceId: string | undefined): void {
     let live = false;
     const offStatus = stream.onStatus((status) => {
       const now = status === 'live';
-      if (now && !live) invalidate(queryClient, COVERED);
+      if (now && !live) invalidate(queryClient, CATCH_UP);
       live = now;
-      setWorkspaceStreamLive(queryClient, now);
+      setWorkspaceStream(queryClient, now, covers);
     });
     const offEvent = stream.onEvent((event) => invalidate(queryClient, keysFor(event)));
     return () => {
       offStatus();
       offEvent();
       stream.dispose();
-      setWorkspaceStreamLive(queryClient, false);
+      setWorkspaceStream(queryClient, false, covers);
     };
   }, [app, queryClient, enabled, workspaceId]);
 }

@@ -1,43 +1,45 @@
 'use client';
 
-import { type QueryClient, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useSyncExternalStore } from 'react';
 
 interface StreamStatus {
   live: boolean;
+  /** Whether the stream announces every change to this read (`workspace-events.ts`). */
+  covers: (queryKey: QueryKey) => boolean;
   listeners: Set<() => void>;
 }
 
 /**
- * Whether the workspace event stream is live, per `QueryClient`: the stream
- * that refreshes a cache is the one whose polls it may stand down.
+ * The workspace event stream as the polls see it, per `QueryClient`: the
+ * stream that refreshes a cache is the one whose polls it may stand down.
+ * `useWorkspaceEvents` writes it; `usePollWhile` is its one reader.
  */
 const statuses = new WeakMap<QueryClient, StreamStatus>();
 
 function statusOf(queryClient: QueryClient): StreamStatus {
   let status = statuses.get(queryClient);
   if (!status) {
-    status = { live: false, listeners: new Set() };
+    status = { live: false, covers: () => false, listeners: new Set() };
     statuses.set(queryClient, status);
   }
   return status;
 }
 
-/** Written by `useWorkspaceEvents` alone, as its stream comes up and goes down. */
-export function setWorkspaceStreamLive(queryClient: QueryClient, live: boolean): void {
+export function setWorkspaceStream(
+  queryClient: QueryClient,
+  live: boolean,
+  covers: (queryKey: QueryKey) => boolean,
+): void {
   const status = statusOf(queryClient);
+  status.covers = covers;
   if (status.live === live) return;
   status.live = live;
   for (const listener of status.listeners) listener();
 }
 
-/**
- * Whether the workspace event stream is live right now, so a query whose
- * changes it carries need not poll: the hook spreads `NO_POLL` after its
- * `pollWhile` while this holds. False until the stream says `ready`, and
- * again the moment it drops, which gives the poll back.
- */
-export function useWorkspaceStreamLive(): boolean {
+/** Whether the stream is live and announces every change to `queryKey`. */
+export function useStreamCovers(queryKey: QueryKey): boolean {
   const status = statusOf(useQueryClient());
   const subscribe = useCallback(
     (onChange: () => void) => {
@@ -46,9 +48,10 @@ export function useWorkspaceStreamLive(): boolean {
     },
     [status],
   );
-  return useSyncExternalStore(
+  const live = useSyncExternalStore(
     subscribe,
     () => status.live,
     () => false,
   );
+  return live && status.covers(queryKey);
 }

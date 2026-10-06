@@ -31,6 +31,6 @@ export interface WorkspaceEventBusPort {
   subscribe(
     audiences: readonly WorkspaceEventAudience[],
     listener: (event: WorkspaceEvent) => void,
-    onLost?: () => void,
+    onLost: () => void,
   ): Promise<() => void>;
 }

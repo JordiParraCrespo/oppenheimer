@@ -20,7 +20,7 @@ type Listener = (event: WorkspaceEvent) => void;
 
 /** One channel this replica listens on: who hears it (and how to tell them it is gone), and its `SUBSCRIBE` while in flight. */
 interface Channel {
-  listeners: Map<Listener, (() => void) | undefined>;
+  listeners: Map<Listener, () => void>;
   subscribed: Promise<unknown>;
 }
 
@@ -63,7 +63,7 @@ export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApp
   async subscribe(
     audiences: readonly WorkspaceEventAudience[],
     listener: Listener,
-    onLost?: () => void,
+    onLost: () => void,
   ): Promise<() => void> {
     const subscriber = this.connection();
     const names = [...new Set(audiences.map(channelOf))];
@@ -112,6 +112,10 @@ export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApp
       });
     });
     subscriber.on('close', () => this.dropAll());
+    // Retries ran out and the connection will not come back: the next stream opens a new one.
+    subscriber.on('end', () => {
+      if (this.subscriber === subscriber) this.subscriber = null;
+    });
     subscriber.on('message', (name: string, message: string) => {
       const listeners = this.channels.get(name)?.listeners;
       if (!listeners) return;
@@ -132,7 +136,7 @@ export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApp
   private dropAll(): void {
     const lost = new Set<() => void>();
     for (const channel of this.channels.values()) {
-      for (const onLost of channel.listeners.values()) if (onLost) lost.add(onLost);
+      for (const onLost of channel.listeners.values()) lost.add(onLost);
     }
     this.channels.clear();
     for (const onLost of lost) onLost();

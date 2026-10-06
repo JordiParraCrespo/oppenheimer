@@ -265,16 +265,17 @@ name the jobs and split *those*.
 
 - **Polling is one policy.** `LIVE_POLL` in the product package
   (`src/react/live-poll.ts`) owns every poll: its interval and whether it
-  keeps running while the tab is hidden. A package hook spreads `pollWhile()`
-  and says only when the thing it watches is still moving; a feature never
-  sets `refetchInterval` and asks for the hook that already polls
-  (`useHostPresence`). A poll that watches something finish keeps running on
+  keeps running while the tab is hidden. A package hook spreads
+  `usePollWhile(kind, queryKey, active)` and says only when the thing it
+  watches is still moving; a feature never sets `refetchInterval` and asks
+  for the hook that already polls (`useHostPresence`). A poll that watches something finish keeps running on
   a hidden tab, because that is the tab the reader leaves while it runs;
   presence, which never settles, does not. `pnpm check:structure` fails a
-  `refetchInterval` anywhere but that file. A query whose changes the
-  workspace event stream carries spreads `pollWhile` as usual and then
-  `...(useWorkspaceStreamLive() ? NO_POLL : {})`: it stands down while the
-  stream is live and polls again the moment it drops.
+  `refetchInterval` anywhere but that file. The query key is how a poll
+  meets the workspace event stream: while the stream is live, a poll whose
+  key its coverage table (`workspace-events.ts`) says it carries stands
+  down, and polls again the moment it drops. A new event goes in that
+  table, never in the hook.
 
 ## The page frame is the shell's
 

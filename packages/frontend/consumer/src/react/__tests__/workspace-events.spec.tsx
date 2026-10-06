@@ -8,9 +8,14 @@ import { TOKENS } from '../../di/tokens';
 import type { WorkspaceStreamStatus } from '../../modules/organizations';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { automationsKeys } from '../automations.queries';
-import { hostsKeys } from '../hosts.queries';
+import { hostsKeys, useHostPresence } from '../hosts.queries';
 import { LIVE_POLL } from '../live-poll';
-import { sessionsKeys, useSessions } from '../sessions.queries';
+import {
+  sessionsKeys,
+  useSession,
+  useSessionStartProgress,
+  useSessions,
+} from '../sessions.queries';
 import { useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
 
@@ -43,12 +48,13 @@ function fakeStream() {
   };
 }
 
-function setup(sessions: Record<string, unknown> = {}) {
+function setup(sessions: Record<string, unknown> = {}, hosts: Record<string, unknown> = {}) {
   const fake = fakeStream();
   const openEvents = vi.fn(() => fake.stream);
   const app = fakeKernel({
     [TOKENS.OrganizationsService]: { openEvents },
     [TOKENS.SessionsService]: sessions,
+    [TOKENS.HostsRepository]: hosts,
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const invalidated: unknown[][] = [];
@@ -137,30 +143,70 @@ describe('useWorkspaceEvents', () => {
     expect(invalidated).toHaveLength(once * 2);
   });
 
-  it('stands the session list poll down while live, and gives it back when the stream drops', async () => {
-    const starting = { id: 's-1', isProvisioning: true } as SessionEntity;
-    const { status, wrapper, queryClient } = setup({
-      findAll: vi.fn().mockResolvedValue([starting]),
-    });
+  /**
+   * The coverage table at work: a read whose every change is an event stands
+   * its poll down while the stream is live and polls again the moment it
+   * drops. Start steps raise `session.changed`, so the start log is one.
+   */
+  it.each([
+    {
+      read: 'the session list',
+      queryKey: sessionsKeys.list(),
+      interval: LIVE_POLL.sessionStarting.interval,
+      use: () => useSessions(),
+    },
+    {
+      read: 'a session',
+      queryKey: sessionsKeys.detail('s-1'),
+      interval: LIVE_POLL.sessionOpening.openingInterval,
+      use: () => useSession('s-1'),
+    },
+    {
+      read: "a session's start log",
+      queryKey: sessionsKeys.start('s-1', false),
+      interval: LIVE_POLL.sessionOpening.openingInterval,
+      use: () => useSessionStartProgress('s-1', { starting: true, failed: false }),
+    },
+  ])(
+    'stands the poll on $read down while live, and gives it back on a drop',
+    async ({ queryKey, interval, use }) => {
+      const starting = { id: 's-1', isProvisioning: true } as SessionEntity;
+      const { status, wrapper, queryClient } = setup({
+        findAll: vi.fn().mockResolvedValue([starting]),
+        findById: vi.fn().mockResolvedValue(starting),
+        startProgress: vi.fn().mockResolvedValue({ steps: [], settled: false }),
+      });
+      const { result } = renderHook(
+        () => {
+          useWorkspaceEvents('org-1');
+          return use();
+        },
+        { wrapper },
+      );
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(pollInterval(queryClient, queryKey)).toBe(interval);
+
+      await status('live');
+      await waitFor(() => expect(pollInterval(queryClient, queryKey)).toBe(false));
+
+      await status('down');
+      await waitFor(() => expect(pollInterval(queryClient, queryKey)).toBe(interval));
+    },
+  );
+
+  it('keeps polling presence while live: the stream does not carry a heartbeat', async () => {
+    const { status, wrapper, queryClient } = setup({}, { findAll: vi.fn().mockResolvedValue([]) });
     const { result } = renderHook(
       () => {
         useWorkspaceEvents('org-1');
-        return useSessions();
+        return useHostPresence();
       },
       { wrapper },
     );
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(pollInterval(queryClient, sessionsKeys.list())).toBe(LIVE_POLL.sessionStarting.interval);
 
     await status('live');
-    await waitFor(() => expect(pollInterval(queryClient, sessionsKeys.list())).toBe(false));
-
-    await status('down');
-    await waitFor(() =>
-      expect(pollInterval(queryClient, sessionsKeys.list())).toBe(
-        LIVE_POLL.sessionStarting.interval,
-      ),
-    );
+    expect(pollInterval(queryClient, hostsKeys.list())).toBe(LIVE_POLL.hostPresence.interval);
   });
 
   it('closes the stream on unmount', () => {
