@@ -1,14 +1,10 @@
-import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
+import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { type Query, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
-import type {
-  AutomationEntity,
-  AutomationRunEntity,
-  RunPage,
-} from '../../modules/automations/automation.entity';
+import type { AutomationEntity, RunPage } from '../../modules/automations/automation.entity';
 import {
   automationsKeys,
   useAutomation,
@@ -30,8 +26,8 @@ import { fakeKernel } from './fake-kernel';
  * `automationsKeys.all`, because every write can change the runs as well as the
  * automation; the list, a detail and a run page read again only while
  * something is running; nothing is asked for an id or a trigger that is not
- * there yet; and each write refreshes the whole subtree before the caller's
- * own `onSuccess` runs.
+ * there yet; the list hands each row to its detail; and each write refreshes
+ * what it changed, and only that, before the caller's own `onSuccess` runs.
  */
 
 // Real class instances: shareEntities compares them field by field, and a
@@ -54,9 +50,15 @@ const automation = (id: string, isRunning = false) =>
 const page = (...runs: Run[]) =>
   ({ items: runs, total: runs.length, page: 1, limit: 20, counts: {} }) as unknown as RunPage;
 
-function setup(service: Record<string, unknown>) {
+function setup(
+  service: Record<string, unknown>,
+  // The console's own defaults, for the specs whose rule is its stale window.
+  defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
+    defaultOptions: { queries: { retry: false } },
+  },
+) {
   const app = fakeKernel({ [TOKENS.AutomationsRepository]: service });
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient(defaultOptions);
   function wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -124,6 +126,23 @@ describe('useAutomations', () => {
     await waitFor(() => expect(result.current.data).not.toBe(first));
     expect(result.current.data?.[0]).toBe(first?.[0]);
     expect(result.current.data?.[1]).not.toBe(first?.[1]);
+  });
+});
+
+describe('useAutomations and useAutomation', () => {
+  it('opens an automation from the list without asking for it again', async () => {
+    const findById = vi.fn();
+    const { wrapper } = setup(
+      { findAll: vi.fn().mockResolvedValue([automation('a-1'), automation('a-2')]), findById },
+      { defaultOptions: defaultQueryClientOptions(60_000) },
+    );
+    const { result: list } = renderHook(() => useAutomations(), { wrapper });
+    await waitFor(() => expect(list.current.isSuccess).toBe(true));
+
+    const { result: detail } = renderHook(() => useAutomation('a-2'), { wrapper });
+
+    expect(detail.current.data).toBe(list.current.data?.[1]);
+    expect(findById).not.toHaveBeenCalled();
   });
 });
 
@@ -216,26 +235,40 @@ describe('useTriggerPreview', () => {
 
 describe('automation writes', () => {
   /**
-   * Seed a read from each branch of the tree: the list, a detail, a run page.
-   * A write must leave every one of them stale.
+   * Seed a read from each branch of the tree: the list, a detail, a run page
+   * and a trigger preview. Each write leaves stale what it changed, writes the
+   * automation it was answered with into its detail, and leaves the rest alone.
    */
+  const reads = {
+    list: automationsKeys.list(),
+    detail: automationsKeys.detail('a-1'),
+    runs: automationsKeys.runList({ page: 1 }),
+    preview: automationsKeys.preview(undefined),
+  };
+  type Read = keyof typeof reads;
+
   function seeded(queryClient: QueryClient) {
-    const keys = [
-      automationsKeys.list(),
-      automationsKeys.detail('a-1'),
-      automationsKeys.runList({ page: 1 }),
-    ];
-    for (const key of keys) queryClient.setQueryData(key, 'cached');
-    return keys;
+    for (const key of Object.values(reads)) queryClient.setQueryData(key, 'cached');
   }
 
-  const cases = [
+  const written = automation('a-1');
+  const cases: {
+    name: string;
+    method: string;
+    hook: unknown;
+    variables: unknown;
+    called: unknown[];
+    answer: unknown;
+    stale: Read[];
+  }[] = [
     {
       name: 'create',
       method: 'create',
       hook: useCreateAutomation,
       variables: { name: 'Nightly' },
       called: [{ name: 'Nightly' }],
+      answer: written,
+      stale: ['list'],
     },
     {
       name: 'update',
@@ -243,6 +276,9 @@ describe('automation writes', () => {
       hook: useUpdateAutomation,
       variables: { id: 'a-1', input: { name: 'Renamed' } },
       called: ['a-1', { name: 'Renamed' }],
+      answer: written,
+      // Every run row carries the automation's name.
+      stale: ['list', 'runs'],
     },
     {
       name: 'pause',
@@ -250,6 +286,8 @@ describe('automation writes', () => {
       hook: useSetAutomationPaused,
       variables: { id: 'a-1', paused: true },
       called: ['a-1'],
+      answer: written,
+      stale: ['list'],
     },
     {
       name: 'resume',
@@ -257,6 +295,8 @@ describe('automation writes', () => {
       hook: useSetAutomationPaused,
       variables: { id: 'a-1', paused: false },
       called: ['a-1'],
+      answer: written,
+      stale: ['list'],
     },
     {
       name: 'duplicate',
@@ -264,6 +304,8 @@ describe('automation writes', () => {
       hook: useDuplicateAutomation,
       variables: 'a-1',
       called: ['a-1'],
+      answer: written,
+      stale: ['list'],
     },
     {
       name: 'run now',
@@ -271,22 +313,23 @@ describe('automation writes', () => {
       hook: useRunAutomation,
       variables: { id: 'a-1', idempotencyKey: 'click-1' },
       called: ['a-1', 'click-1'],
+      answer: { id: 'r-1' },
+      stale: ['list', 'detail', 'runs'],
     },
-  ] as const;
+  ];
 
-  for (const { name, method, hook, variables, called } of cases) {
-    it(`${name} calls the repository, leaves every automations read stale, then runs the caller's onSuccess`, async () => {
-      const answer = { id: 'a-1' } as unknown as AutomationRunEntity;
+  for (const { name, method, hook, variables, called, answer, stale } of cases) {
+    it(`${name} leaves stale only what it changed, before the caller's onSuccess`, async () => {
       const service = { [method]: vi.fn().mockResolvedValue(answer) };
       const { wrapper, queryClient } = setup(service);
-      const keys = seeded(queryClient);
-      const staleWhenCalled: boolean[] = [];
-      const onSuccess = vi.fn(() => {
-        for (const key of keys) {
-          staleWhenCalled.push(queryClient.getQueryState(key)?.isInvalidated ?? false);
-        }
-      });
-      const useHook = hook as unknown as (options: { onSuccess: typeof onSuccess }) => {
+      seeded(queryClient);
+      const onSuccess = vi.fn(() => ({
+        stale: (Object.keys(reads) as Read[]).filter(
+          (read) => queryClient.getQueryState(reads[read])?.isInvalidated,
+        ),
+        detail: queryClient.getQueryData(reads.detail),
+      }));
+      const useHook = hook as (options: { onSuccess: typeof onSuccess }) => {
         mutateAsync: (variables: unknown) => Promise<unknown>;
       };
       const { result } = renderHook(() => useHook({ onSuccess }), { wrapper });
@@ -296,23 +339,30 @@ describe('automation writes', () => {
       expect(service[method]).toHaveBeenCalledWith(...called);
       expect(onSuccess).toHaveBeenCalledTimes(1);
       expect(onSuccess.mock.calls[0]).toContain(variables);
-      expect(staleWhenCalled).toEqual(keys.map(() => true));
+      const seen = onSuccess.mock.results[0]?.value;
+      expect(seen.stale).toEqual(stale);
+      if (answer === written) expect(seen.detail).toBe(written);
     });
   }
 
-  it("delete forgets the deleted automation, leaves the other reads stale, then runs the caller's onSuccess", async () => {
+  it("delete forgets the deleted automation, leaves the list and the runs stale, then runs the caller's onSuccess", async () => {
     const service = { remove: vi.fn().mockResolvedValue(undefined) };
     const { wrapper, queryClient } = setup(service);
-    const [list, detail, runs] = seeded(queryClient);
+    seeded(queryClient);
     const onSuccess = vi.fn(() => ({
-      detail: queryClient.getQueryState(detail),
-      stale: [list, runs].map((key) => queryClient.getQueryState(key)?.isInvalidated),
+      detail: queryClient.getQueryState(reads.detail),
+      stale: [reads.list, reads.runs, reads.preview].map(
+        (key) => queryClient.getQueryState(key)?.isInvalidated,
+      ),
     }));
     const { result } = renderHook(() => useDeleteAutomation({ onSuccess }), { wrapper });
 
     await act(() => result.current.mutateAsync('a-1'));
 
     expect(service.remove).toHaveBeenCalledWith('a-1');
-    expect(onSuccess.mock.results[0]?.value).toEqual({ detail: undefined, stale: [true, true] });
+    expect(onSuccess.mock.results[0]?.value).toEqual({
+      detail: undefined,
+      stale: [true, true, false],
+    });
   });
 });
