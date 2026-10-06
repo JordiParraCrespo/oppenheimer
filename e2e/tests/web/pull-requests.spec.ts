@@ -12,6 +12,9 @@ import { provisionedUser, signInAs } from '../../support/web';
  * stub's viewer is `ana-dev`, whose branches and sessions' `oppenheimer/…`
  * branches are "Mine". A merge changes the stub, so the suite resets it first.
  */
+// Both describes drive one GitHub stub, whose pull requests and refusals are global: they take turns.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Pull requests', () => {
   test.beforeEach(async () => {
     const reset = await fetch(`${GITHUB_STUB_URL}/__stub/pulls/reset`, { method: 'POST' });
@@ -112,6 +115,38 @@ test.describe('Pull requests', () => {
     await expect(held).toHaveCount(0, { timeout: 30_000 });
     await analytics.click();
     await expect(merged).toHaveText('0', { timeout: 30_000 });
+  });
+});
+
+test.describe('Pull requests when GitHub answers in part', () => {
+  test.beforeEach(async () => {
+    const reset = await fetch(`${GITHUB_STUB_URL}/__stub/pulls/reset`, { method: 'POST' });
+    expect(reset.ok, 'the GitHub stub resets its pull requests').toBe(true);
+  });
+
+  test.afterEach(async () => {
+    await fetch(`${GITHUB_STUB_URL}/__stub/pulls/reset`, { method: 'POST' });
+  });
+
+  test('a repository whose checks GitHub refuses keeps its rows and says what to grant', async ({
+    page,
+  }) => {
+    test.slow();
+    // An installation without Checks: read, as met on a real one (#244).
+    await fetch(`${GITHUB_STUB_URL}/__stub/checks-refused/acme-labs/xrp-mobile`, { method: 'PUT' });
+    const owner = await provisionedUser('pullsrefused');
+    await connectInstallation(owner.api);
+    await signInAs(page, owner.user);
+
+    await page.goto('/pulls');
+    // The queue renders: the refused repository's rows and the other repository's alike.
+    await expect(rowButton(page, 'Store wallet tokens in the Keychain')).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(rowButton(page, 'Dark mode for the dashboard')).toBeVisible();
+    await expect(page.getByText(/The GitHub App needs Checks: read/)).toBeVisible();
+    const row = page.getByRole('row').filter({ hasText: 'Store wallet tokens in the Keychain' });
+    await expect(row.getByText('Checks unavailable').first()).toBeVisible();
   });
 });
 

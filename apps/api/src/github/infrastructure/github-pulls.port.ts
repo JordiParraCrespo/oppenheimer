@@ -6,6 +6,9 @@
 
 export type GithubCheckState = 'passing' | 'failing' | 'running' | 'none';
 
+/** Why GitHub did not answer a read, in the words a reader can act on. */
+export type GithubRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+
 export interface GithubPullRequestSummary {
   number: number;
   title: string;

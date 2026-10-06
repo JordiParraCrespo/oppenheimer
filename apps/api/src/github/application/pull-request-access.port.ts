@@ -4,6 +4,7 @@ import type {
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
+  GithubRefusal,
   GithubReviewComment,
 } from '../infrastructure/github-pulls.port';
 
@@ -26,15 +27,39 @@ export interface PullRequestAddress {
 }
 
 /**
- * A pull request as the queue and the briefing read it: GitHub's own detail
- * plus the paths it touches, its checks on the head commit and its reviews.
+ * One part of a pull request as GitHub answered it: the value, or the refusal
+ * GitHub gave instead. An unread part is never an empty one (#244).
+ */
+export type Part<T> = { value: T; refusal: null } | { value: null; refusal: GithubRefusal };
+
+/**
+ * A pull request as the queue and the briefing read it: GitHub's own detail,
+ * and the paths it touches, its checks on the head commit and its reviews,
+ * each read on its own.
  */
 export interface PullRequestSnapshot {
   repository: WorkspaceRepository;
   pull: GithubPullRequestDetail;
-  filePaths: string[];
-  checks: GithubChecks;
-  reviews: GithubPullRequestReview[];
+  files: Part<string[]>;
+  checks: Part<GithubChecks>;
+  reviews: Part<GithubPullRequestReview[]>;
+}
+
+/** What GitHub did not give on a read of a repository, and the refusal it gave. */
+export interface ReadGap {
+  what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
+  refusal: GithubRefusal;
+}
+
+/**
+ * One repository's pull requests as far as GitHub answered: what it gave, and
+ * each gap with GitHub's own refusal. A refused listing is one `repository`
+ * gap and no snapshots.
+ */
+export interface RepositoryPulls {
+  repository: WorkspaceRepository;
+  snapshots: PullRequestSnapshot[];
+  gaps: ReadGap[];
 }
 
 export interface ReviewSubmission {
@@ -55,17 +80,19 @@ export interface PullRequestAccessPort {
   repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
   /** The caller's GitHub login, when they have connected GitHub with a stored grant. */
   viewerLogin(userId: string): Promise<string | null>;
-  /** One repository's open pull requests, each with its paths, checks and reviews. */
-  openPullRequests(
-    scope: AccessScope,
-    repository: WorkspaceRepository,
-  ): Promise<PullRequestSnapshot[]>;
-  /** One repository's pull requests closed since a moment, newest first, each with its reviews. */
+  /** One repository's open pull requests, each with its paths, checks and reviews. Never throws for GitHub's refusals. */
+  openPullRequests(scope: AccessScope, repository: WorkspaceRepository): Promise<RepositoryPulls>;
+  /**
+   * The pull requests closed since a moment across the repositories, the
+   * `limit` most recently closed of them read in full; `complete` is false
+   * when there were more.
+   */
   closedPullRequests(
     scope: AccessScope,
-    repository: WorkspaceRepository,
+    repositories: WorkspaceRepository[],
     since: Date,
-  ): Promise<PullRequestSnapshot[]>;
+    limit: number,
+  ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }>;
   pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot>;
   files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]>;
   reviewComments(scope: AccessScope, address: PullRequestAddress): Promise<GithubReviewComment[]>;

@@ -19,8 +19,10 @@ export {
   type PullRequestQueue,
   type PullRequestReviewer,
   type PullRequestScope,
+  type ReadRefusal,
   type ReviewInput,
   type ReviewVerdict,
+  type UnreadableRepository,
   type WatchedRepository,
 } from './pull-request.entity';
 export { PullRequestsModule } from './pull-requests.module';

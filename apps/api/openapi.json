@@ -12507,7 +12507,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12624,7 +12624,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12733,7 +12733,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12859,7 +12859,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12990,7 +12990,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13124,7 +13124,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13258,7 +13258,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13390,7 +13390,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13531,7 +13531,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13665,7 +13665,7 @@
             }
           },
           "429": {
-            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20362,7 +20362,8 @@
               "large_change",
               "docs_tests_config",
               "small_change",
-              "medium_change"
+              "medium_change",
+              "files_unread"
             ]
           },
           "path": {
@@ -20433,7 +20434,22 @@
           },
           "checks": {
             "type": "string",
-            "enum": ["passing", "failing", "running", "none"]
+            "enum": ["passing", "failing", "running", "none", "unavailable"],
+            "description": "`unavailable`: GitHub would not show them, and `checksRefusal` says why."
+          },
+          "checksRefusal": {
+            "type": "string",
+            "enum": ["forbidden", "not_found", "rate_limited", "failed"],
+            "nullable": true,
+            "description": "Why `checks` is `unavailable`; null when GitHub showed them."
+          },
+          "unread": {
+            "type": "array",
+            "description": "What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.",
+            "items": {
+              "type": "string",
+              "enum": ["files", "reviews"]
+            }
           },
           "mergeable": {
             "type": "boolean",
@@ -20446,6 +20462,7 @@
               "conflicts",
               "checks_failing",
               "checks_running",
+              "checks_unavailable",
               "changes_requested",
               "behind",
               "approval_required"
@@ -20480,6 +20497,8 @@
           "additions",
           "deletions",
           "checks",
+          "checksRefusal",
+          "unread",
           "mergeable",
           "waitingSeconds",
           "draft",
@@ -20515,6 +20534,26 @@
           }
         },
         "required": ["deep", "medium", "quick"]
+      },
+      "UnreadableRepositoryDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/xrp-mobile"
+          },
+          "what": {
+            "type": "string",
+            "enum": ["repository", "pull_requests", "files", "checks", "reviews"],
+            "description": "`repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them."
+          },
+          "refusal": {
+            "type": "string",
+            "enum": ["forbidden", "not_found", "rate_limited", "failed"],
+            "description": "The refusal GitHub gave: no access, gone, wait, or no answer."
+          }
+        },
+        "required": ["fullName", "what", "refusal"]
       },
       "PullRequestQueueResponseDto": {
         "type": "object",
@@ -20552,9 +20591,16 @@
             "type": "string",
             "nullable": true,
             "description": "The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name."
+          },
+          "unreadable": {
+            "description": "Watched repositories this read could not fully answer.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnreadableRepositoryDto"
+            }
           }
         },
-        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts"]
+        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts", "unreadable"]
       },
       "AnalyticsFigureDto": {
         "type": "object",
@@ -20624,6 +20670,7 @@
               "conflicts",
               "checks_failing",
               "checks_running",
+              "checks_unavailable",
               "changes_requested",
               "behind",
               "approval_required"
@@ -20721,6 +20768,16 @@
             "items": {
               "$ref": "#/components/schemas/AnalyticsWaitingDto"
             }
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "False when more pull requests closed in the window than one read takes in full; the figures then count the most recently closed."
+          },
+          "unreadable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnreadableRepositoryDto"
+            }
           }
         },
         "required": [
@@ -20736,7 +20793,9 @@
           "timeToMerge",
           "days",
           "lanes",
-          "waiting"
+          "waiting",
+          "complete",
+          "unreadable"
         ]
       },
       "WatchedRepositoryDto": {
@@ -20777,7 +20836,7 @@
         "properties": {
           "state": {
             "type": "string",
-            "enum": ["passing", "failing", "running", "none"]
+            "enum": ["passing", "failing", "running", "none", "unavailable"]
           },
           "total": {
             "type": "number"
@@ -20874,7 +20933,22 @@
           },
           "checks": {
             "type": "string",
-            "enum": ["passing", "failing", "running", "none"]
+            "enum": ["passing", "failing", "running", "none", "unavailable"],
+            "description": "`unavailable`: GitHub would not show them, and `checksRefusal` says why."
+          },
+          "checksRefusal": {
+            "type": "string",
+            "enum": ["forbidden", "not_found", "rate_limited", "failed"],
+            "nullable": true,
+            "description": "Why `checks` is `unavailable`; null when GitHub showed them."
+          },
+          "unread": {
+            "type": "array",
+            "description": "What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.",
+            "items": {
+              "type": "string",
+              "enum": ["files", "reviews"]
+            }
           },
           "mergeable": {
             "type": "boolean",
@@ -20887,6 +20961,7 @@
               "conflicts",
               "checks_failing",
               "checks_running",
+              "checks_unavailable",
               "changes_requested",
               "behind",
               "approval_required"
@@ -20961,6 +21036,8 @@
           "additions",
           "deletions",
           "checks",
+          "checksRefusal",
+          "unread",
           "mergeable",
           "waitingSeconds",
           "draft",

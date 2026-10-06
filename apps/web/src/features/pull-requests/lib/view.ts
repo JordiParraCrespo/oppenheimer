@@ -28,6 +28,7 @@ export const CHECK_STATE: Record<PullRequestChecks, StatusState> = {
   failing: 'blocked',
   running: 'waiting',
   none: 'idle',
+  unavailable: 'idle',
 };
 
 export type DeltaTone = 'good' | 'bad' | 'flat';

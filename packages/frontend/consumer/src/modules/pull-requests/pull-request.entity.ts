@@ -25,7 +25,19 @@ export interface PullRequestAddress {
   number: number;
 }
 
-export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none';
+/** `unavailable`: GitHub would not show them, which is not the same as a commit with none. */
+export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+
+/** Why GitHub did not answer a read: no access, gone, asked to wait, or no answer. */
+export type ReadRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+
+/** What GitHub did not give on a read: which repository, what of it, and the refusal it gave. */
+export interface UnreadableRepository {
+  fullName: string;
+  /** `repository`: nothing could be listed; `pull_requests`: some could not be read; else that part of some. */
+  what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
+  refusal: ReadRefusal;
+}
 
 /** What holds a pull request, the first that applies; null when it can merge. */
 export type PullRequestBlocker =
@@ -33,6 +45,7 @@ export type PullRequestBlocker =
   | 'conflicts'
   | 'checks_failing'
   | 'checks_running'
+  | 'checks_unavailable'
   | 'changes_requested'
   | 'behind'
   | 'approval_required';
@@ -43,7 +56,9 @@ export type LaneReason =
   | { code: 'large_change'; lines: number }
   | { code: 'docs_tests_config'; files: number }
   | { code: 'small_change'; lines: number; files: number }
-  | { code: 'medium_change'; lines: number; files: number };
+  | { code: 'medium_change'; lines: number; files: number }
+  /** GitHub did not give the files: size alone, never quick. */
+  | { code: 'files_unread'; lines: number };
 
 /** One row of the queue. */
 export class PullRequestEntity {
@@ -70,6 +85,10 @@ export class PullRequestEntity {
     public readonly waitingSeconds: number,
     public readonly draft: boolean,
     public readonly htmlUrl: string,
+    /** Why the checks are `unavailable`; null when GitHub showed them. */
+    public readonly checksRefusal: ReadRefusal | null,
+    /** What GitHub did not give on this read; an unread part is not an empty one. */
+    public readonly unread: readonly ('files' | 'reviews')[],
   ) {}
 
   get address(): PullRequestAddress {
@@ -96,6 +115,8 @@ export class PullRequestEntity {
 
 export interface PullRequestQueue {
   items: PullRequestEntity[];
+  /** Watched repositories this read could not fully answer (#244). */
+  unreadable: UnreadableRepository[];
   scopes: Record<PullRequestScope, number>;
   /** Within the scope asked for. */
   lanes: Record<PullRequestLane, number>;
@@ -150,6 +171,8 @@ export class PullRequestDetailEntity extends PullRequestEntity {
       row.waitingSeconds,
       row.draft,
       row.htmlUrl,
+      row.checksRefusal,
+      row.unread,
     );
   }
 
@@ -213,6 +236,9 @@ export interface AnalyticsMedian {
 
 export interface PullRequestAnalytics {
   range: PullRequestAnalyticsRange;
+  /** False when more closed in the window than one read takes in full: the figures count the most recent. */
+  complete: boolean;
+  unreadable: UnreadableRepository[];
   from: Date;
   to: Date;
   created: AnalyticsFigure;

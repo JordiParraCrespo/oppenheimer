@@ -10,7 +10,9 @@ export type LaneReason =
   | { code: 'large_change'; lines: number }
   | { code: 'docs_tests_config'; files: number }
   | { code: 'small_change'; lines: number; files: number }
-  | { code: 'medium_change'; lines: number; files: number };
+  | { code: 'medium_change'; lines: number; files: number }
+  /** GitHub did not give the paths, so no risky path can be ruled out: never quick. */
+  | { code: 'files_unread'; lines: number };
 
 export interface LaneDecision {
   lane: PullRequestLane;
@@ -41,13 +43,19 @@ const QUICK_FILES = 5;
 /**
  * Deep: a risky path, or over a thousand changed lines. Quick: docs, tests and
  * configuration only, or a small change in few files. Medium: everything else.
+ * `null` paths are files GitHub did not give: size alone, and never quick.
  */
 export function decideLane(
-  paths: readonly string[],
+  paths: readonly string[] | null,
   additions: number,
   deletions: number,
 ): LaneDecision {
   const lines = additions + deletions;
+  if (paths === null) {
+    return lines > DEEP_LINES
+      ? { lane: 'deep', reason: { code: 'large_change', lines } }
+      : { lane: 'medium', reason: { code: 'files_unread', lines } };
+  }
   const risky = paths.find((path) => RISKY.some((pattern) => pattern.test(path)));
   if (risky) return { lane: 'deep', reason: { code: 'risky_path', path: riskyDirectory(risky) } };
   if (lines > DEEP_LINES) return { lane: 'deep', reason: { code: 'large_change', lines } };

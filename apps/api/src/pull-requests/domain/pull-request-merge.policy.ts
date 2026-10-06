@@ -8,7 +8,8 @@ export interface MergeFacts {
   /** Null while GitHub is still computing it. */
   mergeable: boolean | null;
   mergeableState: string;
-  checks: 'passing' | 'failing' | 'running' | 'none';
+  /** `unavailable`: GitHub would not show them, so nothing says the merge would pass. */
+  checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
   /** Each reviewer's latest verdict. */
   verdicts: readonly ('APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED')[];
 }
@@ -19,6 +20,7 @@ export type MergeBlocker =
   | 'conflicts'
   | 'checks_failing'
   | 'checks_running'
+  | 'checks_unavailable'
   | 'changes_requested'
   | 'behind'
   | 'approval_required';
@@ -29,6 +31,7 @@ export function mergeBlocker(facts: MergeFacts): MergeBlocker | null {
   if (facts.mergeable === false || facts.mergeableState === 'dirty') return 'conflicts';
   if (facts.checks === 'failing') return 'checks_failing';
   if (facts.checks === 'running') return 'checks_running';
+  if (facts.checks === 'unavailable') return 'checks_unavailable';
   if (facts.verdicts.includes('CHANGES_REQUESTED')) return 'changes_requested';
   if (facts.mergeableState === 'behind') return 'behind';
   if (facts.mergeableState === 'blocked') return 'approval_required';
@@ -44,7 +47,12 @@ export function mergeGates(
   const approved =
     facts.verdicts.includes('APPROVED') && !facts.verdicts.includes('CHANGES_REQUESTED');
   return {
-    checks: facts.checks === 'failing' ? 'failed' : facts.checks === 'running' ? 'pending' : 'done',
+    checks:
+      facts.checks === 'failing'
+        ? 'failed'
+        : facts.checks === 'running' || facts.checks === 'unavailable'
+          ? 'pending'
+          : 'done',
     conflicts:
       facts.mergeable === false || facts.mergeableState === 'dirty'
         ? 'failed'

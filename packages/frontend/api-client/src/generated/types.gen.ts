@@ -2199,7 +2199,7 @@ export type ConnectGoogleCalendarRequest = {
 };
 
 export type PullRequestLaneReasonDto = {
-    code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change';
+    code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change' | 'files_unread';
     /**
      * The risky directory, for `risky_path`.
      */
@@ -2234,7 +2234,18 @@ export type PullRequestRowDto = {
     laneReason: PullRequestLaneReasonDto;
     additions: number;
     deletions: number;
-    checks: 'passing' | 'failing' | 'running' | 'none';
+    /**
+     * `unavailable`: GitHub would not show them, and `checksRefusal` says why.
+     */
+    checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+    /**
+     * Why `checks` is `unavailable`; null when GitHub showed them.
+     */
+    checksRefusal: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+    /**
+     * What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.
+     */
+    unread: Array<'files' | 'reviews'>;
     /**
      * False on a conflict with the base; true while GitHub is still computing it.
      */
@@ -2242,7 +2253,7 @@ export type PullRequestRowDto = {
     /**
      * What holds it, or null when it can merge.
      */
-    blocker?: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'changes_requested' | 'behind' | 'approval_required';
+    blocker?: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'checks_unavailable' | 'changes_requested' | 'behind' | 'approval_required';
     /**
      * Seconds since it was opened.
      */
@@ -2261,6 +2272,18 @@ export type PullRequestLaneCountsDto = {
     deep: number;
     medium: number;
     quick: number;
+};
+
+export type UnreadableRepositoryDto = {
+    fullName: string;
+    /**
+     * `repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them.
+     */
+    what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
+    /**
+     * The refusal GitHub gave: no access, gone, wait, or no answer.
+     */
+    refusal: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
 };
 
 export type PullRequestQueueResponseDto = {
@@ -2283,6 +2306,10 @@ export type PullRequestQueueResponseDto = {
      * The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name.
      */
     viewerLogin?: string | null;
+    /**
+     * Watched repositories this read could not fully answer.
+     */
+    unreadable: Array<UnreadableRepositoryDto>;
 };
 
 export type AnalyticsFigureDto = {
@@ -2308,7 +2335,7 @@ export type AnalyticsLaneDto = {
 };
 
 export type AnalyticsWaitingDto = {
-    reason: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'changes_requested' | 'behind' | 'approval_required';
+    reason: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'checks_unavailable' | 'changes_requested' | 'behind' | 'approval_required';
     /**
      * Open pull requests held by it now.
      */
@@ -2354,6 +2381,11 @@ export type PullRequestAnalyticsResponseDto = {
      * What holds the open pull requests now.
      */
     waiting: Array<AnalyticsWaitingDto>;
+    /**
+     * False when more pull requests closed in the window than one read takes in full; the figures then count the most recently closed.
+     */
+    complete: boolean;
+    unreadable: Array<UnreadableRepositoryDto>;
 };
 
 export type WatchedRepositoryDto = {
@@ -2372,7 +2404,7 @@ export type SetRepositoryWatchRequest = {
 };
 
 export type PullRequestChecksDto = {
-    state: 'passing' | 'failing' | 'running' | 'none';
+    state: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
     total: number;
     passed: number;
     failed: number;
@@ -2412,7 +2444,18 @@ export type PullRequestDetailResponseDto = {
     laneReason: PullRequestLaneReasonDto;
     additions: number;
     deletions: number;
-    checks: 'passing' | 'failing' | 'running' | 'none';
+    /**
+     * `unavailable`: GitHub would not show them, and `checksRefusal` says why.
+     */
+    checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+    /**
+     * Why `checks` is `unavailable`; null when GitHub showed them.
+     */
+    checksRefusal: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+    /**
+     * What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.
+     */
+    unread: Array<'files' | 'reviews'>;
     /**
      * False on a conflict with the base; true while GitHub is still computing it.
      */
@@ -2420,7 +2463,7 @@ export type PullRequestDetailResponseDto = {
     /**
      * What holds it, or null when it can merge.
      */
-    blocker?: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'changes_requested' | 'behind' | 'approval_required';
+    blocker?: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'checks_unavailable' | 'changes_requested' | 'behind' | 'approval_required';
     /**
      * Seconds since it was opened.
      */
@@ -8640,6 +8683,8 @@ export type FindPullRequestsErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -8695,6 +8740,8 @@ export type FindPullRequestAnalyticsErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -8745,6 +8792,8 @@ export type FindWatchedRepositoriesErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -8798,6 +8847,8 @@ export type SetRepositoryWatchErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -8852,6 +8903,8 @@ export type FindPullRequestErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -8906,6 +8959,8 @@ export type FindPullRequestFilesErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -8960,6 +9015,8 @@ export type FindPullRequestCommentsErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -9014,6 +9071,8 @@ export type AddPullRequestCommentErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -9068,6 +9127,8 @@ export type SubmitPullRequestReviewErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**
@@ -9122,6 +9183,8 @@ export type MergePullRequestErrors = {
     409: ProblemDetailsDto;
     /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
      */
     429: ProblemDetailsDto;
     /**

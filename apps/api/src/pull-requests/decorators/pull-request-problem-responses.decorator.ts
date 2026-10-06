@@ -34,6 +34,11 @@ export const PullRequestProblemResponses = () =>
       description: 'The GitHub App is not configured on this server',
       code: 'GITHUB_002',
     }),
+    ApiProblemResponse({
+      status: 429,
+      description: 'GitHub asked to wait; `retryAfterSeconds` says how long',
+      code: 'GITHUB_015',
+    }),
   );
 
 /** What a write in the caller's name adds: no user token, or GitHub would not merge yet. */

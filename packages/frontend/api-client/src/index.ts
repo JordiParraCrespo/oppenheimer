@@ -166,6 +166,7 @@ export type {
   TriggerFilterResponseDto,
   TriggerPreviewMatchResponseDto,
   TriggerPreviewResponseDto,
+  UnreadableRepositoryDto,
   UpdateAutomationRequest,
   UpdateAutomationSettingsRequest,
   UpdateCalendarEventRequest,

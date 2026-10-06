@@ -12,17 +12,20 @@ const LANE_REASONS = [
   'docs_tests_config',
   'small_change',
   'medium_change',
+  'files_unread',
 ] as const;
 const BLOCKERS = [
   'draft',
   'conflicts',
   'checks_failing',
   'checks_running',
+  'checks_unavailable',
   'changes_requested',
   'behind',
   'approval_required',
 ] as const;
-const CHECK_STATES = ['passing', 'failing', 'running', 'none'] as const;
+const CHECK_STATES = ['passing', 'failing', 'running', 'none', 'unavailable'] as const;
+const REFUSALS = ['forbidden', 'not_found', 'rate_limited', 'failed'] as const;
 const GATE_STATES = ['done', 'failed', 'pending'] as const;
 
 /** Why the lane policy put a pull request where it is; the console words it. */
@@ -84,8 +87,26 @@ export class PullRequestRowDto {
   @ApiProperty()
   deletions!: number;
 
-  @ApiProperty({ enum: CHECK_STATES })
+  @ApiProperty({
+    enum: CHECK_STATES,
+    description: '`unavailable`: GitHub would not show them, and `checksRefusal` says why.',
+  })
   checks!: (typeof CHECK_STATES)[number];
+
+  @ApiProperty({
+    enum: REFUSALS,
+    nullable: true,
+    description: 'Why `checks` is `unavailable`; null when GitHub showed them.',
+  })
+  checksRefusal!: (typeof REFUSALS)[number] | null;
+
+  @ApiProperty({
+    enum: ['files', 'reviews'],
+    isArray: true,
+    description:
+      'What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.',
+  })
+  unread!: ('files' | 'reviews')[];
 
   @ApiProperty({
     description: 'False on a conflict with the base; true while GitHub is still computing it.',
@@ -131,6 +152,27 @@ export class PullRequestLaneCountsDto {
   quick!: number;
 }
 
+const READ_GAPS = ['repository', 'pull_requests', 'files', 'checks', 'reviews'] as const;
+
+/** Something GitHub did not give on this read: which repository, what, and the refusal GitHub gave. */
+export class UnreadableRepositoryDto {
+  @ApiProperty({ example: 'acme-labs/xrp-mobile' })
+  fullName!: string;
+
+  @ApiProperty({
+    enum: READ_GAPS,
+    description:
+      '`repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them.',
+  })
+  what!: (typeof READ_GAPS)[number];
+
+  @ApiProperty({
+    enum: REFUSALS,
+    description: 'The refusal GitHub gave: no access, gone, wait, or no answer.',
+  })
+  refusal!: (typeof REFUSALS)[number];
+}
+
 /** `GET /pulls`: one scope's queue, with what the header and the scope and lane controls count. */
 export class PullRequestQueueResponseDto {
   @ApiProperty({ type: [PullRequestRowDto], description: 'Longest wait first.' })
@@ -158,6 +200,12 @@ export class PullRequestQueueResponseDto {
       'The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name.',
   })
   viewerLogin!: string | null;
+
+  @ApiProperty({
+    type: [UnreadableRepositoryDto],
+    description: 'Watched repositories this read could not fully answer.',
+  })
+  unreadable!: UnreadableRepositoryDto[];
 }
 
 export class PullRequestGateDto {
