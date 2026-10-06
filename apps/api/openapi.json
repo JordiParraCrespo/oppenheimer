@@ -12290,6 +12290,1181 @@
         "tags": ["Calendar"]
       }
     },
+    "/api/v1/pulls": {
+      "get": {
+        "description": "Open pull requests of the watched repositories, read live through the workspace’s installations: yours and your sessions’ (`mine`), review requests (`requested`) or the rest (`watching`), longest wait first, each with its lane and what holds it.",
+        "operationId": "findPullRequests",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Whose queue; default `mine`",
+            "schema": {
+              "enum": ["mine", "requested", "watching"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequestQueueResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The pull request queue",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/analytics": {
+      "get": {
+        "description": "The watched repositories over a week, a month or a quarter against the period before: created and merged per day, what you reviewed, median waits for review (sessions and people apart) and to merge, the lane mix, and what holds the open pull requests now.",
+        "operationId": "findPullRequestAnalytics",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Default `month`",
+            "schema": {
+              "enum": ["week", "month", "quarter"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequestAnalyticsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pull request analytics",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/repositories": {
+      "get": {
+        "description": "Every repository the workspace’s installations cover, and whether the caller watches it. Watched unless they switched it off.",
+        "operationId": "findWatchedRepositories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WatchedRepositoryDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The repositories the queue can watch",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/repositories/{installationId}/{githubRepoId}": {
+      "put": {
+        "description": "A watched repository’s open pull requests are in the queue and the analytics. Every repository is watched until switched off.",
+        "operationId": "setRepositoryWatch",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRepositoryWatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Watch a repository, or stop",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}": {
+      "get": {
+        "description": "Read live through the installation: the description, size, checks, reviewers, its lane and the path to merge.",
+        "operationId": "findPullRequest",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequestDetailResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One pull request",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/files": {
+      "get": {
+        "description": "Each changed file with its unified diff; a binary file, or one GitHub will not show, carries no patch.",
+        "operationId": "findPullRequestFiles",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PullRequestFileDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A pull request’s files",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/comments": {
+      "get": {
+        "description": "The comments on its lines, from anyone, oldest first.",
+        "operationId": "findPullRequestComments",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PullRequestCommentDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A pull request’s line comments",
+        "tags": ["Pull requests"]
+      },
+      "post": {
+        "description": "One comment on one line of the head commit, posted at once in the caller’s own name.",
+        "operationId": "addPullRequestComment",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddPullRequestCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Comment on a line",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/reviews": {
+      "post": {
+        "description": "Posted to GitHub in the caller’s own name with its line comments: comment, request changes, or approve — which then merges when GitHub allows it, and otherwise leaves the pull request waiting.",
+        "operationId": "submitPullRequestReview",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitPullRequestReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSubmittedResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a review",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/merge": {
+      "post": {
+        "description": "In the caller’s own name, at its current head. GitHub’s branch rules decide; a refusal is `GITHUB_014`.",
+        "operationId": "mergePullRequest",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergePullRequestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Merge a pull request",
+        "tags": ["Pull requests"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -13354,6 +14529,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "pulls:read",
+                "pulls:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -13397,6 +14574,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "pulls:read",
+                "pulls:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -13479,6 +14658,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "pulls:read",
+                "pulls:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -13585,6 +14766,8 @@
               "tasks:write",
               "calendar:read",
               "calendar:write",
+              "pulls:read",
+              "pulls:write",
               "repositories:read",
               "repositories:write",
               "flags:read",
@@ -13643,6 +14826,7 @@
               "automations",
               "tasks",
               "calendar",
+              "pulls",
               "repositories",
               "flags"
             ],
@@ -13713,6 +14897,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "pulls:read",
+                "pulls:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -13767,6 +14953,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "pulls:read",
+                "pulls:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -13853,6 +15041,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "pulls:read",
+                "pulls:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -18922,6 +20112,778 @@
           }
         },
         "required": ["code", "state"]
+      },
+      "PullRequestLaneReasonDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "risky_path",
+              "large_change",
+              "docs_tests_config",
+              "small_change",
+              "medium_change"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "The risky directory, for `risky_path`.",
+            "example": "auth/"
+          },
+          "lines": {
+            "type": "number",
+            "description": "Changed lines, additions and deletions together."
+          },
+          "files": {
+            "type": "number"
+          }
+        },
+        "required": ["code"]
+      },
+      "PullRequestRowDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The installation that reaches the repository."
+          },
+          "githubRepoId": {
+            "type": "number"
+          },
+          "repository": {
+            "type": "string",
+            "example": "acme-labs/xrp-mobile"
+          },
+          "number": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "description": "A GitHub login."
+          },
+          "authorKind": {
+            "type": "string",
+            "enum": ["session", "person"],
+            "description": "A session’s when its branch is one a session pushed."
+          },
+          "headRef": {
+            "type": "string",
+            "example": "oppenheimer/keychain-tokens"
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["mine", "requested", "watching"]
+          },
+          "lane": {
+            "type": "string",
+            "enum": ["deep", "medium", "quick"]
+          },
+          "laneReason": {
+            "$ref": "#/components/schemas/PullRequestLaneReasonDto"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          },
+          "checks": {
+            "type": "string",
+            "enum": ["passing", "failing", "running", "none"]
+          },
+          "mergeable": {
+            "type": "boolean",
+            "description": "False on a conflict with the base; true while GitHub is still computing it."
+          },
+          "blocker": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "conflicts",
+              "checks_failing",
+              "checks_running",
+              "changes_requested",
+              "behind",
+              "approval_required"
+            ],
+            "nullable": true,
+            "description": "What holds it, or null when it can merge."
+          },
+          "waitingSeconds": {
+            "type": "number",
+            "description": "Seconds since it was opened."
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "htmlUrl": {
+            "type": "string",
+            "example": "https://github.com/acme-labs/xrp-mobile/pull/12"
+          }
+        },
+        "required": [
+          "installationId",
+          "githubRepoId",
+          "repository",
+          "number",
+          "title",
+          "author",
+          "authorKind",
+          "headRef",
+          "scope",
+          "lane",
+          "laneReason",
+          "additions",
+          "deletions",
+          "checks",
+          "mergeable",
+          "waitingSeconds",
+          "draft",
+          "htmlUrl"
+        ]
+      },
+      "PullRequestScopeCountsDto": {
+        "type": "object",
+        "properties": {
+          "mine": {
+            "type": "number"
+          },
+          "requested": {
+            "type": "number"
+          },
+          "watching": {
+            "type": "number"
+          }
+        },
+        "required": ["mine", "requested", "watching"]
+      },
+      "PullRequestLaneCountsDto": {
+        "type": "object",
+        "properties": {
+          "deep": {
+            "type": "number"
+          },
+          "medium": {
+            "type": "number"
+          },
+          "quick": {
+            "type": "number"
+          }
+        },
+        "required": ["deep", "medium", "quick"]
+      },
+      "PullRequestQueueResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Longest wait first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PullRequestRowDto"
+            }
+          },
+          "scopes": {
+            "$ref": "#/components/schemas/PullRequestScopeCountsDto"
+          },
+          "lanes": {
+            "description": "Within the scope asked for.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PullRequestLaneCountsDto"
+              }
+            ]
+          },
+          "readyToMerge": {
+            "type": "number",
+            "description": "In the scope asked for, nothing holds them."
+          },
+          "withConflicts": {
+            "type": "number"
+          },
+          "oldestWaitingSeconds": {
+            "type": "number",
+            "nullable": true
+          },
+          "viewerLogin": {
+            "type": "string",
+            "nullable": true,
+            "description": "The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name."
+          }
+        },
+        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts"]
+      },
+      "AnalyticsFigureDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "previous": {
+            "type": "number"
+          }
+        },
+        "required": ["value", "previous"]
+      },
+      "AnalyticsMedianDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "nullable": true
+          },
+          "previous": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "AnalyticsDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-04"
+          },
+          "created": {
+            "type": "number"
+          },
+          "merged": {
+            "type": "number"
+          }
+        },
+        "required": ["date", "created", "merged"]
+      },
+      "AnalyticsLaneDto": {
+        "type": "object",
+        "properties": {
+          "lane": {
+            "type": "string",
+            "enum": ["deep", "medium", "quick"]
+          },
+          "value": {
+            "type": "number"
+          },
+          "previous": {
+            "type": "number"
+          }
+        },
+        "required": ["lane", "value", "previous"]
+      },
+      "AnalyticsWaitingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "conflicts",
+              "checks_failing",
+              "checks_running",
+              "changes_requested",
+              "behind",
+              "approval_required"
+            ]
+          },
+          "value": {
+            "type": "number",
+            "description": "Open pull requests held by it now."
+          },
+          "medianHours": {
+            "type": "number",
+            "nullable": true,
+            "description": "Median hours they have been open."
+          }
+        },
+        "required": ["reason", "value"]
+      },
+      "PullRequestAnalyticsResponseDto": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "string",
+            "enum": ["week", "month", "quarter"]
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created": {
+            "$ref": "#/components/schemas/AnalyticsFigureDto"
+          },
+          "merged": {
+            "$ref": "#/components/schemas/AnalyticsFigureDto"
+          },
+          "reviewedByYou": {
+            "description": "Pull requests the caller reviewed.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsFigureDto"
+              }
+            ]
+          },
+          "waitForReview": {
+            "description": "Opened to first review by someone else, in hours.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMedianDto"
+              }
+            ]
+          },
+          "waitForReviewAgents": {
+            "description": "Same, for pull requests sessions opened.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMedianDto"
+              }
+            ]
+          },
+          "waitForReviewPeople": {
+            "description": "Same, for pull requests people opened.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMedianDto"
+              }
+            ]
+          },
+          "timeToMerge": {
+            "description": "Opened to merged, in hours.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsMedianDto"
+              }
+            ]
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsDayDto"
+            }
+          },
+          "lanes": {
+            "description": "Merged pull requests by lane.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsLaneDto"
+            }
+          },
+          "waiting": {
+            "description": "What holds the open pull requests now.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsWaitingDto"
+            }
+          }
+        },
+        "required": [
+          "range",
+          "from",
+          "to",
+          "created",
+          "merged",
+          "reviewedByYou",
+          "waitForReview",
+          "waitForReviewAgents",
+          "waitForReviewPeople",
+          "timeToMerge",
+          "days",
+          "lanes",
+          "waiting"
+        ]
+      },
+      "WatchedRepositoryDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "githubRepoId": {
+            "type": "number"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/xrp-mobile"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "watching": {
+            "type": "boolean",
+            "description": "Watched unless the caller switched it off."
+          }
+        },
+        "required": ["installationId", "githubRepoId", "fullName", "private", "watching"]
+      },
+      "SetRepositoryWatchRequest": {
+        "type": "object",
+        "properties": {
+          "watching": {
+            "type": "boolean"
+          }
+        },
+        "required": ["watching"]
+      },
+      "PullRequestChecksDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": ["passing", "failing", "running", "none"]
+          },
+          "total": {
+            "type": "number"
+          },
+          "passed": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          }
+        },
+        "required": ["state", "total", "passed", "failed", "pending"]
+      },
+      "PullRequestGateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["checks", "conflicts", "review", "merge"]
+          },
+          "state": {
+            "type": "string",
+            "enum": ["done", "failed", "pending"]
+          }
+        },
+        "required": ["id", "state"]
+      },
+      "PullRequestReviewerDto": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["approved", "changes_requested", "commented", "requested"]
+          }
+        },
+        "required": ["login", "state"]
+      },
+      "PullRequestDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The installation that reaches the repository."
+          },
+          "githubRepoId": {
+            "type": "number"
+          },
+          "repository": {
+            "type": "string",
+            "example": "acme-labs/xrp-mobile"
+          },
+          "number": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "description": "A GitHub login."
+          },
+          "authorKind": {
+            "type": "string",
+            "enum": ["session", "person"],
+            "description": "A session’s when its branch is one a session pushed."
+          },
+          "headRef": {
+            "type": "string",
+            "example": "oppenheimer/keychain-tokens"
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["mine", "requested", "watching"]
+          },
+          "lane": {
+            "type": "string",
+            "enum": ["deep", "medium", "quick"]
+          },
+          "laneReason": {
+            "$ref": "#/components/schemas/PullRequestLaneReasonDto"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          },
+          "checks": {
+            "type": "string",
+            "enum": ["passing", "failing", "running", "none"]
+          },
+          "mergeable": {
+            "type": "boolean",
+            "description": "False on a conflict with the base; true while GitHub is still computing it."
+          },
+          "blocker": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "conflicts",
+              "checks_failing",
+              "checks_running",
+              "changes_requested",
+              "behind",
+              "approval_required"
+            ],
+            "nullable": true,
+            "description": "What holds it, or null when it can merge."
+          },
+          "waitingSeconds": {
+            "type": "number",
+            "description": "Seconds since it was opened."
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "htmlUrl": {
+            "type": "string",
+            "example": "https://github.com/acme-labs/xrp-mobile/pull/12"
+          },
+          "body": {
+            "type": "string",
+            "description": "The description, as written (Markdown)."
+          },
+          "baseRef": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["open", "merged", "closed"]
+          },
+          "changedFiles": {
+            "type": "number"
+          },
+          "folders": {
+            "description": "The top-level directories it touches, most files first.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "checkCounts": {
+            "$ref": "#/components/schemas/PullRequestChecksDto"
+          },
+          "gates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PullRequestGateDto"
+            }
+          },
+          "reviewers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PullRequestReviewerDto"
+            }
+          },
+          "viewerLogin": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "installationId",
+          "githubRepoId",
+          "repository",
+          "number",
+          "title",
+          "author",
+          "authorKind",
+          "headRef",
+          "scope",
+          "lane",
+          "laneReason",
+          "additions",
+          "deletions",
+          "checks",
+          "mergeable",
+          "waitingSeconds",
+          "draft",
+          "htmlUrl",
+          "body",
+          "baseRef",
+          "state",
+          "changedFiles",
+          "folders",
+          "checkCounts",
+          "gates",
+          "reviewers"
+        ]
+      },
+      "PullRequestFileDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "previousPath": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "example": "modified"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          },
+          "patch": {
+            "type": "string",
+            "nullable": true,
+            "description": "The unified diff; null for a binary file or one GitHub will not show."
+          }
+        },
+        "required": ["path", "status", "additions", "deletions"]
+      },
+      "PullRequestCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "path": {
+            "type": "string"
+          },
+          "line": {
+            "type": "number",
+            "nullable": true
+          },
+          "side": {
+            "type": "string",
+            "enum": ["LEFT", "RIGHT"]
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "path", "side", "body", "author", "createdAt"]
+      },
+      "SubmitPullRequestReviewRequest": {
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": ["comment", "approve", "request_changes"]
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65000
+          },
+          "comments": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "line": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                },
+                "side": {
+                  "type": "string",
+                  "enum": ["LEFT", "RIGHT"],
+                  "default": "RIGHT"
+                },
+                "body": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 65000
+                }
+              },
+              "required": ["path", "line", "body"]
+            },
+            "default": []
+          }
+        },
+        "required": ["verdict"]
+      },
+      "ReviewSubmittedResponseDto": {
+        "type": "object",
+        "properties": {
+          "merged": {
+            "type": "boolean",
+            "description": "Merged now; false for a comment, a change request, or an approval GitHub would not merge yet."
+          }
+        },
+        "required": ["merged"]
+      },
+      "AddPullRequestCommentRequest": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "side": {
+            "type": "string",
+            "enum": ["LEFT", "RIGHT"],
+            "default": "RIGHT"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65000
+          }
+        },
+        "required": ["path", "line", "body"]
+      },
+      "MergePullRequestRequest": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["squash", "merge", "rebase"],
+            "default": "squash"
+          }
+        }
       },
       "CapabilitiesResponseDto": {
         "type": "object",

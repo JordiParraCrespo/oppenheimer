@@ -1,0 +1,78 @@
+import {
+  DiffStat,
+  IconButton,
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@oppenheimer/design-system-web';
+import { ChevronLeft, SquareArrowOutUpRight } from '@oppenheimer/design-system-web/icons';
+import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
+import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
+import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
+import { ReviewPopover } from './review-popover';
+
+/** The bar over a pull request: back to the queue, its three views, GitHub, and Submit review. */
+export function PullRequestToolbar({
+  address,
+  view,
+  onViewChange,
+  pending,
+  onReviewSubmitted,
+  onDiscardPending,
+}: {
+  address: PullRequestAddress;
+  view: PullRequestView;
+  onViewChange: (view: PullRequestView) => void;
+  pending: readonly LineCommentInput[];
+  onReviewSubmitted: () => void;
+  onDiscardPending: () => void;
+}) {
+  const { t } = useTranslation();
+  const { data: pull } = usePullRequest(address);
+
+  return (
+    <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
+      <IconButton
+        size="sm"
+        aria-label={t('pullRequests.detail.back')}
+        render={<Link to="/pulls" />}
+      >
+        <ChevronLeft />
+      </IconButton>
+      <SegmentedControl
+        size="md"
+        value={view}
+        onValueChange={(next) => onViewChange(next as PullRequestView)}
+        aria-label={t('pullRequests.detail.viewLabel')}
+      >
+        {PULL_REQUEST_VIEWS.map((value) => (
+          <SegmentedControlItem key={value} value={value}>
+            {t(`pullRequests.detail.views.${value}`)}
+            {value === 'changes' && pull ? (
+              <DiffStat additions={pull.additions} deletions={pull.deletions} />
+            ) : null}
+          </SegmentedControlItem>
+        ))}
+      </SegmentedControl>
+      <span className="flex-1" />
+      {pull ? (
+        <IconButton
+          aria-label={t('pullRequests.detail.openOnGithub')}
+          render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
+        >
+          <SquareArrowOutUpRight />
+        </IconButton>
+      ) : null}
+      {pull?.isOpen ? (
+        <ReviewPopover
+          address={address}
+          viewerLogin={pull.viewerLogin}
+          pending={pending}
+          onSubmitted={onReviewSubmitted}
+          onDiscard={onDiscardPending}
+        />
+      ) : null}
+    </div>
+  );
+}

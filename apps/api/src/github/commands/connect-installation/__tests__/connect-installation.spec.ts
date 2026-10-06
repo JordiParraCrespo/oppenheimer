@@ -2,6 +2,7 @@ import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GithubUserGrantResolver } from '../../../application/github-user-grant.resolver';
 import {
   INSTALL_STATE_PREFIX,
   InstallStateResolver,
@@ -81,11 +82,23 @@ function build(rows: Rows = {}) {
 
   const github = {
     isConfigured: vi.fn().mockReturnValue(true),
-    listUserInstallations: vi
-      .fn()
-      .mockResolvedValue(rows.visible ?? [{ githubInstallationId: CLAIM.githubInstallationId }]),
+    listUserInstallations: vi.fn().mockResolvedValue({
+      installations: rows.visible ?? [{ githubInstallationId: CLAIM.githubInstallationId }],
+      user: { githubUserId: 583231, login: 'ana' },
+      tokens: {
+        accessToken: 'ghu_ana',
+        accessExpiresAt: null,
+        refreshToken: null,
+        refreshExpiresAt: null,
+      },
+    }),
     readInstallation: vi.fn().mockResolvedValue(rows.claim ?? CLAIM),
   } satisfies Pick<GithubAppPort, 'isConfigured' | 'listUserInstallations' | 'readInstallation'>;
+
+  const userGrants = { keep: vi.fn().mockResolvedValue(undefined) } satisfies Pick<
+    GithubUserGrantResolver,
+    'keep'
+  >;
 
   const cache = memoryCache();
   cache.store.set(`${INSTALL_STATE_PREFIX}${STATE}`, { userId: 'ana', organizationId: 'org-acme' });
@@ -96,9 +109,10 @@ function build(rows: Rows = {}) {
     github as unknown as GithubAppPort,
     new GithubInstallationMapper(),
     installState,
+    userGrants as unknown as GithubUserGrantResolver,
   );
 
-  return { handler, installations, github, cache };
+  return { handler, installations, github, cache, userGrants };
 }
 
 function command(overrides: Partial<ConnectInstallationCommand> = {}) {

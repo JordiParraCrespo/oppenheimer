@@ -1,0 +1,57 @@
+import { Inject } from '@nestjs/common';
+import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
+import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import { WatchedRepositoriesResolver } from '../../application/watched-repositories.resolver';
+import { analyticsWindow } from '../../domain/pull-request-analytics.policy';
+import type { PullRequestAnalyticsResponseDto } from '../../dtos/pull-request-analytics.response.dto';
+import { PullRequestMapper } from '../../pull-request.mapper';
+import { FindPullRequestAnalyticsQuery } from './find-pull-request-analytics.query';
+
+/**
+ * The review period against the one before, over the watched repositories:
+ * computed from GitHub's own answers on each read — the open pull requests and
+ * those closed since the previous period began — with nothing stored. Medians,
+ * never means.
+ */
+@QueryHandler(FindPullRequestAnalyticsQuery)
+export class FindPullRequestAnalyticsQueryHandler
+  implements IQueryHandler<FindPullRequestAnalyticsQuery, PullRequestAnalyticsResponseDto>
+{
+  constructor(
+    @Inject(PULL_REQUEST_ACCESS)
+    private readonly access: PullRequestAccessPort,
+    private readonly watched: WatchedRepositoriesResolver,
+    private readonly mapper: PullRequestMapper,
+  ) {}
+
+  async execute({
+    scope,
+    range,
+  }: FindPullRequestAnalyticsQuery): Promise<PullRequestAnalyticsResponseDto> {
+    const now = new Date();
+    const window = analyticsWindow(range, now);
+    const [repositories, viewerLogin] = await Promise.all([
+      this.watched.watched(scope),
+      this.access.viewerLogin(scope.userId),
+    ]);
+    const [open, closed] = await Promise.all([
+      Promise.all(
+        repositories.map((repository) => this.access.openPullRequests(scope, repository)),
+      ),
+      Promise.all(
+        repositories.map((repository) =>
+          this.access.closedPullRequests(scope, repository, window.previousFrom),
+        ),
+      ),
+    ]);
+    return this.mapper.toAnalytics({
+      range,
+      window,
+      open: open.flat(),
+      closed: closed.flat(),
+      viewerLogin,
+      now,
+    });
+  }
+}

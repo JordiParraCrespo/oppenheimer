@@ -97,4 +97,29 @@ export const GithubErrors = {
     message: 'The GitHub installation was not started from this workspace',
     httpStatus: 400,
   },
+  /**
+   * Acting in someone's name needs their own GitHub user token, and there is
+   * none: never connected, sealed under a replaced key, or revoked on GitHub.
+   * Connecting GitHub again stores a new one.
+   */
+  USER_NOT_CONNECTED: {
+    code: 'GITHUB_012',
+    message: 'Connect GitHub again to review and merge in your name',
+    httpStatus: 409,
+  },
+  /** Also one in a repository the installation does not cover. */
+  PULL_REQUEST_NOT_FOUND: {
+    code: 'GITHUB_013',
+    message: 'Pull request not found',
+    httpStatus: 404,
+  },
+  /**
+   * GitHub would not merge it: a required review or check, a conflict, or a
+   * branch rule. Nothing is retried in anyone's name; the pull request waits.
+   */
+  MERGE_REFUSED: {
+    code: 'GITHUB_014',
+    message: 'GitHub would not merge this pull request yet',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

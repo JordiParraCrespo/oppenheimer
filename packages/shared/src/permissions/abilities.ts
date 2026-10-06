@@ -71,6 +71,9 @@ export const KNOWN_SUBJECTS = [
   // the workspace's own events and a person's Google Calendar connection.
   'Task',
   'Calendar',
+  // The Pull requests area: GitHub's pull requests, read and reviewed through
+  // the workspace's installations, and a person's watched repositories.
+  'PullRequest',
   'all',
 ] as const;
 
@@ -364,6 +367,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Calendar',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'PullRequest',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

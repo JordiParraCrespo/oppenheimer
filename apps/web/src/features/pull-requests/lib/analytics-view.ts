@@ -1,0 +1,40 @@
+import type { BarDatum, ChartSeries, DataTone } from '@oppenheimer/design-system-web';
+import type { PullRequestAnalytics, PullRequestLane } from '@oppenheimer/frontend-consumer';
+
+export const DAY_SERIES = (created: string, merged: string): ChartSeries[] => [
+  { key: 'created', label: created, tone: 'chart-1' },
+  { key: 'merged', label: merged, tone: 'chart-2' },
+];
+
+export const LANE_TONE: Record<PullRequestLane, DataTone> = {
+  quick: 'chart-1',
+  medium: 'chart-2',
+  deep: 'chart-3',
+};
+
+/** One bar per day: the day of the month, with the month under the first and every 1st. */
+export function dayBars(analytics: PullRequestAnalytics, locale: string): BarDatum[] {
+  return analytics.days.map((day, index) => {
+    const date = new Date(`${day.date}T00:00:00Z`);
+    const first = index === 0 || date.getUTCDate() === 1;
+    return {
+      key: day.date,
+      label: String(date.getUTCDate()),
+      sublabel: first
+        ? date.toLocaleString(locale, { month: 'short', timeZone: 'UTC' })
+        : undefined,
+      values: { created: day.created, merged: day.merged },
+    };
+  });
+}
+
+/** `Sep 5 – Oct 4`. */
+export function rangeLabel(analytics: PullRequestAnalytics, locale: string): string {
+  const format = (date: Date) =>
+    date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  return `${format(analytics.from)} – ${format(analytics.to)}`;
+}
+
+export function shareOf(value: number, total: number): number {
+  return total ? Math.round((value / total) * 100) : 0;
+}

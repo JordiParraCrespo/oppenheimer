@@ -6,5 +6,6 @@ export * from './organizations';
 export * from './permissions';
 export * from './profile';
 export * from './projects';
+export * from './pull-requests';
 export * from './sessions';
 export * from './tasks';

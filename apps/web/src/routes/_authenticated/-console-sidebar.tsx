@@ -12,6 +12,11 @@ const AutomationsSidebar = lazy(() =>
     default: module.AutomationsSidebar,
   })),
 );
+const PullRequestsSidebar = lazy(() =>
+  import('@/features/pull-requests/sections/pull-requests-sidebar').then((module) => ({
+    default: module.PullRequestsSidebar,
+  })),
+);
 const PlanNav = lazy(() =>
   import('@/features/tasks/sections/plan-nav').then((module) => ({ default: module.PlanNav })),
 );
@@ -45,6 +50,8 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
     <Suspense fallback={null}>
       {list === 'automations' ? (
         <AutomationsSidebar />
+      ) : list === 'pulls' ? (
+        <PullRequestsSidebar />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <PlanNav />

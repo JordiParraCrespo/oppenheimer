@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { createPullsStub } from './github-stub-pulls.ts';
 
 /**
  * A stand-in for GitHub, the one part of the run that cannot be real here.
@@ -33,6 +34,8 @@ export interface GithubStubOptions {
   repositories: StubRepository[];
   /** Branch names per repository `full_name`. The first is the default. */
   branches: Record<string, string[]>;
+  /** The GitHub login of whoever authorizes the App: their pull requests are "mine". */
+  viewerLogin: string;
 }
 
 export interface GithubStub {
@@ -67,7 +70,24 @@ const DEFAULTS: GithubStubOptions = {
     'acme-labs/xrp-mobile': ['main', 'release/2026-09', 'fix/wallet-empty-state'],
     'acme-labs/xrp-web': ['trunk', 'next'],
   },
+  viewerLogin: 'ana-dev',
 };
+
+function readBody(request: IncomingMessage): Promise<unknown> {
+  return new Promise((resolve) => {
+    let raw = '';
+    request.on('data', (chunk) => {
+      raw += chunk;
+    });
+    request.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : undefined);
+      } catch {
+        resolve(undefined);
+      }
+    });
+  });
+}
 
 function json(response: ServerResponse, status: number, body: unknown) {
   const payload = JSON.stringify(body);
@@ -100,81 +120,104 @@ export async function startGithubStub(
   }
 
   installations.set(options.installationId, installationOf(options.installationId));
+  const pulls = createPullsStub(options.repositories, options.viewerLogin);
 
-  const server: Server = createServer((request: IncomingMessage, response: ServerResponse) => {
-    const url = new URL(request.url ?? '/', 'http://localhost');
-    const path = url.pathname;
+  const server: Server = createServer(
+    async (request: IncomingMessage, response: ServerResponse) => {
+      const url = new URL(request.url ?? '/', 'http://localhost');
+      const path = url.pathname;
+      const method = request.method ?? 'GET';
+      const body = method === 'GET' ? undefined : await readBody(request);
 
-    // The OAuth exchange. GitHub answers 200 with an `error` member rather than
-    // a 4xx, and the adapter reads it that way, so the stub does too.
-    if (path === '/login/oauth/access_token') {
-      return json(response, 200, { access_token: 'stub-user-token', token_type: 'bearer' });
-    }
+      // The OAuth exchange, for a code and for a refresh alike: an App with
+      // expiring user tokens answers both with a fresh pair. GitHub answers 200
+      // with an `error` member rather than a 4xx, and the adapter reads it that
+      // way, so the stub does too.
+      if (path === '/login/oauth/access_token') {
+        return json(response, 200, {
+          access_token: 'stub-user-token',
+          expires_in: 28_800,
+          refresh_token: 'stub-refresh-token',
+          refresh_token_expires_in: 15_897_600,
+          token_type: 'bearer',
+        });
+      }
 
-    // The one endpoint GitHub does not have: a test saying which installation
-    // it is about to connect. Everything below answers GitHub's own shapes.
-    const claim = /^\/__stub\/installations\/(\d+)$/.exec(path);
-    if (claim && request.method === 'PUT') {
-      const id = Number(claim[1]);
-      installations.set(id, installationOf(id));
-      return json(response, 200, { installations: [...installations.keys()] });
-    }
+      // Who authorized: the reviews and merges made with that token are theirs.
+      if (path === '/user') {
+        return json(response, 200, { id: 583_231, login: options.viewerLogin, type: 'User' });
+      }
 
-    // What the account installing the App can see. The connect call trusts this
-    // over the installation id it was handed, which is the check being exercised.
-    if (path === '/user/installations') {
-      const known = [...installations.values()];
-      return json(response, 200, { total_count: known.length, installations: known });
-    }
+      const answered = pulls.handle(method, path, url.searchParams, body);
+      if (answered) return json(response, answered.status, answered.body);
 
-    const byInstallation = /^\/app\/installations\/(\d+)$/.exec(path);
-    if (byInstallation) {
-      const known = installations.get(Number(byInstallation[1]));
-      return known ? json(response, 200, known) : json(response, 404, { message: 'Not Found' });
-    }
+      // The one endpoint GitHub does not have: a test saying which installation
+      // it is about to connect. Everything below answers GitHub's own shapes.
+      const claim = /^\/__stub\/installations\/(\d+)$/.exec(path);
+      if (claim && request.method === 'PUT') {
+        const id = Number(claim[1]);
+        installations.set(id, installationOf(id));
+        return json(response, 200, { installations: [...installations.keys()] });
+      }
 
-    if (/^\/app\/installations\/\d+\/access_tokens$/.test(path)) {
-      return json(response, 201, {
-        token: 'stub-installation-token',
-        expires_at: new Date(Date.now() + 3_600_000).toISOString(),
-      });
-    }
+      // What the account installing the App can see. The connect call trusts this
+      // over the installation id it was handed, which is the check being exercised.
+      if (path === '/user/installations') {
+        const known = [...installations.values()];
+        return json(response, 200, { total_count: known.length, installations: known });
+      }
 
-    if (path === '/installation/repositories') {
-      return json(response, 200, {
-        total_count: options.repositories.length,
-        repositories: options.repositories,
-      });
-    }
+      const byInstallation = /^\/app\/installations\/(\d+)$/.exec(path);
+      if (byInstallation) {
+        const known = installations.get(Number(byInstallation[1]));
+        return known ? json(response, 200, known) : json(response, 404, { message: 'Not Found' });
+      }
 
-    const byId = /^\/repositories\/(\d+)$/.exec(path);
-    if (byId) {
-      const repository = options.repositories.find((candidate) => candidate.id === Number(byId[1]));
-      // A repository the installation does not cover is a 404 from GitHub, and
-      // that refusal is what the API turns into `GITHUB_010`.
-      return repository
-        ? json(response, 200, repository)
-        : json(response, 404, { message: 'Not Found' });
-    }
+      if (/^\/app\/installations\/\d+\/access_tokens$/.test(path)) {
+        return json(response, 201, {
+          token: 'stub-installation-token',
+          expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+        });
+      }
 
-    const branches = /^\/repos\/([^/]+)\/([^/]+)\/branches$/.exec(path);
-    if (branches) {
-      const fullName = `${decodeURIComponent(branches[1] ?? '')}/${decodeURIComponent(branches[2] ?? '')}`;
-      const names = options.branches[fullName];
-      if (!names) return json(response, 404, { message: 'Not Found' });
-      return json(
-        response,
-        200,
-        names.map((name, index) => ({
-          name,
-          commit: { sha: `${index}`.padStart(40, 'd') },
-          protected: index === 0,
-        })),
-      );
-    }
+      if (path === '/installation/repositories') {
+        return json(response, 200, {
+          total_count: options.repositories.length,
+          repositories: options.repositories,
+        });
+      }
 
-    json(response, 404, { message: `No stub for ${request.method} ${path}` });
-  });
+      const byId = /^\/repositories\/(\d+)$/.exec(path);
+      if (byId) {
+        const repository = options.repositories.find(
+          (candidate) => candidate.id === Number(byId[1]),
+        );
+        // A repository the installation does not cover is a 404 from GitHub, and
+        // that refusal is what the API turns into `GITHUB_010`.
+        return repository
+          ? json(response, 200, repository)
+          : json(response, 404, { message: 'Not Found' });
+      }
+
+      const branches = /^\/repos\/([^/]+)\/([^/]+)\/branches$/.exec(path);
+      if (branches) {
+        const fullName = `${decodeURIComponent(branches[1] ?? '')}/${decodeURIComponent(branches[2] ?? '')}`;
+        const names = options.branches[fullName];
+        if (!names) return json(response, 404, { message: 'Not Found' });
+        return json(
+          response,
+          200,
+          names.map((name, index) => ({
+            name,
+            commit: { sha: `${index}`.padStart(40, 'd') },
+            protected: index === 0,
+          })),
+        );
+      }
+
+      json(response, 404, { message: `No stub for ${method} ${path}` });
+    },
+  );
 
   await new Promise<void>((resolve) => server.listen(options.port ?? 0, '127.0.0.1', resolve));
   const address = server.address();

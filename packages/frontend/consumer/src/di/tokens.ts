@@ -12,6 +12,7 @@ export const TOKENS = {
   ProfileRepository: Symbol.for('ProfileRepository'),
   ProfileService: Symbol.for('ProfileService'),
   ProjectsRepository: Symbol.for('ProjectsRepository'),
+  PullRequestsRepository: Symbol.for('PullRequestsRepository'),
   SessionsRepository: Symbol.for('SessionsRepository'),
   SessionsService: Symbol.for('SessionsService'),
   TasksRepository: Symbol.for('TasksRepository'),

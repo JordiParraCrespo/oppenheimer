@@ -3,7 +3,9 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
+import { GithubUserGrantResolver } from './application/github-user-grant.resolver';
 import { InstallStateResolver } from './application/install-state.resolver';
+import { PullRequestAccessResolver } from './application/pull-request-access.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
 import { ConnectInstallationCommandHandler } from './commands/connect-installation/connect-installation.command-handler';
 import { ConnectInstallationHttpController } from './commands/connect-installation/connect-installation.http.controller';
@@ -15,10 +17,22 @@ import { StartInstallationCommandHandler } from './commands/start-installation/s
 import { StartInstallationHttpController } from './commands/start-installation/start-installation.http.controller';
 import { GithubInstallationOrmEntity } from './database/github-installation.orm-entity';
 import { GithubInstallationRepository } from './database/github-installation.repository';
-import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, REPOSITORY_ACCESS } from './github.di-tokens';
+import { GithubUserGrantOrmEntity } from './database/github-user-grant.orm-entity';
+import { GithubUserGrantRepository } from './database/github-user-grant.repository';
+import {
+  GITHUB_APP,
+  GITHUB_INSTALLATION_REPOSITORY,
+  GITHUB_PULLS,
+  GITHUB_USER_GRANT_REPOSITORY,
+  PULL_REQUEST_ACCESS,
+  REPOSITORY_ACCESS,
+  USER_TOKEN_SEALER,
+} from './github.di-tokens';
 import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
+import { AesUserTokenSealerAdapter } from './infrastructure/aes-user-token-sealer.adapter';
 import { GithubEventSource } from './infrastructure/github-event-source.adapter';
+import { GithubPullsAdapter } from './infrastructure/github-pulls.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
@@ -59,7 +73,12 @@ const adapters: Provider[] = [
   { provide: GITHUB_INSTALLATION_REPOSITORY, useClass: GithubInstallationRepository },
   { provide: GITHUB_APP, useClass: GithubRestAdapter },
   { provide: REPOSITORY_ACCESS, useClass: RepositoryAccessResolver },
+  { provide: GITHUB_USER_GRANT_REPOSITORY, useClass: GithubUserGrantRepository },
+  { provide: USER_TOKEN_SEALER, useClass: AesUserTokenSealerAdapter },
+  { provide: GITHUB_PULLS, useClass: GithubPullsAdapter },
+  { provide: PULL_REQUEST_ACCESS, useClass: PullRequestAccessResolver },
   InstallStateResolver,
+  GithubUserGrantResolver,
 ];
 
 /**
@@ -75,7 +94,7 @@ const adapters: Provider[] = [
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([GithubInstallationOrmEntity]),
+    TypeOrmModule.forFeature([GithubInstallationOrmEntity, GithubUserGrantOrmEntity]),
     AuthzKernelModule.forFeature([InstallationResource]),
     // The hub its non-installation deliveries go to, and the registry this
     // module contributes its event source to.
@@ -89,10 +108,11 @@ const adapters: Provider[] = [
     ...adapters,
     ...InboundEventsModule.contributeSources([GithubEventSource]),
   ],
-  // `REPOSITORY_ACCESS` and nothing else. The GitHub client and the unscoped
-  // installation lookup are this module's own: exporting them is how `sessions/`
-  // and `relay/` would end up minting with GitHub's numeric id, past the port
-  // that translates a checkout's uuid and checks the installation is usable.
-  exports: [REPOSITORY_ACCESS],
+  // `REPOSITORY_ACCESS` and `PULL_REQUEST_ACCESS`, and nothing else. The GitHub
+  // client and the unscoped installation lookup are this module's own: exporting
+  // them is how `sessions/` and `relay/` would end up minting with GitHub's
+  // numeric id, past the port that translates a checkout's uuid and checks the
+  // installation is usable — and how a user token would leave this module.
+  exports: [REPOSITORY_ACCESS, PULL_REQUEST_ACCESS],
 })
 export class GithubModule {}
