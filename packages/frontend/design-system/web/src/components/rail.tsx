@@ -4,7 +4,7 @@ import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
-import { useSortableItem } from './drag';
+import { useSortableControl } from './drag';
 
 /**
  * Rail — the 56px strip left of the sidebar that switches the console between
@@ -135,9 +135,11 @@ function RailTip({
 }
 
 /**
- * A `RailItem` the reader can drag into another place. While it moves its
- * own place is the drop slot (round, on the selected wash) and the lifted
- * copy is the caller's overlay; the neighbours slide.
+ * A `RailItem` the reader can drag into another place. It is a link and a
+ * sortable item at once (`useSortableControl`): a click or Enter opens the
+ * list, a drag past 5px or Space picks it up. While it moves its own place
+ * is the drop slot and the lifted copy is the caller's overlay; the
+ * neighbours slide.
  */
 function SortableRailItem({
   id,
@@ -145,23 +147,19 @@ function SortableRailItem({
   style,
   ...props
 }: Omit<React.ComponentProps<typeof RailItem>, 'ref' | 'onPointerDown' | 'onKeyDown'> & { id: string }) {
-  const { ref, handleProps, style: slide, isDragging } = useSortableItem({
-    id,
-    data: { type: 'rail-item', label: props.label },
-    pickUp: 'space',
-  });
-  // The drag contract goes last: the caller's props never replace the ref, the listeners or the slide.
+  const { node, control } = useSortableControl({ id, data: { type: 'rail-item', label: props.label } });
+  // The item is both the node and the control; the drag contract goes last, so the caller's props never replace it.
   return (
     <RailItem
       {...props}
-      data-dragging={isDragging || undefined}
-      className={cn(
-        'touch-none data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible',
-        className,
-      )}
-      {...handleProps}
-      ref={ref}
-      style={{ ...style, ...slide }}
+      {...control}
+      {...node}
+      className={cn(node.className, className)}
+      style={{ ...style, ...node.style }}
+      ref={(element) => {
+        node.ref(element);
+        control.ref(element);
+      }}
     />
   );
 }

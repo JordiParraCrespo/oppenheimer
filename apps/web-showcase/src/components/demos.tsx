@@ -773,42 +773,48 @@ export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: stri
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 
 type DemoState = 'running' | 'needs-input' | 'failed' | 'idle' | 'pending';
-type DemoProject = { name: string; sessions: [string, string, DemoState][] };
 
-const PROJECTS: DemoProject[] = [
-  {
-    name: 'XRP Mobile',
-    sessions: [
-      ['PR #121 porting to peersyst', '2m', 'running'],
-      ['XRP Mobile API cleanup', '3h', 'needs-input'],
-      ['tool router', '1d', 'idle'],
-    ],
-  },
-  {
-    name: 'Atlas',
-    sessions: [
-      ['nightly ingest', '14m', 'running'],
-      ['invoice triage', '1h', 'needs-input'],
-      ['retriever eval', '5h', 'failed'],
-      ['doc summariser', '2d', 'idle'],
-    ],
-  },
-  { name: 'Client sites', sessions: [] },
-];
+/** Every session once, by id; the projects and the rail are groups of ids. */
+const SESSIONS: Record<string, { name: string; age: string; state: DemoState }> = {
+  peersyst: { name: 'PR #121 porting to peersyst', age: '2m', state: 'running' },
+  cleanup: { name: 'XRP Mobile API cleanup', age: '3h', state: 'needs-input' },
+  router: { name: 'tool router', age: '1d', state: 'idle' },
+  ingest: { name: 'nightly ingest', age: '14m', state: 'running' },
+  triage: { name: 'invoice triage', age: '1h', state: 'needs-input' },
+  retriever: { name: 'retriever eval', age: '5h', state: 'failed' },
+  summariser: { name: 'doc summariser', age: '2d', state: 'idle' },
+};
 
-/** Each session's age and state, by name, wherever it has been dragged. */
-const SESSIONS = new Map(PROJECTS.flatMap((p) => p.sessions.map(([name, age, state]) => [name, { age, state }] as const)));
+const PROJECTS = ['XRP Mobile', 'Atlas', 'Client sites'];
+
+const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
+  sessions: { label: 'Sessions', icon: <TerminalIcon /> },
+  pulls: { label: 'Pull requests', icon: <GitPullRequestIcon /> },
+  automations: { label: 'Automations', icon: <ZapIcon /> },
+  plan: { label: 'Plan', icon: <CircleCheckIcon /> },
+};
+
+/** The shell's one order: the rail's items, and each project's sessions. */
+const FIRST_ORDER: SortableGroups = {
+  rail: ['sessions', 'pulls', 'automations', 'plan'],
+  'XRP Mobile': ['peersyst', 'cleanup', 'router'],
+  Atlas: ['ingest', 'triage', 'retriever', 'summariser'],
+  'Client sites': [],
+};
 
 function RowMenu({
   open,
   onOpenChange,
   onRename,
   projects,
+  onMove,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRename: () => void;
   projects: string[];
+  /** Move to project…: the same write as dropping the row on that project. */
+  onMove: (project: string) => void;
 }) {
   const [pane, setPane] = React.useState<'root' | 'move'>('root');
   return (
@@ -841,7 +847,9 @@ function RowMenu({
             <DropdownMenuBack onClick={() => setPane('root')}>Move to project</DropdownMenuBack>
             <DropdownMenuSeparator />
             {projects.map((name) => (
-              <DropdownMenuItem key={name}>{name}</DropdownMenuItem>
+              <DropdownMenuItem key={name} onClick={() => onMove(name)}>
+                {name}
+              </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem>
@@ -854,133 +862,120 @@ function RowMenu({
   );
 }
 
-const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
-  sessions: { label: 'Sessions', icon: <TerminalIcon /> },
-  pulls: { label: 'Pull requests', icon: <GitPullRequestIcon /> },
-  automations: { label: 'Automations', icon: <ZapIcon /> },
-  plan: { label: 'Plan', icon: <CircleCheckIcon /> },
-};
-
-/** The rail's items in the reader's own order: drag one up or down. */
-function SortableRail({ sessions }: { sessions: number }) {
-  const [groups, setGroups] = React.useState<SortableGroups>({ rail: ['sessions', 'pulls', 'automations', 'plan'] });
-  const sortable = useSortableGroups(groups, setGroups);
+/** The rail's items in the reader's order, a group of the shell's one drag. */
+function SortableRail({ items, sessions }: { items: readonly string[]; sessions: number }) {
   const counts: Record<string, number> = { sessions, pulls: 18, automations: 5 };
   return (
     <Rail>
       <RailMark>O</RailMark>
-      <DragProvider
-        {...sortable}
-        overlay={(active) => {
-          const item = RAIL_ITEMS[active.id];
-          return item ? (
-            <RailItem label={item.label} active>
-              {item.icon}
-            </RailItem>
-          ) : null;
-        }}
-      >
-        <SortableGroup id="rail" items={groups.rail ?? []}>
-          <div className="flex flex-col gap-1.5">
-            {(groups.rail ?? []).map((id) => {
-              const item = RAIL_ITEMS[id];
-              return item ? (
-                <SortableRailItem key={id} id={id} label={item.label} count={counts[id]} active={id === 'sessions'}>
-                  {item.icon}
-                </SortableRailItem>
-              ) : null;
-            })}
-          </div>
-        </SortableGroup>
-      </DragProvider>
+      <SortableGroup id="rail" items={items} accepts={['rail-item']}>
+        <div className="flex flex-col gap-1.5">
+          {items.map((id) => {
+            const item = RAIL_ITEMS[id];
+            return item ? (
+              <SortableRailItem key={id} id={id} label={item.label} count={counts[id]} active={id === 'sessions'}>
+                {item.icon}
+              </SortableRailItem>
+            ) : null;
+          })}
+        </div>
+      </SortableGroup>
     </Rail>
   );
 }
 
+/** The lifted copy: a rail item or a session row. */
+function DragCopy({ id, name }: { id: string; name: string }) {
+  const rail = RAIL_ITEMS[id];
+  if (rail) {
+    return (
+      <RailItem label={rail.label} active>
+        {rail.icon}
+      </RailItem>
+    );
+  }
+  const session = SESSIONS[id];
+  return session ? (
+    <div className="w-60 rounded-sm bg-card">
+      <SessionItem name={name} age={session.age} state={session.state} active />
+    </div>
+  ) : null;
+}
+
 export function SidebarDemo({ empty }: { empty?: boolean }) {
-  const [active, setActive] = React.useState('PR #121 porting to peersyst');
+  const [active, setActive] = React.useState('peersyst');
   const [query, setQuery] = React.useState('');
   const [filters, setFilters] = React.useState<string[]>(empty ? [] : ['Host: optimus']);
   const [closed, setClosed] = React.useState<string[]>([]);
   const [menu, setMenu] = React.useState<string | null>(null);
-  const [renaming, setRenaming] = React.useState<{ name: string; draft: string } | null>(null);
+  const [renaming, setRenaming] = React.useState<{ id: string; draft: string } | null>(null);
   const [names, setNames] = React.useState<Record<string, string>>({});
-  // Each project's sessions, in the reader's order: drag a row up or down, or into another project.
-  const [order, setOrder] = React.useState<SortableGroups>(() =>
-    Object.fromEntries(PROJECTS.map((p) => [p.name, p.sessions.map(([name]) => name)])),
-  );
+  // One order for the shell: drag a rail item, or a session within or across projects.
+  const [order, setOrder] = React.useState<SortableGroups>(FIRST_ORDER);
   const sortable = useSortableGroups(order, setOrder);
+  const nameOf = (id: string) => names[id] ?? SESSIONS[id]?.name ?? id;
+  const moveTo = (id: string, to: string) =>
+    setOrder((current) => {
+      const from = Object.keys(current).find((key) => current[key]?.includes(id));
+      if (!from || from === to) return current;
+      return { ...current, [from]: (current[from] ?? []).filter((x) => x !== id), [to]: [...(current[to] ?? []), id] };
+    });
   const term = query.trim().toLowerCase();
   const projects = empty ? [] : PROJECTS;
-  const total = projects.reduce((n, p) => n + (order[p.name]?.length ?? 0), 0);
+  const total = projects.reduce((n, project) => n + (order[project]?.length ?? 0), 0);
   return (
     <div className="flex h-150 shrink-0 overflow-hidden">
-      <SortableRail sessions={total} />
-      <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <div className="flex h-14 items-center px-4">
-          <Wordmark product="Console" />
-        </div>
-        <div className="px-3">
-          <Button variant={empty ? 'secondary' : 'primary'} size="md" block>
-            New session
-          </Button>
-        </div>
-        <SidebarListHead label="Projects" count={projects.length} className="mt-4">
-          <IconButton aria-label="New project" size="xs" variant="quiet">
-            <PlusIcon />
-          </IconButton>
-          <FilterMenuDemo />
-        </SidebarListHead>
-        <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
-        {filters.length ? (
-          <div className="flex flex-wrap gap-1 px-3 pb-2">
-            {filters.map((f) => (
-              <FilterChip key={f} onRemove={() => setFilters((x) => x.filter((y) => y !== f))}>
-                {f}
-              </FilterChip>
-            ))}
+      <DragProvider {...sortable} overlay={(item) => <DragCopy id={item.id} name={nameOf(item.id)} />}>
+        <SortableRail items={order.rail ?? []} sessions={total} />
+        <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+          <div className="flex h-14 items-center px-4">
+            <Wordmark product="Console" />
           </div>
-        ) : null}
-        <div className="min-h-0 flex-1 overflow-y-auto pb-2">
-          {empty ? (
-            <div className="px-3">
-              <EmptyState compact>
-                <EmptyState.Header>
-                  <EmptyState.Description>
-                    No projects yet. The first one you create appears here with its sessions.
-                  </EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
+          <div className="px-3">
+            <Button variant={empty ? 'secondary' : 'primary'} size="md" block>
+              New session
+            </Button>
+          </div>
+          <SidebarListHead label="Projects" count={projects.length} className="mt-4">
+            <IconButton aria-label="New project" size="xs" variant="quiet">
+              <PlusIcon />
+            </IconButton>
+            <FilterMenuDemo />
+          </SidebarListHead>
+          <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
+          {filters.length ? (
+            <div className="flex flex-wrap gap-1 px-3 pb-2">
+              {filters.map((f) => (
+                <FilterChip key={f} onRemove={() => setFilters((x) => x.filter((y) => y !== f))}>
+                  {f}
+                </FilterChip>
+              ))}
             </div>
-          ) : (
-            <DragProvider
-              {...sortable}
-              labels={{
-                instructions:
-                  'To pick up a session, press space. Use the arrow keys to move it, space to drop it, and escape to cancel.',
-              }}
-              overlay={(item) => {
-                const session = SESSIONS.get(item.id);
-                return session ? (
-                  <div className="w-60 rounded-sm bg-card">
-                    <SessionItem name={names[item.id] ?? item.id} age={session.age || undefined} state={session.state} active />
-                  </div>
-                ) : null;
-              }}
-            >
-              {projects.map((project) => {
-                const open = !closed.includes(project.name);
-                const ids = order[project.name] ?? [];
-                const rows = ids.filter((name) => (term ? (names[name] ?? name).toLowerCase().includes(term) : true));
+          ) : null}
+          <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+            {empty ? (
+              <div className="px-3">
+                <EmptyState compact>
+                  <EmptyState.Header>
+                    <EmptyState.Description>
+                      No projects yet. The first one you create appears here with its sessions.
+                    </EmptyState.Description>
+                  </EmptyState.Header>
+                </EmptyState>
+              </div>
+            ) : (
+              projects.map((project) => {
+                const open = !closed.includes(project);
+                const ids = order[project] ?? [];
                 return (
-                  <SortableGroup key={project.name} id={project.name} items={open ? rows : []} data={{ label: project.name }}>
+                  <SortableGroup key={project} id={project} items={open ? ids : []} accepts={['session']} data={{ label: project }}>
                     <SidebarProjectGroup>
                       <SidebarProjectHeader
-                        name={project.name}
+                        name={project}
                         count={ids.length}
                         open={open}
                         onOpenChange={(next) =>
-                          setClosed((c) => (next ? c.filter((n) => n !== project.name) : [...c, project.name]))
+                          setClosed((c) => (next ? c.filter((n) => n !== project) : [...c, project]))
                         }
                         current={ids.includes(active)}
                         actions={
@@ -988,7 +983,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                             <IconButton aria-label="New session here" size="xs" variant="quiet">
                               <PlusIcon />
                             </IconButton>
-                            <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
+                            <IconButton aria-label={`${project} settings`} size="xs" variant="quiet">
                               <Settings2Icon />
                             </IconButton>
                           </>
@@ -1001,26 +996,27 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                           </SidebarEmptyRow>
                         ) : (
                           <SessionList>
-                            {rows.map((name) => {
-                              const session = SESSIONS.get(name);
-                              return (
+                            {ids.map((id) => {
+                              const session = SESSIONS[id];
+                              return session ? (
                                 <SortableSessionItem
-                                  key={name}
-                                  id={name}
-                                  disabled={term !== ''}
-                                  name={names[name] ?? name}
-                                  age={session?.age || undefined}
-                                  state={session?.state}
-                                  active={name === active}
-                                  onClick={() => setActive(name)}
-                                  menuOpen={menu === name}
+                                  key={id}
+                                  id={id}
+                                  // A search hides the rows it does not match; the order stays whole.
+                                  hidden={term !== '' && !nameOf(id).toLowerCase().includes(term)}
+                                  name={nameOf(id)}
+                                  age={session.age}
+                                  state={session.state}
+                                  active={id === active}
+                                  onClick={() => setActive(id)}
+                                  menuOpen={menu === id}
                                   rename={
-                                    renaming?.name === name
+                                    renaming?.id === id
                                       ? {
                                           value: renaming.draft,
-                                          onValueChange: (draft) => setRenaming({ name, draft }),
+                                          onValueChange: (draft) => setRenaming({ id, draft }),
                                           onCommit: () => {
-                                            setNames((n) => ({ ...n, [name]: renaming.draft || name }));
+                                            setNames((n) => ({ ...n, [id]: renaming.draft || nameOf(id) }));
                                             setRenaming(null);
                                           },
                                           onCancel: () => setRenaming(null),
@@ -1029,14 +1025,15 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                                   }
                                   action={
                                     <RowMenu
-                                      open={menu === name}
-                                      onOpenChange={(next) => setMenu(next ? name : null)}
-                                      onRename={() => setRenaming({ name, draft: names[name] ?? name })}
-                                      projects={PROJECTS.filter((p) => p.name !== project.name).map((p) => p.name)}
+                                      open={menu === id}
+                                      onOpenChange={(next) => setMenu(next ? id : null)}
+                                      onRename={() => setRenaming({ id, draft: nameOf(id) })}
+                                      projects={PROJECTS.filter((p) => p !== project)}
+                                      onMove={(to) => moveTo(id, to)}
                                     />
                                   }
                                 />
-                              );
+                              ) : null;
                             })}
                           </SessionList>
                         )
@@ -1044,14 +1041,14 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                     </SidebarProjectGroup>
                   </SortableGroup>
                 );
-              })}
-            </DragProvider>
-          )}
+              })
+            )}
+          </div>
+          <div className="border-t border-sidebar-border px-2 py-2">
+            <AccountMenuDemo />
+          </div>
         </div>
-        <div className="border-t border-sidebar-border px-2 py-2">
-          <AccountMenuDemo />
-        </div>
-      </div>
+      </DragProvider>
     </div>
   );
 }

@@ -74,6 +74,8 @@ interface DragMove {
 /** What a screen reader hears; `name` is the item's `data.label`, else its id. */
 interface DragLabels {
   instructions: string;
+  /** For an item that is also a link or a button (`useSortableControl`): Space picks it up, Enter opens it. */
+  controlInstructions: string;
   pickedUp: (name: string) => string;
   over: (name: string, target: string | null) => string;
   dropped: (name: string, target: string | null) => string;
@@ -83,6 +85,8 @@ interface DragLabels {
 const DEFAULT_LABELS: DragLabels = {
   instructions:
     'To pick up an item, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.',
+  controlInstructions:
+    'To pick up an item, press space; enter opens it. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.',
   pickedUp: (name) => `Picked up ${name}.`,
   over: (name, target) => (target ? `${name} is over ${target}.` : `${name} is not over a place it can go.`),
   dropped: (name, target) => (target ? `${name} was dropped on ${target}.` : `${name} was dropped.`),
@@ -104,6 +108,16 @@ const ACTIVATION_PX = 5;
 const AUTO_SCROLL = { threshold: { x: 0.08, y: 0.08 }, acceleration: 4 } as const;
 
 const ReducedMotion = React.createContext(false);
+/** The id of the provider's `controlInstructions`, which a control's description points at. */
+const ControlInstructions = React.createContext<string | undefined>(undefined);
+
+/**
+ * The drop slot: while an item is the one being dragged, its place keeps its
+ * size, its content invisible on the selected wash with the ring inside.
+ * `SortableItem` and `useSortableControl`'s node both wear it.
+ */
+const SORTABLE_SLOT =
+  'touch-none data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible';
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = React.useState(false);
@@ -199,6 +213,7 @@ function DragProvider({
 }) {
   const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const reduced = usePrefersReducedMotion();
+  const controlInstructions = React.useId();
   const [active, setActive] = React.useState<DragItem | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: ACTIVATION_PX } }),
@@ -214,36 +229,41 @@ function DragProvider({
 
   return (
     <ReducedMotion.Provider value={reduced}>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={acceptingCollisions}
-        autoScroll={AUTO_SCROLL}
-        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-        accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
-        onDragStart={(event: DndDragStartEvent) => {
-          const item = itemOf(event.active);
-          setActive(item);
-          onDragStart?.(item);
-        }}
-        onDragOver={(event: DndDragOverEvent) => {
-          onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
-        }}
-        onDragEnd={(event: DndDragEndEvent) => {
-          setActive(null);
-          onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
-        }}
-        onDragCancel={(event) => {
-          setActive(null);
-          onDragCancel?.(itemOf(event.active));
-        }}
-      >
-        {children}
-        {overlay ? (
-          <DndDragOverlay dropAnimation={dropAnimation(reduced)}>
-            {active ? <DragLift>{overlay(active)}</DragLift> : null}
-          </DndDragOverlay>
-        ) : null}
-      </DndContext>
+      <ControlInstructions.Provider value={controlInstructions}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={acceptingCollisions}
+          autoScroll={AUTO_SCROLL}
+          measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+          accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
+          onDragStart={(event: DndDragStartEvent) => {
+            const item = itemOf(event.active);
+            setActive(item);
+            onDragStart?.(item);
+          }}
+          onDragOver={(event: DndDragOverEvent) => {
+            onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
+          }}
+          onDragEnd={(event: DndDragEndEvent) => {
+            setActive(null);
+            onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
+          }}
+          onDragCancel={(event) => {
+            setActive(null);
+            onDragCancel?.(itemOf(event.active));
+          }}
+        >
+          {children}
+          {overlay ? (
+            <DndDragOverlay dropAnimation={dropAnimation(reduced)}>
+              {active ? <DragLift>{overlay(active)}</DragLift> : null}
+            </DndDragOverlay>
+          ) : null}
+        </DndContext>
+        <span id={controlInstructions} hidden>
+          {labels.controlInstructions}
+        </span>
+      </ControlInstructions.Provider>
     </ReducedMotion.Provider>
   );
 }
@@ -355,21 +375,9 @@ function SortableGroup({
 
 /**
  * One item of a `SortableGroup`. Returns the ref, the handle's props, and
- * the style that slides it while its neighbours move. An item that is also
- * a link or a button takes `pickUp="space"`, so Enter still opens it and
- * only Space picks it up.
+ * the style that slides it while its neighbours move.
  */
-function useSortableItem({
-  id,
-  data,
-  disabled,
-  pickUp = 'space-or-enter',
-}: {
-  id: string;
-  data?: DragData;
-  disabled?: boolean;
-  pickUp?: 'space' | 'space-or-enter';
-}) {
+function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
   const reduced = React.useContext(ReducedMotion);
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id,
@@ -377,18 +385,9 @@ function useSortableItem({
     disabled,
     transition: reduced ? null : { duration: SLIDE_MS, easing: EASE_STANDARD },
   });
-  const onKeyDown = listeners?.onKeyDown;
-  const keys =
-    pickUp === 'space' && onKeyDown
-      ? {
-          onKeyDown: (event: React.KeyboardEvent) => {
-            if (event.key !== 'Enter' || isDragging) onKeyDown(event);
-          },
-        }
-      : {};
   return {
     ref: setNodeRef,
-    handleProps: { ...attributes, ...listeners, ...keys },
+    handleProps: { ...attributes, ...listeners },
     style: { transform: CSS.Translate.toString(transform), transition } as React.CSSProperties,
     isDragging,
   };
@@ -417,8 +416,8 @@ function SortableItem({
       data-dragging={isDragging || undefined}
       style={{ ...style, ...slide }}
       className={cn(
-        'relative touch-none outline-none select-none focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-ring',
-        'data-dragging:rounded-md data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible',
+        'relative outline-none select-none focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-ring data-dragging:rounded-md',
+        SORTABLE_SLOT,
         className,
       )}
       {...handleProps}
@@ -427,6 +426,51 @@ function SortableItem({
       {children}
     </div>
   );
+}
+
+/**
+ * A sortable item that is also a link or a button: a sidebar row, a rail
+ * item. Enter keeps opening it and Space picks it up, so the two never
+ * meet; the screen reader is told so, and the control keeps its own role
+ * and is never announced as disabled. Returns two prop sets:
+ *
+ * - `node`: the box that is measured, moves and takes the pointer (the row,
+ *   with the drop slot's look); a key pressed on the control inside bubbles
+ *   to it.
+ * - `control`: the link or button the reader focuses; only it starts a drag
+ *   from the keyboard, so a field inside it never does.
+ *
+ * When the control is the whole item (a rail item), spread both on it and
+ * pass both refs.
+ */
+function useSortableControl({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
+  const reduced = React.useContext(ReducedMotion);
+  const instructions = React.useContext(ControlInstructions);
+  const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+    id,
+    data,
+    disabled,
+    transition: reduced ? null : { duration: SLIDE_MS, easing: EASE_STANDARD },
+  });
+  return {
+    isDragging,
+    node: {
+      ref: setNodeRef,
+      style: { transform: CSS.Translate.toString(transform), transition } as React.CSSProperties,
+      'data-dragging': isDragging || undefined,
+      className: SORTABLE_SLOT,
+      onPointerDown: (event: React.PointerEvent) => listeners?.onPointerDown?.(event),
+      // Enter is the control's own: it opens the session or the page.
+      onKeyDown: (event: React.KeyboardEvent) => {
+        if (event.key !== 'Enter') listeners?.onKeyDown?.(event);
+      },
+    },
+    control: {
+      ref: setActivatorNodeRef,
+      'aria-roledescription': attributes['aria-roledescription'],
+      'aria-describedby': instructions,
+    },
+  };
 }
 
 /**
@@ -526,6 +570,7 @@ export {
   SortableItem,
   useDraggable,
   useDroppable,
+  useSortableControl,
   useSortableGroups,
   useSortableItem,
 };

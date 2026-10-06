@@ -131,6 +131,7 @@ export {
   SortableItem,
   useDraggable,
   useDroppable,
+  useSortableControl,
   useSortableGroups,
   useSortableItem,
 } from './components/drag';
