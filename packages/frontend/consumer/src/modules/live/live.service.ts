@@ -13,7 +13,7 @@ export type LiveStatus = 'off' | 'connecting' | 'live' | 'down';
 /** The slice of `EventSource` this service drives, so a test can hand it a fake. */
 export interface LiveSource {
   readonly readyState: number;
-  addEventListener(type: string, listener: (event: MessageEvent<string>) => void): void;
+  addEventListener(type: string, listener: (event: MessageEvent) => void): void;
   close(): void;
 }
 
@@ -43,15 +43,14 @@ export class LiveService {
   private readonly createSource: LiveSourceFactory;
 
   constructor(
+    /** Empty for a console served beside the API, which then dials its own origin. */
     @inject(TOKENS.ApiBaseUrl)
-    @optional()
-    private readonly apiBaseUrl: string = '',
+    private readonly apiBaseUrl: string,
     @inject(TOKENS.LiveSourceFactory)
     @optional()
     createSource?: LiveSourceFactory,
   ) {
-    this.createSource =
-      createSource ?? ((url) => new EventSource(url, { withCredentials: true }) as LiveSource);
+    this.createSource = createSource ?? ((url) => new EventSource(url, { withCredentials: true }));
   }
 
   status(): LiveStatus {
@@ -84,8 +83,7 @@ export class LiveService {
 
   private dial(): void {
     this.redial = undefined;
-    const base = this.apiBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
-    const source = this.createSource(new URL(LIVE_PATH, base).toString());
+    const source = this.createSource(`${this.apiBaseUrl.replace(/\/$/, '')}${LIVE_PATH}`);
     this.source = source;
     this.setStatus('connecting');
     source.addEventListener('open', () => this.setStatus('live'));

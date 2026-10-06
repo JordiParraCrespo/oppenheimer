@@ -33,7 +33,12 @@ describe('Live events over Redis (integration)', () => {
 
   const heard = () => {
     const events: LiveEvent[] = [];
-    return { events, listener: (event: LiveEvent) => events.push(event) };
+    let lost = 0;
+    return {
+      events,
+      lost: () => lost,
+      listener: { event: (event: LiveEvent) => events.push(event), lost: () => lost++ },
+    };
   };
 
   const changed = (sessionId: string): LiveEvent => ({ type: 'session.changed', sessionId });
@@ -80,6 +85,37 @@ describe('Live events over Redis (integration)', () => {
     await vi.waitFor(async () => {
       const [, count] = (await probe.pubsub('NUMSUB', 'live:org:org-3')) as [string, number];
       expect(count).toBe(0);
+    });
+  });
+
+  it('keeps the channel for a console that joins while the last one leaves', async () => {
+    const publisher = await replica();
+    const holder = await replica();
+    const leaving = heard();
+    const joining = heard();
+    const leave = await holder.subscribe('org-4', leaving.listener);
+
+    const joined = holder.subscribe('org-4', joining.listener);
+    leave();
+    await joined;
+    await publisher.publish('org-4', changed('s-3'));
+
+    await vi.waitFor(() => expect(joining.events).toEqual([changed('s-3')]));
+  });
+
+  it('tells every console when its connection to Redis drops', async () => {
+    const holder = await replica();
+    const first = heard();
+    const second = heard();
+    await holder.subscribe('org-5', first.listener);
+    await holder.subscribe('org-6', second.listener);
+
+    const probe = clients[0] as Redis;
+    await probe.client('KILL', 'TYPE', 'pubsub');
+
+    await vi.waitFor(() => {
+      expect(first.lost()).toBe(1);
+      expect(second.lost()).toBe(1);
     });
   });
 });

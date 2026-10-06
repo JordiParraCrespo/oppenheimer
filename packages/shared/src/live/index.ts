@@ -4,7 +4,7 @@ import { z } from 'zod';
  * What the console's live stream (`GET /v1/live`) carries: which row changed,
  * never the row. A console that hears one reads that row again through the
  * endpoint it already uses, under its own authorization, so the stream adds
- * no second way to see data (`product/versions/mvp/21-live-events.md`).
+ * no second way to see data (`product/versions/mvp/03-control-plane.md`, "The live stream, as built").
  */
 export const liveEventSchema = z.discriminatedUnion('type', [
   /** A session was created, or its lifecycle or turn moved. */

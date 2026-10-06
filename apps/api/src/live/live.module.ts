@@ -9,7 +9,7 @@ import { StreamLiveEventsQueryHandler } from './queries/stream-live-events/strea
 /**
  * The console's live stream: domain events that change what a console draws,
  * fanned out over Redis to every replica holding a console of that workspace
- * (`product/versions/mvp/21-live-events.md`).
+ * (`product/versions/mvp/03-control-plane.md`, "The live stream, as built").
  */
 @Module({
   imports: [CqrsModule],

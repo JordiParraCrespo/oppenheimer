@@ -125,7 +125,7 @@ test.describe('Live events', () => {
     }
   });
 
-  test('a caller the flag leaves out is refused, and keeps polling', async () => {
+  test('a caller the flag leaves out is refused', async () => {
     const { api } = await signedUpContext('liveoutsider');
 
     const response = await api.get('/api/v1/live', { failOnStatusCode: false });

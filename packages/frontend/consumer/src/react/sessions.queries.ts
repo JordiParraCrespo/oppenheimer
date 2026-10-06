@@ -20,7 +20,7 @@ import {
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
-import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
+import { CLOSE_WATCH_MS, NO_POLL, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
 import { useLiveStreamed } from './live-status';
 import { seedDetails } from './seed-details';
 
@@ -144,8 +144,9 @@ export function useSessions<TData = SessionEntity[]>(
       (rows) =>
         rows?.some((session) => session.isProvisioning || closesOf(queryClient).has(session.id)) ??
         false,
-      { streamed },
     ),
+    // The live stream carries every change to these rows while it is up.
+    ...(streamed ? NO_POLL : {}),
   });
 }
 
@@ -172,8 +173,8 @@ export function useSession(
       'sessionOpening',
       (session) =>
         (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
-      { streamed },
     ),
+    ...(streamed ? NO_POLL : {}),
   });
 }
 

@@ -29,61 +29,21 @@ JordiParraCrespo/oppenheimer#239.
 - **What no poll covers.** A session's turn (working, waiting on the person)
   was never polled at all: the list showed it as of its last read.
 
-## Decided (slice 1: sessions)
+## Slices
 
-- **The wire is server-sent events**, `GET /api/v1/live`, one stream per
-  console tab, scoped to the caller's active workspace. The stream only flows
-  from the server, so SSE is enough: it goes through the console's nginx
-  `location /api` as it is (buffering off, 1 h read timeout, already there for
-  the attach socket), and the browser's `EventSource` dials again by itself.
-  The terminal's WebSocket stays what it is.
-- **It carries ids, never rows.** An event is `{ "type": "session.changed",
-  "sessionId": … }` (`@oppenheimer/shared/live`). A console that hears one reads
-  the row again through the endpoint it already uses, under its own
-  authorization, so the stream is no second way to see data and cannot
-  disagree with the read model.
-- **The facts come from domain events that already existed.** The `live`
-  module listens to `SessionCreatedDomainEvent`,
-  `SessionStateChangedDomainEvent` and `SessionTurnChangedDomainEvent`, each
-  of which carries its `organizationId`. The outbox delivers one to one
-  replica; the console's stream lives on whichever replica it dialled.
-- **Replicas meet in Redis pub/sub**, one channel per workspace
-  (`live:org:<organizationId>`). Publishing uses the API's shared command
-  client; hearing takes one subscriber connection per process, subscribed to
-  a workspace's channel only while a console of it is open on that replica.
-  This is the first pub/sub in the API: the attach socket chose a timer over
-  pub/sub for revocation (`REAUTHORIZE_INTERVAL_MS`), which still stands.
-- **A publish is best effort.** A failed publish is logged and dropped, not
-  retried: retrying would mean failing the outbox delivery, which redelivers
-  the event to every other listener too, to save a read the console makes
-  anyway on its next dial.
-- **A stream lives five minutes** (`LIVE_STREAM_MAX_AGE_MS`), then the API
-  ends it and the browser dials again. A dial is where the guards run: the
-  caller's session, workspace, `read Session`, `sessions:read` and the flag.
-  So a revoked caller hears ids for at most five minutes — ids, not data, and
-  every read behind them is authorized on its own. A `ping` every 25 s keeps
-  proxies from idling it out.
-- **A refusal means poll.** 401, `FLAG_003` (the flag is off for the caller),
-  `LIVE_002` (no active workspace) and `LIVE_001` (the API cannot reach Redis,
-  answered before the stream opens rather than opening one that never speaks)
-  all leave the console polling, and it dials again after 60 s
-  (`CONSUMER_CONFIG.live.redialAfterRefusalMs`).
-- **Polls stop only while the stream is up.** `pollWhile` takes `streamed`;
-  `useSessions` and `useSession` pass whether the stream is `live` right now,
-  so a drop gives the polls back on the next render. The start log
-  (`useSessionStartProgress`) still polls: its steps are log entries, not
-  domain events.
-- **Coming up reads everything again.** Each time the stream comes up, the
-  first dial or any dial after a drop, every read it covers (`sessions/*`) is
-  read again, because nothing says what changed while it was down. That is
-  the cost of a dial: one read per open session screen, about every five
-  minutes.
-- **`live_events` is a release flag**, default off, expiring 2026-12-31. It
-  gates the route on the server (`@RequireFlag`) and the dial on the client
-  (`useFeatureFlag`), so turning it off is always safe: the console polls as
-  it did.
+The rules of the stream are 03 ("The live stream, as built"); the poll
+fallback is 05 ("How the console learns what changed"). Their values live in
+`@oppenheimer/shared/live` and `CONSUMER_CONFIG.live`. This note is the order
+the polls move in.
 
-## Not yet carried
+| Slice | Facts | Raised by | Replaces |
+| --- | --- | --- | --- |
+| 1 (done) | A session created, its lifecycle, its turn | `SessionCreated`, `SessionStateChanged`, `SessionTurnChanged` domain events | `sessionStarting`, and `sessionOpening` for a session's row; a session's turn was never polled |
+
+The start log (`useSessionStartProgress`) still polls in slice 1: its steps
+are log entries, not domain events.
+
+## Next slices
 
 | Fact | What would raise it | Slice |
 | --- | --- | --- |

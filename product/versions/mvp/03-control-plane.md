@@ -446,6 +446,30 @@ decorator, so `route-policy-coverage.spec.ts` does not see them; the
 gateway specs, which run both sockets on a real HTTP server, are the
 coverage they get.
 
+## The live stream, as built
+
+`live/` tells consoles which rows of their workspace changed, so they need not
+poll (note 21 holds the slices; `live_events` gates it). The rules:
+
+- **Ids, not rows.** An event names what changed (`session.changed` and its
+  id); the console reads the row again through the endpoint it already uses,
+  under its own authorization. The stream is no second way to see data, and
+  cannot disagree with the read model.
+- **Facts come from domain events.** A handler in `live/` maps a domain
+  event to a live event and publishes it. The outbox delivers an event to one
+  replica and a console's stream lives on whichever replica it dialled, so
+  replicas meet on a per-workspace Redis pub/sub channel.
+- **Publishing never fails the event.** `LiveEventsPort.publish` logs a bus
+  failure and returns: a throw would fail the outbox delivery to every other
+  listener, to save a read the console makes on its next dial anyway.
+- **Authorized on every dial.** A stream ends after a fixed age
+  (`LIVE_STREAM_MAX_AGE_MS`) and the browser dials again; the dial is where
+  the session, workspace, policy, scope and flag are judged.
+- **Refuse rather than open deaf.** A dial whose subscription cannot be made
+  is answered `LIVE_001` before the stream opens. A stream whose bus
+  connection drops afterwards is ended, so the console polls until a dial is
+  answered again.
+
 ## Data model, first cut
 
 users, installations, repositories (**not a table**: listed live from

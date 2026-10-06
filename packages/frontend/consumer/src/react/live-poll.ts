@@ -8,9 +8,7 @@
  * `inBackground` keeps TanStack Query's interval running on a hidden document,
  * where it pauses by default. A poll that watches something finish keeps going:
  * the reader leaves the tab while it runs, and each stops once the thing
- * settles. Presence never settles, so it pauses. A poll whose facts the live
- * stream carries stops while the stream is up (`streamed`): the session list
- * and a session's own row, today (`product/versions/mvp/21-live-events.md`).
+ * settles. Presence never settles, so it pauses.
  *
  * - `sessionStarting`: the session list, where a row is still being built or a
  *   deleted row stays `open` until its host answers the close (watched for at
@@ -90,21 +88,15 @@ function intervalFor(kind: LivePollKind, queryHash: string): number {
  * `true` for as long as the query is mounted, or a predicate over the rows the
  * query holds that says whether the thing is still moving.
  *
- * `streamed` is whether the live stream is carrying this query's changes right
- * now (`useLiveStreamed`); while it is, nothing polls. When the stream drops
- * the hook re-renders with it false, and the poll is back.
- *
  * Spread it after the caller's options, so the catalog decides and a caller
  * cannot hand a different interval or turn the hidden-tab bit off.
  */
 export function pollWhile<TData>(
   kind: LivePollKind,
   active: boolean | ((data: TData | undefined) => boolean),
-  { streamed = false }: { streamed?: boolean } = {},
 ): Poll<TData> {
   const poll = LIVE_POLL[kind];
   const { inBackground } = poll;
-  if (streamed) return { refetchInterval: false, refetchIntervalInBackground: inBackground };
   const opens = 'openingInterval' in poll;
   // A poll with no opening phase stays a number, which is what it means: one
   // pace, whoever asks.
@@ -148,3 +140,11 @@ export const CLOSE_WATCH_MS = 60_000;
  * think of. A host that is offline never answers, and the watch stops asking.
  */
 export const RESTART_WATCH_MS = 60_000;
+
+/**
+ * No poll: what a hook spreads after its `pollWhile` while something else
+ * tells it of every change — the live stream, for the queries it covers
+ * (`useLiveStreamed`). The exception belongs to the hook that knows its rows
+ * are carried; this file only keeps the one place the option is named.
+ */
+export const NO_POLL = { refetchInterval: false } as const;

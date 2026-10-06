@@ -602,7 +602,7 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 ## Live
 
 The console's live stream (`GET /v1/live`): which of the workspace's rows
-changed, pushed instead of polled. See `product/versions/mvp/21-live-events.md`.
+changed, pushed instead of polled. See `product/versions/mvp/03-control-plane.md` ("The live stream, as built").
 
 | Code                                     | Title                                               | HTTP |
 | ---------------------------------------- | --------------------------------------------------- | ---- |

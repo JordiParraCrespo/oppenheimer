@@ -340,6 +340,14 @@
   is measured in note 14: a first session on a large repository goes from
   half a minute to about a second when Send comes ten seconds after the
   pick (2026-10-02).
+- **How the console learns what changed.** A screen polls only through
+  `LIVE_POLL`, and only while the thing it watches is still moving. Where
+  the live stream carries a query's changes (03 "The live stream, as
+  built"; behind `live_events`), that query does not poll while the stream
+  is up and polls again the moment it drops: the poll is the fallback,
+  never removed. Each time the stream comes up, every read it covers is
+  read again, since nothing says what changed while it was down. The
+  slices that move each poll are note 21. (2026-10-06)
 
 ## Open questions
 
@@ -375,3 +383,6 @@
    Should the pane attach as soon as the create returns, which changes
    01's attach ticket and 03's relay? Or should the console be told of
    `open` another way?
+   *Partly answered 2026-10-06:* behind `live_events` the console is told —
+   the live stream (03, note 21) names the session the moment its row
+   turns `open`, so the pane no longer waits on a poll tick.
