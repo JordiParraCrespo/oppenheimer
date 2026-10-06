@@ -10,5 +10,4 @@ import { CalendarScreen } from '@/features/calendar/screens/calendar';
 export const Route = createFileRoute('/_authenticated/plan/calendar')({
   validateSearch: calendarSearchSchema,
   component: CalendarScreen,
-  staticData: { pane: 'full' },
 });

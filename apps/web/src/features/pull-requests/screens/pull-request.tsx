@@ -25,7 +25,7 @@ export function PullRequestScreen({
     navigate({ to: '.', search: { view: next === 'briefing' ? undefined : next } });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-canvas">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PullRequestToolbar
         address={address}
         view={view}

@@ -6,6 +6,7 @@ import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
+import { useSortableControl } from './drag';
 import type { StatusState } from './status-dot';
 
 function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
@@ -50,6 +51,7 @@ function SessionItem({
   action,
   menuOpen,
   rename,
+  rowProps,
   className,
   render,
   nativeButton,
@@ -71,14 +73,17 @@ function SessionItem({
   /** Keeps the row lit and the action visible while its menu is open. */
   menuOpen?: boolean;
   rename?: SessionRename;
+  /** Props for the row's list item, the box around the button: a sortable row's node (`SortableSessionItem`). */
+  rowProps?: React.ComponentProps<'div'>;
 }) {
   const withAction = action !== undefined;
+  const inRow = withAction || rowProps !== undefined;
   const button = (
     <ButtonPrimitive
       data-slot="session-item"
       data-state={state}
       data-active={active || undefined}
-      role={withAction ? undefined : 'listitem'}
+      role={inRow ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       // A row rendered as a router link is an anchor, not a <button>: Base UI
       // keeps link semantics only when told so, as Button does.
@@ -111,6 +116,8 @@ function SessionItem({
           autoFocus
           onChange={(event) => rename.onValueChange(event.target.value)}
           onClick={(event) => event.stopPropagation()}
+          // A press in the field selects its text; it never moves the row.
+          onPointerDown={(event) => event.stopPropagation()}
           onBlur={rename.onCommit}
           onKeyDown={(event) => {
             if (event.key === 'Enter') rename.onCommit();
@@ -136,13 +143,43 @@ function SessionItem({
     </ButtonPrimitive>
   );
 
-  if (!withAction) return button;
+  if (!inRow) return button;
   return (
-    <SidebarRow slot="session-row" action={rename ? undefined : action} menuOpen={menuOpen}>
+    <SidebarRow slot="session-row" action={rename ? undefined : action} menuOpen={menuOpen} {...rowProps}>
       {button}
     </SidebarRow>
   );
 }
 
-export { SessionItem, SessionList };
+/**
+ * SortableSessionItem — a `SessionItem` the reader can drag: up or down in
+ * its project, or into another project's `SortableGroup` (a folded or empty
+ * one still takes it). The row is the sortable node and its button the
+ * control (`useSortableControl`), so a click or Enter opens the session and
+ * a drag past 5px or Space picks it up; its place is the drop slot while it
+ * moves. It sits in the shell's `DragProvider`; where the order and the
+ * project are kept is the app's. `hidden` keeps a row the reader filtered
+ * out in its group's order without drawing it.
+ */
+function SortableSessionItem({
+  id,
+  disabled,
+  hidden,
+  ...props
+}: Omit<React.ComponentProps<typeof SessionItem>, 'rowProps' | 'disabled' | 'hidden'> & {
+  id: string;
+  disabled?: boolean;
+  hidden?: boolean;
+}) {
+  const { node, control } = useSortableControl({ id, data: { type: 'session', label: props.name }, disabled });
+  return (
+    <SessionItem
+      {...props}
+      {...control}
+      rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-sm') }}
+    />
+  );
+}
+
+export { SessionItem, SessionList, SortableSessionItem };
 export type { SessionRename };

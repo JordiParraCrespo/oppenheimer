@@ -1,24 +1,14 @@
-import { EditorPage, EditorPageBody } from '@oppenheimer/design-system-web';
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
 /**
- * The automations pages (`product/versions/mvp/13-automations.md`): one
- * frame — the wide page body — mounted here once; the overview's two tabs and
- * an automation's page are the child routes. The list beside the rail is the
- * matched route's (`useConsoleList`), so this layout has nothing to declare.
- * `full`, because the frame scrolls its own column.
+ * The automations pages (`product/versions/mvp/13-automations.md`): the
+ * overview's two tabs and an automation's page are the child routes, each a
+ * page at the `wide` measure, which holds a table. The shell draws the frame
+ * (`pane` in the web kit's `shell/lib/pane.ts`), so this layout only declares
+ * it and renders its `Outlet`; the list beside the rail is the matched
+ * route's (`useConsoleList`). A run's terminal is un-nested
+ * (`automations_.$automationId.sessions.$sessionId.tsx`) and takes the pane.
  */
 export const Route = createFileRoute('/_authenticated/automations')({
-  component: AutomationsLayout,
-  staticData: { pane: 'full' },
+  staticData: { pane: 'wide' },
 });
-
-function AutomationsLayout() {
-  return (
-    <EditorPage>
-      <EditorPageBody wide>
-        <Outlet />
-      </EditorPageBody>
-    </EditorPage>
-  );
-}

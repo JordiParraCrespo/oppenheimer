@@ -6,6 +6,7 @@ export function useDragLabels(): DragLabels {
   const { t } = useTranslation();
   return {
     instructions: t('common.drag.instructions'),
+    controlInstructions: t('common.drag.controlInstructions'),
     pickedUp: (name) => t('common.drag.pickedUp', { name }),
     over: (name, target) =>
       target ? t('common.drag.over', { name, target }) : t('common.drag.nowhere', { name }),

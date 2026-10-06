@@ -16,8 +16,9 @@ import { StatBar } from './stat-card';
  *
  * - `ChartHero`: the headline figure of a series: its dot and name, the
  *   number at 40px mono, and its change against the period before.
- * - `BarChart`: grouped columns per day (created and merged), up to 16px
- *   wide with 3px between a group's bars, the x labels in mono with the
+ * - `BarChart`: grouped columns per day (created and merged), pills up to
+ *   16px wide with 3px between a group's bars (the export's `980px` radius,
+ *   both ends round), the x labels in mono with the
  *   month under the first day of each; hovering a day lifts it, fades the
  *   others and reads its values out above the chart.
  * - `LineChart`: two series over time with a crosshair, a dot per series on
@@ -176,7 +177,7 @@ function BarChart({
               <span
                 key={s.key}
                 className={cn(
-                  'max-w-4 min-w-0 flex-1 rounded-t-[4px] transition-[height,opacity] duration-slow ease-out',
+                  'max-w-4 min-w-0 flex-1 rounded-pill transition-[height,opacity] duration-slow ease-out',
                   TONE_BG[s.tone],
                   hover !== null && hover !== i && 'opacity-35',
                 )}
