@@ -23,7 +23,7 @@ for the detail and sources.
 | 14 | [Session boot time, measured](14-session-boot-time.md) | A measurement note, not `versions/mvp/14`: each hop from Send to the agent's first byte, measured from the browser on one host, beside how Orca prepares a checkout before the click. It decides nothing; its questions are 02 open question 9 and 05 open question 8 |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 | releases | [Releases and deployment artifacts](releases.md) | Independent web, API and runner versions; GitHub builds, deployment pulls by digest |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -315,10 +315,6 @@ earlier note:
   it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
 
 
-- Web, API and runner ship independent semantic versions. GitHub validates each
-  release commit and builds its artifacts; deployment consumes recorded image
-  digests. Runner signing remains offline. Automated deployments follow later
-  (`releases.md`, 2026-10-01).
 - `versions/mvp/02-runner.md` had a store's first clone be blobless
   (`--filter=blob:none`) and the whole of a create's network work happen
   after Send. On 2026-10-02 the first clone became shallow at the base and
@@ -329,3 +325,12 @@ earlier note:
 - 03, 01 and 05 let a session take images only; on 2026-10-04 it takes files
   (images, PDF, text) judged by their bytes, and a runner that does not
   announce `session.files` is still sent images only (01, 02, 03, 05, 07).
+- `next-steps/` placed a kanban board in 0.3. On 2026-10-05 the design
+  export drew it as Plan (tasks, goals, a calendar) and the owner put it
+  in the MVP (`versions/mvp/17-plan.md`); 0.2 with pull requests is next.
+- 17 and 19 put Plan behind a `plan` release flag, with a task summary
+  endpoint, a `'task'` session origin and an automation occurrences
+  endpoint. The first version shipped with none of them: no flag, the
+  board's one read serves every count, a task's session is a person's and
+  its link records the task, and the console computes automation runs
+  (`versions/mvp/17-plan.md`, "As built").

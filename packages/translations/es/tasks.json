@@ -1,0 +1,144 @@
+{
+  "backToTask": "Volver a la tarea",
+  "nav": {
+    "label": "Plan",
+    "tasks": "Tareas",
+    "calendar": "Calendario"
+  },
+  "sidebar": {
+    "projects": "Proyectos",
+    "all": "Todos los proyectos",
+    "unassigned": "Sin asignar",
+    "newProject": "Nuevo proyecto",
+    "loadFailed": "No se han podido cargar tus proyectos."
+  },
+  "board": {
+    "title": "Tareas",
+    "newTask": "Nueva tarea",
+    "addTask": "Añadir tarea",
+    "addTo": "Añadir una tarea a {{column}}",
+    "quickPlaceholder": "Título de la tarea",
+    "filedUnder": "En {{name}}",
+    "loadFailed": "No se ha podido cargar el tablero.",
+    "moveFailed": "No se ha podido mover la tarea. Ha vuelto a su sitio.",
+    "addFailed": "No se ha podido añadir la tarea.",
+    "stats": {
+      "open": "abiertas",
+      "doing": "en curso",
+      "done": "hechas",
+      "overdue": "vencidas"
+    },
+    "filedAll": "En todos los proyectos",
+    "keyAdd": "añadir",
+    "keyCancel": "cancelar"
+  },
+  "columns": {
+    "later": "Más adelante",
+    "todo": "Por hacer",
+    "doing": "En curso",
+    "done": "Hecho"
+  },
+  "card": {
+    "markDone": "Marcar como hecha",
+    "markNotDone": "Marcar como no hecha",
+    "start": "Iniciar sesión de trabajo",
+    "openSession": "Abrir la sesión {{name}}"
+  },
+  "sessionState": {
+    "waiting": "Necesita respuesta",
+    "queued": "En cola",
+    "running": "En marcha",
+    "failed": "Fallida",
+    "idle": "Inactiva",
+    "completed": "Completada"
+  },
+  "dates": {
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "yesterday": "Ayer",
+    "nextMonday": "El lunes que viene",
+    "endOfMonth": "Fin de mes",
+    "inThreeMonths": "En 3 meses"
+  },
+  "goals": {
+    "label": "Objetivos",
+    "title": "Objetivos",
+    "new": "Nuevo objetivo",
+    "empty": "Los objetivos agrupan tareas y cuentan cuántas están hechas.",
+    "noTarget": "Sin fecha",
+    "progress": "{{done}} / {{total}} tareas",
+    "edit": "Editar {{name}}",
+    "loadFailed": "No se han podido cargar tus objetivos.",
+    "emptyTitle": "Aún no hay objetivos"
+  },
+  "goal": {
+    "newTitle": "Nuevo objetivo",
+    "editTitle": "Editar objetivo",
+    "name": "Objetivo",
+    "namePlaceholder": "¿Qué quieres conseguir?",
+    "target": "Fecha",
+    "add": "Añadir objetivo",
+    "delete": "Eliminar objetivo",
+    "deleteTitle": "¿Eliminar este objetivo?",
+    "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin objetivo.",
+    "saveFailed": "No se ha podido guardar el objetivo.",
+    "deleteFailed": "No se ha podido eliminar el objetivo."
+  },
+  "dialog": {
+    "newTitle": "Nueva tarea",
+    "editTitle": "Editar tarea",
+    "titleLabel": "Título",
+    "titlePlaceholder": "¿Qué hay que hacer?",
+    "notesLabel": "Notas",
+    "notesPlaceholder": "Añade notas",
+    "status": "Estado",
+    "project": "Proyecto",
+    "goal": "Objetivo",
+    "none": "Ninguno",
+    "due": "Vence",
+    "sessions": "Sesiones",
+    "startSession": "Iniciar sesión de trabajo",
+    "linkExisting": "Vincular existente",
+    "unlink": "Desvincular {{name}}",
+    "unlinkFailed": "No se ha podido desvincular la sesión.",
+    "add": "Añadir tarea",
+    "save": "Guardar",
+    "delete": "Eliminar tarea",
+    "deleteTitle": "¿Eliminar esta tarea?",
+    "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+    "saveFailed": "No se ha podido guardar la tarea.",
+    "deleteFailed": "No se ha podido eliminar la tarea.",
+    "loadFailed": "No se ha podido cargar el tablero.",
+    "gone": "Esta tarea ya no existe."
+  },
+  "link": {
+    "search": "Buscar sesiones",
+    "empty": "Todas las sesiones ya están vinculadas.",
+    "noMatch": "Ninguna sesión coincide con «{{query}}».",
+    "inProject": "En {{name}}",
+    "others": "Otras sesiones",
+    "failed": "No se ha podido vincular la sesión."
+  },
+  "start": {
+    "title": "Iniciar sesión de trabajo",
+    "for": "Para «{{title}}»",
+    "prompt": "Instrucciones",
+    "repository": "Repositorio",
+    "repositoryPlaceholder": "Elige un repositorio",
+    "repositorySearch": "Buscar repositorios",
+    "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
+    "host": "Host",
+    "hostPlaceholder": "Elige un host",
+    "hostSearch": "Buscar hosts",
+    "noHosts": "Aún no hay hosts. Añade uno en Ajustes → Hosts.",
+    "agent": "Agente y modelo",
+    "agentSearch": "Buscar modelos",
+    "agentEmpty": "Ningún modelo coincide con «{{query}}».",
+    "offlineShort": "Desconectado",
+    "offline": "{{host}} está desconectado. La sesión espera en cola y empieza cuando su runner se vuelva a conectar.",
+    "offlineSince": "{{host}} lleva desconectado desde {{when}}. La sesión espera en cola y empieza cuando su runner se vuelva a conectar.",
+    "start": "Iniciar sesión de trabajo",
+    "queue": "Poner en cola",
+    "failed": "No se ha podido iniciar la sesión."
+  }
+}

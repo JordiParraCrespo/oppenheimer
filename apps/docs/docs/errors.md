@@ -533,6 +533,64 @@ on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
 `overlapping`, the rate caps, `missed`), and a reason that would repeat every time
 pauses the automation with a `pausedReason`.
 
+## Tasks
+
+Plan's board: tasks, the goals over them, and the sessions a task started or
+links. See `product/versions/mvp/17-plan.md`.
+
+| Code                                 | Title                                    | HTTP |
+| ------------------------------------ | ---------------------------------------- | ---- |
+| `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
+| `TASKS_002` <a id="tasks_002" />     | Goal not found                           | 404  |
+| `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
+| `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
+| `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
+| `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
+| `TASKS_007` <a id="tasks_007" />     | That goal belongs to another project     | 409  |
+
+`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, goal or
+session in another workspace.
+
+`TASKS_004` is a project that is missing or archived: nothing new is filed under a
+retired project.
+
+`TASKS_006` is a move that named a task to land after which is no longer in that
+column, or is the task being moved. The board was stale; reload it.
+
+`TASKS_007` is a request whose goal and project disagree. A goal brings its own
+project, so leave `projectId` out when choosing one.
+
+## Calendar
+
+Plan's calendar: the workspace's own events, and a person's Google Calendar read
+through to Google and never stored. See `product/versions/mvp/20-plan-calendar.md`.
+
+| Code                                     | Title                                               | HTTP |
+| ---------------------------------------- | --------------------------------------------------- | ---- |
+| `CALENDAR_001` <a id="calendar_001" />   | Event not found                                     | 404  |
+| `CALENDAR_002` <a id="calendar_002" />   | The calendar belongs to an organization             | 400  |
+| `CALENDAR_003` <a id="calendar_003" />   | That range of days is too wide                      | 400  |
+| `CALENDAR_004` <a id="calendar_004" />   | Google Calendar is not configured on this server    | 503  |
+| `CALENDAR_005` <a id="calendar_005" />   | That Google Calendar connection was not started here | 400 |
+| `CALENDAR_006` <a id="calendar_006" />   | Google did not grant read access to the calendar    | 400  |
+| `CALENDAR_007` <a id="calendar_007" />   | Google Calendar is not connected                    | 409  |
+| `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
+| `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
+
+`CALENDAR_003` is a range that runs backwards or covers more than 62 days.
+
+`CALENDAR_004` needs the Google sign-in client (`GOOGLE_CLIENT_ID`/`_SECRET`) and
+`CALENDAR_TOKEN_KEY`; without them the calendar shows everything but Google.
+
+`CALENDAR_005` is a connect `state` that is missing, expired, used, or someone
+else's. Start again from Connect Google Calendar.
+
+`CALENDAR_006` is Google refusing the code, returning no refresh token, or a
+consent screen where the calendar permission was left unticked.
+
+`CALENDAR_007` is no connection, or one Google has since revoked (or one sealed
+under a `CALENDAR_TOKEN_KEY` that was replaced): connect again.
+
 ## Inbound events
 
 What external systems tell us — GitHub's webhook today — stored once and normalized

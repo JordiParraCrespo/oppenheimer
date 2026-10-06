@@ -61,6 +61,23 @@ export function formatCountdown(ms: number, locale: string): string {
 }
 
 /**
+ * How long something has been gone, in its two largest units, the way the
+ * host-link frames write it: "7s", "2m 14s", "1h 03m", "2d 3h". Unlike a
+ * countdown it does not hold its width: under a minute it is seconds alone.
+ */
+export function formatTimeAway(ms: number, locale: string): string {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(seconds / 86_400);
+  const hours = Math.floor((seconds % 86_400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const rest = seconds % 60;
+  if (days) return [unit(locale, 'day', days), unit(locale, 'hour', hours)].join(' ');
+  if (hours) return [unit(locale, 'hour', hours), unit(locale, 'minute', minutes, true)].join(' ');
+  if (minutes) return [unit(locale, 'minute', minutes), unit(locale, 'second', rest)].join(' ');
+  return unit(locale, 'second', rest);
+}
+
+/**
  * Where a compact duration switches from hours to days, by what it measures:
  * an age turns into days after a day ("2d ago"); a wait the reader plans
  * around keeps its hours for two ("in 45h", the automations sidebar's frame).

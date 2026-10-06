@@ -1,7 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
+import { calendarKeys } from '../calendar.queries';
 import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
+import { tasksKeys } from '../tasks.queries';
 
 /**
  * What invalidating or removing a key reaches, asked of a real `QueryClient`,
@@ -65,5 +67,36 @@ describe('hostsKeys', () => {
 
     expect(invalidated(client, hostsKeys.list())).toBe(true);
     expect(invalidated(client, hostsKeys.pairingList())).toBe(false);
+  });
+});
+
+describe('tasksKeys', () => {
+  it('refreshes every task list, the board and a session’s alike, without touching the goals', async () => {
+    const board = tasksKeys.list({});
+    const session = tasksKeys.list({ sessionId: 's-1' });
+    const goals = tasksKeys.goalList();
+    const client = cacheWith(board, session, goals);
+
+    await client.invalidateQueries({ queryKey: tasksKeys.lists() });
+
+    expect(invalidated(client, board)).toBe(true);
+    expect(invalidated(client, session)).toBe(true);
+    expect(invalidated(client, goals)).toBe(false);
+  });
+});
+
+describe('calendarKeys', () => {
+  it('refreshes the workspace’s events without reading Google again', async () => {
+    const october = calendarKeys.eventRange({ from: '2026-10-01', to: '2026-10-31' });
+    const google = calendarKeys.googleEvents(
+      { from: '2026-10-01', to: '2026-10-31' },
+      'Europe/Madrid',
+    );
+    const client = cacheWith(october, google);
+
+    await client.invalidateQueries({ queryKey: calendarKeys.events() });
+
+    expect(invalidated(client, october)).toBe(true);
+    expect(invalidated(client, google)).toBe(false);
   });
 });

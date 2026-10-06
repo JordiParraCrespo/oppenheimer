@@ -2,6 +2,7 @@ import { Global, Logger, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
+import { calendarTokenKeyOf } from '../config/calendar.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 
@@ -63,6 +64,13 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // A database on disk to place a host's network with. Without it networks
     // are recorded by address only, and no new-network email can be judged.
     ip_geolocation: ipGeolocationIsConfigured(configService),
+    // The Google sign-in client and a valid sealing key, which is all the
+    // calendar's Google layer needs.
+    google_calendar: Boolean(
+      configService.get('oauth.google.clientId') &&
+        configService.get('oauth.google.clientSecret') &&
+        calendarTokenKeyOf(configService.get<string>('calendar.tokenKey')),
+    ),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

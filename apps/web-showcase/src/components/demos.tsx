@@ -62,7 +62,8 @@ import { EmptyState } from '@oppenheimer/design-system-web/empty-state';
 import { Chip, FilterChip } from '@oppenheimer/design-system-web/chip';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ImageCarousel } from '@oppenheimer/design-system-web/image-carousel';
-import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web/rail';
+import { Rail, RailItem, RailMark, SortableRailItem } from '@oppenheimer/design-system-web/rail';
+import { DragProvider, SortableGroup, useSortableGroups, type SortableGroups } from '@oppenheimer/design-system-web/drag';
 import {
   RepositoryRowList,
   type RepositoryRowValue,
@@ -176,6 +177,7 @@ import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
 import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
+import { RadioGroup, RadioGroupItem } from '@oppenheimer/design-system-web/radio-group';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ArrowUpRightIcon,
@@ -185,6 +187,7 @@ import {
   EllipsisIcon,
   FileTextIcon,
   GitBranchIcon,
+  CircleCheckIcon,
   GitPullRequestIcon,
   GlobeIcon,
   LogOutIcon,
@@ -709,6 +712,19 @@ export function CheckboxDemo() {
   );
 }
 
+/* ── RadioGroup ──────────────────────────────────────────────────────────── */
+
+export function RadioGroupDemo() {
+  const [verdict, setVerdict] = React.useState('comment');
+  return (
+    <RadioGroup value={verdict} onValueChange={setVerdict} aria-label="Verdict" className="w-full max-w-90">
+      <RadioGroupItem value="comment" label="Comment" description="Post the comments without a verdict." />
+      <RadioGroupItem value="approve" label="Approve" description="The change can merge once checks pass." />
+      <RadioGroupItem value="changes" label="Request changes" description="It does not merge until these are addressed." />
+    </RadioGroup>
+  );
+}
+
 /* ── Composer ────────────────────────────────────────────────────────────── */
 
 export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: string }) {
@@ -835,6 +851,49 @@ function RowMenu({
   );
 }
 
+const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
+  sessions: { label: 'Sessions', icon: <TerminalIcon /> },
+  pulls: { label: 'Pull requests', icon: <GitPullRequestIcon /> },
+  automations: { label: 'Automations', icon: <ZapIcon /> },
+  plan: { label: 'Plan', icon: <CircleCheckIcon /> },
+};
+
+/** The rail's items in the reader's own order: drag one up or down. */
+function SortableRail({ sessions }: { sessions: number }) {
+  const [groups, setGroups] = React.useState<SortableGroups>({ rail: ['sessions', 'pulls', 'automations', 'plan'] });
+  const sortable = useSortableGroups(groups, setGroups);
+  const counts: Record<string, number> = { sessions, pulls: 18, automations: 5 };
+  return (
+    <Rail>
+      <RailMark>O</RailMark>
+      <DragProvider
+        {...sortable}
+        overlay={(active) => {
+          const item = RAIL_ITEMS[active.id];
+          return item ? (
+            <RailItem label={item.label} active>
+              {item.icon}
+            </RailItem>
+          ) : null;
+        }}
+      >
+        <SortableGroup id="rail" items={groups.rail ?? []}>
+          <div className="flex flex-col gap-1.5">
+            {(groups.rail ?? []).map((id) => {
+              const item = RAIL_ITEMS[id];
+              return item ? (
+                <SortableRailItem key={id} id={id} label={item.label} count={counts[id]} active={id === 'sessions'}>
+                  {item.icon}
+                </SortableRailItem>
+              ) : null;
+            })}
+          </div>
+        </SortableGroup>
+      </DragProvider>
+    </Rail>
+  );
+}
+
 export function SidebarDemo({ empty }: { empty?: boolean }) {
   const [active, setActive] = React.useState('PR #121 porting to peersyst');
   const [query, setQuery] = React.useState('');
@@ -848,15 +907,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
   const total = projects.reduce((n, p) => n + p.sessions.length, 0);
   return (
     <div className="flex h-150 shrink-0 overflow-hidden">
-      <Rail>
-        <RailMark>O</RailMark>
-        <RailItem label="Sessions" count={total} active>
-          <TerminalIcon />
-        </RailItem>
-        <RailItem label="Routines" count={5}>
-          <ZapIcon />
-        </RailItem>
-      </Rail>
+      <SortableRail sessions={total} />
       <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 items-center px-4">
           <Wordmark product="Console" />

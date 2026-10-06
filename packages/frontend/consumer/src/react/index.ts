@@ -15,6 +15,18 @@ export {
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
+export {
+  type UpdateCalendarEventVariables,
+  useCalendarEvents,
+  useConnectGoogleCalendar,
+  useCreateCalendarEvent,
+  useDeleteCalendarEvent,
+  useDisconnectGoogleCalendar,
+  useGoogleCalendarConnection,
+  useGoogleCalendarEvents,
+  useStartGoogleCalendarConnection,
+  useUpdateCalendarEvent,
+} from './calendar.queries';
 // The pairing flow, not its parts: a surface that read the token or the host
 // poll directly would be back to asking "is there a host?" instead of "was
 // this token spent?".
@@ -83,3 +95,23 @@ export {
   useUploadSessionAttachment,
 } from './sessions.queries';
 export { useSessionStream } from './sessions.stream';
+export {
+  type LinkTaskSessionVariables,
+  type MoveTaskVariables,
+  type StartTaskSessionVariables,
+  type UpdateGoalVariables,
+  type UpdateTaskVariables,
+  useCreateGoal,
+  useCreateTask,
+  useDeleteGoal,
+  useDeleteTask,
+  useGoals,
+  useLinkTaskSession,
+  useMoveTask,
+  useSessionTasks,
+  useStartTaskSession,
+  useTasks,
+  useUnlinkTaskSession,
+  useUpdateGoal,
+  useUpdateTask,
+} from './tasks.queries';

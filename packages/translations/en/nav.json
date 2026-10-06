@@ -20,5 +20,6 @@
   "sidebarDescription": "Your sessions, your automations and your account.",
   "settings": "Settings",
   "automations": "Automations",
-  "logOutFailed": "Could not log you out. Try again."
+  "logOutFailed": "Could not log you out. Try again.",
+  "plan": "Plan"
 }
