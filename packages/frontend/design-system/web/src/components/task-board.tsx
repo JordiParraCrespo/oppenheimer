@@ -19,8 +19,9 @@ import { StatusDot, type StatusState } from './status-dot';
  *
  * - `TaskBoard`: one row of however many columns it is given, at least
  *   272px each, scrolling sideways when the parent is narrower. It is as
- *   wide as its parent; on a page, `EditorPageBody` bleeds its scroller
- *   through the gutter to the frame's edge.
+ *   wide as its parent. On a page the caller marks it `data-bleed`, and
+ *   `EditorPageBody` takes the scroller through the gutter to the frame's
+ *   edge.
  * - `TaskColumn`: the head (the status on `StatusDot`, the count in mono, a
  *   + to add)
  *   over a tray on the hover wash, 18px round, that tints toward the

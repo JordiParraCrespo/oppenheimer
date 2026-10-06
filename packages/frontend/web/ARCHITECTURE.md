@@ -95,23 +95,12 @@ the ⌘K palette and the hairline above the account row, which is the console �
 its sidebar is its content, and the version-1 artboards draw none of the
 three.
 
-A screen says how it wants to be framed with route `staticData.pane`. A page
-is the default: the shell's pane paints the ground (the console's one
-painter of it, and the positioned box a `DropZone` with `outline="pane"`
-traces), and `PageFrame` — the design system's `EditorPage` at a measure —
-draws the scroll and the gutter around it. The measures are `status`,
-`composer`, `narrow` (the default), `wide`, `briefing` and `board`
-(`EditorPageBody`'s `size`). `PageFrame` brings a new page back to the top
-when the leaf route or the measure changes, without remounting it, so a
-search param over the same page (`?task=`) keeps its place. `full` hands the
-content area to a box that must not scroll outside itself — the terminal, a
-pull request — and such a screen renders `PageFrame` for a state of it that
-is a page. `resolveContentPane` reads the innermost match that declares one,
-the same way `AuthLayout` reads its legal note, so a layout route declares it
-once for its subtree and renders only its `Outlet`.
-
-No screen paints the ground or rebuilds the frame; `pnpm check:structure`
-reports one that does.
+A screen says how it wants to be framed with route `staticData.pane`, and
+`AppShell` frames it: the pane paints the ground, holds a bar slot
+(`PaneBar`), takes drops (`usePaneDrop`) and draws `PageFrame` at the
+measure. `resolveContentPane` reads the innermost match that declares a
+pane, the same way `AuthLayout` reads its legal note. The model is
+`.agents/rules/frontend-architecture.md`, "The page frame is the shell's".
 
 ## How an app configures the auth layout
 

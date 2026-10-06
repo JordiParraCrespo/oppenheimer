@@ -404,20 +404,76 @@ for (const { app } of APPS) {
 
 // The page frame is the shell's. A route declares its measure (`pane` in the
 // kit's `shell/lib/pane.ts`) and the shell paints the ground and draws the
-// frame (`PageFrame`: the scroll, the measure, the gutter) once. Two shapes
-// put a frame back in a screen, and each is how pages drifted onto two greys
-// at five widths: painting the ground or wrapping itself in `EditorPage`, and
-// rebuilding the frame by hand, a scroll of its own around a centred
-// `max-w-*` column. A `full` screen with a state that is a page asks for
-// `PageFrame` instead. `public` is exempt: its pages render outside any
-// shell, so they own their ground. A tripwire on classes and tags in code
-// (comments are stripped first), not a parser.
+// frame (the scroll, the measure, the gutter) once. Two shapes put a frame
+// back in a screen, and each is how pages drifted onto two greys at five
+// widths: painting the ground or wrapping itself in `EditorPage`, and
+// rebuilding the frame by hand, an element that scrolls around a centred
+// `max-w-*` column. `public` is exempt: its pages render outside any shell,
+// so they own their ground. Classes are read from each element's
+// `className`, every string in it (a `cn(...)` included), with comments
+// stripped first; a tripwire, not a parser.
 const GROUND = /\bbg-(?:canvas|background)\b|<EditorPage(?:Body)?\b/;
-const OWN_SCROLL = /\boverflow-(?:y-)?auto\b/;
-const CENTRED_MEASURE = /\bmx-auto\b[^'"`]*\bmax-w-|\bmax-w-[^'"`]*\bmx-auto\b/;
+const SCROLLS = /\boverflow-(?:y-)?auto\b/;
 const GROUND_OWNERS = ['public'];
 const code = (source) =>
   source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+
+/** Every string literal in a tag's `className` value, as one class list. */
+function classesOf(tag) {
+  const at = tag.search(/\bclassName\s*=/);
+  if (at === -1) return '';
+  let i = tag.indexOf('=', at) + 1;
+  while (/\s/.test(tag[i])) i += 1;
+  let value;
+  if (tag[i] === '"' || tag[i] === "'") value = tag.slice(i, tag.indexOf(tag[i], i + 1) + 1);
+  else {
+    let depth = 0;
+    let j = i;
+    for (; j < tag.length; j += 1) {
+      if (tag[j] === '{') depth += 1;
+      else if (tag[j] === '}' && --depth === 0) break;
+    }
+    value = tag.slice(i, j + 1);
+  }
+  return [...value.matchAll(/(["'`])((?:(?!\1).)*)\1/g)].map((m) => m[2]).join(' ');
+}
+
+const centred = (classes) => /\bmx?-auto\b/.test(classes) && /\bmax-w-/.test(classes);
+
+/** The text inside the element whose opening tag ends at `from`, up to its closing tag. */
+function childrenOf(source, name, from) {
+  const tags = new RegExp(`<(/?)${name.replace('.', '\\.')}\\b`, 'g');
+  tags.lastIndex = from;
+  let depth = 1;
+  let match = tags.exec(source);
+  while (match !== null) {
+    if (match[1]) {
+      if (--depth === 0) return source.slice(from, match.index);
+    } else if (
+      !openingTag(source, match.index + match[0].length)
+        .trimEnd()
+        .endsWith('/')
+    ) {
+      depth += 1;
+    }
+    match = tags.exec(source);
+  }
+  return source.slice(from);
+}
+
+/** An element that scrolls with a centred `max-w-*` column inside it, if the file has one. */
+function rebuiltFrame(source) {
+  for (const open of source.matchAll(/<([A-Za-z][\w.]*)\b/g)) {
+    const tag = openingTag(source, open.index + open[0].length);
+    if (!SCROLLS.test(classesOf(tag)) || tag.trimEnd().endsWith('/')) continue;
+    const inside = childrenOf(source, open[1], open.index + open[0].length + tag.length + 1);
+    for (const child of inside.matchAll(/<([A-Za-z][\w.]*)\b/g)) {
+      if (centred(classesOf(openingTag(inside, child.index + child[0].length)))) return true;
+    }
+  }
+  return false;
+}
+
 for (const { app, features } of APPS) {
   const src = join(root, app, 'src');
   if (!existsSync(src)) continue;
@@ -433,10 +489,9 @@ for (const { app, features } of APPS) {
         `${relative(root, file)}: \`${ground[0]}\` — the console's ground and page frame are the shell's. Declare the page's measure as the route's \`staticData.pane\` and render only the content. See .agents/rules/frontend-architecture.md`,
       );
     }
-    const measure = source.match(CENTRED_MEASURE);
-    if (measure && OWN_SCROLL.test(source)) {
+    if (rebuiltFrame(source)) {
       fail(
-        `${relative(root, file)}: a scroll of its own around a centred \`max-w-*\` column is the page frame rebuilt. Declare the measure as the route's \`staticData.pane\`, or render \`PageFrame\` from @oppenheimer/frontend-web in a \`full\` screen's page state. See .agents/rules/frontend-architecture.md`,
+        `${relative(root, file)}: an element that scrolls around a centred \`max-w-*\` column is the page frame rebuilt. Declare the measure as the route's \`staticData.pane\` and render only the content. See .agents/rules/frontend-architecture.md`,
       );
     }
   }

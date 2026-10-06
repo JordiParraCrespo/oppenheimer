@@ -21,13 +21,15 @@ import { cn } from '../lib/utils';
  * - `status` (420px) and `composer` (720px) are a column centred in the pane
  *   both ways: a session being prepared, New session's composer.
  * - `narrow` (760px), a form, a single card or an article; `wide` (920px), a
- *   page that holds a table; `briefing` (980px), a pull request's briefing;
- *   `board` (1240px), Plan's columns. These open at the top.
+ *   page that holds a table or a briefing; `board` (1240px), Plan's columns;
+ *   `fluid`, no measure, for a page as wide as the pane (a diff). These open
+ *   at the top.
  *
- * The body owns the gutter, and the one child that has to reach the frame's
- * edge, the task board's sideways scroller, is bled through it from here: the
- * columns stay on the measure while a card scrolled past passes under the
- * gutter instead of starting in it.
+ * The body owns the gutter. A child that has to reach the frame's edge opts in
+ * with `data-bleed`, and the body cancels its gutter for it: the task board's
+ * sideways scroller keeps its columns on the measure while a card scrolled
+ * past passes under the gutter instead of starting in it. The child knows
+ * neither the gutter's width nor that a page exists.
  *
  * `EditorPageTop` is a first row for a page that opens on view tabs and one
  * action. `EditorPageBack` navigates, so it takes `render` for the router's
@@ -54,23 +56,23 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-type EditorPageSize = 'status' | 'composer' | 'narrow' | 'wide' | 'briefing' | 'board';
+type EditorPageSize = 'status' | 'composer' | 'narrow' | 'wide' | 'board' | 'fluid';
 
 const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
   // `.op-provision__inner`, centred in the pane.
   status: 'my-auto max-w-105 py-8',
   // `.op-newsession`, centred in the pane.
   composer: 'my-auto max-w-180 py-12',
-  // `op-rpage__body` opens 24px down; `op-rp__inner`, 28px; the briefing, 32px.
+  // `op-rpage__body` opens 24px down; `op-rp__inner`, 28px.
   narrow: 'max-w-190 pt-6 pb-18',
   wide: 'max-w-230 pt-7 pb-18',
-  briefing: 'max-w-245 pt-8 pb-18',
   board: 'max-w-310 pt-7 pb-18',
+  fluid: 'pt-6 pb-12',
 };
 
-/** The page's gutter, and the task board's scroller bled through it to the frame's edge. */
+/** The page's gutter, cancelled for a child that opts in to the frame's edge. */
 const GUTTER =
-  'px-4 sm:px-8 [&_[data-slot=task-board]]:-mx-4 [&_[data-slot=task-board]]:px-4 sm:[&_[data-slot=task-board]]:-mx-8 sm:[&_[data-slot=task-board]]:px-8';
+  'px-4 sm:px-8 [&_[data-bleed]]:-mx-4 [&_[data-bleed]]:px-4 sm:[&_[data-bleed]]:-mx-8 sm:[&_[data-bleed]]:px-8';
 
 /** The measured column inside the page, centred, with its gutter. */
 function EditorPageBody({

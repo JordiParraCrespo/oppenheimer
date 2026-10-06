@@ -4,8 +4,7 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
 /**
  * New session: the composer, centred in the pane at the `composer` measure
- * (the export's `.op-newsession`). The pane is its drop zone; the screen says
- * how (`outline="pane"`), the shell keeps the frame.
+ * (the export's `.op-newsession`). The pane is its drop zone (`usePaneDrop`).
  *
  * `?project=` and `?host=`: see `newSessionSearchSchema`.
  */

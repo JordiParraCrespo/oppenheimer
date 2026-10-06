@@ -605,7 +605,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   times are wall-clock; archiving a project is not blocked by its tasks.
 - 2026-10-06: **The shell draws every console page, on the export's
   grey.** A route names its measure, one of the export's widths; `full`
-  is only the terminal and a pull request. The rule is
+  is only the session terminal. The rule is
   `.agents/rules/frontend-architecture.md`, "The page frame is the
   shell's".
 - 2026-10-06: **The console hears about changes from one event stream,

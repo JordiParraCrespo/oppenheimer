@@ -60,14 +60,14 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
-| A console page (the automations, Plan, Pull requests, New session) | the route's `staticData.pane` measure, which the shell frames; `EditorPageTop` for a page's tabs; a `full` screen's page state renders the kit's `PageFrame`; inside Settings, `PageHeader` parts + `RoutineSteps` | `EditorPage` in a route or a screen, a hand-rolled scroll column, a `max-w-*` column of its own |
+| A console page (the automations, Plan, Pull requests, New session) | the route's `staticData.pane` measure, which the shell frames; `PaneBar` for a bar that stays above the page; `EditorPageTop` for a page's tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | `EditorPage` in a route or a screen, a hand-rolled scroll column, a `max-w-*` column of its own |
 | A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` (`apps/web/src/lib/console.ts`, over the kit's `createDialogSlot`) | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
 | What an offline host is holding up, and its fix, on Settings | `HostCard`'s `offline` | an `Alert` under the card |
 | A session whose host went offline, reconnects or catches up | `Terminal hostLink={{ phase, host }}` with `HostLinkChrome` in the status bar's place (the banner; the notice form only if the product chose it) | an `Alert` or `ErrorAlert` above the terminal, a hand-built banner |
 | A command someone runs on their own machine to fix it | `CommandRow` in a `CommandRowList` | a `CodeBlock` per command, inline `<code>` in a sentence |
-| Attaching files by dropping them on a pane | `DropZone` | `dragenter` listeners in a feature |
+| Attaching files by dropping them on a pane | `DropZone` around a `full` pane; on a page the shell frames, the kit's `usePaneDrop` | `dragenter` listeners in a feature, an outline drawn by a screen |
 | Moving or reordering things by dragging (cards between columns, an entry to another day, a session to another project, the rail's order) | the drag layer: `DragProvider` with `SortableGroup` / `SortableItem` or `useDraggable` / `useDroppable`; `SortableSessionItem` and `SortableRailItem` for the sidebar and the rail, `useSortableControl` for any other item that is also a link or a button | `draggable` attributes, pointer listeners, dnd-kit imported in a feature |
 | Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `GoalCard` above | a `Card` grid, a table |
 | A month with things on its days | `MonthCalendar` (`CalendarEntry` per item) inside the page's `DragProvider` | a grid of `div`s, a calendar library |

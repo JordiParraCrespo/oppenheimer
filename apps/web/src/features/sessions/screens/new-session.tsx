@@ -1,4 +1,4 @@
-import { DropZone } from '@oppenheimer/design-system-web';
+import { usePaneDrop } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { NewSessionDropContext, useNewSessionDrop } from '../hooks/use-new-session-drop';
 import { NewSessionForm } from '../sections/new-session-form';
@@ -11,28 +11,26 @@ import { NewSessionForm } from '../sections/new-session-form';
  * the section.
  *
  * The shell frames it at the `composer` measure (`routes/_authenticated/
- * sessions/new.tsx`). The pane is still the drop zone: files dropped anywhere
- * in the window are handed to the composer, which holds the task's files,
- * and the outline traces the shell's pane (`outline="pane"`), not this
- * column, however far the form has scrolled.
+ * sessions/new.tsx`), and the pane takes its drops (`usePaneDrop`): files
+ * dropped anywhere in the window are handed to the composer, which holds the
+ * task's files, and the pane draws the outline on its own edge.
  */
 export function NewSessionScreen() {
   const { t } = useTranslation();
   const drop = useNewSessionDrop();
+  usePaneDrop(drop.deliver);
 
   return (
     <NewSessionDropContext value={drop}>
-      <DropZone onFiles={drop.deliver} listen="window" outline="pane">
-        <div className="flex flex-col gap-4.5">
-          <NewSessionForm
-            heading={
-              <h1 className="font-display text-metric font-semibold text-fg">
-                {t('sessions.new.title')}
-              </h1>
-            }
-          />
-        </div>
-      </DropZone>
+      <div className="flex flex-col gap-4.5">
+        <NewSessionForm
+          heading={
+            <h1 className="font-display text-metric font-semibold text-fg">
+              {t('sessions.new.title')}
+            </h1>
+          }
+        />
+      </div>
     </NewSessionDropContext>
   );
 }

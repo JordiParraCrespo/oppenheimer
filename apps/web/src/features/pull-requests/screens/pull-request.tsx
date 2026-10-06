@@ -1,5 +1,5 @@
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
-import { PageFrame } from '@oppenheimer/frontend-web';
+import { PaneBar } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { PullRequestView } from '../lib/pull-request-search';
@@ -13,10 +13,9 @@ import { PullRequestToolbar } from '../sections/pull-request-toolbar';
  * line comments are the one thing two of them share — written on Changes,
  * posted from Submit review — so they live here.
  *
- * The route is `full` so the bar stays put. Changes is the diff, as wide as
- * the pane and scrolling under the bar; the briefing and the description are
- * pages, the shell's frame at the `briefing` and `narrow` measures (the
- * export's 980px brief and 760px article).
+ * The bar sits in the shell's slot above the page (`PaneBar`), so it stays put
+ * while the view scrolls under it; each view is a page the shell frames at
+ * the measure the route reads off `?view=`.
  */
 export function PullRequestScreen({
   address,
@@ -31,35 +30,31 @@ export function PullRequestScreen({
     navigate({ to: '.', search: { view: next === 'briefing' ? undefined : next } });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <PullRequestToolbar
-        address={address}
-        view={view}
-        onViewChange={setView}
-        pending={pending}
-        onReviewSubmitted={() => setPending([])}
-        onDiscardPending={() => setPending([])}
-      />
+    <>
+      <PaneBar>
+        <PullRequestToolbar
+          address={address}
+          view={view}
+          onViewChange={setView}
+          pending={pending}
+          onReviewSubmitted={() => setPending([])}
+          onDiscardPending={() => setPending([])}
+        />
+      </PaneBar>
       {view === 'description' ? (
-        <PageFrame size="narrow">
-          <PullRequestDescription address={address} />
-        </PageFrame>
+        <PullRequestDescription address={address} />
       ) : view === 'changes' ? (
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-6 pb-12">
-          <PullRequestChanges
-            address={address}
-            pending={pending}
-            onAddPending={(comment) => setPending((current) => [...current, comment])}
-            onDiscardPending={(index) =>
-              setPending((current) => current.filter((_, i) => i !== index))
-            }
-          />
-        </div>
+        <PullRequestChanges
+          address={address}
+          pending={pending}
+          onAddPending={(comment) => setPending((current) => [...current, comment])}
+          onDiscardPending={(index) =>
+            setPending((current) => current.filter((_, i) => i !== index))
+          }
+        />
       ) : (
-        <PageFrame size="briefing">
-          <PullRequestBriefing address={address} onReviewChanges={() => setView('changes')} />
-        </PageFrame>
+        <PullRequestBriefing address={address} onReviewChanges={() => setView('changes')} />
       )}
-    </div>
+    </>
   );
 }

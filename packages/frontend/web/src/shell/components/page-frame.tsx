@@ -7,10 +7,10 @@ import { useScrollReset } from '../hooks/use-scroll-reset';
  * the top on every new page. `AppShell` draws it around every route whose
  * pane is a measure (`lib/pane.ts`), so no screen draws a frame of its own.
  *
- * The one other place it is drawn is inside a `full` screen, under a bar the
- * screen keeps fixed or in a state of it that is a page: a pull request's
- * briefing under its toolbar, a session that is still being prepared. Those
- * ask for the same frame here rather than rebuild it.
+ * It is exported for one case: a state of a `full` route that is not a route
+ * of its own, a session still being prepared before its terminal exists. A
+ * screen whose views are routes or search params names its measure on the
+ * route instead.
  */
 export function PageFrame({ size, children }: { size: EditorPageSize; children: ReactNode }) {
   const scroller = useScrollReset<HTMLDivElement>(size);

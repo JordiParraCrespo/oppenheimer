@@ -5,12 +5,10 @@
 "@oppenheimer/web-showcase": patch
 ---
 
-- `EditorPageBody`'s `size` takes the export's widths: `status`, `composer`
-  (both centred in the pane), `narrow`, `wide`, `briefing`, `board`. The body
-  bleeds the task board through its gutter; `--page-gutter` is gone.
-- `EditorPage` paints no ground: the frame sits on its parent's.
-- `DropZone` takes `outline="pane"` to trace the positioned ancestor rather
-  than its own box.
-- The kit exports `PageFrame`, the frame `AppShell` draws at a route's measure;
-  a `full` screen renders it for a state that is a page. It returns a new page
-  to the top without remounting it.
+- `EditorPageBody`'s `size` is a measure the export repeats: `status`,
+  `composer`, `narrow`, `wide`, `board`, `fluid`. A child opts in to the
+  frame's edge with `data-bleed`.
+- The shell frames the page; `EditorPage` paints no ground.
+- `staticData.pane` may be a function of the route's search.
+- The kit adds `PaneBar` and `usePaneDrop`; the design system exports
+  `DropOutline`.
