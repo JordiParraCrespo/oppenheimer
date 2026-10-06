@@ -152,6 +152,8 @@
     "reviewChanges": "Review changes",
     "brief": "Brief",
     "noDescription": "No description.",
+    "copyCode": "Copy code",
+    "codeCopied": "Copied",
     "whatChanges": "What changes",
     "risk": "Lane",
     "where": "Mostly {{folders}}",

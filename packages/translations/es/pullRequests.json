@@ -152,6 +152,8 @@
     "reviewChanges": "Revisar los cambios",
     "brief": "Resumen",
     "noDescription": "Sin descripción.",
+    "copyCode": "Copiar código",
+    "codeCopied": "Copiado",
     "whatChanges": "Qué cambia",
     "risk": "Carril",
     "where": "Sobre todo {{folders}}",

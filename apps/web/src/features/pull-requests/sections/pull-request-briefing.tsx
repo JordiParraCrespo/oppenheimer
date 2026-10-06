@@ -16,6 +16,7 @@ import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { LaneBadge } from '../components/lane-badge';
+import { MarkdownInline } from '../components/markdown-inline';
 import { ReviewerRow } from '../components/reviewer-row';
 import { laneReasonText, mergeSteps } from '../lib/briefing';
 import { leadOf } from '../lib/markdown';
@@ -182,7 +183,7 @@ export function PullRequestBriefing({
             />
             <Panel title={t('pullRequests.detail.brief')}>
               <p className="m-0 max-w-prose text-body-lg text-pretty text-fg">
-                {lead ?? t('pullRequests.detail.noDescription')}
+                {lead ? <MarkdownInline tokens={lead} /> : t('pullRequests.detail.noDescription')}
               </p>
               <FactGrid>
                 <FactTile label={t('pullRequests.detail.whatChanges')}>
