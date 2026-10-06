@@ -167,7 +167,18 @@
     },
     "opened": "{{author}} wants to merge {{head}} into {{base}}",
     "reviewsUnread": "GitHub did not return the reviews on this read.",
-    "filesUnread": "GitHub did not return the files on this read."
+    "filesUnread": "GitHub did not return the files on this read.",
+    "rail": {
+      "mergeStatus": "Merge status",
+      "canMerge": "Can merge without conflicts",
+      "conflicts": "Has conflicts with {{base}}",
+      "merged": "Merged into {{base}}",
+      "closed": "Closed without merging",
+      "reviews": "Reviews",
+      "checksSummary": "{{passed}} of {{total}} passing",
+      "noChecks": "No checks"
+    },
+    "editOnGithub": "Edit on GitHub"
   },
   "review": {
     "submit": "Submit review",

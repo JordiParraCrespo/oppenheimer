@@ -2,16 +2,16 @@ import { IconButton, useCopy } from '@oppenheimer/design-system-web';
 import { CheckIcon, CopyIcon } from '@oppenheimer/design-system-web/icons';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type CodeNode, highlightCode } from '../lib/highlight';
+import { type CodeNode, highlightCode, syntaxClass } from '../lib/highlight';
 
 function codeNodes(nodes: CodeNode[], prefix: string): ReactNode[] {
   return nodes.map((node, index) => {
     const key = `${prefix}-${index}`;
-    return node.kind === 'text' ? (
-      node.text
-    ) : (
-      <span key={key} className={node.className}>
-        {codeNodes(node.children, key)}
+    if (node.type === 'text') return node.value;
+    if (node.type !== 'element') return null;
+    return (
+      <span key={key} className={syntaxClass(node.properties.className)}>
+        {codeNodes(node.children as CodeNode[], key)}
       </span>
     );
   });

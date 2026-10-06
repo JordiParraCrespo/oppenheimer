@@ -152,17 +152,6 @@
     --link: var(--op-blue-600); /* one blue for links */
     --ring: rgba(0, 113, 227, 0.45);
 
-    /* ---- Syntax — code in a reader's markdown, never chrome ------------
-       Outside the palette on purpose: the Codex desktop app's code colours,
-       so a description's code block reads the way it does there. Comments
-       take the muted ink. */
-    --syntax-keyword: #ab4f7a;
-    --syntax-literal: #ac4f23;
-    --syntax-string: #3a843f;
-    --syntax-variable: #643cae;
-    --syntax-attribute: #b8802b;
-    --syntax-name: #1f4e94;
-
     /* ---- Status — run state only, never decoration ------------------- */
     --success: var(--op-green-500);
     --warning: var(--op-amber-500);
@@ -534,13 +523,6 @@
     --link: var(--op-blue-400);
     --ring: rgba(41, 151, 255, 0.55);
 
-    --syntax-keyword: #f8a6c8;
-    --syntax-literal: #f1a275;
-    --syntax-string: #83d197;
-    --syntax-variable: #b897f4;
-    --syntax-attribute: #f9dc78;
-    --syntax-name: #63a8f8;
-
     --success: var(--op-green-400);
     --warning: var(--op-amber-400);
     --danger: var(--op-red-400);
@@ -787,12 +769,6 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-active: var(--primary-active);
   --color-link: var(--link);
-  --color-syntax-keyword: var(--syntax-keyword);
-  --color-syntax-literal: var(--syntax-literal);
-  --color-syntax-string: var(--syntax-string);
-  --color-syntax-variable: var(--syntax-variable);
-  --color-syntax-attribute: var(--syntax-attribute);
-  --color-syntax-name: var(--syntax-name);
   --color-overlay: var(--overlay);
   --color-success: var(--success);
   --color-warning: var(--warning);

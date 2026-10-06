@@ -2,38 +2,57 @@ import { common, createLowlight } from 'lowlight';
 
 /**
  * A code block's syntax, the way the Codex desktop app finds it: highlight.js
- * (through `lowlight`, with its common languages) for the fence's language,
- * as a tree of spans classed `hljs-*` that `Prose` colours. The tree is
- * turned into elements, never into HTML.
+ * (through `lowlight`, with its common languages) for the fence's language.
+ * The result is lowlight's own tree, which the code block renders as spans.
  */
-
-export type CodeNode =
-  | { kind: 'text'; text: string }
-  | { kind: 'span'; className: string; children: CodeNode[] };
 
 const lowlight = createLowlight(common);
 
-type HastNode = ReturnType<typeof lowlight.highlight>['children'][number];
+/** A node of the highlighted tree: text, or a span classed `hljs-*` around more. */
+export type CodeNode = ReturnType<typeof lowlight.highlight>['children'][number];
 
-function toNode(node: HastNode): CodeNode | null {
-  if (node.type === 'text') return { kind: 'text', text: node.value };
-  if (node.type !== 'element') return null;
-  const classes = node.properties.className;
-  return {
-    kind: 'span',
-    className: Array.isArray(classes) ? classes.join(' ') : '',
-    children: node.children
-      .map((child) => toNode(child as HastNode))
-      .filter((child) => child !== null),
-  };
-}
-
-/** The code as highlighted spans, or null when the fence names no language highlight.js knows. */
+/** The code's highlighted tree, or null when the fence names no language highlight.js knows. */
 export function highlightCode(code: string, language: string | undefined): CodeNode[] | null {
   const name = language?.trim().split(/\s+/)[0]?.toLowerCase();
   if (!name || !lowlight.registered(name)) return null;
-  return lowlight
-    .highlight(name, code)
-    .children.map(toNode)
-    .filter((node) => node !== null);
+  return lowlight.highlight(name, code).children;
+}
+
+/**
+ * The colour a highlight.js class takes, grouped the way the Codex app
+ * groups them and drawn from the hues the system already themes.
+ */
+const SYNTAX: Record<string, string> = {
+  'hljs-comment': 'text-fg-muted italic',
+  'hljs-quote': 'text-fg-muted italic',
+  'hljs-keyword': 'text-(--file-icon-pink)',
+  'hljs-doctag': 'text-(--file-icon-pink)',
+  'hljs-operator': 'text-(--file-icon-pink)',
+  'hljs-built_in': 'text-(--file-icon-orange)',
+  'hljs-literal': 'text-(--file-icon-orange)',
+  'hljs-number': 'text-(--file-icon-orange)',
+  'hljs-string': 'text-(--file-icon-green)',
+  'hljs-regexp': 'text-(--file-icon-green)',
+  'hljs-addition': 'text-(--file-icon-green)',
+  'hljs-deletion': 'text-danger',
+  'hljs-variable': 'text-(--file-icon-purple)',
+  'hljs-template-variable': 'text-(--file-icon-purple)',
+  'hljs-type': 'text-(--file-icon-purple)',
+  'hljs-title': 'text-(--file-icon-purple)',
+  'hljs-attr': 'text-(--file-icon-yellow)',
+  'hljs-attribute': 'text-(--file-icon-yellow)',
+  'hljs-section': 'text-(--file-icon-yellow)',
+  'hljs-name': 'text-(--file-icon-blue)',
+  'hljs-tag': 'text-(--file-icon-blue)',
+  'hljs-symbol': 'text-(--file-icon-blue)',
+  'hljs-bullet': 'text-(--file-icon-blue)',
+  'hljs-link': 'text-(--file-icon-blue)',
+  'hljs-meta': 'text-(--file-icon-blue)',
+};
+
+/** A span's colour from its classes; `title class_` is a literal, as in the app. */
+export function syntaxClass(classes: unknown): string | undefined {
+  const names = Array.isArray(classes) ? classes.map(String) : [];
+  if (names.includes('hljs-title') && names.includes('class_')) return SYNTAX['hljs-built_in'];
+  return names.map((name) => SYNTAX[name]).find(Boolean);
 }

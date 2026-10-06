@@ -12,7 +12,8 @@ import { MarkdownBody } from '../components/markdown-body';
 
 afterEach(cleanup);
 
-const view = (source: string) => render(<MarkdownBody source={source} />).container;
+const PAGE = 'https://github.com/acme/app/pull/12';
+const view = (source: string) => render(<MarkdownBody source={source} base={PAGE} />).container;
 
 describe('MarkdownBody', () => {
   it('renders emphasis, links, nested lists and tables as elements, not syntax', () => {
@@ -38,7 +39,7 @@ describe('MarkdownBody', () => {
       'Job',
       'Result',
     ]);
-    expect(page.querySelector('td')?.getAttribute('data-col-size')).toBe('sm');
+    expect(page.querySelector('td')?.className).toBe('max-w-40');
   });
 
   it('drops the template’s comments, folds details and names an alert', () => {
@@ -61,6 +62,16 @@ describe('MarkdownBody', () => {
     expect(details?.open).toBe(true);
     expect(details?.querySelector('summary')?.textContent).toBe('Local CI');
     expect(details?.querySelector('p')?.textContent).toBe('All green.');
+  });
+
+  it('resolves a relative link and a fragment against the pull request’s page', () => {
+    const links = view(
+      '[guide](../blob/main/README.md) and [below](#how-to-test)',
+    ).querySelectorAll('a');
+    expect([...links].map((link) => link.getAttribute('href'))).toEqual([
+      'https://github.com/acme/app/blob/main/README.md',
+      'https://github.com/acme/app/pull/12#how-to-test',
+    ]);
   });
 
   it('keeps basic inline tags and drops every other piece of HTML', () => {
@@ -90,8 +101,9 @@ describe('MarkdownBody', () => {
     const code = 'const total = items.length; // "count"';
     const page = view(`\`\`\`ts\n${code}\n\`\`\``);
     expect(page.querySelector('pre code')?.textContent).toBe(code);
-    expect(page.querySelector('pre .hljs-keyword')?.textContent).toBe('const');
-    expect(page.querySelector('pre .hljs-comment')?.textContent).toBe('// "count"');
+    const spans = [...page.querySelectorAll('pre span')];
+    expect(spans.find((span) => span.textContent === 'const')?.className).toBeTruthy();
+    expect(spans.find((span) => span.textContent === '// "count"')?.className).toContain('italic');
     expect(view('```\nplain <b>text</b>\n```').querySelector('pre span, pre b')).toBeNull();
   });
 

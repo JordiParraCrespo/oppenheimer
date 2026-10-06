@@ -1141,7 +1141,18 @@
       },
       "opened": "{{author}} quiere fusionar {{head}} en {{base}}",
       "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
-      "filesUnread": "GitHub no devolvió los archivos en esta lectura."
+      "filesUnread": "GitHub no devolvió los archivos en esta lectura.",
+      "rail": {
+        "mergeStatus": "Estado de la fusión",
+        "canMerge": "Se puede fusionar sin conflictos",
+        "conflicts": "Tiene conflictos con {{base}}",
+        "merged": "Fusionada en {{base}}",
+        "closed": "Cerrada sin fusionar",
+        "reviews": "Revisiones",
+        "checksSummary": "{{passed}} de {{total}} correctas",
+        "noChecks": "Sin comprobaciones"
+      },
+      "editOnGithub": "Editar en GitHub"
     },
     "review": {
       "submit": "Enviar revisión",
