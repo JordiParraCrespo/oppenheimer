@@ -9,12 +9,13 @@ import { LOCALE_RESOLVER } from '../../profile/profile.di-tokens';
 import { EmailJobMapper, type EmailLocaleTarget } from '../email-job.mapper';
 
 /**
- * Sends at most this many emails per second, across every worker on the queue:
- * Resend's default rate limit for a team. The limiter is also what lets
- * {@link EmailProcessor.holdQueue} hold the queue at all — BullMQ only honours
- * a manual rate limit on a worker that has one.
+ * A ceiling, not a pace: BullMQ honours a manual rate limit
+ * ({@link EmailProcessor.holdQueue}) only on a worker that has a `limiter`, so
+ * this one is set high enough never to delay ordinary mail. A password reset
+ * must not wait behind a burst of sign-ups. The pace a provider wants comes
+ * from its own refusal, which holds the queue until its reset.
  */
-const SENDS_PER_SECOND = 2;
+const SENDS_PER_SECOND = 50;
 
 /**
  * Sends the queued transactional mail.
