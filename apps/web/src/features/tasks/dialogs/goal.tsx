@@ -4,7 +4,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  toast,
 } from '@oppenheimer/design-system-web';
 import {
   useCreateGoal,
@@ -14,7 +13,7 @@ import {
   useUpdateGoal,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GoalForm, type GoalFormValues } from '../forms/goal-form';
@@ -51,7 +50,7 @@ export function GoalDialog({
   const [deleting, setDeleting] = useState(false);
   const create = useCreateGoal({
     onSuccess: () => {
-      toast.success(t('toasts.goalAdded'));
+      notifySuccess('goalAdded');
       onClose();
     },
   });

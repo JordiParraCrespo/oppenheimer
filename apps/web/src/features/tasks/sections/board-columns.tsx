@@ -7,7 +7,6 @@ import {
   TaskColumnAdd,
   TaskComposer,
   TaskSessionChip,
-  toast,
 } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import {
@@ -19,7 +18,13 @@ import {
   useSessions,
   useTasks,
 } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, formatCalendarDay, useDragLabels, useLocale } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  formatCalendarDay,
+  notifySuccess,
+  useDragLabels,
+  useLocale,
+} from '@oppenheimer/frontend-web';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -63,7 +68,7 @@ export function BoardColumns() {
   });
   const { data: hosts } = useHosts({ select: (rows) => new Map(rows.map((row) => [row.id, row])) });
   const move = useMoveTask();
-  const create = useCreateTask({ onSuccess: () => toast.success(t('toasts.taskAdded')) });
+  const create = useCreateTask({ onSuccess: () => notifySuccess('taskAdded') });
   const [composing, setComposing] = useState<TaskStatus | null>(null);
   const [draft, setDraft] = useState('');
   const rows = tasks.data ?? [];
