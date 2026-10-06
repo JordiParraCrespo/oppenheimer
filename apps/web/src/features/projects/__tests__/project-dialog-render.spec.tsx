@@ -59,7 +59,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false, error: null }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false, error: null }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
-  useManageGithubAccess: () => ({ manage: vi.fn(), error: null, dismiss: vi.fn() }),
+  useStartInstallation: () => ({ mutate: vi.fn(), isPending: false, error: null, reset: vi.fn() }),
+  useRefreshInstallations: () => vi.fn(),
   useHosts: () => ({ data: [{ id: 'host-1', name: 'mac-studio' }], isPending: false }),
   useSessions: () => ({ data: 0 }),
 }));

@@ -1,11 +1,12 @@
 import {
   useInstallationRepositoriesFor,
   useInstallations,
-  useManageGithubAccess,
+  useRefreshInstallations,
   useRepositoryBranchesFor,
+  useStartInstallation,
 } from '@oppenheimer/frontend-consumer/react';
-import { useDeploymentCapabilities, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, openPendingTab } from '@oppenheimer/frontend-web';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert, useManageRepositoryAccess } from '@oppenheimer/frontend-web';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
@@ -17,7 +18,7 @@ import { parseRepositoryKey, toRepositoryOptions } from '../lib/session-options'
  * picked repositories: the API answers them live from GitHub, so a call per
  * row of an unopened picker spends rate limit on nothing. "Manage repository
  * access" is a mutation, not a link, because its install URL carries a state
- * minted on click (`useManageGithubAccess`).
+ * minted on click (`useManageRepositoryAccess`).
  */
 export function NewSessionRepositories() {
   const { t } = useTranslation();
@@ -26,10 +27,7 @@ export function NewSessionRepositories() {
 
   const resolveError = useErrorMessage();
   const installations = useInstallations();
-  const installUrl = useDeploymentCapabilities({
-    select: (deployment) => deployment.github_app_install_url,
-  });
-  const manageAccess = useManageGithubAccess(openPendingTab);
+  const manageAccess = useManageRepositoryAccess(useStartInstallation(), useRefreshInstallations());
   const repositories = useInstallationRepositoriesFor(
     (installations.data ?? []).map((installation) => installation.id),
   );
@@ -48,8 +46,8 @@ export function NewSessionRepositories() {
         })}
         value={field.value}
         onValueChange={field.onChange}
-        onManage={installUrl.data ? manageAccess.manage : undefined}
-        loading={installations.isPending || repositories.isPending || installUrl.isPending}
+        onManage={manageAccess.onManage}
+        loading={installations.isPending || repositories.isPending || manageAccess.isPending}
         branchesLoading={branches.isPending}
         failure={
           (installations.error ?? repositories.error)
@@ -64,7 +62,7 @@ export function NewSessionRepositories() {
       <ErrorAlert
         className="basis-full"
         error={manageAccess.error}
-        fallback={t('sessions.new.repository.manageFailed')}
+        fallback={t('common.repositoryAccess.failed')}
         onDismiss={manageAccess.dismiss}
       />
     </>

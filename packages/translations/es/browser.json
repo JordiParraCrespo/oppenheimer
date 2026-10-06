@@ -40,6 +40,10 @@
       "dropped": "{{name}} se ha soltado en {{target}}.",
       "droppedNowhere": "{{name}} se ha soltado.",
       "cancelled": "Se ha cancelado mover {{name}}."
+    },
+    "repositoryAccess": {
+      "manage": "Gestionar el acceso a repositorios",
+      "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
     }
   },
   "validation": {
@@ -398,9 +402,7 @@
       "deleteBlocked_other": "Este proyecto no se puede eliminar mientras tenga {{count}} sesiones abiertas. Muévelas a otro proyecto o elimínalas primero.",
       "deleteBlocked_many": "Este proyecto no se puede eliminar mientras tenga {{count}} sesiones abiertas. Muévelas a otro proyecto o elimínalas primero.",
       "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
-      "loadFailed": "No se ha podido cargar este proyecto.",
-      "manage": "Gestionar acceso a repositorios",
-      "manageFailed": "No se pudo abrir GitHub. Inténtalo de nuevo en un momento."
+      "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
       "title": "¿Eliminar {{name}}?",
@@ -494,8 +496,6 @@
         "branchEmpty": "Ninguna rama coincide.",
         "branchPane": "Rama de {{name}}",
         "changeBranch": "Cambiar de rama",
-        "manage": "Gestionar el acceso a repositorios",
-        "manageFailed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento.",
         "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
         "archived": "Archivado",
         "failed": "No se han podido cargar tus repositorios."

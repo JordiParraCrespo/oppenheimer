@@ -33,9 +33,7 @@
     "deleteBlocked_one": "This project can’t be deleted while it has {{count}} open session. Move it to another project or delete it first.",
     "deleteBlocked_other": "This project can’t be deleted while it has {{count}} open sessions. Move them to another project or delete them first.",
     "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
-    "loadFailed": "Could not load this project.",
-    "manage": "Manage repository access",
-    "manageFailed": "Could not open GitHub. Try again in a moment."
+    "loadFailed": "Could not load this project."
   },
   "deleteDialog": {
     "title": "Delete {{name}}?",

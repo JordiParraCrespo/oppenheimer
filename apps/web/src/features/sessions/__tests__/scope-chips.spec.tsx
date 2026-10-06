@@ -70,7 +70,7 @@ describe('the scope chips', () => {
     );
 
     openChip('sessions.new.repository.label');
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.new.repository.manage' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.repositoryAccess.manage' }));
     expect(onManage).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('link')).toBeNull();
   });
@@ -80,7 +80,7 @@ describe('the scope chips', () => {
 
     const popup = openChip('sessions.new.repository.label');
     expect(within(popup).getByText('sessions.new.repository.noApp')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'sessions.new.repository.manage' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'common.repositoryAccess.manage' })).toBeNull();
   });
 
   it('says the branches are loading rather than that none match', () => {

@@ -39,5 +39,9 @@
     "dropped": "{{name}} was dropped on {{target}}.",
     "droppedNowhere": "{{name}} was dropped.",
     "cancelled": "Moving {{name}} was cancelled."
+  },
+  "repositoryAccess": {
+    "manage": "Manage repository access",
+    "failed": "Could not open GitHub. Try again in a moment."
   }
 }

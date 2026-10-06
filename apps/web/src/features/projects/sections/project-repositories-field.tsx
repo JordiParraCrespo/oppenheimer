@@ -1,5 +1,4 @@
 import {
-  BrandGlyph,
   Field,
   FieldDescription,
   FieldLabel,
@@ -7,10 +6,11 @@ import {
   type RepositoryRowValue,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { ArrowUpRight } from '@oppenheimer/design-system-web/icons';
-import { useManageGithubAccess } from '@oppenheimer/frontend-consumer/react';
-import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, openPendingTab } from '@oppenheimer/frontend-web';
+import {
+  useRefreshInstallations,
+  useStartInstallation,
+} from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert, useManageRepositoryAccess } from '@oppenheimer/frontend-web';
 import { type Control, useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useProjectRepositoryOptions } from '../hooks/use-project-repository-options';
@@ -29,10 +29,7 @@ export function ProjectRepositoriesField({ control }: { control: Control<Project
   const { field } = useController({ control, name: 'rows' });
   const rows = field.value;
   const { options, loading } = useProjectRepositoryOptions(rows);
-  const installUrl = useDeploymentCapabilities({
-    select: (deployment) => deployment.github_app_install_url,
-  });
-  const manageAccess = useManageGithubAccess(openPendingTab);
+  const manageAccess = useManageRepositoryAccess(useStartInstallation(), useRefreshInstallations());
 
   /**
    * The add field's ids, reconciled with the rows: a new one is cloned by
@@ -67,21 +64,13 @@ export function ProjectRepositoriesField({ control }: { control: Control<Project
             query ? t('projects.dialog.noMatch', { query }) : t('projects.dialog.allAdded')
           }
           removeLabel={(name) => t('projects.dialog.remove', { name })}
-          action={
-            installUrl.data
-              ? {
-                  label: t('projects.dialog.manage'),
-                  icon: <BrandGlyph name="github" size={15} />,
-                  trailing: <ArrowUpRight />,
-                  onSelect: manageAccess.manage,
-                }
-              : undefined
-          }
+          onManage={manageAccess.onManage}
+          manageLabel={t('common.repositoryAccess.manage')}
         />
       )}
       <ErrorAlert
         error={manageAccess.error}
-        fallback={t('projects.dialog.manageFailed')}
+        fallback={t('common.repositoryAccess.failed')}
         onDismiss={manageAccess.dismiss}
       />
       {rows.length === 0 ? (

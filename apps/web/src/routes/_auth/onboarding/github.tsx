@@ -6,8 +6,8 @@ import { githubStepSearchSchema } from '@/features/organizations/lib/onboarding-
 /**
  * Step 3. GitHub returns here after an install with `installation_id`, `code`
  * and the `state` the API minted, parsed at the boundary and dropped once
- * exchanged (all one-shot), or with `setup_action=request` when an owner has
- * to approve it. The screen gets the bare nonce; the walk is pinned
+ * exchanged (all one-shot), and `setup_action`, which says whether it was an
+ * install at all. The screen gets the bare nonce; the walk is pinned
  * on the install URL on the way out and kept through the rewrite.
  */
 export const Route = createFileRoute('/_auth/onboarding/github')({
@@ -32,7 +32,7 @@ function GithubStep() {
       githubInstallationId={githubInstallationId}
       code={code}
       state={state}
-      requested={setupAction === 'request'}
+      setupAction={setupAction}
       installUrlFor={(url) => (walk ? installUrlCarryingWalk(url) : url)}
       onExchanged={() =>
         navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true })

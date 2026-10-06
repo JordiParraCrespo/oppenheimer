@@ -75,7 +75,7 @@ export function RepositoryBranchSelect({
       action={
         onManage
           ? {
-              label: t('sessions.new.repository.manage'),
+              label: t('common.repositoryAccess.manage'),
               icon: <BrandGlyph name="github" size={15} />,
               trailing: <ArrowUpRight />,
               onSelect: onManage,

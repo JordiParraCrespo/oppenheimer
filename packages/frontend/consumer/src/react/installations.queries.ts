@@ -95,43 +95,15 @@ export function useStartInstallation(options?: UseMutationOptions<InstallationSt
   });
 }
 
-/** A tab opened in the click and pointed at an address once it arrives; the platform's to open. */
-export interface ManageAccessTab {
-  go: (url: string) => void;
-  close: () => void;
-}
-
 /**
- * "Manage repository access": the App's install page in a new tab, with a
- * minted install state (`POST /installations` refuses a callback without
- * one). It is how a workspace reaches an organization's repositories: the App
- * is installed on that organization, or an owner is asked to.
- *
- * Minted on click, not render: every mint is a Redis key and the pickers that
- * offer this render on every dialog. The tab itself is the platform's
- * (`openTab`, opened before the mint so a popup blocker allows it), and so is
- * telling this window the reader came back: `onReturn` then drops the
- * installations and their repositories, because the install was connected in
- * the other tab and this one's cache knows nothing of it.
+ * Read the installations and their repositories again: for a console tab the
+ * reader returns to after connecting an install in another one, whose cache
+ * knows nothing of it.
  */
-export function useManageGithubAccess(
-  openTab: (options: { onReturn: () => void }) => ManageAccessTab,
-) {
+export function useRefreshInstallations() {
   const queryClient = useQueryClient();
-  const { mutate, error, reset } = useStartInstallation();
-
-  return {
-    manage: () => {
-      const tab = openTab({
-        onReturn: () => {
-          void queryClient.invalidateQueries({ queryKey: installationsKeys.all });
-        },
-      });
-      mutate(undefined, { onSuccess: ({ url }) => tab.go(url), onError: () => tab.close() });
-    },
-    /** Why the last mint failed, until `dismiss`. */
-    error,
-    dismiss: reset,
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: installationsKeys.all });
   };
 }
 

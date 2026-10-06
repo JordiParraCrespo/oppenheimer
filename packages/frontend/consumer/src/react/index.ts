@@ -44,7 +44,7 @@ export {
   useInstallationRepositories,
   useInstallationRepositoriesFor,
   useInstallations,
-  useManageGithubAccess,
+  useRefreshInstallations,
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';

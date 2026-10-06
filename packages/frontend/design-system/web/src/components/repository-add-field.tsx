@@ -1,12 +1,11 @@
 'use client';
 
-import { SearchIcon, XIcon } from 'lucide-react';
+import { ArrowUpRightIcon, SearchIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { BrandGlyph } from './brand-glyph';
 import {
-  type ChipSelectAction,
   ChipSelectActionRow,
   ChipSelectEmpty,
   ChipSelectItem,
@@ -38,8 +37,9 @@ const defaultEmptyText = (query: string): React.ReactNode =>
  *
  * Ids in, ids out: the caller owns `value` (the ids added, in order) and the
  * label and hint around it. The pane is `ChipSelect`'s parts, as the branch
- * pill's is, so the two repository controls share one picker; `action` is the
- * same pinned foot row ("Manage repository access").
+ * pill's is, so the two repository controls share one picker. `onManage` adds
+ * the pinned foot row the repository chip has, "Manage repository access"
+ * with the GitHub mark; absent, there is no App to manage and no row.
  *
  * ```tsx
  * <RepositoryAddField
@@ -56,7 +56,8 @@ function RepositoryAddField({
   placeholder = 'Add a repository…',
   emptyText: emptyTextProp,
   removeLabel: removeLabelProp,
-  action,
+  onManage,
+  manageLabel = 'Manage repository access',
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onChange'> & {
@@ -66,8 +67,9 @@ function RepositoryAddField({
   placeholder?: string;
   emptyText?: (query: string) => React.ReactNode;
   removeLabel?: (name: string) => string;
-  /** A pinned row at the pane's foot, under the list. */
-  action?: ChipSelectAction;
+  /** Opens the App's install page; absent when the deployment has no App. */
+  onManage?: () => void;
+  manageLabel?: string;
 }) {
   // Not a default parameter: the React Compiler skips a function-valued one.
   const emptyText = emptyTextProp ?? defaultEmptyText;
@@ -134,7 +136,17 @@ function RepositoryAddField({
               <ChipSelectEmpty>{emptyText(query)}</ChipSelectEmpty>
             )}
           </div>
-          {action ? <ChipSelectActionRow action={action} onClose={() => setOpen(false)} /> : null}
+          {onManage ? (
+            <ChipSelectActionRow
+              action={{
+                label: manageLabel,
+                icon: <BrandGlyph name="github" size={15} />,
+                trailing: <ArrowUpRightIcon />,
+                onSelect: onManage,
+              }}
+              onClose={() => setOpen(false)}
+            />
+          ) : null}
         </ChipSelectPopup>
       </Popover>
 
