@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'tasks' | 'calendar' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'tasks' | 'calendar' | 'pulls' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -2196,6 +2196,303 @@ export type GoogleCalendarConnectStartResponseDto = {
 export type ConnectGoogleCalendarRequest = {
     code: string;
     state: string;
+};
+
+export type PullRequestLaneReasonDto = {
+    code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change';
+    /**
+     * The risky directory, for `risky_path`.
+     */
+    path?: string;
+    /**
+     * Changed lines, additions and deletions together.
+     */
+    lines?: number;
+    files?: number;
+};
+
+export type PullRequestRowDto = {
+    /**
+     * The installation that reaches the repository.
+     */
+    installationId: string;
+    githubRepoId: number;
+    repository: string;
+    number: number;
+    title: string;
+    /**
+     * A GitHub login.
+     */
+    author: string;
+    /**
+     * A session’s when its branch is one a session pushed.
+     */
+    authorKind: 'session' | 'person';
+    headRef: string;
+    scope: 'mine' | 'requested' | 'watching';
+    lane: 'deep' | 'medium' | 'quick';
+    laneReason: PullRequestLaneReasonDto;
+    additions: number;
+    deletions: number;
+    checks: 'passing' | 'failing' | 'running' | 'none';
+    /**
+     * False on a conflict with the base; true while GitHub is still computing it.
+     */
+    mergeable: boolean;
+    /**
+     * What holds it, or null when it can merge.
+     */
+    blocker?: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'changes_requested' | 'behind' | 'approval_required';
+    /**
+     * Seconds since it was opened.
+     */
+    waitingSeconds: number;
+    draft: boolean;
+    htmlUrl: string;
+};
+
+export type PullRequestScopeCountsDto = {
+    mine: number;
+    requested: number;
+    watching: number;
+};
+
+export type PullRequestLaneCountsDto = {
+    deep: number;
+    medium: number;
+    quick: number;
+};
+
+export type PullRequestQueueResponseDto = {
+    /**
+     * Longest wait first.
+     */
+    items: Array<PullRequestRowDto>;
+    scopes: PullRequestScopeCountsDto;
+    /**
+     * Within the scope asked for.
+     */
+    lanes: PullRequestLaneCountsDto;
+    /**
+     * In the scope asked for, nothing holds them.
+     */
+    readyToMerge: number;
+    withConflicts: number;
+    oldestWaitingSeconds?: number | null;
+    /**
+     * The caller’s GitHub login; null until they connect GitHub, and nothing is done in their name.
+     */
+    viewerLogin?: string | null;
+};
+
+export type AnalyticsFigureDto = {
+    value: number;
+    previous: number;
+};
+
+export type AnalyticsMedianDto = {
+    value?: number | null;
+    previous?: number | null;
+};
+
+export type AnalyticsDayDto = {
+    date: string;
+    created: number;
+    merged: number;
+};
+
+export type AnalyticsLaneDto = {
+    lane: 'deep' | 'medium' | 'quick';
+    value: number;
+    previous: number;
+};
+
+export type AnalyticsWaitingDto = {
+    reason: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'changes_requested' | 'behind' | 'approval_required';
+    /**
+     * Open pull requests held by it now.
+     */
+    value: number;
+    /**
+     * Median hours they have been open.
+     */
+    medianHours?: number | null;
+};
+
+export type PullRequestAnalyticsResponseDto = {
+    range: 'week' | 'month' | 'quarter';
+    from: string;
+    to: string;
+    created: AnalyticsFigureDto;
+    merged: AnalyticsFigureDto;
+    /**
+     * Pull requests the caller reviewed.
+     */
+    reviewedByYou: AnalyticsFigureDto;
+    /**
+     * Opened to first review by someone else, in hours.
+     */
+    waitForReview: AnalyticsMedianDto;
+    /**
+     * Same, for pull requests sessions opened.
+     */
+    waitForReviewAgents: AnalyticsMedianDto;
+    /**
+     * Same, for pull requests people opened.
+     */
+    waitForReviewPeople: AnalyticsMedianDto;
+    /**
+     * Opened to merged, in hours.
+     */
+    timeToMerge: AnalyticsMedianDto;
+    days: Array<AnalyticsDayDto>;
+    /**
+     * Merged pull requests by lane.
+     */
+    lanes: Array<AnalyticsLaneDto>;
+    /**
+     * What holds the open pull requests now.
+     */
+    waiting: Array<AnalyticsWaitingDto>;
+};
+
+export type WatchedRepositoryDto = {
+    installationId: string;
+    githubRepoId: number;
+    fullName: string;
+    private: boolean;
+    /**
+     * Watched unless the caller switched it off.
+     */
+    watching: boolean;
+};
+
+export type SetRepositoryWatchRequest = {
+    watching: boolean;
+};
+
+export type PullRequestChecksDto = {
+    state: 'passing' | 'failing' | 'running' | 'none';
+    total: number;
+    passed: number;
+    failed: number;
+    pending: number;
+};
+
+export type PullRequestGateDto = {
+    id: 'checks' | 'conflicts' | 'review' | 'merge';
+    state: 'done' | 'failed' | 'pending';
+};
+
+export type PullRequestReviewerDto = {
+    login: string;
+    state: 'approved' | 'changes_requested' | 'commented' | 'requested';
+};
+
+export type PullRequestDetailResponseDto = {
+    /**
+     * The installation that reaches the repository.
+     */
+    installationId: string;
+    githubRepoId: number;
+    repository: string;
+    number: number;
+    title: string;
+    /**
+     * A GitHub login.
+     */
+    author: string;
+    /**
+     * A session’s when its branch is one a session pushed.
+     */
+    authorKind: 'session' | 'person';
+    headRef: string;
+    scope: 'mine' | 'requested' | 'watching';
+    lane: 'deep' | 'medium' | 'quick';
+    laneReason: PullRequestLaneReasonDto;
+    additions: number;
+    deletions: number;
+    checks: 'passing' | 'failing' | 'running' | 'none';
+    /**
+     * False on a conflict with the base; true while GitHub is still computing it.
+     */
+    mergeable: boolean;
+    /**
+     * What holds it, or null when it can merge.
+     */
+    blocker?: 'draft' | 'conflicts' | 'checks_failing' | 'checks_running' | 'changes_requested' | 'behind' | 'approval_required';
+    /**
+     * Seconds since it was opened.
+     */
+    waitingSeconds: number;
+    draft: boolean;
+    htmlUrl: string;
+    /**
+     * The description, as written (Markdown).
+     */
+    body: string;
+    baseRef: string;
+    state: 'open' | 'merged' | 'closed';
+    changedFiles: number;
+    /**
+     * The top-level directories it touches, most files first.
+     */
+    folders: Array<string>;
+    checkCounts: PullRequestChecksDto;
+    gates: Array<PullRequestGateDto>;
+    reviewers: Array<PullRequestReviewerDto>;
+    viewerLogin?: string | null;
+};
+
+export type PullRequestFileDto = {
+    path: string;
+    previousPath?: string | null;
+    status: string;
+    additions: number;
+    deletions: number;
+    /**
+     * The unified diff; null for a binary file or one GitHub will not show.
+     */
+    patch?: string | null;
+};
+
+export type PullRequestCommentDto = {
+    id: number;
+    path: string;
+    line?: number | null;
+    side: 'LEFT' | 'RIGHT';
+    body: string;
+    author: string;
+    createdAt: string;
+};
+
+export type SubmitPullRequestReviewRequest = {
+    verdict: 'comment' | 'approve' | 'request_changes';
+    body?: string;
+    comments?: Array<{
+        path: string;
+        line: number;
+        side?: 'LEFT' | 'RIGHT';
+        body: string;
+    }>;
+};
+
+export type ReviewSubmittedResponseDto = {
+    /**
+     * Merged now; false for a comment, a change request, or an approval GitHub would not merge yet.
+     */
+    merged: boolean;
+};
+
+export type AddPullRequestCommentRequest = {
+    path: string;
+    line: number;
+    side?: 'LEFT' | 'RIGHT';
+    body: string;
+};
+
+export type MergePullRequestRequest = {
+    method?: 'squash' | 'merge' | 'rebase';
 };
 
 export type CapabilitiesResponseDto = {
@@ -8240,6 +8537,503 @@ export type FindGoogleCalendarEventsResponses = {
 };
 
 export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];
+
+export type FindPullRequestsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Whose queue; default `mine`
+         */
+        scope?: 'mine' | 'requested' | 'watching';
+    };
+    url: '/api/v1/pulls';
+};
+
+export type FindPullRequestsErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestsError = FindPullRequestsErrors[keyof FindPullRequestsErrors];
+
+export type FindPullRequestsResponses = {
+    200: PullRequestQueueResponseDto;
+};
+
+export type FindPullRequestsResponse = FindPullRequestsResponses[keyof FindPullRequestsResponses];
+
+export type FindPullRequestAnalyticsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Default `month`
+         */
+        range?: 'week' | 'month' | 'quarter';
+    };
+    url: '/api/v1/pulls/analytics';
+};
+
+export type FindPullRequestAnalyticsErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestAnalyticsError = FindPullRequestAnalyticsErrors[keyof FindPullRequestAnalyticsErrors];
+
+export type FindPullRequestAnalyticsResponses = {
+    200: PullRequestAnalyticsResponseDto;
+};
+
+export type FindPullRequestAnalyticsResponse = FindPullRequestAnalyticsResponses[keyof FindPullRequestAnalyticsResponses];
+
+export type FindWatchedRepositoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/pulls/repositories';
+};
+
+export type FindWatchedRepositoriesErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindWatchedRepositoriesError = FindWatchedRepositoriesErrors[keyof FindWatchedRepositoriesErrors];
+
+export type FindWatchedRepositoriesResponses = {
+    200: Array<WatchedRepositoryDto>;
+};
+
+export type FindWatchedRepositoriesResponse = FindWatchedRepositoriesResponses[keyof FindWatchedRepositoriesResponses];
+
+export type SetRepositoryWatchData = {
+    body: SetRepositoryWatchRequest;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/repositories/{installationId}/{githubRepoId}';
+};
+
+export type SetRepositoryWatchErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type SetRepositoryWatchError = SetRepositoryWatchErrors[keyof SetRepositoryWatchErrors];
+
+export type SetRepositoryWatchResponses = {
+    204: void;
+};
+
+export type SetRepositoryWatchResponse = SetRepositoryWatchResponses[keyof SetRepositoryWatchResponses];
+
+export type FindPullRequestData = {
+    body?: never;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}';
+};
+
+export type FindPullRequestErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestError = FindPullRequestErrors[keyof FindPullRequestErrors];
+
+export type FindPullRequestResponses = {
+    200: PullRequestDetailResponseDto;
+};
+
+export type FindPullRequestResponse = FindPullRequestResponses[keyof FindPullRequestResponses];
+
+export type FindPullRequestFilesData = {
+    body?: never;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/files';
+};
+
+export type FindPullRequestFilesErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestFilesError = FindPullRequestFilesErrors[keyof FindPullRequestFilesErrors];
+
+export type FindPullRequestFilesResponses = {
+    200: Array<PullRequestFileDto>;
+};
+
+export type FindPullRequestFilesResponse = FindPullRequestFilesResponses[keyof FindPullRequestFilesResponses];
+
+export type FindPullRequestCommentsData = {
+    body?: never;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/comments';
+};
+
+export type FindPullRequestCommentsErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestCommentsError = FindPullRequestCommentsErrors[keyof FindPullRequestCommentsErrors];
+
+export type FindPullRequestCommentsResponses = {
+    200: Array<PullRequestCommentDto>;
+};
+
+export type FindPullRequestCommentsResponse = FindPullRequestCommentsResponses[keyof FindPullRequestCommentsResponses];
+
+export type AddPullRequestCommentData = {
+    body: AddPullRequestCommentRequest;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/comments';
+};
+
+export type AddPullRequestCommentErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type AddPullRequestCommentError = AddPullRequestCommentErrors[keyof AddPullRequestCommentErrors];
+
+export type AddPullRequestCommentResponses = {
+    204: void;
+};
+
+export type AddPullRequestCommentResponse = AddPullRequestCommentResponses[keyof AddPullRequestCommentResponses];
+
+export type SubmitPullRequestReviewData = {
+    body: SubmitPullRequestReviewRequest;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/reviews';
+};
+
+export type SubmitPullRequestReviewErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type SubmitPullRequestReviewError = SubmitPullRequestReviewErrors[keyof SubmitPullRequestReviewErrors];
+
+export type SubmitPullRequestReviewResponses = {
+    200: ReviewSubmittedResponseDto;
+};
+
+export type SubmitPullRequestReviewResponse = SubmitPullRequestReviewResponses[keyof SubmitPullRequestReviewResponses];
+
+export type MergePullRequestData = {
+    body: MergePullRequestRequest;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/merge';
+};
+
+export type MergePullRequestErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type MergePullRequestError = MergePullRequestErrors[keyof MergePullRequestErrors];
+
+export type MergePullRequestResponses = {
+    204: void;
+};
+
+export type MergePullRequestResponse = MergePullRequestResponses[keyof MergePullRequestResponses];
 
 export type CheckData = {
     body?: never;

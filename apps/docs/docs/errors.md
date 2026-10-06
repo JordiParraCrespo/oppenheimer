@@ -332,6 +332,9 @@ session asks.
 | `GITHUB_009` <a id="github_009" /> | GitHub could not be reached or rejected the request            | 502  |
 | `GITHUB_010` <a id="github_010" /> | That repository is not covered by this GitHub installation     | 404  |
 | `GITHUB_011` <a id="github_011" /> | The GitHub installation was not started from this workspace    | 400  |
+| `GITHUB_012` <a id="github_012" /> | Connect GitHub again to review and merge in your name          | 409  |
+| `GITHUB_013` <a id="github_013" /> | Pull request not found                                         | 404  |
+| `GITHUB_014` <a id="github_014" /> | GitHub would not merge this pull request yet                   | 409  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -360,6 +363,26 @@ which: telling them apart would make the endpoint a probing oracle.
 `GITHUB_002` also covers a credential GitHub itself rejected: a `401` from the
 App's own JWT is a deployment problem, not a caller's, and reporting it as one
 sends whoever hit it to the right place.
+
+`GITHUB_012` comes from a review, a comment or a merge: they are made with the
+caller's own GitHub user token, kept sealed from the install's authorization,
+never with the App's. There is none to use when the caller never installed the
+App from this console, or GitHub refused to refresh it. Connecting GitHub again
+stores a fresh one.
+
+`GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
+protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
+request waits. Approving answers `200` with `merged: false` instead of this
+code, because the approval itself landed.
+
+## Pull requests
+
+The Pull requests area reads GitHub live through the workspace's installations
+and keeps nothing of a pull request but which repositories the caller watches.
+
+| Code                               | Title                                | HTTP |
+| ---------------------------------- | ------------------------------------ | ---- |
+| `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
 
 ## Projects
 

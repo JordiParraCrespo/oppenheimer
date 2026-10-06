@@ -65,6 +65,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
+import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { QueueModule } from './queue/queue.module';
 import { REDIS_CLIENT } from './redis/redis.di-tokens';
 import { RedisModule } from './redis/redis.module';
@@ -242,6 +243,7 @@ import { UsersModule } from './users/user.module';
     AutomationsModule,
     TasksModule,
     CalendarModule,
+    PullRequestsModule,
     RelayModule,
     HealthModule,
     QueueModule,

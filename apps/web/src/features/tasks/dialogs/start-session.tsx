@@ -8,7 +8,6 @@ import {
   DialogTitle,
   FieldDescription,
   Skeleton,
-  toast,
 } from '@oppenheimer/design-system-web';
 import { shortName } from '@oppenheimer/frontend-consumer';
 import {
@@ -18,7 +17,7 @@ import {
   useTasks,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { RelativeTime } from '@oppenheimer/frontend-web';
+import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,12 +47,8 @@ export function StartSessionDialog() {
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const launch = useStartTaskSession({
     onSuccess: (started) => {
-      toast.success(
-        t(
-          started.hints.includes('host_offline')
-            ? 'toasts.taskSessionQueued'
-            : 'toasts.taskSessionStarted',
-        ),
+      notifySuccess(
+        started.hints.includes('host_offline') ? 'taskSessionQueued' : 'taskSessionStarted',
       );
       close();
     },
