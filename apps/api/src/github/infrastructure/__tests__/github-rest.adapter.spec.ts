@@ -2,7 +2,8 @@ import { generateKeyPairSync } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
-import type { GithubFetch } from '../github-rest.adapter';
+import { type GithubFetch, GithubHttp } from '../github-http.adapter';
+import { GithubPullsAdapter } from '../github-pulls.adapter';
 import { GithubRestAdapter } from '../github-rest.adapter';
 
 /**
@@ -52,6 +53,7 @@ function fakeFetch(answers: Answer[]) {
       ok: (answer.status ?? 200) < 400,
       status: answer.status ?? 200,
       json: async () => answer.body ?? {},
+      text: async () => JSON.stringify(answer.body ?? {}),
       headers: {
         get: (name: string) =>
           name === 'link' ? (answer.link ?? null) : (answer.headers?.[name] ?? null),
@@ -65,7 +67,11 @@ function build(answers: Answer[], options: { configured?: boolean } = {}) {
   const http = fakeFetch(answers);
   const capabilities = new CapabilitiesService({ github_app: options.configured ?? true });
   return {
-    adapter: new GithubRestAdapter(configWith(), capabilities, http.impl),
+    adapter: new GithubRestAdapter(
+      configWith(),
+      capabilities,
+      new GithubHttp(configWith(), http.impl),
+    ),
     http,
   };
 }
@@ -138,7 +144,7 @@ describe('the App JWT', () => {
     const adapter = new GithubRestAdapter(
       configWith(escaped),
       new CapabilitiesService({ github_app: true }),
-      http.impl,
+      new GithubHttp(configWith(escaped), http.impl),
     );
 
     await expect(adapter.mintRepositoryToken(45678901, 831004242)).resolves.toMatchObject({
@@ -218,7 +224,7 @@ describe('minting a repository token', () => {
     const adapter = new GithubRestAdapter(
       configWith(),
       new CapabilitiesService({ github_app: true }),
-      failing,
+      new GithubHttp(configWith(), failing),
     );
 
     await expect(adapter.mintRepositoryToken(45678901, 831004242)).rejects.toMatchObject({
@@ -418,6 +424,43 @@ describe('GitHub’s rate limit', () => {
     expect(http.calls.map((call) => new URL(call.url).pathname)).toEqual([
       '/app/installations/45678901/access_tokens',
       '/installation/repositories',
+      '/app/installations/45678901/access_tokens',
+    ]);
+  });
+
+  it('counts every token of an installation against one budget, across both adapters', async () => {
+    // The pull-requests adapter is refused on the installation's token; the App
+    // adapter's next read of that installation, with a freshly minted token,
+    // must not be sent.
+    const http = fakeFetch([
+      {
+        status: 403,
+        body: { message: 'API rate limit exceeded for installation ID 45678901.' },
+        headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': inAMinute() },
+      },
+      TOKEN_ANSWER,
+    ]);
+    const client = new GithubHttp(configWith(), http.impl);
+    const pulls = new GithubPullsAdapter(client);
+    const rest = new GithubRestAdapter(
+      configWith(),
+      new CapabilitiesService({ github_app: true }),
+      client,
+    );
+
+    await expect(
+      pulls.listPullRequests(
+        { token: 'ghs_held', bucket: 'installation:45678901' },
+        'acme-labs/oppenheimer',
+        'open',
+        1,
+      ),
+    ).rejects.toMatchObject({ code: 'GITHUB_015' });
+    await expect(rest.listInstallationRepositories(45678901)).rejects.toMatchObject({
+      code: 'GITHUB_015',
+    });
+    expect(http.calls.map((call) => new URL(call.url).pathname)).toEqual([
+      '/repos/acme-labs/oppenheimer/pulls',
       '/app/installations/45678901/access_tokens',
     ]);
   });

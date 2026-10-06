@@ -1,10 +1,8 @@
 import { createSign } from 'node:crypto';
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppError, CapabilitiesService } from '@oppenheimer/backend-core';
-import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 import { GithubErrors } from '../domain/github.errors';
-import { GITHUB_FETCH } from '../github.di-tokens';
 import type {
   GithubAppPort,
   GithubBranch,
@@ -14,17 +12,11 @@ import type {
   GithubUserAuthorization,
   GithubUserTokens,
 } from './github-app.port';
-import { type GithubBucket, GithubRateLimit, tokenBucket } from './github-rate-limit.adapter';
+import { GithubHttp, type GithubRequest, type StatusMap } from './github-http.adapter';
+import type { GithubBucket } from './github-pulls.port';
 
 const OAUTH_TOKEN_PATH = '/login/oauth/access_token';
 
-/** GitHub's REST API version, pinned so a future default cannot move under us. */
-const API_VERSION = '2022-11-28';
-/** GitHub requires a User-Agent and refuses requests without one. */
-const USER_AGENT = 'oppenheimer-control-plane';
-/** A listing the picker is waiting on is worth failing fast rather than hanging. */
-const REQUEST_TIMEOUT_MS = 10_000;
-const PAGE_SIZE = 100;
 /**
  * A hard stop on pagination. `Link` comes from upstream, so a malformed or
  * self-referential header must not be able to loop forever; at this page size
@@ -86,56 +78,28 @@ interface RawUser {
   login: string;
 }
 
-/** What this adapter needs of `fetch`, so a double can stand in for it. */
-export type GithubFetch = typeof globalThis.fetch;
-
-/** What a refusal means at one call site, by status. */
-type StatusMap = Partial<Record<number, ErrorDefinition>>;
-
-interface RequestOptions {
-  /** What GitHub counts this call against, and so what a rate-limit pause covers. */
-  bucket: GithubBucket;
-  /** Bearer credential. Absent for the OAuth exchange, which authenticates by body. */
-  token?: string;
-  method?: string;
-  body?: unknown;
-  accept?: string;
-  /**
-   * Statuses this call site has a specific answer for. Everything else follows
-   * the default reading in {@link errorFor} — which is what keeps a suspended
-   * install, a bad App key and a rate limit from collapsing into one code.
-   */
-  onStatus?: StatusMap;
-}
-
 /**
- * The only file that talks to GitHub, on the platform `fetch` and
- * `node:crypto`: seven endpoints, an RS256 JWT and one pagination rule do not
- * earn a client library to keep current, audit and resolve at install time.
- * GitHub's failures become this module's problem documents, or they would
- * reach a client as a bare 500 with no code.
+ * What the App does on GitHub, on the platform `fetch` (through
+ * {@link GithubHttp}, the module's one client) and `node:crypto`: seven
+ * endpoints, an RS256 JWT and one pagination rule do not earn a client library
+ * to keep current, audit and resolve at install time. GitHub's failures become
+ * this module's problem documents, or they would reach a client as a bare 500
+ * with no code.
+ *
+ * Each call names the budget GitHub counts it against: `app` for the App's JWT,
+ * `installation:<id>` for an installation's token, `oauth` for the install
+ * flow (the person's id is not known until its last call, and it runs once).
  *
  * **Nothing here logs a response body.** The access-token endpoint answers with
  * a live credential, and a log line is the easiest place to leak one.
  */
 @Injectable()
 export class GithubRestAdapter implements GithubAppPort {
-  private readonly logger = new Logger(GithubRestAdapter.name);
-  private readonly http: GithubFetch;
-  private readonly limits: GithubRateLimit;
-
   constructor(
     private readonly configService: ConfigService,
     private readonly capabilities: CapabilitiesService,
-    @Optional()
-    @Inject(GITHUB_FETCH)
-    fetchImpl?: GithubFetch,
-    @Optional()
-    rateLimit?: GithubRateLimit,
-  ) {
-    this.http = fetchImpl ?? globalThis.fetch;
-    this.limits = rateLimit ?? new GithubRateLimit();
-  }
+    private readonly http: GithubHttp,
+  ) {}
 
   /**
    * One predicate, shared with the capability.
@@ -148,18 +112,8 @@ export class GithubRestAdapter implements GithubAppPort {
     return this.capabilities.has('github_app');
   }
 
-  /**
-   * GitHub's REST root, without a trailing slash. Configuration rather than a
-   * constant since GitHub Enterprise Server serves the same API on somebody
-   * else's host — and since an end-to-end run has to reach a stub to exercise a
-   * path that needs a repository without registering an App (`e2e/README.md`).
-   * This and {@link oauthTokenUrl} default to github.com, so a deployment that
-   * sets neither is unchanged.
-   */
   private get api(): string {
-    return (
-      this.configService.get<string>('githubApp.apiBaseUrl') ?? 'https://api.github.com'
-    ).replace(/\/+$/, '');
+    return this.http.api;
   }
 
   private get oauthTokenUrl(): string {
@@ -173,11 +127,10 @@ export class GithubRestAdapter implements GithubAppPort {
     this.assertConfigured();
 
     const tokens = await this.exchangeCode({ code });
-    const bucket = tokenBucket(tokens.accessToken);
+    const bucket: GithubBucket = 'oauth';
     const installations = await this.paginate<RawInstallation>(
       `${this.api}/user/installations`,
-      tokens.accessToken,
-      bucket,
+      { bucket, token: tokens.accessToken },
       (body) => collectionOf<RawInstallation>(body, 'installations'),
     );
     const { body: user } = await this.request<RawUser>(`${this.api}/user`, {
@@ -234,8 +187,7 @@ export class GithubRestAdapter implements GithubAppPort {
 
     const repositories = await this.paginate<RawRepository>(
       `${this.api}/installation/repositories`,
-      token,
-      `installation:${githubInstallationId}`,
+      { bucket: `installation:${githubInstallationId}`, token },
       (body) => collectionOf<RawRepository>(body, 'repositories'),
     );
 
@@ -283,13 +235,15 @@ export class GithubRestAdapter implements GithubAppPort {
     const [owner, name] = repository.full_name.split('/');
     const branches = await this.paginate<RawBranch>(
       `${this.api}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/branches`,
-      token,
-      bucket,
-      (body) => (Array.isArray(body) ? (body as RawBranch[]) : []),
       {
-        403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
-        404: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
+        bucket,
+        token,
+        onStatus: {
+          403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
+          404: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
+        },
       },
+      (body) => (Array.isArray(body) ? (body as RawBranch[]) : []),
     );
 
     return {
@@ -428,88 +382,29 @@ export class GithubRestAdapter implements GithubAppPort {
     return `${signingInput}.${base64url(signature)}`;
   }
 
-  private async paginate<T>(
+  private paginate<T>(
     url: string,
-    token: string,
-    bucket: GithubBucket,
+    options: Omit<GithubRequest, 'unauthorized'>,
     pick: (body: unknown) => T[],
-    onStatus?: StatusMap,
   ): Promise<T[]> {
-    const items: T[] = [];
-    let next: string | undefined = withPageSize(url);
-
-    for (let page = 0; page < MAX_PAGES && next; page += 1) {
-      const { body, link } = await this.request<unknown>(next, { bucket, token, onStatus });
-      items.push(...pick(body));
-      next = nextPageUrl(link);
-    }
-
-    return items;
+    return this.http.paginate(
+      url,
+      { ...options, unauthorized: GithubErrors.APP_NOT_CONFIGURED },
+      pick,
+      MAX_PAGES,
+    );
   }
 
   /**
-   * One request, with its failure folded onto the catalog, inside GitHub's
-   * rate limit: a paused bucket is refused without a call, and a refusal for
-   * rate is `GITHUB_015` whatever the call site maps its status to.
-   *
-   * The credential travels in the `Authorization` header and never in the URL,
-   * which is what lets the log line and the problem document name the request at
-   * all. Neither carries the response body: this is the code path that mints
-   * credentials.
+   * One request through the module's client. A `401` here is never the
+   * caller's fault: the App JWT did not verify or the credentials are wrong,
+   * which is a deployment problem and says so.
    */
-  private async request<T>(
+  private request<T>(
     url: string,
-    options: RequestOptions,
+    options: Omit<GithubRequest, 'unauthorized'>,
   ): Promise<{ body: T; link: string | null }> {
-    let response: Response;
-    try {
-      response = await this.limits.call(options.bucket, () =>
-        this.http(url, {
-          method: options.method ?? 'GET',
-          headers: {
-            accept: options.accept ?? 'application/vnd.github+json',
-            'x-github-api-version': API_VERSION,
-            'user-agent': USER_AGENT,
-            ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-            ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-          },
-          body: options.body === undefined ? undefined : JSON.stringify(options.body),
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        }),
-      );
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      // A timeout, a DNS failure, a reset: GitHub did not answer at all, which is
-      // never a 4xx no matter what the call site expected.
-      this.logger.warn(
-        { message: 'GitHub could not be reached', url: pathOf(url) },
-        error instanceof Error ? error.stack : String(error),
-      );
-      throw new AppError(GithubErrors.UPSTREAM_FAILED, {
-        detail: 'GitHub could not be reached.',
-        extensions: { upstreamStatus: null },
-      });
-    }
-
-    if (!response.ok) {
-      this.logger.warn({
-        message: 'GitHub rejected a request',
-        url: pathOf(url),
-        status: response.status,
-      });
-      // The error body carries GitHub's own sentence and no credential; the
-      // success body of this same endpoint does, which is why only this branch
-      // reads one.
-      const upstreamMessage = await messageOf(response);
-      await this.limits.refuseIfLimited(options.bucket, response, upstreamMessage);
-      throw new AppError(errorFor(response.status, options.onStatus), {
-        detail: upstreamMessage ?? 'GitHub answered this request with an error.',
-        extensions: { upstreamStatus: response.status },
-      });
-    }
-
-    await this.limits.observe(options.bucket, response);
-    return { body: (await response.json()) as T, link: response.headers.get('link') };
+    return this.http.request<T>(url, { ...options, unauthorized: GithubErrors.APP_NOT_CONFIGURED });
   }
 
   private assertConfigured(): void {
@@ -544,47 +439,8 @@ export class GithubRestAdapter implements GithubAppPort {
   }
 }
 
-/**
- * What a status means when the call site has not said.
- *
- * `401` is never the caller's fault: the App JWT did not verify or the
- * credentials are wrong, which is a deployment problem and says so. Everything
- * else — `422`, `429`, any 5xx — is upstream trouble, and GitHub's own sentence
- * travels in `detail`.
- */
-function errorFor(status: number, onStatus?: StatusMap): ErrorDefinition {
-  const named = onStatus?.[status];
-  if (named) return named;
-  if (status === 401) return GithubErrors.APP_NOT_CONFIGURED;
-  return GithubErrors.UPSTREAM_FAILED;
-}
-
-/** GitHub's own sentence for a refusal. Never read from a successful response. */
-async function messageOf(response: Response): Promise<string | undefined> {
-  try {
-    const body = (await response.json()) as { message?: unknown };
-    return typeof body.message === 'string' ? body.message : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function base64url(value: Buffer): string {
   return value.toString('base64url');
-}
-
-function withPageSize(url: string): string {
-  return `${url}${url.includes('?') ? '&' : '?'}per_page=${PAGE_SIZE}`;
-}
-
-/** `<https://api.github.com/…?page=2>; rel="next", <…>; rel="last"` */
-function nextPageUrl(link: string | null): string | undefined {
-  if (!link) return undefined;
-  for (const part of link.split(',')) {
-    const match = /<([^>]+)>\s*;\s*rel="next"/.exec(part.trim());
-    if (match) return match[1];
-  }
-  return undefined;
 }
 
 /**
@@ -595,15 +451,6 @@ function collectionOf<T>(body: unknown, field: string): T[] {
   if (Array.isArray(body)) return body as T[];
   const wrapped = (body as Record<string, unknown> | null)?.[field];
   return Array.isArray(wrapped) ? (wrapped as T[]) : [];
-}
-
-/** The path alone, so a log line names the request without its query string. */
-function pathOf(url: string): string {
-  try {
-    return new URL(url).pathname;
-  } catch {
-    return url;
-  }
 }
 
 function toRepository(repository: RawRepository): GithubRepository {

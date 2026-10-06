@@ -392,10 +392,10 @@ operation. "We don't own the data" is a reason to have a port, not a reason to
 have a 500-line service.
 
 A gateway or adapter that calls a system outside the process also honours
-that system's rate limit, and is not done until it does: it reads the limit
-signals on every answer, answers its own `429` code, pauses the bucket the
-provider counts against, and caps its own concurrency. The rule and the
-inventory of integrations are `.agents/rules/integrations.md`.
+that system's rate limit, and is not done until it does: every call goes
+through one `UpstreamLimiter.exchange`, with buckets named for what the
+provider counts, and a rate limit answers the module's own `429` code. The
+rule is `.agents/rules/integrations.md`.
 
 ## Enforcement
 

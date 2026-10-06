@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError, upstreamRateLimited } from '@oppenheimer/backend-core';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   CALENDAR_CONNECTION_REPOSITORY,
   CALENDAR_PROVIDER,
@@ -13,7 +13,6 @@ import { isReadableRange } from '../../domain/calendar-range.policy';
 import {
   CalendarGrantRevokedError,
   type CalendarProviderPort,
-  CalendarRateLimitedError,
   type ProviderCalendarEvent,
 } from '../../infrastructure/calendar-provider.port';
 import type { TokenSealerPort } from '../../infrastructure/token-sealer.port';
@@ -63,12 +62,8 @@ export class FindGoogleCalendarEventsQueryHandler
       if (error instanceof CalendarGrantRevokedError) {
         return this.revoked(connection, 'Google revoked the grant');
       }
-      if (error instanceof CalendarRateLimitedError) {
-        throw upstreamRateLimited(CalendarErrors.GOOGLE_RATE_LIMITED, {
-          system: 'Google Calendar',
-          resetAt: error.resetAt,
-        });
-      }
+      // Google's quota (`CALENDAR_010`): already the problem to answer.
+      if (error instanceof AppError) throw error;
       throw new AppError(CalendarErrors.GOOGLE_UNAVAILABLE);
     }
   }

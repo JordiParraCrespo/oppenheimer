@@ -3,13 +3,15 @@ import { UpstreamPause, type UpstreamPauseStore } from '../upstream-pause';
 
 const NOW = Date.parse('2026-10-06T12:00:00.000Z');
 
-function memoryStore(): UpstreamPauseStore & { values: Map<string, unknown> } {
-  const values = new Map<string, unknown>();
+function memoryStore(): UpstreamPauseStore & { values: Map<string, number> } {
+  const values = new Map<string, number>();
   return {
     values,
     get: async <T>(key: string) => values.get(key) as T | undefined,
-    set: async (key: string, value: unknown) => {
-      values.set(key, value);
+    setMax: async (key: string, value: number) => {
+      const kept = Math.max(values.get(key) ?? 0, value);
+      values.set(key, kept);
+      return kept;
     },
   };
 }
@@ -33,6 +35,18 @@ describe('UpstreamPause', () => {
     );
   });
 
+  it('never lets a replica that learned a shorter reset cut another’s pause short', async () => {
+    const store = memoryStore();
+    await new UpstreamPause('github', store).pause('installation:1', new Date(NOW + 60_000), NOW);
+
+    // Replica B saw no reset header and pauses for the floor; the pause it reports is the shared one.
+    const b = new UpstreamPause('github', store, { defaultPauseMs: 1_000 });
+    expect(await b.pause('installation:1', null, NOW)).toEqual(new Date(NOW + 60_000));
+    expect(
+      await new UpstreamPause('github', store).pausedUntil('installation:1', NOW + 2_000),
+    ).toEqual(new Date(NOW + 60_000));
+  });
+
   it('pauses for the default when the provider gave no reset, and never past the cap', async () => {
     const pause = new UpstreamPause('google', undefined, {
       defaultPauseMs: 5_000,
@@ -46,7 +60,7 @@ describe('UpstreamPause', () => {
   it('keeps working on what this process knows when the store is down', async () => {
     const broken: UpstreamPauseStore = {
       get: vi.fn().mockRejectedValue(new Error('redis down')),
-      set: vi.fn().mockRejectedValue(new Error('redis down')),
+      setMax: vi.fn().mockRejectedValue(new Error('redis down')),
     };
     const pause = new UpstreamPause('github', broken);
     await pause.pause('app', new Date(NOW + 10_000), NOW);

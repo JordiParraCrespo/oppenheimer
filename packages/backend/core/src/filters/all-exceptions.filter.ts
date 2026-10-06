@@ -159,13 +159,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 }
 
 /**
- * An upstream rate limit (`upstreamRateLimited`) carries how long to wait, and
- * a client that reads `Retry-After` waits instead of retrying into the same wall.
+ * `AppError.retryAfterSeconds`, as a header: a client that reads `Retry-After`
+ * waits instead of retrying into the same wall.
  */
 function retryAfterOf(exception: unknown): number | null {
   if (!(exception instanceof AppError)) return null;
-  const seconds = exception.extensions.retryAfterSeconds;
-  return typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0
+  const seconds = exception.retryAfterSeconds;
+  return seconds !== undefined && Number.isFinite(seconds) && seconds > 0
     ? Math.ceil(seconds)
     : null;
 }

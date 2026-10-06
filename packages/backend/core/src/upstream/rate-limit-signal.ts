@@ -1,24 +1,26 @@
 /**
- * What an upstream answer says about its rate limit, read from headers alone.
+ * What an upstream answer says about its rate limit: the one place that
+ * decides whether a call was refused for rate.
  *
- * Providers spell this three ways, and this reads all of them:
+ * Headers are read here, in the spellings providers use:
  *
  * - `Retry-After` (RFC 9110): seconds, or an HTTP date.
  * - `X-RateLimit-Remaining` / `X-RateLimit-Reset`: GitHub, Slack, Discord and
  *   most others. The reset is epoch seconds for some and seconds-from-now for
  *   others; a value past 10⁹ can only be an epoch, so that is the tell.
- * - `RateLimit-Remaining` / `RateLimit-Reset`, and the structured
- *   `RateLimit: "default";r=0;t=30` of the IETF draft, where the reset is
- *   always seconds-from-now.
+ * - `RateLimit-Remaining` / `RateLimit-Reset` and the structured
+ *   `RateLimit: "default";r=0;t=30` of the IETF draft
+ *   (draft-ietf-httpapi-ratelimit-headers), which defines the reset as
+ *   seconds-from-now and nothing else; that is the only unit read there.
  *
- * A body can say more (GitHub's secondary limit, Google's `rateLimitExceeded`),
- * and reading it is the adapter's job: it knows the provider's shape, and only
- * it may read a body at all.
+ * What only a body says (GitHub's secondary limit, Google's
+ * `rateLimitExceeded`) is the adapter's to read, since only it knows the
+ * provider's shape; it hands the answer in as `bodyLimited`.
  */
 export interface RateLimitSignal {
   /**
-   * The provider refused this call for its rate: a `429`, or a `403` that came
-   * with an exhausted budget or a `Retry-After`.
+   * The provider refused this call for its rate: a `429`, a refusal whose body
+   * said so, or a `403` with an exhausted budget or a `Retry-After`.
    */
   limited: boolean;
   /** Calls left in the current window, when the provider says. */
@@ -33,20 +35,21 @@ export interface RateLimitedResponse {
   headers: { get(name: string): string | null };
 }
 
+export interface ReadRateLimitOptions {
+  /** The adapter read the error body and it names a rate or quota refusal. */
+  bodyLimited?: boolean;
+  now?: number;
+}
+
 /** Past this, a reset can only be epoch seconds: 10⁹ seconds from now is 2058. */
 const EPOCH_THRESHOLD = 1_000_000_000;
 
 export function readRateLimit(
   response: RateLimitedResponse,
-  now: number = Date.now(),
+  options: ReadRateLimitOptions = {},
 ): RateLimitSignal {
-  const header = (name: string): string | null => {
-    try {
-      return response.headers?.get(name) ?? null;
-    } catch {
-      return null;
-    }
-  };
+  const now = options.now ?? Date.now();
+  const header = (name: string): string | null => response.headers.get(name);
 
   const structured = parseStructured(header('ratelimit'));
   const remaining =
@@ -56,12 +59,14 @@ export function readRateLimit(
 
   const retryAfter = retryAfterOf(header('retry-after'), now);
   const reset =
-    resetOf(header('x-ratelimit-reset'), now) ??
-    resetOf(header('ratelimit-reset'), now, { alwaysDelta: true }) ??
-    (structured.resetSeconds === null ? null : new Date(now + structured.resetSeconds * 1000));
+    xResetOf(header('x-ratelimit-reset'), now) ??
+    deltaOf(numberOf(header('ratelimit-reset')), now) ??
+    deltaOf(structured.resetSeconds, now);
 
+  const refused = response.status >= 400;
   const limited =
     response.status === 429 ||
+    (refused && options.bodyLimited === true) ||
     (response.status === 403 && (remaining === 0 || retryAfter !== null));
 
   return { limited, remaining, resetAt: retryAfter ?? reset };
@@ -81,15 +86,15 @@ function retryAfterOf(value: string | null, now: number): Date | null {
   return Number.isNaN(date) ? null : new Date(date);
 }
 
-function resetOf(
-  value: string | null,
-  now: number,
-  options: { alwaysDelta?: boolean } = {},
-): Date | null {
+/** `X-RateLimit-Reset`: epoch seconds (GitHub) or seconds from now (others). */
+function xResetOf(value: string | null, now: number): Date | null {
   const seconds = numberOf(value);
   if (seconds === null) return null;
-  if (!options.alwaysDelta && seconds > EPOCH_THRESHOLD) return new Date(seconds * 1000);
-  return new Date(now + seconds * 1000);
+  return seconds > EPOCH_THRESHOLD ? new Date(seconds * 1000) : new Date(now + seconds * 1000);
+}
+
+function deltaOf(seconds: number | null, now: number): Date | null {
+  return seconds === null ? null : new Date(now + seconds * 1000);
 }
 
 /** `"default";r=0;t=30` — `r` is what is left, `t` the seconds until it refills. */

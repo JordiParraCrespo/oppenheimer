@@ -78,6 +78,22 @@ describe('Redis (integration)', () => {
     await expect(cache.take('attach:integration')).resolves.toEqual({ sessionId: 's-1' });
   });
 
+  it('keeps the larger of two pauses, so a shorter one can never cut another short', async () => {
+    const cache = app.get(CacheService);
+    const later = Date.now() + 60_000;
+
+    await expect(cache.setMax('upstream:pause:github:installation:1', later, 60)).resolves.toBe(
+      later,
+    );
+    await expect(
+      cache.setMax('upstream:pause:github:installation:1', later - 59_000, 1),
+    ).resolves.toBe(later);
+
+    await expect(cache.get('upstream:pause:github:installation:1')).resolves.toBe(later);
+    // The shorter write did not shorten the TTL either.
+    expect(await redis.ttl('cache:upstream:pause:github:installation:1')).toBeGreaterThan(50);
+  });
+
   it('reads many keys in one MGET and loads a miss once', async () => {
     const cache = app.get(CacheService);
     await cache.set('mget:a', 'A', 60);

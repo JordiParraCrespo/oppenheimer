@@ -14,6 +14,11 @@ export interface AppErrorOptions {
   extensions?: Record<string, unknown>;
   /** The underlying error, kept for logs — never serialised to the client. */
   cause?: unknown;
+  /**
+   * Seconds until the request may succeed, sent as `Retry-After`. Set by
+   * `upstreamRateLimited`; the filter reads this field and nothing else.
+   */
+  retryAfterSeconds?: number;
 }
 
 /**
@@ -32,6 +37,8 @@ export class AppError extends HttpException {
   /** Explicit problem type URI, when the catalog entry overrides the default. */
   public readonly type?: string;
   public readonly extensions: Record<string, unknown>;
+  /** Seconds until the request may succeed, sent as `Retry-After` when set. */
+  public readonly retryAfterSeconds?: number;
 
   constructor(error: ErrorDefinition, options: AppErrorOptions = {}) {
     super(
@@ -48,5 +55,6 @@ export class AppError extends HttpException {
     this.detail = options.detail;
     this.type = error.type;
     this.extensions = options.extensions ?? {};
+    this.retryAfterSeconds = options.retryAfterSeconds;
   }
 }

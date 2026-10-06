@@ -1,11 +1,9 @@
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { AppError } from '@oppenheimer/backend-core';
-import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
+import { Injectable } from '@nestjs/common';
 import { GithubErrors } from '../domain/github.errors';
-import { GITHUB_FETCH } from '../github.di-tokens';
+import { GithubHttp, type StatusMap } from './github-http.adapter';
 import type {
   GithubChecks,
+  GithubCredential,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
@@ -14,13 +12,7 @@ import type {
   GithubReviewComment,
   GithubReviewInput,
 } from './github-pulls.port';
-import { GithubRateLimit, tokenBucket } from './github-rate-limit.adapter';
-import type { GithubFetch } from './github-rest.adapter';
 
-const API_VERSION = '2022-11-28';
-const USER_AGENT = 'oppenheimer-control-plane';
-const REQUEST_TIMEOUT_MS = 10_000;
-const PAGE_SIZE = 100;
 /** A pull request's files, reviews and comments: GitHub stops listing files at 3,000 anyway. */
 const MAX_PAGES = 30;
 
@@ -92,56 +84,36 @@ interface RawCombinedStatus {
  * GitHub's pull request endpoints on the platform `fetch`, like the App adapter
  * beside it. The token is the caller's: an installation token to read, the
  * person's own to comment, review and merge, so what GitHub records is what that
- * person did. Every call is counted against that token's bucket in
- * {@link GithubRateLimit}, the same one the App adapter goes through.
+ * person did. Every call goes through {@link GithubHttp}, the one client this
+ * module has, counted against the budget the caller names on the credential.
  *
  * **Nothing here logs a token or a response body.**
  */
 @Injectable()
 export class GithubPullsAdapter implements GithubPullsPort {
-  private readonly logger = new Logger(GithubPullsAdapter.name);
-  private readonly http: GithubFetch;
-  private readonly limits: GithubRateLimit;
-
-  constructor(
-    private readonly configService: ConfigService,
-    @Optional()
-    @Inject(GITHUB_FETCH)
-    fetchImpl?: GithubFetch,
-    @Optional()
-    rateLimit?: GithubRateLimit,
-  ) {
-    this.http = fetchImpl ?? globalThis.fetch;
-    this.limits = rateLimit ?? new GithubRateLimit();
-  }
-
-  private get api(): string {
-    return (
-      this.configService.get<string>('githubApp.apiBaseUrl') ?? 'https://api.github.com'
-    ).replace(/\/+$/, '');
-  }
+  constructor(private readonly http: GithubHttp) {}
 
   async listPullRequests(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     state: 'open' | 'closed',
     maxPages: number,
   ): Promise<GithubPullRequestSummary[]> {
     const raw = await this.paginate<RawPull>(
       `${this.repo(fullName)}/pulls?state=${state}&sort=updated&direction=desc`,
-      token,
+      credential,
       maxPages,
     );
     return raw.map(toSummary);
   }
 
   async readPullRequest(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
   ): Promise<GithubPullRequestDetail> {
     const { body } = await this.request<RawPull>(`${this.repo(fullName)}/pulls/${number}`, {
-      token,
+      credential,
       onStatus: { 404: GithubErrors.PULL_REQUEST_NOT_FOUND },
     });
     return {
@@ -156,13 +128,13 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   async listFiles(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
   ): Promise<GithubPullRequestFile[]> {
     const raw = await this.paginate<RawFile>(
       `${this.repo(fullName)}/pulls/${number}/files`,
-      token,
+      credential,
       MAX_PAGES,
     );
     return raw.map((file) => ({
@@ -176,13 +148,13 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   async listReviews(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
   ): Promise<GithubPullRequestReview[]> {
     const raw = await this.paginate<RawReview>(
       `${this.repo(fullName)}/pulls/${number}/reviews`,
-      token,
+      credential,
       MAX_PAGES,
     );
     return raw.map((review) => ({
@@ -194,13 +166,13 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   async listReviewComments(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
   ): Promise<GithubReviewComment[]> {
     const raw = await this.paginate<RawComment>(
       `${this.repo(fullName)}/pulls/${number}/comments`,
-      token,
+      credential,
       MAX_PAGES,
     );
     return raw.map((comment) => ({
@@ -215,15 +187,21 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   /** Check runs and the older commit statuses together: a repository may use either. */
-  async readChecks(token: string, fullName: string, sha: string): Promise<GithubChecks> {
+  async readChecks(
+    credential: GithubCredential,
+    fullName: string,
+    sha: string,
+  ): Promise<GithubChecks> {
     const [{ body: runs }, { body: combined }] = await Promise.all([
       this.request<{ check_runs?: RawCheckRun[] }>(
         `${this.repo(fullName)}/commits/${sha}/check-runs?per_page=100`,
         {
-          token,
+          credential,
         },
       ),
-      this.request<RawCombinedStatus>(`${this.repo(fullName)}/commits/${sha}/status`, { token }),
+      this.request<RawCombinedStatus>(`${this.repo(fullName)}/commits/${sha}/status`, {
+        credential,
+      }),
     ]);
     const outcomes: ('passed' | 'failed' | 'pending')[] = [
       ...(runs.check_runs ?? []).map((run) =>
@@ -261,13 +239,13 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   async createReview(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
     review: GithubReviewInput,
   ): Promise<void> {
     await this.request(`${this.repo(fullName)}/pulls/${number}/reviews`, {
-      token,
+      credential,
       method: 'POST',
       body: {
         event: review.event,
@@ -285,13 +263,13 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   async createReviewComment(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
     comment: { commitId: string; path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void> {
     await this.request(`${this.repo(fullName)}/pulls/${number}/comments`, {
-      token,
+      credential,
       method: 'POST',
       body: {
         body: comment.body,
@@ -305,14 +283,14 @@ export class GithubPullsAdapter implements GithubPullsPort {
   }
 
   async merge(
-    token: string,
+    credential: GithubCredential,
     fullName: string,
     number: number,
     method: 'squash' | 'merge' | 'rebase',
     sha: string,
   ): Promise<void> {
     await this.request(`${this.repo(fullName)}/pulls/${number}/merge`, {
-      token,
+      credential,
       method: 'PUT',
       body: { merge_method: method, sha },
       onStatus: {
@@ -326,82 +304,41 @@ export class GithubPullsAdapter implements GithubPullsPort {
 
   private repo(fullName: string): string {
     const [owner, name] = fullName.split('/');
-    return `${this.api}/repos/${encodeURIComponent(owner ?? '')}/${encodeURIComponent(name ?? '')}`;
+    return `${this.http.api}/repos/${encodeURIComponent(owner ?? '')}/${encodeURIComponent(name ?? '')}`;
   }
 
-  private async paginate<T>(url: string, token: string, maxPages: number): Promise<T[]> {
-    const items: T[] = [];
-    let next: string | undefined = `${url}${url.includes('?') ? '&' : '?'}per_page=${PAGE_SIZE}`;
-    for (let page = 0; page < maxPages && next; page += 1) {
-      const { body, link } = await this.request<unknown>(next, {
-        token,
+  private paginate<T>(url: string, credential: GithubCredential, maxPages: number): Promise<T[]> {
+    return this.http.paginate<T>(
+      url,
+      {
+        bucket: credential.bucket,
+        token: credential.token,
         onStatus: { 404: GithubErrors.PULL_REQUEST_NOT_FOUND },
-      });
-      if (Array.isArray(body)) items.push(...(body as T[]));
-      next = nextPageUrl(link);
-    }
-    return items;
+        unauthorized: GithubErrors.USER_NOT_CONNECTED,
+      },
+      (body) => (Array.isArray(body) ? (body as T[]) : []),
+      maxPages,
+    );
   }
 
-  private async request<T>(
+  /** A `401` here is the person's grant (or the installation token) GitHub no longer accepts. */
+  private request<T>(
     url: string,
     options: {
-      token: string;
+      credential: GithubCredential;
       method?: string;
       body?: unknown;
-      onStatus?: Partial<Record<number, ErrorDefinition>>;
+      onStatus?: StatusMap;
     },
   ): Promise<{ body: T; link: string | null }> {
-    const bucket = tokenBucket(options.token);
-    let response: Response;
-    try {
-      response = await this.limits.call(bucket, () =>
-        this.http(url, {
-          method: options.method ?? 'GET',
-          headers: {
-            accept: 'application/vnd.github+json',
-            'x-github-api-version': API_VERSION,
-            'user-agent': USER_AGENT,
-            authorization: `Bearer ${options.token}`,
-            ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-          },
-          body: options.body === undefined ? undefined : JSON.stringify(options.body),
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        }),
-      );
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      this.logger.warn({ message: 'GitHub could not be reached', url: pathOf(url) }, String(error));
-      throw new AppError(GithubErrors.UPSTREAM_FAILED, {
-        detail: 'GitHub could not be reached.',
-        extensions: { upstreamStatus: null },
-      });
-    }
-
-    if (!response.ok) {
-      this.logger.warn({
-        message: 'GitHub rejected a request',
-        url: pathOf(url),
-        status: response.status,
-      });
-      const upstreamMessage = await messageOf(response);
-      await this.limits.refuseIfLimited(bucket, response, upstreamMessage);
-      const named = options.onStatus?.[response.status];
-      throw new AppError(
-        named ??
-          (response.status === 401
-            ? GithubErrors.USER_NOT_CONNECTED
-            : GithubErrors.UPSTREAM_FAILED),
-        {
-          detail: upstreamMessage ?? 'GitHub answered this request with an error.',
-          extensions: { upstreamStatus: response.status },
-        },
-      );
-    }
-
-    await this.limits.observe(bucket, response);
-    const text = await response.text();
-    return { body: (text ? JSON.parse(text) : {}) as T, link: response.headers.get('link') };
+    return this.http.request<T>(url, {
+      bucket: options.credential.bucket,
+      token: options.credential.token,
+      method: options.method,
+      body: options.body,
+      onStatus: options.onStatus,
+      unauthorized: GithubErrors.USER_NOT_CONNECTED,
+    });
   }
 }
 
@@ -424,30 +361,4 @@ function toSummary(pull: RawPull): GithubPullRequestSummary {
     mergedAt: pull.merged_at,
     requestedReviewers: (pull.requested_reviewers ?? []).map((user) => user.login),
   };
-}
-
-async function messageOf(response: Response): Promise<string | undefined> {
-  try {
-    const body = (await response.json()) as { message?: unknown };
-    return typeof body.message === 'string' ? body.message : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function nextPageUrl(link: string | null): string | undefined {
-  if (!link) return undefined;
-  for (const part of link.split(',')) {
-    const match = /<([^>]+)>\s*;\s*rel="next"/.exec(part.trim());
-    if (match) return match[1];
-  }
-  return undefined;
-}
-
-function pathOf(url: string): string {
-  try {
-    return new URL(url).pathname;
-  } catch {
-    return url;
-  }
 }

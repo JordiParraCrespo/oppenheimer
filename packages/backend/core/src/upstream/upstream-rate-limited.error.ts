@@ -2,9 +2,9 @@ import { AppError, type ErrorDefinition } from '../errors/app.error';
 
 /**
  * The problem an integration answers when a provider's rate limit stops a
- * call: its own catalog code (a `429`), the provider named, and
- * `retryAfterSeconds`, which `AllExceptionsFilter` also sends as `Retry-After`
- * so a client can wait instead of retrying into the same wall.
+ * call: its own catalog code (a `429`), the provider named, and how long to
+ * wait, as `AppError.retryAfterSeconds` (which `AllExceptionsFilter` sends as
+ * `Retry-After`) and in the body for clients that read it there.
  */
 export function upstreamRateLimited(
   error: ErrorDefinition,
@@ -18,6 +18,7 @@ export function upstreamRateLimited(
     detail:
       options.detail ??
       `${options.system} asked us to slow down; try again in ${retryAfterSeconds} seconds.`,
+    retryAfterSeconds,
     extensions: {
       upstream: options.system,
       retryAfterSeconds,

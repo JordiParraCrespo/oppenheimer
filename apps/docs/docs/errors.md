@@ -382,7 +382,9 @@ some of these with a `403`, and this code is what keeps them from reading as
 `GITHUB_008` or `GITHUB_010`. The response carries `Retry-After` and
 `retryAfterSeconds`, and until then the API does not ask GitHub again for that
 budget on anyone's behalf: the same request answers `GITHUB_015` straight
-away, on every replica.
+away, on every replica. It is also the answer when one server already has too
+many GitHub requests waiting: a page that fans out that far is refused with a
+short `Retry-After` rather than left hanging.
 
 ## Pull requests
 

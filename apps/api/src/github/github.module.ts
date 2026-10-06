@@ -32,8 +32,8 @@ import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
 import { AesUserTokenSealerAdapter } from './infrastructure/aes-user-token-sealer.adapter';
 import { GithubEventSource } from './infrastructure/github-event-source.adapter';
+import { GithubHttp } from './infrastructure/github-http.adapter';
 import { GithubPullsAdapter } from './infrastructure/github-pulls.adapter';
-import { GithubRateLimit } from './infrastructure/github-rate-limit.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
@@ -78,8 +78,8 @@ const adapters: Provider[] = [
   { provide: USER_TOKEN_SEALER, useClass: AesUserTokenSealerAdapter },
   { provide: GITHUB_PULLS, useClass: GithubPullsAdapter },
   { provide: PULL_REQUEST_ACCESS, useClass: PullRequestAccessResolver },
-  // One instance behind both adapters, so they share one in-flight cap and one pause per bucket.
-  GithubRateLimit,
+  // The one client both GitHub adapters send through: one in-flight cap, one pause per bucket.
+  GithubHttp,
   InstallStateResolver,
   GithubUserGrantResolver,
 ];
