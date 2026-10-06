@@ -391,6 +391,12 @@ a **gateway** in `infrastructure/` that speaks to it, and a use-case slice per
 operation. "We don't own the data" is a reason to have a port, not a reason to
 have a 500-line service.
 
+A gateway or adapter that calls a system outside the process also honours
+that system's rate limit, and is not done until it does: every call goes
+through one `UpstreamLimiter.exchange`, with buckets named for what the
+provider counts, and a rate limit answers the module's own `429` code. The
+rule is `.agents/rules/integrations.md`.
+
 ## Enforcement
 
 Two checks, and they answer different questions. The structure check says

@@ -20,6 +20,11 @@ export const PullRequestProblemResponses = () =>
       code: 'GITHUB_008',
     }),
     ApiProblemResponse({
+      status: 429,
+      description: "GitHub's rate limit was reached; try again after Retry-After",
+      code: 'GITHUB_015',
+    }),
+    ApiProblemResponse({
       status: 502,
       description: 'GitHub could not be reached or rejected the request',
       code: 'GITHUB_009',

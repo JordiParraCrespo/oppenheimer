@@ -83,7 +83,11 @@ export class OpenAiCompatibleLlmService extends LlmService {
         max_tokens: request.maxTokens ?? DEFAULT_MAX_TOKENS,
         ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
       },
-      { timeoutMs: request.timeoutMs ?? this.config.timeoutMs, signal: request.signal },
+      {
+        timeoutMs: request.timeoutMs ?? this.config.timeoutMs,
+        signal: request.signal,
+        pause: this.pause,
+      },
     );
     return this.parse(body, model);
   }

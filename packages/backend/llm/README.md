@@ -24,7 +24,9 @@ behind it.
   `openai-compatible` covers everything else that serves
   `POST {baseUrl}/chat/completions`: Groq, Fireworks, vLLM, a local Ollama.
 - `LlmError` — one error type, with a `code`: `not_configured`, `timeout`,
-  `aborted`, `network`, `http` (with `status`) or `invalid_response`.
+  `aborted`, `network`, `rate_limited` (with `resetAt`), `http` (with
+  `status`) or `invalid_response`. A provider that answered `429` is not
+  called again by that service until its `Retry-After` has passed.
 - `createLlmService(config)` builds a client without Nest; `llmIsConfigured(config)`
   answers whether one could make a call, without building anything.
 - `LlmModule.forRoot(config)` / `forRootAsync({ inject, useFactory })` — a

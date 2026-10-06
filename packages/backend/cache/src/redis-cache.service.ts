@@ -13,6 +13,19 @@ export interface RedisCacheOptions {
 export const DEFAULT_CACHE_KEY_PREFIX = 'cache:';
 
 /**
+ * `KEYS[1]` keeps the larger of itself and `ARGV[1]`; only a write resets the
+ * TTL (`ARGV[2]` seconds). Values are JSON, and a JSON number reads as a Lua
+ * number, so the stored form is the one `get` parses.
+ */
+const SET_MAX_SCRIPT = `
+local current = tonumber(redis.call('GET', KEYS[1]))
+local candidate = tonumber(ARGV[1])
+if current and current >= candidate then return tostring(current) end
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+return ARGV[1]
+`;
+
+/**
  * `CacheService` over a Redis client it is handed and does not own.
  *
  * - **The connection is the caller's.** The client is shared with other Redis
@@ -93,6 +106,18 @@ export class RedisCacheService extends CacheService {
   /** `GETDEL` — one round trip, so two redeemers cannot both read the value. */
   async take<T>(key: string): Promise<T | undefined> {
     return parse<T>(await this.redis.getdel(this.key(key)));
+  }
+
+  /** One `EVAL`, so the compare and the write cannot interleave with another replica's. */
+  async setMax(key: string, value: number, ttlSeconds: number): Promise<number> {
+    const kept = await this.redis.eval(
+      SET_MAX_SCRIPT,
+      1,
+      this.key(key),
+      JSON.stringify(value),
+      Math.max(1, Math.ceil(ttlSeconds)),
+    );
+    return Number(kept);
   }
 
   async del(key: string): Promise<void> {

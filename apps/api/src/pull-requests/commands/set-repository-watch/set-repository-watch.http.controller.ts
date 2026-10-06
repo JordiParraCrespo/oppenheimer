@@ -43,7 +43,7 @@ export class SetRepositoryWatchHttpController {
   @ApiOperation({
     summary: 'Watch a repository, or stop',
     description:
-      'A watched repository’s open pull requests are in the queue and the analytics. Every repository is watched until switched off.',
+      'A watched repository’s open pull requests are in the queue’s Watching scope and the analytics. No repository is watched until switched on.',
   })
   @ApiBody({ type: SetRepositoryWatchRequest })
   @ApiResponse({ status: 204 })

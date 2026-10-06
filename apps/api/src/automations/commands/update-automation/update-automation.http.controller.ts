@@ -48,6 +48,11 @@ export class UpdateAutomationHttpController {
       'What the editor changed, with the version it loaded. A change to what a run executes becomes the next revision; triggers, when sent, replace the set.',
   })
   @ApiResponse({ status: 200, type: AutomationResponseDto })
+  @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
   @ApiProblemResponse({ status: 404, description: 'Automation not found', code: 'AUTOMATIONS_001' })
   @ApiProblemResponse({
     status: 409,

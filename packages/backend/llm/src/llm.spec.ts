@@ -24,7 +24,13 @@ interface Seen {
 let server: Server;
 let baseUrl: string;
 let seen: Seen[];
-let reply: { status: number; body: unknown; delayMs?: number; stallBodyMs?: number };
+let reply: {
+  status: number;
+  body: unknown;
+  delayMs?: number;
+  stallBodyMs?: number;
+  headers?: Record<string, string>;
+};
 
 beforeAll(async () => {
   server = createServer((request, response) => {
@@ -40,7 +46,7 @@ beforeAll(async () => {
       });
       const send = () => {
         const payload = typeof reply.body === 'string' ? reply.body : JSON.stringify(reply.body);
-        response.writeHead(reply.status, { 'content-type': 'application/json' });
+        response.writeHead(reply.status, { 'content-type': 'application/json', ...reply.headers });
         // Headers now, body later: the case where only reading the body is slow.
         if (reply.stallBodyMs) {
           response.flushHeaders();
@@ -190,14 +196,43 @@ describe('OpenAiCompatibleLlmService', () => {
   });
 
   it('carries a non-2xx status on the error', async () => {
-    reply = { status: 429, body: { error: { message: 'slow down' } } };
+    reply = { status: 500, body: { error: { message: 'model crashed' } } };
     const llm = createLlmService({ provider: 'openai-compatible', baseUrl, model: 'm' });
 
     const error = await failure(llm.complete({ messages: [{ role: 'user', content: 'Hi' }] }));
 
     expect(error.code).toBe('http');
+    expect(error.status).toBe(500);
+    expect(error.message).toContain('model crashed');
+  });
+
+  it('reports a 429 as rate_limited, with when the provider may be called again', async () => {
+    reply = {
+      status: 429,
+      body: { error: { message: 'slow down' } },
+      headers: { 'retry-after': '20' },
+    };
+    const llm = createLlmService({ provider: 'openai-compatible', baseUrl, model: 'm' });
+    const before = Date.now();
+
+    const error = await failure(llm.complete({ messages: [{ role: 'user', content: 'Hi' }] }));
+
+    expect(error.code).toBe('rate_limited');
     expect(error.status).toBe(429);
     expect(error.message).toContain('slow down');
+    expect(error.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 20_000);
+  });
+
+  it('does not call a provider again until its Retry-After has passed', async () => {
+    reply = { status: 429, body: {}, headers: { 'retry-after': '60' } };
+    const llm = createLlmService({ provider: 'openai-compatible', baseUrl, model: 'm' });
+    await failure(llm.complete({ messages: [{ role: 'user', content: 'Hi' }] }));
+    reply = { status: 200, body: { choices: [{ message: { content: 'Hello' } }] } };
+
+    const error = await failure(llm.complete({ messages: [{ role: 'user', content: 'Again' }] }));
+
+    expect(error.code).toBe('rate_limited');
+    expect(seen).toHaveLength(1);
   });
 
   it('reports a stalled error body as a timeout, not an HTTP failure', async () => {

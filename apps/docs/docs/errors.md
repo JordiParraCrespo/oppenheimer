@@ -335,6 +335,7 @@ session asks.
 | `GITHUB_012` <a id="github_012" /> | Connect GitHub again to review and merge in your name          | 409  |
 | `GITHUB_013` <a id="github_013" /> | Pull request not found                                         | 404  |
 | `GITHUB_014` <a id="github_014" /> | GitHub would not merge this pull request yet                   | 409  |
+| `GITHUB_015` <a id="github_015" /> | GitHub's rate limit was reached; try again shortly             | 429  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -374,6 +375,16 @@ stores a fresh one.
 protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
 request waits. Approving answers `200` with `merged: false` instead of this
 code, because the approval itself landed.
+
+`GITHUB_015` is GitHub's rate limit: the primary hourly budget of an
+installation, a user token or the App, or a secondary limit. GitHub refuses
+some of these with a `403`, and this code is what keeps them from reading as
+`GITHUB_008` or `GITHUB_010`. The response carries `Retry-After` and
+`retryAfterSeconds`, and until then the API does not ask GitHub again for that
+budget on anyone's behalf: the same request answers `GITHUB_015` straight
+away, on every replica. It is also the answer when one server already has too
+many GitHub requests waiting: a page that fans out that far is refused with a
+short `Retry-After` rather than left hanging.
 
 ## Pull requests
 
@@ -599,6 +610,7 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | `CALENDAR_007` <a id="calendar_007" />   | Google Calendar is not connected                    | 409  |
 | `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
 | `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
+| `CALENDAR_010` <a id="calendar_010" />   | Google Calendar's rate limit was reached; try again shortly | 429 |
 
 `CALENDAR_003` is a range that runs backwards or covers more than 62 days.
 

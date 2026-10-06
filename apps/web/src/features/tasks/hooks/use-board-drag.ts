@@ -28,6 +28,7 @@ export function useBoardDrag(
       const above = settled.current[to]?.[index - 1] ?? null;
       onMove({ id, status: to as TaskStatus, afterTaskId: above });
     },
+    { live: true },
   );
 
   return {

@@ -82,7 +82,7 @@ export class CreateSessionHttpController {
     code: 'SESSIONS_017',
   })
   @ApiProblemResponse({ status: 410, description: 'Attachment gone', code: 'SESSIONS_019' })
-  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit', code: ['RATE_001', 'GITHUB_015'] })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,

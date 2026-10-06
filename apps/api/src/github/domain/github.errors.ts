@@ -122,4 +122,14 @@ export const GithubErrors = {
     message: 'GitHub would not merge this pull request yet',
     httpStatus: 409,
   },
+  /**
+   * GitHub's rate limit stopped the call — primary or secondary — or an earlier
+   * answer already said to wait, and GitHub was not asked again. A 429 with
+   * `Retry-After` and `retryAfterSeconds`; nothing is retried behind the caller's back.
+   */
+  RATE_LIMITED: {
+    code: 'GITHUB_015',
+    message: "GitHub's rate limit was reached; try again shortly",
+    httpStatus: 429,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

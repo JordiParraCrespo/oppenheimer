@@ -62,6 +62,8 @@ export class FindGoogleCalendarEventsQueryHandler
       if (error instanceof CalendarGrantRevokedError) {
         return this.revoked(connection, 'Google revoked the grant');
       }
+      // Google's quota (`CALENDAR_010`): already the problem to answer.
+      if (error instanceof AppError) throw error;
       throw new AppError(CalendarErrors.GOOGLE_UNAVAILABLE);
     }
   }

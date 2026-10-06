@@ -26,6 +26,9 @@ export class CalendarProviderError extends Error {}
 /**
  * A calendar provider, read-only: Google today, Outlook or iCloud as a second
  * adapter (`product/versions/mvp/20-plan-calendar.md` §5).
+ *
+ * Any call may throw the provider's rate-limit problem (`CALENDAR_010`, an
+ * `AppError`) when its quota stopped it; callers let it through as is.
  */
 export interface CalendarProviderPort {
   isConfigured(): boolean;

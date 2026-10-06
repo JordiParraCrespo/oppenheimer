@@ -85,6 +85,38 @@ const columnOf = (rows: TaskEntity[] | undefined, id: string) =>
   rows?.find((row) => row.id === id)?.status;
 
 describe('useMoveTask', () => {
+  it('has the card in its new column in the same frame as the drop, even over a board read on its way', async () => {
+    const stale = deferred<TaskEntity[]>();
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([task('a'), task('b')])
+      .mockReturnValueOnce(stale.promise);
+    const { wrapper, queryClient } = setup({
+      findAll,
+      findGoals: vi.fn().mockResolvedValue([]),
+      move: vi.fn(() => new Promise<TaskEntity>(() => {})),
+    });
+    const { result } = renderHook(() => ({ tasks: useTasks(), move: useMoveTask() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+    act(() => void queryClient.refetchQueries({ queryKey: tasksKeys.lists() }));
+    await waitFor(() => expect(findAll).toHaveBeenCalledTimes(2));
+    const board = () =>
+      queryClient.getQueriesData<TaskEntity[]>({ queryKey: tasksKeys.lists() })[0]?.[1];
+
+    // The board drops its live order in the same handler; a read that lags the drop puts the card back for a frame.
+    let atDrop: string | undefined;
+    act(() => {
+      result.current.move.mutate({ id: 'a', status: 'doing', afterTaskId: null });
+      atDrop = columnOf(board(), 'a');
+    });
+    await act(async () => stale.resolve([task('a'), task('b')]));
+
+    expect(atDrop).toBe('doing');
+    expect(columnOf(board(), 'a')).toBe('doing');
+  });
+
   it('keeps a second drag where it was dropped while the first one settles', async () => {
     const board = [task('a'), task('b')];
     const findAll = vi.fn().mockResolvedValue(board);

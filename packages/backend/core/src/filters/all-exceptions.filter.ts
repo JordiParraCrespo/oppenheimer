@@ -73,6 +73,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const retryAfter = retryAfterOf(exception);
+    if (retryAfter !== null) response.setHeader('Retry-After', String(retryAfter));
+
     response.status(problem.status).contentType(PROBLEM_JSON_CONTENT_TYPE).json(problem);
   }
 
@@ -153,6 +156,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       context,
     );
   }
+}
+
+/**
+ * `AppError.retryAfterSeconds`, as a header: a client that reads `Retry-After`
+ * waits instead of retrying into the same wall.
+ */
+function retryAfterOf(exception: unknown): number | null {
+  if (!(exception instanceof AppError)) return null;
+  const seconds = exception.retryAfterSeconds;
+  return seconds !== undefined && Number.isFinite(seconds) && seconds > 0
+    ? Math.ceil(seconds)
+    : null;
 }
 
 /** Flattens Zod issues into RFC 7807's `invalid-params` shape. */

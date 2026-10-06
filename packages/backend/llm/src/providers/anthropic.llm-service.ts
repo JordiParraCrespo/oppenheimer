@@ -52,7 +52,11 @@ export class AnthropicLlmService extends LlmService {
         ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
         messages: request.messages,
       },
-      { timeoutMs: request.timeoutMs ?? this.config.timeoutMs, signal: request.signal },
+      {
+        timeoutMs: request.timeoutMs ?? this.config.timeoutMs,
+        signal: request.signal,
+        pause: this.pause,
+      },
     );
 
     const record = asRecord(body);

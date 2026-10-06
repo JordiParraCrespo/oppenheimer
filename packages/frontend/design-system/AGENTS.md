@@ -127,7 +127,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   targets and never mounts its own provider. It wraps dnd-kit, which no app
   imports. The motion lives in the layer, on the token ramp (`--drag-lift`,
   the fast and base durations); a sortable item's own place is the drop
-  slot. Keyboard and announcements come with it; a surface translates the
+  slot. A board's provider is `live` (with `useSortableGroups`'
+  `{ live: true }`): its ids reorder as the card moves, the slot going after
+  a card once the pointer passes its middle, and every card that changes
+  place slides there; other groups keep dnd-kit's displacement. Keyboard and
+  announcements come with it; a surface translates the
   words through `labels`. A control inside a draggable spreads
   `dragIgnore`. Files from the desktop stay `DropZone`'s.
 - **Plan composes the system's own vocabulary.** A task's status is the

@@ -158,6 +158,7 @@ export function BoardColumns() {
         onDismiss={create.reset}
       />
       <DragProvider
+        live
         {...drag.handlers}
         labels={dragLabels}
         overlay={(active) => {

@@ -152,6 +152,7 @@
       "GITHUB_012": "Connect GitHub again so reviews and merges are made in your name.",
       "GITHUB_013": "That pull request could not be found.",
       "GITHUB_014": "GitHub will not merge this pull request yet. It waits until it can.",
+      "GITHUB_015": "GitHub asked us to slow down. Try again in a minute.",
       "PROJECTS_001": "That project could not be found.",
       "PROJECTS_002": "Choose a workspace before working with projects.",
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
@@ -232,6 +233,7 @@
       "CALENDAR_007": "Google Calendar isn't connected. Connect it again.",
       "CALENDAR_008": "Google Calendar didn't answer. Try again in a moment.",
       "CALENDAR_009": "An event has to end after it starts.",
+      "CALENDAR_010": "Google Calendar asked us to slow down. Try again in a minute.",
       "INBOUND_001": "That event source isn't known.",
       "INBOUND_002": "The delivery carries no delivery id.",
       "SESS_001": "The host has no record of that session.",
@@ -1001,7 +1003,7 @@
       "emptyTitle": "Nothing in this view",
       "emptyHint": "Pull requests opened by your sessions or teammates land here with a lane already picked.",
       "emptyWatchingTitle": "You are not watching any repositories",
-      "emptyWatchingHint": "Pick repositories in Manage repositories. Their open pull requests show up here.",
+      "emptyWatchingHint": "Search for repositories with Watch repositories. Their open pull requests show up here.",
       "loadFailed": "Could not load pull requests.",
       "notConnectedTitle": "Connect GitHub to see pull requests",
       "notConnectedHint": "Install the GitHub App on the account that holds your repositories.",
@@ -1046,10 +1048,11 @@
       "approval_required": "Waiting for a required approval"
     },
     "watch": {
-      "add": "Watch a repository",
+      "add": "Watch repositories",
       "search": "Search repositories",
       "noMatch": "No repository matches “{{query}}”",
-      "allWatched": "You watch every repository",
+      "loading": "Loading repositories…",
+      "none": "No repositories to watch yet",
       "unwatch": "Stop watching {{name}}",
       "private": "Private",
       "failed": "Could not update the watched repositories."

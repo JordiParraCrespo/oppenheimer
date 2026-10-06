@@ -49,6 +49,11 @@ export class AddCheckoutHttpController {
       'The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.',
   })
   @ApiResponse({ status: 201, type: SessionResponseDto })
+  @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
   @ApiProblemResponse({
     status: 404,

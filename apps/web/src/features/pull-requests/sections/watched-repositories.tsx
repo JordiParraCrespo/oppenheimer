@@ -9,9 +9,8 @@ import { WatchRepositorySearch } from './watch-repository-search';
 
 /**
  * The repositories the caller watches, under the Watching scope: one chip
- * each, its × stops watching it, and Watch a repository searches the rest.
- * Every repository the installations reach starts watched; nothing lists them
- * all at once.
+ * each, its × stops watching it, and Watch repositories searches them all.
+ * None is watched until the caller picks it.
  */
 export function WatchedRepositories() {
   const { t } = useTranslation();

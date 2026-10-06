@@ -68,7 +68,9 @@ export class ConnectGoogleCalendarCommandHandler
   private async exchange(code: string): Promise<CalendarGrant> {
     try {
       return await this.provider.exchange(code);
-    } catch {
+    } catch (error) {
+      // Google's quota (`CALENDAR_010`) is not a refused code.
+      if (error instanceof AppError) throw error;
       throw new AppError(CalendarErrors.GOOGLE_GRANT_REFUSED, {
         detail: 'Google refused the authorization code',
       });
