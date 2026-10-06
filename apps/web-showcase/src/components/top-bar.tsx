@@ -13,6 +13,7 @@ import { Kbd } from '@oppenheimer/design-system-web/kbd';
 import { useSidebar } from '@oppenheimer/design-system-web/sidebar';
 import { MoonIcon, PanelLeftIcon, SearchIcon, SunIcon } from '@oppenheimer/design-system-web/icons';
 import * as React from 'react';
+import { useShowcaseTheme } from '@/lib/theme';
 import { TOC } from '@/lib/toc';
 
 /**
@@ -60,22 +61,10 @@ export function TopBar() {
 }
 
 function ThemeButton() {
-  const [isDark, setIsDark] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsDark(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  function toggle() {
-    const next = !document.documentElement.classList.contains('dark');
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('theme', next ? 'dark' : 'light');
-    setIsDark(next);
-  }
-
+  const { dark, setDark } = useShowcaseTheme();
   return (
-    <IconButton aria-label="Toggle theme" size="sm" onClick={toggle}>
-      {isDark ? <SunIcon /> : <MoonIcon />}
+    <IconButton aria-label="Toggle theme" size="sm" onClick={() => setDark(!dark)}>
+      {dark ? <SunIcon /> : <MoonIcon />}
     </IconButton>
   );
 }
