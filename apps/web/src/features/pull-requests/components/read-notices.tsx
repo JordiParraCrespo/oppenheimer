@@ -3,35 +3,27 @@ import type { UnreadableRepository } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 
 /**
- * What a read could not show, said where the reader looks (#244): checks
- * GitHub refused for want of a permission the reader can grant, and each
- * watched repository it answered only in part or not at all.
+ * What a read could not show (#244): one line for each repository, part and
+ * refusal GitHub gave. Checks refused for want of access also say which App
+ * permissions to grant, since that is the one a reader can fix.
  */
-export function ReadNotices({
-  unreadable,
-  checksRefused,
-}: {
-  unreadable: readonly UnreadableRepository[];
-  checksRefused: boolean;
-}) {
+export function ReadNotices({ unreadable }: { unreadable: readonly UnreadableRepository[] }) {
   const { t } = useTranslation();
-  if (!checksRefused && unreadable.length === 0) return null;
+  if (unreadable.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      {checksRefused ? (
-        <Callout tone="warning">{t('pullRequests.notices.checksRefused')}</Callout>
-      ) : null}
-      {unreadable.map((repository) => (
+      {unreadable.map((gap) => (
         <Callout
-          key={repository.fullName}
-          tone={repository.refusal === 'rate_limited' ? 'neutral' : 'warning'}
+          key={`${gap.fullName}|${gap.what}|${gap.refusal}`}
+          tone={gap.refusal === 'rate_limited' ? 'neutral' : 'warning'}
         >
-          {t(
-            repository.partial
-              ? `pullRequests.notices.partial.${repository.refusal}`
-              : `pullRequests.notices.unreadable.${repository.refusal}`,
-            { name: repository.fullName },
-          )}
+          {t(`pullRequests.notices.${gap.refusal}`, {
+            name: gap.fullName,
+            what: t(`pullRequests.notices.what.${gap.what}`),
+          })}
+          {gap.what === 'checks' && gap.refusal === 'forbidden'
+            ? ` ${t('pullRequests.notices.checksPermission')}`
+            : null}
         </Callout>
       ))}
     </div>

@@ -26,9 +26,13 @@ export const PullRequestProblemResponses = () =>
     }),
     ApiProblemResponse({
       status: 503,
-      description:
-        'The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds',
-      code: ['GITHUB_002', 'GITHUB_015'],
+      description: 'The GitHub App is not configured on this server',
+      code: 'GITHUB_002',
+    }),
+    ApiProblemResponse({
+      status: 429,
+      description: 'GitHub asked to wait; `retryAfterSeconds` says how long',
+      code: 'GITHUB_015',
     }),
   );
 

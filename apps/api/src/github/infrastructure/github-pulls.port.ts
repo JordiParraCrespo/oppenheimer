@@ -4,8 +4,7 @@
  * user token to act. Nothing of GitHub's wire shape crosses this line.
  */
 
-/** `none` is a commit with no checks; `unavailable` is checks GitHub would not show (#244). */
-export type GithubCheckState = 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+export type GithubCheckState = 'passing' | 'failing' | 'running' | 'none';
 
 /** Why GitHub did not answer a read, in the words a reader can act on. */
 export type GithubRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
@@ -71,8 +70,6 @@ export interface GithubReviewComment {
 
 export interface GithubChecks {
   state: GithubCheckState;
-  /** Set when `state` is `unavailable`. */
-  refusal?: GithubRefusal;
   total: number;
   passed: number;
   failed: number;

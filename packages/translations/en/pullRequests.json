@@ -77,7 +77,8 @@
     "checks_running": "Checks running",
     "changes_requested": "Changes requested",
     "behind": "Behind the base branch",
-    "approval_required": "Waiting for a required approval"
+    "approval_required": "Waiting for a required approval",
+    "checks_unavailable": "Checks unavailable"
   },
   "watch": {
     "add": "Watch a repository",
@@ -251,21 +252,20 @@
     "nothingWaits": "Nothing holds an open pull request right now.",
     "loadFailed": "Could not load analytics.",
     "none": "—",
-    "capped": "Counted from the {{n}} most recently closed pull requests: more closed this {{range}} than one read takes."
+    "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes."
   },
   "notices": {
-    "checksRefused": "GitHub would not show the checks. The GitHub App needs Checks: read and Commit statuses: read; accept the permission update on GitHub and they appear here.",
-    "unreadable": {
-      "forbidden": "{{name}}: GitHub refused access, so its pull requests are not shown.",
-      "not_found": "{{name}}: GitHub no longer finds it, so its pull requests are not shown.",
-      "rate_limited": "{{name}}: GitHub asked us to slow down. Its pull requests show up on the next read.",
-      "failed": "{{name}}: GitHub did not answer, so its pull requests are not shown."
+    "forbidden": "{{name}}: GitHub refused access to {{what}}.",
+    "not_found": "{{name}}: GitHub no longer finds {{what}}.",
+    "rate_limited": "{{name}}: GitHub asked us to slow down before it gave {{what}}. They show up on the next read.",
+    "failed": "{{name}}: GitHub did not answer for {{what}}.",
+    "what": {
+      "repository": "its pull requests",
+      "pull_requests": "some of its pull requests",
+      "files": "the files of some pull requests",
+      "checks": "the checks of some pull requests",
+      "reviews": "the reviews of some pull requests"
     },
-    "partial": {
-      "forbidden": "{{name}}: GitHub refused some of its pull requests; the rest are shown.",
-      "not_found": "{{name}}: some of its pull requests are gone; the rest are shown.",
-      "rate_limited": "{{name}}: GitHub asked us to slow down before every pull request was read; the rest show up on the next read.",
-      "failed": "{{name}}: GitHub did not answer for some of its pull requests; the rest are shown."
-    }
+    "checksPermission": "The GitHub App needs Checks: read and Commit statuses: read; accept the permission update on GitHub."
   }
 }

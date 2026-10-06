@@ -9,7 +9,9 @@ import { PullRequestMapper } from '../pull-request.mapper';
  */
 const NOW = new Date('2026-10-06T12:00:00Z');
 
-function snapshot(missing: PullRequestSnapshot['missing']): PullRequestSnapshot {
+type Part = 'files' | 'checks' | 'reviews';
+
+function snapshot(missing: Part[]): PullRequestSnapshot {
   return {
     repository: {
       installationId: 'inst',
@@ -42,12 +44,18 @@ function snapshot(missing: PullRequestSnapshot['missing']): PullRequestSnapshot 
       mergeable: true,
       mergeableState: 'clean',
     },
-    filePaths: missing.includes('files') ? [] : ['README.md'],
-    checks: { state: 'passing', total: 1, passed: 1, failed: 0, pending: 0 },
+    files: missing.includes('files')
+      ? { value: null, refusal: 'forbidden' }
+      : { value: ['README.md'], refusal: null },
+    checks: missing.includes('checks')
+      ? { value: null, refusal: 'forbidden' }
+      : { value: { state: 'passing', total: 1, passed: 1, failed: 0, pending: 0 }, refusal: null },
     reviews: missing.includes('reviews')
-      ? []
-      : [{ id: 1, login: 'ana', state: 'APPROVED', submittedAt: '2026-10-05T00:00:00Z' }],
-    missing,
+      ? { value: null, refusal: 'failed' }
+      : {
+          value: [{ id: 1, login: 'ana', state: 'APPROVED', submittedAt: '2026-10-05T00:00:00Z' }],
+          refusal: null,
+        },
   };
 }
 
@@ -71,7 +79,6 @@ describe('a pull request read in part', () => {
         viewerLogin: 'ana',
         now: NOW,
         complete: true,
-        closedCeiling: 150,
         unreadable: [],
       });
 
@@ -85,5 +92,39 @@ describe('a pull request read in part', () => {
     expect(unread.reviewedByYou.value).toBe(0);
     expect(unread.waitForReview.value).toBeNull();
     expect(unread.lanes.every((lane) => lane.value === 0)).toBe(true);
+  });
+
+  it('holds a pull request whose checks GitHub would not show: it is never ready to merge', () => {
+    const row = mapper.toRow(
+      {
+        ...snapshot(['checks']),
+        pull: { ...snapshot([]).pull, state: 'open', merged: false, mergedAt: null },
+      },
+      'ana',
+      NOW,
+    );
+    expect(row.checks).toBe('unavailable');
+    expect(row.checksRefusal).toBe('forbidden');
+    expect(row.blocker).toBe('checks_unavailable');
+  });
+
+  it('names each gap once, with the refusal GitHub gave', () => {
+    const repository = snapshot([]).repository;
+    expect(
+      mapper.toUnreadable([
+        {
+          repository,
+          snapshots: [],
+          gaps: [
+            { what: 'checks', refusal: 'forbidden' },
+            { what: 'checks', refusal: 'forbidden' },
+          ],
+        },
+        { repository, snapshots: [], gaps: [{ what: 'pull_requests', refusal: 'rate_limited' }] },
+      ]),
+    ).toEqual([
+      { fullName: 'acme/xrp', what: 'checks', refusal: 'forbidden' },
+      { fullName: 'acme/xrp', what: 'pull_requests', refusal: 'rate_limited' },
+    ]);
   });
 });

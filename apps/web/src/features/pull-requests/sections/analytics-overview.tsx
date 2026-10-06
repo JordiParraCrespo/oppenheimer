@@ -84,11 +84,9 @@ export function AnalyticsOverview() {
           const from = (value: string) => t('pullRequests.analytics.from', { value });
           return (
             <>
-              <ReadNotices unreadable={data.unreadable} checksRefused={false} />
+              <ReadNotices unreadable={data.unreadable} />
               {data.complete ? null : (
-                <Callout>
-                  {t('pullRequests.analytics.capped', { n: data.closedCeiling, range: rangeWord })}
-                </Callout>
+                <Callout>{t('pullRequests.analytics.capped', { range: rangeWord })}</Callout>
               )}
               <CreatedMergedPanel analytics={data} />
               <div className="grid gap-3 md:grid-cols-3">

@@ -17,7 +17,6 @@ import type {
 import {
   GithubPausedError,
   GithubRequestGate,
-  MAX_WAIT_MS,
   readRateLimit,
   withJitter,
 } from './github-rate-limit.util';
@@ -362,40 +361,23 @@ export class GithubPullsAdapter implements GithubPullsPort {
       try {
         response = await this.gate.run(options.token, () => this.send(url, options));
       } catch (error) {
-        if (!(error instanceof GithubPausedError)) throw error;
-        // GitHub's pause outlasts what a request holds: say when, without asking it again.
-        throw new AppError(GithubErrors.RATE_LIMITED, {
-          detail: 'GitHub asked to wait before the next request.',
-          extensions: {
-            upstreamStatus: null,
-            retryAfterSeconds: Math.max(1, Math.ceil((error.resumeAt - Date.now()) / 1000)),
-          },
-        });
+        if (error instanceof GithubPausedError) throw rateLimited(error.resumeAt, null);
+        throw error;
       }
       const upstreamMessage = response.ok ? null : ((await messageOf(response)) ?? null);
       const limit = readRateLimit(response.status, response.headers, upstreamMessage);
-      if (limit.resumeAt) {
-        const now = Date.now();
-        this.gate.pause(options.token, now + withJitter(Math.max(0, limit.resumeAt - now)));
-      }
 
-      if (limit.limited) {
-        const wait = (limit.resumeAt ?? Date.now()) - Date.now();
+      if (limit.limited && limit.resumeAt !== null) {
+        const now = Date.now();
+        // One clock: the gate holds the token until then, sleeping through a short wait and refusing a long one.
+        this.gate.pause(options.token, now + withJitter(Math.max(0, limit.resumeAt - now)));
         this.logger.warn({
           message: 'GitHub asked to wait',
           url: pathOf(url),
           status: response.status,
-          wait,
         });
-        // The gate holds the next attempt until GitHub's pause is over.
-        if (attempt < MAX_LIMIT_RETRIES && wait <= MAX_WAIT_MS) continue;
-        throw new AppError(GithubErrors.RATE_LIMITED, {
-          detail: upstreamMessage ?? 'GitHub asked to wait before the next request.',
-          extensions: {
-            upstreamStatus: response.status,
-            retryAfterSeconds: Math.max(1, Math.ceil(wait / 1000)),
-          },
-        });
+        if (attempt < MAX_LIMIT_RETRIES) continue;
+        throw rateLimited(limit.resumeAt, response.status, upstreamMessage);
       }
 
       if (!response.ok) {
@@ -447,6 +429,21 @@ export class GithubPullsAdapter implements GithubPullsPort {
       });
     }
   }
+}
+
+/** `GITHUB_015`: GitHub asked this token to wait, and until when. */
+function rateLimited(
+  resumeAt: number,
+  upstreamStatus: number | null,
+  message?: string | null,
+): AppError {
+  return new AppError(GithubErrors.RATE_LIMITED, {
+    detail: message ?? 'GitHub asked to wait before the next request.',
+    extensions: {
+      upstreamStatus,
+      retryAfterSeconds: Math.max(1, Math.ceil((resumeAt - Date.now()) / 1000)),
+    },
+  });
 }
 
 function toSummary(pull: RawPull): GithubPullRequestSummary {

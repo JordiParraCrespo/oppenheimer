@@ -65,7 +65,7 @@ function toEntity(dto: PullRequestRowDto): PullRequestEntity {
     dto.waitingSeconds,
     dto.draft,
     dto.htmlUrl,
-    dto.checksRefusal ?? null,
+    dto.checksRefusal,
     dto.unread,
   );
 }
@@ -80,7 +80,6 @@ function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {
     oldestWaitingSeconds: dto.oldestWaitingSeconds ?? null,
     viewerLogin: dto.viewerLogin ?? null,
     unreadable: dto.unreadable,
-    checksRefused: dto.checksRefused,
   };
 }
 
@@ -112,7 +111,6 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
   return {
     range: dto.range,
     complete: dto.complete,
-    closedCeiling: dto.closedCeiling,
     unreadable: dto.unreadable,
     from: new Date(dto.from),
     to: new Date(dto.to),

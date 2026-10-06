@@ -12,6 +12,9 @@ import { provisionedUser, signInAs } from '../../support/web';
  * stub's viewer is `ana-dev`, whose branches and sessions' `oppenheimer/…`
  * branches are "Mine". A merge changes the stub, so the suite resets it first.
  */
+// Both describes drive one GitHub stub, whose pull requests and refusals are global: they take turns.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Pull requests', () => {
   test.beforeEach(async () => {
     const reset = await fetch(`${GITHUB_STUB_URL}/__stub/pulls/reset`, { method: 'POST' });

@@ -19,6 +19,7 @@ const BLOCKERS = [
   'conflicts',
   'checks_failing',
   'checks_running',
+  'checks_unavailable',
   'changes_requested',
   'behind',
   'approval_required',
@@ -92,7 +93,11 @@ export class PullRequestRowDto {
   })
   checks!: (typeof CHECK_STATES)[number];
 
-  @ApiPropertyOptional({ enum: REFUSALS, nullable: true })
+  @ApiProperty({
+    enum: REFUSALS,
+    nullable: true,
+    description: 'Why `checks` is `unavailable`; null when GitHub showed them.',
+  })
   checksRefusal!: (typeof REFUSALS)[number] | null;
 
   @ApiProperty({
@@ -147,19 +152,25 @@ export class PullRequestLaneCountsDto {
   quick!: number;
 }
 
-/** A repository GitHub answered only in part, or not at all, on this read. */
+const READ_GAPS = ['repository', 'pull_requests', 'files', 'checks', 'reviews'] as const;
+
+/** Something GitHub did not give on this read: which repository, what, and the refusal GitHub gave. */
 export class UnreadableRepositoryDto {
   @ApiProperty({ example: 'acme-labs/xrp-mobile' })
   fullName!: string;
 
   @ApiProperty({
+    enum: READ_GAPS,
+    description:
+      '`repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them.',
+  })
+  what!: (typeof READ_GAPS)[number];
+
+  @ApiProperty({
     enum: REFUSALS,
-    description: 'Why: no access, gone, GitHub asked to wait, or did not answer.',
+    description: 'The refusal GitHub gave: no access, gone, wait, or no answer.',
   })
   refusal!: (typeof REFUSALS)[number];
-
-  @ApiProperty({ description: 'True when some of its pull requests were read and some were not.' })
-  partial!: boolean;
 }
 
 /** `GET /pulls`: one scope's queue, with what the header and the scope and lane controls count. */
@@ -195,12 +206,6 @@ export class PullRequestQueueResponseDto {
     description: 'Watched repositories this read could not fully answer.',
   })
   unreadable!: UnreadableRepositoryDto[];
-
-  @ApiProperty({
-    description:
-      'GitHub refused a pull request’s checks for want of access: the App lacks Checks or Commit statuses read.',
-  })
-  checksRefused!: boolean;
 }
 
 export class PullRequestGateDto {

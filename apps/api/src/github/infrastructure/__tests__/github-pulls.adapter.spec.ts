@@ -66,10 +66,13 @@ describe('a read GitHub asks to wait for', () => {
         headers: { 'retry-after': '120' },
       },
     ]);
-    await expect(adapter.readPullRequest('ghs_token', 'acme/xrp', 12)).rejects.toMatchObject({
-      code: 'GITHUB_015',
-      extensions: { upstreamStatus: 403, retryAfterSeconds: 120 },
-    });
+    const refusal = adapter.readPullRequest('ghs_token', 'acme/xrp', 12);
+    await expect(refusal).rejects.toMatchObject({ code: 'GITHUB_015' });
+    const { extensions } = (await refusal.catch((error) => error)) as {
+      extensions: { retryAfterSeconds: number };
+    };
+    expect(extensions.retryAfterSeconds).toBeGreaterThanOrEqual(120);
+    // The gate holds the token: GitHub is not asked again inside the pause.
     expect(calls).toHaveLength(1);
   });
 

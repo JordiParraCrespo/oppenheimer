@@ -56,6 +56,26 @@ const PULL = {
   mergeableState: 'clean',
 };
 
+it('keeps the refusal GitHub gave for a pull request it would not read, beside the ones it did', async () => {
+  const { resolver, repository } = build({
+    listPullRequests: vi.fn().mockResolvedValue([PULL, { ...PULL, number: 13 }]),
+    readPullRequest: vi.fn(async (_t: string, _r: string, number: number) => {
+      if (number === 13) throw refused(403);
+      return PULL;
+    }),
+    listFiles: vi.fn().mockResolvedValue([]),
+    readChecks: vi
+      .fn()
+      .mockResolvedValue({ state: 'passing', total: 1, passed: 1, failed: 0, pending: 0 }),
+    listReviews: vi.fn().mockResolvedValue([]),
+  });
+
+  const read = await resolver.openPullRequests(SCOPE, repository);
+
+  expect(read.snapshots.map((s) => s.pull.number)).toEqual([12]);
+  expect(read.gaps).toEqual([{ what: 'pull_requests', refusal: 'forbidden' }]);
+});
+
 const refused = (status: number) =>
   new AppError(GithubErrors.UPSTREAM_FAILED, {
     detail: 'refused',
@@ -109,12 +129,11 @@ describe('a pull request GitHub answers only in part', () => {
 
     const read = await resolver.openPullRequests(SCOPE, repository);
 
-    expect(read.refusal).toBeNull();
     expect(read.snapshots).toHaveLength(1);
     const [snapshot] = read.snapshots;
-    expect(snapshot?.filePaths).toEqual(['src/auth/keychain.ts']);
-    expect(snapshot?.checks).toMatchObject({ state: 'unavailable', refusal: 'forbidden' });
-    expect(snapshot?.missing).toEqual(['checks']);
+    expect(snapshot?.files).toEqual({ value: ['src/auth/keychain.ts'], refusal: null });
+    expect(snapshot?.checks).toEqual({ value: null, refusal: 'forbidden' });
+    expect(read.gaps).toEqual([{ what: 'checks', refusal: 'forbidden' }]);
     // Kept only briefly, so the next read asks GitHub again.
     expect([...store.values()][0]?.ttl).toBe(15);
   });
@@ -126,8 +145,7 @@ describe('a pull request GitHub answers only in part', () => {
 
     await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
       snapshots: [],
-      refusal: 'not_found',
-      partial: false,
+      gaps: [{ what: 'repository', refusal: 'not_found' }],
     });
   });
 
@@ -141,7 +159,7 @@ describe('a pull request GitHub answers only in part', () => {
     });
 
     await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
-      refusal: 'rate_limited',
+      gaps: [{ what: 'repository', refusal: 'rate_limited' }],
     });
   });
 });

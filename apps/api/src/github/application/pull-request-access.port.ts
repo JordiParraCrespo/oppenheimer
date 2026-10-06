@@ -27,31 +27,39 @@ export interface PullRequestAddress {
 }
 
 /**
- * A pull request as the queue and the briefing read it: GitHub's own detail
- * plus the paths it touches, its checks on the head commit and its reviews.
+ * One part of a pull request as GitHub answered it: the value, or the refusal
+ * GitHub gave instead. An unread part is never an empty one (#244).
+ */
+export type Part<T> = { value: T; refusal: null } | { value: null; refusal: GithubRefusal };
+
+/**
+ * A pull request as the queue and the briefing read it: GitHub's own detail,
+ * and the paths it touches, its checks on the head commit and its reviews,
+ * each read on its own.
  */
 export interface PullRequestSnapshot {
   repository: WorkspaceRepository;
   pull: GithubPullRequestDetail;
-  filePaths: string[];
-  checks: GithubChecks;
-  reviews: GithubPullRequestReview[];
-  /** The parts GitHub would not give; the rest of the snapshot stands without them (#244). */
-  missing: SnapshotPart[];
+  files: Part<string[]>;
+  checks: Part<GithubChecks>;
+  reviews: Part<GithubPullRequestReview[]>;
 }
 
-export type SnapshotPart = 'files' | 'checks' | 'reviews';
+/** What GitHub did not give on a read of a repository, and the refusal it gave. */
+export interface ReadGap {
+  what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
+  refusal: GithubRefusal;
+}
 
 /**
- * One repository's pull requests as far as GitHub answered: a refusal of the
- * listing itself leaves `snapshots` empty and names why, and pull requests
- * that could not be read leave the rest, with `partial` set.
+ * One repository's pull requests as far as GitHub answered: what it gave, and
+ * each gap with GitHub's own refusal. A refused listing is one `repository`
+ * gap and no snapshots.
  */
 export interface RepositoryPulls {
   repository: WorkspaceRepository;
   snapshots: PullRequestSnapshot[];
-  refusal: GithubRefusal | null;
-  partial: boolean;
+  gaps: ReadGap[];
 }
 
 export interface ReviewSubmission {

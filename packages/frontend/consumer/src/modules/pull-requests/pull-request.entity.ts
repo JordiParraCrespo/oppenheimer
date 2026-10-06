@@ -31,12 +31,12 @@ export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none' | 'un
 /** Why GitHub did not answer a read: no access, gone, asked to wait, or no answer. */
 export type ReadRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
 
-/** A watched repository a read could not fully answer. */
+/** What GitHub did not give on a read: which repository, what of it, and the refusal it gave. */
 export interface UnreadableRepository {
   fullName: string;
+  /** `repository`: nothing could be listed; `pull_requests`: some could not be read; else that part of some. */
+  what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
   refusal: ReadRefusal;
-  /** Some of its pull requests were read, some were not. */
-  partial: boolean;
 }
 
 /** What holds a pull request, the first that applies; null when it can merge. */
@@ -45,6 +45,7 @@ export type PullRequestBlocker =
   | 'conflicts'
   | 'checks_failing'
   | 'checks_running'
+  | 'checks_unavailable'
   | 'changes_requested'
   | 'behind'
   | 'approval_required';
@@ -84,10 +85,10 @@ export class PullRequestEntity {
     public readonly waitingSeconds: number,
     public readonly draft: boolean,
     public readonly htmlUrl: string,
-    /** Why the checks are `unavailable`; null otherwise. */
-    public readonly checksRefusal: ReadRefusal | null = null,
+    /** Why the checks are `unavailable`; null when GitHub showed them. */
+    public readonly checksRefusal: ReadRefusal | null,
     /** What GitHub did not give on this read; an unread part is not an empty one. */
-    public readonly unread: readonly ('files' | 'reviews')[] = [],
+    public readonly unread: readonly ('files' | 'reviews')[],
   ) {}
 
   get address(): PullRequestAddress {
@@ -116,8 +117,6 @@ export interface PullRequestQueue {
   items: PullRequestEntity[];
   /** Watched repositories this read could not fully answer (#244). */
   unreadable: UnreadableRepository[];
-  /** GitHub refused checks for want of access: the App needs Checks and Commit statuses read. */
-  checksRefused: boolean;
   scopes: Record<PullRequestScope, number>;
   /** Within the scope asked for. */
   lanes: Record<PullRequestLane, number>;
@@ -237,9 +236,8 @@ export interface AnalyticsMedian {
 
 export interface PullRequestAnalytics {
   range: PullRequestAnalyticsRange;
-  /** False when more closed in the window than one read takes; the figures count the most recent `closedCeiling`. */
+  /** False when more closed in the window than one read takes in full: the figures count the most recent. */
   complete: boolean;
-  closedCeiling: number;
   unreadable: UnreadableRepository[];
   from: Date;
   to: Date;

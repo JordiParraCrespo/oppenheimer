@@ -12367,6 +12367,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12378,7 +12388,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12474,6 +12484,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12485,7 +12505,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12573,6 +12593,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12584,7 +12614,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12689,6 +12719,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12700,7 +12740,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12810,6 +12850,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12821,7 +12871,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12934,6 +12984,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12945,7 +13005,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13058,6 +13118,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13069,7 +13139,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13180,6 +13250,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13191,7 +13271,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13311,6 +13391,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13322,7 +13412,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13435,6 +13525,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13446,7 +13546,7 @@
             }
           },
           "503": {
-            "description": "GITHUB_002 / GITHUB_015 — The GitHub App is not configured on this server, or GitHub asked to wait longer than a request holds",
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20201,7 +20301,8 @@
           "checksRefusal": {
             "type": "string",
             "enum": ["forbidden", "not_found", "rate_limited", "failed"],
-            "nullable": true
+            "nullable": true,
+            "description": "Why `checks` is `unavailable`; null when GitHub showed them."
           },
           "unread": {
             "type": "array",
@@ -20222,6 +20323,7 @@
               "conflicts",
               "checks_failing",
               "checks_running",
+              "checks_unavailable",
               "changes_requested",
               "behind",
               "approval_required"
@@ -20256,6 +20358,7 @@
           "additions",
           "deletions",
           "checks",
+          "checksRefusal",
           "unread",
           "mergeable",
           "waitingSeconds",
@@ -20300,17 +20403,18 @@
             "type": "string",
             "example": "acme-labs/xrp-mobile"
           },
+          "what": {
+            "type": "string",
+            "enum": ["repository", "pull_requests", "files", "checks", "reviews"],
+            "description": "`repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them."
+          },
           "refusal": {
             "type": "string",
             "enum": ["forbidden", "not_found", "rate_limited", "failed"],
-            "description": "Why: no access, gone, GitHub asked to wait, or did not answer."
-          },
-          "partial": {
-            "type": "boolean",
-            "description": "True when some of its pull requests were read and some were not."
+            "description": "The refusal GitHub gave: no access, gone, wait, or no answer."
           }
         },
-        "required": ["fullName", "refusal", "partial"]
+        "required": ["fullName", "what", "refusal"]
       },
       "PullRequestQueueResponseDto": {
         "type": "object",
@@ -20355,21 +20459,9 @@
             "items": {
               "$ref": "#/components/schemas/UnreadableRepositoryDto"
             }
-          },
-          "checksRefused": {
-            "type": "boolean",
-            "description": "GitHub refused a pull request’s checks for want of access: the App lacks Checks or Commit statuses read."
           }
         },
-        "required": [
-          "items",
-          "scopes",
-          "lanes",
-          "readyToMerge",
-          "withConflicts",
-          "unreadable",
-          "checksRefused"
-        ]
+        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts", "unreadable"]
       },
       "AnalyticsFigureDto": {
         "type": "object",
@@ -20439,6 +20531,7 @@
               "conflicts",
               "checks_failing",
               "checks_running",
+              "checks_unavailable",
               "changes_requested",
               "behind",
               "approval_required"
@@ -20539,11 +20632,7 @@
           },
           "complete": {
             "type": "boolean",
-            "description": "False when more pull requests closed in the window than one read takes in full; the figures then count the most recent."
-          },
-          "closedCeiling": {
-            "type": "number",
-            "description": "How many closed pull requests one read takes in full."
+            "description": "False when more pull requests closed in the window than one read takes in full; the figures then count the most recently closed."
           },
           "unreadable": {
             "type": "array",
@@ -20567,7 +20656,6 @@
           "lanes",
           "waiting",
           "complete",
-          "closedCeiling",
           "unreadable"
         ]
       },
@@ -20712,7 +20800,8 @@
           "checksRefusal": {
             "type": "string",
             "enum": ["forbidden", "not_found", "rate_limited", "failed"],
-            "nullable": true
+            "nullable": true,
+            "description": "Why `checks` is `unavailable`; null when GitHub showed them."
           },
           "unread": {
             "type": "array",
@@ -20733,6 +20822,7 @@
               "conflicts",
               "checks_failing",
               "checks_running",
+              "checks_unavailable",
               "changes_requested",
               "behind",
               "approval_required"
@@ -20807,6 +20897,7 @@
           "additions",
           "deletions",
           "checks",
+          "checksRefusal",
           "unread",
           "mergeable",
           "waitingSeconds",

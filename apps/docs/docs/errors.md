@@ -335,7 +335,7 @@ session asks.
 | `GITHUB_012` <a id="github_012" /> | Connect GitHub again to review and merge in your name          | 409  |
 | `GITHUB_013` <a id="github_013" /> | Pull request not found                                         | 404  |
 | `GITHUB_014` <a id="github_014" /> | GitHub would not merge this pull request yet                   | 409  |
-| `GITHUB_015` <a id="github_015" /> | GitHub asked to wait before the next request                   | 503  |
+| `GITHUB_015` <a id="github_015" /> | GitHub asked to wait before the next request                   | 429  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -375,14 +375,6 @@ stores a fresh one.
 protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
 request waits. Approving answers `200` with `merged: false` instead of this
 code, because the approval itself landed.
-
-`GITHUB_015` is GitHub's rate limit: a 429, a spent hourly budget, or a
-secondary limit (too many requests at once). Pull request reads go through
-one paced lane per token, a few requests at a time, and wait out a short
-`Retry-After` themselves; this code is what is left when GitHub asks for a
-longer wait than a request holds. `retryAfterSeconds` says when to ask again.
-In the queue and Analytics it does not fail the page: the repository it
-stopped is listed as one GitHub asked to wait for.
 
 ## Pull requests
 

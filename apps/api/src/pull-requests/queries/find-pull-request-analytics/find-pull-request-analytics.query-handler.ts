@@ -50,7 +50,6 @@ export class FindPullRequestAnalyticsQueryHandler
       viewerLogin,
       now,
       complete: closed.complete,
-      closedCeiling: CLOSED_CEILING,
       unreadable: this.mapper.toUnreadable([...open, ...closed.pulls]),
     });
   }

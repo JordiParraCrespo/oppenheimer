@@ -129,6 +129,6 @@ export const GithubErrors = {
   RATE_LIMITED: {
     code: 'GITHUB_015',
     message: 'GitHub asked to wait before the next request',
-    httpStatus: 503,
+    httpStatus: 429,
   },
 } as const satisfies Record<string, ErrorDefinition>;

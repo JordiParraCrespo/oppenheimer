@@ -3,15 +3,13 @@ import { createHash } from 'node:crypto';
 /**
  * How the pull request reads stay under GitHub's limits
  * (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api):
- * a few requests in flight per token at most, a shared pause when GitHub says
- * wait, and the primary budget read from every answer rather than discovered
- * by a refusal (#247).
+ * a few requests in flight per token at most, and one pause per token when
+ * GitHub says wait. The gate is the only thing that waits: a pause it can hold
+ * is slept through, a longer one is refused before anything is sent (#247).
  */
 
 /** Requests in flight per token. GitHub asks for serial calls; a handful keeps a cold queue usable. */
 export const CONCURRENCY_PER_TOKEN = 4;
-/** Below this many requests left in the hour, the token pauses until GitHub's reset. */
-export const LOW_REMAINING = 25;
 /** How long one request will wait out a limit before giving the refusal back to the caller. */
 export const MAX_WAIT_MS = 20_000;
 /** A secondary limit with no `Retry-After`: GitHub says to wait at least a minute. */
@@ -108,14 +106,14 @@ function keyOf(token: string): string {
 export interface RateLimitReading {
   /** GitHub refused this request for a limit: wait, then try again. */
   limited: boolean;
-  /** When the token may ask again (epoch ms), if GitHub said or the budget is nearly spent. */
+  /** When the token may ask again (epoch ms); set only when `limited`. */
   resumeAt: number | null;
 }
 
 /**
  * Reads one answer's limits. A 429, or a 403 whose budget is spent or whose
- * message names the secondary limit, is a "wait" rather than a refusal; any
- * answer whose remaining budget is low pauses the token until the reset.
+ * message names the secondary limit, is a "wait" rather than a refusal. Any
+ * other answer, a permission 403 included, is not a limit.
  */
 export function readRateLimit(
   status: number,
@@ -131,15 +129,12 @@ export function readRateLimit(
   const secondary = /secondary rate limit|abuse/i.test(message ?? '');
   const limited = status === 429 || (status === 403 && (spent || secondary));
 
+  if (!limited) return { limited: false, resumeAt: null };
   if (Number.isFinite(retryAfter) && retryAfter > 0) {
     return { limited, resumeAt: now + retryAfter * 1000 };
   }
-  if (limited && spent && resetAt) return { limited, resumeAt: resetAt };
-  if (limited) return { limited, resumeAt: now + SECONDARY_DEFAULT_MS };
-  if (remaining !== null && Number(remaining) < LOW_REMAINING && resetAt) {
-    return { limited: false, resumeAt: resetAt };
-  }
-  return { limited: false, resumeAt: null };
+  if (spent && resetAt) return { limited, resumeAt: resetAt };
+  return { limited, resumeAt: now + SECONDARY_DEFAULT_MS };
 }
 
 /** A wait with up to a fifth of jitter, so callers released together do not return together. */

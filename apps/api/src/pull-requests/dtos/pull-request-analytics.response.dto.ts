@@ -54,6 +54,7 @@ export class AnalyticsWaitingDto {
       'conflicts',
       'checks_failing',
       'checks_running',
+      'checks_unavailable',
       'changes_requested',
       'behind',
       'approval_required',
@@ -124,12 +125,9 @@ export class PullRequestAnalyticsResponseDto {
 
   @ApiProperty({
     description:
-      'False when more pull requests closed in the window than one read takes in full; the figures then count the most recent.',
+      'False when more pull requests closed in the window than one read takes in full; the figures then count the most recently closed.',
   })
   complete!: boolean;
-
-  @ApiProperty({ description: 'How many closed pull requests one read takes in full.' })
-  closedCeiling!: number;
 
   @ApiProperty({ type: [UnreadableRepositoryDto] })
   unreadable!: UnreadableRepositoryDto[];

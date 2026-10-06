@@ -45,9 +45,7 @@ export function QueueTable() {
         const pages = Math.max(1, Math.ceil(rows.length / QUEUE_PAGE_SIZE));
         const current = Math.min(page, pages - 1);
         const shown = rows.slice(current * QUEUE_PAGE_SIZE, (current + 1) * QUEUE_PAGE_SIZE);
-        const notices = (
-          <ReadNotices unreadable={data.unreadable} checksRefused={data.checksRefused} />
-        );
+        const notices = <ReadNotices unreadable={data.unreadable} />;
         if (!data.items.length) {
           const watching = scope === 'watching';
           return (

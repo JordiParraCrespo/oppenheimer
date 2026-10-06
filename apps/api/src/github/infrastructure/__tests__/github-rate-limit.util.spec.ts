@@ -46,7 +46,8 @@ describe('reading GitHub’s limits off an answer', () => {
     ).toEqual({ limited: true, resumeAt: NOW + 600_000 });
   });
 
-  it('pauses before the refusal when the budget is nearly spent, and leaves a healthy answer alone', () => {
+  it('reads a successful answer as no limit, however low the remaining budget', () => {
+    // Pausing on a success turned the last of the budget into a stall that never refused (review on #250).
     const reset = String((NOW + 120_000) / 1000);
     expect(
       readRateLimit(
@@ -56,10 +57,6 @@ describe('reading GitHub’s limits off an answer', () => {
         NOW,
       ),
     ).toEqual({
-      limited: false,
-      resumeAt: NOW + 120_000,
-    });
-    expect(readRateLimit(200, headers({ 'x-ratelimit-remaining': '4000' }), null, NOW)).toEqual({
       limited: false,
       resumeAt: null,
     });
