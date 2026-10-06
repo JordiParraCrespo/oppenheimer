@@ -36,6 +36,9 @@ export interface AutomationRunRepositoryPort {
 
   findOneForSystem(id: string): Promise<Option<AutomationRunEntity>>;
 
+  /** The run that started a session, if one did (`UQ_automation_run_session`). */
+  findOneBySessionForSystem(sessionId: string): Promise<Option<AutomationRunEntity>>;
+
   /**
    * The sweep: re-stage the dispatch of runs still pending since before
    * `staleBefore` — their job ran out of retries, or Redis lost it — and move

@@ -612,3 +612,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   every pane is the export's grey, so Plan moves onto it. `full` stays for
   the terminal, New session's drop zone and a pull request. Settings keeps
   its own shell, on the same grey.
+- 2026-10-06: **The console hears about changes from one event stream,
+  beside its polls** (03, 05). `GET /v1/events` streams invalidations
+  (`session.changed`, `host.changed`, `pairing.spent`,
+  `automationRun.changed`) per workspace and per person over Redis
+  pub/sub, published from the outbox after each commit. The polls in
+  `LIVE_POLL` keep running as the fallback. Behind the
+  `workspace_event_stream` flag.

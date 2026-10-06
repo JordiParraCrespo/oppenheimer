@@ -77,6 +77,7 @@ import { CredentialThrottlerGuard } from './throttling/guards/credential-throttl
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
+import { WorkspaceEventsModule } from './workspace-events/workspace-events.module';
 
 @Module({
   imports: [
@@ -241,6 +242,8 @@ import { UsersModule } from './users/user.module';
     ProjectsModule,
     SessionsModule,
     AutomationsModule,
+    // The console's change feed, published from the outbox after each commit.
+    WorkspaceEventsModule,
     TasksModule,
     CalendarModule,
     PullRequestsModule,
