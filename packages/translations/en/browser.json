@@ -1043,13 +1043,13 @@
       "approval_required": "Waiting for a required approval"
     },
     "watch": {
-      "manage": "Manage repositories",
-      "title": "Watched repositories",
-      "hint": "Repositories your GitHub installations reach. Open pull requests from watched ones show up here.",
+      "add": "Watch a repository",
+      "search": "Search repositories",
+      "noMatch": "No repository matches “{{query}}”",
+      "allWatched": "You watch every repository",
+      "unwatch": "Stop watching {{name}}",
       "private": "Private",
-      "public": "Public",
-      "loadFailed": "Could not load repositories.",
-      "toggle": "Watch {{name}}"
+      "failed": "Could not update the watched repositories."
     },
     "detail": {
       "back": "Back to the queue",

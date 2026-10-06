@@ -1047,13 +1047,13 @@
       "approval_required": "Espera una aprobación obligatoria"
     },
     "watch": {
-      "manage": "Gestionar repositorios",
-      "title": "Repositorios seguidos",
-      "hint": "Los repositorios a los que llegan tus instalaciones de GitHub. Las pull requests abiertas de los que sigues aparecen aquí.",
+      "add": "Seguir un repositorio",
+      "search": "Buscar repositorios",
+      "noMatch": "Ningún repositorio coincide con «{{query}}»",
+      "allWatched": "Ya sigues todos los repositorios",
+      "unwatch": "Dejar de seguir {{name}}",
       "private": "Privado",
-      "public": "Público",
-      "loadFailed": "No se pudieron cargar los repositorios.",
-      "toggle": "Seguir {{name}}"
+      "failed": "No se pudieron actualizar los repositorios seguidos."
     },
     "detail": {
       "back": "Volver a la cola",
