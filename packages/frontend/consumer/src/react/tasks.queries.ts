@@ -3,7 +3,6 @@
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
-  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -47,12 +46,12 @@ export function useTasks<TData = TaskEntity[]>(
   });
 }
 
-/** The tasks a session is on: the session header's "Back to task". */
+/** The tasks a session is on: the session header's "Back to task", derived from the board. */
 export function useSessionTasks(sessionId: string | undefined) {
-  const app = useConsumerApp();
-  return useQuery({
-    queryKey: tasksKeys.list({ sessionId }),
-    queryFn: sessionId ? () => app.tasks.findAll({ sessionId }) : skipToken,
+  return useTasks({
+    select: (rows) =>
+      rows.filter((row) => row.sessions.some((link) => link.sessionId === sessionId)),
+    enabled: sessionId !== undefined,
   });
 }
 
@@ -69,17 +68,38 @@ export function useGoals<TData = GoalEntity[]>(
 }
 
 /**
- * Write the task the server returned into the board, then let the narrower lists
- * and the goals' progress refetch: a move or a Done changes what a goal counts.
+ * The server's answer replaces that task's row on the board, or removes it on a
+ * delete; goals refetch when a goal's `doneCount` or `totalCount` can move.
+ * `previous` is the row before the write: read from the board unless the caller
+ * already drew a provisional one there. A board read already in flight is
+ * cancelled first, so an answer from before the write cannot land on top of it.
  */
-function settleTask(queryClient: QueryClient, task: TaskEntity | null, removedId?: string) {
+async function settleTask(
+  queryClient: QueryClient,
+  id: string,
+  task: TaskEntity | null,
+  previous = queryClient
+    .getQueryData<TaskEntity[]>(tasksKeys.list(BOARD))
+    ?.find((row) => row.id === id),
+) {
+  const boardKnown = queryClient.getQueryData(tasksKeys.list(BOARD)) !== undefined;
+  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD), exact: true });
   queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
     if (!rows) return rows;
-    const rest = rows.filter((row) => row.id !== (task?.id ?? removedId));
+    const rest = rows.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
   });
-  void queryClient.invalidateQueries({ queryKey: tasksKeys.lists() });
-  void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
+  if (!boardKnown || movesGoalProgress(previous, task)) {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
+  }
+}
+
+/** A task joined or left a goal, or one on a goal turned Done or back. */
+function movesGoalProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
+  const before = was?.goalId ?? null;
+  const after = now?.goalId ?? null;
+  if (before !== after) return true;
+  return before !== null && (was?.isDone ?? false) !== (now?.isDone ?? false);
 }
 
 export function useCreateTask(options?: UseMutationOptions<TaskEntity, Error, TaskInput>) {
@@ -87,7 +107,7 @@ export function useCreateTask(options?: UseMutationOptions<TaskEntity, Error, Ta
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: TaskInput) => app.tasks.create(input),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
@@ -103,7 +123,7 @@ export function useUpdateTask(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: UpdateTaskVariables) => app.tasks.update(id, input),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
@@ -114,27 +134,37 @@ export interface MoveTaskVariables extends TaskMove {
 /**
  * A drag or a tick. The card moves on the drop: the board is written at once with
  * a provisional key just after the task it landed below (or before every key, at
- * the top), and the server's key replaces it. A refusal puts the board back.
+ * the top), and the server's key replaces it. A refusal puts that card back and
+ * reads the board again, since other writes may have settled while it was out.
  */
 export function useMoveTask(
-  options?: UseMutationOptions<TaskEntity, Error, MoveTaskVariables, { previous?: TaskEntity[] }>,
+  options?: UseMutationOptions<TaskEntity, Error, MoveTaskVariables, { previous?: TaskEntity }>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task, _move, context) =>
+      settleTask(queryClient, task.id, task, context?.previous),
+    ),
     mutationFn: ({ id, status, afterTaskId }: MoveTaskVariables) =>
       app.tasks.move(id, { status, afterTaskId }),
     onMutate: async (move) => {
       await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
-      const previous = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
-      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
-        rows?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, rows) : row)),
+      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
+      const previous = rows?.find((row) => row.id === move.id);
+      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) =>
+        current?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, current) : row)),
       );
       return { previous };
     },
     onError: (error, move, context, mutation) => {
-      if (context?.previous) queryClient.setQueryData(tasksKeys.list(BOARD), context.previous);
+      const previous = context?.previous;
+      if (previous) {
+        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
+          rows?.map((row) => (row.id === previous.id ? previous : row)),
+        );
+      }
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.list(BOARD) });
       return options?.onError?.(error, move, context, mutation);
     },
   });
@@ -166,7 +196,7 @@ export function useDeleteTask(options?: UseMutationOptions<void, Error, string>)
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.tasks.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, null, id)),
+    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, id, null)),
   });
 }
 
@@ -183,8 +213,8 @@ export function useStartTaskSession(
   return useMutation({
     mutationFn: ({ id, ...input }: StartTaskSessionVariables) => app.tasks.startSession(id, input),
     ...withCacheOnSuccess(options, (started) => {
-      settleTask(queryClient, started.task);
       void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      return settleTask(queryClient, started.task.id, started.task);
     }),
   });
 }
@@ -203,7 +233,7 @@ export function useLinkTaskSession(
   return useMutation({
     mutationFn: ({ id, sessionId, seenStatus }: LinkTaskSessionVariables) =>
       app.tasks.linkSession(id, sessionId, seenStatus),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
@@ -215,7 +245,7 @@ export function useUnlinkTaskSession(
   return useMutation({
     mutationFn: ({ id, sessionId }: { id: string; sessionId: string }) =>
       app.tasks.unlinkSession(id, sessionId),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
