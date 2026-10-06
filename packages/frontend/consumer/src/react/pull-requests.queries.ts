@@ -134,7 +134,7 @@ export interface SetRepositoryWatchVariables {
   watching: boolean;
 }
 
-/** Watching moves a repository's pull requests in or out of every scope. */
+/** Watching moves a repository's pull requests in or out of the Watching scope and the analytics. */
 export function useSetRepositoryWatch(
   options?: UseMutationOptions<void, Error, SetRepositoryWatchVariables>,
 ) {

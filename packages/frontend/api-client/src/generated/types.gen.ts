@@ -2394,7 +2394,7 @@ export type WatchedRepositoryDto = {
     fullName: string;
     private: boolean;
     /**
-     * Watched unless the caller switched it off.
+     * Not watched until the caller switches it on.
      */
     watching: boolean;
 };

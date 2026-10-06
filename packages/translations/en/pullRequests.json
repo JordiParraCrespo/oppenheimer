@@ -33,7 +33,7 @@
     "emptyTitle": "Nothing in this view",
     "emptyHint": "Pull requests opened by your sessions or teammates land here with a lane already picked.",
     "emptyWatchingTitle": "You are not watching any repositories",
-    "emptyWatchingHint": "Pick repositories in Manage repositories. Their open pull requests show up here.",
+    "emptyWatchingHint": "Search for repositories with Watch repositories. Their open pull requests show up here.",
     "loadFailed": "Could not load pull requests.",
     "notConnectedTitle": "Connect GitHub to see pull requests",
     "notConnectedHint": "Install the GitHub App on the account that holds your repositories.",
@@ -81,10 +81,11 @@
     "checks_unavailable": "Checks unavailable"
   },
   "watch": {
-    "add": "Watch a repository",
+    "add": "Watch repositories",
     "search": "Search repositories",
     "noMatch": "No repository matches “{{query}}”",
-    "allWatched": "You watch every repository",
+    "loading": "Loading repositories…",
+    "none": "No repositories to watch yet",
     "unwatch": "Stop watching {{name}}",
     "private": "Private",
     "failed": "Could not update the watched repositories."

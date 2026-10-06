@@ -5,6 +5,7 @@ import {
   mergeBlocker,
   mergeGates,
   scopeOf,
+  visibleInQueue,
 } from '../domain/pull-request-merge.policy';
 
 const READY: MergeFacts = {
@@ -103,5 +104,17 @@ describe('whose queue a pull request is in', () => {
     expect(scopeOf(pull, 'ana')).toBe('requested');
     expect(scopeOf(pull, 'cy')).toBe('watching');
     expect(scopeOf(pull, null)).toBe('watching');
+  });
+});
+
+describe('which pull requests the queue shows', () => {
+  it('shows yours and the reviews asked of you from every repository', () => {
+    expect(visibleInQueue('mine', false)).toBe(true);
+    expect(visibleInQueue('requested', false)).toBe(true);
+  });
+
+  it('shows the rest only from a repository you watch', () => {
+    expect(visibleInQueue('watching', false)).toBe(false);
+    expect(visibleInQueue('watching', true)).toBe(true);
   });
 });
