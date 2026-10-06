@@ -7,6 +7,7 @@ import { TOKENS } from '../../di/tokens';
 import { TaskEntity } from '../../modules/tasks/task.entity';
 import type { TasksRepository } from '../../modules/tasks/tasks.repository';
 import {
+  tasksKeys,
   useCreateTask,
   useDeleteTask,
   useGoals,
@@ -136,6 +137,30 @@ describe('useMoveTask', () => {
     expect(findAll).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps its answer over a board read that was already on its way', async () => {
+    const stale = deferred<TaskEntity[]>();
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([task('a')])
+      .mockReturnValueOnce(stale.promise);
+    const { wrapper, queryClient } = setup({
+      findAll,
+      findGoals: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue(task('a', { title: 'Renamed' })),
+    });
+    const { result } = renderHook(() => ({ tasks: useTasks(), update: useUpdateTask() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+    act(() => void queryClient.refetchQueries({ queryKey: tasksKeys.lists() }));
+    await waitFor(() => expect(findAll).toHaveBeenCalledTimes(2));
+
+    await act(() => result.current.update.mutateAsync({ id: 'a', input: { title: 'Renamed' } }));
+    await act(async () => stale.resolve([task('a')]));
+
+    await waitFor(() => expect(result.current.tasks.data?.[0]?.title).toBe('Renamed'));
+  });
+
   it("reads the goals again when a goal's task turns Done", async () => {
     const findGoals = vi.fn().mockResolvedValue([]);
     const { wrapper } = setup({
@@ -182,7 +207,9 @@ describe('the goals', () => {
     await act(() => result.current.update.mutateAsync({ id: 'a', input: { title: 'Renamed' } }));
     await act(() => result.current.create.mutateAsync({ title: 'b' }));
 
-    expect(result.current.tasks.data?.map((row) => row.title)).toEqual(['Renamed', 'b']);
+    await waitFor(() =>
+      expect(result.current.tasks.data?.map((row) => row.title)).toEqual(['Renamed', 'b']),
+    );
     expect(findGoals).toHaveBeenCalledTimes(1);
   });
 

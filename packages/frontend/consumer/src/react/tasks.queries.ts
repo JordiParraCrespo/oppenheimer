@@ -71,9 +71,10 @@ export function useGoals<TData = GoalEntity[]>(
  * The server's answer replaces that task's row on the board, or removes it on a
  * delete; goals refetch when a goal's `doneCount` or `totalCount` can move.
  * `previous` is the row before the write: read from the board unless the caller
- * already drew a provisional one there.
+ * already drew a provisional one there. A board read already in flight is
+ * cancelled first, so an answer from before the write cannot land on top of it.
  */
-function settleTask(
+async function settleTask(
   queryClient: QueryClient,
   id: string,
   task: TaskEntity | null,
@@ -82,6 +83,7 @@ function settleTask(
     ?.find((row) => row.id === id),
 ) {
   const boardKnown = queryClient.getQueryData(tasksKeys.list(BOARD)) !== undefined;
+  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD), exact: true });
   queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
     if (!rows) return rows;
     const rest = rows.filter((row) => row.id !== id);
@@ -211,8 +213,8 @@ export function useStartTaskSession(
   return useMutation({
     mutationFn: ({ id, ...input }: StartTaskSessionVariables) => app.tasks.startSession(id, input),
     ...withCacheOnSuccess(options, (started) => {
-      settleTask(queryClient, started.task.id, started.task);
       void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      return settleTask(queryClient, started.task.id, started.task);
     }),
   });
 }
