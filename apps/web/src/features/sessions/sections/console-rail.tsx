@@ -6,15 +6,13 @@ import {
   SortableGroup,
   SortableRailItem,
 } from '@oppenheimer/design-system-web';
-import { CircleCheck, GitPullRequest, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
-import type { ReactElement, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useConsoleList } from '@/lib/console';
-import { useRailOrder } from '../hooks/use-rail-order';
-import type { RailItemId } from '../lib/rail-order';
+import { type ConsoleList, useConsoleList } from '@/lib/console';
+import { RAIL_GROUP, useRailOrder } from '../hooks/use-rail-order';
+import { type RailItemId, railEntry } from '../lib/rail-order';
 
 /**
  * The console's rail, switching the sidebar between its lists
@@ -26,7 +24,8 @@ import type { RailItemId } from '../lib/rail-order';
  *
  * The reader drags the items into their own order, as the design's rail
  * does; a press still opens the list, and the order is kept on this device
- * (`useRailOrder`).
+ * (`useRailOrder`). The rail is the console's only drag surface outside a
+ * page, so it carries its own `DragProvider`.
  */
 export function ConsoleRail() {
   const { t } = useTranslation();
@@ -36,39 +35,8 @@ export function ConsoleRail() {
   });
   const list = useConsoleList();
   const dragLabels = useDragLabels();
-  const { group, order, handlers } = useRailOrder();
-
-  const items: Record<
-    RailItemId,
-    { label: string; icon: ReactNode; count?: number; active: boolean; link: ReactElement }
-  > = {
-    sessions: {
-      label: t('nav.sessions'),
-      icon: <Terminal />,
-      count: sessionCount,
-      active: list === 'sessions',
-      link: <Link to="/sessions/new" />,
-    },
-    pulls: {
-      label: t('nav.pullRequests'),
-      icon: <GitPullRequest />,
-      active: list === 'pulls',
-      link: <Link to="/pulls" />,
-    },
-    automations: {
-      label: t('nav.automations'),
-      icon: <Zap />,
-      active: list === 'automations',
-      link: <Link to="/automations" />,
-    },
-    plan: {
-      label: t('nav.plan'),
-      icon: <CircleCheck />,
-      count: openTasks,
-      active: list === 'tasks' || list === 'calendar',
-      link: <Link to="/plan" />,
-    },
-  };
+  const { order, handlers } = useRailOrder();
+  const counts: Partial<Record<RailItemId, number>> = { sessions: sessionCount, plan: openTasks };
 
   return (
     <Rail aria-label={t('nav.primaryNavigation')}>
@@ -77,28 +45,31 @@ export function ConsoleRail() {
         {...handlers}
         labels={dragLabels}
         overlay={(active) => {
-          const item = items[active.id as RailItemId];
-          return item ? (
-            <RailItem label={item.label} active>
-              {item.icon}
+          const entry = railEntry(active.id);
+          return entry ? (
+            <RailItem label={t(entry.labelKey)} active>
+              <entry.Icon />
             </RailItem>
           ) : null;
         }}
       >
-        <SortableGroup id={group} items={order} accepts={['rail-item']}>
+        <SortableGroup id={RAIL_GROUP} items={order} accepts={['rail-item']}>
+          {/* The group owns no spacing of its own; the column's gap is the rail's. */}
           <div className="flex flex-col gap-1.5">
             {order.map((id) => {
-              const item = items[id];
+              const entry = railEntry(id);
+              if (!entry) return null;
+              const lists: readonly ConsoleList[] = entry.lists;
               return (
                 <SortableRailItem
                   key={id}
                   id={id}
-                  label={item.label}
-                  count={item.count}
-                  active={item.active}
-                  render={item.link}
+                  label={t(entry.labelKey)}
+                  count={counts[id]}
+                  active={lists.includes(list)}
+                  render={<Link to={entry.to} />}
                 >
-                  {item.icon}
+                  <entry.Icon />
                 </SortableRailItem>
               );
             })}

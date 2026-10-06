@@ -1,26 +1,21 @@
-import { type SortableGroups, useSortableGroups } from '@oppenheimer/design-system-web';
-import { useRef, useState } from 'react';
-import { type RailItemId, rememberRailOrder, storedRailOrder } from '../lib/rail-order';
+import { useSortableGroups } from '@oppenheimer/design-system-web';
+import { useState } from 'react';
+import { type RailItemId, railEntry, rememberRailOrder, storedRailOrder } from '../lib/rail-order';
 
-const GROUP = 'rail';
+/** The `SortableGroup` id the rail's items sit in. */
+export const RAIL_GROUP = 'rail';
 
 /**
- * The rail's items in the reader's order, as the drag layer moves them: the
- * neighbours slide while one is held, and a drop keeps the new order on this
- * device. Spread `handlers` on the rail's `DragProvider` and the order on its
- * `SortableGroup`.
+ * The rail's items in the reader's order. The drag layer hands back the new
+ * order on the drop (and the old one on a cancel); that value is drawn and
+ * kept on this device. Spread `handlers` on the rail's `DragProvider`.
  */
 export function useRailOrder() {
-  const [groups, setGroups] = useState<SortableGroups>(() => ({ [GROUP]: storedRailOrder() }));
-  // The value the drop settled on, read by the move that follows it in the same handler.
-  const settled = useRef<SortableGroups>(groups);
-  const handlers = useSortableGroups(
-    groups,
-    (next) => {
-      settled.current = next;
-      setGroups(next);
-    },
-    () => rememberRailOrder(settled.current[GROUP] ?? []),
-  );
-  return { group: GROUP, order: (groups[GROUP] ?? []) as readonly RailItemId[], handlers };
+  const [order, setOrder] = useState<readonly RailItemId[]>(storedRailOrder);
+  const handlers = useSortableGroups({ [RAIL_GROUP]: order }, (next) => {
+    const settled = (next[RAIL_GROUP] ?? []).flatMap((id) => railEntry(id)?.id ?? []);
+    setOrder(settled);
+    rememberRailOrder(settled);
+  });
+  return { order, handlers };
 }
