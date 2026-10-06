@@ -125,6 +125,7 @@ function harness() {
       dataSource.transaction(work as never),
     ),
     stageJob: vi.fn(async () => undefined),
+    stageEvents: vi.fn(async () => undefined),
   };
   const mapper = {
     toDomain: (record: { id: string }) => automations.find((a) => a.id === record.id),

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { SessionStateChangedDomainEvent } from '../domain/events/session-state-changed.domain-event';
+import { SessionUpdatedDomainEvent } from '../domain/events/session-updated.domain-event';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import {
   checkoutDirectoryCandidates,
@@ -71,17 +73,39 @@ describe('recordEvent is the only mutator of the fold', () => {
   it('raises a state-changed event only on a real transition', () => {
     const work = session();
     work.clearEvents();
+    const stateChanges = () =>
+      work.domainEvents.filter((event) => event instanceof SessionStateChangedDomainEvent);
 
     work.recordEvent(entry(SESSION_EVENT_KINDS.REQUESTED));
-    expect(work.domainEvents).toHaveLength(0);
+    expect(stateChanges()).toHaveLength(0);
 
     work.recordEvent(entry(SESSION_EVENT_KINDS.STARTED));
-    expect(work.domainEvents).toHaveLength(1);
+    expect(stateChanges()).toHaveLength(1);
 
     // A second start is the same state: nothing changed, so nobody is owed a
     // notification.
     work.recordEvent(entry(SESSION_EVENT_KINDS.STARTED));
-    expect(work.domainEvents).toHaveLength(1);
+    expect(stateChanges()).toHaveLength(1);
+  });
+
+  /**
+   * The console's feed is woken by this one event, so every write that lands
+   * an entry must raise it, a stop or a rename as much as a transition, and
+   * a batch raises it once rather than once per entry.
+   */
+  it('raises one updated event per write, whatever the entries were', () => {
+    const work = session();
+    work.clearEvents();
+    const updates = () =>
+      work.domainEvents.filter((event) => event instanceof SessionUpdatedDomainEvent);
+
+    work.recordEvents([entry(SESSION_EVENT_KINDS.REQUESTED), entry(SESSION_EVENT_KINDS.STOPPED)]);
+    expect(updates()).toHaveLength(1);
+    expect(updates()[0]).toMatchObject({ aggregateId: work.id, origin: work.origin });
+
+    work.clearEvents();
+    work.recordEvent(entry(SESSION_EVENT_KINDS.STOPPED));
+    expect(updates()).toHaveLength(1);
   });
 
   it('replays a log onto the aggregate exactly as the pure fold would', () => {

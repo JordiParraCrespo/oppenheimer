@@ -9,6 +9,7 @@ import type {
   AutomationRunOutcome,
   AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
+import { AutomationRunChangedDomainEvent } from './events/automation-run-changed.domain-event';
 
 /**
  * Why a run happened, in words that outlive the event it came from: the
@@ -67,7 +68,7 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
 
   /** A firing the dispatcher owes a look at. */
   static fire(props: NewRunProps, now: Date): AutomationRunEntity {
-    return new AutomationRunEntity({
+    const run = new AutomationRunEntity({
       id: randomUUID(),
       props: {
         ...props,
@@ -79,6 +80,8 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
         dispatchedAt: null,
       },
     });
+    run.changed('the automation fired');
+    return run;
   }
 
   /** A firing a guard refused before it was ever queued. Recorded, never silent. */
@@ -145,12 +148,14 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
     this.props.outcome = 'skipped';
     this.props.skipReason = reason;
     this.setUpdatedAt(new Date());
+    this.changed(`the run was skipped: ${reason}`);
   }
 
   expire(): void {
     this.assertPending();
     this.props.outcome = 'expired';
     this.setUpdatedAt(new Date());
+    this.changed('the run expired before it could start');
   }
 
   /** Not now: look again at `until`. Counts as an attempt. */
@@ -159,6 +164,7 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
     this.props.availableAt = until;
     this.props.attempts += 1;
     this.setUpdatedAt(new Date());
+    this.changed('the run was deferred');
   }
 
   /**
@@ -172,6 +178,20 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
     this.props.sessionId = sessionId;
     this.props.dispatchedAt = at;
     this.setUpdatedAt(new Date());
+    this.changed('the run started its session');
+  }
+
+  /** One per write, however many steps it took (`skipped` fires, then skips). */
+  private changed(reason: string): void {
+    if (this.domainEvents.some((event) => event instanceof AutomationRunChangedDomainEvent)) return;
+    this.addEvent(
+      new AutomationRunChangedDomainEvent({
+        aggregateId: this.id,
+        reason,
+        organizationId: this.props.organizationId,
+        automationId: this.props.automationId,
+      }),
+    );
   }
 
   private assertPending(): void {
