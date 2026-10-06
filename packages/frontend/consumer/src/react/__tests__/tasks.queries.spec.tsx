@@ -5,8 +5,10 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import { TaskEntity } from '../../modules/tasks/task.entity';
+import type { TasksRepository } from '../../modules/tasks/tasks.repository';
 import {
   useCreateTask,
+  useDeleteTask,
   useGoals,
   useMoveTask,
   useSessionTasks,
@@ -14,13 +16,6 @@ import {
   useUpdateTask,
 } from '../tasks.queries';
 import { fakeKernel } from './fake-kernel';
-
-/**
- * Every write on Plan answers with the task it wrote, and ranks are fractional,
- * so that answer is the whole change. The board used to be read again after
- * each one anyway, and that read, set off while a second drag was in flight,
- * drew the second card back in its old column until its own answer landed.
- */
 
 const at = new Date('2026-10-01T00:00:00Z');
 
@@ -65,7 +60,12 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-function setup(service: Record<string, unknown>) {
+/** The repository methods these hooks call, so a renamed one fails to compile here. */
+type TasksFake = Partial<
+  Pick<TasksRepository, 'findAll' | 'findGoals' | 'create' | 'update' | 'move' | 'remove'>
+>;
+
+function setup(service: TasksFake) {
   const app = fakeKernel({ [TOKENS.TasksRepository]: service });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   function wrapper({ children }: { children: ReactNode }) {
@@ -86,7 +86,7 @@ describe('useMoveTask', () => {
     const board = [task('a'), task('b')];
     const findAll = vi.fn().mockResolvedValue(board);
     const answers = { a: deferred<TaskEntity>(), b: deferred<TaskEntity>() };
-    const move = vi.fn((id: 'a' | 'b') => answers[id].promise);
+    const move = vi.fn((id: string) => answers[id as keyof typeof answers].promise);
     const { wrapper } = setup({ findAll, findGoals: vi.fn().mockResolvedValue([]), move });
     const { result } = renderHook(() => ({ tasks: useTasks(), move: useMoveTask() }), {
       wrapper,
@@ -189,5 +189,66 @@ describe('useSessionTasks', () => {
     await waitFor(() => expect(result.current.mine.data?.map((row) => row.id)).toEqual(['a']));
     expect(findAll).toHaveBeenCalledTimes(1);
     expect(findAll).toHaveBeenCalledWith({});
+  });
+});
+
+describe('goal progress', () => {
+  async function settled(
+    board: TaskEntity[],
+    service: TasksFake,
+    write: (hooks: {
+      update: ReturnType<typeof useUpdateTask>;
+      remove: ReturnType<typeof useDeleteTask>;
+    }) => Promise<unknown>,
+  ) {
+    const findGoals = vi.fn().mockResolvedValue([]);
+    const { wrapper } = setup({
+      findAll: vi.fn().mockResolvedValue(board),
+      findGoals,
+      ...service,
+    });
+    const { result } = renderHook(
+      () => ({
+        tasks: useTasks(),
+        goals: useGoals(),
+        update: useUpdateTask(),
+        remove: useDeleteTask(),
+      }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.goals.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+    await act(() => write(result.current));
+    return findGoals;
+  }
+
+  it('is read again when a task leaves its goal', async () => {
+    const findGoals = await settled(
+      [task('a', { goalId: 'g-1' })],
+      { update: vi.fn().mockResolvedValue(task('a')) },
+      ({ update }) => update.mutateAsync({ id: 'a', input: { goalId: null } }),
+    );
+
+    await waitFor(() => expect(findGoals).toHaveBeenCalledTimes(2));
+  });
+
+  it("is read again when a goal's task is deleted", async () => {
+    const findGoals = await settled(
+      [task('a', { goalId: 'g-1' })],
+      { remove: vi.fn().mockResolvedValue(undefined) },
+      ({ remove }) => remove.mutateAsync('a'),
+    );
+
+    await waitFor(() => expect(findGoals).toHaveBeenCalledTimes(2));
+  });
+
+  it('is not read again when a task on no goal is deleted', async () => {
+    const findGoals = await settled(
+      [task('a')],
+      { remove: vi.fn().mockResolvedValue(undefined) },
+      ({ remove }) => remove.mutateAsync('a'),
+    );
+
+    expect(findGoals).toHaveBeenCalledTimes(1);
   });
 });

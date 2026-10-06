@@ -46,17 +46,11 @@ export function useTasks<TData = TaskEntity[]>(
   });
 }
 
-/**
- * The tasks a session is on: the session header's "Back to task". A `select`
- * over the board, which the console rail keeps read on every screen, so the
- * header costs no request of its own and follows a link the moment it is made.
- */
+/** The tasks a session is on: the session header's "Back to task", derived from the board. */
 export function useSessionTasks(sessionId: string | undefined) {
   return useTasks({
     select: (rows) =>
-      sessionId
-        ? rows.filter((row) => row.sessions.some((link) => link.sessionId === sessionId))
-        : [],
+      rows.filter((row) => row.sessions.some((link) => link.sessionId === sessionId)),
     enabled: sessionId !== undefined,
   });
 }
@@ -74,39 +68,36 @@ export function useGoals<TData = GoalEntity[]>(
 }
 
 /**
- * Write the task the server returned into the board. Ranks are fractional, so
- * a write moves no row but its own and the answer is the whole change: the
- * board is not read again. Reading it again was worse than a wasted request,
- * since a refetch that set off while a second drag was still on its way drew
- * that card back in its old place until its own answer landed.
- *
- * Goals refetch only when a count can have moved: a task joined or left a goal,
- * or one on a goal turned Done or back. `before` is the board as it was before
- * the write, for a mutation that already drew it provisionally; without the
- * board to compare against, the goals refetch.
+ * The server's answer replaces that task's row on the board, or removes it on a
+ * delete; goals refetch when a goal's `doneCount` or `totalCount` can move.
+ * `previous` is the row before the write: read from the board unless the caller
+ * already drew a provisional one there.
  */
 function settleTask(
   queryClient: QueryClient,
+  id: string,
   task: TaskEntity | null,
-  { removedId, before }: { removedId?: string; before?: TaskEntity[] } = {},
+  previous = queryClient
+    .getQueryData<TaskEntity[]>(tasksKeys.list(BOARD))
+    ?.find((row) => row.id === id),
 ) {
-  const id = task?.id ?? removedId;
-  const rows = before ?? queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
-  const was = rows?.find((row) => row.id === id);
-  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) => {
-    if (!current) return current;
-    const rest = current.filter((row) => row.id !== id);
+  const boardKnown = queryClient.getQueryData(tasksKeys.list(BOARD)) !== undefined;
+  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
+    if (!rows) return rows;
+    const rest = rows.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
   });
-  if (!rows || movesGoalProgress(was, task)) {
+  if (!boardKnown || movesGoalProgress(previous, task)) {
     void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
   }
 }
 
+/** A task joined or left a goal, or one on a goal turned Done or back. */
 function movesGoalProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
-  if (!was && !now) return true;
-  if (!was || !now) return (was ?? now)?.goalId != null;
-  return was.goalId !== now.goalId || (now.goalId !== null && was.isDone !== now.isDone);
+  const before = was?.goalId ?? null;
+  const after = now?.goalId ?? null;
+  if (before !== after) return true;
+  return before !== null && (was?.isDone ?? false) !== (now?.isDone ?? false);
 }
 
 export function useCreateTask(options?: UseMutationOptions<TaskEntity, Error, TaskInput>) {
@@ -114,7 +105,7 @@ export function useCreateTask(options?: UseMutationOptions<TaskEntity, Error, Ta
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: TaskInput) => app.tasks.create(input),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
@@ -130,7 +121,7 @@ export function useUpdateTask(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: UpdateTaskVariables) => app.tasks.update(id, input),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
@@ -149,8 +140,13 @@ export function useMoveTask(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    ...withCacheOnSuccess(options, (task, _move, context) =>
-      settleTask(queryClient, task, { before: context?.previous }),
+    ...withCacheOnSuccess(options, (task, move, context) =>
+      settleTask(
+        queryClient,
+        task.id,
+        task,
+        context?.previous?.find((row) => row.id === move.id),
+      ),
     ),
     mutationFn: ({ id, status, afterTaskId }: MoveTaskVariables) =>
       app.tasks.move(id, { status, afterTaskId }),
@@ -195,7 +191,7 @@ export function useDeleteTask(options?: UseMutationOptions<void, Error, string>)
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.tasks.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, null, { removedId: id })),
+    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, id, null)),
   });
 }
 
@@ -212,7 +208,7 @@ export function useStartTaskSession(
   return useMutation({
     mutationFn: ({ id, ...input }: StartTaskSessionVariables) => app.tasks.startSession(id, input),
     ...withCacheOnSuccess(options, (started) => {
-      settleTask(queryClient, started.task);
+      settleTask(queryClient, started.task.id, started.task);
       void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
@@ -232,7 +228,7 @@ export function useLinkTaskSession(
   return useMutation({
     mutationFn: ({ id, sessionId, seenStatus }: LinkTaskSessionVariables) =>
       app.tasks.linkSession(id, sessionId, seenStatus),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
@@ -244,7 +240,7 @@ export function useUnlinkTaskSession(
   return useMutation({
     mutationFn: ({ id, sessionId }: { id: string; sessionId: string }) =>
       app.tasks.unlinkSession(id, sessionId),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
   });
 }
 
