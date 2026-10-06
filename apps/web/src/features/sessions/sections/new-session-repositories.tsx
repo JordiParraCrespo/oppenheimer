@@ -5,7 +5,7 @@ import {
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, openPendingTab } from '@oppenheimer/frontend-web';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
@@ -29,7 +29,7 @@ export function NewSessionRepositories() {
   const installUrl = useDeploymentCapabilities({
     select: (deployment) => deployment.github_app_install_url,
   });
-  const manageAccess = useManageGithubAccess();
+  const manageAccess = useManageGithubAccess(openPendingTab);
   const repositories = useInstallationRepositoriesFor(
     (installations.data ?? []).map((installation) => installation.id),
   );

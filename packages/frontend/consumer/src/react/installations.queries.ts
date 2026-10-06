@@ -95,33 +95,39 @@ export function useStartInstallation(options?: UseMutationOptions<InstallationSt
   });
 }
 
+/** A tab opened in the click and pointed at an address once it arrives; the platform's to open. */
+export interface ManageAccessTab {
+  go: (url: string) => void;
+  close: () => void;
+}
+
 /**
- * "Manage repository access": open the GitHub App's install page in a new tab
- * with a minted install state (`POST /installations` refuses a callback
- * without one). It is how a workspace reaches an organization's repositories:
- * the App is installed on that organization, or an owner is asked to.
+ * "Manage repository access": the App's install page in a new tab, with a
+ * minted install state (`POST /installations` refuses a callback without
+ * one). It is how a workspace reaches an organization's repositories: the App
+ * is installed on that organization, or an owner is asked to.
  *
  * Minted on click, not render: every mint is a Redis key and the pickers that
- * offer this render on every dialog. The tab opens **before** the mint, in the
- * click, because popup blockers refuse a `window.open` after an `await`; it
- * starts blank with `opener` cut and is pointed at GitHub once the URL
- * arrives. A failed mint closes it and leaves the error to the caller.
+ * offer this render on every dialog. The tab itself is the platform's
+ * (`openTab`, opened before the mint so a popup blocker allows it), and so is
+ * telling this window the reader came back: `onReturn` then drops the
+ * installations and their repositories, because the install was connected in
+ * the other tab and this one's cache knows nothing of it.
  */
-export function useManageGithubAccess() {
+export function useManageGithubAccess(
+  openTab: (options: { onReturn: () => void }) => ManageAccessTab,
+) {
+  const queryClient = useQueryClient();
   const { mutate, error, reset } = useStartInstallation();
 
   return {
     manage: () => {
-      const tab = window.open('', '_blank');
-      if (tab) tab.opener = null;
-      mutate(undefined, {
-        onSuccess: ({ url }) => {
-          // A blocked popup leaves nowhere to send the reader but here.
-          if (tab) tab.location.href = url;
-          else window.location.assign(url);
+      const tab = openTab({
+        onReturn: () => {
+          void queryClient.invalidateQueries({ queryKey: installationsKeys.all });
         },
-        onError: () => tab?.close(),
       });
+      mutate(undefined, { onSuccess: ({ url }) => tab.go(url), onError: () => tab.close() });
     },
     /** Why the last mint failed, until `dismiss`. */
     error,
