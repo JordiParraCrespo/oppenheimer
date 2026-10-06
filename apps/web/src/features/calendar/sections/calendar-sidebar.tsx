@@ -28,7 +28,10 @@ const ICON: Record<CalendarLayer, ReactNode> = {
  */
 export function CalendarSidebar() {
   const { t } = useTranslation();
-  const { off } = calendar.useSearch();
+  // `useMatch`, not `useSearch`: the shell mounts this sidebar and outlives
+  // the calendar, so a navigation away renders it once more with the
+  // calendar's match already gone — see `tasks-sidebar.tsx`.
+  const off = calendar.useMatch({ shouldThrow: false, select: (match) => match.search.off });
   const navigate = calendar.useNavigate();
   const hidden = hiddenLayers(off);
 
