@@ -37,7 +37,8 @@ const GROUPS = {
     'html-parse-stringify',
     'void-elements',
   ],
-  'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+  'vendor-validation': ['zod'],
+  'vendor-forms': ['react-hook-form', '@hookform/resolvers'],
   'vendor-auth': ['better-auth', '@better-auth', '@better-fetch', 'nanostores', 'jose'],
   'vendor-ui': [
     '@base-ui',
