@@ -28,6 +28,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — the rail's third item: tasks by status (To do, In progress, Later, Done) per project, goals, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
 | [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the rail's fourth item: the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge |
+| [`OppenheimerAgent (explore)`](version1/OppenheimerAgent%20(explore).dc.html) | Exploration, not a screen: one agent per workspace that sees every session, task and pull request, in the forms it might take |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
@@ -94,6 +95,22 @@ an agent to ask or run a command, conflicts, and Merge behind a confirm.
 `version1/assets/filetypes/` holds the file-type marks its file tree uses.
 `version1/rail-order.js`, loaded by the three console frames, lets a
 person drag the rail's items into their own order, kept per browser.
+
+The 2026-10-06 export moves the watched repositories out of
+`PullRequests` and into Settings, as a Watched repositories section:
+add a repository to track its pull requests, and per repository a Track
+toggle, the lane its pull requests start in (Auto lets the lane agent
+pick from the size and the paths changed) and whether to notify when one
+opens. `PullRequests` keeps a link to configure them, trades Path to
+merge for Merge confidence, and opens a pull request's review session.
+
+The same export adds `OppenheimerAgent (explore)`, an exploration rather
+than a screen: one Oppenheimer agent per workspace that reads its
+sessions, tasks and open pull requests, answers questions about them with
+links back, and acts only on approval (merge three pull requests in
+order, or combine them into one). It sketches the forms it could take in
+two turns: an ask bar, a docked panel, a request page that owns work
+spanning sessions and lands it, and the agent as a session of its own.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -168,5 +185,10 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   and the rail's sortable items); the diff and the file tree are
   @pierre/diffs and @pierre/trees, and the tree's published icon set
   stands in for `version1/assets/filetypes/`.
+- The Oppenheimer agent (`OppenheimerAgent (explore)`, 2026-10-06) is in
+  no note: an agent of the product's own is 0.6
+  (`../../../next-steps/0.6-mcp-cli-and-agent.md`), after the MVP, and the
+  frame is an exploration of its form, not a decided screen. Watched
+  repositories in Settings follow the pull requests (above).
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
