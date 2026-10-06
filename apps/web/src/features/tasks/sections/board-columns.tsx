@@ -161,7 +161,7 @@ export function BoardColumns() {
           return task ? card(task, true) : null;
         }}
       >
-        <TaskBoard>
+        <TaskBoard gutter>
           {COLUMNS.map((status) => {
             const ids = drag.groups[status] ?? [];
             const label = t(`tasks.columns.${status}`);
