@@ -96,6 +96,18 @@ export function useStartInstallation(options?: UseMutationOptions<InstallationSt
 }
 
 /**
+ * Read the installations and their repositories again: for a console tab the
+ * reader returns to after connecting an install in another one, whose cache
+ * knows nothing of it.
+ */
+export function useRefreshInstallations() {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: installationsKeys.all });
+  };
+}
+
+/**
  * The list is invalidated on success because the step that called this renders
  * straight off it — without that, a reader who has just connected is told they
  * have not.

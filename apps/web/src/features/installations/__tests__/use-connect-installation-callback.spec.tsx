@@ -50,4 +50,25 @@ describe('useConnectInstallationCallback', () => {
     expect(mutate).not.toHaveBeenCalled();
     expect(result.current.unstarted).toBe(false);
   });
+
+  it('posts nothing for an install request, and says an owner has to approve it', () => {
+    // GitHub's return when a member who is not an owner asks for an
+    // organization install: a state and a code, but no installation yet.
+    const { result } = renderHook(() =>
+      useConnectInstallationCallback(undefined, 'abc', NONCE, 'request'),
+    );
+
+    expect(mutate).not.toHaveBeenCalled();
+    expect(result.current.requested).toBe(true);
+    expect(result.current.unstarted).toBe(false);
+  });
+
+  it('does not read an install or an update as a request', () => {
+    const { result } = renderHook(() =>
+      useConnectInstallationCallback(4242, 'abc', NONCE, 'update'),
+    );
+
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(result.current.requested).toBe(false);
+  });
 });

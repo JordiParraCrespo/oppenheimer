@@ -26,7 +26,7 @@
     },
     "github": {
       "title": "Connect GitHub",
-      "description": "This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.",
+      "description": "This installs the Oppenheimer GitHub App on your account or on an organization. You pick all repositories or selected ones on GitHub's own page.",
       "connect": "Connect GitHub",
       "starting": "Opening GitHub…",
       "skip": "Skip for now",
@@ -36,7 +36,8 @@
       "failed": "We could not connect that GitHub installation.",
       "unstarted": "This GitHub link was not started here. Connect GitHub again.",
       "connectedAll": "Every repository on the account",
-      "connectedPending": "Connected"
+      "connectedPending": "Connected",
+      "requested": "Request sent. An owner of the organization has to approve the install on GitHub. Once they have, choose Connect GitHub again and pick the organization to add its repositories here."
     },
     "host": {
       "title": "Add your first host",

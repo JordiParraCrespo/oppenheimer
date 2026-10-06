@@ -84,7 +84,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
-  useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
+  useStartInstallation: () => ({ mutate: vi.fn(), isPending: false, error: null, reset: vi.fn() }),
+  useRefreshInstallations: () => vi.fn(),
   usePrepareSession: () => ({ mutate: prepared }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
