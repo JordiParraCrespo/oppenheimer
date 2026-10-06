@@ -6,8 +6,9 @@ import { NewSessionForm } from '../sections/new-session-form';
 /**
  * New session, the console's pane when nothing is open
  * (`product/versions/mvp/05-screens.md`, the export's `.op-newsession`), on
- * the console's canvas like every page. The screen only composes; every read
- * belongs to the section.
+ * the grey ground the shell lays under every pane, so the white composer
+ * reads as the one surface. The screen only composes; every read belongs to
+ * the section.
  *
  * The pane is the drop zone: files dropped anywhere on it are handed to the
  * composer, which holds the task's files, and the outline traces the pane

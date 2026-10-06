@@ -14,9 +14,10 @@ import { cn } from '../lib/utils';
  * frame: the ground, the scroll, the measure and the gutter are said once,
  * here (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`).
  *
- * The ground is the console's `canvas`, the same white as Plan and the
- * session pane; a card on it carries a hairline, since white on white has no
- * lift. Settings keeps its grey `canvas-recessed` and its own shell.
+ * The ground is `canvas-recessed`, the export's grey `--canvas`, the same
+ * under every console page and under Settings: the run history, the tables
+ * and the selected view tab are white on it, which is all the lift they
+ * need. Dark lifts the card instead, where the two grounds are one.
  *
  * `EditorPageBody` takes the measure as `size`: `narrow` (760px) for a form
  * or a single card, `wide` (920px) for a page that holds a table, `board`
@@ -43,7 +44,7 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="editor-page"
-      className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas', className)}
+      className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas-recessed', className)}
       {...props}
     />
   );

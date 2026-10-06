@@ -4,7 +4,8 @@ import type { EditorPageSize } from '@oppenheimer/design-system-web';
  * How the shell frames the screen under it. Almost every screen is a page:
  * the canvas ground, a column that scrolls, a measure and a gutter, which
  * the shell draws once (the design system's `EditorPage`) so no screen
- * repaints the ground or keeps a scroll of its own. The pane's value is the
+ * repaints the ground — the export's grey, the same under every pane — or
+ * keeps a scroll of its own. The pane's value is the
  * page's measure. The one exception is a screen whose box *is* the pane —
  * the session terminal, which sizes itself from it and loses scrollback to
  * every pixel of padding, and New session, whose drop outline traces it.
@@ -23,7 +24,7 @@ declare module '@tanstack/react-router' {
     /**
      * `narrow` (the default), `wide` or `board` — a page at that measure
      * (`EditorPageBody`'s `size`). `full` — the screen owns the pane: no
-     * ground, padding, measure or scroll of the shell's.
+     * padding, measure or scroll of the shell's, on the shell's ground.
      */
     pane?: ContentPane;
   }

@@ -604,12 +604,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   calendar computes automation runs from the automations list; event
   times are wall-clock; archiving a project is not blocked by its tasks.
 - 2026-10-06: **Every console page is on one ground, in one frame.** The
-  automations and New session sat on the export's grey (`canvas-recessed`)
-  while Plan sat on white, and each page drew its own frame at its own
-  width; Pull requests arrived the same day on the grey too. The shell now draws the page: a route's `pane` names its measure
-  (`narrow` 760px, `wide` 920px for the automations' tables, `board` 1240px
-  for Plan), the ground is the white `canvas`, and a card on it carries a
-  hairline. `full` stays for the terminal and New session's drop zone.
-  Settings keeps its own shell and its grey. The Pull requests queue and
-  analytics (0.2) are on the same frame at `wide`; a pull request itself,
-  its bar over its diff, is `full`.
+  automations, Pull requests and New session sat on the export's grey
+  (`canvas-recessed`) while Plan sat on white, and each page drew its own
+  frame at its own width. The shell now draws the page: a route's `pane`
+  names its measure (`narrow` 760px, `wide` 920px for the automations' and
+  Pull requests' tables, `board` 1240px for Plan), and the ground under
+  every pane is the export's grey, so Plan moves onto it. `full` stays for
+  the terminal, New session's drop zone and a pull request. Settings keeps
+  its own shell, on the same grey.

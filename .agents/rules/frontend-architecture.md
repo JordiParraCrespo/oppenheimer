@@ -279,16 +279,16 @@ A console page does not draw its own ground, scroll or measure. The route
 declares the measure as `staticData.pane` — `narrow` (the default), `wide`
 (a table) or `board` (Plan's columns) — on the layout route of its subtree
 where it has one (`plan.tsx`, `automations.tsx`, `pulls.tsx`, which render
-nothing but their `Outlet`), and `AppShell` draws the design system's `EditorPage` around
-it: the white canvas, the one scroll, the gutter. A screen renders content
+nothing but their `Outlet`), and `AppShell` draws the design system's
+`EditorPage` around it: the ground, the one scroll, the gutter. A screen renders content
 only, from a plain `flex flex-col` with its own gap. A child that has to
 reach the frame's edge — the task board's sideways scroller — bleeds
 through `--page-gutter` instead of restating the gutter's width. `full` is
 for a screen whose box is the pane (the terminal, New session's drop zone,
-a pull request's bar over its diff).
-A white card on the canvas carries `border-border-subtle`; a disc or tab
-that was "the card colour on the grey" takes the hover wash. Settings is
-the one exception: its own shell, its own grey (`canvas-recessed`).
+a pull request's bar over its diff). The ground under every pane is the
+export's grey, `canvas-recessed`, painted by the shell's column; white
+cards float on it with no border of their own. Settings has its own shell
+on the same grey.
 
 `pnpm check:structure` fails an app file outside `features/public/` that
 paints `bg-canvas*` or `bg-background`, or renders `EditorPage` or

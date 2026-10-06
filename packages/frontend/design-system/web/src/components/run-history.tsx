@@ -53,7 +53,7 @@ function RunHistory({
   return (
     <div
       data-slot="run-history"
-      className={cn('rounded-lg border border-border-subtle bg-card px-[18px] pt-4 pb-3', className)}
+      className={cn('rounded-lg bg-card px-[18px] pt-4 pb-3', className)}
       {...props}
     >
       <div className="flex min-h-5 flex-wrap items-center gap-2 text-[13.5px]">

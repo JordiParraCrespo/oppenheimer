@@ -20,7 +20,7 @@ function RunsList({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="runs-list"
       role="table"
-      className={cn('flex flex-col rounded-lg border border-border-subtle bg-card p-1.5', className)}
+      className={cn('flex flex-col rounded-lg bg-card p-1.5', className)}
       {...props}
     />
   );

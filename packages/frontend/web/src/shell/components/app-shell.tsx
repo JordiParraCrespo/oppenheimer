@@ -42,11 +42,12 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
         <AppSidebar />
         <SidebarInset className="flex min-h-0 min-w-0 flex-col">
           {chrome ? <TopBar onSearch={() => setCommandOpen(true)} /> : null}
-          {/* The column is a flex column that never scrolls itself: a page
-              scrolls inside its frame, and a `full` screen — whose content
-              *is* the viewport, the session terminal — fills the height with
-              `flex-1` instead of guessing at a viewport calculation. */}
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {/* The column is the console's ground, under every pane, and a flex
+              column that never scrolls itself: a page scrolls inside its
+              frame, and a `full` screen — whose content *is* the viewport,
+              the session terminal — fills the height with `flex-1` instead of
+              guessing at a viewport calculation. */}
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
             {pane === 'full' ? (
               <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
             ) : (

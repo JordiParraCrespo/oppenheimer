@@ -102,9 +102,7 @@
   email typed out. Full name is **two fields side by side**, not the
   export's one, because the account stores first and last name apart
   and splitting one string on its first space gets names wrong.
-- New session: on the console's white canvas like every page (the
-  export drew it grey; changed 2026-10-06, see the log in `README.md`),
-  a line under the title that says what
+- New session: on the grey canvas, a line under the title that says what
   sending will do once a project is picked ("In XRP Mobile · cloning 1 of
   1 repository, each on its own opp/ branch."; "Set the scope, then
   describe the work." until then); chips for project, host, repository,
