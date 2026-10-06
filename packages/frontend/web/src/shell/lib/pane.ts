@@ -1,19 +1,23 @@
 import type { EditorPageSize } from '@oppenheimer/design-system-web';
 
 /**
- * How the shell frames the screen under it. Almost every screen is a page:
- * the canvas ground, a column that scrolls, a measure and a gutter, which
- * the shell draws once (the design system's `EditorPage`) so no screen
- * repaints the ground — the export's grey, the same under every pane — or
- * keeps a scroll of its own. The pane's value is the
- * page's measure. The one exception is a screen whose box *is* the pane —
- * the session terminal, which sizes itself from it and loses scrollback to
- * every pixel of padding, and New session, whose drop outline traces it.
+ * How the shell frames the screen under it. A screen is a page: the shell
+ * draws the frame (`PageFrame`: a column that scrolls, a measure and a
+ * gutter) at the measure the route names, and the screen renders its content
+ * and nothing of the frame. The pane's value is that measure,
+ * `EditorPageBody`'s `size`.
+ *
+ * `full` is only for a box that is the pane and must not scroll outside
+ * itself: the session terminal, which sizes itself from the pane and loses
+ * scrollback to every pixel of padding, and a pull request, whose bar stays
+ * put over its diff. A state of such a screen that is a page (a session still
+ * being prepared, a pull request's briefing) asks for `PageFrame` rather than
+ * rebuild it.
  *
  * A route declares it as `staticData`, as an auth page declares its legal
  * note, so the shell reads it off the match instead of a screen reaching up
  * into the layout. A layout route declares it for its subtree (Plan,
- * Automations) and renders only its `Outlet`.
+ * Automations, Pull requests) and renders only its `Outlet`.
  */
 export type ContentPane = EditorPageSize | 'full';
 
@@ -22,9 +26,10 @@ const DEFAULT_CONTENT_PANE: ContentPane = 'narrow';
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     /**
-     * `narrow` (the default), `wide` or `board` — a page at that measure
-     * (`EditorPageBody`'s `size`). `full` — the screen owns the pane: no
-     * padding, measure or scroll of the shell's, on the shell's ground.
+     * A page at that measure (`EditorPageBody`'s `size`: `status`,
+     * `composer`, `narrow` — the default — `wide`, `briefing`, `board`), or
+     * `full`, a box that is the pane: no frame of the shell's, only its
+     * ground.
      */
     pane?: ContentPane;
   }

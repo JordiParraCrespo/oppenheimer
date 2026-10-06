@@ -60,7 +60,7 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
-| The automations overview, the one page over the main column | `EditorPage` from its layout route (`routes/_authenticated/automations.tsx`), `EditorPageTop` for its tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | a `Card` of `Field`s, a hand-rolled scroll column, a new layout route |
+| A console page (the automations, Plan, Pull requests, New session) | the route's `staticData.pane` measure, which the shell frames; `EditorPageTop` for a page's tabs; a `full` screen's page state renders the kit's `PageFrame`; inside Settings, `PageHeader` parts + `RoutineSteps` | `EditorPage` in a route or a screen, a hand-rolled scroll column, a `max-w-*` column of its own |
 | A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` (`apps/web/src/lib/console.ts`, over the kit's `createDialogSlot`) | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |

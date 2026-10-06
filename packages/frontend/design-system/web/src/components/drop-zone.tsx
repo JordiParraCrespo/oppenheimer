@@ -14,7 +14,10 @@ import { cn } from '../lib/utils';
  * then the pane's edge takes the frames' 3px outline in the action blue,
  * square and flush with the pane: no fill, no radius, no label. Wrap the
  * pane itself (the main column beside the sidebar), so the outline traces
- * exactly it. It exists only while the drag does, fades in, and never takes
+ * exactly it, or pass `outline="pane"` when the zone is content inside a
+ * page the shell frames: the zone then takes no position of its own, and the
+ * outline traces the nearest positioned ancestor, the shell's pane, whatever
+ * the page has scrolled. It exists only while the drag does, fades in, and never takes
  * the pointer, so the pane under it stays exactly as it was.
  *
  * The zone is its own box (`listen="self"`, the default), so two zones on a
@@ -27,6 +30,7 @@ import { cn } from '../lib/utils';
 function DropZone({
   onFiles,
   listen = 'self',
+  outline = 'self',
   disabled = false,
   className,
   children,
@@ -35,6 +39,8 @@ function DropZone({
   onFiles: (files: File[]) => void;
   /** `window` only on a page with one zone. */
   listen?: 'self' | 'window';
+  /** `pane`: trace the positioned ancestor (the shell's pane), not this box. */
+  outline?: 'self' | 'pane';
   disabled?: boolean;
 }) {
   const zone = React.useRef<HTMLDivElement>(null);
@@ -45,7 +51,7 @@ function DropZone({
       ref={zone}
       data-slot="drop-zone"
       data-dragging={dragging || undefined}
-      className={cn('relative', className)}
+      className={cn(outline === 'self' && 'relative', className)}
       {...props}
     >
       {children}

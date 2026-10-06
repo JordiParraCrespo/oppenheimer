@@ -4,6 +4,7 @@ export {
   type DialogSlot,
   type DialogSlotActions,
 } from './components/dialog-slot';
+export { PageFrame } from './components/page-frame';
 export { SettingsSidebar } from './components/settings-sidebar';
 export type {
   NavItem,

@@ -3,14 +3,14 @@ import { newSessionSearchSchema } from '@/features/sessions/lib/new-session-sear
 import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
 /**
- * New session. `full`, like the rest of `/sessions`: the composer is the
- * console's main pane in the artboards, not a page inside it, and the pane
- * is its drop zone, whose outline has to trace the pane's edge.
+ * New session: the composer, centred in the pane at the `composer` measure
+ * (the export's `.op-newsession`). The pane is its drop zone; the screen says
+ * how (`outline="pane"`), the shell keeps the frame.
  *
  * `?project=` and `?host=`: see `newSessionSearchSchema`.
  */
 export const Route = createFileRoute('/_authenticated/sessions/new')({
   component: NewSessionScreen,
-  staticData: { pane: 'full' },
+  staticData: { pane: 'composer' },
   validateSearch: newSessionSearchSchema,
 });

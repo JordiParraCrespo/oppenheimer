@@ -1,7 +1,7 @@
 import { Callout, Stepper } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, PageFrame } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
@@ -50,10 +50,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-y-auto">
-      {/* A 420px column centred in whatever room the shell gives it
-          (`.op-provision__inner`). */}
-      <div className="m-auto w-full max-w-105 p-8">
+    // The session's route is `full`, for the terminal it becomes; while it is
+    // being prepared it is a page, the shell's frame at the `status` measure
+    // (`.op-provision__inner`, centred in the pane).
+    <PageFrame size="status">
+      <div>
         <p className="figures text-micro text-fg-muted uppercase">{host}</p>
         <h1 className="mt-2 font-display text-h2 font-semibold text-fg">
           {t(failed ? 'sessions.provisioning.failedTitle' : 'sessions.provisioning.title')}
@@ -91,6 +92,6 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           </p>
         ) : null}
       </div>
-    </div>
+    </PageFrame>
   );
 }

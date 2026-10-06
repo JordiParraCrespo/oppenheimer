@@ -291,6 +291,40 @@ export function ThingScreen() {
   assert.equal(content.status, 0, content.report);
 });
 
+test('a screen that rebuilds the page frame by hand is reported; a sidebar scroller, a comment and PageFrame pass', () => {
+  const rebuilt = check({
+    'src/features/things/screens/thing.tsx': `export function ThingScreen() {
+  return (
+    <div className="flex min-h-0 flex-1 overflow-y-auto">
+      <div className="m-auto mx-auto w-full max-w-180 px-8 py-12">thing</div>
+    </div>
+  );
+}
+`,
+  });
+  assert.equal(rebuilt.status, 1);
+  assert.match(rebuilt.report, /screens\/thing\.tsx: a scroll of its own around a centred/);
+
+  const fine = check({
+    'src/features/things/sections/thing-sidebar.tsx': `export function ThingSidebar() {
+  return <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">rows</div>;
+}
+`,
+    'src/features/things/sections/thing-status.tsx': `import { PageFrame } from '@oppenheimer/frontend-web';
+// Not \`bg-canvas-recessed\`: the shell paints the ground.
+export function ThingStatus() {
+  return (
+    <PageFrame size="status">
+      {/* A centred column, the shell's own. */}
+      <p className="max-w-60 truncate">status</p>
+    </PageFrame>
+  );
+}
+`,
+  });
+  assert.equal(fine.status, 0, fine.report);
+});
+
 test('two components side by side in an app file are reported; one passes', () => {
   const { report } = check({
     'src/features/things/sections/two.tsx': `export function ThingList() {

@@ -9,7 +9,7 @@
  *    files, never a sub-directory
  *  - a route file composes; past 120 lines it contains
  *  - the console's ground and page frame are the shell's: no screen paints
- *    the canvas or draws `EditorPage` around itself
+ *    the ground, draws `EditorPage` or rebuilds the frame by hand
  *  - an app never re-creates a file the platform kit already ships
  *  - every workspace package carries a README.md and an AGENTS.md, every
  *    frontend app, `packages/frontend` and each platform kit an
@@ -403,13 +403,21 @@ for (const { app } of APPS) {
 }
 
 // The page frame is the shell's. A route declares its measure (`pane` in the
-// kit's `shell/lib/pane.ts`) and the shell draws the canvas, the scroll and
-// the gutter once; a screen that paints the ground or wraps itself in
-// `EditorPage` is how five pages ended up on two greys at four widths.
-// `public` is exempt: its pages render outside any shell, so they own their
-// ground. A tripwire on the class and the tag, not a parser.
+// kit's `shell/lib/pane.ts`) and the shell paints the ground and draws the
+// frame (`PageFrame`: the scroll, the measure, the gutter) once. Two shapes
+// put a frame back in a screen, and each is how pages drifted onto two greys
+// at five widths: painting the ground or wrapping itself in `EditorPage`, and
+// rebuilding the frame by hand, a scroll of its own around a centred
+// `max-w-*` column. A `full` screen with a state that is a page asks for
+// `PageFrame` instead. `public` is exempt: its pages render outside any
+// shell, so they own their ground. A tripwire on classes and tags in code
+// (comments are stripped first), not a parser.
 const GROUND = /\bbg-(?:canvas|background)\b|<EditorPage(?:Body)?\b/;
+const OWN_SCROLL = /\boverflow-(?:y-)?auto\b/;
+const CENTRED_MEASURE = /\bmx-auto\b[^'"`]*\bmax-w-|\bmax-w-[^'"`]*\bmx-auto\b/;
 const GROUND_OWNERS = ['public'];
+const code = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
 for (const { app, features } of APPS) {
   const src = join(root, app, 'src');
   if (!existsSync(src)) continue;
@@ -418,10 +426,17 @@ for (const { app, features } of APPS) {
     if (!file.endsWith('.tsx') || /\.(spec|test)\.tsx$/.test(file) || file.includes('/__tests__/'))
       continue;
     if (owners.some((owner) => file.startsWith(owner))) continue;
-    const match = readFileSync(file, 'utf8').match(GROUND);
-    if (match) {
+    const source = code(readFileSync(file, 'utf8'));
+    const ground = source.match(GROUND);
+    if (ground) {
       fail(
-        `${relative(root, file)}: \`${match[0]}\` — the console's ground and page frame are the shell's. Declare the page's measure as the route's \`staticData.pane\` (narrow, wide, board) and render only the content. See .agents/rules/frontend-architecture.md`,
+        `${relative(root, file)}: \`${ground[0]}\` — the console's ground and page frame are the shell's. Declare the page's measure as the route's \`staticData.pane\` and render only the content. See .agents/rules/frontend-architecture.md`,
+      );
+    }
+    const measure = source.match(CENTRED_MEASURE);
+    if (measure && OWN_SCROLL.test(source)) {
+      fail(
+        `${relative(root, file)}: a scroll of its own around a centred \`max-w-*\` column is the page frame rebuilt. Declare the measure as the route's \`staticData.pane\`, or render \`PageFrame\` from @oppenheimer/frontend-web in a \`full\` screen's page state. See .agents/rules/frontend-architecture.md`,
       );
     }
   }
