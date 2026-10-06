@@ -253,6 +253,8 @@
     "nothingWaits": "Ahora mismo nada frena ninguna pull request abierta.",
     "loadFailed": "No se pudo cargar la analítica.",
     "none": "—",
-    "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez."
+    "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez.",
+    "weekOf": "Semana del {{date}}",
+    "hoverWeek": "Pasa por una semana"
   }
 }

@@ -125,6 +125,8 @@ interface BarDatum {
   label: string;
   /** Under the label: the month on the first day of one ("Sep"). */
   sublabel?: string;
+  /** What the readout calls this bar when the axis's own words are not enough ("Week of Aug 3"). */
+  readoutLabel?: string;
   values: Record<string, number>;
 }
 
@@ -170,7 +172,12 @@ function BarChart({
     <figure data-slot="bar-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
       <ChartReadout
         series={series}
-        label={hovered ? `${hovered.sublabel ? `${hovered.sublabel} ` : ''}${hovered.label}` : undefined}
+        label={
+          hovered
+            ? (hovered.readoutLabel ??
+              `${hovered.sublabel ? `${hovered.sublabel} ` : ''}${hovered.label}`)
+            : undefined
+        }
         values={hovered?.values}
         format={format}
         idle={readout}

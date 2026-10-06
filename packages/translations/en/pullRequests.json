@@ -253,6 +253,8 @@
     "nothingWaits": "Nothing holds an open pull request right now.",
     "loadFailed": "Could not load analytics.",
     "none": "—",
-    "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes."
+    "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes.",
+    "weekOf": "Week of {{date}}",
+    "hoverWeek": "Hover a week"
   }
 }

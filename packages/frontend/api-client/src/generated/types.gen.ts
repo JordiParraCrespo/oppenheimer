@@ -2374,6 +2374,10 @@ export type PullRequestAnalyticsResponseDto = {
     timeToMerge: AnalyticsMedianDto;
     days: Array<AnalyticsDayDto>;
     /**
+     * What one entry of `days` covers: a day, or — over a quarter — the week it starts, as the artboard draws it.
+     */
+    bucket: 'day' | 'week';
+    /**
      * Merged pull requests by lane.
      */
     lanes: Array<AnalyticsLaneDto>;

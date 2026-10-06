@@ -20755,6 +20755,11 @@
               "$ref": "#/components/schemas/AnalyticsDayDto"
             }
           },
+          "bucket": {
+            "type": "string",
+            "enum": ["day", "week"],
+            "description": "What one entry of `days` covers: a day, or — over a quarter — the week it starts, as the artboard draws it."
+          },
           "lanes": {
             "description": "Merged pull requests by lane.",
             "type": "array",
@@ -20792,6 +20797,7 @@
           "waitForReviewPeople",
           "timeToMerge",
           "days",
+          "bucket",
           "lanes",
           "waiting",
           "complete",

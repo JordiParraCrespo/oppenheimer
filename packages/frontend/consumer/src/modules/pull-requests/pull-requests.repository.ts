@@ -122,6 +122,7 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
     waitForReviewPeople: median(dto.waitForReviewPeople),
     timeToMerge: median(dto.timeToMerge),
     days: dto.days,
+    bucket: dto.bucket,
     lanes: dto.lanes,
     waiting: dto.waiting.map((row) => ({
       reason: row.reason as PullRequestAnalytics['waiting'][number]['reason'],

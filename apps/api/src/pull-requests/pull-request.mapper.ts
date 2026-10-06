@@ -16,9 +16,11 @@ import type {
 } from '../github/infrastructure/github-pulls.port';
 import {
   type AnalyticsWindow,
-  daysOf,
+  barsOf,
+  bucketOf,
   hoursBetween,
   median,
+  mondayOf,
   periodOf,
 } from './domain/pull-request-analytics.policy';
 import { decideLane } from './domain/pull-request-lane.policy';
@@ -250,10 +252,13 @@ export class PullRequestMapper {
     const merged = (pull: GithubPullRequestSummary) => pull.mergedAt;
     const createdOf = (s: PullRequestSnapshot) => s.pull.createdAt;
     const mergedOf = (s: PullRequestSnapshot) => s.pull.mergedAt;
-    const days = daysOf(window).map((date) => ({
+    // One bar per day, or per week over a quarter, as the artboard draws it.
+    const bucket = bucketOf(input.range);
+    const barOf = (at: string) => (bucket === 'week' ? mondayOf(at.slice(0, 10)) : at.slice(0, 10));
+    const days = barsOf(window, bucket).map((date) => ({
       date,
-      created: everyPull.filter((pull) => pull.createdAt.slice(0, 10) === date).length,
-      merged: everyPull.filter((pull) => pull.mergedAt?.slice(0, 10) === date).length,
+      created: everyPull.filter((pull) => barOf(pull.createdAt) === date).length,
+      merged: everyPull.filter((pull) => pull.mergedAt && barOf(pull.mergedAt) === date).length,
     }));
     // The lane mix counts only pull requests whose files were read: a guessed lane would skew it.
     const laneOf = (s: PullRequestSnapshot) =>
@@ -289,6 +294,7 @@ export class PullRequestMapper {
         mergedOf,
       ),
       days,
+      bucket,
       lanes: LANES.map((lane) => ({
         lane,
         value: all.filter(

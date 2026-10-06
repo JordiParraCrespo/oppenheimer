@@ -13,16 +13,28 @@ export const LANE_TONE: Record<PullRequestLane, DataTone> = {
 };
 
 /** One bar per day: the day of the month, with the month under the first and every 1st. */
-export function dayBars(analytics: PullRequestAnalytics, locale: string): BarDatum[] {
+export function dayBars(
+  analytics: PullRequestAnalytics,
+  locale: string,
+  weekOf?: (date: string) => string,
+): BarDatum[] {
   return analytics.days.map((day, index) => {
     const date = new Date(`${day.date}T00:00:00Z`);
-    const first = index === 0 || date.getUTCDate() === 1;
+    // A month's name sits under the first bar of it, and under the first bar of all.
+    const first = index === 0 || date.getUTCDate() <= (analytics.bucket === 'week' ? 7 : 1);
     return {
       key: day.date,
       label: String(date.getUTCDate()),
       sublabel: first
         ? date.toLocaleString(locale, { month: 'short', timeZone: 'UTC' })
         : undefined,
+      // A week's bar says which week it is, rather than the day it starts on.
+      readoutLabel:
+        analytics.bucket === 'week' && weekOf
+          ? weekOf(
+              date.toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+            )
+          : undefined,
       values: { created: day.created, merged: day.merged },
     };
   });

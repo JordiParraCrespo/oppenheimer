@@ -248,8 +248,10 @@ export interface PullRequestAnalytics {
   waitForReviewAgents: AnalyticsMedian;
   waitForReviewPeople: AnalyticsMedian;
   timeToMerge: AnalyticsMedian;
-  /** `YYYY-MM-DD`, oldest first. */
+  /** `YYYY-MM-DD`, oldest first: a day each, or the Monday of a week over a quarter. */
   days: { date: string; created: number; merged: number }[];
+  /** What one entry of `days` covers. */
+  bucket: 'day' | 'week';
   lanes: ({ lane: PullRequestLane } & AnalyticsFigure)[];
   waiting: { reason: PullRequestBlocker; value: number; medianHours: number | null }[];
 }
