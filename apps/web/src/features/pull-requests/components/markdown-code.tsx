@@ -1,15 +1,31 @@
 import { IconButton, useCopy } from '@oppenheimer/design-system-web';
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { CheckIcon, CopyIcon } from '@oppenheimer/design-system-web/icons';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type CodeNode, highlightCode } from '../lib/highlight';
 
-/** A fenced block of a description: the code as written, a copy button in its corner. */
+function codeNodes(nodes: CodeNode[], prefix: string): ReactNode[] {
+  return nodes.map((node, index) => {
+    const key = `${prefix}-${index}`;
+    return node.kind === 'text' ? (
+      node.text
+    ) : (
+      <span key={key} className={node.className}>
+        {codeNodes(node.children, key)}
+      </span>
+    );
+  });
+}
+
+/** A fenced block of a description: the code as written, its syntax coloured, a copy button in its corner. */
 export function MarkdownCode({ code, language }: { code: string; language?: string }) {
   const { t } = useTranslation();
   const { copied, copy } = useCopy(code);
+  const highlighted = highlightCode(code, language);
   return (
     <div className="relative">
       <pre data-language={language || undefined}>
-        <code>{code}</code>
+        <code>{highlighted ? codeNodes(highlighted, 'code') : code}</code>
       </pre>
       <IconButton
         size="xs"

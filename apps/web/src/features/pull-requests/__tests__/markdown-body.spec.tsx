@@ -86,6 +86,15 @@ describe('MarkdownBody', () => {
     expect(page.querySelector('pre code')?.textContent).toBe(code);
   });
 
+  it('colours a fenced block in its language without changing a character', () => {
+    const code = 'const total = items.length; // "count"';
+    const page = view(`\`\`\`ts\n${code}\n\`\`\``);
+    expect(page.querySelector('pre code')?.textContent).toBe(code);
+    expect(page.querySelector('pre .hljs-keyword')?.textContent).toBe('const');
+    expect(page.querySelector('pre .hljs-comment')?.textContent).toBe('// "count"');
+    expect(view('```\nplain <b>text</b>\n```').querySelector('pre span, pre b')).toBeNull();
+  });
+
   it('shows a task list as checkboxes that cannot be changed', () => {
     const boxes = view('- [x] done\n- [ ] todo').querySelectorAll('input[type=checkbox]');
     expect([...boxes].map((box) => (box as HTMLInputElement).checked)).toEqual([true, false]);
