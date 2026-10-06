@@ -10,10 +10,13 @@ import {
   type DragOverEvent as DndDragOverEvent,
   type DragStartEvent as DndDragStartEvent,
   type DropAnimation,
+  type DroppableContainer,
+  type KeyboardCoordinateGetter,
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
   pointerWithin,
+  type UniqueIdentifier,
   useDndContext,
   useDraggable as useDndDraggable,
   useDroppable as useDndDroppable,
@@ -25,6 +28,7 @@ import {
   horizontalListSortingStrategy,
   rectSortingStrategy,
   SortableContext,
+  type SortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -47,6 +51,9 @@ import { cn } from '../lib/utils';
  * - `SortableGroup` / `SortableItem` keep things in order in one or more
  *   groups: the item's own slot becomes the drop slot, its neighbours slide
  *   out of the way, and `useSortableGroups` moves ids between groups live.
+ *   A `live` provider (a board) reorders within a group live too, the way
+ *   the frames' board does: the slot goes after an item once the pointer
+ *   passes that item's middle, and the layout itself opens it.
  *
  * The motion is the frames' on the system's ramp: a drag starts after 5px
  * (so a click still opens the thing), the lifted copy takes `--drag-lift`
@@ -108,6 +115,8 @@ const ACTIVATION_PX = 5;
 const AUTO_SCROLL = { threshold: { x: 0.08, y: 0.08 }, acceleration: 4 } as const;
 
 const ReducedMotion = React.createContext(false);
+/** Inside a `live` provider: groups keep their layout and the ids reorder as the item moves. */
+const LiveOrder = React.createContext(false);
 /** The id of the provider's `controlInstructions`, which a control's description points at. */
 const ControlInstructions = React.createContext<string | undefined>(undefined);
 
@@ -152,24 +161,96 @@ function takes(accepts: unknown, type: unknown): boolean {
   return !Array.isArray(accepts) || (typeof type === 'string' && accepts.includes(type));
 }
 
+type Sorted = { containerId?: UniqueIdentifier; index?: number; items?: UniqueIdentifier[] } | undefined;
+
+function sortedOf(container: DroppableContainer | undefined): Sorted {
+  return container?.data.current?.sortable as Sorted;
+}
+
 /**
  * Only the targets that take the active item. An item of a sortable group
  * answers with its group's `accepts`, so a group that refuses a type
- * refuses it over its items too, not only over its empty space. Under the
- * pointer first; from the keyboard, which has no pointer, the nearest
- * corners.
+ * refuses it over its items too, not only over its empty space.
  */
-const acceptingCollisions: CollisionDetection = (args) => {
+function acceptingTargets(args: Parameters<CollisionDetection>[0]) {
   const type = args.active.data.current?.type;
-  const accepting = (data: Record<string, unknown> | undefined): boolean => {
-    const group = (data?.sortable as { containerId?: string | number } | undefined)?.containerId;
-    if (group === undefined) return takes(data?.accepts, type);
+  const accepting = (container: DroppableContainer): boolean => {
+    const group = sortedOf(container)?.containerId;
+    if (group === undefined) return takes(container.data.current?.accepts, type);
     return takes(args.droppableContainers.find((c) => c.id === group)?.data.current?.accepts, type);
   };
-  const droppableContainers = args.droppableContainers.filter((container) => accepting(container.data.current));
-  const scoped = { ...args, droppableContainers };
+  return { ...args, droppableContainers: args.droppableContainers.filter(accepting) };
+}
+
+/** Under the pointer first; from the keyboard, which has no pointer, the nearest corners. */
+const acceptingCollisions: CollisionDetection = (args) => {
+  const scoped = acceptingTargets(args);
   const under = pointerWithin(scoped);
   return under.length > 0 ? under : closestCorners(scoped);
+};
+
+/**
+ * A `live` provider's answer: not the target under the item but its slot,
+ * named by what it goes before — an item, or the group itself for its end.
+ * Under the pointer an item wins over the group around it, and in a group's
+ * gaps and padding the nearest item answers, so the slot never runs to the
+ * end and back between two cards; past an item's middle the slot is the
+ * next one's. Over nothing it is nothing, and the slot stays where it was.
+ * From the keyboard, the nearest corners, and the slot is past the item
+ * when the keys moved toward it.
+ */
+const slotCollisions: CollisionDetection = (args) => {
+  const scoped = acceptingTargets(args);
+  const containerOf = (id: UniqueIdentifier | undefined) => scoped.droppableContainers.find((c) => c.id === id);
+  const answer = (container: DroppableContainer | undefined) =>
+    container ? [{ id: container.id, data: { droppableContainer: container } }] : [];
+  /** `item`'s slot, or the one after it: the next item but the active one, else the group's end. */
+  const slot = (item: DroppableContainer, after: boolean) => {
+    const sorted = sortedOf(item);
+    // Over its own slot the item is where it goes, whichever half the pointer is in.
+    if (!after || !sorted || item.id === args.active.id) return answer(item);
+    const rest = (sorted.items ?? []).filter((id) => id !== args.active.id);
+    const next = rest[rest.indexOf(item.id) + 1];
+    return answer(next === undefined ? containerOf(sorted.containerId) : containerOf(next));
+  };
+
+  const pointer = args.pointerCoordinates;
+  if (!pointer) {
+    const hit = containerOf(closestCorners(scoped)[0]?.id);
+    const from = sortedOf(containerOf(args.active.id));
+    if (!hit) return [];
+    // Its own group's corner is the keyboard at an edge, not a move to the end.
+    if (hit.data.current?.group === true && hit.id === from?.containerId) return answer(containerOf(args.active.id));
+    const to = sortedOf(hit);
+    return slot(hit, to?.containerId === from?.containerId && (to?.index ?? 0) > (from?.index ?? 0));
+  }
+
+  const under = pointerWithin(scoped);
+  let hit = containerOf(under.find((c) => sortedOf(containerOf(c.id)) !== undefined)?.id) ?? containerOf(under[0]?.id);
+  if (hit?.data.current?.group === true) {
+    let nearest: { item: DroppableContainer; distance: number } | null = null;
+    for (const item of scoped.droppableContainers) {
+      if (sortedOf(item)?.containerId !== hit.id) continue;
+      const rect = scoped.droppableRects.get(item.id);
+      if (!rect) continue;
+      const distance = Math.hypot(pointer.x - (rect.left + rect.width / 2), pointer.y - (rect.top + rect.height / 2));
+      if (!nearest || distance < nearest.distance) nearest = { item, distance };
+    }
+    if (!nearest) return answer(hit);
+    hit = nearest.item;
+  }
+  const rect = hit ? scoped.droppableRects.get(hit.id) : undefined;
+  if (!hit || !rect) return answer(hit);
+  const orientation = containerOf(sortedOf(hit)?.containerId)?.data.current?.orientation as SortableOrientation;
+  const pastX = pointer.x > rect.left + rect.width / 2;
+  const pastY = pointer.y > rect.top + rect.height / 2;
+  const after =
+    orientation === 'horizontal'
+      ? pastX
+      : orientation === 'grid'
+        ? pointer.y > rect.bottom || (pointer.y >= rect.top && pastX)
+        : pastY;
+  return slot(hit, after);
 };
 
 /** Settles the lift while the copy glides home, so it lands flat. */
@@ -190,11 +271,25 @@ function dropAnimation(reduced: boolean): DropAnimation | null {
 }
 
 /**
+ * The keys under a `live` provider: the same steps, from the item's own
+ * place. dnd-kit's getter skips the target `over` names, which here is the
+ * slot's next item, not the one the keys reached, so it would jump two.
+ */
+const slotKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) =>
+  sortableKeyboardCoordinates(event, { ...args, context: { ...args.context, over: null } });
+
+/**
  * One surface's drag. `overlay` draws the lifted copy for the active item;
  * without it nothing follows the pointer, which suits a target-only surface
  * that shows the move another way.
+ *
+ * `live` is for a surface whose groups are all ordered by
+ * `useSortableGroups` with `{ live: true }` (a board): its groups keep their
+ * layout while the ids reorder, every item that changes place slides there,
+ * and `over` names the slot (`slotCollisions`) rather than the target.
  */
 function DragProvider({
+  live = false,
   onDragStart,
   onDragOver,
   onDragEnd,
@@ -203,6 +298,7 @@ function DragProvider({
   labels: labelsProp,
   children,
 }: {
+  live?: boolean;
   onDragStart?: (active: DragItem) => void;
   onDragOver?: (move: DragMove) => void;
   onDragEnd?: (move: DragMove) => void;
@@ -217,7 +313,7 @@ function DragProvider({
   const [active, setActive] = React.useState<DragItem | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: ACTIVATION_PX } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: live ? slotKeyboardCoordinates : sortableKeyboardCoordinates }),
   );
 
   const announcements: Announcements = {
@@ -229,41 +325,43 @@ function DragProvider({
 
   return (
     <ReducedMotion.Provider value={reduced}>
-      <ControlInstructions.Provider value={controlInstructions}>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={acceptingCollisions}
-          autoScroll={AUTO_SCROLL}
-          measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-          accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
-          onDragStart={(event: DndDragStartEvent) => {
-            const item = itemOf(event.active);
-            setActive(item);
-            onDragStart?.(item);
-          }}
-          onDragOver={(event: DndDragOverEvent) => {
-            onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
-          }}
-          onDragEnd={(event: DndDragEndEvent) => {
-            setActive(null);
-            onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
-          }}
-          onDragCancel={(event) => {
-            setActive(null);
-            onDragCancel?.(itemOf(event.active));
-          }}
-        >
-          {children}
-          {overlay ? (
-            <DndDragOverlay dropAnimation={dropAnimation(reduced)}>
-              {active ? <DragLift>{overlay(active)}</DragLift> : null}
-            </DndDragOverlay>
-          ) : null}
-        </DndContext>
-        <span id={controlInstructions} hidden>
-          {labels.controlInstructions}
-        </span>
-      </ControlInstructions.Provider>
+      <LiveOrder.Provider value={live}>
+        <ControlInstructions.Provider value={controlInstructions}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={live ? slotCollisions : acceptingCollisions}
+            autoScroll={AUTO_SCROLL}
+            measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+            accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
+            onDragStart={(event: DndDragStartEvent) => {
+              const item = itemOf(event.active);
+              setActive(item);
+              onDragStart?.(item);
+            }}
+            onDragOver={(event: DndDragOverEvent) => {
+              onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
+            }}
+            onDragEnd={(event: DndDragEndEvent) => {
+              setActive(null);
+              onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
+            }}
+            onDragCancel={(event) => {
+              setActive(null);
+              onDragCancel?.(itemOf(event.active));
+            }}
+          >
+            {children}
+            {overlay ? (
+              <DndDragOverlay dropAnimation={dropAnimation(reduced)}>
+                {active ? <DragLift>{overlay(active)}</DragLift> : null}
+              </DndDragOverlay>
+            ) : null}
+          </DndContext>
+          <span id={controlInstructions} hidden>
+            {labels.controlInstructions}
+          </span>
+        </ControlInstructions.Provider>
+      </LiveOrder.Provider>
     </ReducedMotion.Provider>
   );
 }
@@ -332,6 +430,9 @@ const STRATEGY = {
   grid: rectSortingStrategy,
 } as const;
 
+/** Inside a `live` provider nothing is displaced by transform: the layout opens the slot. */
+const inPlace: SortingStrategy = () => null;
+
 /**
  * An ordered group: a board column, a list. It is also a target, so an
  * empty group still takes an item. `data-over` is set while the active item
@@ -354,12 +455,13 @@ function SortableGroup({
   accepts?: readonly string[];
   data?: DragData;
 }) {
-  const { setNodeRef } = useDndDroppable({ id, data: { ...data, accepts, group: true } });
+  const live = React.useContext(LiveOrder);
+  const { setNodeRef } = useDndDroppable({ id, data: { ...data, accepts, orientation, group: true } });
   const { active, over } = useDndContext();
   const overGroup =
     over && (String(over.id) === id || over.data.current?.sortable?.containerId === id);
   return (
-    <SortableContext id={id} items={items as string[]} strategy={STRATEGY[orientation]}>
+    <SortableContext id={id} items={items as string[]} strategy={live ? inPlace : STRATEGY[orientation]}>
       <div
         ref={setNodeRef}
         data-slot="sortable-group"
@@ -374,16 +476,27 @@ function SortableGroup({
 }
 
 /**
+ * Inside a `live` provider no strategy displaces the neighbours, so every
+ * item whose place changes slides there from where it was; dnd-kit's
+ * default animates only the item that was dragged.
+ */
+function slideOnReorder(live: boolean) {
+  return live ? { animateLayoutChanges: () => true } : {};
+}
+
+/**
  * One item of a `SortableGroup`. Returns the ref, the handle's props, and
  * the style that slides it while its neighbours move.
  */
 function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
   const reduced = React.useContext(ReducedMotion);
+  const live = React.useContext(LiveOrder);
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id,
     data,
     disabled,
     transition: reduced ? null : { duration: SLIDE_MS, easing: EASE_STANDARD },
+    ...slideOnReorder(live),
   });
   return {
     ref: setNodeRef,
@@ -446,11 +559,13 @@ function SortableItem({
 function useSortableControl({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
   const reduced = React.useContext(ReducedMotion);
   const instructions = React.useContext(ControlInstructions);
+  const live = React.useContext(LiveOrder);
   const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id,
     data,
     disabled,
     transition: reduced ? null : { duration: SLIDE_MS, easing: EASE_STANDARD },
+    ...slideOnReorder(live),
   });
   return {
     isDragging,
@@ -492,6 +607,11 @@ type SortableGroups = Record<string, readonly string[]>;
  * the `DragProvider`; `onChange` gets each new value, and `onMove` the
  * finished move once, for the caller to save.
  *
+ * With `{ live: true }`, under a `live` provider, `over` is the slot (what
+ * the item goes before, or a group for its end) and the item takes it the
+ * moment it changes, within a group as across; over nothing it keeps its
+ * place, and a drop there leaves it in the last one it took.
+ *
  * The groups being moved live in a ref for the length of a drag, so an
  * over and the drop that follow each other before a render never read the
  * value from before the item crossed.
@@ -500,6 +620,7 @@ function useSortableGroups(
   value: SortableGroups,
   onChange: (next: SortableGroups) => void,
   onMove?: (move: { id: string; from: string; to: string; index: number }) => void,
+  { live: liveOrder = false }: { live?: boolean } = {},
 ) {
   const drag = React.useRef<{ start: SortableGroups; from: string; live: SortableGroups } | null>(null);
 
@@ -514,6 +635,22 @@ function useSortableGroups(
     onChange(next);
   };
 
+  /** `live` with the item in the slot `over` names, or `live` itself when it is already there. */
+  const intoSlot = (live: SortableGroups, active: DragItem, over: DragItem): SortableGroups => {
+    if (over.id === active.id) return live;
+    const from = itemGroup(live, active.id);
+    const to = targetGroup(live, over);
+    if (!from || !to) return live;
+    const rest = (live[to] ?? []).filter((id) => id !== active.id);
+    const at = over.data.group === true ? rest.length : rest.indexOf(over.id);
+    if (at === -1 || (from === to && live[to]?.indexOf(active.id) === at)) return live;
+    return {
+      ...live,
+      [from]: (live[from] ?? []).filter((id) => id !== active.id),
+      [to]: [...rest.slice(0, at), active.id, ...rest.slice(at)],
+    };
+  };
+
   return {
     onDragStart: (active: DragItem) => {
       const from = itemGroup(value, active.id);
@@ -522,6 +659,11 @@ function useSortableGroups(
     onDragOver: ({ active, over }: DragMove) => {
       const live = drag.current?.live;
       if (!live || !over) return;
+      if (liveOrder) {
+        const next = intoSlot(live, active, over);
+        if (next !== live) publish(next);
+        return;
+      }
       const from = itemGroup(live, active.id);
       const to = targetGroup(live, over);
       if (!from || !to || from === to) return;
@@ -539,15 +681,25 @@ function useSortableGroups(
       drag.current = null;
       if (!current) return;
       const { start, from, live } = current;
-      const to = itemGroup(live, active.id);
-      if (!over || !to) {
+      let next: SortableGroups;
+      if (liveOrder) {
+        next = over ? intoSlot(live, active, over) : live;
+      } else {
+        const to = itemGroup(live, active.id);
+        if (!over || !to) {
+          onChange(start);
+          return;
+        }
+        const list = live[to] ?? [];
+        const at = list.indexOf(active.id);
+        const overIndex = over.data.group === true ? -1 : list.indexOf(over.id);
+        next = overIndex !== -1 && overIndex !== at ? { ...live, [to]: arrayMove([...list], at, overIndex) } : live;
+      }
+      const to = itemGroup(next, active.id);
+      if (!to) {
         onChange(start);
         return;
       }
-      const list = live[to] ?? [];
-      const at = list.indexOf(active.id);
-      const overIndex = over.data.group === true ? -1 : list.indexOf(over.id);
-      const next = overIndex !== -1 && overIndex !== at ? { ...live, [to]: arrayMove([...list], at, overIndex) } : live;
       if (next !== value) onChange(next);
       const index = (next[to] ?? []).indexOf(active.id);
       if (to !== from || index !== (start[from] ?? []).indexOf(active.id)) {

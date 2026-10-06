@@ -88,6 +88,8 @@ export function TaskBoardDemo() {
         }),
       ),
     ),
+    undefined,
+    { live: true },
   );
 
   const doneIds = groups.done ?? [];
@@ -166,6 +168,7 @@ export function TaskBoardDemo() {
         </GoalGrid>
       </section>
       <DragProvider
+        live
         {...sortable}
         overlay={(active) => {
           const task = tasks[active.id];
