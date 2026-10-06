@@ -129,4 +129,28 @@ describe('RedisWorkspaceEventsAdapter', () => {
       subscriber.gate = null;
     }
   });
+
+  /**
+   * Nothing published while the connection was down reached this replica. A
+   * stream left open on it would read live and hear nothing.
+   */
+  it('tells every listener once when its connection closes, and keeps none of its channels', async () => {
+    const { adapter, connection } = setup();
+    const lostA = vi.fn();
+    const lostB = vi.fn();
+    const heard = vi.fn();
+    await adapter.subscribe([{ organizationId: 'org-1' }, { userId: 'u-1' }], heard, lostA);
+    await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), lostB);
+
+    connection().emit('close');
+    connection().emit(
+      'message',
+      'workspace-events:org:org-1',
+      JSON.stringify({ type: 'session.changed', id: 's-1' }),
+    );
+
+    expect(lostA).toHaveBeenCalledTimes(1);
+    expect(lostB).toHaveBeenCalledTimes(1);
+    expect(heard).not.toHaveBeenCalled();
+  });
 });

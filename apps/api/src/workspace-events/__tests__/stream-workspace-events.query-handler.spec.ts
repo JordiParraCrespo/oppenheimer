@@ -15,14 +15,16 @@ import {
 /** A feed whose subscription resolves when the spec says so. */
 function fakeFeed() {
   let deliver: (event: WorkspaceEvent) => void = () => {};
+  let lose: () => void = () => {};
   let resolve: (off: () => void) => void = () => {};
   const off = vi.fn();
   const audiences: WorkspaceEventAudience[][] = [];
   const feed: WorkspaceEventBusPort = {
     publish: async () => undefined,
-    subscribe: (asked, listener) => {
+    subscribe: (asked, listener, onLost) => {
       audiences.push([...asked]);
       deliver = listener;
+      lose = onLost ?? (() => {});
       return new Promise((done) => {
         resolve = done;
       });
@@ -38,6 +40,8 @@ function fakeFeed() {
       await Promise.resolve();
     },
     deliver: (event: WorkspaceEvent) => deliver(event),
+    /** The bus dropping the subscription, as a closed Redis connection does. */
+    lose: () => lose(),
   };
 }
 
@@ -104,6 +108,18 @@ describe('StreamWorkspaceEventsQueryHandler', () => {
     await fake.subscribed();
     fake.deliver({ type: 'automationRun.changed', id: 'r-1', automationId: 'a-1' });
     expect(frames).toEqual([{ kind: 'ready' }]);
+  });
+
+  /** A console that stood its polls down on `ready` must not be left on a deaf stream. */
+  it('ends the stream when the bus drops its subscription, so the browser dials again', async () => {
+    const fake = fakeFeed();
+    const { completed } = await open(fake);
+    await fake.subscribed();
+
+    fake.lose();
+
+    expect(completed()).toBe(true);
+    expect(fake.off).toHaveBeenCalled();
   });
 
   it('ends the subscription when the client goes', async () => {

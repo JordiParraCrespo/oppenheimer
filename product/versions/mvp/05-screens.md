@@ -354,6 +354,13 @@
   sooner, never later, and a tab whose stream drops refetches what it
   covers once when it is back. Behind the `workspace_event_stream` flag
   (2026-10-06).
+  *Changed later the same day:* the polls whose facts the stream carries
+  stand down while it is live — the session list, a session's own row, and
+  a pairing token waiting to be spent — and poll again the moment it drops.
+  Presence, a run's status and a start's steps are not on the stream and
+  keep polling. Every time the stream comes up, the first connect included,
+  the reads it covers are refetched once, so nothing that landed before
+  `ready` is missed.
 
 ## Open questions
 

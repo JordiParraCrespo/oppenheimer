@@ -471,6 +471,11 @@ flag (issue #239).
 - **Presence is not on it.** Online is derived from `lastSeenAt` on every
   read and never written as a transition, so there is nothing to announce;
   the console's presence poll stays how it learns a host came or went.
+- **Ended with its bus connection.** When a replica's subscriber connection
+  to Redis closes, every stream on it ends and the browser dials again; the
+  connection does not resubscribe on its own. A stream left open across the
+  gap would read live and miss what was published meanwhile, and the
+  console stands its polls down while a stream is live (05, 2026-10-06).
 
 ## Data model, first cut
 

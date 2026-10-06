@@ -8,6 +8,7 @@ import { automationsKeys } from './automations.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
 import { sessionsKeys } from './sessions.queries';
+import { setWorkspaceStreamLive } from './workspace-stream-status';
 
 /**
  * The reads a change touches, at the keys they already have. A pairing
@@ -51,10 +52,12 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
  * `workspace_event_stream` flag is on: one stream per tab, whose events
  * refetch the queries they name the moment the change commits.
  *
- * It sits beside the polls in `LIVE_POLL`, which run as they always do: the
- * stream makes a change arrive sooner, never later. After a reconnect the
- * covered queries are refetched once, for what the gap may have missed. A
- * flag read off, or a workspace that changes, closes the stream.
+ * While it is live, the polls whose facts it carries stand down
+ * (`useWorkspaceStreamLive`); the moment it is not, they poll again. Each time
+ * it comes up — the first connect included, since a change can land between a
+ * screen's read and the subscription — the covered queries are refetched
+ * once, for what the gap may have missed. A flag read off, or a workspace that
+ * changes, closes the stream.
  */
 export function useWorkspaceEvents(workspaceId: string | undefined): void {
   const app = useConsumerApp();
@@ -65,23 +68,19 @@ export function useWorkspaceEvents(workspaceId: string | undefined): void {
   useEffect(() => {
     if (!enabled || !workspaceId) return;
     const stream = app.organizations.openEvents();
-    // Live once already, then down: the next `live` is a reconnect.
-    let wasLive = false;
-    let dropped = false;
+    let live = false;
     const offStatus = stream.onStatus((status) => {
-      if (status !== 'live') {
-        dropped = wasLive;
-        return;
-      }
-      if (dropped) invalidate(queryClient, COVERED);
-      wasLive = true;
-      dropped = false;
+      const now = status === 'live';
+      if (now && !live) invalidate(queryClient, COVERED);
+      live = now;
+      setWorkspaceStreamLive(queryClient, now);
     });
     const offEvent = stream.onEvent((event) => invalidate(queryClient, keysFor(event)));
     return () => {
       offStatus();
       offEvent();
       stream.dispose();
+      setWorkspaceStreamLive(queryClient, false);
     };
   }, [app, queryClient, enabled, workspaceId]);
 }

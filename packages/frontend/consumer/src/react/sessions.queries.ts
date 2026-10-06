@@ -20,8 +20,9 @@ import {
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
-import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
+import { CLOSE_WATCH_MS, NO_POLL, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
 import { seedDetails } from './seed-details';
+import { useWorkspaceStreamLive } from './workspace-stream-status';
 
 export const sessionsKeys = {
   all: ['sessions'] as const,
@@ -121,6 +122,7 @@ export function useSessions<TData = SessionEntity[]>(
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
+  const streamed = useWorkspaceStreamLive();
 
   return useQuery<SessionEntity[], Error, TData>({
     queryKey: sessionsKeys.list(),
@@ -142,6 +144,8 @@ export function useSessions<TData = SessionEntity[]>(
         rows?.some((session) => session.isProvisioning || closesOf(queryClient).has(session.id)) ??
         false,
     ),
+    // The workspace event stream carries every change to these rows while it is live.
+    ...(streamed ? NO_POLL : {}),
   });
 }
 
@@ -150,8 +154,8 @@ export function useSession(
   options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
-
   const queryClient = useQueryClient();
+  const streamed = useWorkspaceStreamLive();
 
   return useQuery({
     queryKey: sessionsKeys.detail(id),
@@ -169,6 +173,7 @@ export function useSession(
       (session) =>
         (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
     ),
+    ...(streamed ? NO_POLL : {}),
   });
 }
 

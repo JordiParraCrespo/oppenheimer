@@ -8,7 +8,8 @@ import {
   usePairingTokens,
   useReplacePairing,
 } from './hosts.queries';
-import { pollWhile } from './live-poll';
+import { NO_POLL, pollWhile } from './live-poll';
+import { useWorkspaceStreamLive } from './workspace-stream-status';
 
 /** The longest delay `setTimeout` honours; a later one fires at once. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -53,6 +54,7 @@ export interface HostPairingFlow {
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);
   const replace = useReplacePairing(hostName);
+  const streamed = useWorkspaceStreamLive();
   // The token that has run out, by id, so a regenerated token starts unexpired
   // without anything having to reset this.
   const [expiredId, setExpiredId] = useState<string | null>(null);
@@ -78,10 +80,15 @@ export function useHostPairing(hostName: string): HostPairingFlow {
   // that can only answer "no".
   const { data: tokens } = usePairingTokens(
     { enabled: Boolean(pairing) && !expired },
-    pollWhile('pairing', (rows) => {
-      if (!pairing || expired) return false;
-      return !rows?.find((token) => token.id === pairing.id)?.redeemedHostId;
-    }),
+    {
+      ...pollWhile('pairing', (rows) => {
+        if (!pairing || expired) return false;
+        return !rows?.find((token) => token.id === pairing.id)?.redeemedHostId;
+      }),
+      // A spent token is `pairing.spent` on the workspace event stream. The
+      // host coming online below is presence, which the stream does not carry.
+      ...(streamed ? NO_POLL : {}),
+    },
   );
 
   const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;

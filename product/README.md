@@ -359,3 +359,8 @@ earlier note:
   added beside the polls, behind the `workspace_event_stream` flag
   (`versions/mvp/03-control-plane.md`, 05). Issue #239 asked which version
   it belongs to: the MVP, since the polls it speeds up are the MVP's own.
+- The workspace event stream went in beside the polls, which kept running
+  (2026-10-06). The same day the polls it covers were made to stand down
+  while it is live, and poll again when it drops; the stream ends with its
+  Redis connection so it is never live and deaf (`versions/mvp/05-screens.md`,
+  `versions/mvp/03-control-plane.md`).

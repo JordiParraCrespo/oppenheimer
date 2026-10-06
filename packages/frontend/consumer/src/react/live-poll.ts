@@ -140,3 +140,11 @@ export const CLOSE_WATCH_MS = 60_000;
  * think of. A host that is offline never answers, and the watch stops asking.
  */
 export const RESTART_WATCH_MS = 60_000;
+
+/**
+ * No poll: what a hook spreads after its `pollWhile` while the workspace event
+ * stream is live and carries every change to its rows
+ * (`useWorkspaceStreamLive`). The exception belongs to the hook that knows its
+ * rows are carried; this file only keeps the one place the option is named.
+ */
+export const NO_POLL = { refetchInterval: false } as const;

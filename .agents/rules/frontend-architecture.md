@@ -271,7 +271,10 @@ name the jobs and split *those*.
   (`useHostPresence`). A poll that watches something finish keeps running on
   a hidden tab, because that is the tab the reader leaves while it runs;
   presence, which never settles, does not. `pnpm check:structure` fails a
-  `refetchInterval` anywhere but that file.
+  `refetchInterval` anywhere but that file. A query whose changes the
+  workspace event stream carries spreads `pollWhile` as usual and then
+  `...(useWorkspaceStreamLive() ? NO_POLL : {})`: it stands down while the
+  stream is live and polls again the moment it drops.
 
 ## The page frame is the shell's
 
