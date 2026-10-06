@@ -141,7 +141,31 @@ test('a session started from a card moves it to In progress and links back', asy
   ).toBeVisible();
   const line = moved.getByRole('button', { name: /^Open session / });
   await expect(line).toContainText('Queued');
-  await line.click();
+
+  // Link existing: a pane under the button in the task's dialog, the task's
+  // project's sessions under its name; Enter links the first and the task
+  // moves to In progress.
+  await page.getByRole('button', { name: 'New task', exact: true }).click();
+  const second = page.getByRole('dialog', { name: 'New task' });
+  await second.getByLabel('Title').fill('Polish the wallet list');
+  await second.getByRole('button', { name: 'Wallet' }).click();
+  await second.getByRole('button', { name: 'Add task' }).click();
+  await card(page, 'Polish the wallet list').click();
+  const edit = page.getByRole('dialog', { name: 'Edit task' });
+  await edit.getByRole('button', { name: 'Link existing' }).click();
+  const pane = page.getByRole('listbox', { name: 'Search sessions' });
+  await expect(pane.getByText('In Wallet')).toBeVisible();
+  await expect(pane.getByRole('option')).toHaveCount(1);
+  await page.getByRole('textbox', { name: 'Search sessions' }).press('Enter');
+  await expect(pane).toBeHidden();
+  await expect(edit.getByRole('button', { name: /^Unlink / })).toHaveCount(1);
+  await edit.press('Escape');
+  await expect(
+    moved.locator('[data-slot="task-card"]').filter({ hasText: 'Polish the wallet list' }),
+  ).toBeVisible();
+
+  // Both cards carry that one session now.
+  await line.first().click();
   await expect(page).toHaveURL(/\/sessions\//);
   await owner.api.dispose();
 });

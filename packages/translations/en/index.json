@@ -1073,9 +1073,9 @@
       "gone": "This task no longer exists."
     },
     "link": {
-      "title": "Link a session",
       "search": "Search sessions",
-      "empty": "No sessions to link.",
+      "empty": "Every session is already linked.",
+      "noMatch": "No sessions match “{{query}}”.",
       "inProject": "In {{name}}",
       "others": "Other sessions",
       "failed": "Couldn’t link that session."
