@@ -3,7 +3,6 @@
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
-  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -47,12 +46,18 @@ export function useTasks<TData = TaskEntity[]>(
   });
 }
 
-/** The tasks a session is on: the session header's "Back to task". */
+/**
+ * The tasks a session is on: the session header's "Back to task". A `select`
+ * over the board, which the console rail keeps read on every screen, so the
+ * header costs no request of its own and follows a link the moment it is made.
+ */
 export function useSessionTasks(sessionId: string | undefined) {
-  const app = useConsumerApp();
-  return useQuery({
-    queryKey: tasksKeys.list({ sessionId }),
-    queryFn: sessionId ? () => app.tasks.findAll({ sessionId }) : skipToken,
+  return useTasks({
+    select: (rows) =>
+      sessionId
+        ? rows.filter((row) => row.sessions.some((link) => link.sessionId === sessionId))
+        : [],
+    enabled: sessionId !== undefined,
   });
 }
 
@@ -69,17 +74,39 @@ export function useGoals<TData = GoalEntity[]>(
 }
 
 /**
- * Write the task the server returned into the board, then let the narrower lists
- * and the goals' progress refetch: a move or a Done changes what a goal counts.
+ * Write the task the server returned into the board. Ranks are fractional, so
+ * a write moves no row but its own and the answer is the whole change: the
+ * board is not read again. Reading it again was worse than a wasted request,
+ * since a refetch that set off while a second drag was still on its way drew
+ * that card back in its old place until its own answer landed.
+ *
+ * Goals refetch only when a count can have moved: a task joined or left a goal,
+ * or one on a goal turned Done or back. `before` is the board as it was before
+ * the write, for a mutation that already drew it provisionally; without the
+ * board to compare against, the goals refetch.
  */
-function settleTask(queryClient: QueryClient, task: TaskEntity | null, removedId?: string) {
-  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
-    if (!rows) return rows;
-    const rest = rows.filter((row) => row.id !== (task?.id ?? removedId));
+function settleTask(
+  queryClient: QueryClient,
+  task: TaskEntity | null,
+  { removedId, before }: { removedId?: string; before?: TaskEntity[] } = {},
+) {
+  const id = task?.id ?? removedId;
+  const rows = before ?? queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
+  const was = rows?.find((row) => row.id === id);
+  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) => {
+    if (!current) return current;
+    const rest = current.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
   });
-  void queryClient.invalidateQueries({ queryKey: tasksKeys.lists() });
-  void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
+  if (!rows || movesGoalProgress(was, task)) {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
+  }
+}
+
+function movesGoalProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
+  if (!was && !now) return true;
+  if (!was || !now) return (was ?? now)?.goalId != null;
+  return was.goalId !== now.goalId || (now.goalId !== null && was.isDone !== now.isDone);
 }
 
 export function useCreateTask(options?: UseMutationOptions<TaskEntity, Error, TaskInput>) {
@@ -122,7 +149,9 @@ export function useMoveTask(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task)),
+    ...withCacheOnSuccess(options, (task, _move, context) =>
+      settleTask(queryClient, task, { before: context?.previous }),
+    ),
     mutationFn: ({ id, status, afterTaskId }: MoveTaskVariables) =>
       app.tasks.move(id, { status, afterTaskId }),
     onMutate: async (move) => {
@@ -166,7 +195,7 @@ export function useDeleteTask(options?: UseMutationOptions<void, Error, string>)
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.tasks.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, null, id)),
+    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, null, { removedId: id })),
   });
 }
 
