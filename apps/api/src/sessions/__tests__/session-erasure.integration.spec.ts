@@ -87,6 +87,7 @@ describe('sessions: erasing a workspace (integration)', () => {
       dataSource,
       new WorkSessionMapper(),
       outbox(),
+      { publish: () => undefined },
     );
   }, 180000);
 

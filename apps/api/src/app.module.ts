@@ -76,6 +76,7 @@ import { CredentialThrottlerGuard } from './throttling/guards/credential-throttl
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
+import { WorkspaceEventsModule } from './workspace-events/workspace-events.module';
 
 @Module({
   imports: [
@@ -212,6 +213,9 @@ import { UsersModule } from './users/user.module';
       }),
     }),
     OutboxModule,
+    // The console's change feed, global like the outbox: modules publish to it
+    // after a commit (`product/versions/mvp/21-workspace-events.md`).
+    WorkspaceEventsModule,
     // The bundles are the same JSON the web app loads, so a string
     // is written once and a translator edits one file — and an email, which
     // has no request to negotiate a language from, renders from the

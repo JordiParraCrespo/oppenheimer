@@ -46,4 +46,12 @@ export interface HostPresencePort {
    * or unpaired host is ignored.
    */
   connectedFrom(hostId: string, address: string, at?: Date): Promise<void>;
+
+  /**
+   * The link this process held for the host closed. Nothing is written: the
+   * host reads offline once its last beat leaves the online window, and that
+   * is when its owner's console is told to look again. A link that reopens on
+   * any replica first makes that look find it online, which is the truth.
+   */
+  disconnected(hostId: string): void;
 }

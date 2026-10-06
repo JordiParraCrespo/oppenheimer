@@ -333,3 +333,9 @@ earlier note:
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
   (`versions/mvp/17-plan.md`, "As built").
+- `versions/mvp/05-screens.md` and the 2026-10-01 entry had the console poll
+  for every change it does not cause, with a faster opening poll for a
+  starting session. On 2026-10-06 one Server-Sent Events stream per tab
+  became the trigger, behind the `workspace_event_stream` flag, with the
+  polls kept as its fallback; issue #239's question of which version it
+  belongs to was answered as the MVP (`versions/mvp/21-workspace-events.md`).

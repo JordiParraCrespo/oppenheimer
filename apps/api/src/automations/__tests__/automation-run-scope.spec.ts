@@ -56,6 +56,7 @@ describe('the runs page', () => {
       { query } as unknown as DataSource,
       {} as OutboxService,
       { readModelOf: (row: unknown) => row } as unknown as AutomationRunMapper,
+      { publish: () => undefined },
     );
     return { runs, query };
   }

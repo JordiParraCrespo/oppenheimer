@@ -168,6 +168,7 @@ async function boot(): Promise<World> {
   const presence: HostPresencePort = {
     observe: vi.fn().mockResolvedValue('recorded'),
     connectedFrom: vi.fn().mockResolvedValue(undefined),
+    disconnected: vi.fn(),
   };
   const reconciliation: SessionReconciliationPort = {
     reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),

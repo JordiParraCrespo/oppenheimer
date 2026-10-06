@@ -375,3 +375,6 @@
    Should the pane attach as soon as the create returns, which changes
    01's attach ticket and 03's relay? Or should the console be told of
    `open` another way?
+   *2026-10-06:* the other way exists — `session.changed` on the workspace
+   event stream (21) reaches the pane as soon as the host appends
+   `session.started`, behind the `workspace_event_stream` flag.

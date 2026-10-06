@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
+import type { WorkspaceEventsPort } from '../../workspace-events/application/workspace-events.port';
+import { WORKSPACE_EVENTS } from '../../workspace-events/workspace-events.di-tokens';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
@@ -53,8 +55,22 @@ export class WorkSessionRepository
     private readonly dataSource: DataSource,
     private readonly mapper: WorkSessionMapper,
     private readonly outbox: OutboxService,
+    @Inject(WORKSPACE_EVENTS)
+    private readonly events: WorkspaceEventsPort,
   ) {
     super();
+  }
+
+  /**
+   * Tell the workspace's console the row changed, once it has committed. Every
+   * write below that landed a log entry calls it: the fold is what a session
+   * screen draws, and a start step is a log entry the stepper reads.
+   */
+  private announce(session: WorkSessionEntity): void {
+    this.events.publish(
+      { organizationId: session.organizationId },
+      { type: 'session.changed', id: session.id },
+    );
   }
 
   async createIfUnclaimed(
@@ -156,6 +172,7 @@ export class WorkSessionRepository
     }
 
     session.clearEvents();
+    this.announce(session);
     return { session, created: true, refused: null };
   }
 
@@ -167,6 +184,7 @@ export class WorkSessionRepository
       this.appendWithin(manager, session, events),
     );
     session.clearEvents();
+    if (outcome.appended.length > 0) this.announce(session);
     return outcome;
   }
 
@@ -196,6 +214,7 @@ export class WorkSessionRepository
     });
     if (!appended) return None;
     appended.session.clearEvents();
+    if (appended.outcome.appended.length > 0) this.announce(appended.session);
     return Some(appended);
   }
 
@@ -215,7 +234,10 @@ export class WorkSessionRepository
       await this.appendWithin(manager, session, events);
       return 'moved' as const;
     });
-    if (outcome === 'moved') session.clearEvents();
+    if (outcome === 'moved') {
+      session.clearEvents();
+      this.announce(session);
+    }
     return outcome;
   }
 
@@ -231,6 +253,7 @@ export class WorkSessionRepository
       return this.appendWithin(manager, session, events);
     });
     session.clearEvents();
+    if (outcome.appended.length > 0) this.announce(session);
     return outcome;
   }
 
@@ -250,6 +273,7 @@ export class WorkSessionRepository
       return appended;
     });
     session.clearEvents();
+    if (outcome.appended.length > 0) this.announce(session);
     return outcome;
   }
 

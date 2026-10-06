@@ -116,12 +116,14 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       outbox,
       new AutomationMapper(runMapper),
       runMapper,
+      { publish: () => undefined },
     );
     runs = new AutomationRunRepository(
       dataSource.getRepository(AutomationRunOrmEntity),
       dataSource,
       outbox,
       runMapper,
+      { publish: () => undefined },
     );
     settings = new AutomationSettingsRepository(
       dataSource.getRepository(AutomationSettingsOrmEntity),

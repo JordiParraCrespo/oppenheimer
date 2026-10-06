@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { LIVE_POLL, pollWhile } from '../live-poll';
+import { LIVE_POLL, pollWhile, setStreamedPolls } from '../live-poll';
 
 /**
  * The catalog decides both halves of a poll: a hook says only when the thing
@@ -75,11 +75,72 @@ describe('pollWhile', () => {
 
   it('carries whether the poll survives a hidden tab from the catalog, never from the hook', () => {
     expect(pollWhile('sessionStarting', true).refetchIntervalInBackground).toBe(true);
-    expect(pollWhile('hostPresence', true)).toEqual({
-      refetchInterval: LIVE_POLL.hostPresence.interval,
-      refetchIntervalInBackground: false,
-    });
-    expect(pollWhile('liveRun', false).refetchInterval).toBe(false);
+    const presence = pollWhile('hostPresence', true);
+    expect(presence.refetchIntervalInBackground).toBe(false);
+    expect(presence.refetchInterval({ queryHash: 'hosts', state: {} })).toBe(
+      LIVE_POLL.hostPresence.interval,
+    );
+    expect(pollWhile('liveRun', false).refetchInterval({ queryHash: 'runs', state: {} })).toBe(
+      false,
+    );
+  });
+});
+
+/**
+ * The workspace stream refetches what a poll would have, the moment it
+ * changes. A poll left running beside it is the request every two seconds
+ * the stream exists to remove; a poll that stayed down after the stream
+ * dropped is a screen that never moves again.
+ */
+describe('while the workspace stream is live', () => {
+  it('stands a poll down, and brings it back when the stream drops', () => {
+    const poll = pollWhile<{ isRunning: boolean }>('liveRun', (row) => row?.isRunning ?? false);
+    const tick = () =>
+      poll.refetchInterval({ queryHash: 'run', state: { data: { isRunning: true } } });
+    try {
+      setStreamedPolls(['liveRun']);
+      expect(tick()).toBe(false);
+      setStreamedPolls([]);
+      expect(tick()).toBe(LIVE_POLL.liveRun.interval);
+    } finally {
+      setStreamedPolls([]);
+    }
+  });
+
+  it('leaves a kind the stream does not cover polling', () => {
+    try {
+      setStreamedPolls(['liveRun']);
+      expect(
+        pollWhile('hostPresence', true).refetchInterval({ queryHash: 'hosts', state: {} }),
+      ).toBe(LIVE_POLL.hostPresence.interval);
+    } finally {
+      setStreamedPolls([]);
+    }
+  });
+
+  /** A poll back from the stream is a fresh wait, so it opens fast again. */
+  it('forgets the opening clock while the stream covers it', () => {
+    vi.useFakeTimers();
+    try {
+      const poll = pollWhile<{ isProvisioning: boolean }>(
+        'sessionOpening',
+        (session) => session?.isProvisioning ?? false,
+      );
+      const tick = () =>
+        poll.refetchInterval({
+          queryHash: 'opening-streamed',
+          state: { data: { isProvisioning: true } },
+        });
+      expect(tick()).toBe(LIVE_POLL.sessionOpening.openingInterval);
+      vi.advanceTimersByTime(LIVE_POLL.sessionOpening.openingForMs + 1);
+      setStreamedPolls(['sessionOpening']);
+      expect(tick()).toBe(false);
+      setStreamedPolls([]);
+      expect(tick()).toBe(LIVE_POLL.sessionOpening.openingInterval);
+    } finally {
+      setStreamedPolls([]);
+      vi.useRealTimers();
+    }
   });
 });
 

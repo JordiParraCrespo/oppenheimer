@@ -6,7 +6,11 @@ import type { HostRepositoryPort } from '../../database/host.repository.port';
 import type { HostMetadataRepositoryPort } from '../../database/host-metadata.repository.port';
 import type { HostEntity } from '../../domain/host.entity';
 import type { IpGeolocationPort } from '../../infrastructure/ip-geolocation.port';
-import { HostPresenceResolver, OWNER_RECHECK_MS } from '../host-presence.resolver';
+import {
+  HostPresenceResolver,
+  OFFLINE_ANNOUNCE_DELAY_MS,
+  OWNER_RECHECK_MS,
+} from '../host-presence.resolver';
 
 const facts = {
   platform: 'ubuntu',
@@ -42,16 +46,19 @@ function setup(host: Partial<HostEntity> | null) {
     }),
   };
   const owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: 'jordi' }) };
+  const events = { publish: vi.fn() };
   return {
     hosts,
     metadata,
     geolocation,
     owners,
+    events,
     resolver: new HostPresenceResolver(
       hosts,
       metadata,
       geolocation,
       owners as unknown as CredentialOwnerPort,
+      events,
     ),
   };
 }
@@ -227,5 +234,50 @@ describe('HostPresenceResolver', () => {
     const { metadata, resolver } = setup({ isUnpaired: true });
     await resolver.connectedFrom('host-1', '198.51.100.9');
     expect(metadata.recordNetwork).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Presence is derived on read and never stored, so nothing would otherwise
+ * tell the owner's console that a host came or went: these are its two
+ * moments, the link opening and the window running out after it closed.
+ */
+describe('HostPresenceResolver announces presence to the owner', () => {
+  it('on a hello, and not on every heartbeat', async () => {
+    const { events, resolver } = setup({ ownerUserId: 'jordi', isUnpaired: false });
+
+    await resolver.observe('host-1', { facts, connectedAt: new Date() });
+    expect(events.publish).toHaveBeenCalledWith(
+      { userId: 'jordi' },
+      { type: 'host.changed', id: 'host-1' },
+    );
+
+    events.publish.mockClear();
+    await resolver.observe('host-1', { facts });
+    expect(events.publish).not.toHaveBeenCalled();
+  });
+
+  it('never for a hello it refused', async () => {
+    const { events, resolver } = setup({ ownerUserId: 'jordi', isUnpaired: true });
+    await resolver.observe('host-1', { facts, connectedAt: new Date() });
+    expect(events.publish).not.toHaveBeenCalled();
+  });
+
+  /** Told at once, the console would re-read a host still inside its online window. */
+  it('once the online window has passed after its link closed', async () => {
+    vi.useFakeTimers();
+    try {
+      const { events, resolver } = setup({ ownerUserId: 'jordi', isUnpaired: false });
+      resolver.disconnected('host-1');
+      expect(events.publish).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(OFFLINE_ANNOUNCE_DELAY_MS);
+      expect(events.publish).toHaveBeenCalledWith(
+        { userId: 'jordi' },
+        { type: 'host.changed', id: 'host-1' },
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

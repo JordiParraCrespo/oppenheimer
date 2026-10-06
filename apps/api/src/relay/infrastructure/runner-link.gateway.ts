@@ -276,6 +276,7 @@ export class RunnerLinkGateway {
       appends.dispose();
       this.links.unregister(link);
       for (const sink of link.drainAttachments()) sink.closed('link_lost');
+      this.events.onLinkDown(link);
       this.logger.log({
         message: 'runner link down',
         hostId,

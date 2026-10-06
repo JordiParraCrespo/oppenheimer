@@ -36,6 +36,7 @@ function harness(rows: { id: string; automationId: string; cause: string }[]) {
     {} as DataSource,
     outbox,
     {} as AutomationRunMapper,
+    { publish: () => undefined },
   );
   return { repository, staged };
 }

@@ -15,6 +15,7 @@ import { AutomationPlanFactory } from './application/automation-plan.factory';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
+import { RunSessionChangedDomainEventHandler } from './application/event-handlers/run-session-changed.domain-event-handler';
 import { OwnerScopeResolver } from './application/owner-scope.resolver';
 import { RunDispatchResolver } from './application/run-dispatch.resolver';
 import { AutomationMapper } from './automation.mapper';
@@ -163,6 +164,7 @@ const queryHandlers: Provider[] = [
     ExternalEventReceivedDomainEventHandler,
     HostUnpairedPausesAutomationsDomainEventHandler,
     ProjectArchivedPausesAutomationsDomainEventHandler,
+    RunSessionChangedDomainEventHandler,
     AutomationRunsProcessor,
     AutomationSchedulesProcessor,
     AutomationRetentionProcessor,

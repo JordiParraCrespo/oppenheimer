@@ -142,6 +142,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       dataSource,
       new WorkSessionMapper(),
       outbox(),
+      { publish: () => undefined },
     );
   }, 180000);
 

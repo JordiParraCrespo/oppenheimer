@@ -1,5 +1,6 @@
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
+import { WorkspaceEventStream } from './events/workspace-event-stream';
 import type { OrganizationEntity } from './organization.entity';
 import type { OrganizationsRepository } from './organizations.repository';
 
@@ -19,7 +20,18 @@ export class OrganizationsService {
   constructor(
     @inject(TOKENS.OrganizationsRepository)
     private readonly repository: OrganizationsRepository,
+    @inject(TOKENS.ApiBaseUrl)
+    @optional()
+    private readonly apiBaseUrl: string = '',
   ) {}
+
+  /**
+   * The caller's workspace, live: what changed in it, as it changes. Nothing
+   * is opened until this is called, and `dispose()` closes it.
+   */
+  openEvents(): WorkspaceEventStream {
+    return new WorkspaceEventStream({ apiBaseUrl: this.apiBaseUrl });
+  }
 
   findAll(): Promise<OrganizationEntity[]> {
     return this.repository.findAll();

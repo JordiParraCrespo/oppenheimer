@@ -32,6 +32,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 18 | [Plan: the product](18-plan-product.md) | What the Plan frames say, screen by screen: the board, the dialogs, tasks that start or link sessions, and the gaps the frames leave |
 | 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
 | 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
+| 21 | [Workspace events](21-workspace-events.md) | One Server-Sent Events stream per console tab carrying invalidations, fanned out over Redis, replacing the polls in `LIVE_POLL` behind a flag |
 
 ## Decision log
 
@@ -603,3 +604,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   session started from a task is a person's, linked with `started`; the
   calendar computes automation runs from the automations list; event
   times are wall-clock; archiving a project is not blocked by its tasks.
+- 2026-10-06: **The console's polls give way to one event stream** (21,
+  05). `GET /v1/events` streams invalidations (`session.changed`,
+  `host.changed`, `pairing.spent`, `automationRun.changed`) per workspace and
+  per person over Redis pub/sub; while it is live every `LIVE_POLL` kind
+  stands down, and polling comes back whenever it drops. Behind the
+  `workspace_event_stream` flag until the polls it replaces are deleted.

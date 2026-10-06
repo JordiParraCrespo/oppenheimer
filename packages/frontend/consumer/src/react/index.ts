@@ -115,3 +115,4 @@ export {
   useUpdateGoal,
   useUpdateTask,
 } from './tasks.queries';
+export { useWorkspaceEvents } from './workspace-events';

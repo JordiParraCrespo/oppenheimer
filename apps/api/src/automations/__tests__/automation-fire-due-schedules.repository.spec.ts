@@ -138,6 +138,7 @@ function harness() {
     outbox as unknown as OutboxService,
     mapper,
     runMapper,
+    { publish: () => undefined },
   );
   return { repository, automations, statements, locks, outbox };
 }

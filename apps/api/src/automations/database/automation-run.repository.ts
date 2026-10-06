@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
@@ -6,6 +6,8 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { LISTED_RUN_STATUSES } from '@oppenheimer/shared/automations';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, Repository } from 'typeorm';
+import type { WorkspaceEventsPort } from '../../workspace-events/application/workspace-events.port';
+import { WORKSPACE_EVENTS } from '../../workspace-events/workspace-events.di-tokens';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
 import type {
@@ -96,6 +98,18 @@ const READ_MODEL_SQL = `
   LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1`;
 
 /** Insert a firing and, when it is pending, stage its dispatch — inside the caller's transaction. */
+/**
+ * Tell the workspace's console a run changed, once it has committed: queued,
+ * skipped, dispatched or deferred. Running and finished are its session's
+ * turns, which `RunSessionChangedDomainEventHandler` announces.
+ */
+export function announceRun(events: WorkspaceEventsPort, run: AutomationRunEntity): void {
+  events.publish(
+    { organizationId: run.organizationId },
+    { type: 'automationRun.changed', id: run.id, automationId: run.automationId },
+  );
+}
+
 export async function insertRunWithin(
   manager: EntityManager,
   outbox: OutboxService,
@@ -274,6 +288,8 @@ export class AutomationRunRepository
     private readonly dataSource: DataSource,
     private readonly outbox: OutboxService,
     private readonly mapper: AutomationRunMapper,
+    @Inject(WORKSPACE_EVENTS)
+    private readonly events: WorkspaceEventsPort,
   ) {
     super();
   }
@@ -282,7 +298,10 @@ export class AutomationRunRepository
     const inserted = await this.outbox.transaction((manager) =>
       insertRunWithin(manager, this.outbox, this.mapper, run),
     );
-    if (inserted) return { runId: run.id, inserted };
+    if (inserted) {
+      announceRun(this.events, run);
+      return { runId: run.id, inserted };
+    }
     const existing: { id: string }[] = await this.dataSource.query(
       `SELECT "id" FROM "automation_run" WHERE "automationId" = $1 AND "causeKey" = $2`,
       [run.automationId, run.causeKey],
@@ -311,7 +330,10 @@ export class AutomationRunRepository
         inserted: await insertRunWithin(manager, this.outbox, this.mapper, decided),
       };
     });
-    if (inserted) return { run, runId: run.id, inserted };
+    if (inserted) {
+      announceRun(this.events, run);
+      return { run, runId: run.id, inserted };
+    }
     return { run, runId: await this.firingOfCause(run), inserted };
   }
 
@@ -357,6 +379,11 @@ export class AutomationRunRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findOneBySessionForSystem(sessionId: string): Promise<Option<AutomationRunEntity>> {
+    const record = await this.repository.findOneBy({ sessionId });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async save(run: AutomationRunEntity): Promise<void> {
     const record = this.mapper.toRecord(run);
     await this.outbox.transaction(async (manager) => {
@@ -379,6 +406,7 @@ export class AutomationRunRepository
       // A deferral owes another look later; the delay rides the outbox row.
       if (run.isPending) await stageDispatch(manager, this.outbox, run);
     });
+    announceRun(this.events, run);
   }
 
   async countLiveForAutomation(
