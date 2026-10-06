@@ -198,6 +198,7 @@
     "failed": "La revisión no se envió."
   },
   "changes": {
+    "back": "Volver",
     "layout": "Disposición",
     "unified": "Unificada",
     "split": "Dividida",

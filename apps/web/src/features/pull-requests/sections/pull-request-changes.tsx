@@ -1,10 +1,4 @@
-import {
-  DiffFileTree,
-  type DiffLayout,
-  SegmentedControl,
-  SegmentedControlItem,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
+import { DiffFileTree, type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
@@ -13,24 +7,26 @@ import { useTranslation } from 'react-i18next';
 import { ChangesFile } from './changes-file';
 
 /**
- * Changes: every file's diff, unified or split, and the tree beside it, which
- * stays put while the diff scrolls. A comment added to the review stays
- * pending here, with the screen, until the review is submitted.
+ * Changes: every file's diff, unified or split as the bar says, edge to edge
+ * under it, and the tree beside it, which stays put while the diff scrolls. A
+ * comment added to the review stays pending here, with the screen, until the
+ * review is submitted.
  */
 export function PullRequestChanges({
   address,
+  layout,
   pending,
   onAddPending,
   onDiscardPending,
 }: {
   address: PullRequestAddress;
+  layout: DiffLayout;
   pending: readonly LineCommentInput[];
   onAddPending: (comment: LineCommentInput) => void;
   onDiscardPending: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const files = usePullRequestFiles(address);
-  const [layout, setLayout] = useState<DiffLayout>('unified');
   const [selected, setSelected] = useState<string | undefined>(undefined);
 
   return (
@@ -40,57 +36,44 @@ export function PullRequestChanges({
       errorFallback={t('pullRequests.changes.loadFailed')}
       empty={{
         when: (rows) => rows.length === 0,
-        show: <p className="m-0 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>,
+        show: (
+          <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
+        ),
       }}
     >
       {(rows) => (
-        <div className="flex min-h-0 flex-1 flex-col gap-3">
-          <SegmentedControl
-            value={layout}
-            onValueChange={(next) => setLayout(next as DiffLayout)}
-            aria-label={t('pullRequests.changes.layout')}
-            className="self-start"
-          >
-            <SegmentedControlItem value="unified">
-              {t('pullRequests.changes.unified')}
-            </SegmentedControlItem>
-            <SegmentedControlItem value="split">
-              {t('pullRequests.changes.split')}
-            </SegmentedControlItem>
-          </SegmentedControl>
-          <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border-subtle bg-card">
-            <div className="min-w-0 flex-1 overflow-y-auto">
-              {rows.map((file) => (
-                <ChangesFile
-                  key={file.path}
-                  address={address}
-                  file={file}
-                  layout={layout}
-                  pending={pending}
-                  onAddPending={onAddPending}
-                  onDiscardPending={onDiscardPending}
-                />
-              ))}
-            </div>
-            <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border-subtle lg:flex">
-              <DiffFileTree
-                files={rows}
-                selected={selected}
-                onSelect={(path) => {
-                  setSelected(path);
-                  document
-                    .getElementById(`file-${path}`)
-                    ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-                }}
-                labels={{
-                  title: t('pullRequests.changes.files'),
-                  filter: t('pullRequests.changes.filter'),
-                  viewed: (done, total) => t('pullRequests.changes.viewed', { done, total }),
-                }}
-                className="w-full"
+        <div className="flex min-h-0 flex-1 bg-card">
+          <div className="min-w-0 flex-1 overflow-y-auto">
+            {rows.map((file) => (
+              <ChangesFile
+                key={file.path}
+                address={address}
+                file={file}
+                layout={layout}
+                pending={pending}
+                onAddPending={onAddPending}
+                onDiscardPending={onDiscardPending}
               />
-            </aside>
+            ))}
           </div>
+          <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border-subtle lg:flex">
+            <DiffFileTree
+              files={rows}
+              selected={selected}
+              onSelect={(path) => {
+                setSelected(path);
+                document
+                  .getElementById(`file-${path}`)
+                  ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+              }}
+              labels={{
+                title: t('pullRequests.changes.files'),
+                filter: t('pullRequests.changes.filter'),
+                viewed: (done, total) => t('pullRequests.changes.viewed', { done, total }),
+              }}
+              className="w-full"
+            />
+          </aside>
         </div>
       )}
     </QueryState>
