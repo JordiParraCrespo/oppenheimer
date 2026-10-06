@@ -3,6 +3,8 @@
 import { shareEntities, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
+  type QueryClient,
+  type QueryKey,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -24,13 +26,9 @@ import type {
 } from '../modules/automations/automation.entity';
 import { useConsumerApp } from './context';
 import { type PollKeys, pollWhile } from './live-poll';
+import { seedDetails } from './seed-details';
 
-/**
- * Query key factory for the `automations` feature. Runs sit under the same
- * root because every automation write can change them: a delete marks its
- * runs as the deleted automation's, Run now adds one, a pause changes what
- * the next slot does.
- */
+/** Query key factory for the `automations` feature. What each write refreshes is {@link settleAutomation}. */
 export const automationsKeys = {
   all: ['automations'] as const,
   lists: () => [...automationsKeys.all, 'list'] as const,
@@ -49,13 +47,8 @@ type GithubTriggerInput = Extract<TriggerInput, { source: 'github' }>;
 /**
  * The workspace's automations, oldest first: the sidebar's groups and the
  * overview's table read the same list. Each carries its status, its next run
- * and its last six runs, so neither needs a second request.
- */
-/**
- * Every automation in the workspace. Each row is also written to that
- * automation's detail, which is the same document, so opening one from the
- * list renders on the click; a detail read after this list was asked for is
- * as new or newer, and is left alone.
+ * and its last six runs, and is the same document as its detail, which it
+ * fills (`seedDetails`).
  */
 export function useAutomations<TData = AutomationEntity[]>(
   options?: Omit<
@@ -70,13 +63,7 @@ export function useAutomations<TData = AutomationEntity[]>(
     queryFn: async () => {
       const askedAt = Date.now();
       const automations = await app.automations.findAll();
-      for (const automation of automations) {
-        const key = automationsKeys.detail(automation.id);
-        if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= askedAt) continue;
-        queryClient.setQueryData<AutomationEntity>(key, (current) =>
-          shareEntities(current, automation),
-        );
-      }
+      seedDetails(queryClient, automations, automationsKeys.detail, askedAt);
       return automations;
     },
     ...options,
@@ -141,30 +128,63 @@ export function useTriggerPreview(trigger: GithubTriggerInput | undefined) {
 }
 
 /**
- * A write answers with the automation it wrote: that goes into its detail and
- * the list is read again. The runs are read again only by the writes that
- * change them (a run, a rename, which every run row carries, and a delete),
- * and the trigger preview never: it reads GitHub, not the automation.
+ * What an automations write refreshes. An answer that is the automation's row
+ * replaces its detail and its list row. A new automation has no list row yet,
+ * so the list is read again. Runs are read again only by a write that can
+ * change a run row: an update (every row carries the automation's name), a
+ * run, a delete. Nothing touches the trigger preview, which reads GitHub.
+ * Reads of the rows it writes that are already in flight are cancelled first,
+ * so an answer from before the write cannot land on top of it.
  */
-function useSettleAutomation() {
-  const queryClient = useQueryClient();
-  return (automation: AutomationEntity, { runs = false }: { runs?: boolean } = {}) => {
-    queryClient.setQueryData(automationsKeys.detail(automation.id), automation);
-    return Promise.all([
-      queryClient.invalidateQueries({ queryKey: automationsKeys.lists() }),
-      runs ? queryClient.invalidateQueries({ queryKey: automationsKeys.runs() }) : undefined,
+type AutomationWrite =
+  | { saved: AutomationEntity; runs: boolean }
+  | { added: AutomationEntity }
+  | { removed: string }
+  | { ran: string };
+
+async function settleAutomation(queryClient: QueryClient, write: AutomationWrite) {
+  const refetch = (...keys: QueryKey[]) =>
+    Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+  if ('saved' in write) {
+    const { saved, runs } = write;
+    await Promise.all([
+      queryClient.cancelQueries({ queryKey: automationsKeys.detail(saved.id), exact: true }),
+      // A list still on its first read has no row to write, and is left to land.
+      queryClient.cancelQueries({
+        queryKey: automationsKeys.list(),
+        exact: true,
+        predicate: (query) => query.state.data !== undefined,
+      }),
     ]);
-  };
+    queryClient.setQueryData(automationsKeys.detail(saved.id), saved);
+    queryClient.setQueryData<AutomationEntity[]>(automationsKeys.list(), (rows) =>
+      rows?.map((row) => (row.id === saved.id ? shareEntities(row, saved) : row)),
+    );
+    return runs ? refetch(automationsKeys.runs()) : undefined;
+  }
+  if ('added' in write) {
+    queryClient.setQueryData(automationsKeys.detail(write.added.id), write.added);
+    return refetch(automationsKeys.lists());
+  }
+  if ('removed' in write) {
+    queryClient.removeQueries({ queryKey: automationsKeys.detail(write.removed), exact: true });
+    return refetch(automationsKeys.lists(), automationsKeys.runs());
+  }
+  return refetch(
+    automationsKeys.detail(write.ran),
+    automationsKeys.lists(),
+    automationsKeys.runs(),
+  );
 }
 
 export function useCreateAutomation(
   options?: UseMutationOptions<AutomationEntity, Error, AutomationInput>,
 ) {
   const app = useConsumerApp();
-  const settle = useSettleAutomation();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: AutomationInput) => app.automations.create(input),
-    ...withCacheOnSuccess(options, (automation) => settle(automation)),
+    ...withCacheOnSuccess(options, (added) => settleAutomation(queryClient, { added })),
   });
 }
 
@@ -177,10 +197,10 @@ export function useUpdateAutomation(
   options?: UseMutationOptions<AutomationEntity, Error, UpdateAutomationVariables>,
 ) {
   const app = useConsumerApp();
-  const settle = useSettleAutomation();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: UpdateAutomationVariables) => app.automations.update(id, input),
-    ...withCacheOnSuccess(options, (automation) => settle(automation, { runs: true })),
+    ...withCacheOnSuccess(options, (saved) => settleAutomation(queryClient, { saved, runs: true })),
   });
 }
 
@@ -194,11 +214,13 @@ export function useSetAutomationPaused(
   options?: UseMutationOptions<AutomationEntity, Error, PauseAutomationVariables>,
 ) {
   const app = useConsumerApp();
-  const settle = useSettleAutomation();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, paused }: PauseAutomationVariables) =>
       paused ? app.automations.pause(id) : app.automations.resume(id),
-    ...withCacheOnSuccess(options, (automation) => settle(automation)),
+    ...withCacheOnSuccess(options, (saved) =>
+      settleAutomation(queryClient, { saved, runs: false }),
+    ),
   });
 }
 
@@ -207,10 +229,10 @@ export function useDuplicateAutomation(
   options?: UseMutationOptions<AutomationEntity, Error, string>,
 ) {
   const app = useConsumerApp();
-  const settle = useSettleAutomation();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.automations.duplicate(id),
-    ...withCacheOnSuccess(options, (automation) => settle(automation)),
+    ...withCacheOnSuccess(options, (added) => settleAutomation(queryClient, { added })),
   });
 }
 
@@ -224,13 +246,7 @@ export function useDeleteAutomation(options?: UseMutationOptions<void, Error, st
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.automations.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => {
-      queryClient.removeQueries({ queryKey: automationsKeys.detail(id), exact: true });
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: automationsKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: automationsKeys.runs() }),
-      ]);
-    }),
+    ...withCacheOnSuccess(options, (_data, removed) => settleAutomation(queryClient, { removed })),
   });
 }
 
@@ -249,14 +265,6 @@ export function useRunAutomation(
   return useMutation({
     mutationFn: ({ id, idempotencyKey }: RunAutomationVariables) =>
       app.automations.run(id, idempotencyKey),
-    // The answer is the run, not the automation, whose count and last runs
-    // moved with it: its detail is read again along with the list and the runs.
-    ...withCacheOnSuccess(options, (_run, { id }) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: automationsKeys.detail(id) }),
-        queryClient.invalidateQueries({ queryKey: automationsKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: automationsKeys.runs() }),
-      ]),
-    ),
+    ...withCacheOnSuccess(options, (_run, { id }) => settleAutomation(queryClient, { ran: id })),
   });
 }

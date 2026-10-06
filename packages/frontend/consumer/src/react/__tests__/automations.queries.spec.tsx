@@ -23,11 +23,11 @@ import { fakeKernel } from './fake-kernel';
 
 /**
  * The automations hooks. What matters: every key lives under
- * `automationsKeys.all`, because every write can change the runs as well as the
- * automation; the list, a detail and a run page read again only while
- * something is running; nothing is asked for an id or a trigger that is not
- * there yet; the list hands each row to its detail; and each write refreshes
- * what it changed, and only that, before the caller's own `onSuccess` runs.
+ * `automationsKeys.all`; the list, a detail and a run page read again only
+ * while something is running; nothing is asked for an id or a trigger that is
+ * not there yet; the list hands each row to its detail; and each write
+ * refreshes what it changed, and only that, before the caller's own
+ * `onSuccess` runs.
  */
 
 // Real class instances: shareEntities compares them field by field, and a
@@ -234,11 +234,7 @@ describe('useTriggerPreview', () => {
 });
 
 describe('automation writes', () => {
-  /**
-   * Seed a read from each branch of the tree: the list, a detail, a run page
-   * and a trigger preview. Each write leaves stale what it changed, writes the
-   * automation it was answered with into its detail, and leaves the rest alone.
-   */
+  /** The reads a write may touch: the source's list row and detail, a run page, a preview. */
   const reads = {
     list: automationsKeys.list(),
     detail: automationsKeys.detail('a-1'),
@@ -247,122 +243,142 @@ describe('automation writes', () => {
   };
   type Read = keyof typeof reads;
 
-  function seeded(queryClient: QueryClient) {
-    for (const key of Object.values(reads)) queryClient.setQueryData(key, 'cached');
+  const source = automation('a-1');
+  const saved = automation('a-1', true);
+  const copy = automation('a-2');
+
+  interface WriteCase {
+    name: string;
+    service: Record<string, unknown>;
+    write: (hooks: ReturnType<typeof useWrites>) => Promise<unknown>;
+    stale: Read[];
+    /** Where the answer must land, if the answer is an automation. */
+    lands?: { detail: string; listRow: boolean };
+    /** Whether the source's detail is gone afterwards. */
+    removed?: boolean;
   }
 
-  const written = automation('a-1');
-  const cases: {
-    name: string;
-    method: string;
-    hook: unknown;
-    variables: unknown;
-    called: unknown[];
-    answer: unknown;
-    stale: Read[];
-  }[] = [
+  function useWrites() {
+    return {
+      create: useCreateAutomation(),
+      update: useUpdateAutomation(),
+      paused: useSetAutomationPaused(),
+      duplicate: useDuplicateAutomation(),
+      remove: useDeleteAutomation(),
+      run: useRunAutomation(),
+    };
+  }
+
+  const cases: WriteCase[] = [
     {
       name: 'create',
-      method: 'create',
-      hook: useCreateAutomation,
-      variables: { name: 'Nightly' },
-      called: [{ name: 'Nightly' }],
-      answer: written,
+      service: { create: vi.fn().mockResolvedValue(copy) },
+      write: ({ create }) => create.mutateAsync({ name: 'Nightly' } as never),
       stale: ['list'],
-    },
-    {
-      name: 'update',
-      method: 'update',
-      hook: useUpdateAutomation,
-      variables: { id: 'a-1', input: { name: 'Renamed' } },
-      called: ['a-1', { name: 'Renamed' }],
-      answer: written,
-      // Every run row carries the automation's name.
-      stale: ['list', 'runs'],
-    },
-    {
-      name: 'pause',
-      method: 'pause',
-      hook: useSetAutomationPaused,
-      variables: { id: 'a-1', paused: true },
-      called: ['a-1'],
-      answer: written,
-      stale: ['list'],
-    },
-    {
-      name: 'resume',
-      method: 'resume',
-      hook: useSetAutomationPaused,
-      variables: { id: 'a-1', paused: false },
-      called: ['a-1'],
-      answer: written,
-      stale: ['list'],
+      lands: { detail: 'a-2', listRow: false },
     },
     {
       name: 'duplicate',
-      method: 'duplicate',
-      hook: useDuplicateAutomation,
-      variables: 'a-1',
-      called: ['a-1'],
-      answer: written,
+      service: { duplicate: vi.fn().mockResolvedValue(copy) },
+      write: ({ duplicate }) => duplicate.mutateAsync('a-1'),
       stale: ['list'],
+      lands: { detail: 'a-2', listRow: false },
+    },
+    {
+      name: 'update',
+      service: { update: vi.fn().mockResolvedValue(saved) },
+      write: ({ update }) => update.mutateAsync({ id: 'a-1', input: { version: 1 } }),
+      // Every run row carries the automation's name.
+      stale: ['runs'],
+      lands: { detail: 'a-1', listRow: true },
+    },
+    {
+      name: 'pause',
+      service: { pause: vi.fn().mockResolvedValue(saved) },
+      write: ({ paused }) => paused.mutateAsync({ id: 'a-1', paused: true }),
+      stale: [],
+      lands: { detail: 'a-1', listRow: true },
+    },
+    {
+      name: 'resume',
+      service: { resume: vi.fn().mockResolvedValue(saved) },
+      write: ({ paused }) => paused.mutateAsync({ id: 'a-1', paused: false }),
+      stale: [],
+      lands: { detail: 'a-1', listRow: true },
     },
     {
       name: 'run now',
-      method: 'run',
-      hook: useRunAutomation,
-      variables: { id: 'a-1', idempotencyKey: 'click-1' },
-      called: ['a-1', 'click-1'],
-      answer: { id: 'r-1' },
+      service: { run: vi.fn().mockResolvedValue({ id: 'r-1' }) },
+      write: ({ run }) => run.mutateAsync({ id: 'a-1', idempotencyKey: 'click-1' }),
       stale: ['list', 'detail', 'runs'],
+    },
+    {
+      name: 'delete',
+      service: { remove: vi.fn().mockResolvedValue(undefined) },
+      write: ({ remove }) => remove.mutateAsync('a-1'),
+      stale: ['list', 'runs'],
+      removed: true,
     },
   ];
 
-  for (const { name, method, hook, variables, called, answer, stale } of cases) {
-    it(`${name} leaves stale only what it changed, before the caller's onSuccess`, async () => {
-      const service = { [method]: vi.fn().mockResolvedValue(answer) };
+  for (const { name, service, write, stale, lands, removed } of cases) {
+    it(`${name} refreshes what it changed, and only that`, async () => {
       const { wrapper, queryClient } = setup(service);
-      seeded(queryClient);
-      const onSuccess = vi.fn(() => ({
-        stale: (Object.keys(reads) as Read[]).filter(
-          (read) => queryClient.getQueryState(reads[read])?.isInvalidated,
-        ),
-        detail: queryClient.getQueryData(reads.detail),
-      }));
-      const useHook = hook as (options: { onSuccess: typeof onSuccess }) => {
-        mutateAsync: (variables: unknown) => Promise<unknown>;
-      };
-      const { result } = renderHook(() => useHook({ onSuccess }), { wrapper });
+      queryClient.setQueryData(reads.list, [source]);
+      queryClient.setQueryData(reads.detail, source);
+      queryClient.setQueryData(reads.runs, 'cached');
+      queryClient.setQueryData(reads.preview, 'cached');
+      const { result } = renderHook(() => useWrites(), { wrapper });
 
-      await act(() => result.current.mutateAsync(variables));
+      await act(() => write(result.current));
 
-      expect(service[method]).toHaveBeenCalledWith(...called);
-      expect(onSuccess).toHaveBeenCalledTimes(1);
-      expect(onSuccess.mock.calls[0]).toContain(variables);
-      const seen = onSuccess.mock.results[0]?.value;
-      expect(seen.stale).toEqual(stale);
-      if (answer === written) expect(seen.detail).toBe(written);
+      const isStale = (read: Read) => queryClient.getQueryState(reads[read])?.isInvalidated;
+      expect((Object.keys(reads) as Read[]).filter(isStale)).toEqual(stale);
+      if (lands) {
+        const answer = lands.listRow ? saved : copy;
+        expect(queryClient.getQueryData(automationsKeys.detail(lands.detail))).toBe(answer);
+        expect(queryClient.getQueryData<AutomationEntity[]>(reads.list)?.[0]).toBe(
+          lands.listRow ? answer : source,
+        );
+        if (!lands.listRow) expect(queryClient.getQueryData(reads.detail)).toBe(source);
+      }
+      if (removed) expect(queryClient.getQueryState(reads.detail)).toBeUndefined();
     });
   }
 
-  it("delete forgets the deleted automation, leaves the list and the runs stale, then runs the caller's onSuccess", async () => {
-    const service = { remove: vi.fn().mockResolvedValue(undefined) };
-    const { wrapper, queryClient } = setup(service);
-    seeded(queryClient);
-    const onSuccess = vi.fn(() => ({
-      detail: queryClient.getQueryState(reads.detail),
-      stale: [reads.list, reads.runs, reads.preview].map(
-        (key) => queryClient.getQueryState(key)?.isInvalidated,
-      ),
-    }));
-    const { result } = renderHook(() => useDeleteAutomation({ onSuccess }), { wrapper });
+  it("runs the caller's onSuccess after its own refresh", async () => {
+    const { wrapper, queryClient } = setup({ pause: vi.fn().mockResolvedValue(saved) });
+    queryClient.setQueryData(reads.detail, source);
+    const onSuccess = vi.fn(() => queryClient.getQueryData(reads.detail));
+    const { result } = renderHook(() => useSetAutomationPaused({ onSuccess }), { wrapper });
 
-    await act(() => result.current.mutateAsync('a-1'));
+    await act(() => result.current.mutateAsync({ id: 'a-1', paused: true }));
 
-    expect(service.remove).toHaveBeenCalledWith('a-1');
-    expect(onSuccess.mock.results[0]?.value).toEqual({
-      detail: undefined,
-      stale: [true, true, false],
-    });
+    expect(onSuccess.mock.results[0]?.value).toBe(saved);
+  });
+
+  it('keeps a pause it settled over a detail read that was already on its way', async () => {
+    let answerStale!: (value: AutomationEntity) => void;
+    const findById = vi
+      .fn()
+      .mockResolvedValueOnce(source)
+      .mockReturnValueOnce(
+        new Promise<AutomationEntity>((resolve) => {
+          answerStale = resolve;
+        }),
+      );
+    const { wrapper, queryClient } = setup({ findById, pause: vi.fn().mockResolvedValue(saved) });
+    const { result } = renderHook(
+      () => ({ detail: useAutomation('a-1'), paused: useSetAutomationPaused() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    act(() => void queryClient.refetchQueries({ queryKey: reads.detail }));
+    await waitFor(() => expect(findById).toHaveBeenCalledTimes(2));
+
+    await act(() => result.current.paused.mutateAsync({ id: 'a-1', paused: true }));
+    await act(async () => answerStale(source));
+
+    expect(result.current.detail.data).toBe(saved);
   });
 });
