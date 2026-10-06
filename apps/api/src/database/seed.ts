@@ -24,6 +24,7 @@ import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
+import { GithubUserGrantOrmEntity } from '../github/database/github-user-grant.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
 import { HostInventoryOrmEntity } from '../hosts/database/host-inventory.orm-entity';
@@ -41,6 +42,7 @@ import { PersonalWorkspaceRepository } from '../organizations/database/personal-
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
@@ -110,6 +112,8 @@ const dataSource = new DataSource({
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
+    GithubUserGrantOrmEntity,
+    WatchedRepositoryOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,

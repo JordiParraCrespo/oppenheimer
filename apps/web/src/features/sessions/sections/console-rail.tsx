@@ -1,5 +1,5 @@
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web';
-import { CircleCheck, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import { CircleCheck, GitPullRequest, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ import { useConsoleList } from '@/lib/console';
  */
 export function ConsoleRail() {
   const { t } = useTranslation();
-  const { data: sessions } = useSessions();
+  const { data: sessionCount } = useSessions({ select: (rows) => rows.length });
   const { data: openTasks } = useTasks({
     select: (rows) => rows.filter((row) => !row.isDone).length,
   });
@@ -26,11 +26,18 @@ export function ConsoleRail() {
       <RailMark aria-hidden>O</RailMark>
       <RailItem
         label={t('nav.sessions')}
-        count={sessions?.length}
+        count={sessionCount}
         active={list === 'sessions'}
         render={<Link to="/sessions/new" />}
       >
         <Terminal />
+      </RailItem>
+      <RailItem
+        label={t('nav.pullRequests')}
+        active={list === 'pulls'}
+        render={<Link to="/pulls" />}
+      >
+        <GitPullRequest />
       </RailItem>
       <RailItem
         label={t('nav.automations')}

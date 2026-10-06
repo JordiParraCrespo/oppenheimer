@@ -21,6 +21,8 @@ for the detail and sources.
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | 14 | [Session boot time, measured](14-session-boot-time.md) | A measurement note, not `versions/mvp/14`: each hop from Send to the agent's first byte, measured from the browser on one host, beside how Orca prepares a checkout before the click. It decides nothing; its questions are 02 open question 9 and 05 open question 8 |
+| 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
+| 16 | [Developer-tools landscape](16-developer-tools-landscape.md) | AI review, agent consoles, merge tools, analytics and sandboxes as of September 2026; almost every reviewer reads the diff and none runs the code on your host; agent PRs wait 5× longer; ten things to take |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 | next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
@@ -333,6 +335,20 @@ earlier note:
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
   (`versions/mvp/17-plan.md`, "As built").
+- Note 15's first version proposed protecting the reviewer and the
+  evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
+  owner rejected it the same day (2026-09-27): the product is for people
+  who push hard. Note 15 now goes after the review bottleneck instead,
+  with lanes, auto-merge for easy PRs, and a review session prepared
+  with the context.
+- Note 15 then settled its own questions with the owner (2026-09-27):
+  Jev picks the lane, and each lane has an agent (verification, summary,
+  full review); review is an automation with the agent picked in its
+  Agent step; auto-merge covers every PR that passes. The same day it
+  said the Oppenheimer App would approve as its own reviewer; on
+  2026-09-28 the owner changed that: we approve and merge in the user's
+  name, with their own authorization, and when GitHub will not allow it
+  the PR waits.
 - `versions/mvp/05-screens.md` and the 2026-10-01 entry had the console poll
   for every change it does not cause, with a faster opening poll for a
   starting session. On 2026-10-06 one Server-Sent Events stream per tab

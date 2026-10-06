@@ -236,9 +236,9 @@ function parseEnv(file) {
 
 /**
  * The keys a stack keeps across `up`s: a paired host pinned the control
- * plane's key.
+ * plane's key, and a stored GitHub user token was sealed under the last one.
  */
-const KEPT_KEYS = ['CONTROL_PLANE_SIGNING_KEY', 'GITHUB_APP_PRIVATE_KEY'];
+const KEPT_KEYS = ['CONTROL_PLANE_SIGNING_KEY', 'GITHUB_APP_PRIVATE_KEY', 'GITHUB_USER_TOKEN_KEY'];
 
 /**
  * What the API runs with on top of the checkout's `.env`: the stubs'

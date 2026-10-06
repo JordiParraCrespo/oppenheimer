@@ -1,5 +1,6 @@
-import { TokenSentence, TriggerCard } from '@oppenheimer/design-system-web';
+import { TokenSentence, TriggerCard, useNow } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useLocale } from '@oppenheimer/frontend-web';
 import {
   SCHEDULE_FREQUENCIES,
@@ -27,18 +28,17 @@ const FIVES = Array.from({ length: 12 }, (_, i) => i * 5);
  */
 export function ScheduleTriggerCard({
   card,
-  now,
   onChange,
   onRemove,
 }: {
   card: ScheduleCard;
-  /** When the card was opened: what "tomorrow" and "past" are measured from. */
-  now: number;
   onChange: (card: ScheduleCard) => void;
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
+  // What "tomorrow" and "past" are measured from.
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const patch = (fields: Partial<ScheduleCard>) => onChange({ ...card, ...fields });
   const minutes = QUARTERS.includes(card.minute)
     ? QUARTERS

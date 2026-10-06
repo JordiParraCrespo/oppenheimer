@@ -2,6 +2,7 @@ import {
   cn,
   Field,
   FieldAction,
+  FieldDescription,
   FieldError,
   FieldLabel,
   FieldRow,
@@ -126,7 +127,7 @@ export function AuthField({
       {error ? (
         <FieldError errors={[error]} />
       ) : hint ? (
-        <p className="text-xs text-fg-subtle">{hint}</p>
+        <FieldDescription>{hint}</FieldDescription>
       ) : null}
     </Field>
   );

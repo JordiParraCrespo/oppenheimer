@@ -41,6 +41,13 @@ const schema = z.object({
    * as the one above.
    */
   oauthBaseUrl: z.string().url().default('https://github.com'),
+  /**
+   * The AES-256-GCM key a person's GitHub user token is sealed under, 32 bytes as
+   * base64. Optional: without it nothing is stored from the install's user
+   * authorization, and the Pull requests area reads through the installation and
+   * cannot review or merge in anyone's name.
+   */
+  userTokenKey: z.string().optional(),
 });
 
 export const githubAppConfig = registerAs('githubApp', () =>
@@ -53,5 +60,13 @@ export const githubAppConfig = registerAs('githubApp', () =>
     slug: 'GITHUB_APP_SLUG',
     apiBaseUrl: 'GITHUB_APP_API_URL',
     oauthBaseUrl: 'GITHUB_APP_OAUTH_URL',
+    userTokenKey: 'GITHUB_USER_TOKEN_KEY',
   }),
 );
+
+/** A key `GITHUB_USER_TOKEN_KEY` can hold: 32 bytes, base64. */
+export function githubUserTokenKeyOf(value: string | undefined): Buffer | null {
+  if (!value) return null;
+  const key = Buffer.from(value, 'base64');
+  return key.length === 32 ? key : null;
+}

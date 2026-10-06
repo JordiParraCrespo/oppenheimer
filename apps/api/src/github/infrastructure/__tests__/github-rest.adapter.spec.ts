@@ -301,11 +301,12 @@ describe('listing a repository’s branches', () => {
 describe('the installation claim proof', () => {
   it('exchanges the code and reports what GitHub lists for that account', async () => {
     const { adapter, http } = build([
-      { body: { access_token: 'gho_user' } },
+      { body: { access_token: 'ghu_user', refresh_token: 'ghr_user', expires_in: 28800 } },
       { body: { total_count: 1, installations: [INSTALLATION] } },
+      { body: { id: 583231, login: 'ana' } },
     ]);
 
-    const visible = await adapter.listUserInstallations('the-oauth-code');
+    const authorization = await adapter.listUserInstallations('the-oauth-code');
 
     expect(http.calls[0].url).toBe('https://github.com/login/oauth/access_token');
     expect(JSON.parse(String(http.calls[0].init.body))).toEqual({
@@ -314,9 +315,15 @@ describe('the installation claim proof', () => {
       code: 'the-oauth-code',
     });
     // The user token authenticates the listing, and never leaves this adapter.
-    expect(headerOf(http.calls[1].init, 'authorization')).toBe('Bearer gho_user');
+    expect(headerOf(http.calls[1].init, 'authorization')).toBe('Bearer ghu_user');
     // Visibility only. What the installation *is* comes from the App's own read.
-    expect(visible).toEqual([{ githubInstallationId: 45678901 }]);
+    expect(authorization.installations).toEqual([{ githubInstallationId: 45678901 }]);
+    // Who authorized, and the tokens kept (sealed) to act in their name.
+    expect(authorization.user).toEqual({ githubUserId: 583231, login: 'ana' });
+    expect(authorization.tokens).toMatchObject({
+      accessToken: 'ghu_user',
+      refreshToken: 'ghr_user',
+    });
   });
 
   it('refuses a code GitHub rejects with a 200 and an error field', async () => {

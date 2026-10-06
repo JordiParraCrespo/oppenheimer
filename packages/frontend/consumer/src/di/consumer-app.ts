@@ -15,6 +15,8 @@ import type { ProfileService } from '../modules/profile';
 import { ProfileModule } from '../modules/profile';
 import type { ProjectsRepository } from '../modules/projects';
 import { ProjectsModule } from '../modules/projects';
+import type { PullRequestsRepository } from '../modules/pull-requests';
+import { PullRequestsModule } from '../modules/pull-requests';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import type { TasksRepository } from '../modules/tasks';
@@ -29,6 +31,7 @@ export const consumerModules = [
   SessionsModule,
   ProjectsModule,
   AutomationsModule,
+  PullRequestsModule,
   TasksModule,
   CalendarModule,
   HostsModule,
@@ -82,6 +85,11 @@ export class ConsumerApp {
   /** Saved prompts that start sessions on a schedule or an event, and the runs they made. */
   get automations(): AutomationsRepository {
     return this.kernel.container.get(TOKENS.AutomationsRepository);
+  }
+
+  /** Pull requests on GitHub: the queue, a briefing, reviews and merges in the user's name, analytics. */
+  get pullRequests(): PullRequestsRepository {
+    return this.kernel.container.get(TOKENS.PullRequestsRepository);
   }
 
   /** Plan's board: tasks, the goals over them, and the sessions a task started or links. */

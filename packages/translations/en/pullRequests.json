@@ -1,0 +1,251 @@
+{
+  "sidebar": {
+    "title": "Pull requests",
+    "views": "Views",
+    "queue": "PR queue",
+    "analytics": "Analytics",
+    "repositories": "Repositories",
+    "allRepositories": "All repositories",
+    "noRepositories": "No watched repositories yet."
+  },
+  "queue": {
+    "title": "PR queue",
+    "ready": "ready to merge",
+    "conflicts": "with conflicts",
+    "oldest": "oldest waiting",
+    "reviewNext": "Review next",
+    "scopesLabel": "Whose pull requests",
+    "scopes": {
+      "mine": "Mine",
+      "requested": "Review requests",
+      "watching": "Watching"
+    },
+    "scopeHint": {
+      "mine": "Opened by you or your sessions. Check what holds each one and merge.",
+      "requested": "Pull requests where someone asked for your review.",
+      "watching": "Open pull requests in repositories you watch, where nobody asked for your review."
+    },
+    "search": "Search title, repo, #number, author",
+    "clearSearch": "Clear search",
+    "laneLabel": "Lane",
+    "all": "All",
+    "noMatch": "No pull request matches “{{query}}”.",
+    "emptyTitle": "Nothing in this view",
+    "emptyHint": "Pull requests opened by your sessions or teammates land here with a lane already picked.",
+    "emptyWatchingTitle": "You are not watching any repositories",
+    "emptyWatchingHint": "Pick repositories in Manage repositories. Their open pull requests show up here.",
+    "loadFailed": "Could not load pull requests.",
+    "notConnectedTitle": "Connect GitHub to see pull requests",
+    "notConnectedHint": "Install the GitHub App on the account that holds your repositories.",
+    "connect": "Connect GitHub",
+    "range": "{{first}}–{{last}} of {{total}}",
+    "openChanges": "Open changes",
+    "review": "Review",
+    "session": "Session",
+    "merged": "Merged",
+    "mergeFailed": "GitHub did not merge it.",
+    "mergedToast": "Merged {{reference}}."
+  },
+  "lanes": {
+    "deep": "Deep",
+    "medium": "Medium",
+    "quick": "Quick"
+  },
+  "laneReason": {
+    "risky_path": "Touches {{path}}, where a careful read pays.",
+    "large_change": "{{lines}} changed lines.",
+    "docs_tests_config": "Only docs, tests and configuration.",
+    "small_change": "A small change: {{lines}} lines in {{files}} files.",
+    "medium_change": "{{lines}} lines in {{files}} files."
+  },
+  "checks": {
+    "passing": "Passing",
+    "failing": "Failing",
+    "running": "Running",
+    "none": "No checks"
+  },
+  "conflicts": {
+    "none": "No conflicts",
+    "some": "Conflicts"
+  },
+  "blocker": {
+    "draft": "Still a draft",
+    "conflicts": "Resolve conflicts with the base first",
+    "checks_failing": "Checks failing",
+    "checks_running": "Checks running",
+    "changes_requested": "Changes requested",
+    "behind": "Behind the base branch",
+    "approval_required": "Waiting for a required approval"
+  },
+  "watch": {
+    "add": "Watch a repository",
+    "search": "Search repositories",
+    "noMatch": "No repository matches “{{query}}”",
+    "allWatched": "You watch every repository",
+    "unwatch": "Stop watching {{name}}",
+    "private": "Private",
+    "failed": "Could not update the watched repositories."
+  },
+  "detail": {
+    "back": "Back to the queue",
+    "viewLabel": "View",
+    "views": {
+      "briefing": "Briefing",
+      "description": "Description",
+      "changes": "Changes"
+    },
+    "openOnGithub": "Open on GitHub",
+    "loadFailed": "Could not load the pull request.",
+    "state": {
+      "open": "Open",
+      "merged": "Merged",
+      "closed": "Closed",
+      "draft": "Draft"
+    },
+    "into": "into",
+    "size": "Size",
+    "files": "Files",
+    "inFolders_one": "in {{count}} folder",
+    "inFolders_other": "in {{count}} folders",
+    "inFolders_many": "in {{count}} folders",
+    "checks": "Checks",
+    "conflicts": "Conflicts",
+    "mergesCleanly": "Merges cleanly into {{base}}",
+    "withBase": "With {{base}} · rebase before merging",
+    "noneWord": "None",
+    "pathToMerge": "Path to merge",
+    "gatesDone": "{{done}} of {{total}} done",
+    "gates": {
+      "checks": "Checks",
+      "conflicts": "Conflicts",
+      "review": "Review",
+      "merge": "Merge"
+    },
+    "gateMeta": {
+      "checks": {
+        "done": "All passing",
+        "failed": "{{failed}} failing",
+        "pending": "{{pending}} running"
+      },
+      "conflicts": {
+        "done": "Merges cleanly",
+        "failed": "Rebase on {{base}}",
+        "pending": "GitHub is checking"
+      },
+      "review": {
+        "done": "Approved",
+        "failed": "Changes requested",
+        "pending": "Waiting for review"
+      },
+      "merge": {
+        "done": "Merged",
+        "pending": "Squash into {{base}}"
+      }
+    },
+    "mergeNote": "Squash and merge into {{base}} as @{{login}}.",
+    "mergeNoteNoLogin": "Connect GitHub again so the merge is made in your name.",
+    "mergedInto": "Merged into {{base}}.",
+    "reviewChanges": "Review changes",
+    "brief": "Brief",
+    "noDescription": "No description.",
+    "whatChanges": "What changes",
+    "risk": "Lane",
+    "where": "Mostly {{folders}}",
+    "reviewers": "Reviewers",
+    "noReviewers": "Nobody has reviewed it yet.",
+    "reviewer": {
+      "approved": "Approved",
+      "changes_requested": "Changes requested",
+      "commented": "Commented",
+      "requested": "Requested"
+    },
+    "opened": "{{author}} wants to merge {{head}} into {{base}}"
+  },
+  "review": {
+    "submit": "Submit review",
+    "title": "Review decision",
+    "verdicts": {
+      "comment": {
+        "label": "Comment",
+        "description": "Post your comments without a verdict."
+      },
+      "approve": {
+        "label": "Approve and merge",
+        "description": "Approves as you and merges once GitHub allows it."
+      },
+      "request_changes": {
+        "label": "Request changes",
+        "description": "Sends your comments back to fix."
+      }
+    },
+    "comment": "Review comment",
+    "placeholder": "Leave a comment",
+    "pending_one": "{{count}} pending comment. Only you can see it until you submit.",
+    "pending_other": "{{count}} pending comments. Only you can see them until you submit.",
+    "pending_many": "{{count}} pending comments. Only you can see them until you submit.",
+    "postsAs": "Posts as @{{login}}.",
+    "discard": "Discard",
+    "close": "Close",
+    "submitted": "Review submitted.",
+    "approvedMerged": "Approved and merged.",
+    "approvedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
+    "failed": "The review did not go through."
+  },
+  "changes": {
+    "layout": "Layout",
+    "unified": "Unified",
+    "split": "Split",
+    "files": "Files",
+    "viewed": "{{done}} / {{total}} viewed",
+    "filter": "Filter files",
+    "noPatch": "GitHub shows no diff for this file.",
+    "loadFailed": "Could not load the changes.",
+    "empty": "No changes.",
+    "pending": "Pending, posts with your review",
+    "posted": "Posted on GitHub",
+    "discard": "Discard",
+    "addToReview": "Add to review",
+    "addSingle": "Add single comment",
+    "hint": "⌘⏎ adds to review",
+    "commentPlaceholder": "Leave a comment",
+    "cancel": "Cancel",
+    "commentAdded": "Comment posted."
+  },
+  "analytics": {
+    "title": "Your review {{range}}",
+    "ranges": {
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter"
+    },
+    "rangeWord": {
+      "week": "week",
+      "month": "month",
+      "quarter": "quarter"
+    },
+    "compared": "compared with the {{days}} days before · watched repositories",
+    "rangeLabel": "Range",
+    "created": "PRs created",
+    "merged": "PRs merged",
+    "from": "from {{value}}",
+    "series": "Series",
+    "both": "Created and merged",
+    "perDay": "Pull requests created and merged per day",
+    "hover": "Hover a day",
+    "reviewedByYou": "Reviewed by you",
+    "waitForReview": "Median wait for review",
+    "timeToMerge": "Median time to merge",
+    "waitTitle": "Median wait for review",
+    "vsPrevious": "vs the {{range}} before",
+    "agents": "Agent sessions",
+    "people": "People",
+    "laneMix": "Lane mix",
+    "mergedWord": "Merged",
+    "waited": "What holds open pull requests",
+    "waitedMeta": "{{n}} open now",
+    "medianHold": "Open for {{hours}} (median)",
+    "nothingWaits": "Nothing holds an open pull request right now.",
+    "loadFailed": "Could not load analytics.",
+    "none": "—"
+  }
+}

@@ -11,6 +11,7 @@ export * from './pagination.schema.js';
 export * from './primitives.js';
 export * from './profile.schema.js';
 export * from './project.schema.js';
+export * from './pull-request.schema.js';
 export * from './role.schema.js';
 export * from './session.schema.js';
 export * from './task.schema.js';
