@@ -23,6 +23,19 @@ describe('resolveContentPane', () => {
     expect(resolveContentPane([match(), match('board'), match()])).toBe('board');
   });
 
+  it('reads a pane declared from the search off that match', () => {
+    const views = {
+      staticData: {
+        pane: (search: Record<string, unknown>) =>
+          (search.view === 'changes' ? 'fluid' : 'wide') as ContentPane,
+      },
+    };
+    expect(resolveContentPane([match('wide'), { ...views, search: { view: 'changes' } }])).toBe(
+      'fluid',
+    );
+    expect(resolveContentPane([match('wide'), { ...views, search: {} }])).toBe('wide');
+  });
+
   it('survives an empty match chain', () => {
     expect(resolveContentPane([])).toBe('narrow');
   });

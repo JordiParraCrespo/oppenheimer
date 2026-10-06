@@ -117,7 +117,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   running terminal: a drag carrying files draws the 3px action-blue outline
   around the whole pane, square and flush, with no fill and no label. It is
   its own box; `listen="window"` only on a page
-  with one zone.
+  with one zone. A box that owns the edge but not the drop (the console's
+  pane, which takes a framed page's drops) draws `DropOutline` itself.
 - **Things move by dragging on one layer.** `drag.tsx` is headless and
   product-free: `useDraggable` / `useDroppable` (with `accepts` by
   `data.type`), and `SortableGroup` / `SortableItem` / `useSortableGroups`

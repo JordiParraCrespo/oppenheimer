@@ -1,32 +1,40 @@
 import type { EditorPageSize } from '@oppenheimer/design-system-web';
 
 /**
- * How the shell frames the screen under it. Almost every screen is a page:
- * the canvas ground, a column that scrolls, a measure and a gutter, which
- * the shell draws once (the design system's `EditorPage`) so no screen
- * repaints the ground — the export's grey, the same under every pane — or
- * keeps a scroll of its own. The pane's value is the
- * page's measure. The one exception is a screen whose box *is* the pane —
- * the session terminal, which sizes itself from it and loses scrollback to
- * every pixel of padding, and New session, whose drop outline traces it.
+ * How the shell frames the screen under it. A screen is a page: the shell
+ * draws the frame (`PageFrame`: a column that scrolls, a measure and a
+ * gutter) at the measure the route names, and the screen renders its content
+ * and nothing of the frame. The pane's value is that measure,
+ * `EditorPageBody`'s `size`. A screen's bar that must stay put while its page
+ * scrolls (a pull request's toolbar) goes in the shell's slot above the frame
+ * (`PaneBar`), not in a frame of its own.
+ *
+ * `full` is only a box that is the pane and must not scroll outside itself:
+ * the session terminal, which sizes itself from the pane and loses scrollback
+ * to every pixel of padding.
  *
  * A route declares it as `staticData`, as an auth page declares its legal
  * note, so the shell reads it off the match instead of a screen reaching up
  * into the layout. A layout route declares it for its subtree (Plan,
- * Automations) and renders only its `Outlet`.
+ * Automations, Pull requests) and renders only its `Outlet`; a route whose
+ * views are search params (a pull request's briefing, description and diff)
+ * declares it as a function of its search.
  */
 export type ContentPane = EditorPageSize | 'full';
+
+type PaneDeclaration = ContentPane | ((search: Record<string, unknown>) => ContentPane);
 
 const DEFAULT_CONTENT_PANE: ContentPane = 'narrow';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     /**
-     * `narrow` (the default), `wide` or `board` — a page at that measure
-     * (`EditorPageBody`'s `size`). `full` — the screen owns the pane: no
-     * padding, measure or scroll of the shell's, on the shell's ground.
+     * A page at that measure (`EditorPageBody`'s `size`: `status`,
+     * `composer`, `narrow` — the default — `wide`, `board`, `fluid`), or
+     * `full`, a box that is the pane. A function of the route's search when
+     * its views are search params.
      */
-    pane?: ContentPane;
+    pane?: PaneDeclaration;
   }
 }
 
@@ -35,10 +43,12 @@ declare module '@tanstack/react-router' {
  * for its whole subtree and a single screen can still override it.
  */
 export function resolveContentPane(
-  matches: readonly { staticData: { pane?: ContentPane } }[],
+  matches: readonly { staticData: { pane?: PaneDeclaration }; search?: unknown }[],
 ): ContentPane {
   for (let index = matches.length - 1; index >= 0; index -= 1) {
-    const pane = matches[index]?.staticData.pane;
+    const match = matches[index];
+    const pane = match?.staticData.pane;
+    if (typeof pane === 'function') return pane((match?.search ?? {}) as Record<string, unknown>);
     if (pane) return pane;
   }
   return DEFAULT_CONTENT_PANE;

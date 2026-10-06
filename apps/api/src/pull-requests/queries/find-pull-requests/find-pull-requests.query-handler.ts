@@ -31,18 +31,17 @@ export class FindPullRequestsQueryHandler
       this.watched.all(scope),
       this.access.viewerLogin(scope.userId),
     ]);
+    // A repository GitHub will not answer costs its own rows, not the queue (#244). Its gap is
+    // reported whether or not it is watched: yours and your review requests come from every repository.
+    const reads = await Promise.all(
+      repositories.map(({ repository }) => this.access.openPullRequests(scope, repository)),
+    );
     const now = new Date();
-    const rows = (
-      await Promise.all(
-        repositories.map(async ({ repository, watching }) =>
-          (
-            await this.access.openPullRequests(scope, repository)
-          )
-            .map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now))
-            .filter((row) => visibleInQueue(row.scope, watching)),
-        ),
-      )
-    ).flat();
-    return this.mapper.toQueue(rows, queue, viewerLogin);
+    const rows = reads.flatMap((read, index) =>
+      read.snapshots
+        .map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now))
+        .filter((row) => visibleInQueue(row.scope, repositories[index]?.watching ?? false)),
+    );
+    return this.mapper.toQueue(rows, queue, viewerLogin, reads);
   }
 }

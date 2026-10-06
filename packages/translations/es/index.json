@@ -1030,13 +1030,15 @@
       "large_change": "{{lines}} líneas cambiadas.",
       "docs_tests_config": "Solo documentación, tests y configuración.",
       "small_change": "Un cambio pequeño: {{lines}} líneas en {{files}} archivos.",
-      "medium_change": "{{lines}} líneas en {{files}} archivos."
+      "medium_change": "{{lines}} líneas en {{files}} archivos.",
+      "files_unread": "GitHub no devolvió sus archivos, así que el carril sale solo de su tamaño ({{lines}} líneas)."
     },
     "checks": {
       "passing": "Pasan",
       "failing": "Fallan",
       "running": "En curso",
-      "none": "Sin checks"
+      "none": "Sin checks",
+      "unavailable": "Checks no disponibles"
     },
     "conflicts": {
       "none": "Sin conflictos",
@@ -1049,7 +1051,8 @@
       "checks_running": "Los checks están en curso",
       "changes_requested": "Se pidieron cambios",
       "behind": "Va por detrás de la rama base",
-      "approval_required": "Espera una aprobación obligatoria"
+      "approval_required": "Espera una aprobación obligatoria",
+      "checks_unavailable": "Checks no disponibles"
     },
     "watch": {
       "add": "Seguir repositorios",
@@ -1134,7 +1137,9 @@
         "commented": "Comentó",
         "requested": "Pedida"
       },
-      "opened": "{{author}} quiere fusionar {{head}} en {{base}}"
+      "opened": "{{author}} quiere fusionar {{head}} en {{base}}",
+      "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
+      "filesUnread": "GitHub no devolvió los archivos en esta lectura."
     },
     "review": {
       "submit": "Enviar revisión",
@@ -1221,7 +1226,22 @@
       "medianHold": "Abiertas {{hours}} (mediana)",
       "nothingWaits": "Ahora mismo nada frena ninguna pull request abierta.",
       "loadFailed": "No se pudo cargar la analítica.",
-      "none": "—"
+      "none": "—",
+      "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez."
+    },
+    "notices": {
+      "forbidden": "{{name}}: GitHub denegó el acceso a {{what}}.",
+      "not_found": "{{name}}: GitHub ya no encuentra {{what}}.",
+      "rate_limited": "{{name}}: GitHub nos pidió ir más despacio antes de dar {{what}}. Aparecerán en la próxima lectura.",
+      "failed": "{{name}}: GitHub no respondió para {{what}}.",
+      "what": {
+        "repository": "sus pull requests",
+        "pull_requests": "algunas de sus pull requests",
+        "files": "los archivos de algunas pull requests",
+        "checks": "los checks de algunas pull requests",
+        "reviews": "las revisiones de algunas pull requests"
+      },
+      "checksPermission": "La app de GitHub necesita Checks: read y Commit statuses: read; acepta la actualización de permisos en GitHub."
     }
   },
   "tasks": {

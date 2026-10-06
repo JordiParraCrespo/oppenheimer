@@ -6,6 +6,7 @@ import type {
 } from '@oppenheimer/shared';
 import type {
   PullRequestSnapshot,
+  RepositoryPulls,
   WorkspaceRepository,
 } from '../github/application/pull-request-access.port';
 import type {
@@ -36,6 +37,7 @@ import type {
   PullRequestQueueResponseDto,
   PullRequestReviewerDto,
   PullRequestRowDto,
+  UnreadableRepositoryDto,
   WatchedRepositoryDto,
 } from './dtos/pull-request.response.dto';
 import type { PullRequestAnalyticsResponseDto } from './dtos/pull-request-analytics.response.dto';
@@ -50,7 +52,7 @@ const LANES: PullRequestLane[] = ['deep', 'medium', 'quick'];
 export class PullRequestMapper {
   toRow(snapshot: PullRequestSnapshot, viewerLogin: string | null, now: Date): PullRequestRowDto {
     const { pull, repository } = snapshot;
-    const decision = decideLane(snapshot.filePaths, pull.additions, pull.deletions);
+    const decision = decideLane(snapshot.files.value, pull.additions, pull.deletions);
     return {
       installationId: repository.installationId,
       githubRepoId: repository.githubRepoId,
@@ -65,7 +67,12 @@ export class PullRequestMapper {
       laneReason: decision.reason,
       additions: pull.additions,
       deletions: pull.deletions,
-      checks: snapshot.checks.state,
+      checks: snapshot.checks.value?.state ?? 'unavailable',
+      checksRefusal: snapshot.checks.refusal,
+      unread: [
+        ...(snapshot.files.refusal ? (['files'] as const) : []),
+        ...(snapshot.reviews.refusal ? (['reviews'] as const) : []),
+      ],
       mergeable: pull.mergeable !== false && pull.mergeableState !== 'dirty',
       blocker: mergeBlocker(this.factsOf(snapshot)),
       waitingSeconds: Math.max(
@@ -81,6 +88,7 @@ export class PullRequestMapper {
     rows: PullRequestRowDto[],
     scope: PullRequestScope,
     viewerLogin: string | null,
+    reads: RepositoryPulls[],
   ): PullRequestQueueResponseDto {
     const items = rows
       .filter((row) => row.scope === scope)
@@ -103,7 +111,20 @@ export class PullRequestMapper {
       withConflicts: count((row) => row.blocker === 'conflicts'),
       oldestWaitingSeconds: items[0]?.waitingSeconds ?? null,
       viewerLogin,
+      unreadable: this.toUnreadable(reads),
     };
+  }
+
+  /** Every gap the reads left, with GitHub's own refusal, once per repository, part and refusal (#244). */
+  toUnreadable(reads: RepositoryPulls[]): UnreadableRepositoryDto[] {
+    const gaps = new Map<string, UnreadableRepositoryDto>();
+    for (const read of reads) {
+      for (const gap of read.gaps) {
+        const entry = { fullName: read.repository.fullName, what: gap.what, refusal: gap.refusal };
+        gaps.set(`${entry.fullName}|${entry.what}|${entry.refusal}`, entry);
+      }
+    }
+    return [...gaps.values()];
   }
 
   toDetail(
@@ -119,13 +140,13 @@ export class PullRequestMapper {
       baseRef: pull.baseRef,
       state: pull.merged ? 'merged' : pull.state,
       changedFiles: pull.changedFiles,
-      folders: foldersOf(snapshot.filePaths),
-      checkCounts: {
-        state: snapshot.checks.state,
-        total: snapshot.checks.total,
-        passed: snapshot.checks.passed,
-        failed: snapshot.checks.failed,
-        pending: snapshot.checks.pending,
+      folders: foldersOf(snapshot.files.value ?? []),
+      checkCounts: snapshot.checks.value ?? {
+        state: 'unavailable',
+        total: 0,
+        passed: 0,
+        failed: 0,
+        pending: 0,
       },
       gates: (['checks', 'conflicts', 'review', 'merge'] as const).map((id) => ({
         id,
@@ -176,6 +197,8 @@ export class PullRequestMapper {
     closed: PullRequestSnapshot[];
     viewerLogin: string | null;
     now: Date;
+    complete: boolean;
+    unreadable: UnreadableRepositoryDto[];
   }): PullRequestAnalyticsResponseDto {
     const { window, viewerLogin, now } = input;
     const all = dedupe([...input.open, ...input.closed]);
@@ -183,12 +206,15 @@ export class PullRequestMapper {
       value: all.filter((s) => periodOf(at(s), window) === 'current').length,
       previous: all.filter((s) => periodOf(at(s), window) === 'previous').length,
     });
+    // Unread reviews count in neither review figure: GitHub saying no is not nobody reviewing.
     const reviewedAt = (s: PullRequestSnapshot) =>
       viewerLogin
-        ? (s.reviews.find((r) => r.login === viewerLogin && r.submittedAt)?.submittedAt ?? null)
+        ? (s.reviews.value?.find((r) => r.login === viewerLogin && r.submittedAt)?.submittedAt ??
+          null)
         : null;
     const firstReviewHours = (s: PullRequestSnapshot) => {
-      const first = s.reviews
+      if (!s.reviews.value) return null;
+      const first = s.reviews.value
         .filter((r) => r.login !== s.pull.authorLogin && r.submittedAt)
         .map((r) => r.submittedAt as string)
         .sort()[0];
@@ -213,8 +239,9 @@ export class PullRequestMapper {
       created: all.filter((s) => s.pull.createdAt.slice(0, 10) === date).length,
       merged: all.filter((s) => s.pull.mergedAt?.slice(0, 10) === date).length,
     }));
+    // The lane mix counts only pull requests whose files were read: a guessed lane would skew it.
     const laneOf = (s: PullRequestSnapshot) =>
-      decideLane(s.filePaths, s.pull.additions, s.pull.deletions).lane;
+      s.files.value ? decideLane(s.files.value, s.pull.additions, s.pull.deletions).lane : null;
     const waiting = new Map<MergeBlocker, number[]>();
     for (const s of input.open) {
       const blocker = mergeBlocker(this.factsOf(s));
@@ -258,6 +285,8 @@ export class PullRequestMapper {
       waiting: [...waiting.entries()]
         .map(([reason, hours]) => ({ reason, value: hours.length, medianHours: median(hours) }))
         .sort((a, b) => b.value - a.value),
+      complete: input.complete,
+      unreadable: input.unreadable,
     };
   }
 
@@ -269,14 +298,14 @@ export class PullRequestMapper {
       state: pull.state,
       mergeable: pull.mergeable,
       mergeableState: pull.mergeableState,
-      checks: snapshot.checks.state,
-      verdicts: latestVerdicts(snapshot.reviews, pull.authorLogin),
+      checks: snapshot.checks.value?.state ?? 'unavailable',
+      verdicts: latestVerdicts(snapshot.reviews.value ?? [], pull.authorLogin),
     };
   }
 
   private reviewersOf(snapshot: PullRequestSnapshot): PullRequestReviewerDto[] {
     const reviewed = new Map<string, PullRequestReviewerDto['state']>();
-    for (const review of snapshot.reviews) {
+    for (const review of snapshot.reviews.value ?? []) {
       if (review.login === snapshot.pull.authorLogin) continue;
       const state =
         review.state === 'APPROVED'

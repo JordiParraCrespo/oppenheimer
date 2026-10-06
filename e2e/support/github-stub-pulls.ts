@@ -444,11 +444,20 @@ export function createPullsStub(
     return verdicts.includes('APPROVED') && !verdicts.includes('CHANGES_REQUESTED');
   };
 
+  /** Repositories whose checks GitHub refuses, as an installation without Checks: read gets (#244). */
+  const checksRefused = new Set<string>();
+
   return {
     handle(method, path, query, body) {
       if (path === '/__stub/pulls/reset' && method === 'POST') {
         seed();
+        checksRefused.clear();
         return { status: 200, body: { reset: true } };
+      }
+      const refuse = /^\/__stub\/checks-refused\/([^/]+)\/([^/]+)$/.exec(path);
+      if (refuse && method === 'PUT') {
+        checksRefused.add(`${refuse[1]}/${refuse[2]}`);
+        return { status: 200, body: { refused: [...checksRefused] } };
       }
       const repo = /^\/repos\/([^/]+)\/([^/]+)\/(.+)$/.exec(path);
       if (!repo) return null;
@@ -457,6 +466,9 @@ export function createPullsStub(
 
       const checks = /^commits\/([0-9a-f]+)\/(check-runs|status)$/.exec(rest);
       if (checks) {
+        if (checksRefused.has(fullName)) {
+          return { status: 403, body: { message: 'Resource not accessible by integration' } };
+        }
         const pull = findBySha(checks[1] ?? '');
         if (checks[2] === 'status')
           return { status: 200, body: { state: 'success', statuses: [] } };

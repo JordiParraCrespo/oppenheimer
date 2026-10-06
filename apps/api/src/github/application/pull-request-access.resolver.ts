@@ -3,6 +3,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import type { GithubInstallationRepositoryPort } from '../database/github-installation.repository.port';
+import { planClosedReads } from '../domain/closed-read.policy';
 import { GithubErrors } from '../domain/github.errors';
 import type { GithubInstallationEntity } from '../domain/github-installation.entity';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, GITHUB_PULLS } from '../github.di-tokens';
@@ -11,27 +12,34 @@ import type {
   GithubCredential,
   GithubPullRequestDetail,
   GithubPullRequestFile,
+  GithubPullRequestSummary,
   GithubPullsPort,
+  GithubRefusal,
   GithubReviewComment,
 } from '../infrastructure/github-pulls.port';
 import { type GithubActor, GithubUserGrantResolver } from './github-user-grant.resolver';
 import type {
+  Part,
   PullRequestAccessPort,
   PullRequestAddress,
   PullRequestSnapshot,
+  ReadGap,
+  RepositoryPulls,
   ReviewSubmission,
   WorkspaceRepository,
 } from './pull-request-access.port';
 
 /** A repository's open list: short, so a merge or a new push shows on the next look. */
 const OPEN_TTL_SECONDS = 30;
-/** A snapshot is keyed by the PR's `updated_at`, so it can live until GitHub says it changed. */
-const SNAPSHOT_TTL_SECONDS = 600;
+/** A closed pull request no longer changes: its snapshot is kept for most of a day. */
+const CLOSED_SNAPSHOT_TTL_SECONDS = 6 * 3600;
+/** A snapshot GitHub answered only in part is kept briefly, so the next read asks again (#244). */
+const PARTIAL_TTL_SECONDS = 15;
 const REPOSITORIES_TTL_SECONDS = 60;
 /** An installation token is reused until this close to GitHub's one-hour expiry. */
 const TOKEN_MARGIN_MS = 5 * 60_000;
-/** The analytics read at most this many closed pull requests per repository. */
-const CLOSED_PAGES = 2;
+/** GitHub's page: Analytics lists one per repository, the newest closed. */
+const PULLS_PER_PAGE = 100;
 
 /**
  * Reads through the installation, cached briefly in Redis as GitHub's own
@@ -85,37 +93,79 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async openPullRequests(
     scope: AccessScope,
     repository: WorkspaceRepository,
-  ): Promise<PullRequestSnapshot[]> {
-    const credential = await this.readCredential(scope, repository.installationId);
-    const open = await this.cache.getOrSet(
-      `github:pulls:open:${repository.installationId}:${repository.githubRepoId}`,
-      OPEN_TTL_SECONDS,
-      () => this.pulls.listPullRequests(credential, repository.fullName, 'open', 1),
-    );
-    return Promise.all(
-      open.map((pull) =>
-        this.snapshot(credential, repository, pull.number, pull.updatedAt, OPEN_TTL_SECONDS),
-      ),
-    );
+  ): Promise<RepositoryPulls> {
+    const listing = await this.list(scope, repository, 'open', OPEN_TTL_SECONDS);
+    if (!listing.ok)
+      return {
+        repository,
+        snapshots: [],
+        gaps: [{ what: 'repository', refusal: listing.refusal }],
+      };
+    return this.snapshotsOf(listing.credential, repository, listing.pulls, OPEN_TTL_SECONDS);
   }
 
   async closedPullRequests(
     scope: AccessScope,
-    repository: WorkspaceRepository,
+    repositories: WorkspaceRepository[],
     since: Date,
-  ): Promise<PullRequestSnapshot[]> {
-    const credential = await this.readCredential(scope, repository.installationId);
-    const closed = await this.cache.getOrSet(
-      `github:pulls:closed:${repository.installationId}:${repository.githubRepoId}`,
-      OPEN_TTL_SECONDS * 4,
-      () => this.pulls.listPullRequests(credential, repository.fullName, 'closed', CLOSED_PAGES),
-    );
-    const recent = closed.filter((pull) => new Date(pull.closedAt ?? pull.updatedAt) >= since);
-    return Promise.all(
-      recent.map((pull) =>
-        this.snapshot(credential, repository, pull.number, pull.updatedAt, SNAPSHOT_TTL_SECONDS),
+    limit: number,
+  ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }> {
+    const listings = await Promise.all(
+      repositories.map((repository) =>
+        this.list(scope, repository, 'closed', OPEN_TTL_SECONDS * 4),
       ),
     );
+    const plan = planClosedReads(
+      listings.map((listing) =>
+        listing.ok
+          ? { pulls: listing.pulls, full: listing.pulls.length >= PULLS_PER_PAGE }
+          : { pulls: [], full: false },
+      ),
+      (pull) => pull.closedAt ?? pull.updatedAt,
+      since,
+      limit,
+    );
+    const pulls = await Promise.all(
+      listings.map((listing, index) => {
+        const repository = repositories[index] as WorkspaceRepository;
+        return listing.ok
+          ? this.snapshotsOf(
+              listing.credential,
+              repository,
+              plan.picks[index] ?? [],
+              CLOSED_SNAPSHOT_TTL_SECONDS,
+            )
+          : {
+              repository,
+              snapshots: [],
+              gaps: [{ what: 'repository' as const, refusal: listing.refusal }],
+            };
+      }),
+    );
+    return { pulls, complete: plan.complete };
+  }
+
+  /** One repository's newest page of pull requests in a state, or the refusal GitHub gave. */
+  private async list(
+    scope: AccessScope,
+    repository: WorkspaceRepository,
+    state: 'open' | 'closed',
+    ttlSeconds: number,
+  ): Promise<
+    | { ok: true; credential: GithubCredential; pulls: GithubPullRequestSummary[] }
+    | { ok: false; refusal: GithubRefusal }
+  > {
+    try {
+      const credential = await this.readCredential(scope, repository.installationId);
+      const pulls = await this.cache.getOrSet(
+        `github:pulls:${state}:${repository.installationId}:${repository.githubRepoId}`,
+        ttlSeconds,
+        () => this.pulls.listPullRequests(credential, repository.fullName, state, 1),
+      );
+      return { ok: true, credential, pulls };
+    } catch (error) {
+      return { ok: false, refusal: refusalOf(error) };
+    }
   }
 
   async pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot> {
@@ -217,6 +267,40 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     );
   }
 
+  /** Each pull request's snapshot, and every gap with the refusal GitHub gave for it. */
+  private async snapshotsOf(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+    pulls: GithubPullRequestSummary[],
+    ttlSeconds: number,
+  ): Promise<RepositoryPulls> {
+    const settled = await Promise.allSettled(
+      pulls.map((pull) =>
+        this.snapshot(credential, repository, pull.number, pull.updatedAt, ttlSeconds),
+      ),
+    );
+    const snapshots = settled.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : [],
+    );
+    const gaps: ReadGap[] = settled.flatMap((result) =>
+      result.status === 'rejected'
+        ? [{ what: 'pull_requests' as const, refusal: refusalOf(result.reason) }]
+        : [],
+    );
+    for (const snapshot of snapshots) {
+      if (snapshot.files.refusal) gaps.push({ what: 'files', refusal: snapshot.files.refusal });
+      if (snapshot.checks.refusal) gaps.push({ what: 'checks', refusal: snapshot.checks.refusal });
+      if (snapshot.reviews.refusal)
+        gaps.push({ what: 'reviews', refusal: snapshot.reviews.refusal });
+    }
+    return { repository, snapshots, gaps };
+  }
+
+  /**
+   * The pull request and its three parts. The pull request itself must be
+   * read; files, checks and reviews each settle on their own, and a snapshot
+   * with a refused part is cached only briefly so the next read asks again.
+   */
   private async snapshot(
     credential: GithubCredential,
     repository: WorkspaceRepository,
@@ -226,18 +310,24 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     known?: GithubPullRequestDetail,
   ): Promise<PullRequestSnapshot> {
     const key = `github:pulls:snapshot:${repository.installationId}:${repository.githubRepoId}:${number}:${updatedAt}`;
-    const read = async (): Promise<PullRequestSnapshot> => {
-      const pull =
-        known ?? (await this.pulls.readPullRequest(credential, repository.fullName, number));
-      const [files, checks, reviews] = await Promise.all([
-        this.pulls.listFiles(credential, repository.fullName, number),
-        this.pulls.readChecks(credential, repository.fullName, pull.headSha),
-        this.pulls.listReviews(credential, repository.fullName, number),
-      ]);
-      return { repository, pull, filePaths: files.map((file) => file.path), checks, reviews };
-    };
-    // Checks move without `updated_at` moving, so an open PR's snapshot is short-lived.
-    return this.cache.getOrSet(key, ttlSeconds, read);
+    const cached = await this.cache.get<PullRequestSnapshot>(key);
+    if (cached) return cached;
+
+    const pull =
+      known ?? (await this.pulls.readPullRequest(credential, repository.fullName, number));
+    const [files, checks, reviews] = await Promise.all([
+      partOf(
+        this.pulls
+          .listFiles(credential, repository.fullName, number)
+          .then((list) => list.map((file) => file.path)),
+      ),
+      partOf(this.pulls.readChecks(credential, repository.fullName, pull.headSha)),
+      partOf(this.pulls.listReviews(credential, repository.fullName, number)),
+    ]);
+    const snapshot: PullRequestSnapshot = { repository, pull, files, checks, reviews };
+    const whole = !files.refusal && !checks.refusal && !reviews.refusal;
+    await this.cache.set(key, snapshot, whole ? ttlSeconds : PARTIAL_TTL_SECONDS);
+    return snapshot;
   }
 
   private async repositoryOf(
@@ -307,6 +397,30 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     }
     return installation;
   }
+}
+
+async function partOf<T>(read: Promise<T>): Promise<Part<T>> {
+  try {
+    return { value: await read, refusal: null };
+  } catch (error) {
+    return { value: null, refusal: refusalOf(error) };
+  }
+}
+
+/** What a failed read means to a reader: no access, gone, wait, or GitHub did not answer. */
+function refusalOf(error: unknown): GithubRefusal {
+  if (!(error instanceof AppError)) return 'failed';
+  if (error.code === GithubErrors.RATE_LIMITED.code) return 'rate_limited';
+  if (
+    error.code === GithubErrors.INSTALLATION_SUSPENDED.code ||
+    error.code === GithubErrors.INSTALLATION_NOT_FOUND.code
+  ) {
+    return 'forbidden';
+  }
+  const status = error.extensions.upstreamStatus;
+  if (status === 401 || status === 403) return 'forbidden';
+  if (status === 404 || error.code === GithubErrors.PULL_REQUEST_NOT_FOUND.code) return 'not_found';
+  return 'failed';
 }
 
 /** A person's own token, counted against them: every token of theirs shares one budget. */

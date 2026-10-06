@@ -49,15 +49,29 @@ function DropZone({
       {...props}
     >
       {children}
-      {dragging ? (
-        <div
-          aria-hidden
-          data-slot="drop-zone-overlay"
-          className="pointer-events-none absolute inset-0 z-10 border-3 border-primary motion-safe:animate-label-in"
-        />
-      ) : null}
+      {dragging ? <DropOutline /> : null}
     </div>
   );
 }
 
-export { DropZone };
+/**
+ * The outline itself, for the box that owns the edge: `DropZone` draws it on
+ * its own box, and the console's shell draws it on its pane, which takes a
+ * screen's drops through `useFileDrag` (the web kit's `usePaneDrop`). It
+ * fills its positioned parent and never takes the pointer.
+ */
+function DropOutline({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      aria-hidden
+      data-slot="drop-zone-overlay"
+      className={cn(
+        'pointer-events-none absolute inset-0 z-10 border-3 border-primary motion-safe:animate-label-in',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { DropOutline, DropZone };
