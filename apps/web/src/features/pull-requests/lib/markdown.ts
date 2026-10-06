@@ -28,10 +28,37 @@ export type BasicHtmlToken = { type: 'basicHtml'; raw: string; tag: BasicTag; to
 /** Every token the renderer is handed. */
 export type MarkdownToken = MarkedToken | DetailsToken | BasicHtmlToken;
 
-const DETAILS =
-  /^ {0,3}<details(\s+open)?\s*>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>[ \t]*(?:\n+|$)/i;
+const DETAILS_OPEN = /^ {0,3}<details(\s+open)?\s*>\s*<summary>([\s\S]*?)<\/summary>/i;
+const DETAILS_TAG = /<(\/?)details\b[^>]*>/gi;
 const BASIC_HTML = /^<(b|del|em|i|kbd|s|strong|sub|sup|u)>([\s\S]*?)<\/\1>/i;
 const ALERT = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*\n?/i;
+
+/**
+ * A fold at the start of `source`, its closing tag found by counting the
+ * folds opened inside it, so a nested `<details>` stays inside its parent.
+ */
+function matchDetails(
+  source: string,
+): { raw: string; open: boolean; summary: string; body: string } | null {
+  const head = DETAILS_OPEN.exec(source);
+  if (!head) return null;
+  let depth = 1;
+  const tags = new RegExp(DETAILS_TAG.source, 'gi');
+  tags.lastIndex = head[0].length;
+  for (let tag = tags.exec(source); tag; tag = tags.exec(source)) {
+    depth += tag[1] ? -1 : 1;
+    if (depth > 0) continue;
+    const end = tag.index + tag[0].length;
+    const trailing = /^[ \t]*(?:\n+|$)/.exec(source.slice(end))?.[0] ?? '';
+    return {
+      raw: source.slice(0, end) + trailing,
+      open: head[1] !== undefined,
+      summary: head[2] ?? '',
+      body: source.slice(head[0].length, tag.index),
+    };
+  }
+  return null;
+}
 
 const markdown = new Marked({
   gfm: true,
@@ -41,17 +68,17 @@ const markdown = new Marked({
       level: 'block',
       start: (source) => source.match(/<details/i)?.index,
       tokenizer(source) {
-        const match = DETAILS.exec(source);
+        const match = matchDetails(source);
         if (!match) return undefined;
         return {
           type: 'details',
-          raw: match[0],
-          summary: (match[2] ?? '')
+          raw: match.raw,
+          summary: match.summary
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim(),
-          open: match[1] !== undefined,
-          tokens: this.lexer.blockTokens((match[3] ?? '').trim(), []),
+          open: match.open,
+          tokens: this.lexer.blockTokens(match.body.trim(), []),
         };
       },
     },
@@ -112,8 +139,11 @@ const ENTITIES: Record<string, string> = {
 /** A text token's characters: `marked` leaves `&amp;` and `&#39;` as written. */
 export function decodeEntities(text: string): string {
   return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
-    if (/^#x/i.test(name)) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
-    if (name.startsWith('#')) return String.fromCodePoint(Number(name.slice(1)));
+    if (name.startsWith('#')) {
+      const point = /^#x/i.test(name) ? Number.parseInt(name.slice(2), 16) : Number(name.slice(1));
+      // An out-of-range reference stays as written rather than throwing in render.
+      return point <= 0x10ffff ? String.fromCodePoint(point) : entity;
+    }
     return ENTITIES[name.toLowerCase()] ?? entity;
   });
 }

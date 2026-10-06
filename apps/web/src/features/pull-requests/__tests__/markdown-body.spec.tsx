@@ -74,6 +74,31 @@ describe('MarkdownBody', () => {
     ]);
   });
 
+  it('keeps a nested fold inside its parent', () => {
+    const page = view(
+      [
+        '<details>',
+        '<summary>Outer</summary>',
+        '',
+        '<details>',
+        '<summary>Inner</summary>',
+        '',
+        'deep',
+        '</details>',
+        '',
+        'after inner',
+        '</details>',
+      ].join('\n'),
+    );
+    const outer = page.querySelector('details');
+    expect(outer?.querySelector(':scope details summary')?.textContent).toBe('Inner');
+    expect(outer?.textContent).toContain('after inner');
+  });
+
+  it('leaves an entity it cannot decode as written instead of failing the page', () => {
+    expect(view('big &#9999999999; and &amp; ok').textContent).toBe('big &#9999999999; and & ok');
+  });
+
   it('keeps basic inline tags and drops every other piece of HTML', () => {
     const page = view(
       [
