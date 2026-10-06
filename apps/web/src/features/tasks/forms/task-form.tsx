@@ -1,4 +1,11 @@
-import { Button, FieldError, Input, Textarea } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  Input,
+  Textarea,
+} from '@oppenheimer/design-system-web';
 import { ErrorAlert, type ResolvedErrorMessage, useZodResolver } from '@oppenheimer/frontend-web';
 import { createTaskSchema, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import type { ReactNode } from 'react';
@@ -10,8 +17,8 @@ import { TaskDueRow } from './task-due-row';
 import { TaskGoalRow } from './task-goal-row';
 
 /**
- * The task dialog's form (`Tasks.dc.html`): the title and notes as plain text at
- * the top, then the rows — Status, Project, Goal, the sessions (the dialog's,
+ * The task dialog's form (`Tasks.dc.html`): the title and notes as the design
+ * system's labelled fields, then the rows — Status, Project, Goal, the sessions (the dialog's,
  * passed in), Due — and the footer. Enter in the title saves.
  */
 export function TaskForm({
@@ -52,24 +59,26 @@ export function TaskForm({
 
   return (
     <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div className="flex flex-col gap-1.5">
+      <Field data-invalid={Boolean(formState.errors.title)}>
+        <FieldLabel htmlFor="task-title">{t('tasks.dialog.titleLabel')}</FieldLabel>
         <Input
           {...register('title')}
-          className="h-auto border-0 bg-transparent px-0 text-h3 font-semibold hover:border-0 has-focus-visible:ring-0"
+          id="task-title"
           placeholder={t('tasks.dialog.titlePlaceholder')}
-          aria-label={t('tasks.dialog.titleLabel')}
           aria-invalid={Boolean(formState.errors.title)}
           autoFocus
         />
         <FieldError errors={[formState.errors.title]} />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="task-notes">{t('tasks.dialog.notesLabel')}</FieldLabel>
         <Textarea
           {...register('notes')}
+          id="task-notes"
           rows={3}
-          className="min-h-0 resize-none border-0 bg-transparent px-0 py-0 text-fg-muted hover:border-0 focus-visible:ring-0"
           placeholder={t('tasks.dialog.notesPlaceholder')}
-          aria-label={t('tasks.dialog.notesLabel')}
         />
-      </div>
+      </Field>
       <div className="flex flex-col gap-3 border-t border-border-subtle pt-5">
         <Controller
           control={control}

@@ -1332,9 +1332,9 @@
       "gone": "Esta tarea ya no existe."
     },
     "link": {
-      "title": "Vincular una sesión",
       "search": "Buscar sesiones",
-      "empty": "No hay sesiones que vincular.",
+      "empty": "Todas las sesiones ya están vinculadas.",
+      "noMatch": "Ninguna sesión coincide con «{{query}}».",
       "inProject": "En {{name}}",
       "others": "Otras sesiones",
       "failed": "No se ha podido vincular la sesión."

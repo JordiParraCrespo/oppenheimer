@@ -1,13 +1,12 @@
 import { Button, IconButton, StatusDot } from '@oppenheimer/design-system-web';
-import { Link2, Play, X } from '@oppenheimer/design-system-web/icons';
+import { Play, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions, useUnlinkTaskSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, RelativeTime } from '@oppenheimer/frontend-web';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LinkSessionPicker } from '../dialogs/link-session';
 import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
+import { LinkSessionPicker } from './link-session-picker';
 
 const board = getRouteApi('/_authenticated/plan/');
 
@@ -25,7 +24,6 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
   });
   const { data: hosts } = useHosts({ select: (rows) => new Map(rows.map((row) => [row.id, row])) });
   const unlink = useUnlinkTaskSession();
-  const [linking, setLinking] = useState(false);
   const linked = task.sessions.flatMap((link) => {
     const session = sessions?.get(link.sessionId);
     return session ? [{ link, session }] : [];
@@ -89,13 +87,9 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
             <Play />
             {t('tasks.dialog.startSession')}
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setLinking(true)}>
-            <Link2 />
-            {t('tasks.dialog.linkExisting')}
-          </Button>
+          <LinkSessionPicker task={task} />
         </div>
       </div>
-      {linking ? <LinkSessionPicker task={task} onClose={() => setLinking(false)} /> : null}
     </div>
   );
 }

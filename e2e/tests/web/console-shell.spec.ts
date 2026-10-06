@@ -76,3 +76,39 @@ test('a URL the console does not have answers inside the shell', async ({ page }
 
   await owner.api.dispose();
 });
+
+/**
+ * Plan's two sidebars read their own route's search, and the shell that mounts
+ * them outlives both routes. Leaving either one for another list rendered the
+ * sidebar once more against a match that was already gone, which threw and
+ * took the whole console to its error boundary — a crash a reader met by
+ * switching lists, never by loading a URL, so every other spec here missed it.
+ */
+test('switching the rail away from Plan leaves the console drawn', async ({ page }) => {
+  const owner = await provisionedUser('consolerail');
+  await signInAs(page, owner.user);
+  const broken = page.getByText('This screen could not be drawn');
+
+  await page.goto('/plan/calendar');
+  await page.getByRole('link', { name: 'Sessions', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
+  await expect(broken).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Plan', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Tasks' })).toBeVisible();
+  await page.getByRole('link', { name: 'Automations', exact: true }).click();
+  await expect(page).toHaveURL(/\/automations$/);
+  await expect(broken).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Plan', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Plan' })
+    .getByText('Calendar', { exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/plan\/calendar$/);
+  await page.getByRole('link', { name: 'Automations', exact: true }).click();
+  await expect(page).toHaveURL(/\/automations$/);
+  await expect(broken).toHaveCount(0);
+
+  await owner.api.dispose();
+});

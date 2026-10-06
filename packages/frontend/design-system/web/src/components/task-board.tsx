@@ -19,8 +19,8 @@ import { StatusDot, type StatusState } from './status-dot';
  *
  * - `TaskBoard`: one row of however many columns it is given, at least
  *   272px each, scrolling sideways when the parent is narrower. It is as
- *   wide as its parent; a page that wants it to bleed into its gutter says
- *   so on its own wrapper.
+ *   wide as its parent, and `gutter` lets the scroller alone reach into the
+ *   page's.
  * - `TaskColumn`: the head (the status on `StatusDot`, the count in mono, a
  *   + to add)
  *   over a tray on the hover wash, 18px round, that tints toward the
@@ -46,11 +46,26 @@ const TASK_STATUS_STATE: Record<TaskStatus, StatusState> = {
   done: 'completed',
 };
 
-function TaskBoard({ className, children, ...props }: React.ComponentProps<'div'>) {
+function TaskBoard({
+  gutter,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /**
+   * The page's gutter, and the margin that cancels it, as the page states
+   * them (`-mx-8 px-8`). It is a prop rather than the caller's `className`
+   * because the padding has to sit on the element that scrolls: that is what
+   * keeps the columns on the page's measure while a card scrolled past the
+   * edge passes under the gutter instead of starting in it. The board holds
+   * no gutter of its own — whose it is, and how wide, is the page's.
+   */
+  gutter?: string;
+}) {
   return (
     <div
       data-slot="task-board"
-      className={cn('overflow-x-auto overscroll-x-contain [scrollbar-width:none]', className)}
+      className={cn('overflow-x-auto overscroll-x-contain [scrollbar-width:none]', gutter, className)}
       {...props}
     >
       <div className="grid auto-cols-[minmax(272px,1fr)] grid-flow-col items-start gap-3">{children}</div>

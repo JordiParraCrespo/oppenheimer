@@ -16,7 +16,12 @@ const board = getRouteApi('/_authenticated/plan/');
  */
 export function TasksSidebar() {
   const { t } = useTranslation();
-  const { project } = board.useSearch();
+  // `useMatch`, not `useSearch`: the shell mounts this sidebar and outlives
+  // the board, so a navigation away renders it once more with the board's
+  // match already gone. `useSearch` throws on that render and takes the
+  // console to its error boundary; this reads the same search and answers
+  // undefined for the one frame before the shell swaps the sidebar out.
+  const project = board.useMatch({ shouldThrow: false, select: (match) => match.search.project });
   const projects = useProjects();
   const { data: open } = useTasks({
     select: (rows) => {

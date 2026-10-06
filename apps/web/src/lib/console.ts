@@ -1,5 +1,5 @@
 import { createDialogSlot } from '@oppenheimer/frontend-web';
-import { useMatchRoute } from '@tanstack/react-router';
+import { useMatches } from '@tanstack/react-router';
 
 /**
  * The console's dialogs, named by what opens them
@@ -38,19 +38,26 @@ export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 export type ConsoleList = 'sessions' | 'automations' | 'pulls' | 'tasks' | 'calendar';
 
 /**
- * Which of the console's lists the address is under: `automations` for
- * everything under `/automations`, the editor included; `pulls` for the
- * queue, a pull request and analytics under `/pulls`; Plan's two, `calendar`
- * under `/plan/calendar` (Google's return included) and `tasks` for the rest
- * of `/plan`; and `sessions` for everything else. One predicate, asked of the
- * router, so the rail's current item and the sidebar beside it can never
- * disagree.
+ * Which of the console's lists the matched routes are under: `automations`
+ * for everything under `/automations`, the editor included; `pulls` for the
+ * queue, a pull request and analytics under `/pulls`; Plan's two,
+ * `calendar` under `/plan/calendar` (Google's return included) and `tasks`
+ * for the rest of `/plan`; and `sessions` for everything else. One predicate,
+ * so the rail's current item and the sidebar beside it can never disagree.
+ * It reads the matches, not the address: the address moves on while the next
+ * route still loads, and a list drawn ahead of its route reads a match that
+ * is not there yet.
  */
 export function useConsoleList(): ConsoleList {
-  const matchRoute = useMatchRoute();
-  if (matchRoute({ to: '/automations', fuzzy: true })) return 'automations';
-  if (matchRoute({ to: '/pulls', fuzzy: true })) return 'pulls';
-  if (matchRoute({ to: '/plan/calendar', fuzzy: true })) return 'calendar';
-  if (matchRoute({ to: '/plan', fuzzy: true })) return 'tasks';
-  return 'sessions';
+  return useMatches({
+    select: (matches): ConsoleList => {
+      const ids = matches.map((match) => match.routeId);
+      if (ids.some((id) => id.startsWith('/_authenticated/automations'))) return 'automations';
+      // The queue and analytics under the `pulls` layout, and a pull request un-nested from it (`pulls_`).
+      if (ids.some((id) => id.startsWith('/_authenticated/pulls'))) return 'pulls';
+      if (ids.some((id) => id.startsWith('/_authenticated/plan/calendar'))) return 'calendar';
+      if (ids.some((id) => id.startsWith('/_authenticated/plan/'))) return 'tasks';
+      return 'sessions';
+    },
+  });
 }
