@@ -8,10 +8,11 @@ import { PullRequestMapper } from '../../pull-request.mapper';
 import { FindPullRequestsQuery } from './find-pull-requests.query';
 
 /**
- * The queue: the open pull requests of every watched repository, read through
- * the installations, each sorted into whose it is and which lane it needs. All
- * three scopes are counted from the one read, so the scope control's numbers
- * and the list never disagree.
+ * The queue: the open pull requests the installations reach, each sorted into
+ * whose it is and which lane it needs. Yours and the ones asking for your
+ * review come from every repository; the rest only from the repositories you
+ * watch, which start as none. All three scopes are counted from the one read,
+ * so the scope control's numbers and the list never disagree.
  */
 @QueryHandler(FindPullRequestsQuery)
 export class FindPullRequestsQueryHandler
@@ -26,16 +27,26 @@ export class FindPullRequestsQueryHandler
 
   async execute({ scope, queue }: FindPullRequestsQuery): Promise<PullRequestQueueResponseDto> {
     const [repositories, viewerLogin] = await Promise.all([
-      this.watched.watched(scope),
+      this.watched.all(scope),
       this.access.viewerLogin(scope.userId),
     ]);
+    const watched = new Set(
+      repositories
+        .filter((entry) => entry.watching)
+        .map(({ repository }) => `${repository.installationId}:${repository.githubRepoId}`),
+    );
     const snapshots = (
       await Promise.all(
-        repositories.map((repository) => this.access.openPullRequests(scope, repository)),
+        repositories.map(({ repository }) => this.access.openPullRequests(scope, repository)),
       )
     ).flat();
     const now = new Date();
-    const rows = snapshots.map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now));
+    const rows = snapshots
+      .map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now))
+      .filter(
+        (row) =>
+          row.scope !== 'watching' || watched.has(`${row.installationId}:${row.githubRepoId}`),
+      );
     return this.mapper.toQueue(rows, queue, viewerLogin);
   }
 }

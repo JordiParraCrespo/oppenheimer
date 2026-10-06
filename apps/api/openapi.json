@@ -12506,7 +12506,7 @@
     },
     "/api/v1/pulls/repositories": {
       "get": {
-        "description": "Every repository the workspace’s installations cover, and whether the caller watches it. Watched unless they switched it off.",
+        "description": "Every repository the workspace’s installations cover, and whether the caller watches it. None is watched until they switch it on.",
         "operationId": "findWatchedRepositories",
         "parameters": [],
         "responses": {
@@ -12605,7 +12605,7 @@
     },
     "/api/v1/pulls/repositories/{installationId}/{githubRepoId}": {
       "put": {
-        "description": "A watched repository’s open pull requests are in the queue and the analytics. Every repository is watched until switched off.",
+        "description": "A watched repository’s open pull requests are in the queue’s Watching scope and the analytics. No repository is watched until switched on.",
         "operationId": "setRepositoryWatch",
         "parameters": [
           {
@@ -20519,7 +20519,7 @@
           },
           "watching": {
             "type": "boolean",
-            "description": "Watched unless the caller switched it off."
+            "description": "Not watched until the caller switches it on."
           }
         },
         "required": ["installationId", "githubRepoId", "fullName", "private", "watching"]

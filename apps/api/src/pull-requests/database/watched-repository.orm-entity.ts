@@ -3,9 +3,9 @@ import { Column, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from
 
 /**
  * Whether a person watches one repository in one workspace. A repository
- * nobody has a row for is watched: every repository the installation covers is
- * in the queue until its owner switches it off, so the rows are the exceptions
- * a person chose, not a copy of GitHub's list.
+ * nobody has a row for is not watched: a person picks the repositories they
+ * want under Watching, so the rows are the choices they made, not a copy of
+ * GitHub's list.
  */
 @Entity('watched_repository')
 @Unique('UQ_watched_repository', ['organizationId', 'userId', 'installationId', 'githubRepoId'])

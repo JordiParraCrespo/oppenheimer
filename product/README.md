@@ -354,3 +354,12 @@ earlier note:
   alone was white. On 2026-10-06 every console page moved onto the
   export's grey, in one frame the shell draws at the route's measure
   (`versions/mvp/README.md`).
+- The pull request queue first watched every repository the GitHub App
+  reaches until the reader switched one off. On 2026-10-06 nothing is
+  watched until the reader picks it: Watching starts empty, and Watch
+  repositories is a search over every repository with a check on the
+  watched ones, where a pick toggles and the list stays open (Synara's
+  inbox filter and VS Code's multi-select quick pick). Mine and Review
+  requests read every repository, so a new workspace still sees its own
+  pull requests; Watching and Analytics read the picks
+  (`next-steps/0.2-pull-requests.md`, question 1).

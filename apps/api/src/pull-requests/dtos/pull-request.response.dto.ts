@@ -286,6 +286,6 @@ export class WatchedRepositoryDto {
   @ApiProperty()
   private!: boolean;
 
-  @ApiProperty({ description: 'Watched unless the caller switched it off.' })
+  @ApiProperty({ description: 'Not watched until the caller switches it on.' })
   watching!: boolean;
 }

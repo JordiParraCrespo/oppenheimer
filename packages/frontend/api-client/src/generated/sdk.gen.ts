@@ -1943,7 +1943,7 @@ export const findPullRequestAnalytics = <ThrowOnError extends boolean = false>(o
 /**
  * The repositories the queue can watch
  *
- * Every repository the workspace’s installations cover, and whether the caller watches it. Watched unless they switched it off.
+ * Every repository the workspace’s installations cover, and whether the caller watches it. None is watched until they switch it on.
  */
 export const findWatchedRepositories = <ThrowOnError extends boolean = false>(options?: Options<FindWatchedRepositoriesData, ThrowOnError>): RequestResult<FindWatchedRepositoriesResponses, FindWatchedRepositoriesErrors, ThrowOnError> => (options?.client ?? client).get<FindWatchedRepositoriesResponses, FindWatchedRepositoriesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1954,7 +1954,7 @@ export const findWatchedRepositories = <ThrowOnError extends boolean = false>(op
 /**
  * Watch a repository, or stop
  *
- * A watched repository’s open pull requests are in the queue and the analytics. Every repository is watched until switched off.
+ * A watched repository’s open pull requests are in the queue’s Watching scope and the analytics. No repository is watched until switched on.
  */
 export const setRepositoryWatch = <ThrowOnError extends boolean = false>(options: Options<SetRepositoryWatchData, ThrowOnError>): RequestResult<SetRepositoryWatchResponses, SetRepositoryWatchErrors, ThrowOnError> => (options.client ?? client).put<SetRepositoryWatchResponses, SetRepositoryWatchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
