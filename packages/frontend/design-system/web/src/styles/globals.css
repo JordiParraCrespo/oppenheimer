@@ -106,8 +106,7 @@
     /* The console's ground: the export's grey `--canvas`
        (`design/version1/console.css`), under every pane the shell draws and
        under Settings, so white cards float on it without a border. The shell
-       paints it once (`AppShell`'s column and `EditorPage`); a screen never
-       does. */
+       paints it once (`AppShell`'s pane); no frame or screen does. */
     --canvas-recessed: var(--op-gray-50);
     --card: var(--op-white); /* the only lit surface on the canvas */
     /* A lit surface that is also a control — the social sign-in buttons — needs

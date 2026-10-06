@@ -9,7 +9,7 @@
  *    files, never a sub-directory
  *  - a route file composes; past 120 lines it contains
  *  - the console's ground and page frame are the shell's: no screen paints
- *    the canvas or draws `EditorPage` around itself
+ *    the ground, draws `EditorPage` or rebuilds the frame by hand
  *  - an app never re-creates a file the platform kit already ships
  *  - every workspace package carries a README.md and an AGENTS.md, every
  *    frontend app, `packages/frontend` and each platform kit an
@@ -403,13 +403,77 @@ for (const { app } of APPS) {
 }
 
 // The page frame is the shell's. A route declares its measure (`pane` in the
-// kit's `shell/lib/pane.ts`) and the shell draws the canvas, the scroll and
-// the gutter once; a screen that paints the ground or wraps itself in
-// `EditorPage` is how five pages ended up on two greys at four widths.
-// `public` is exempt: its pages render outside any shell, so they own their
-// ground. A tripwire on the class and the tag, not a parser.
+// kit's `shell/lib/pane.ts`) and the shell paints the ground and draws the
+// frame (the scroll, the measure, the gutter) once. Two shapes put a frame
+// back in a screen, and each is how pages drifted onto two greys at five
+// widths: painting the ground or wrapping itself in `EditorPage`, and
+// rebuilding the frame by hand, an element that scrolls around a centred
+// `max-w-*` column. `public` is exempt: its pages render outside any shell,
+// so they own their ground. Classes are read from each element's
+// `className`, every string in it (a `cn(...)` included), with comments
+// stripped first; a tripwire, not a parser.
 const GROUND = /\bbg-(?:canvas|background)\b|<EditorPage(?:Body)?\b/;
+const SCROLLS = /\boverflow-(?:y-)?auto\b/;
 const GROUND_OWNERS = ['public'];
+const code = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+
+/** Every string literal in a tag's `className` value, as one class list. */
+function classesOf(tag) {
+  const at = tag.search(/\bclassName\s*=/);
+  if (at === -1) return '';
+  let i = tag.indexOf('=', at) + 1;
+  while (/\s/.test(tag[i])) i += 1;
+  let value;
+  if (tag[i] === '"' || tag[i] === "'") value = tag.slice(i, tag.indexOf(tag[i], i + 1) + 1);
+  else {
+    let depth = 0;
+    let j = i;
+    for (; j < tag.length; j += 1) {
+      if (tag[j] === '{') depth += 1;
+      else if (tag[j] === '}' && --depth === 0) break;
+    }
+    value = tag.slice(i, j + 1);
+  }
+  return [...value.matchAll(/(["'`])((?:(?!\1).)*)\1/g)].map((m) => m[2]).join(' ');
+}
+
+const centred = (classes) => /\bmx?-auto\b/.test(classes) && /\bmax-w-/.test(classes);
+
+/** The text inside the element whose opening tag ends at `from`, up to its closing tag. */
+function childrenOf(source, name, from) {
+  const tags = new RegExp(`<(/?)${name.replace('.', '\\.')}\\b`, 'g');
+  tags.lastIndex = from;
+  let depth = 1;
+  let match = tags.exec(source);
+  while (match !== null) {
+    if (match[1]) {
+      if (--depth === 0) return source.slice(from, match.index);
+    } else if (
+      !openingTag(source, match.index + match[0].length)
+        .trimEnd()
+        .endsWith('/')
+    ) {
+      depth += 1;
+    }
+    match = tags.exec(source);
+  }
+  return source.slice(from);
+}
+
+/** An element that scrolls with a centred `max-w-*` column inside it, if the file has one. */
+function rebuiltFrame(source) {
+  for (const open of source.matchAll(/<([A-Za-z][\w.]*)\b/g)) {
+    const tag = openingTag(source, open.index + open[0].length);
+    if (!SCROLLS.test(classesOf(tag)) || tag.trimEnd().endsWith('/')) continue;
+    const inside = childrenOf(source, open[1], open.index + open[0].length + tag.length + 1);
+    for (const child of inside.matchAll(/<([A-Za-z][\w.]*)\b/g)) {
+      if (centred(classesOf(openingTag(inside, child.index + child[0].length)))) return true;
+    }
+  }
+  return false;
+}
+
 for (const { app, features } of APPS) {
   const src = join(root, app, 'src');
   if (!existsSync(src)) continue;
@@ -418,10 +482,16 @@ for (const { app, features } of APPS) {
     if (!file.endsWith('.tsx') || /\.(spec|test)\.tsx$/.test(file) || file.includes('/__tests__/'))
       continue;
     if (owners.some((owner) => file.startsWith(owner))) continue;
-    const match = readFileSync(file, 'utf8').match(GROUND);
-    if (match) {
+    const source = code(readFileSync(file, 'utf8'));
+    const ground = source.match(GROUND);
+    if (ground) {
       fail(
-        `${relative(root, file)}: \`${match[0]}\` — the console's ground and page frame are the shell's. Declare the page's measure as the route's \`staticData.pane\` (narrow, wide, board) and render only the content. See .agents/rules/frontend-architecture.md`,
+        `${relative(root, file)}: \`${ground[0]}\` — the console's ground and page frame are the shell's. Declare the page's measure as the route's \`staticData.pane\` and render only the content. See .agents/rules/frontend-architecture.md`,
+      );
+    }
+    if (rebuiltFrame(source)) {
+      fail(
+        `${relative(root, file)}: an element that scrolls around a centred \`max-w-*\` column is the page frame rebuilt. Declare the measure as the route's \`staticData.pane\` and render only the content. See .agents/rules/frontend-architecture.md`,
       );
     }
   }

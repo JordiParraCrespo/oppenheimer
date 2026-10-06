@@ -1349,7 +1349,7 @@ export function PillTabsDemo() {
 
 export function EditorPageDemo() {
   return (
-    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle bg-canvas-recessed">
       <EditorPage>
         <EditorPageBody>
         <EditorPageBack href="#editorpage">Back</EditorPageBack>
@@ -1394,7 +1394,7 @@ export function EditorPageDemo() {
 export function EditorPageWideDemo() {
   const [tab, setTab] = React.useState('automations');
   return (
-    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle bg-canvas-recessed">
       <EditorPage>
         <EditorPageBody size="wide">
           <EditorPageTop>

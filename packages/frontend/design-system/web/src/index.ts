@@ -135,7 +135,7 @@ export {
   useSortableGroups,
   useSortableItem,
 } from './components/drag';
-export { DropZone } from './components/drop-zone';
+export { DropOutline, DropZone } from './components/drop-zone';
 export {
   DropdownMenu,
   DropdownMenuBack,

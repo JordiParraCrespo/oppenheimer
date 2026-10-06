@@ -19,8 +19,9 @@ import { StatusDot, type StatusState } from './status-dot';
  *
  * - `TaskBoard`: one row of however many columns it is given, at least
  *   272px each, scrolling sideways when the parent is narrower. It is as
- *   wide as its parent, and its scroller alone reaches through the page's
- *   gutter (`--page-gutter`, which `EditorPageBody` publishes).
+ *   wide as its parent. On a page the caller marks it `data-bleed`, and
+ *   `EditorPageBody` takes the scroller through the gutter to the frame's
+ *   edge.
  * - `TaskColumn`: the head (the status on `StatusDot`, the count in mono, a
  *   + to add)
  *   over a tray on the hover wash, 18px round, that tints toward the
@@ -48,17 +49,9 @@ const TASK_STATUS_STATE: Record<TaskStatus, StatusState> = {
 
 function TaskBoard({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
-    // The scroller takes the page's gutter as padding and cancels it with the
-    // same margin: the columns stay on the page's measure while a card
-    // scrolled past the edge passes under the gutter instead of starting in
-    // it. The width is the page's (`--page-gutter`); outside a page the
-    // variable is unset and both resolve to nothing.
     <div
       data-slot="task-board"
-      className={cn(
-        '-mx-(--page-gutter) overflow-x-auto overscroll-x-contain px-(--page-gutter) [scrollbar-width:none]',
-        className,
-      )}
+      className={cn('overflow-x-auto overscroll-x-contain [scrollbar-width:none]', className)}
       {...props}
     >
       <div className="grid auto-cols-[minmax(272px,1fr)] grid-flow-col items-start gap-3">{children}</div>

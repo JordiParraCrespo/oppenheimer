@@ -140,8 +140,8 @@ without reaching up into it.
 Two layouts do this, each augmenting `StaticDataRouteOption` with a
 `declare module` block beside the code that reads it, so a key and its only
 consumer stay together: `AuthLayout` reads `authWidth` and `legalNoteKey`,
-and `AppShell` reads `pane` (a page's measure — `narrow`, `wide`, `board` —
-or `full`) through `resolveContentPane`
+and `AppShell` reads `pane` (a page's measure, `full`, or a function of the
+route's search that returns one) through `resolveContentPane`
 in the kit's `shell/lib/pane.ts`. Adding a key means adding it next to its
 reader, not to a shared types file.
 

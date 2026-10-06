@@ -275,24 +275,34 @@ name the jobs and split *those*.
 
 ## The page frame is the shell's
 
-A console page does not draw its own ground, scroll or measure. The route
-declares the measure as `staticData.pane` — `narrow` (the default), `wide`
-(a table) or `board` (Plan's columns) — on the layout route of its subtree
-where it has one (`plan.tsx`, `automations.tsx`, `pulls.tsx`, which render
-nothing but their `Outlet`), and `AppShell` draws the design system's
-`EditorPage` around it: the ground, the one scroll, the gutter. A screen renders content
-only, from a plain `flex flex-col` with its own gap. A child that has to
-reach the frame's edge — the task board's sideways scroller — bleeds
-through `--page-gutter` instead of restating the gutter's width. `full` is
-for a screen whose box is the pane (the terminal, New session's drop zone,
-a pull request's bar over its diff). The ground under every pane is the
-export's grey, `canvas-recessed`, painted by the shell's column; white
-cards float on it with no border of their own. Settings has its own shell
-on the same grey.
+- **The pane owns the ground.** `AppShell`'s pane paints the export's grey
+  (`canvas-recessed`) under everything, once; no frame or screen paints it.
+  Settings has its own shell on the same grey.
+- **A measure is a page the shell frames.** The route names it as
+  `staticData.pane`, on the layout route of its subtree where it has one
+  (`plan.tsx`, `automations.tsx`, `pulls.tsx` render nothing but their
+  `Outlet`), and the shell draws the frame at it: the scroll, the measure, the
+  gutter. The measures are the widths the export repeats: `status` (420px)
+  and `composer` (720px), centred in the pane; `narrow` (760px, the default),
+  `wide` (920px), `board` (1240px); and `fluid`, no measure. A route whose
+  views are search params declares the pane as a function of its search (a
+  pull request's `?view=`). The screen renders content only; the frame opens
+  a new page at the top without remounting it.
+- **A bar that stays put is the shell's slot, not a frame.** A screen hands
+  it to `PaneBar`, which puts it above the page; the page under it is still
+  the route's measure.
+- **`full` is only a box that is the pane** and must not scroll outside
+  itself: the session terminal. A state of it that is not a route (a session
+  still being prepared) renders the kit's `PageFrame`, the one caller outside
+  the shell.
+- **The pane owns its edge.** A screen takes drops with `usePaneDrop`; the
+  pane listens and draws the outline. A child that reaches the frame's edge
+  opts in with `data-bleed`; the frame cancels its gutter for it.
 
 `pnpm check:structure` fails an app file outside `features/public/` that
-paints `bg-canvas*` or `bg-background`, or renders `EditorPage` or
-`EditorPageBody`.
+paints `bg-canvas*` or `bg-background`, renders `EditorPage` or
+`EditorPageBody`, or has an element that scrolls around a centred `max-w-*`
+column.
 
 ## Routing is its own skill
 

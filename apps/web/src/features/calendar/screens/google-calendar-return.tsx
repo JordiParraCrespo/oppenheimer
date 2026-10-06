@@ -19,7 +19,7 @@ export function GoogleCalendarReturnScreen() {
   const refused = Boolean(search.error) || !search.code || !search.state;
 
   return (
-    <div className="mx-auto flex w-full max-w-110 flex-col gap-4 pt-9">
+    <>
       {refused || connect.isError ? (
         <>
           {refused ? (
@@ -38,6 +38,6 @@ export function GoogleCalendarReturnScreen() {
           </EmptyState.Header>
         </EmptyState>
       )}
-    </div>
+    </>
   );
 }
