@@ -16,13 +16,12 @@ import { AutomationSettingsOrmEntity } from '../automations/database/automation-
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
-import { GithubUserGrantOrmEntity } from '../github/database/github-user-grant.orm-entity';
-import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
+import { GithubUserGrantOrmEntity } from '../github/database/github-user-grant.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
 import { HostInventoryOrmEntity } from '../hosts/database/host-inventory.orm-entity';
@@ -39,6 +38,7 @@ import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-e
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-version.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';

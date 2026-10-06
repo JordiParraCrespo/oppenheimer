@@ -32,7 +32,6 @@ import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-st
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { CalendarModule } from './calendar/calendar.module';
-import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
@@ -66,6 +65,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
+import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { QueueModule } from './queue/queue.module';
 import { REDIS_CLIENT } from './redis/redis.di-tokens';
 import { RedisModule } from './redis/redis.module';
