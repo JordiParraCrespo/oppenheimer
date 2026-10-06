@@ -62,6 +62,7 @@ function RailItem({
   children,
   render,
   ref,
+  'aria-describedby': describedBy,
   ...props
 }: useRender.ComponentProps<'button'> & {
   /** The accessible name, and what the tip beside the button reads ("Sessions"). */
@@ -83,7 +84,8 @@ function RailItem({
       'data-slot': 'rail-item',
       'data-active': active || undefined,
       'aria-label': label,
-      'aria-describedby': hasCount ? countId : undefined,
+      // A sortable item's drag instructions describe it too; the count stays beside them.
+      'aria-describedby': [describedBy, hasCount ? countId : undefined].filter(Boolean).join(' ') || undefined,
       'aria-current': active ? 'page' : undefined,
       className: cn(
         'group/rail-item relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
