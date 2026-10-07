@@ -1209,6 +1209,7 @@
       "failed": "The review did not go through."
     },
     "changes": {
+      "back": "Back",
       "layout": "Layout",
       "unified": "Unified",
       "split": "Split",

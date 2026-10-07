@@ -1,3 +1,4 @@
+import type { DiffLayout } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { PaneBar } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
@@ -10,8 +11,9 @@ import { PullRequestToolbar } from '../sections/pull-request-toolbar';
 
 /**
  * A pull request: the bar and one of its three views. The review's pending
- * line comments are the one thing two of them share — written on Changes,
- * posted from Submit review — so they live here.
+ * line comments are shared by two of them — written on Changes, posted from
+ * Submit review — and the diff's layout is switched in the bar and drawn on
+ * Changes, so both live here.
  *
  * The bar sits in the shell's slot above the page (`PaneBar`), so it stays put
  * while the view scrolls under it; each view is a page the shell frames at
@@ -26,6 +28,7 @@ export function PullRequestScreen({
 }) {
   const navigate = useNavigate();
   const [pending, setPending] = useState<LineCommentInput[]>([]);
+  const [layout, setLayout] = useState<DiffLayout>('unified');
   const setView = (next: PullRequestView) =>
     navigate({ to: '.', search: { view: next === 'briefing' ? undefined : next } });
 
@@ -36,6 +39,8 @@ export function PullRequestScreen({
           address={address}
           view={view}
           onViewChange={setView}
+          layout={layout}
+          onLayoutChange={setLayout}
           pending={pending}
           onReviewSubmitted={() => setPending([])}
           onDiscardPending={() => setPending([])}
@@ -46,6 +51,7 @@ export function PullRequestScreen({
       ) : view === 'changes' ? (
         <PullRequestChanges
           address={address}
+          layout={layout}
           pending={pending}
           onAddPending={(comment) => setPending((current) => [...current, comment])}
           onDiscardPending={(index) =>

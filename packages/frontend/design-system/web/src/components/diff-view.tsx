@@ -32,11 +32,15 @@ import { IconButton } from './icon-button';
  *   agent's (the bot glyph) or a person's (their avatar), and the field for
  *   a new one.
  *
- * The colours are the system's: the code on the card, additions and
- * deletions as a wash of the success and danger hues with a 3px bar, the
- * gutter numbers subtle. `colorScheme` is the app's resolved theme (the
- * kit's `useTheme().resolvedTheme`), so the code follows the app's switch,
- * not the OS.
+ * The colours are the system's, set through the library's custom properties
+ * (`DIFF_TOKENS`): the card is its ground (`--diffs-light-bg`,
+ * `--diffs-dark-bg`), so every wash mixes from the card; additions and
+ * deletions mix toward `--success` and `--danger`, with the library's bar in
+ * the gutter (`diffIndicators: 'bars'`); the gutter numbers are
+ * `--fg-subtle`; the hunk line is the card with a hint of `--info`.
+ * `colorScheme` is the app's resolved theme (the kit's
+ * `useTheme().resolvedTheme`), so the code follows the app's switch, not the
+ * OS.
  */
 
 type DiffLayout = 'unified' | 'split';
@@ -46,13 +50,16 @@ type DiffAnnotation<T> = DiffLineAnnotation<T>;
 
 /** The library's custom properties, pointed at the tokens. */
 const DIFF_TOKENS = {
+  '--diffs-light-bg': 'var(--card)',
+  '--diffs-dark-bg': 'var(--card)',
   '--diffs-font-family': 'var(--font-mono)',
   '--diffs-header-font-family': 'var(--font-sans)',
   '--diffs-font-size': '12.5px',
   '--diffs-line-height': '20px',
   '--diffs-bg-context-override': 'var(--card)',
-  '--diffs-bg-buffer-override': 'var(--card)',
-  '--diffs-bg-separator-override': 'var(--hover-surface)',
+  // Split view hatches the side a hunk does not reach, in a faint tint of the text.
+  '--diffs-bg-buffer-override': 'color-mix(in oklab, var(--card) 90%, var(--fg))',
+  '--diffs-bg-separator-override': 'color-mix(in oklab, var(--card) 94%, var(--info))',
   // The hues lines mix toward; the library sets how far for each theme.
   '--diffs-bg-addition-override': 'var(--success)',
   '--diffs-bg-deletion-override': 'var(--danger)',
@@ -98,11 +105,9 @@ function DiffView<T>({
           themeType: colorScheme,
           disableFileHeader: true,
           overflow: 'wrap',
-          diffIndicators: 'classic',
+          diffIndicators: 'bars',
           lineDiffType: 'word',
           hunkSeparators: 'line-info',
-          // Split view leaves the missing side blank, as the frames do, not hatched.
-          unsafeCSS: '[data-content-buffer]{background-image:none}',
           enableGutterUtility: Boolean(onCommentLine),
           onGutterUtilityClick: onCommentLine
             ? (range) =>
