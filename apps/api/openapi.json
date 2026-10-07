@@ -20538,10 +20538,6 @@
       "UnreadableRepositoryDto": {
         "type": "object",
         "properties": {
-          "fullName": {
-            "type": "string",
-            "example": "acme-labs/xrp-mobile"
-          },
           "what": {
             "type": "string",
             "enum": ["repository", "pull_requests", "files", "checks", "reviews"],
@@ -20553,7 +20549,7 @@
             "description": "The refusal GitHub gave: no access, gone, wait, or no answer."
           }
         },
-        "required": ["fullName", "what", "refusal"]
+        "required": ["what", "refusal"]
       },
       "PullRequestQueueResponseDto": {
         "type": "object",

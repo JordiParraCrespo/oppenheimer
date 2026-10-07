@@ -2275,7 +2275,6 @@ export type PullRequestLaneCountsDto = {
 };
 
 export type UnreadableRepositoryDto = {
-    fullName: string;
     /**
      * `repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them.
      */

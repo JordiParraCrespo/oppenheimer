@@ -154,11 +154,15 @@ export class PullRequestLaneCountsDto {
 
 const READ_GAPS = ['repository', 'pull_requests', 'files', 'checks', 'reviews'] as const;
 
-/** Something GitHub did not give on this read: which repository, what, and the refusal GitHub gave. */
+/**
+ * Something GitHub did not give on this read: what, and the refusal it gave.
+ *
+ * It names no repository. Nothing shows one — the notice is one line about
+ * what GitHub did, not a list — and the period's numbers are kept in the
+ * browser's storage, where a private repository's name does not belong
+ * (`frontend-consumer`'s `persistence.ts`).
+ */
 export class UnreadableRepositoryDto {
-  @ApiProperty({ example: 'acme-labs/xrp-mobile' })
-  fullName!: string;
-
   @ApiProperty({
     enum: READ_GAPS,
     description:

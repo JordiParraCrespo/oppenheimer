@@ -18,6 +18,12 @@ import { tasksKeys } from './tasks.queries';
  * and the sessions on it, and a calendar is someone's day, Google's included. Pull requests are
  * private repositories' code, diffs included. A consumer app passes this
  * to `createQueryPersistOptions`.
+ *
+ * The review period's numbers are the one part of the area that is kept
+ * (`pullRequestAnalyticsKeys`, deliberately its own feature): counts, medians,
+ * a lane mix and dates, naming no repository and holding no code. They are
+ * what a reader opens the page for, and reading them from storage is what
+ * spares them a skeleton on every visit.
  */
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   sessionsKeys.all[0],

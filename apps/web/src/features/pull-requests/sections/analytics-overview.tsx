@@ -67,7 +67,9 @@ export function AnalyticsOverview() {
               <span className="figures text-fg">{rangeLabel(analytics.data, locale)}</span>{' '}
               {t('pullRequests.analytics.compared', {
                 days: Math.round(
-                  (analytics.data.to.getTime() - analytics.data.from.getTime()) / 86_400_000,
+                  (new Date(analytics.data.to).getTime() -
+                    new Date(analytics.data.from).getTime()) /
+                    86_400_000,
                 ),
               })}
             </span>

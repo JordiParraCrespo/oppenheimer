@@ -42,8 +42,8 @@ export function dayBars(
 
 /** `Sep 5 – Oct 4`. */
 export function rangeLabel(analytics: PullRequestAnalytics, locale: string): string {
-  const format = (date: Date) =>
-    date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  const format = (at: string) =>
+    new Date(at).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   return `${format(analytics.from)} – ${format(analytics.to)}`;
 }
 

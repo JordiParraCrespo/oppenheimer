@@ -28,7 +28,7 @@ export function useReadNotices(unreadable: readonly UnreadableRepository[] | und
   useEffect(() => {
     const gaps = unreadable ?? [];
     const signature = gaps
-      .map((gap) => `${gap.fullName}|${gap.what}|${gap.refusal}`)
+      .map((gap) => `${gap.what}|${gap.refusal}`)
       .sort()
       .join(',');
     if (signature === said.current) return;

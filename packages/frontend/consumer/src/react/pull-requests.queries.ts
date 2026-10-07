@@ -56,8 +56,19 @@ export const pullRequestsKeys = {
   comments: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'comments'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
-  analytics: (range: PullRequestAnalyticsRange) =>
-    [...pullRequestsKeys.all, 'analytics', range] as const,
+};
+
+/**
+ * The review period's numbers are their own feature, and the reason is
+ * storage: what the queue holds is private repositories' code — titles,
+ * branches, file paths — and never reaches the persisted cache, while these
+ * are counts, medians and dates that name nothing. A feature is the unit the
+ * persister's deny-list works in (`persistence.ts`), so the split in storage
+ * has to be a split in the key.
+ */
+const pullRequestAnalyticsKeys = {
+  all: ['pullRequestAnalytics'] as const,
+  range: (range: PullRequestAnalyticsRange) => [...pullRequestAnalyticsKeys.all, range] as const,
 };
 
 /**
@@ -122,7 +133,7 @@ export function useWatchedRepositories<TData = WatchedRepository[]>(
 export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
   const app = useConsumerApp();
   return useQuery<PullRequestAnalytics, Error>({
-    queryKey: pullRequestsKeys.analytics(range),
+    queryKey: pullRequestAnalyticsKeys.range(range),
     queryFn: () => app.pullRequests.analytics(range),
     placeholderData: keepPreviousData,
   });
@@ -130,7 +141,13 @@ export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
 
 function useInvalidatePullRequests() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: pullRequestsKeys.all });
+  // Both roots: watching a repository changes the queue and the period's
+  // numbers alike, and they are only separate keys so that storage can tell
+  // them apart.
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: pullRequestsKeys.all });
+    await queryClient.invalidateQueries({ queryKey: pullRequestAnalyticsKeys.all });
+  };
 }
 
 export interface SetRepositoryWatchVariables {

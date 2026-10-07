@@ -133,8 +133,8 @@ export class PullRequestMapper {
     const gaps = new Map<string, UnreadableRepositoryDto>();
     for (const read of reads) {
       for (const gap of read.gaps) {
-        const entry = { fullName: read.repository.fullName, what: gap.what, refusal: gap.refusal };
-        gaps.set(`${entry.fullName}|${entry.what}|${entry.refusal}`, entry);
+        const entry = { what: gap.what, refusal: gap.refusal };
+        gaps.set(`${entry.what}|${entry.refusal}`, entry);
       }
     }
     return [...gaps.values()];

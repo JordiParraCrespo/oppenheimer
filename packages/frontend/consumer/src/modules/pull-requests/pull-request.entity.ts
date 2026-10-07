@@ -31,9 +31,8 @@ export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none' | 'un
 /** Why GitHub did not answer a read: no access, gone, asked to wait, or no answer. */
 export type ReadRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
 
-/** What GitHub did not give on a read: which repository, what of it, and the refusal it gave. */
+/** What GitHub did not give on a read: what of it, and the refusal it gave. It names no repository. */
 export interface UnreadableRepository {
-  fullName: string;
   /** `repository`: nothing could be listed; `pull_requests`: some could not be read; else that part of some. */
   what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
   refusal: ReadRefusal;
@@ -241,8 +240,13 @@ export interface PullRequestAnalytics {
   /** False when more closed in the window than one read takes in full: the figures count the most recent. */
   complete: boolean;
   unreadable: UnreadableRepository[];
-  from: Date;
-  to: Date;
+  /**
+   * ISO 8601, not `Date`. These numbers are kept in the browser's storage, and
+   * what comes back from JSON is a string: a `Date` here is a crash on the
+   * first read after a reload, not a type error anywhere the compiler looks.
+   */
+  from: string;
+  to: string;
   created: AnalyticsFigure;
   merged: AnalyticsFigure;
   reviewedByYou: AnalyticsFigure;
