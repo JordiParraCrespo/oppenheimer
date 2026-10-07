@@ -1,9 +1,10 @@
 #!/bin/sh
-# Vendored from JordiParraCrespo/indie-hacker-agents-claude-skills
-# (.claude/skills/db-backup-verify/scripts/upload.sh at dfc86c7), plus one fix not
-# yet upstream: it verifies the upload against the prefix, since `rclone
-# check` refuses an object path.
-# Fix it there, then copy it here again.
+# Started from the db-backup-verify skill in JordiParraCrespo/indie-hacker-agents-claude-skills
+# (.claude/skills/db-backup-verify/scripts/upload.sh at dfc86c7) and maintained here:
+# this is the copy deploy/dev runs. It differs from the skill in one fix:
+# it verifies each upload against the prefix, since `rclone check` refuses
+# an object path.
+#
 # upload.sh — runs in the uploader: the container WITH internet and WITHOUT
 # database access. It only ever sees ciphertext.
 #

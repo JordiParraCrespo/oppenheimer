@@ -28,11 +28,11 @@ applies them to Oppenheimer.
 | File | What it is |
 |---|---|
 | `compose.yml` | The stack. Upstream images are pinned by digest. The app images come from `release.env` |
-| `bin/oppctl` | Everything you do on the server: setup, doctor, deploy, rollback, backup, restore, status |
+| `bin/oppctl` | Everything you do on the server: setup, doctor, deploy, rollback, backup, restore, status. Installed once, outside every release |
 | `bin/deploy-gate` | The forced command on CI's SSH key. It accepts `deploy <sha>` and a bundle on stdin, nothing else |
 | `cloudflared.yml.tmpl` | Tunnel ingress. It is in this repo, not in the Cloudflare dashboard |
-| `backup/` | The dump sidecar image, `dump.sh` and `upload.sh` (copied from the skill), and the restore-drill assertions |
-| `systemd/` | Backup timers, plus a unit that alerts when one fails |
+| `backup/` | The dump sidecar image, `dump.sh` and `upload.sh` (started from the skill, maintained here), and the restore-drill assertions |
+| `systemd/` | `oppenheimer-backup@.service` and the three timers that run it, plus a unit that alerts when one fails |
 | `cloud-init.yaml` | First-boot setup: users, Docker, Tailscale, ufw, security updates |
 | `config/*.example` | The server's settings. `oppctl setup` writes the real files to `/srv/oppenheimer/config` |
 
@@ -116,11 +116,17 @@ Setup does the following:
 - creates `/srv/oppenheimer/{releases,config}`
 - generates the database passwords and `config/api.env`, with a fresh Better
   Auth secret, control-plane signing key and GitHub token key
-- installs the deploy gate and `/usr/local/bin/oppctl`
+- installs `oppctl` and the deploy gate, root-owned, in
+  `/usr/local/libexec/oppenheimer`, with `/usr/local/bin/oppctl` pointing
+  there
 - authorizes the CI key, restricted to the gate
 - enables the backup timers
 
 Running it again is safe: it never overwrites a secret that already exists.
+It is also how a change to `oppctl` or the gate reaches the server: a deploy
+ships the release's compose file and scripts but runs the installed `oppctl`,
+and warns when the commit carries a different one. Re-run setup from that
+commit.
 
 ### 4. Cloudflare Tunnel
 
@@ -160,7 +166,9 @@ Follow the `db-backup-verify` skill (`references/storage-setup.md` and
 Then fill in `/srv/oppenheimer/config/host.env`:
 
 - `DEV_HOSTNAME`, `TUNNEL_ID`, `IMAGE_REPO`
-- `AGE_RECIPIENT`, `R2_BUCKET`, `B2_BUCKET`
+- `AGE_RECIPIENT`, `R2_BUCKET`, `B2_BUCKET`. A deploy refuses to run
+  without the first two and an `[r2]` remote: every deploy after the first
+  starts with a dump off the server.
 - `NTFY_URL`: a secret ntfy topic. Failed backups and failed deploys post there.
 
 Put the same hostname into `FRONTEND_URL` and `BETTER_AUTH_URL` in `api.env`.
@@ -197,11 +205,11 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 
 | | |
 |---|---|
-| `oppctl status` | Release, previous release, containers, newest local dumps, disk |
+| `oppctl status` | Release, previous release, an interrupted deploy if there was one, containers, newest local dumps, disk |
 | `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow |
 | `oppctl psql` | psql as the app's role |
 | `oppctl rollback` | Run the previous release's images and config again |
-| `oppctl backup now` | Dump and upload outside the schedule |
+| `oppctl backup daily` | Dump and upload outside the schedule |
 | `oppctl doctor` | Checks config, keys, remotes, timers and Docker, and says when a reboot is due |
 
 ### How a deploy works
@@ -216,16 +224,26 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
    - renders the tunnel config and checks the compose invariants: no
      published ports, every image pinned by digest, `data` internal, Postgres
      and Redis only on `data`
-   - takes an encrypted dump and uploads it
-   - starts the new release and waits for the API, then for nginx, then for
-     a `GET /api/v1/ready` through nginx to the database and Redis, then for
-     cloudflared
-4. If anything fails, it starts the previous release again, sends a
-   notification, and the workflow goes red. When the deploy passes, `current`
-   points at the new release, and releases beyond the last five are pruned
-   along with their images.
-5. Back in the workflow, the job checks `https://$DEV_URL/api/v1/health`
-   through Cloudflare.
+   - takes an encrypted dump and uploads it, or stops (not on the first deploy,
+     which has no database yet)
+   - starts the new release and waits for each healthcheck: the API, nginx,
+     a `GET /api/v1/ready` through nginx to the database and Redis, and
+     cloudflared's `/ready`, which passes only once the tunnel is connected
+     to Cloudflare
+4. If anything fails, it starts the previous release again (on a first
+   deploy, it stops the new one), sends a notification, and the workflow goes
+   red. A failed check, an error and a signal all take that same path. When
+   the deploy passes, `current` points at the new release, and releases
+   beyond the last five are pruned along with their images.
+5. Back in the workflow, the job checks `$DEV_URL/api/v1/ready` through
+   Cloudflare. A missing `DEV_URL` fails the job.
+
+A deploy outlives its SSH connection: if CI's session drops, the deploy
+finishes or rolls back on the server anyway, and its output is in
+`/srv/oppenheimer/deploy.log`. Only a deploy killed outright (a reboot, `kill
+-9`) can leave containers that `current` does not name. It leaves
+`/srv/oppenheimer/inflight` behind, and `oppctl status` and `doctor` say so;
+deploy again or run `oppctl rollback`.
 
 **Migrations run when the API boots, and only forward.** A rollback brings
 back the old images, not the old schema. If the old API refuses the new
@@ -302,7 +320,8 @@ age -d -i ~/secure/oppenheimer-dev.age.key oppenheimer-<stamp>.pgc.age \
 - **One server.** No staging in front of it: this *is* the rehearsal
   environment. A production server is the same directory with a second
   `config/` and its own environment in GitHub.
-- **The deploy gate does not limit what a deploy can change.** The bundle's
-  `oppctl` runs as `deploy`, which is in the docker group. Three things guard
-  the server: the `dev` environment's branch rule, the tailnet ACL, and the
-  key's `restrict`.
+- **The deploy gate does not limit what a deploy can change.** The installed
+  `oppctl` runs the deploy, but the release's compose file decides what runs,
+  as `deploy`, which is in the docker group. Four things guard the server:
+  the workflow runs on `main` only, the `dev` environment's branch rule, the
+  tailnet ACL, and the key's `restrict`.

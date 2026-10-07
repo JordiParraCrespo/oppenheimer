@@ -21,7 +21,9 @@ concurrency:
 jobs:
   build:
     name: Build ${{ matrix.image }}
-    if: vars.DEV_DEPLOY_ENABLED == 'true'
+    # Main only, whatever the trigger: a dispatch from another branch builds
+    # and ships nothing, with or without the environment's branch rule.
+    if: vars.DEV_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: gha-vm
     permissions:
       contents: read
@@ -68,6 +70,7 @@ jobs:
   deploy:
     name: Deploy to the dev server
     needs: build
+    if: vars.DEV_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: gha-vm
     # Holds the secrets below; restrict it to `main` in the repository's
     # environment settings so no other branch can reach the server.
@@ -118,16 +121,19 @@ jobs:
                   "deploy@$DEV_SSH_HOST" "deploy $GITHUB_SHA"
           rm -rf "$bundle"
 
-      # From outside, through Cloudflare: the one check the server cannot do
-      # for itself.
-      - name: Public health check
-        if: vars.DEV_URL != ''
+      # From outside, through Cloudflare's edge and the tunnel to nginx, the
+      # API, Postgres and Redis: the one path the server cannot check itself.
+      - name: Public readiness check
         env:
           DEV_URL: ${{ vars.DEV_URL }}
         run: |
+          if [ -z "$DEV_URL" ]; then
+            echo "::error::the dev environment has no DEV_URL variable"
+            exit 1
+          fi
           for _ in $(seq 1 12); do
-            curl -fsS --max-time 10 "$DEV_URL/api/v1/health" && exit 0
+            curl -fsS --max-time 10 "$DEV_URL/api/v1/ready" && exit 0
             sleep 5
           done
-          echo "::error::$DEV_URL/api/v1/health did not answer after the deploy"
+          echo "::error::$DEV_URL/api/v1/ready did not answer after the deploy"
           exit 1

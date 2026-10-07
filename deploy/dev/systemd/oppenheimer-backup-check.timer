@@ -2,6 +2,7 @@
 Description=Oppenheimer dev: backup freshness, read from R2
 
 [Timer]
+Unit=oppenheimer-backup@check.service
 OnCalendar=*-*-* 09,21:07:00 UTC
 RandomizedDelaySec=10min
 Persistent=true

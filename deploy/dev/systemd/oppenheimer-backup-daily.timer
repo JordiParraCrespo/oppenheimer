@@ -2,6 +2,7 @@
 Description=Oppenheimer dev: encrypted dump to R2
 
 [Timer]
+Unit=oppenheimer-backup@daily.service
 OnCalendar=*-*-* 03:17:00 UTC
 RandomizedDelaySec=10min
 Persistent=true

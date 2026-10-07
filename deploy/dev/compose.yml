@@ -162,7 +162,8 @@ services:
     image: cloudflare/cloudflared:2026.10.0@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
     restart: unless-stopped
     networks: [edge]
-    command: ["tunnel", "--no-autoupdate", "--config", "/etc/cloudflared/config.yml", "run"]
+    # Metrics on loopback only, for the healthcheck below.
+    command: ["tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:2000", "--config", "/etc/cloudflared/config.yml", "run"]
     volumes:
       # Rendered by `oppctl` from cloudflared.yml.tmpl and config/host.env.
       - ./cloudflared.yml:/etc/cloudflared/config.yml:ro
@@ -174,6 +175,14 @@ services:
       # oppenheimer:end web
       api:
         condition: service_healthy
+    # /ready answers 200 only once the tunnel holds a connection to Cloudflare's
+    # edge, so a deploy that cannot be reached from outside fails here.
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
 
   # ---- backups: started by `oppctl backup`, never by `up` -------------------
 
@@ -189,6 +198,8 @@ services:
       PGHOST: postgres
       PGUSER: backup_user
       PGDATABASE: oppenheimer
+      # Read by dump.sh, the image's entrypoint, into PGPASSWORD: libpq itself
+      # has no PGPASSWORD_FILE.
       PGPASSWORD_FILE: /run/secrets/backup_db_password
       AGE_RECIPIENT: ${AGE_RECIPIENT:-}
     secrets: [backup_db_password]

@@ -5,4 +5,4 @@ Description=Oppenheimer dev: report %i failing
 Type=oneshot
 User=deploy
 Group=deploy
-ExecStart=/usr/local/bin/oppctl notify "%i failed on %H — journalctl -u %i"
+ExecStart=/usr/local/libexec/oppenheimer/oppctl notify "%i failed on %H — journalctl -u %i"

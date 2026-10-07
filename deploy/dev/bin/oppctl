@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 # oppctl — operate the Oppenheimer dev deployment on this server.
 #
-#   oppctl setup [--ci-key '<ssh public key>']   once, as root: dirs, secrets, units
+#   oppctl setup [--ci-key '<ssh public key>']   as root, from a checkout: install
 #   oppctl doctor                                 is this server ready to deploy?
 #   oppctl deploy <sha> <bundle-dir>              what the CI deploy gate runs
 #   oppctl rollback                               back to the previous release
 #   oppctl status | logs [service…] | psql
-#   oppctl backup {daily|weekly|check|now}        dump → encrypt → R2 (weekly: B2)
+#   oppctl backup {daily|weekly|check}            dump → encrypt → R2 (weekly: B2)
 #   oppctl restore                                plaintext pg_dump -Fc on stdin
 #
 # Nothing is built here. A release is the deploy/dev directory of one commit
 # plus `release.env`, which pins the images the `Deploy dev` workflow built for
 # that commit by digest. Releases live in /srv/oppenheimer/releases;
 # `current` and `previous` are symlinks into it.
+#
+# This program is not part of a release. `oppctl setup` installs it, root-owned,
+# in /usr/local/libexec/oppenheimer beside the deploy gate, and everything —
+# the gate, the timers, you — runs that copy, which operates on the release
+# directory it is given. A release that changes it is installed by running
+# setup again from that commit.
 
 set -euo pipefail
 
@@ -21,6 +27,8 @@ CONFIG="$ROOT/config"
 RELEASES="$ROOT/releases"
 CURRENT="$ROOT/current"
 PREVIOUS="$ROOT/previous"
+INFLIGHT="$ROOT/inflight"
+LIBEXEC=/usr/local/libexec/oppenheimer
 PROJECT=oppenheimer-dev
 KEEP_RELEASES=5
 HEALTH_TIMEOUT="${OPP_HEALTH_TIMEOUT:-300}"
@@ -109,7 +117,9 @@ check_config() {
   for f in api.env db_password backup_db_password rclone.conf tunnel-credentials.json; do
     [ -s "$CONFIG/$f" ] || { warn "missing or empty: $CONFIG/$f"; missing=1; }
   done
-  for v in IMAGE_REPO DEV_HOSTNAME TUNNEL_ID; do
+  # AGE_RECIPIENT and R2_BUCKET too: every deploy after the first starts with
+  # a dump off the server, and a deploy that cannot take one does not run.
+  for v in IMAGE_REPO DEV_HOSTNAME TUNNEL_ID AGE_RECIPIENT R2_BUCKET; do
     [ -n "${!v:-}" ] || { warn "$v is empty in $CONFIG/host.env"; missing=1; }
   done
   [ "$missing" -eq 0 ] || return 1
@@ -117,6 +127,7 @@ check_config() {
     || { warn "tunnel-credentials.json is not a cloudflared tunnel credentials file"; return 1; }
   [ "$(jq -r .TunnelID "$CONFIG/tunnel-credentials.json")" = "$TUNNEL_ID" ] \
     || { warn "TUNNEL_ID does not match the credentials file's TunnelID"; return 1; }
+  grep -q '^\[r2\]' "$CONFIG/rclone.conf" || { warn "rclone.conf has no [r2] remote"; return 1; }
 }
 
 container_of() { compose "$1" ps -q "$2" 2>/dev/null | head -1; }
@@ -126,10 +137,13 @@ wait_healthy() {
   while [ "$SECONDS" -lt "$deadline" ]; do
     id="$(container_of "$rel" "$svc")"
     if [ -n "$id" ]; then
-      state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$id")"
+      # Healthy means its healthcheck passed. A service the release checks
+      # without one is a mistake in compose.yml, not a pass.
+      state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$id")"
       case "$state" in
-        healthy|running) ok "$svc is $state"; return 0 ;;
-        unhealthy|exited|dead) warn "$svc is $state"; return 1 ;;
+        healthy) ok "$svc is healthy"; return 0 ;;
+        unhealthy) warn "$svc is unhealthy"; return 1 ;;
+        none) warn "$svc has no healthcheck"; return 1 ;;
       esac
     fi
     sleep 3
@@ -209,6 +223,36 @@ prune_releases() {
   docker image prune -f >/dev/null 2>&1 || true
 }
 
+# What a deploy has done so far, for deploy_unwind.
+DEPLOY_SHA="" DEPLOY_REL="" DEPLOY_PREV="" DEPLOY_STARTED=0 DEPLOY_DONE=0
+
+# The one way a deploy ends without `current` moving: a failed check, a `die`,
+# a signal. If the new release was started, the previous one is started again
+# (a first deploy's is stopped instead), so the running containers are always
+# the ones `current` names. `inflight` records a deploy in progress; one left
+# behind means this process was killed outright, and `oppctl status` says so.
+deploy_unwind() {
+  [ "$DEPLOY_DONE" = 1 ] && return 0
+  trap - EXIT INT TERM
+  if [ "$DEPLOY_STARTED" = 1 ]; then
+    compose "$DEPLOY_REL" ps || true
+    compose "$DEPLOY_REL" logs --tail 80 api || true
+    if [ -n "$DEPLOY_PREV" ]; then
+      warn "rolling back to $(basename "$DEPLOY_PREV")"
+      compose "$DEPLOY_PREV" up -d --remove-orphans || true
+      verify_release "$DEPLOY_PREV" || warn "the previous release is not healthy either"
+      warn "migrations that ran are NOT undone; if the previous API refuses the schema, restore the pre-deploy dump (README: Restore)"
+    else
+      warn "stopping the failed first release"
+      compose "$DEPLOY_REL" stop || true
+    fi
+  fi
+  rm -f "$INFLIGHT"
+  notify "deploy of ${DEPLOY_SHA:0:12} failed"
+  printf '[oppctl] FAIL deploy of %s failed\n' "$DEPLOY_SHA" >&2
+  exit 1
+}
+
 cmd_deploy() {
   local sha="${1:-}" bundle="${2:-}"
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || die "usage: oppctl deploy <40-char sha> <bundle-dir>"
@@ -217,43 +261,45 @@ cmd_deploy() {
   check_config || die "this server is not configured — run 'oppctl doctor'"
   lock
 
-  local rel prev
-  rel="$RELEASES/${sha:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
-  prev="$(current_release)"
-  log "deploying $sha as $(basename "$rel")"
+  # A dropped SSH session must not stop a deploy halfway: hangups and broken
+  # pipes are ignored, and the output also goes to deploy.log, so the deploy
+  # finishes or unwinds on its own and can be read afterwards.
+  trap '' HUP PIPE
+  exec > >(tee -p -a "$ROOT/deploy.log") 2>&1
+  DEPLOY_SHA="$sha"
+  DEPLOY_PREV="$(current_release)"
+  DEPLOY_REL="$RELEASES/${sha:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
+  trap deploy_unwind EXIT
+  trap 'exit 1' INT TERM
+  log "$(date -u +%FT%TZ) deploying $sha as $(basename "$DEPLOY_REL")"
+  cmp -s "$bundle/deploy/bin/oppctl" "${BASH_SOURCE[0]}" \
+    || warn "this commit changes oppctl; install it with 'oppctl setup' from this commit"
 
-  cp -a "$bundle/deploy" "$rel"
-  rm -f "$rel/registry-token"
-  pull_images "$sha" "$bundle/registry-token" "$rel/release.env"
-  render_tunnel_config "$rel"
-  check_invariants "$rel"
+  cp -a "$bundle/deploy" "$DEPLOY_REL"
+  rm -f "$DEPLOY_REL/registry-token"
+  pull_images "$sha" "$bundle/registry-token" "$DEPLOY_REL/release.env"
+  render_tunnel_config "$DEPLOY_REL"
+  check_invariants "$DEPLOY_REL"
 
   # A dump before the new API boots: migrations run at boot and only forward,
   # so this is what a bad migration is undone with. It runs with the incoming
   # release's backup image and scripts, so a fix to them ships with the deploy
   # that carries it.
-  if [ -n "$prev" ] && [ -n "$(container_of "$prev" postgres)" ]; then
-    backup_run "$rel" predeploy || die "pre-deploy backup failed — not deploying over a database without one"
+  if [ -n "$DEPLOY_PREV" ] && [ -n "$(container_of "$DEPLOY_PREV" postgres)" ]; then
+    backup_run "$DEPLOY_REL" daily || die "pre-deploy backup failed — not deploying over a database without one"
   fi
 
-  if compose "$rel" up -d --remove-orphans && verify_release "$rel"; then
-    swap_links "$rel"
-    ensure_backup_role "$rel"
-    prune_releases
-    ok "deployed $sha"
-    return 0
-  fi
+  ln -sfn "$DEPLOY_REL" "$INFLIGHT"
+  DEPLOY_STARTED=1
+  compose "$DEPLOY_REL" up -d --remove-orphans || die "compose up failed"
+  verify_release "$DEPLOY_REL" || die "the new release is not healthy"
 
-  compose "$rel" ps >&2 || true
-  compose "$rel" logs --tail 80 api >&2 || true
-  if [ -n "$prev" ]; then
-    warn "rolling back to $(basename "$prev")"
-    compose "$prev" up -d --remove-orphans || true
-    verify_release "$prev" || warn "the previous release is not healthy either"
-    warn "migrations that ran are NOT undone; if the previous API refuses the schema, restore the pre-deploy dump (README: Restore)"
-  fi
-  notify "deploy of ${sha:0:12} failed and was rolled back"
-  die "deploy of $sha failed"
+  swap_links "$DEPLOY_REL"
+  DEPLOY_DONE=1
+  rm -f "$INFLIGHT"
+  ensure_backup_role "$DEPLOY_REL" || warn "could not refresh backup_user; the next backup will try again"
+  prune_releases
+  ok "deployed $sha"
 }
 
 cmd_rollback() {
@@ -292,26 +338,23 @@ GRANT pg_read_all_data TO backup_user;
 SQL
 }
 
+# Dump and upload are two containers (one reads the database, the other
+# reaches the internet), so the program that runs them in order is this one;
+# upload.sh owns only the transfer. A dump that stays on this server is not a
+# backup, so each step fails closed.
 backup_run() {
   local rel="$1" mode="$2"
   case "$mode" in
-    daily|now|predeploy)
-      if [ -z "${AGE_RECIPIENT:-}" ]; then
-        [ "$mode" = predeploy ] && { warn "AGE_RECIPIENT is unset — deploying WITHOUT a pre-deploy backup"; return 0; }
-        die "AGE_RECIPIENT is unset in $CONFIG/host.env"
-      fi
-      ensure_backup_role "$rel"
+    daily)
+      [ -n "${AGE_RECIPIENT:-}" ] || { warn "AGE_RECIPIENT is unset in $CONFIG/host.env"; return 1; }
+      [ -n "${R2_BUCKET:-}" ] || { warn "R2_BUCKET is unset in $CONFIG/host.env"; return 1; }
+      ensure_backup_role "$rel" || return 1
       log "dumping"
       compose "$rel" run --rm -T backup-dump </dev/null || return 1
-      if [ -z "${R2_BUCKET:-}" ]; then
-        [ "$mode" = daily ] && die "R2_BUCKET is unset — the dump stays on this server, which is not a backup"
-        warn "R2_BUCKET is unset — the dump stays on this server only"
-        return 0
-      fi
       compose "$rel" run --rm -T backup-upload daily </dev/null ;;
-    weekly) compose "$rel" run --rm -T backup-upload weekly </dev/null ;;
-    check)  compose "$rel" run --rm -T backup-upload check </dev/null ;;
-    *) die "usage: oppctl backup {daily|weekly|check|now}" ;;
+    weekly|check)
+      compose "$rel" run --rm -T backup-upload "$mode" </dev/null ;;
+    *) die "usage: oppctl backup {daily|weekly|check}" ;;
   esac
 }
 
@@ -343,9 +386,7 @@ cmd_restore() {
   trap 'rm -f "$dump"' EXIT
   log "receiving the dump"
   cat > "$dump"
-  if [ -n "${AGE_RECIPIENT:-}" ]; then
-    backup_run "$rel" predeploy || die "could not take a safety dump first"
-  fi
+  backup_run "$rel" daily || die "could not take a safety dump first"
   compose "$rel" exec -T postgres sh -c 'cat > /tmp/restore.pgc' < "$dump"
   rm -f "$dump"
   compose "$rel" exec -T postgres pg_restore -l /tmp/restore.pgc >/dev/null \
@@ -374,6 +415,7 @@ cmd_status() {
   printf 'release   %s\n' "$(basename "$rel")"
   printf 'previous  %s\n' "$(basename "$(readlink -e "$PREVIOUS" 2>/dev/null || echo none)")"
   printf 'url       https://%s\n\n' "$DEV_HOSTNAME"
+  [ -L "$INFLIGHT" ] && warn "a deploy of $(basename "$(readlink "$INFLIGHT")") was killed before it finished; the containers may be that release's — deploy again, or 'oppctl rollback'"
   compose "$rel" ps
   printf '\nlocal dumps:\n'
   docker run --rm --network none --entrypoint sh -v oppenheimer-dev_backup-work:/work:ro \
@@ -387,12 +429,11 @@ cmd_doctor() {
   local bad=0
   check_config && ok "config files and host.env are filled in" || bad=1
   [[ "${AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] && ok "AGE_RECIPIENT is an age public key" \
-    || { warn "AGE_RECIPIENT is not set to an age public key — no backups"; bad=1; }
-  grep -q '^\[r2\]' "$CONFIG/rclone.conf" 2>/dev/null && [ -n "${R2_BUCKET:-}" ] && ok "R2 remote and bucket configured" \
-    || { warn "no [r2] remote in rclone.conf or R2_BUCKET unset"; bad=1; }
+    || { warn "AGE_RECIPIENT is not an age public key (age1…)"; bad=1; }
   grep -q '^\[b2\]' "$CONFIG/rclone.conf" 2>/dev/null && [ -n "${B2_BUCKET:-}" ] && ok "B2 remote and bucket configured" \
     || { warn "no [b2] remote in rclone.conf or B2_BUCKET unset — weekly copy will fail"; bad=1; }
   [ -n "${NTFY_URL:-}" ] && ok "failures notify $NTFY_URL" || warn "NTFY_URL unset — failed backups alert nobody"
+  [ -L "$INFLIGHT" ] && { warn "an interrupted deploy left $INFLIGHT (see 'oppctl status')"; bad=1; }
   for t in oppenheimer-backup-daily oppenheimer-backup-weekly oppenheimer-backup-check; do
     systemctl is-enabled --quiet "$t.timer" 2>/dev/null && ok "$t.timer enabled" || { warn "$t.timer not enabled"; bad=1; }
   done
@@ -406,7 +447,8 @@ cmd_setup() {
   local ci_key=""
   [ "${1:-}" = --ci-key ] && ci_key="${2:-}"
   id deploy >/dev/null 2>&1 || die "no 'deploy' user (cloud-init.yaml creates it)"
-  command -v openssl jq flock docker >/dev/null || die "need openssl, jq, flock and docker"
+  command -v openssl jq flock docker tee >/dev/null || die "need openssl, jq, flock and docker"
+  [ -f "$HERE/config/host.env.example" ] || die "run setup from a checkout's deploy/dev, not the installed copy"
 
   install -d -o deploy -g deploy -m 0755 "$ROOT" "$RELEASES"
   install -d -o deploy -g deploy -m 0700 "$CONFIG"
@@ -434,12 +476,14 @@ cmd_setup() {
   [ -e "$CONFIG/rclone.conf" ] || { : > "$CONFIG/rclone.conf"; chmod 0644 "$CONFIG/rclone.conf"; }
   chown -R deploy:deploy "$CONFIG"
 
-  # The only thing the workflow's SSH key may run.
-  install -D -m 0755 -o root -g root "$HERE/bin/deploy-gate" /usr/local/libexec/oppenheimer-deploy-gate
-  ln -sfn "$CURRENT/bin/oppctl" /usr/local/bin/oppctl
+  # The operator and the only thing the workflow's SSH key may run, root-owned
+  # and outside every release.
+  install -d -m 0755 -o root -g root "$LIBEXEC"
+  install -m 0755 -o root -g root "$HERE/bin/oppctl" "$HERE/bin/deploy-gate" "$LIBEXEC/"
+  ln -sfn "$LIBEXEC/oppctl" /usr/local/bin/oppctl
   if [ -n "$ci_key" ]; then
     install -d -o deploy -g deploy -m 0700 ~deploy/.ssh
-    local line="command=\"/usr/local/libexec/oppenheimer-deploy-gate\",restrict $ci_key"
+    local line="command=\"$LIBEXEC/deploy-gate\",restrict $ci_key"
     grep -qxF "$line" ~deploy/.ssh/authorized_keys 2>/dev/null || printf '%s\n' "$line" >> ~deploy/.ssh/authorized_keys
     chown deploy:deploy ~deploy/.ssh/authorized_keys; chmod 0600 ~deploy/.ssh/authorized_keys
     log "authorized the CI key for the deploy gate only"

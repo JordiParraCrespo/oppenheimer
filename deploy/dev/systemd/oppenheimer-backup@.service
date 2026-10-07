@@ -1,5 +1,5 @@
 [Unit]
-Description=Oppenheimer dev: copy of the newest dump to B2
+Description=Oppenheimer dev: backup %i
 Wants=network-online.target
 After=network-online.target docker.service
 OnFailure=oppenheimer-notify@%n.service
@@ -8,5 +8,5 @@ OnFailure=oppenheimer-notify@%n.service
 Type=oneshot
 User=deploy
 Group=deploy
-ExecStart=/usr/local/bin/oppctl backup weekly
+ExecStart=/usr/local/libexec/oppenheimer/oppctl backup %i
 TimeoutStartSec=2h

@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# The forced command on the `Deploy dev` workflow's SSH key (installed by
-# `oppctl setup` into /usr/local/libexec, root-owned, and named in
-# ~deploy/.ssh/authorized_keys with `restrict`). The key gets no shell, no
-# forwarding and no other command than:
+# The forced command on the `Deploy dev` workflow's SSH key. `oppctl setup`
+# installs it, root-owned, in /usr/local/libexec/oppenheimer beside oppctl, and
+# names it in ~deploy/.ssh/authorized_keys with `restrict`. The key gets no
+# shell, no forwarding and no other command than:
 #
 #   deploy <40-char sha>    with a tar.gz on stdin: deploy/ (this directory at
 #                           that commit) and registry-token (the workflow's
 #                           short-lived GITHUB_TOKEN, to pull its images)
 #
-# What it does not do is narrow what a deploy can change: the bundle's oppctl
-# runs as `deploy`, a member of the docker group, so whoever can run the
-# workflow on main can change this server. The key, the tailnet ACL and the
-# `dev` environment's branch rule are what guard that.
+# The installed oppctl runs the deploy; the bundle supplies the release's
+# compose file, scripts and config templates, never the program. What a
+# release can still change is everything its compose file can, run by
+# `deploy`, a member of the docker group: the `dev` environment's branch
+# rule, the tailnet ACL and this key are what guard who ships one.
 set -euo pipefail
 
 read -r cmd sha rest <<< "${SSH_ORIGINAL_COMMAND:-}"
@@ -20,9 +21,11 @@ read -r cmd sha rest <<< "${SSH_ORIGINAL_COMMAND:-}"
   exit 2
 }
 
+# Outlive a dropped connection: the deploy finishes or unwinds either way, and
+# the bundle is removed only after it has.
+trap '' HUP PIPE
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 head -c 50000000 | tar -xzf - -C "$work" --no-same-owner --no-same-permissions deploy registry-token
 chmod 0600 "$work/registry-token"
-chmod 0755 "$work/deploy/bin/oppctl"
-"$work/deploy/bin/oppctl" deploy "$sha" "$work"
+"$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/oppctl" deploy "$sha" "$work"

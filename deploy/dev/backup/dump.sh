@@ -1,9 +1,9 @@
 #!/bin/sh
-# Vendored from JordiParraCrespo/indie-hacker-agents-claude-skills
-# (.claude/skills/db-backup-verify/scripts/dump.sh at dfc86c7), plus one fix not
-# yet upstream: it reads PGPASSWORD_FILE itself, since libpq has no such
-# variable.
-# Fix it there, then copy it here again.
+# Started from the db-backup-verify skill in JordiParraCrespo/indie-hacker-agents-claude-skills
+# (.claude/skills/db-backup-verify/scripts/dump.sh at dfc86c7) and maintained here:
+# this is the copy deploy/dev runs. It differs from the skill in one fix:
+# it reads PGPASSWORD_FILE itself, since libpq has no such variable.
+#
 # dump.sh — runs in the dump sidecar: the container WITH database access and
 # WITHOUT internet.
 #
