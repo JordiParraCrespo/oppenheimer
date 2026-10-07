@@ -9,6 +9,7 @@ import { FileText } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import { useMergePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,8 +27,7 @@ export function QueueRow({ pull }: { pull: PullRequestEntity }) {
   const [confirming, setConfirming] = useState(false);
   const resolveError = useErrorMessage();
   const merge = useMergePullRequest({
-    onSuccess: () =>
-      toast.success(t('pullRequests.queue.mergedToast', { reference: pull.reference })),
+    onSuccess: () => notifySuccess('pullRequestMerged', { reference: pull.reference }),
     onError: (error) =>
       toast.error(resolveError(error, t('pullRequests.queue.mergeFailed')).message),
   });
@@ -95,6 +95,12 @@ export function QueueRow({ pull }: { pull: PullRequestEntity }) {
             disabledReason={
               blocked ?? (merge.isPending ? t('pullRequests.queue.merged') : undefined)
             }
+            labels={{
+              merge: t('pullRequests.queue.mergeButton.merge'),
+              confirm: t('pullRequests.queue.mergeButton.confirm'),
+              cancel: t('pullRequests.queue.mergeButton.cancel'),
+              merged: t('pullRequests.queue.merged'),
+            }}
           />
         </>
       }

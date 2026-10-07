@@ -1018,7 +1018,21 @@
       "session": "Sesión",
       "merged": "Fusionada",
       "mergeFailed": "GitHub no la fusionó.",
-      "mergedToast": "{{reference}} fusionada."
+      "columns": {
+        "lane": "Carril",
+        "title": "Pull request",
+        "size": "Tamaño",
+        "checks": "Checks",
+        "conflicts": "Conflictos",
+        "waiting": "Esperando"
+      },
+      "previousPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "mergeButton": {
+        "merge": "Fusionar",
+        "confirm": "Confirmar la fusión",
+        "cancel": "Cancelar la fusión"
+      }
     },
     "lanes": {
       "deep": "A fondo",
@@ -1207,10 +1221,8 @@
       "postsAs": "Se publica como @{{login}}.",
       "discard": "Descartar",
       "close": "Cerrar",
-      "submitted": "Revisión enviada.",
-      "approvedMerged": "Aprobada y fusionada.",
-      "approvedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
-      "failed": "La revisión no se envió."
+      "failed": "La revisión no se envió.",
+      "optional": "Opcional"
     },
     "changes": {
       "back": "Volver",
@@ -1231,7 +1243,12 @@
       "hint": "⌘⏎ lo añade a la revisión",
       "commentPlaceholder": "Deja un comentario",
       "cancel": "Cancelar",
-      "commentAdded": "Comentario publicado."
+      "expand": "Expandir el archivo",
+      "collapse": "Contraer el archivo",
+      "markViewed": "Visto",
+      "comments_one": "{{count}} comentario",
+      "comments_other": "{{count}} comentarios",
+      "comments_many": "{{count}} comentarios"
     },
     "analytics": {
       "title": "Tu {{range}} de revisiones",
@@ -1949,6 +1966,11 @@
     "taskDeleted": "Tarea eliminada.",
     "goalAdded": "Objetivo añadido.",
     "taskSessionStarted": "Sesión iniciada.",
-    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar."
+    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar.",
+    "pullRequestMerged": "{{reference}} fusionada.",
+    "reviewSubmitted": "Revisión enviada.",
+    "reviewApprovedMerged": "Aprobada y fusionada.",
+    "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
+    "reviewCommentPosted": "Comentario publicado."
   }
 }

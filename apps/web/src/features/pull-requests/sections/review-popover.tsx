@@ -13,6 +13,7 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import { useSubmitPullRequestReview } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { REVIEW_VERDICTS } from '@oppenheimer/shared/schemas/pull-request';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,12 +46,12 @@ export function ReviewPopover({
       setOpen(false);
       setComment('');
       onSubmitted();
-      toast.success(
+      notifySuccess(
         verdict !== 'approve'
-          ? t('pullRequests.review.submitted')
+          ? 'reviewSubmitted'
           : merged
-            ? t('pullRequests.review.approvedMerged')
-            : t('pullRequests.review.approvedWaiting'),
+            ? 'reviewApprovedMerged'
+            : 'reviewApprovedWaiting',
       );
     },
     onError: (error) => toast.error(resolveError(error, t('pullRequests.review.failed')).message),
@@ -96,6 +97,7 @@ export function ReviewPopover({
           labels={{
             title: t('pullRequests.review.title'),
             comment: t('pullRequests.review.comment'),
+            optional: t('pullRequests.review.optional'),
             placeholder: t('pullRequests.review.placeholder'),
             discard: t('pullRequests.review.discard'),
             close: t('pullRequests.review.close'),

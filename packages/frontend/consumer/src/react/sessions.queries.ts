@@ -227,16 +227,16 @@ export function useSessionStartProgress(
  * started, goes straight to its terminal without reading the log at all.
  */
 export function useSessionOpening(session: SessionEntity | undefined): boolean {
-  const queryClient = useQueryClient();
   const live = session?.isLive ?? false;
-  const watched =
-    session !== undefined &&
-    queryClient.getQueryState(sessionsKeys.start(session.id, false)) !== undefined;
-  const { data } = useSessionStartProgress(session?.id, {
-    starting: live && watched,
-    failed: false,
-  });
-  return live && watched && !(data?.settled ?? false);
+  // Watched means the log has data in the cache: the create seeded it, or the
+  // start pane read it. Read through the observer, not the cache, so the
+  // answer follows the query rather than whichever render read it first.
+  const { data } = useSessionStartProgress(
+    session?.id,
+    { starting: live, failed: false },
+    { enabled: (query) => query.state.data !== undefined },
+  );
+  return live && data !== undefined && !data.settled;
 }
 
 export interface CreateSessionVariables {
