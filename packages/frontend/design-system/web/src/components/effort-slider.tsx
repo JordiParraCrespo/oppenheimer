@@ -31,7 +31,8 @@ const KNOB = 30;
  * progress the button holds the value the drag started from: it changes width
  * with every stop, and the popover is anchored to it, so a live label would
  * shift the composer's foot row and the popover with it. It catches up when
- * the drag ends or the popover closes.
+ * the drag ends or the popover closes. The button is as wide as its longest
+ * stop, so the label changing never moves it.
  */
 function EffortSlider<V extends string>({
   stops,
@@ -65,7 +66,8 @@ function EffortSlider<V extends string>({
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault();
     track.current?.setPointerCapture(event.pointerId);
-    onDraggingChange?.(true);
+    // Only a capture that took is a drag; `lostpointercapture` ends it.
+    if (track.current?.hasPointerCapture(event.pointerId)) onDraggingChange?.(true);
     const next = fromPointer(event.clientX);
     if (next) onValueChange(next);
   }
@@ -190,7 +192,18 @@ function EffortPicker<V extends string>({
       <PopoverTrigger
         render={
           <ComposerToolButton tone="muted" open={open} disabled={disabled} className={className} aria-label={label}>
-            {shown?.label}
+            {/* Every stop in one cell: the cell is as wide as the longest, only the shown one paints. */}
+            <span className="grid">
+              {stops.map((stop) => (
+                <span
+                  key={stop.value}
+                  aria-hidden={stop.value !== shown?.value}
+                  className={cn('col-start-1 row-start-1', stop.value !== shown?.value && 'invisible')}
+                >
+                  {stop.label}
+                </span>
+              ))}
+            </span>
           </ComposerToolButton>
         }
       />
