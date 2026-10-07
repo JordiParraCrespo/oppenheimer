@@ -1,0 +1,133 @@
+name: Deploy dev
+
+# Every push to main, built here and only run on the dev server: the server
+# pulls the images this workflow pushed and pins them by digest, and never
+# builds anything. The server side is deploy/dev (README.md there is the
+# runbook). Pull requests carry their `pnpm ci:local` report, so main is what
+# was reviewed; the scheduled CI run still re-checks it every eight hours.
+#
+# Off until the server exists: set the repository variable
+# DEV_DEPLOY_ENABLED=true once deploy/dev/README.md's setup is done.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time, and none cancelled halfway through a migration.
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.image }}
+    if: vars.DEV_DEPLOY_ENABLED == 'true'
+    runs-on: gha-vm
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - image: api
+            context: .
+            file: apps/api/Dockerfile
+          # oppenheimer:begin web
+          - image: web
+            context: .
+            file: apps/web/Dockerfile
+          # oppenheimer:end web
+          # The dump sidecar: Postgres client tools plus age.
+          - image: backup
+            context: deploy/dev/backup
+            file: deploy/dev/backup/Dockerfile
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Lowercase repository name
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Tagged by commit only; `:latest` stays the scheduled CI run's. The
+      # server is x86: Hetzner CX/CPX, not the Arm CAX line.
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VERSION=${{ github.sha }}
+          tags: ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=deploy-dev-${{ matrix.image }}
+          cache-to: type=gha,scope=deploy-dev-${{ matrix.image }},mode=max
+
+  deploy:
+    name: Deploy to the dev server
+    needs: build
+    runs-on: gha-vm
+    # Holds the secrets below; restrict it to `main` in the repository's
+    # environment settings so no other branch can reach the server.
+    environment:
+      name: dev
+      url: ${{ vars.DEV_URL }}
+    permissions:
+      contents: read
+      # The server pulls with this job's token, which expires with the job.
+      packages: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Joins the tailnet as an ephemeral node tagged tag:ci. The tailnet
+      # policy lets tag:ci reach tag:oppenheimer-dev on port 22 and nothing
+      # else (deploy/dev/README.md has the ACL).
+      - uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ vars.DEV_SSH_HOST }}
+
+      - name: SSH key and pinned host key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEV_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEV_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      # The bundle is deploy/dev at this commit plus the token; the server's
+      # deploy gate accepts nothing else. The token goes in the tarball, not
+      # on a command line where `ps` would show it.
+      - name: Deploy ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEV_SSH_HOST: ${{ vars.DEV_SSH_HOST }}
+        run: |
+          bundle="$(mktemp -d)"
+          cp -a deploy/dev "$bundle/deploy"
+          ( umask 077; printf '%s\n' "$GH_TOKEN" > "$bundle/registry-token" )
+          tar -czf - -C "$bundle" deploy registry-token \
+            | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+                  -o ConnectTimeout=30 -o ServerAliveInterval=30 \
+                  "deploy@$DEV_SSH_HOST" "deploy $GITHUB_SHA"
+          rm -rf "$bundle"
+
+      # From outside, through Cloudflare: the one check the server cannot do
+      # for itself.
+      - name: Public health check
+        if: vars.DEV_URL != ''
+        env:
+          DEV_URL: ${{ vars.DEV_URL }}
+        run: |
+          for _ in $(seq 1 12); do
+            curl -fsS --max-time 10 "$DEV_URL/api/v1/health" && exit 0
+            sleep 5
+          done
+          echo "::error::$DEV_URL/api/v1/health did not answer after the deploy"
+          exit 1

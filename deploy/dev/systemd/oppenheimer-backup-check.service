@@ -1,0 +1,12 @@
+[Unit]
+Description=Oppenheimer dev: backup freshness, read from R2
+Wants=network-online.target
+After=network-online.target docker.service
+OnFailure=oppenheimer-notify@%n.service
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+ExecStart=/usr/local/bin/oppctl backup check
+TimeoutStartSec=2h

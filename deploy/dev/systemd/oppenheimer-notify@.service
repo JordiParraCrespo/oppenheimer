@@ -1,0 +1,8 @@
+[Unit]
+Description=Oppenheimer dev: report %i failing
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+ExecStart=/usr/local/bin/oppctl notify "%i failed on %H — journalctl -u %i"

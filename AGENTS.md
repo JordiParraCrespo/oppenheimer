@@ -82,6 +82,7 @@ oppenheimer/
 │   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate, execx
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
+├── deploy/dev/           # The dev deployment: one Hetzner server, built by GitHub, run by oppctl
 ├── docker/               # Docker Compose (dev + prod)
 └── .github/              # GitHub Actions CI/CD
 ```
@@ -356,6 +357,17 @@ pnpm changeset          # Create a changeset for versioning
 
 - **Tier 1 (~€4/mo)**: Hetzner VPS + Docker Compose for API/DB/Redis, free hosting for web/docs
 - Docker images built by the scheduled CI run on `main` (GitHub Actions), pushed to GHCR when it is green
+- **The dev deployment** is `deploy/dev/` (its `README.md` is the runbook): one
+  Hetzner server with no inbound port, public traffic through a Cloudflare
+  Tunnel, admin over Tailscale. `.github/workflows/deploy-dev.yml` builds the
+  `api`, `web` and `backup` images for every push to `main`, then hands the
+  commit to the server's deploy gate over the tailnet; the server never
+  builds. `oppctl` there pins the images by digest, takes an encrypted dump,
+  starts the release and rolls back if it is not healthy. Backups are the
+  `db-backup-verify` skill's (indie-hacker-agents-claude-skills): age-encrypted
+  dumps to R2 daily and B2 weekly, a monthly restore drill against
+  `deploy/dev/backup/assertions.sql`. `deploy/dev/backup/{dump,upload}.sh` are
+  vendored from that skill; fix them there and copy them back
 
 ## When modifying code
 

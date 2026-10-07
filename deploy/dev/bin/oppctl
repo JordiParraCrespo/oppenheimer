@@ -1,0 +1,456 @@
+#!/usr/bin/env bash
+# oppctl — operate the Oppenheimer dev deployment on this server.
+#
+#   oppctl setup [--ci-key '<ssh public key>']   once, as root: dirs, secrets, units
+#   oppctl doctor                                 is this server ready to deploy?
+#   oppctl deploy <sha> <bundle-dir>              what the CI deploy gate runs
+#   oppctl rollback                               back to the previous release
+#   oppctl status | logs [service…] | psql
+#   oppctl backup {daily|weekly|check|now}        dump → encrypt → R2 (weekly: B2)
+#   oppctl restore                                plaintext pg_dump -Fc on stdin
+#
+# Nothing is built here. A release is the deploy/dev directory of one commit
+# plus `release.env`, which pins the images the `Deploy dev` workflow built for
+# that commit by digest. Releases live in /srv/oppenheimer/releases;
+# `current` and `previous` are symlinks into it.
+
+set -euo pipefail
+
+ROOT="${OPP_ROOT:-/srv/oppenheimer}"
+CONFIG="$ROOT/config"
+RELEASES="$ROOT/releases"
+CURRENT="$ROOT/current"
+PREVIOUS="$ROOT/previous"
+PROJECT=oppenheimer-dev
+KEEP_RELEASES=5
+HEALTH_TIMEOUT="${OPP_HEALTH_TIMEOUT:-300}"
+HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+APPS=(api web backup)
+
+log()  { printf '[oppctl] %s\n' "$*" >&2; }
+ok()   { printf '[oppctl] ok   %s\n' "$*" >&2; }
+warn() { printf '[oppctl] warn %s\n' "$*" >&2; }
+die()  { printf '[oppctl] FAIL %s\n' "$*" >&2; exit 1; }
+
+load_host_env() {
+  [ -r "$CONFIG/host.env" ] || die "no $CONFIG/host.env — run 'oppctl setup' as root first"
+  set -a
+  # shellcheck source=/dev/null
+  . "$CONFIG/host.env"
+  set +a
+}
+
+# Every compose call goes through here, so a release is always run with its own
+# compose file and image pins and this server's settings.
+compose() {
+  local rel="$1"; shift
+  OPP_CONFIG="$CONFIG" docker compose -p "$PROJECT" --project-directory "$rel" -f "$rel/compose.yml" \
+    --env-file "$CONFIG/host.env" --env-file "$rel/release.env" "$@"
+}
+
+current_release() { readlink -e "$CURRENT" 2>/dev/null || true; }
+
+need_current() {
+  local rel; rel="$(current_release)"
+  [ -n "$rel" ] && [ -d "$rel" ] || die "nothing is deployed yet"
+  printf '%s' "$rel"
+}
+
+lock() {
+  exec 9>"$ROOT/.lock"
+  flock -w 900 9 || die "another oppctl deploy, rollback, backup or restore is still running"
+}
+
+notify() {
+  [ -n "${NTFY_URL:-}" ] || return 0
+  curl -fsS -m 10 -H "Title: oppenheimer-dev" -d "$*" "$NTFY_URL" >/dev/null 2>&1 \
+    || warn "could not reach ntfy at $NTFY_URL"
+}
+
+# ---------------------------------------------------------------- checks ---
+
+render_tunnel_config() {
+  local rel="$1"
+  sed -e "s|\${TUNNEL_ID}|$TUNNEL_ID|g" -e "s|\${DEV_HOSTNAME}|$DEV_HOSTNAME|g" \
+    "$rel/cloudflared.yml.tmpl" > "$rel/cloudflared.yml"
+}
+
+# The properties the server's isolation rests on, checked on the resolved
+# config of the release about to run, backup profile included.
+check_invariants() {
+  local rel="$1" cfg bad
+  cfg="$(compose "$rel" --profile backup config --format json)" || die "compose rejected $rel/compose.yml"
+
+  bad="$(jq -r '.services | to_entries[] | select((.value.ports // []) | length > 0) | .key' <<< "$cfg")"
+  [ -z "$bad" ] || die "services publish ports to the host (ingress is the tunnel only): $bad"
+
+  bad="$(jq -r '.services | to_entries[] | select(.value.image != null)
+           | select((.value.image | test("@sha256:[0-9a-f]{64}$")) | not) | "\(.key)=\(.value.image)"' <<< "$cfg")"
+  [ -z "$bad" ] || die "images not pinned by digest: $bad"
+
+  jq -e '.networks.data.internal == true' >/dev/null <<< "$cfg" \
+    || die "network 'data' is not internal — Postgres and Redis would have a route out"
+
+  for svc in postgres redis; do
+    [ "$(jq -r --arg s "$svc" '.services[$s].networks | keys | join(",")' <<< "$cfg")" = data ] \
+      || die "$svc must be on the 'data' network only"
+  done
+  ok "compose invariants hold"
+}
+
+check_config() {
+  local missing=0
+  for f in api.env db_password backup_db_password rclone.conf tunnel-credentials.json; do
+    [ -s "$CONFIG/$f" ] || { warn "missing or empty: $CONFIG/$f"; missing=1; }
+  done
+  for v in IMAGE_REPO DEV_HOSTNAME TUNNEL_ID; do
+    [ -n "${!v:-}" ] || { warn "$v is empty in $CONFIG/host.env"; missing=1; }
+  done
+  [ "$missing" -eq 0 ] || return 1
+  jq -e '.TunnelID and .TunnelSecret' "$CONFIG/tunnel-credentials.json" >/dev/null 2>&1 \
+    || { warn "tunnel-credentials.json is not a cloudflared tunnel credentials file"; return 1; }
+  [ "$(jq -r .TunnelID "$CONFIG/tunnel-credentials.json")" = "$TUNNEL_ID" ] \
+    || { warn "TUNNEL_ID does not match the credentials file's TunnelID"; return 1; }
+}
+
+container_of() { compose "$1" ps -q "$2" 2>/dev/null | head -1; }
+
+wait_healthy() {
+  local rel="$1" svc="$2" deadline=$((SECONDS + HEALTH_TIMEOUT)) id state
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    id="$(container_of "$rel" "$svc")"
+    if [ -n "$id" ]; then
+      state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$id")"
+      case "$state" in
+        healthy|running) ok "$svc is $state"; return 0 ;;
+        unhealthy|exited|dead) warn "$svc is $state"; return 1 ;;
+      esac
+    fi
+    sleep 3
+  done
+  warn "$svc not healthy after ${HEALTH_TIMEOUT}s"
+  return 1
+}
+
+# Healthy containers, then one request through the same path a browser takes
+# minus Cloudflare: nginx → API → Postgres and Redis.
+verify_release() {
+  local rel="$1"
+  wait_healthy "$rel" api || return 1
+  # oppenheimer:begin web
+  wait_healthy "$rel" web || return 1
+  compose "$rel" exec -T web wget -qO- http://127.0.0.1:3000/api/v1/ready >/dev/null \
+    || { warn "GET /api/v1/ready through nginx failed"; return 1; }
+  ok "console → API → database and Redis answer"
+  # oppenheimer:end web
+  wait_healthy "$rel" cloudflared || return 1
+}
+
+# --------------------------------------------------------------- releases ---
+
+# Pull this commit's images with the workflow's short-lived token, then pin
+# each by the digest the registry served. No registry credential is kept: the
+# config dir is temporary, and once pulled the images are local, so a restart
+# or a rollback never needs the registry.
+pull_images() {
+  local sha="$1" token_file="$2" out="$3" ref digest var
+  local dc; dc="$(mktemp -d)"
+  [ -s "$token_file" ] || die "the bundle carries no registry token"
+  DOCKER_CONFIG="$dc" docker login "${IMAGE_REPO%%/*}" -u oppenheimer-deploy --password-stdin < "$token_file" >/dev/null 2>&1 \
+    || { rm -rf "$dc"; die "${IMAGE_REPO%%/*} refused the workflow's token"; }
+  : > "$out"
+  printf 'RELEASE_SHA=%s\n' "$sha" >> "$out"
+  for app in "${APPS[@]}"; do
+    ref="$IMAGE_REPO/oppenheimer-$app:$sha"
+    log "pulling $ref"
+    DOCKER_CONFIG="$dc" docker pull -q "$ref" >/dev/null || { rm -rf "$dc"; die "could not pull $ref"; }
+    digest="$(docker image inspect -f '{{range .RepoDigests}}{{println .}}{{end}}' "$ref" \
+               | grep -m1 "^$IMAGE_REPO/oppenheimer-$app@sha256:")" \
+      || { rm -rf "$dc"; die "no registry digest recorded for $ref"; }
+    var="$(printf '%s' "$app" | tr '[:lower:]' '[:upper:]')_IMAGE"
+    printf '%s=%s\n' "$var" "$digest" >> "$out"
+  done
+  rm -rf "$dc"
+}
+
+swap_links() {
+  local new="$1" old; old="$(current_release)"
+  if [ -n "$old" ] && [ "$old" != "$new" ]; then ln -sfn "$old" "$PREVIOUS.tmp" && mv -Tf "$PREVIOUS.tmp" "$PREVIOUS"; fi
+  ln -sfn "$new" "$CURRENT.tmp" && mv -Tf "$CURRENT.tmp" "$CURRENT"
+}
+
+# Each release's images stay tagged `:<sha>` so `docker image prune` never
+# treats them as dangling: a rollback must not need the registry.
+prune_releases() {
+  local cur prev keep_shas name rel sha n=0
+  cur="$(current_release)"; prev="$(readlink -e "$PREVIOUS" 2>/dev/null || true)"
+  keep_shas="$(sed -n 's/^RELEASE_SHA=//p' "$cur/release.env" ${prev:+"$prev/release.env"})"
+  # Newest first; release directories are named <sha12>-<UTC timestamp>.
+  while read -r name; do
+    rel="$RELEASES/$name"
+    n=$((n + 1))
+    [ "$n" -le "$KEEP_RELEASES" ] && continue
+    [ "$rel" = "$cur" ] || [ "$rel" = "$prev" ] && continue
+    log "pruning release $name"
+    sha="$(sed -n 's/^RELEASE_SHA=//p' "$rel/release.env" 2>/dev/null || true)"
+    if [ -n "$sha" ] && ! grep -qxF "$sha" <<< "$keep_shas"; then
+      for app in "${APPS[@]}"; do
+        docker image rm "$IMAGE_REPO/oppenheimer-$app:$sha" >/dev/null 2>&1 || true
+      done
+    fi
+    rm -rf "$rel"
+  done < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -t- -k2 -r)
+  docker image prune -f >/dev/null 2>&1 || true
+}
+
+cmd_deploy() {
+  local sha="${1:-}" bundle="${2:-}"
+  [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || die "usage: oppctl deploy <40-char sha> <bundle-dir>"
+  [ -d "$bundle/deploy" ] || die "no deploy/ directory in $bundle"
+  load_host_env
+  check_config || die "this server is not configured — run 'oppctl doctor'"
+  lock
+
+  local rel prev
+  rel="$RELEASES/${sha:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
+  prev="$(current_release)"
+  log "deploying $sha as $(basename "$rel")"
+
+  cp -a "$bundle/deploy" "$rel"
+  rm -f "$rel/registry-token"
+  pull_images "$sha" "$bundle/registry-token" "$rel/release.env"
+  render_tunnel_config "$rel"
+  check_invariants "$rel"
+
+  # A dump before the new API boots: migrations run at boot and only forward,
+  # so this is what a bad migration is undone with. It runs with the incoming
+  # release's backup image and scripts, so a fix to them ships with the deploy
+  # that carries it.
+  if [ -n "$prev" ] && [ -n "$(container_of "$prev" postgres)" ]; then
+    backup_run "$rel" predeploy || die "pre-deploy backup failed — not deploying over a database without one"
+  fi
+
+  if compose "$rel" up -d --remove-orphans && verify_release "$rel"; then
+    swap_links "$rel"
+    ensure_backup_role "$rel"
+    prune_releases
+    ok "deployed $sha"
+    return 0
+  fi
+
+  compose "$rel" ps >&2 || true
+  compose "$rel" logs --tail 80 api >&2 || true
+  if [ -n "$prev" ]; then
+    warn "rolling back to $(basename "$prev")"
+    compose "$prev" up -d --remove-orphans || true
+    verify_release "$prev" || warn "the previous release is not healthy either"
+    warn "migrations that ran are NOT undone; if the previous API refuses the schema, restore the pre-deploy dump (README: Restore)"
+  fi
+  notify "deploy of ${sha:0:12} failed and was rolled back"
+  die "deploy of $sha failed"
+}
+
+cmd_rollback() {
+  load_host_env
+  lock
+  local target cur
+  target="$(readlink -e "$PREVIOUS" 2>/dev/null || true)"
+  cur="$(need_current)"
+  [ -n "$target" ] && [ -d "$target" ] || die "no previous release to roll back to"
+  log "rolling back $(basename "$cur") → $(basename "$target")"
+  warn "migrations are not reverted; the previous API must accept the current schema"
+  compose "$target" up -d --remove-orphans
+  verify_release "$target" || die "the previous release did not come up healthy"
+  ln -sfn "$cur" "$PREVIOUS.tmp" && mv -Tf "$PREVIOUS.tmp" "$PREVIOUS"
+  ln -sfn "$target" "$CURRENT.tmp" && mv -Tf "$CURRENT.tmp" "$CURRENT"
+  ok "now running $(basename "$target")"
+}
+
+# ---------------------------------------------------------------- backups ---
+
+# backup_user: pg_read_all_data and nothing else. Idempotent; the password is
+# the hex string `oppctl setup` generated, so it needs no quoting.
+ensure_backup_role() {
+  local rel="$1" pw
+  pw="$(cat "$CONFIG/backup_db_password")"
+  [[ "$pw" =~ ^[0-9a-f]+$ ]] || die "backup_db_password must be hex (oppctl setup generates it)"
+  compose "$rel" exec -T postgres psql -q -U oppenheimer -d oppenheimer -v ON_ERROR_STOP=1 >/dev/null <<SQL
+SET client_min_messages = warning;
+DO \$\$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'backup_user') THEN
+    CREATE ROLE backup_user LOGIN;
+  END IF;
+END \$\$;
+ALTER ROLE backup_user WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD '$pw';
+GRANT pg_read_all_data TO backup_user;
+SQL
+}
+
+backup_run() {
+  local rel="$1" mode="$2"
+  case "$mode" in
+    daily|now|predeploy)
+      if [ -z "${AGE_RECIPIENT:-}" ]; then
+        [ "$mode" = predeploy ] && { warn "AGE_RECIPIENT is unset — deploying WITHOUT a pre-deploy backup"; return 0; }
+        die "AGE_RECIPIENT is unset in $CONFIG/host.env"
+      fi
+      ensure_backup_role "$rel"
+      log "dumping"
+      compose "$rel" run --rm -T backup-dump </dev/null || return 1
+      if [ -z "${R2_BUCKET:-}" ]; then
+        [ "$mode" = daily ] && die "R2_BUCKET is unset — the dump stays on this server, which is not a backup"
+        warn "R2_BUCKET is unset — the dump stays on this server only"
+        return 0
+      fi
+      compose "$rel" run --rm -T backup-upload daily </dev/null ;;
+    weekly) compose "$rel" run --rm -T backup-upload weekly </dev/null ;;
+    check)  compose "$rel" run --rm -T backup-upload check </dev/null ;;
+    *) die "usage: oppctl backup {daily|weekly|check|now}" ;;
+  esac
+}
+
+cmd_backup() {
+  load_host_env
+  local rel; rel="$(need_current)"
+  lock
+  if ! backup_run "$rel" "${1:-}"; then
+    notify "backup ${1:-} failed on $(hostname)"
+    die "backup ${1:-} failed"
+  fi
+  ok "backup ${1:-} done"
+}
+
+# Replace the database with a dump. The private key never comes here: decrypt
+# on your own machine and stream the plaintext in over the tailnet —
+#   age -d -i key.txt oppenheimer-….pgc.age | ssh admin@oppenheimer-dev \
+#     sudo -u deploy OPP_CONFIRM=restore-oppenheimer-dev oppctl restore
+cmd_restore() {
+  [ "${OPP_CONFIRM:-}" = restore-oppenheimer-dev ] \
+    || die "this replaces the dev database; set OPP_CONFIRM=restore-oppenheimer-dev"
+  [ ! -t 0 ] || die "pipe a plaintext pg_dump -Fc file into stdin"
+  load_host_env
+  local rel; rel="$(need_current)"
+  lock
+  # Read all of stdin before anything else runs: the safety dump starts
+  # containers, and nothing may consume the stream meant for pg_restore.
+  local dump; dump="$(mktemp "$ROOT/.restore.XXXXXX")"
+  trap 'rm -f "$dump"' EXIT
+  log "receiving the dump"
+  cat > "$dump"
+  if [ -n "${AGE_RECIPIENT:-}" ]; then
+    backup_run "$rel" predeploy || die "could not take a safety dump first"
+  fi
+  compose "$rel" exec -T postgres sh -c 'cat > /tmp/restore.pgc' < "$dump"
+  rm -f "$dump"
+  compose "$rel" exec -T postgres pg_restore -l /tmp/restore.pgc >/dev/null \
+    || die "stdin is not a pg_dump custom-format archive"
+  compose "$rel" stop cloudflared web api
+  compose "$rel" exec -T postgres psql -q -U oppenheimer -d postgres -v ON_ERROR_STOP=1 \
+    -c 'DROP DATABASE IF EXISTS oppenheimer WITH (FORCE)' -c 'CREATE DATABASE oppenheimer OWNER oppenheimer'
+  compose "$rel" exec -T postgres pg_restore -U oppenheimer -d oppenheimer --no-owner --exit-on-error /tmp/restore.pgc \
+    || die "pg_restore failed; the database is partially restored and the API is stopped"
+  compose "$rel" exec -T postgres rm -f /tmp/restore.pgc
+  ensure_backup_role "$rel"
+  compose "$rel" up -d
+  verify_release "$rel" || die "restored, but the release did not come back healthy"
+  ok "restored"
+}
+
+# ---------------------------------------------------------------- the rest ---
+
+cmd_status() {
+  load_host_env
+  local rel; rel="$(need_current)"
+  printf 'release   %s\n' "$(basename "$rel")"
+  printf 'previous  %s\n' "$(basename "$(readlink -e "$PREVIOUS" 2>/dev/null || echo none)")"
+  printf 'url       https://%s\n\n' "$DEV_HOSTNAME"
+  compose "$rel" ps
+  printf '\nlocal dumps:\n'
+  docker run --rm --network none --entrypoint sh -v oppenheimer-dev_backup-work:/work:ro \
+    "$(grep '^BACKUP_IMAGE=' "$rel/release.env" | cut -d= -f2-)" -c 'ls -1t /work/outbox/*.age 2>/dev/null | head -3' 2>/dev/null || true
+  printf '\n'
+  df -h / | tail -1
+}
+
+cmd_doctor() {
+  load_host_env
+  local bad=0
+  check_config && ok "config files and host.env are filled in" || bad=1
+  [[ "${AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] && ok "AGE_RECIPIENT is an age public key" \
+    || { warn "AGE_RECIPIENT is not set to an age public key — no backups"; bad=1; }
+  grep -q '^\[r2\]' "$CONFIG/rclone.conf" 2>/dev/null && [ -n "${R2_BUCKET:-}" ] && ok "R2 remote and bucket configured" \
+    || { warn "no [r2] remote in rclone.conf or R2_BUCKET unset"; bad=1; }
+  grep -q '^\[b2\]' "$CONFIG/rclone.conf" 2>/dev/null && [ -n "${B2_BUCKET:-}" ] && ok "B2 remote and bucket configured" \
+    || { warn "no [b2] remote in rclone.conf or B2_BUCKET unset — weekly copy will fail"; bad=1; }
+  [ -n "${NTFY_URL:-}" ] && ok "failures notify $NTFY_URL" || warn "NTFY_URL unset — failed backups alert nobody"
+  for t in oppenheimer-backup-daily oppenheimer-backup-weekly oppenheimer-backup-check; do
+    systemctl is-enabled --quiet "$t.timer" 2>/dev/null && ok "$t.timer enabled" || { warn "$t.timer not enabled"; bad=1; }
+  done
+  [ -e /var/run/reboot-required ] && warn "a reboot is due for security updates: sudo systemctl reboot"
+  docker info >/dev/null 2>&1 && ok "docker reachable as $(id -un)" || { warn "docker not reachable as $(id -un)"; bad=1; }
+  [ "$bad" -eq 0 ] && ok "ready" || die "not ready (see above)"
+}
+
+cmd_setup() {
+  [ "$(id -u)" -eq 0 ] || die "setup runs as root"
+  local ci_key=""
+  [ "${1:-}" = --ci-key ] && ci_key="${2:-}"
+  id deploy >/dev/null 2>&1 || die "no 'deploy' user (cloud-init.yaml creates it)"
+  command -v openssl jq flock docker >/dev/null || die "need openssl, jq, flock and docker"
+
+  install -d -o deploy -g deploy -m 0755 "$ROOT" "$RELEASES"
+  install -d -o deploy -g deploy -m 0700 "$CONFIG"
+
+  gen() { [ -s "$CONFIG/$1" ] || { openssl rand -hex 32 > "$CONFIG/$1"; log "generated $1"; }; }
+  gen db_password
+  gen backup_db_password
+  # Read by the postgres and backup containers as their own uids; the 0700
+  # directory is what keeps other host users out.
+  chmod 0644 "$CONFIG/db_password" "$CONFIG/backup_db_password"
+
+  if [ ! -s "$CONFIG/host.env" ]; then
+    install -m 0600 "$HERE/config/host.env.example" "$CONFIG/host.env"
+    log "wrote $CONFIG/host.env — fill it in"
+  fi
+  if [ ! -s "$CONFIG/api.env" ]; then
+    sed -e "s|@DB_PASSWORD@|$(cat "$CONFIG/db_password")|" \
+        -e "s|@BETTER_AUTH_SECRET@|$(openssl rand -base64 32)|" \
+        -e "s|@CONTROL_PLANE_SIGNING_KEY@|$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)|" \
+        -e "s|@GITHUB_USER_TOKEN_KEY@|$(openssl rand -base64 32)|" \
+        "$HERE/config/api.env.example" > "$CONFIG/api.env"
+    chmod 0600 "$CONFIG/api.env"
+    log "wrote $CONFIG/api.env with fresh secrets — set the hostname in it"
+  fi
+  [ -e "$CONFIG/rclone.conf" ] || { : > "$CONFIG/rclone.conf"; chmod 0644 "$CONFIG/rclone.conf"; }
+  chown -R deploy:deploy "$CONFIG"
+
+  # The only thing the workflow's SSH key may run.
+  install -D -m 0755 -o root -g root "$HERE/bin/deploy-gate" /usr/local/libexec/oppenheimer-deploy-gate
+  ln -sfn "$CURRENT/bin/oppctl" /usr/local/bin/oppctl
+  if [ -n "$ci_key" ]; then
+    install -d -o deploy -g deploy -m 0700 ~deploy/.ssh
+    local line="command=\"/usr/local/libexec/oppenheimer-deploy-gate\",restrict $ci_key"
+    grep -qxF "$line" ~deploy/.ssh/authorized_keys 2>/dev/null || printf '%s\n' "$line" >> ~deploy/.ssh/authorized_keys
+    chown deploy:deploy ~deploy/.ssh/authorized_keys; chmod 0600 ~deploy/.ssh/authorized_keys
+    log "authorized the CI key for the deploy gate only"
+  fi
+
+  install -m 0644 "$HERE"/systemd/*.service "$HERE"/systemd/*.timer /etc/systemd/system/
+  systemctl daemon-reload
+  systemctl enable --now oppenheimer-backup-daily.timer oppenheimer-backup-weekly.timer oppenheimer-backup-check.timer
+  ok "setup done; next: fill in $CONFIG/host.env and $CONFIG/api.env, add tunnel-credentials.json and rclone.conf, then 'sudo -u deploy oppctl doctor'"
+}
+
+case "${1:-}" in
+  setup)    shift; cmd_setup "$@" ;;
+  doctor)   cmd_doctor ;;
+  deploy)   shift; cmd_deploy "$@" ;;
+  rollback) cmd_rollback ;;
+  backup)   shift; cmd_backup "$@" ;;
+  restore)  cmd_restore ;;
+  status)   cmd_status ;;
+  logs)     shift; load_host_env; compose "$(need_current)" logs --tail 200 "$@" ;;
+  psql)     load_host_env; compose "$(need_current)" exec postgres psql -U oppenheimer oppenheimer ;;
+  notify)   shift; load_host_env; notify "$*" ;;
+  *) sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac
