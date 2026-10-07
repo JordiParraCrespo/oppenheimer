@@ -1,0 +1,12 @@
+[Unit]
+Description=Oppenheimer dev: backup %i
+Wants=network-online.target
+After=network-online.target docker.service
+OnFailure=oppenheimer-notify@%n.service
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+ExecStart=/usr/local/libexec/oppenheimer/oppctl backup %i
+TimeoutStartSec=2h

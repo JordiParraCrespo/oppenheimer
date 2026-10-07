@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Runs on the machine running kamal, before Kamal sets up Docker on the hosts.
+# Postgres and Redis live on an internal network (no route out); Kamal only
+# creates its own `kamal` network, so this creates that one.
+set -euo pipefail
+for host in ${KAMAL_HOSTS//,/ }; do
+  ssh "${KAMAL_SSH_USER:-deploy}@$host" \
+    'docker network inspect oppenheimer-data >/dev/null 2>&1 || docker network create --internal oppenheimer-data'
+done

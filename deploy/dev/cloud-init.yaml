@@ -1,0 +1,82 @@
+#cloud-config
+# First boot of the Hetzner server (`hcloud server create --user-data-from-file`).
+# Brings Ubuntu LTS to the baseline the vps-provision skill describes, the
+# Hetzner way: the Cloud Firewall attached at creation has no inbound rules,
+# so nothing on the public interface is reachable from the first second, and
+# Tailscale (outbound only) is the admin plane. Recovery path when Tailscale
+# fails: Hetzner Console → the server → Console (reset the root password there).
+#
+# Replace the two values marked REPLACE before use; keep the filled-in copy
+# out of git (it carries a Tailscale auth key).
+
+users:
+  - name: admin
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    ssh_authorized_keys:
+      - REPLACE with your SSH public key
+  # Runs the stack and the deploy gate. Joins the docker group below, which is
+  # root-equivalent: its SSH key is restricted to the gate.
+  - name: deploy
+    shell: /bin/bash
+    lock_passwd: true
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - jq
+  - ufw
+  - unattended-upgrades
+  - needrestart
+  - age
+
+write_files:
+  # Container logs rotate instead of filling the disk.
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "local",
+        "log-opts": { "max-size": "20m", "max-file": "5" },
+        "live-restore": true
+      }
+  - path: /etc/ssh/sshd_config.d/10-oppenheimer.conf
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowUsers admin deploy
+  # Security updates only, never an automatic reboot: `oppctl doctor` says
+  # when one is due.
+  - path: /etc/apt/apt.conf.d/52oppenheimer-unattended
+    content: |
+      Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-security";
+        "${distro_id}ESMApps:${distro_codename}-apps-security";
+        "${distro_id}ESM:${distro_codename}-infra-security";
+      };
+      Unattended-Upgrade::Automatic-Reboot "false";
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+runcmd:
+  # Docker CE from Docker's own repository (the script adds it), not the
+  # distro's package; the compose plugin comes with it.
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker deploy
+  - systemctl enable --now docker
+  # Tailscale: a tagged, pre-approved, single-use key; disable key expiry for
+  # this node in the admin console afterwards.
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - tailscale up --auth-key=REPLACE-with-a-tskey-auth-key --hostname=oppenheimer-dev --advertise-tags=tag:oppenheimer-dev
+  # ufw is the second wall behind the Cloud Firewall: SSH only on the tailnet.
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow in on tailscale0 to any port 22 proto tcp
+  - ufw --force enable
+  - systemctl restart ssh

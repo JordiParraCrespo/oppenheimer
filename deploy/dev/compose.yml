@@ -1,0 +1,224 @@
+# The dev deployment on one Hetzner server. Nothing here is built on the
+# server: every image is either a digest-pinned upstream image below or one the
+# `Deploy dev` workflow built and pushed to GHCR, which `oppctl deploy` pins by
+# digest in the release's `release.env`. See deploy/dev/README.md.
+#
+# Run only through `oppctl`, which supplies the two env files compose
+# interpolates from (`config/host.env` for this server, `release.env` for the
+# images of this release) and checks the invariants below before every deploy:
+#
+#   · no service publishes a port: the server's only ingress is the outbound
+#     Cloudflare Tunnel, admin is over Tailscale, and a published port would
+#     bypass ufw through Docker's NAT rules
+#   · every image is pinned by digest
+#   · `data` is internal, and Postgres and Redis sit on it alone
+#
+# Upstream digests were read from Docker Hub on 2026-10-07. Bump them
+# deliberately, in their own commit:
+#   docker buildx imagetools inspect postgres:16-alpine --format '{{.Manifest.Digest}}'
+
+name: oppenheimer-dev
+
+networks:
+  # cloudflared → web → api, and the API's own way out (GitHub, email, LLMs).
+  edge:
+    driver: bridge
+  # Postgres and Redis. No gateway: nothing on it has a route to the internet,
+  # which is why the backup is two containers — the dump can read the database
+  # but not reach R2, the uploader can reach R2 but never sees plaintext.
+  data:
+    driver: bridge
+    internal: true
+  # The uploader's way out, shared with nothing that can reach the database.
+  egress:
+    driver: bridge
+
+volumes:
+  pgdata:
+    name: oppenheimer-dev_pgdata
+  redisdata:
+    name: oppenheimer-dev_redisdata
+  uploads:
+    name: oppenheimer-dev_uploads
+  backup-work:
+    name: oppenheimer-dev_backup-work
+
+secrets:
+  # Outside Swarm a compose secret is a bind mount of a host file: it keeps the
+  # value out of `docker inspect` and the environment, nothing more. The files
+  # live in $OPP_CONFIG, /srv/oppenheimer/config (0700, owned by deploy); `oppctl setup`
+  # writes them.
+  db_password:
+    file: ${OPP_CONFIG:?oppctl sets OPP_CONFIG}/db_password
+  backup_db_password:
+    file: ${OPP_CONFIG:?oppctl sets OPP_CONFIG}/backup_db_password
+
+services:
+  postgres:
+    # Same major as docker/docker-compose.dev.yml and CI. The restore drill
+    # reads the major from each dump's header and restores into the same one.
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    restart: unless-stopped
+    networks: [data]
+    environment:
+      POSTGRES_USER: oppenheimer
+      POSTGRES_DB: oppenheimer
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oppenheimer -d oppenheimer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    restart: unless-stopped
+    networks: [data]
+    # BullMQ needs `noeviction`; appendonly keeps queued jobs across a restart.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # The API image runs as uid 1001 and a fresh named volume is root-owned, so
+  # local uploads would fail with EACCES. Runs to completion before the API.
+  uploads-perms:
+    image: alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
+    restart: "no"
+    network_mode: none
+    command: ["chown", "-R", "1001:1001", "/data/uploads"]
+    volumes:
+      - uploads:/data/uploads
+
+  api:
+    image: ${API_IMAGE:?release.env names the API image}
+    restart: unless-stopped
+    networks: [edge, data]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      uploads-perms:
+        condition: service_completed_successfully
+    # Everything the API reads, documented variable by variable in the repo's
+    # .env.example; `oppctl setup` writes a starting point. The API has no
+    # `*_FILE` convention, so its secrets are environment variables: the file
+    # is 0600 and `docker inspect` on this server shows them. Accepted for dev.
+    env_file:
+      - path: ${OPP_CONFIG:?oppctl sets OPP_CONFIG}/api.env
+        required: true
+    # What this file knows better than api.env, and overrides it with.
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    # Liveness only: `/ready` also fails on disk and heap thresholds, and a
+    # restart does not free a full disk. Migrations run at boot, before the
+    # server listens, hence the long start period.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+  # oppenheimer:begin web
+  web:
+    image: ${WEB_IMAGE:?release.env names the web image}
+    restart: unless-stopped
+    networks: [edge]
+    # nginx resolves `api` once, when it starts, and proxies /api (WebSockets
+    # included) to it; the console and the API share one origin.
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: api:3001
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  # oppenheimer:end web
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.0@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+    restart: unless-stopped
+    networks: [edge]
+    # Metrics on loopback only, for the healthcheck below.
+    command: ["tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:2000", "--config", "/etc/cloudflared/config.yml", "run"]
+    volumes:
+      # Rendered by `oppctl` from cloudflared.yml.tmpl and config/host.env.
+      - ./cloudflared.yml:/etc/cloudflared/config.yml:ro
+      - ${OPP_CONFIG:?oppctl sets OPP_CONFIG}/tunnel-credentials.json:/etc/cloudflared/credentials.json:ro
+    depends_on:
+      # oppenheimer:begin web
+      web:
+        condition: service_healthy
+      # oppenheimer:end web
+      api:
+        condition: service_healthy
+    # /ready answers 200 only once the tunnel holds a connection to Cloudflare's
+    # edge, so a deploy that cannot be reached from outside fails here.
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  # ---- backups: started by `oppctl backup`, never by `up` -------------------
+
+  # Database access, no internet. pg_dump → age (to a public key) → checksum →
+  # atomic rename into the outbox. The image is deploy/dev/backup/, built by
+  # the workflow like the apps.
+  backup-dump:
+    image: ${BACKUP_IMAGE:?release.env names the backup image}
+    restart: "no"
+    profiles: [backup]
+    networks: [data]
+    environment:
+      PGHOST: postgres
+      PGUSER: backup_user
+      PGDATABASE: oppenheimer
+      # Read by dump.sh, the image's entrypoint, into PGPASSWORD: libpq itself
+      # has no PGPASSWORD_FILE.
+      PGPASSWORD_FILE: /run/secrets/backup_db_password
+      AGE_RECIPIENT: ${AGE_RECIPIENT:-}
+    secrets: [backup_db_password]
+    volumes:
+      - backup-work:/work
+
+  # Internet, no database. Only ever handles ciphertext.
+  backup-upload:
+    image: rclone/rclone:1.75.1@sha256:45401ad7410db1d67ffdb58e19059ad20b0d8e0285a60e38bbec55cc1019c7a5
+    restart: "no"
+    profiles: [backup]
+    networks: [egress]
+    entrypoint: ["/bin/sh", "/usr/local/bin/upload.sh"]
+    environment:
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_PREFIX: postgres/
+      B2_BUCKET: ${B2_BUCKET:-}
+      B2_PREFIX: postgres/
+    volumes:
+      - backup-work:/work
+      - ./backup/upload.sh:/usr/local/bin/upload.sh:ro
+      - ${OPP_CONFIG:?oppctl sets OPP_CONFIG}/rclone.conf:/config/rclone/rclone.conf:ro

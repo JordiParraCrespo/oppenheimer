@@ -82,6 +82,7 @@ oppenheimer/
 │   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate, execx
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
+├── deploy/dev/           # The dev deployment: one Hetzner server, built by GitHub, run by oppctl
 ├── docker/               # Docker Compose (dev + prod)
 └── .github/              # GitHub Actions CI/CD
 ```
@@ -356,6 +357,7 @@ pnpm changeset          # Create a changeset for versioning
 
 - **Tier 1 (~€4/mo)**: Hetzner VPS + Docker Compose for API/DB/Redis, free hosting for web/docs
 - Docker images built by the scheduled CI run on `main` (GitHub Actions), pushed to GHCR when it is green
+- The dev deployment is `deploy/dev/`; its `README.md` is the runbook
 
 ## When modifying code
 

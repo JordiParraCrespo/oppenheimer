@@ -1,0 +1,104 @@
+# Spike: the dev deployment's API, Postgres, Redis and the tunnel as one Kamal
+# app. Deployed from CI with images it already built:
+#   kamal deploy -c deploy/kamal/deploy.api.yml --skip-push --version <sha>
+# See deploy/kamal/SPIKE.md for what this replaces and what it does not.
+service: oppenheimer-api
+image: <%= ENV.fetch("IMAGE_NAMESPACE") %>/oppenheimer-api
+
+servers:
+  web:
+    hosts:
+      - <%= ENV.fetch("DEV_SSH_HOST") %>
+    # App containers always join `kamal`; this adds the internal network
+    # Postgres and Redis live on.
+    options:
+      network: oppenheimer-data
+
+# Relative to the repo root, where kamal runs.
+secrets_path: deploy/kamal/secrets
+hooks_path: deploy/kamal/hooks
+
+ssh:
+  user: <%= ENV.fetch("KAMAL_SSH_USER", "deploy") %>
+
+registry:
+  server: <%= ENV.fetch("REGISTRY_SERVER", "ghcr.io") %>
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# Never used: CI builds and pushes the image, and kamal runs with --skip-push.
+# Kamal still requires the section.
+builder:
+  arch: amd64
+
+proxy:
+  host: <%= ENV.fetch("DEV_HOSTNAME") %>
+  app_port: 3001
+  # The web app owns every other path on the same host.
+  path_prefix: /api
+  strip_path_prefix: false
+  forward_headers: true
+  healthcheck:
+    path: /api/v1/ready
+    interval: 3
+    timeout: 5
+  # Nothing is published: cloudflared, on the same `kamal` network, is the
+  # only way in.
+  run:
+    publish: false
+
+env:
+  clear:
+    NODE_ENV: production
+    PORT: "3001"
+    DB_HOST: oppenheimer-api-postgres
+    DB_PORT: "5432"
+    DB_USERNAME: oppenheimer
+    DB_DATABASE: oppenheimer
+    REDIS_HOST: oppenheimer-api-redis
+    REDIS_PORT: "6379"
+    FRONTEND_URL: https://<%= ENV.fetch("DEV_HOSTNAME") %>
+    BETTER_AUTH_URL: https://<%= ENV.fetch("DEV_HOSTNAME") %>
+    TRUST_PROXY: "2"
+  secret:
+    - DB_PASSWORD
+    - BETTER_AUTH_SECRET
+    - CONTROL_PLANE_SIGNING_KEY
+
+# Migrations run at boot, before the API listens.
+deploy_timeout: 180
+drain_timeout: 30
+retain_containers: 5
+
+accessories:
+  postgres:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    host: <%= ENV.fetch("DEV_SSH_HOST") %>
+    network: oppenheimer-data
+    env:
+      clear:
+        POSTGRES_USER: oppenheimer
+        POSTGRES_DB: oppenheimer
+      secret:
+        - POSTGRES_PASSWORD:DB_PASSWORD
+    directories:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    host: <%= ENV.fetch("DEV_SSH_HOST") %>
+    network: oppenheimer-data
+    cmd: redis-server --appendonly yes --maxmemory-policy noeviction
+    directories:
+      - redisdata:/data
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.0@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+    host: <%= ENV.fetch("DEV_SSH_HOST") %>
+    network: kamal
+    cmd: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    files:
+      - deploy/kamal/cloudflared.yml.erb:/etc/cloudflared/config.yml
+    # Kept on the server, never in the repo or CI.
+    volumes:
+      - /srv/oppenheimer/config/tunnel-credentials.json:/etc/cloudflared/credentials.json:ro

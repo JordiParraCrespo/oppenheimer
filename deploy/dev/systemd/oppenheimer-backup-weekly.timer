@@ -1,0 +1,11 @@
+[Unit]
+Description=Oppenheimer dev: copy of the newest dump to B2
+
+[Timer]
+Unit=oppenheimer-backup@weekly.service
+OnCalendar=Sun *-*-* 04:47:00 UTC
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
