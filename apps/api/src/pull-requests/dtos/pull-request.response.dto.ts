@@ -206,6 +206,12 @@ export class PullRequestQueueResponseDto {
     description: 'Watched repositories this read could not fully answer.',
   })
   unreadable!: UnreadableRepositoryDto[];
+
+  @ApiProperty({
+    description:
+      'Some rows still have parts nobody has read: the next read fills more. Ask again while this is true.',
+  })
+  filling!: boolean;
 }
 
 export class PullRequestGateDto {

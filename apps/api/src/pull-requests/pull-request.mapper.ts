@@ -114,6 +114,16 @@ export class PullRequestMapper {
       withConflicts: count((row) => row.blocker === 'conflicts'),
       oldestWaitingSeconds: items[0]?.waitingSeconds ?? null,
       viewerLogin,
+      // Something in this answer has parts nobody has read yet, so the next
+      // read will deepen it: the client polls while that holds (#247).
+      filling: reads.some((read) =>
+        read.snapshots.some(
+          (s) =>
+            (s.files.value === null && s.files.refusal === null) ||
+            (s.checks.value === null && s.checks.refusal === null) ||
+            (s.reviews.value === null && s.reviews.refusal === null),
+        ),
+      ),
       unreadable: this.toUnreadable(reads),
     };
   }

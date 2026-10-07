@@ -24,6 +24,7 @@ import type {
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
+import { pollWhile } from './live-poll';
 
 /**
  * Query key factory for the Pull requests area. Everything sits under one
@@ -74,6 +75,9 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
     queryFn: () => app.pullRequests.queue(scope),
     placeholderData: keepPreviousData,
     ...options,
+    // The rows are drawn from the first read; each poll fills a few more of
+    // their parts, until the answer says it has stopped filling (#247).
+    ...pollWhile<PullRequestQueue>('pullRequestsFilling', (data) => data?.filling === true),
   });
 }
 

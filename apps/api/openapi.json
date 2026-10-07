@@ -20598,9 +20598,21 @@
             "items": {
               "$ref": "#/components/schemas/UnreadableRepositoryDto"
             }
+          },
+          "filling": {
+            "type": "boolean",
+            "description": "Some rows still have parts nobody has read: the next read fills more. Ask again while this is true."
           }
         },
-        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts", "unreadable"]
+        "required": [
+          "items",
+          "scopes",
+          "lanes",
+          "readyToMerge",
+          "withConflicts",
+          "unreadable",
+          "filling"
+        ]
       },
       "AnalyticsFigureDto": {
         "type": "object",

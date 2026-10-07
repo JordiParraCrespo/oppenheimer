@@ -117,6 +117,8 @@ export interface PullRequestQueue {
   items: PullRequestEntity[];
   /** Watched repositories this read could not fully answer (#244). */
   unreadable: UnreadableRepository[];
+  /** Some rows still have parts nobody has read; the next read fills more (#247). */
+  filling: boolean;
   scopes: Record<PullRequestScope, number>;
   /** Within the scope asked for. */
   lanes: Record<PullRequestLane, number>;

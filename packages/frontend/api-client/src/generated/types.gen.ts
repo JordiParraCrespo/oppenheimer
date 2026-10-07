@@ -2310,6 +2310,10 @@ export type PullRequestQueueResponseDto = {
      * Watched repositories this read could not fully answer.
      */
     unreadable: Array<UnreadableRepositoryDto>;
+    /**
+     * Some rows still have parts nobody has read: the next read fills more. Ask again while this is true.
+     */
+    filling: boolean;
 };
 
 export type AnalyticsFigureDto = {

@@ -43,6 +43,14 @@ export const LIVE_POLL = {
   pairing: { interval: 3000, inBackground: true },
   liveRun: { interval: 5000, inBackground: true },
   hostPresence: { interval: 15_000, inBackground: false },
+  /**
+   * A pull request answer that is still filling its parts. The rows are drawn
+   * from the first read; each poll fills a budget more, out of a cache that
+   * keeps what it has, until nothing is left unread (#247). Not in the
+   * background: nobody is watching a page they left, and GitHub's budget is
+   * better spent on the page in front of someone.
+   */
+  pullRequestsFilling: { interval: 4000, inBackground: false },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;

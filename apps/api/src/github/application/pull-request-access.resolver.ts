@@ -49,11 +49,13 @@ const RATE_LIMITED_TTL_SECONDS = 5 * 60;
  * their listing alone — a row, its times and whose it is — and the next read
  * fills more, because a filled snapshot is cached and costs nothing to keep.
  *
- * The page is useful immediately and completes over a few reads, rather than
- * one view asking GitHub for five requests times every pull request it found
- * and being told to slow down (#247).
+ * Small on purpose. Each filled pull request is three or four requests that
+ * GitHub's own pace spreads over a second or so, and they are what a reader
+ * waits for: at twelve, a queue of thirteen took eleven seconds to answer
+ * rows it already had. At five it answers in about two and is whole within a
+ * few polls, which is the trade the reader wants (#247).
  */
-const SNAPSHOT_BUDGET = 12;
+const SNAPSHOT_BUDGET = 5;
 const REPOSITORIES_TTL_SECONDS = 60;
 /** An installation token is reused until this close to GitHub's one-hour expiry. */
 const TOKEN_MARGIN_MS = 5 * 60_000;

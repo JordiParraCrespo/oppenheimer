@@ -79,6 +79,7 @@ function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {
     withConflicts: dto.withConflicts,
     oldestWaitingSeconds: dto.oldestWaitingSeconds ?? null,
     viewerLogin: dto.viewerLogin ?? null,
+    filling: dto.filling,
     unreadable: dto.unreadable,
   };
 }
