@@ -4,9 +4,10 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * Pull requests, in a browser, against the real control plane: the queue read
- * live from GitHub through the workspace's installation, a briefing, its
- * changes and description, a review that approves and merges in the user's
- * name, a merge from the queue, and analytics.
+ * live from GitHub through the workspace's installation, a pull request
+ * opening on its description, its briefing, its changes and Back to the
+ * description, a review that approves and merges in the user's name, a
+ * merge from the queue, and analytics.
  *
  * Only GitHub is faked (`support/github-stub.ts`, `github-stub-pulls.ts`). The
  * stub's viewer is `ana-dev`, whose branches and sessions' `oppenheimer/…`
@@ -21,7 +22,7 @@ test.describe('Pull requests', () => {
     expect(reset.ok, 'the GitHub stub resets its pull requests').toBe(true);
   });
 
-  test('the queue, a briefing, a review that merges, a merge from the queue, analytics', async ({
+  test('the queue, a description, a review that merges, a merge from the queue, analytics', async ({
     page,
   }) => {
     test.slow();
@@ -52,18 +53,13 @@ test.describe('Pull requests', () => {
     await expect(rowButton(page, 'Fix the empty state on the wallet screen')).toBeVisible();
     await expect(rowButton(page, 'Rework the settings layout')).toBeVisible();
 
-    // ── A briefing ───────────────────────────────────────────────────────────
+    // ── A pull request ───────────────────────────────────────────────────────
     await rowButton(page, 'Fix the empty state on the wallet screen').click();
-    await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14/);
-    await expect(page.getByText('Path to merge')).toBeVisible({ timeout: 30_000 });
-    await expect(
-      page.getByText('The wallet screen showed a spinner forever').first(),
-    ).toBeVisible();
-
-    // Its description, GitHub's Markdown as elements: no syntax, no template comment.
-    await page.getByRole('button', { name: 'Description' }).click();
-    await expect(page).toHaveURL(/view=description/);
-    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible();
+    await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14$/);
+    // It opens on its description, GitHub's Markdown as elements: no syntax, no template comment.
+    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(
       page.getByRole('listitem').filter({ hasText: 'shows the prompt' }).getByRole('checkbox'),
     ).toBeChecked();
@@ -76,12 +72,24 @@ test.describe('Pull requests', () => {
     await expect(page.getByText('archived accounts are filtered out first')).toBeVisible();
     await expect(page.getByText('@ana-dev').first()).toBeVisible();
 
+    // Its briefing.
+    await page.getByRole('button', { name: 'Briefing' }).click();
+    await expect(page).toHaveURL(/view=briefing/);
+    await expect(page.getByText('Path to merge')).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.getByText('The wallet screen showed a spinner forever').first(),
+    ).toBeVisible();
+
     // Its changes, from GitHub's patch.
     await page.getByRole('button', { name: /^Changes/ }).click();
     await expect(page).toHaveURL(/view=changes/);
     await expect(page.getByText('src/screens/wallet/EmptyWallet.tsx').first()).toBeVisible({
       timeout: 30_000,
     });
+    // Back from the changes is the pull request's bare address: its description.
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14$/);
+    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible();
 
     // ── Approve and merge, as the user ───────────────────────────────────────
     await page.getByRole('button', { name: /Submit review/ }).click();
