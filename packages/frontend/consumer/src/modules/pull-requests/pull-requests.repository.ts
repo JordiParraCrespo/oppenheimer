@@ -11,6 +11,7 @@ import {
   type LaneReason,
   type LineCommentInput,
   type MergeMethod,
+  type PullRequestActivityItem,
   type PullRequestAddress,
   type PullRequestAnalytics,
   type PullRequestAnalyticsRange,
@@ -182,6 +183,33 @@ export class PullRequestsRepository {
       line: comment.line ?? null,
       createdAt: new Date(comment.createdAt),
     }));
+  }
+
+  @MapApiError(PullRequestsErrors.FETCH_ACTIVITY_FAILED)
+  async activity(address: PullRequestAddress): Promise<PullRequestActivityItem[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findPullRequestActivity({ path: address }),
+      PullRequestsErrors.FETCH_ACTIVITY_FAILED,
+    );
+    return data.flatMap((item): PullRequestActivityItem[] => {
+      const base = { id: item.id, author: item.author, at: new Date(item.at) };
+      switch (item.kind) {
+        case 'comment':
+          return [{ ...base, kind: 'comment', body: item.body ?? '' }];
+        case 'commit':
+          return [{ ...base, kind: 'commit', sha: item.sha ?? '', message: item.body ?? '' }];
+        case 'review':
+          return item.state
+            ? [{ ...base, kind: 'review', state: item.state, body: item.body ?? '' }]
+            : [];
+        case 'event':
+          return item.event
+            ? [{ ...base, kind: 'event', event: item.event, subject: item.subject ?? null }]
+            : [];
+        default:
+          return [];
+      }
+    });
   }
 
   /** Answers whether approving also merged it; GitHub may hold the merge, and then it waits. */

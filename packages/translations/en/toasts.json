@@ -29,5 +29,10 @@
   "pullRequestsGone": "GitHub no longer finds part of what this view shows.",
   "pullRequestsUnanswered": "GitHub did not answer for part of what this view shows.",
   "pullRequestsIncomplete": "Some rows are missing a part GitHub did not give.",
-  "pullRequestsChecksPermission": "GitHub refused the checks: the App needs Checks: read and Commit statuses: read."
+  "pullRequestsChecksPermission": "GitHub refused the checks: the App needs Checks: read and Commit statuses: read.",
+  "pullRequestMerged": "Merged {{reference}}.",
+  "reviewSubmitted": "Review submitted.",
+  "reviewApprovedMerged": "Approved and merged.",
+  "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
+  "reviewCommentPosted": "Comment posted."
 }

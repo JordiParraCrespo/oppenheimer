@@ -29,5 +29,10 @@
   "pullRequestsGone": "GitHub ya no encuentra parte de lo que muestra esta vista.",
   "pullRequestsUnanswered": "GitHub no respondió a parte de lo que muestra esta vista.",
   "pullRequestsIncomplete": "A algunas filas les falta una parte que GitHub no dio.",
-  "pullRequestsChecksPermission": "GitHub rechazó las comprobaciones: la App necesita Checks: read y Commit statuses: read."
+  "pullRequestsChecksPermission": "GitHub rechazó las comprobaciones: la App necesita Checks: read y Commit statuses: read.",
+  "pullRequestMerged": "{{reference}} fusionada.",
+  "reviewSubmitted": "Revisión enviada.",
+  "reviewApprovedMerged": "Aprobada y fusionada.",
+  "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
+  "reviewCommentPosted": "Comentario publicado."
 }

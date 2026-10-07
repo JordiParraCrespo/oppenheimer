@@ -68,6 +68,41 @@ export interface GithubReviewComment {
   createdAt: string;
 }
 
+/** What else happened on a pull request that its timeline names. */
+export type GithubTimelineEvent =
+  | 'review_requested'
+  | 'merged'
+  | 'closed'
+  | 'reopened'
+  | 'ready_for_review'
+  | 'convert_to_draft'
+  | 'head_ref_force_pushed';
+
+/**
+ * One entry of a pull request's conversation, oldest first: a comment, a
+ * pushed commit, a review, or an event. `id` is unique within the timeline.
+ */
+export type GithubTimelineItem =
+  | { kind: 'comment'; id: string; login: string; body: string; at: string }
+  | { kind: 'commit'; id: string; sha: string; login: string; message: string; at: string }
+  | {
+      kind: 'review';
+      id: string;
+      login: string;
+      state: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+      body: string;
+      at: string;
+    }
+  | {
+      kind: 'event';
+      id: string;
+      login: string;
+      event: GithubTimelineEvent;
+      /** Who a review was asked of; null for the other events. */
+      subject: string | null;
+      at: string;
+    };
+
 export interface GithubChecks {
   state: GithubCheckState;
   total: number;
@@ -124,6 +159,12 @@ export interface GithubPullsPort {
     fullName: string,
     number: number,
   ): Promise<GithubReviewComment[]>;
+  /** The conversation tab: comments, commits, reviews and events, oldest first. */
+  listTimeline(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+  ): Promise<GithubTimelineItem[]>;
   readChecks(credential: GithubCredential, fullName: string, sha: string): Promise<GithubChecks>;
   createReview(
     credential: GithubCredential,

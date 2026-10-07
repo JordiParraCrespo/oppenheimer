@@ -1,9 +1,12 @@
+import type { QueryKey } from '@tanstack/react-query';
+import { useStreamCovers } from './workspace-stream-status';
+
 /**
  * Every poll the console runs against the API: how often it asks, and whether
  * it keeps asking while the tab is hidden. A query hook in this package spreads
- * {@link pollWhile}; nothing else names an interval, and a feature asks for the
- * hook that already polls (`useHostPresence`). Each poll goes when the console
- * streams that fact instead.
+ * {@link usePollWhile} with its query key; nothing else names an interval, and
+ * a feature asks for the hook that already polls (`useHostPresence`). A poll
+ * stands down while the workspace event stream carries its fact.
  *
  * `inBackground` keeps TanStack Query's interval running on a hidden document,
  * where it pauses by default. A poll that watches something finish keeps going:
@@ -148,3 +151,21 @@ export const CLOSE_WATCH_MS = 60_000;
  * think of. A host that is offline never answers, and the watch stops asking.
  */
 export const RESTART_WATCH_MS = 60_000;
+
+/**
+ * `pollWhile` for a query the workspace event stream may cover: while the
+ * stream is live and announces every change to `queryKey`
+ * (`workspace-events.ts`), the poll stands down; the moment it is not, it
+ * polls again. A query the stream does not cover polls as `pollWhile` says.
+ */
+export function usePollWhile<TData>(
+  kind: LivePollKind,
+  queryKey: QueryKey,
+  active: boolean | ((data: TData | undefined) => boolean),
+): Poll<TData> {
+  const covered = useStreamCovers(queryKey);
+  if (covered) {
+    return { refetchInterval: false, refetchIntervalInBackground: LIVE_POLL[kind].inBackground };
+  }
+  return pollWhile(kind, active);
+}

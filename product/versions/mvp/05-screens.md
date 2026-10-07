@@ -347,13 +347,18 @@
   pick (2026-10-02).
 
 - **The console hears about changes it did not make from the workspace
-  event stream (03), beside its polls.** Each change refetches the reads it
-  names, at the keys they already have, so a session's start step, a run
-  finishing or a host being paired shows the moment it commits. The polls
-  run as before and stay the fallback: the stream makes a change arrive
-  sooner, never later, and a tab whose stream drops refetches what it
-  covers once when it is back. Behind the `workspace_event_stream` flag
-  (2026-10-06).
+  event stream (03), and stands down the polls it covers.** Each change
+  refetches the reads it names, at the keys they already have, so a
+  session's start step, a run finishing or a host being paired shows the
+  moment it commits. While the stream is live, the polls whose facts it
+  carries stand down — the session list, a session's own row and its start
+  steps, and a pairing token waiting to be spent — and they poll again the
+  moment it drops. Presence and a run's status are not on it and keep
+  polling. Every time the stream comes up, the first connect included, the
+  reads it covers are refetched once, so nothing that landed before
+  `ready` or during a gap is missed. One table in the console
+  (`workspace-events.ts`) owns both lists. Behind the
+  `workspace_event_stream` flag (2026-10-06).
 
 ## Open questions
 

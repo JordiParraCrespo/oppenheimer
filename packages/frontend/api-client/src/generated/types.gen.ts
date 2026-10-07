@@ -2516,6 +2516,24 @@ export type PullRequestCommentDto = {
     createdAt: string;
 };
 
+export type PullRequestActivityItemDto = {
+    id: string;
+    kind: 'comment' | 'commit' | 'review' | 'event';
+    /**
+     * A GitHub login; a commit’s author name.
+     */
+    author: string;
+    at: string;
+    /**
+     * Markdown, or a commit message.
+     */
+    body?: string | null;
+    state?: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+    sha?: string | null;
+    event?: 'review_requested' | 'merged' | 'closed' | 'reopened' | 'ready_for_review' | 'convert_to_draft' | 'head_ref_force_pushed';
+    subject?: string | null;
+};
+
 export type SubmitPullRequestReviewRequest = {
     verdict: 'comment' | 'approve' | 'request_changes';
     body?: string;
@@ -9099,6 +9117,62 @@ export type AddPullRequestCommentResponses = {
 };
 
 export type AddPullRequestCommentResponse = AddPullRequestCommentResponses[keyof AddPullRequestCommentResponses];
+
+export type FindPullRequestActivityData = {
+    body?: never;
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/activity';
+};
+
+export type FindPullRequestActivityErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestActivityError = FindPullRequestActivityErrors[keyof FindPullRequestActivityErrors];
+
+export type FindPullRequestActivityResponses = {
+    200: Array<PullRequestActivityItemDto>;
+};
+
+export type FindPullRequestActivityResponse = FindPullRequestActivityResponses[keyof FindPullRequestActivityResponses];
 
 export type SubmitPullRequestReviewData = {
     body: SubmitPullRequestReviewRequest;

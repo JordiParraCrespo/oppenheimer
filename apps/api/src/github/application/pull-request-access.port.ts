@@ -7,6 +7,7 @@ import type {
   GithubPullRequestSummary,
   GithubRefusal,
   GithubReviewComment,
+  GithubTimelineItem,
 } from '../infrastructure/github-pulls.port';
 
 /** One repository a workspace's installations cover, named by the installation that reaches it. */
@@ -135,6 +136,8 @@ export interface PullRequestAccessPort {
   pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot>;
   files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]>;
   reviewComments(scope: AccessScope, address: PullRequestAddress): Promise<GithubReviewComment[]>;
+  /** Its conversation: comments, commits, reviews and events, oldest first. */
+  activity(scope: AccessScope, address: PullRequestAddress): Promise<GithubTimelineItem[]>;
   submitReview(
     scope: AccessScope,
     userId: string,

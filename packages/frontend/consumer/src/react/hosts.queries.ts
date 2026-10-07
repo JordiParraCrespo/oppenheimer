@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query';
 import type { HostEntity, HostPairing, HostPairingToken } from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
-import { type Poll, type PollKeys, pollWhile } from './live-poll';
+import { type Poll, type PollKeys, usePollWhile } from './live-poll';
 
 /**
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
@@ -65,7 +65,8 @@ export function useHostPresence<TData = HostEntity[]>({
   watching?: boolean;
   select?: (hosts: HostEntity[]) => TData;
 } = {}) {
-  return useHostList<TData>(select ? { select } : undefined, pollWhile('hostPresence', watching));
+  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), watching);
+  return useHostList<TData>(select ? { select } : undefined, poll);
 }
 
 type HostListOptions<TData> = Omit<

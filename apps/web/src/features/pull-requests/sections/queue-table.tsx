@@ -107,7 +107,16 @@ export function QueueTable() {
                   ))}
                 </PillTabs>
               </div>
-              <PullRequestTableHead />
+              <PullRequestTableHead
+                labels={{
+                  lane: t('pullRequests.queue.columns.lane'),
+                  title: t('pullRequests.queue.columns.title'),
+                  size: t('pullRequests.queue.columns.size'),
+                  checks: t('pullRequests.queue.columns.checks'),
+                  conflicts: t('pullRequests.queue.columns.conflicts'),
+                  waiting: t('pullRequests.queue.columns.waiting'),
+                }}
+              />
               {shown.map((pull) => (
                 <QueueRow
                   key={`${pull.installationId}:${pull.githubRepoId}:${pull.number}`}
@@ -127,6 +136,8 @@ export function QueueTable() {
                 })}
                 onPrevious={current > 0 ? () => setPage(current - 1) : undefined}
                 onNext={current < pages - 1 ? () => setPage(current + 1) : undefined}
+                previousLabel={t('pullRequests.queue.previousPage')}
+                nextLabel={t('pullRequests.queue.nextPage')}
               />
             </PullRequestTable>
           </div>

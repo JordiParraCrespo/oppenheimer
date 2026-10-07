@@ -18,9 +18,9 @@ export function channelOf(audience: WorkspaceEventAudience): string {
 
 type Listener = (event: WorkspaceEvent) => void;
 
-/** One channel this replica listens on: who hears it, and its `SUBSCRIBE` while in flight. */
+/** One channel this replica listens on: who hears it (and how to tell them it is gone), and its `SUBSCRIBE` while in flight. */
 interface Channel {
-  listeners: Set<Listener>;
+  listeners: Map<Listener, () => void>;
   subscribed: Promise<unknown>;
 }
 
@@ -37,6 +37,12 @@ interface Channel {
  * Every stream on this replica shares the connection: a channel is subscribed
  * when its first listener arrives, every later listener waits for that same
  * `SUBSCRIBE`, and the channel is unsubscribed when its last listener leaves.
+ *
+ * When the connection closes, every channel goes with it and every listener
+ * is told (`onLost`). It does not resubscribe on its own: what was published
+ * while it was down never reached this replica, so each stream ends, the
+ * browser dials again, and the console reads again what the gap may have
+ * changed. A console that stops polling while its stream is up depends on it.
  */
 @Injectable()
 export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApplicationShutdown {
@@ -57,16 +63,17 @@ export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApp
   async subscribe(
     audiences: readonly WorkspaceEventAudience[],
     listener: Listener,
+    onLost: () => void,
   ): Promise<() => void> {
     const subscriber = this.connection();
     const names = [...new Set(audiences.map(channelOf))];
     const joined = names.map((name) => {
       let channel = this.channels.get(name);
       if (!channel) {
-        channel = { listeners: new Set(), subscribed: subscriber.subscribe(name) };
+        channel = { listeners: new Map(), subscribed: subscriber.subscribe(name) };
         this.channels.set(name, channel);
       }
-      channel.listeners.add(listener);
+      channel.listeners.set(listener, onLost);
       return channel;
     });
     const unsubscribe = () => {
@@ -94,14 +101,20 @@ export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApp
 
   private connection(): Redis {
     if (this.subscriber) return this.subscriber;
-    const subscriber = new Redis(
-      redisConnectionOptions(this.configService.get('redis') as RedisConfig),
-    );
+    const subscriber = new Redis({
+      ...redisConnectionOptions(this.configService.get('redis') as RedisConfig),
+      autoResubscribe: false,
+    });
     subscriber.on('error', (error: Error) => {
       this.logger.warn({
         message: 'Redis unavailable to the workspace stream',
         error: error.message,
       });
+    });
+    subscriber.on('close', () => this.dropAll());
+    // Retries ran out and the connection will not come back: the next stream opens a new one.
+    subscriber.on('end', () => {
+      if (this.subscriber === subscriber) this.subscriber = null;
     });
     subscriber.on('message', (name: string, message: string) => {
       const listeners = this.channels.get(name)?.listeners;
@@ -113,9 +126,19 @@ export class RedisWorkspaceEventsAdapter implements WorkspaceEventBusPort, OnApp
         return;
       }
       if (!isWorkspaceEvent(event)) return;
-      for (const listener of listeners) listener(event);
+      for (const listener of listeners.keys()) listener(event);
     });
     this.subscriber = subscriber;
     return subscriber;
+  }
+
+  /** The connection closed: every channel is gone, and every listener is told once. */
+  private dropAll(): void {
+    const lost = new Set<() => void>();
+    for (const channel of this.channels.values()) {
+      for (const onLost of channel.listeners.values()) lost.add(onLost);
+    }
+    this.channels.clear();
+    for (const onLost of lost) onLost();
   }
 }

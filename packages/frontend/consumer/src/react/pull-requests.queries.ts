@@ -12,6 +12,7 @@ import {
 import type {
   LineCommentInput,
   MergeMethod,
+  PullRequestActivityItem,
   PullRequestAddress,
   PullRequestAnalytics,
   PullRequestAnalyticsRange,
@@ -24,7 +25,7 @@ import type {
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
-import { pollWhile } from './live-poll';
+import { usePollWhile } from './live-poll';
 
 /**
  * Query key factory for the Pull requests area. Everything sits under one
@@ -34,7 +35,7 @@ import { pollWhile } from './live-poll';
  * ```
  * ['pullRequests', 'queue', scope]
  * ['pullRequests', 'detail', installationId, githubRepoId, number]
- * ['pullRequests', 'detail', …, 'files' | 'comments']
+ * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity']
  * ['pullRequests', 'repositories']
  * ['pullRequests', 'analytics', range]
  * ```
@@ -55,6 +56,8 @@ export const pullRequestsKeys = {
     [...pullRequestsKeys.detail(address), 'files'] as const,
   comments: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'comments'] as const,
+  activity: (address: PullRequestAddress | undefined) =>
+    [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
 };
 
@@ -88,7 +91,11 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
     ...options,
     // The rows are drawn from the first read; each poll fills a few more of
     // their parts, until the answer says it has stopped filling (#247).
-    ...pollWhile<PullRequestQueue>('pullRequestsFilling', (data) => data?.filling === true),
+    ...usePollWhile<PullRequestQueue>(
+      'pullRequestsFilling',
+      pullRequestsKeys.queue(scope),
+      (data) => data?.filling === true,
+    ),
   });
 }
 
@@ -115,6 +122,15 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
   return useQuery<PullRequestComment[], Error>({
     queryKey: pullRequestsKeys.comments(address),
     queryFn: address ? () => app.pullRequests.comments(address) : skipToken,
+  });
+}
+
+/** Its conversation: comments, commits, reviews and events, drawn under the description. */
+export function usePullRequestActivity(address: PullRequestAddress | undefined) {
+  const app = useConsumerApp();
+  return useQuery<PullRequestActivityItem[], Error>({
+    queryKey: pullRequestsKeys.activity(address),
+    queryFn: address ? () => app.pullRequests.activity(address) : skipToken,
   });
 }
 

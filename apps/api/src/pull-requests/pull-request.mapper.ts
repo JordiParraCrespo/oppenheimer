@@ -13,6 +13,7 @@ import type {
   GithubPullRequestFile,
   GithubPullRequestSummary,
   GithubReviewComment,
+  GithubTimelineItem,
 } from '../github/infrastructure/github-pulls.port';
 import {
   type AnalyticsWindow,
@@ -34,6 +35,7 @@ import {
   scopeOf,
 } from './domain/pull-request-merge.policy';
 import type {
+  PullRequestActivityItemDto,
   PullRequestCommentDto,
   PullRequestDetailResponseDto,
   PullRequestFileDto,
@@ -190,6 +192,20 @@ export class PullRequestMapper {
       body: comment.body,
       author: comment.login,
       createdAt: comment.createdAt,
+    };
+  }
+
+  toActivity(item: GithubTimelineItem): PullRequestActivityItemDto {
+    return {
+      id: item.id,
+      kind: item.kind,
+      author: item.login,
+      at: item.at,
+      body: item.kind === 'commit' ? item.message : item.kind === 'event' ? null : item.body,
+      state: item.kind === 'review' ? item.state : null,
+      sha: item.kind === 'commit' ? item.sha : null,
+      event: item.kind === 'event' ? item.event : null,
+      subject: item.kind === 'event' ? item.subject : null,
     };
   }
 

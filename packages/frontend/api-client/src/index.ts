@@ -115,6 +115,7 @@ export type {
   ProfileResponseDto,
   ProjectRepositoryResponseDto,
   ProjectResponseDto,
+  PullRequestActivityItemDto,
   PullRequestAnalyticsResponseDto,
   PullRequestChecksDto,
   PullRequestCommentDto,

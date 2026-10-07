@@ -202,6 +202,28 @@ export interface PullRequestComment {
   createdAt: Date;
 }
 
+/** What else happened on a pull request that its conversation shows. */
+export type PullRequestActivityEvent =
+  | 'review_requested'
+  | 'merged'
+  | 'closed'
+  | 'reopened'
+  | 'ready_for_review'
+  | 'convert_to_draft'
+  | 'head_ref_force_pushed';
+
+/** One entry of a pull request's conversation, oldest first. */
+export type PullRequestActivityItem = { id: string; author: string; at: Date } & (
+  | { kind: 'comment'; body: string }
+  | { kind: 'commit'; sha: string; message: string }
+  | {
+      kind: 'review';
+      state: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+      body: string;
+    }
+  | { kind: 'event'; event: PullRequestActivityEvent; subject: string | null }
+);
+
 export interface LineCommentInput {
   path: string;
   line: number;

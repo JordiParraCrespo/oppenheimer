@@ -20,7 +20,7 @@ import {
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
-import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
+import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
 import { seedDetails } from './seed-details';
 
 export const sessionsKeys = {
@@ -135,9 +135,11 @@ export function useSessions<TData = SessionEntity[]>(
       return listed;
     },
     ...options,
-    // Over the query's own rows, before any caller's `select`.
-    ...pollWhile<SessionEntity[]>(
+    // Over the query's own rows, before any caller's `select`. Stands down
+    // while the workspace event stream carries every change to these rows.
+    ...usePollWhile<SessionEntity[]>(
       'sessionStarting',
+      sessionsKeys.list(),
       (rows) =>
         rows?.some((session) => session.isProvisioning || closesOf(queryClient).has(session.id)) ??
         false,
@@ -150,7 +152,6 @@ export function useSession(
   options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
-
   const queryClient = useQueryClient();
 
   return useQuery({
@@ -164,8 +165,9 @@ export function useSession(
         }
       : skipToken,
     ...options,
-    ...pollWhile<SessionEntity>(
+    ...usePollWhile<SessionEntity>(
       'sessionOpening',
+      sessionsKeys.detail(id),
       (session) =>
         (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
     ),
@@ -203,7 +205,11 @@ export function useSessionStartProgress(
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     ...options,
-    ...pollWhile<SessionStartProgress>('sessionOpening', (progress) => !progress?.settled),
+    ...usePollWhile<SessionStartProgress>(
+      'sessionOpening',
+      sessionsKeys.start(id, failed),
+      (progress) => !progress?.settled,
+    ),
   });
 }
 
@@ -221,16 +227,16 @@ export function useSessionStartProgress(
  * started, goes straight to its terminal without reading the log at all.
  */
 export function useSessionOpening(session: SessionEntity | undefined): boolean {
-  const queryClient = useQueryClient();
   const live = session?.isLive ?? false;
-  const watched =
-    session !== undefined &&
-    queryClient.getQueryState(sessionsKeys.start(session.id, false)) !== undefined;
-  const { data } = useSessionStartProgress(session?.id, {
-    starting: live && watched,
-    failed: false,
-  });
-  return live && watched && !(data?.settled ?? false);
+  // Watched means the log has data in the cache: the create seeded it, or the
+  // start pane read it. Read through the observer, not the cache, so the
+  // answer follows the query rather than whichever render read it first.
+  const { data } = useSessionStartProgress(
+    session?.id,
+    { starting: live, failed: false },
+    { enabled: (query) => query.state.data !== undefined },
+  );
+  return live && data !== undefined && !data.settled;
 }
 
 export interface CreateSessionVariables {

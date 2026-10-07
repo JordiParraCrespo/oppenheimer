@@ -17,7 +17,7 @@ export const Route = createFileRoute(
 )({
   validateSearch: pullRequestSearchSchema,
   component: PullRequestRoute,
-  staticData: { pane: (search) => pullRequestPane(search.view) },
+  staticData: { pane: (search) => pullRequestPane(pullRequestSearchSchema.parse(search).view) },
 });
 
 function PullRequestRoute() {

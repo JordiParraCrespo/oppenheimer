@@ -609,9 +609,13 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `.agents/rules/frontend-architecture.md`, "The page frame is the
   shell's".
 - 2026-10-06: **The console hears about changes from one event stream,
-  beside its polls** (03, 05). `GET /v1/events` streams invalidations
-  (`session.changed`, `host.changed`, `pairing.spent`,
+  and stands down the polls it covers** (03, 05). `GET /v1/events` streams
+  invalidations (`session.changed`, `host.changed`, `pairing.spent`,
   `automationRun.changed`) per workspace and per person over Redis
-  pub/sub, published from the outbox after each commit. The polls in
-  `LIVE_POLL` keep running as the fallback. Behind the
-  `workspace_event_stream` flag.
+  pub/sub, published from the outbox after each commit. While a stream is
+  live, the polls in `LIVE_POLL` whose facts it carries (sessions, their
+  start steps, a pending pairing token) stand down, and they poll again the
+  moment it drops; presence and a run's status keep polling. A stream ends
+  when its replica's Redis subscriber connection closes, and every time one
+  comes up, the first connect included, the reads it covers are refetched
+  once. Behind the `workspace_event_stream` flag.
