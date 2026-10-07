@@ -30,7 +30,7 @@ export function PullRequestScreen({
   const [pending, setPending] = useState<LineCommentInput[]>([]);
   const [layout, setLayout] = useState<DiffLayout>('unified');
   const setView = (next: PullRequestView) =>
-    navigate({ to: '.', search: { view: next === 'briefing' ? undefined : next } });
+    navigate({ to: '.', search: { view: next === 'description' ? undefined : next } });
 
   return (
     <>

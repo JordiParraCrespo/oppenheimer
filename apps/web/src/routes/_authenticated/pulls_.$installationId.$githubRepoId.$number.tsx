@@ -28,7 +28,7 @@ function PullRequestRoute() {
     <PullRequestScreen
       key={`${installationId}/${githubRepoId}/${number}`}
       address={address}
-      view={view ?? 'briefing'}
+      view={view ?? 'description'}
     />
   );
 }

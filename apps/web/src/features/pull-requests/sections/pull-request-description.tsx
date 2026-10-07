@@ -1,4 +1,4 @@
-import { PullRequestHeader, Skeleton } from '@oppenheimer/design-system-web';
+import { Card, PullRequestHeader, Skeleton } from '@oppenheimer/design-system-web';
 import { PencilIcon } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
@@ -13,8 +13,8 @@ import { PullRequestCommentsSummary } from './pull-request-comments-summary';
 
 /**
  * The description, as its author wrote it, laid out the way the Codex app
- * lays out a pull request: the header, the description under it with a way
- * to edit it on GitHub and its conversation under that, and beside it the
+ * lays out a pull request: the header, the description on a card under it
+ * with a way to edit it on GitHub and its conversation under that, and beside it the
  * rail of what decides the merge.
  */
 export function PullRequestDescription({ address }: { address: PullRequestAddress }) {
@@ -43,24 +43,26 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
                 base={pull.baseRef}
                 labels={{ into: t('pullRequests.detail.into') }}
               />
-              {pull.body.trim() ? (
-                <MarkdownBody source={pull.body} base={pull.htmlUrl} />
-              ) : (
-                <p className="m-0 text-body text-fg-muted">
-                  {t('pullRequests.detail.noDescription')}
-                </p>
-              )}
-              <div className="flex justify-end border-b border-border-subtle pb-4">
-                <a
-                  href={pull.htmlUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg"
-                >
-                  <PencilIcon className="size-3.5" aria-hidden />
-                  {t('pullRequests.detail.editOnGithub')}
-                </a>
-              </div>
+              <Card padded>
+                {pull.body.trim() ? (
+                  <MarkdownBody source={pull.body} base={pull.htmlUrl} />
+                ) : (
+                  <p className="m-0 text-body text-fg-muted">
+                    {t('pullRequests.detail.noDescription')}
+                  </p>
+                )}
+                <div className="mt-5 flex justify-end border-t border-border-subtle pt-4">
+                  <a
+                    href={pull.htmlUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg"
+                  >
+                    <PencilIcon className="size-3.5" aria-hidden />
+                    {t('pullRequests.detail.editOnGithub')}
+                  </a>
+                </div>
+              </Card>
               <PullRequestActivity address={address} base={pull.htmlUrl} />
             </div>
             <PullRequestRail

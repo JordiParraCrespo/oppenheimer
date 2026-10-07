@@ -17,7 +17,7 @@ import { ReviewPopover } from './review-popover';
 /**
  * The bar over a pull request, its one header: back to the queue and its
  * three views, GitHub, and Submit review. On Changes the views give way to
- * Back, to the briefing, and the diff's layout.
+ * Back, to the description, and the diff's layout.
  */
 export function PullRequestToolbar({
   address,
@@ -45,7 +45,7 @@ export function PullRequestToolbar({
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
       {view === 'changes' ? (
         <>
-          <Button variant="ghost" size="sm" onClick={() => onViewChange('briefing')}>
+          <Button variant="ghost" size="sm" onClick={() => onViewChange('description')}>
             <ChevronLeft />
             {t('pullRequests.changes.back')}
           </Button>

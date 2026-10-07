@@ -52,18 +52,13 @@ test.describe('Pull requests', () => {
     await expect(rowButton(page, 'Fix the empty state on the wallet screen')).toBeVisible();
     await expect(rowButton(page, 'Rework the settings layout')).toBeVisible();
 
-    // ── A briefing ───────────────────────────────────────────────────────────
+    // ── A pull request ───────────────────────────────────────────────────────
     await rowButton(page, 'Fix the empty state on the wallet screen').click();
-    await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14/);
-    await expect(page.getByText('Path to merge')).toBeVisible({ timeout: 30_000 });
-    await expect(
-      page.getByText('The wallet screen showed a spinner forever').first(),
-    ).toBeVisible();
-
-    // Its description, GitHub's Markdown as elements: no syntax, no template comment.
-    await page.getByRole('button', { name: 'Description' }).click();
-    await expect(page).toHaveURL(/view=description/);
-    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible();
+    await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14$/);
+    // It opens on its description, GitHub's Markdown as elements: no syntax, no template comment.
+    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(
       page.getByRole('listitem').filter({ hasText: 'shows the prompt' }).getByRole('checkbox'),
     ).toBeChecked();
@@ -75,6 +70,14 @@ test.describe('Pull requests', () => {
     await expect(page.getByText('lucia-m requested a review from ana-dev')).toBeVisible();
     await expect(page.getByText('archived accounts are filtered out first')).toBeVisible();
     await expect(page.getByText('@ana-dev').first()).toBeVisible();
+
+    // Its briefing.
+    await page.getByRole('button', { name: 'Briefing' }).click();
+    await expect(page).toHaveURL(/view=briefing/);
+    await expect(page.getByText('Path to merge')).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.getByText('The wallet screen showed a spinner forever').first(),
+    ).toBeVisible();
 
     // Its changes, from GitHub's patch.
     await page.getByRole('button', { name: /^Changes/ }).click();
