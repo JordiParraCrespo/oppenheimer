@@ -360,9 +360,7 @@ earlier note:
   it belongs to: the MVP, since the polls it speeds up are the MVP's own.
 - `next-steps/0.2-pull-requests.md` had the queue read every repository
   the installation reaches, so your pull requests and the reviews asked
-  of you came from anywhere while Watching stayed opt-in. Run against an
-  account with 79 repositories on 2026-10-06, one page view was a request
-  per pull request per repository and GitHub answered with a secondary
-  rate limit; the same day the queue became what the reader watches and
-  nothing else. The wider reach returns as one search, not 79 listings
-  (issue #247).
+  of you came from anywhere while Watching stayed opt-in. It now reads
+  what the reader watches and nothing wider; the wider reach returns as
+  one search rather than a listing per repository. That note holds the
+  rule and what the reach cost (issue #247).

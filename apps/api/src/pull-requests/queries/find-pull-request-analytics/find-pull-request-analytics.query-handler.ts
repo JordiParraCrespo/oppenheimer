@@ -46,26 +46,36 @@ export class FindPullRequestAnalyticsQueryHandler
         unreadable: [],
       });
     }
+    const openBudget = this.access.readBudget();
+    const closedBudget = this.access.readBudget();
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.watched(scope),
       this.access.viewerLogin(scope),
     ]);
     // The closed reads are capped, newest first, so a page view costs the window
-    // and not the installation (#247). One budget across both halves bounds what
-    // filling those pull requests' parts costs: the counts and the day chart are
-    // the listings', which every pull request has, and the medians and the lane
-    // mix deepen over the next few reads as more parts land in the cache.
-    const budget = this.access.readBudget();
+    // and not the installation (#247). The counts and the day chart are the
+    // listings', which every pull request has; the medians, the lane mix and
+    // the waiting breakdown are what was read, and deepen over the next few
+    // reads as more parts land in the cache.
+    //
+    // A budget each, because the two halves answer different questions: the
+    // waiting breakdown is the open pull requests', the lane mix and the
+    // medians mostly the closed ones'. Sharing one made which half got the
+    // slots depend on whichever Redis miss resumed first, so a view could
+    // spend everything on open rows and draw no lane mix at all, or the
+    // reverse, with nothing in the code saying which.
     const [open, closed] = await Promise.all([
       Promise.all(
-        repositories.map((repository) => this.access.openPullRequests(scope, repository, budget)),
+        repositories.map((repository) =>
+          this.access.openPullRequests(scope, repository, openBudget),
+        ),
       ),
       this.access.closedPullRequests(
         scope,
         repositories,
         window.previousFrom,
         CLOSED_CEILING,
-        budget,
+        closedBudget,
       ),
     ]);
     return this.mapper.toAnalytics({

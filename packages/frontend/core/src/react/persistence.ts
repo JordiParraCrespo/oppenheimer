@@ -31,6 +31,15 @@ export interface QueryPersistConfig {
  * segment is the first entry of every key factory
  * (`apps/docs/docs/architecture/query-keys.md`), which is what makes a
  * per-feature deny-list possible.
+ *
+ * A denied feature may hold one read that is safe to keep — counts and dates
+ * inside a feature that otherwise holds private code. That read says so
+ * itself, with `meta: { persist: true }`, rather than being moved to a key of
+ * its own: splitting one feature's key so a storage policy could see the
+ * halves left two roots for every later invalidation to remember.
+ *
+ * The default stays deny, so a key added to a sensitive feature tomorrow is
+ * kept out of storage without anyone remembering to list it.
  */
 export function shouldDehydrateQuery(
   query: Query,
@@ -39,7 +48,9 @@ export function shouldDehydrateQuery(
   if (query.state.status !== 'success') return false;
 
   const [feature] = query.queryKey;
-  return typeof feature === 'string' && !nonPersistedFeatures.includes(feature);
+  if (typeof feature !== 'string') return false;
+  if (!nonPersistedFeatures.includes(feature)) return true;
+  return (query.meta as { persist?: boolean } | undefined)?.persist === true;
 }
 
 /**

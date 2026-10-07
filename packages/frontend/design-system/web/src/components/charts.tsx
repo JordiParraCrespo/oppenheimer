@@ -139,11 +139,39 @@ interface BarDatum {
  */
 const MAX_X_LABELS = 16;
 
-/** The bars whose label is drawn: evenly spaced, and always a month's first day. */
+/**
+ * The bars whose label is drawn: evenly spaced, and always a month's first
+ * day, never more than {@link MAX_X_LABELS} of them.
+ *
+ * The ceiling is the whole point, so a bar carrying a `sublabel` does not get
+ * a label *added* on top of the evenly spaced set — it takes the place of the
+ * nearest one. Treating "has a sublabel" as "must be labelled" let a month of
+ * day bars draw its stride plus every 1st, which is the smear this exists to
+ * prevent.
+ */
 function labelledBars(data: readonly BarDatum[]): (datum: BarDatum, index: number) => boolean {
   if (data.length <= MAX_X_LABELS) return () => true;
   const stride = Math.ceil(data.length / MAX_X_LABELS);
-  return (datum, index) => index % stride === 0 || datum.sublabel !== undefined;
+  const chosen = new Set<number>();
+  for (let index = 0; index < data.length; index += stride) chosen.add(index);
+  const months = data.flatMap((datum, index) => (datum.sublabel === undefined ? [] : [index]));
+  const isMonth = new Set(months);
+  for (const index of months) {
+    if (chosen.has(index)) continue;
+    if (chosen.size >= MAX_X_LABELS) {
+      let nearest: number | null = null;
+      for (const candidate of chosen) {
+        if (isMonth.has(candidate)) continue;
+        if (nearest === null || Math.abs(candidate - index) < Math.abs(nearest - index))
+          nearest = candidate;
+      }
+      // Every label is already a month's: there is no room to make.
+      if (nearest === null) continue;
+      chosen.delete(nearest);
+    }
+    chosen.add(index);
+  }
+  return (_datum, index) => chosen.has(index);
 }
 
 function BarChart({

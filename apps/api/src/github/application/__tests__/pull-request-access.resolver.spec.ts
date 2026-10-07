@@ -70,7 +70,7 @@ it('keeps the refusal GitHub gave for a pull request it would not read, beside t
     listReviews: vi.fn().mockResolvedValue([]),
   });
 
-  const read = await resolver.openPullRequests(SCOPE, repository);
+  const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
 
   expect(read.snapshots.map((s) => s.pull.number)).toEqual([12]);
   expect(read.gaps).toEqual([{ what: 'pull_requests', refusal: 'forbidden' }]);
@@ -127,7 +127,7 @@ describe('a pull request GitHub answers only in part', () => {
       listReviews: vi.fn().mockResolvedValue([]),
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository);
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
 
     expect(read.snapshots).toHaveLength(1);
     const [snapshot] = read.snapshots;
@@ -192,6 +192,7 @@ describe('the closed pull requests Analytics reads', () => {
       [repository],
       new Date('2026-09-01T00:00:00Z'),
       2,
+      resolver.readBudget(),
     );
 
     expect(complete).toBe(false);
@@ -273,35 +274,77 @@ describe('what one read spends', () => {
       .fn()
       .mockResolvedValue({ state: 'passing', total: 1, passed: 1, failed: 0, pending: 0 });
     const listReviews = vi.fn().mockResolvedValue([]);
+    const readPullRequest = vi.fn(async (_t: string, _r: string, number: number) =>
+      pullNumbered(number),
+    );
     const pulls = Array.from({ length: count }, (_, i) => pullNumbered(i + 1));
     const { resolver, repository } = build({
       listPullRequests: vi.fn().mockResolvedValue(pulls),
-      readPullRequest: vi.fn(async (_t: string, _r: string, number: number) =>
-        pullNumbered(number),
-      ),
+      readPullRequest,
       listFiles,
       readChecks,
       listReviews,
     });
-    return { resolver, repository, listFiles, readChecks, listReviews };
+    return { resolver, repository, listFiles, readChecks, listReviews, readPullRequest };
   }
 
-  it('draws every pull request, and fills the parts of as many as the budget allows', async () => {
+  /**
+   * The ceiling itself, so a change to it is a change to this line. Five pull
+   * requests is four requests each: the detail, the files, the checks and the
+   * reviews.
+   */
+  const BUDGET = 5;
+
+  it('fills as many pull requests as the budget allows and says it is still filling', async () => {
     const { resolver, repository, listFiles } = budgeted(30);
 
-    const read = await resolver.openPullRequests(SCOPE, repository, { left: 12 });
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
 
-    expect(read.snapshots).toHaveLength(30);
-    expect(listFiles).toHaveBeenCalledTimes(12);
-    const filled = read.snapshots.filter((s) => s.files.value !== null);
-    expect(filled).toHaveLength(12);
+    expect(read.snapshots).toHaveLength(BUDGET);
+    expect(listFiles).toHaveBeenCalledTimes(BUDGET);
+    expect(read.deferred).toBe(30 - BUDGET);
+  });
+
+  /**
+   * A pull request this read cannot fill is left out rather than returned with
+   * empty parts: a row with no files, checks or reviews read would show a
+   * lane, a checks state and a blocker nobody read (#244).
+   */
+  it('leaves a pull request out rather than answering with parts nobody read', async () => {
+    const { resolver, repository } = budgeted(30);
+
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    for (const snapshot of read.snapshots) {
+      expect(snapshot.files.value).not.toBeNull();
+      expect(snapshot.checks.value).not.toBeNull();
+      expect(snapshot.reviews.value).not.toBeNull();
+    }
+  });
+
+  /**
+   * The regression that made this worth rewriting: a deferred pull request
+   * used to be read for its detail anyway and the result thrown away uncached,
+   * so every `pullRequestsFilling` tick paid one request for every row it had
+   * not filled yet — the fan-out the budget exists to stop.
+   */
+  it('does not read the detail of a pull request it defers, on this poll or the next', async () => {
+    const { resolver, repository, readPullRequest } = budgeted(30);
+
+    await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    expect(readPullRequest).toHaveBeenCalledTimes(BUDGET);
+
+    await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    // The first five are cached now, so the second read spends on the next
+    // five and never re-reads the twenty-five it is still deferring.
+    expect(readPullRequest).toHaveBeenCalledTimes(BUDGET * 2);
   });
 
   // An unasked part is not a refused one: it owes the reader no notice.
-  it('reports no gap for a part it never asked for', async () => {
+  it('reports no gap for a pull request it never asked about', async () => {
     const { resolver, repository } = budgeted(30);
 
-    const read = await resolver.openPullRequests(SCOPE, repository, { left: 1 });
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
 
     expect(read.gaps).toEqual([]);
   });
@@ -311,22 +354,40 @@ describe('what one read spends', () => {
   it('spends one budget across repositories', async () => {
     const { resolver, repository, listFiles } = budgeted(10);
     const second = { ...repository, githubRepoId: repository.githubRepoId + 1 };
-    const budget = { left: 12 };
+    const budget = resolver.readBudget();
 
     await resolver.openPullRequests(SCOPE, repository, budget);
     await resolver.openPullRequests(SCOPE, second, budget);
 
-    expect(listFiles).toHaveBeenCalledTimes(12);
+    expect(listFiles).toHaveBeenCalledTimes(BUDGET);
   });
 
   // A pull request already in the cache is free, and never takes a place from
   // one that would cost a read: that is what lets the next view fill more.
   it('spends nothing on a pull request it has already filled', async () => {
-    const { resolver, repository, listFiles } = budgeted(10);
+    const { resolver, repository, listFiles } = budgeted(BUDGET);
 
-    await resolver.openPullRequests(SCOPE, repository, { left: 12 });
-    await resolver.openPullRequests(SCOPE, repository, { left: 12 });
+    const first = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const second = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
 
-    expect(listFiles).toHaveBeenCalledTimes(10);
+    expect(first.snapshots).toHaveLength(BUDGET);
+    expect(second.snapshots).toHaveLength(BUDGET);
+    expect(second.deferred).toBe(0);
+    expect(listFiles).toHaveBeenCalledTimes(BUDGET);
+  });
+
+  /**
+   * Two overlapping polls used to both miss the cache and both spend on the
+   * same pull request, because `get` → read → `set` is not single-flight.
+   */
+  it('reads a pull request once when two polls overlap', async () => {
+    const { resolver, repository, listFiles } = budgeted(BUDGET);
+
+    await Promise.all([
+      resolver.openPullRequests(SCOPE, repository, resolver.readBudget()),
+      resolver.openPullRequests(SCOPE, repository, resolver.readBudget()),
+    ]);
+
+    expect(listFiles).toHaveBeenCalledTimes(BUDGET);
   });
 });

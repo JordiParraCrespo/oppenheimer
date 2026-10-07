@@ -19,11 +19,11 @@ import { tasksKeys } from './tasks.queries';
  * private repositories' code, diffs included. A consumer app passes this
  * to `createQueryPersistOptions`.
  *
- * The review period's numbers are the one part of the area that is kept
- * (`pullRequestAnalyticsKeys`, deliberately its own feature): counts, medians,
- * a lane mix and dates, naming no repository and holding no code. They are
- * what a reader opens the page for, and reading them from storage is what
- * spares them a skeleton on every visit.
+ * The review period's numbers are the one read of that feature which is kept:
+ * counts, medians, a lane mix and dates, naming no repository and holding no
+ * code. It opts in where it is defined, with `meta: { persist: true }` on
+ * `usePullRequestAnalytics`, so this list stays one entry per feature and the
+ * default for anything new stays "not stored".
  */
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   sessionsKeys.all[0],

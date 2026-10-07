@@ -29,45 +29,64 @@ export interface PullRequestAddress {
 }
 
 /**
- * One part of a pull request as GitHub answered it: the value, the refusal
- * GitHub gave instead, or neither — a part nobody asked for. An unread part is
- * never an empty one (#244).
+ * One part of a pull request as GitHub answered it: the value, or the refusal
+ * GitHub gave instead. An unread part is never an empty one (#244), so there
+ * are two states and no third.
  *
- * The third state is what makes a read bounded (#247): a page view asks for as
- * many parts as its budget allows and leaves the rest unasked, and the next
- * read fills more. A reader tells the three apart by `value` and `refusal`
- * together — a value is a read, a refusal is GitHub saying no, and neither is
- * "not yet".
+ * A part a read could not afford is not represented here. It was tried once:
+ * a `{ value: null, refusal: null }` "not yet" reuses the empty shape #244
+ * forbids, and because the type is not a discriminant every
+ * `value ?? []` / `value?.state ?? 'unavailable'` in the mapper compiled and
+ * silently read it as "nobody reviewed" and "checks unavailable". A pull
+ * request this read cannot fill is left out of the read instead — see
+ * `RepositoryPulls.deferred`.
  */
-export type Part<T> =
-  | { value: T; refusal: null }
-  | { value: null; refusal: GithubRefusal }
-  | { value: null; refusal: null };
-
-/** A part this read did not ask for. The next one may. */
-export const UNASKED: { value: null; refusal: null } = { value: null, refusal: null };
+export type Part<T> = { value: T; refusal: null } | { value: null; refusal: GithubRefusal };
 
 /**
- * What one page view may still spend on filling parts. A cached part costs
- * nothing and never draws on it; past it, a pull request comes back from its
- * own read alone and the next view fills more.
+ * What one page view may still spend on filling pull requests. A pull request
+ * already in the cache costs nothing and never draws on it; past the budget a
+ * pull request is deferred to the next read.
  */
 export interface ReadBudget {
-  left: number;
+  /**
+   * Takes up to `wanted` slots and answers how many it got.
+   *
+   * Synchronous on purpose. The first cut spent the budget one slot at a time
+   * *after* `await cache.get`, with one counter shared by the open and closed
+   * halves of a `Promise.all`, so which half got the slots was whichever Redis
+   * miss resumed first. A reservation that cannot span an `await` cannot race.
+   */
+  reserve(wanted: number): number;
 }
 
 /**
- * A pull request as the queue and the briefing read it: GitHub's own detail,
- * and the paths it touches, its checks on the head commit and its reviews,
- * each read on its own.
+ * What every read of a pull request has: GitHub's own detail, the paths it
+ * touches and its reviews, each read on its own.
  */
-export interface PullRequestSnapshot {
+export interface PullRequestRead {
   repository: WorkspaceRepository;
   pull: GithubPullRequestDetail;
   files: Part<string[]>;
-  checks: Part<GithubChecks>;
   reviews: Part<GithubPullRequestReview[]>;
 }
+
+/**
+ * A pull request as the queue and the briefing read it: the above, plus its
+ * checks on the head commit.
+ */
+export interface PullRequestSnapshot extends PullRequestRead {
+  checks: Part<GithubChecks>;
+}
+
+/**
+ * A closed pull request as the figures read it. It has no `checks` field at
+ * all, rather than an empty or "unasked" one: nothing reads a closed pull
+ * request's checks — the waiting breakdown is the open ones' — and they cost
+ * two requests each. Leaving the field out is what makes that a compile error
+ * instead of a row that quietly reports `checks_unavailable`.
+ */
+export type ClosedPullRequestSnapshot = PullRequestRead;
 
 /** What GitHub did not give on a read of a repository, and the refusal it gave. */
 export interface ReadGap {
@@ -80,9 +99,17 @@ export interface ReadGap {
  * each gap with GitHub's own refusal. A refused listing is one `repository`
  * gap and no snapshots.
  */
-export interface RepositoryPulls {
+export interface RepositoryPulls<TSnapshot = PullRequestSnapshot> {
   repository: WorkspaceRepository;
-  snapshots: PullRequestSnapshot[];
+  snapshots: TSnapshot[];
+  /**
+   * How many of this repository's pull requests the read had no budget left to
+   * fill. They are deliberately not rows: a row whose parts nobody read would
+   * have to show a lane, a checks state and a blocker nobody read (#244), and
+   * it would jump as later polls filled it. The view leaves them out, says it
+   * is still filling, and the next read brings them in.
+   */
+  deferred: number;
   gaps: ReadGap[];
 }
 
@@ -114,7 +141,7 @@ export interface PullRequestAccessPort {
   openPullRequests(
     scope: AccessScope,
     repository: WorkspaceRepository,
-    budget?: ReadBudget,
+    budget: ReadBudget,
   ): Promise<RepositoryPulls>;
   /**
    * The pull requests closed since a moment across the repositories, the
@@ -126,9 +153,9 @@ export interface PullRequestAccessPort {
     repositories: WorkspaceRepository[],
     since: Date,
     limit: number,
-    budget?: ReadBudget,
+    budget: ReadBudget,
   ): Promise<{
-    pulls: RepositoryPulls[];
+    pulls: RepositoryPulls<ClosedPullRequestSnapshot>[];
     /** Every pull request in the window as its listing gave it, filled or not: what the figures count. */
     counted: GithubPullRequestSummary[];
     complete: boolean;

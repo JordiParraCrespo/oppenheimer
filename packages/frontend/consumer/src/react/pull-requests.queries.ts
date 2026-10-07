@@ -59,19 +59,9 @@ export const pullRequestsKeys = {
   activity: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
-};
-
-/**
- * The review period's numbers are their own feature, and the reason is
- * storage: what the queue holds is private repositories' code — titles,
- * branches, file paths — and never reaches the persisted cache, while these
- * are counts, medians and dates that name nothing. A feature is the unit the
- * persister's deny-list works in (`persistence.ts`), so the split in storage
- * has to be a split in the key.
- */
-const pullRequestAnalyticsKeys = {
-  all: ['pullRequestAnalytics'] as const,
-  range: (range: PullRequestAnalyticsRange) => [...pullRequestAnalyticsKeys.all, range] as const,
+  analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
+  analyticsRange: (range: PullRequestAnalyticsRange) =>
+    [...pullRequestsKeys.analytics(), range] as const,
 };
 
 /**
@@ -146,24 +136,28 @@ export function useWatchedRepositories<TData = WatchedRepository[]>(
   });
 }
 
+/**
+ * The review period's numbers. The one read of this feature that is kept in
+ * the browser's cache, and it says so here: the queue and the details hold
+ * private repositories' code — titles, branches, file paths — while these are
+ * counts, medians, a lane mix and dates that name nothing. Reading them from
+ * storage is what spares the page a skeleton on every visit.
+ */
 export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
   const app = useConsumerApp();
   return useQuery<PullRequestAnalytics, Error>({
-    queryKey: pullRequestAnalyticsKeys.range(range),
+    queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
     placeholderData: keepPreviousData,
+    meta: { persist: true },
   });
 }
 
 function useInvalidatePullRequests() {
   const queryClient = useQueryClient();
-  // Both roots: watching a repository changes the queue and the period's
-  // numbers alike, and they are only separate keys so that storage can tell
-  // them apart.
-  return async () => {
-    await queryClient.invalidateQueries({ queryKey: pullRequestsKeys.all });
-    await queryClient.invalidateQueries({ queryKey: pullRequestAnalyticsKeys.all });
-  };
+  // One root covers the queue, the details and the period's numbers alike:
+  // watching a repository changes all of them.
+  return () => queryClient.invalidateQueries({ queryKey: pullRequestsKeys.all });
 }
 
 export interface SetRepositoryWatchVariables {
