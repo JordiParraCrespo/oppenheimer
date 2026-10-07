@@ -84,6 +84,7 @@ export {
   useAddPullRequestComment,
   useMergePullRequest,
   usePullRequest,
+  usePullRequestActivity,
   usePullRequestAnalytics,
   usePullRequestComments,
   usePullRequestFiles,

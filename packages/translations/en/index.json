@@ -1122,6 +1122,8 @@
       "reviewChanges": "Review changes",
       "brief": "Brief",
       "noDescription": "No description.",
+      "copyCode": "Copy code",
+      "codeCopied": "Copied",
       "whatChanges": "What changes",
       "risk": "Lane",
       "where": "Mostly {{folders}}",
@@ -1135,7 +1137,46 @@
       },
       "opened": "{{author}} wants to merge {{head}} into {{base}}",
       "reviewsUnread": "GitHub did not return the reviews on this read.",
-      "filesUnread": "GitHub did not return the files on this read."
+      "filesUnread": "GitHub did not return the files on this read.",
+      "rail": {
+        "mergeStatus": "Merge status",
+        "canMerge": "Can merge without conflicts",
+        "conflicts": "Has conflicts with {{base}}",
+        "merged": "Merged into {{base}}",
+        "closed": "Closed without merging",
+        "reviews": "Reviews",
+        "checksSummary": "{{passed}} of {{total}} passing",
+        "noChecks": "No checks",
+        "comments": "Comments",
+        "noComments": "No comments",
+        "commentCount_one": "{{count}} comment",
+        "commentCount_other": "{{count}} comments",
+        "commentCount_many": "{{count}} comments"
+      },
+      "editOnGithub": "Edit on GitHub",
+      "activity": {
+        "title": "Activity",
+        "empty": "Nothing has happened here yet.",
+        "loadFailed": "Could not load the activity.",
+        "commits_one": "{{count}} commit",
+        "commits_other": "{{count}} commits",
+        "commits_many": "{{count}} commits",
+        "review": {
+          "approved": "{{author}} approved these changes",
+          "changes_requested": "{{author}} requested changes",
+          "commented": "{{author}} reviewed",
+          "dismissed": "{{author}}’s review was dismissed"
+        },
+        "event": {
+          "review_requested": "{{author}} requested a review from {{subject}}",
+          "merged": "{{author}} merged this pull request",
+          "closed": "{{author}} closed this pull request",
+          "reopened": "{{author}} reopened this pull request",
+          "ready_for_review": "{{author}} marked this ready for review",
+          "convert_to_draft": "{{author}} converted this to a draft",
+          "head_ref_force_pushed": "{{author}} force-pushed the branch"
+        }
+      }
     },
     "review": {
       "submit": "Submit review",
