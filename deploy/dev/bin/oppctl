@@ -25,7 +25,13 @@ PROJECT=oppenheimer-dev
 KEEP_RELEASES=5
 HEALTH_TIMEOUT="${OPP_HEALTH_TIMEOUT:-300}"
 HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
-APPS=(api web backup)
+APPS=(
+  api
+  # oppenheimer:begin web
+  web
+  # oppenheimer:end web
+  backup
+)
 
 log()  { printf '[oppctl] %s\n' "$*" >&2; }
 ok()   { printf '[oppctl] ok   %s\n' "$*" >&2; }
@@ -344,7 +350,11 @@ cmd_restore() {
   rm -f "$dump"
   compose "$rel" exec -T postgres pg_restore -l /tmp/restore.pgc >/dev/null \
     || die "stdin is not a pg_dump custom-format archive"
-  compose "$rel" stop cloudflared web api
+  compose "$rel" stop cloudflared
+  # oppenheimer:begin web
+  compose "$rel" stop web
+  # oppenheimer:end web
+  compose "$rel" stop api
   compose "$rel" exec -T postgres psql -q -U oppenheimer -d postgres -v ON_ERROR_STOP=1 \
     -c 'DROP DATABASE IF EXISTS oppenheimer WITH (FORCE)' -c 'CREATE DATABASE oppenheimer OWNER oppenheimer'
   compose "$rel" exec -T postgres pg_restore -U oppenheimer -d oppenheimer --no-owner --exit-on-error /tmp/restore.pgc \
