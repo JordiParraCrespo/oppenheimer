@@ -27,12 +27,17 @@ const KNOB = 30;
  * `EffortPicker` is the composer's form of it: a muted tool button reading
  * the current stop, opening a 268px popover with the "Effort · Medium"
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
- * ends, and the slider.
+ * ends, and the slider. While a drag is in progress the knob follows the
+ * pointer but both labels hold the value the drag started from: a label that
+ * changed width on every stop would shift the header and the button the
+ * popover is anchored to. They catch up when the drag ends or the popover
+ * closes.
  */
 function EffortSlider<V extends string>({
   stops,
   value,
   onValueChange,
+  onDraggingChange,
   className,
   'aria-label': ariaLabel = 'Effort',
   ...props
@@ -40,6 +45,8 @@ function EffortSlider<V extends string>({
   stops: readonly EffortStop<V>[];
   value: V;
   onValueChange: (value: V) => void;
+  /** True when a pointer takes the knob, false when it lets go. */
+  onDraggingChange?: (dragging: boolean) => void;
 }) {
   const track = React.useRef<HTMLDivElement>(null);
   const index = Math.max(
@@ -58,6 +65,7 @@ function EffortSlider<V extends string>({
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault();
     track.current?.setPointerCapture(event.pointerId);
+    onDraggingChange?.(true);
     const next = fromPointer(event.clientX);
     if (next) onValueChange(next);
   }
@@ -66,6 +74,10 @@ function EffortSlider<V extends string>({
     if (!track.current?.hasPointerCapture(event.pointerId)) return;
     const next = fromPointer(event.clientX);
     if (next && next !== value) onValueChange(next);
+  }
+
+  function onLostPointerCapture() {
+    onDraggingChange?.(false);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -104,6 +116,7 @@ function EffortSlider<V extends string>({
       data-effort={value}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
+      onLostPointerCapture={onLostPointerCapture}
       onKeyDown={onKeyDown}
       className={cn(
         'relative h-7 cursor-pointer touch-none overflow-hidden rounded-sm bg-hover-surface outline-none select-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
@@ -161,10 +174,19 @@ function EffortPicker<V extends string>({
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
+  // The value a drag started from, shown by both labels until it ends.
+  const [held, setHeld] = React.useState<V | null>(null);
   const hintId = React.useId();
-  const current = stops.find((stop) => stop.value === value) ?? stops[0];
+  const shown = held ?? value;
+  const current = stops.find((stop) => stop.value === shown) ?? stops[0];
+
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) setHeld(null);
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger
         render={
           <ComposerToolButton tone="muted" open={open} disabled={disabled} className={className} aria-label={label}>
@@ -180,7 +202,7 @@ function EffortPicker<V extends string>({
       >
         <div className="flex items-center gap-2 text-[13px]">
           <span className="text-fg-muted">{label}</span>
-          <span key={value} className="motion-safe:animate-effort-in text-fg">
+          <span key={shown} className="motion-safe:animate-effort-in text-fg">
             {current?.label}
           </span>
           <span className="flex-1" />
@@ -201,6 +223,7 @@ function EffortPicker<V extends string>({
             stops={stops}
             value={value}
             onValueChange={onValueChange}
+            onDraggingChange={(dragging) => setHeld(dragging ? value : null)}
             aria-label={label}
             aria-describedby={hintId}
           />
