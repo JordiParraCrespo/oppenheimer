@@ -1,0 +1,46 @@
+# Spike: the console. Same host as the API; kamal-proxy sends /api to the API
+# app and everything else here.
+service: oppenheimer-web
+image: <%= ENV.fetch("IMAGE_NAMESPACE") %>/oppenheimer-web
+
+servers:
+  web:
+    hosts:
+      - <%= ENV.fetch("DEV_SSH_HOST") %>
+
+# Relative to the repo root, where kamal runs.
+secrets_path: deploy/kamal/secrets
+hooks_path: deploy/kamal/hooks
+
+ssh:
+  user: <%= ENV.fetch("KAMAL_SSH_USER", "deploy") %>
+
+registry:
+  server: <%= ENV.fetch("REGISTRY_SERVER", "ghcr.io") %>
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# Never used: CI builds and pushes the image, and kamal runs with --skip-push.
+# Kamal still requires the section.
+builder:
+  arch: amd64
+
+proxy:
+  host: <%= ENV.fetch("DEV_HOSTNAME") %>
+  app_port: 3000
+  forward_headers: true
+  healthcheck:
+    path: /
+  run:
+    publish: false
+
+env:
+  clear:
+    # The image's nginx proxies /api itself and resolves its upstream at
+    # start. Kamal's API containers have no stable name, so it goes back
+    # through kamal-proxy, which routes /api to the API app.
+    API_UPSTREAM: kamal-proxy:80
+
+retain_containers: 5
