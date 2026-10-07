@@ -18,6 +18,12 @@ import { tasksKeys } from './tasks.queries';
  * and the sessions on it, and a calendar is someone's day, Google's included. Pull requests are
  * private repositories' code, diffs included. A consumer app passes this
  * to `createQueryPersistOptions`.
+ *
+ * The review period's numbers are the one read of that feature which is kept:
+ * counts, medians, a lane mix and dates, naming no repository and holding no
+ * code. It opts in where it is defined, with `meta: { persist: true }` on
+ * `usePullRequestAnalytics`, so this list stays one entry per feature and the
+ * default for anything new stays "not stored".
  */
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   sessionsKeys.all[0],

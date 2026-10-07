@@ -114,6 +114,13 @@ export class PullRequestAnalyticsResponseDto {
   @ApiProperty({ type: [AnalyticsDayDto] })
   days!: AnalyticsDayDto[];
 
+  @ApiProperty({
+    enum: ['day', 'week'],
+    description:
+      'What one entry of `days` covers: a day, or — over a quarter — the week it starts, as the artboard draws it.',
+  })
+  bucket!: 'day' | 'week';
+
   @ApiProperty({ type: [AnalyticsLaneDto], description: 'Merged pull requests by lane.' })
   lanes!: AnalyticsLaneDto[];
 

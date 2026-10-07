@@ -70,9 +70,13 @@ export function CreatedMergedPanel({ analytics }: { analytics: PullRequestAnalyt
       </div>
       <BarChart
         series={shown}
-        data={dayBars(analytics, locale)}
+        data={dayBars(analytics, locale, (date) => t('pullRequests.analytics.weekOf', { date }))}
         aria-label={t('pullRequests.analytics.perDay')}
-        readout={t('pullRequests.analytics.hover')}
+        readout={t(
+          analytics.bucket === 'week'
+            ? 'pullRequests.analytics.hoverWeek'
+            : 'pullRequests.analytics.hover',
+        )}
       />
       <ChartLegend series={shown} />
     </Panel>

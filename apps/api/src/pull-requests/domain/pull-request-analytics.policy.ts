@@ -55,3 +55,35 @@ export function daysOf(window: AnalyticsWindow): string[] {
     new Date(window.from.getTime() + (index + 1) * DAY_MS).toISOString().slice(0, 10),
   );
 }
+
+/**
+ * What one bar of the chart covers. A quarter is drawn by the week, as the
+ * artboard draws it (`design/version1/PullRequests.dc.html`: thirteen weeks,
+ * "Week of Aug 3"): ninety bars say less than thirteen, and a day's count over
+ * a quarter is noise either way. A week and a month are drawn by the day.
+ */
+export type AnalyticsBucket = 'day' | 'week';
+
+export function bucketOf(range: PullRequestAnalyticsRange): AnalyticsBucket {
+  return range === 'quarter' ? 'week' : 'day';
+}
+
+/**
+ * The first day of each bar, oldest first. By the day that is every day in the
+ * window; by the week it is each Monday, the last one being the week the
+ * window ends in, so the newest bar is the one still filling.
+ */
+export function barsOf(window: AnalyticsWindow, bucket: AnalyticsBucket): string[] {
+  const days = daysOf(window);
+  if (bucket === 'day') return days;
+  const mondays = new Map<string, true>();
+  for (const day of days) mondays.set(mondayOf(day), true);
+  return [...mondays.keys()];
+}
+
+/** The Monday of a day's week, as `YYYY-MM-DD`. Weeks start on Monday, as the artboard labels them. */
+export function mondayOf(day: string): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  const weekday = (date.getUTCDay() + 6) % 7;
+  return new Date(date.getTime() - weekday * DAY_MS).toISOString().slice(0, 10);
+}

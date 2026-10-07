@@ -9,6 +9,7 @@ import type { GithubInstallationEntity } from '../domain/github-installation.ent
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type {
+  GithubChecks,
   GithubCredential,
   GithubPullRequestDetail,
   GithubPullRequestFile,
@@ -19,15 +20,18 @@ import type {
   GithubTimelineItem,
 } from '../infrastructure/github-pulls.port';
 import { type GithubActor, GithubUserGrantResolver } from './github-user-grant.resolver';
-import type {
-  Part,
-  PullRequestAccessPort,
-  PullRequestAddress,
-  PullRequestSnapshot,
-  ReadGap,
-  RepositoryPulls,
-  ReviewSubmission,
-  WorkspaceRepository,
+import {
+  type ClosedPullRequestSnapshot,
+  type Part,
+  type PullRequestAccessPort,
+  type PullRequestAddress,
+  type PullRequestRead,
+  type PullRequestSnapshot,
+  type ReadBudget,
+  type ReadGap,
+  type RepositoryPulls,
+  type ReviewSubmission,
+  type WorkspaceRepository,
 } from './pull-request-access.port';
 
 /** A repository's open list: short, so a merge or a new push shows on the next look. */
@@ -36,6 +40,25 @@ const OPEN_TTL_SECONDS = 30;
 const CLOSED_SNAPSHOT_TTL_SECONDS = 6 * 3600;
 /** A snapshot GitHub answered only in part is kept briefly, so the next read asks again (#244). */
 const PARTIAL_TTL_SECONDS = 15;
+/**
+ * A part GitHub refused with "slow down" is kept far longer than one it simply
+ * failed (#247). A secondary rate limit lasts minutes, so asking again fifteen
+ * seconds later earns another refusal and nothing else: the gap caches itself
+ * out of existence and re-creates itself on every view.
+ */
+const RATE_LIMITED_TTL_SECONDS = 5 * 60;
+/**
+ * How many pull requests one read fills the parts of. The rest come back from
+ * their listing alone — a row, its times and whose it is — and the next read
+ * fills more, because a filled snapshot is cached and costs nothing to keep.
+ *
+ * Small on purpose. Each filled pull request is three or four requests that
+ * GitHub's own pace spreads over a second or so, and they are what a reader
+ * waits for: at twelve, a queue of thirteen took eleven seconds to answer
+ * rows it already had. At five it answers in about two and is whole within a
+ * few polls, which is the trade the reader wants (#247).
+ */
+const SNAPSHOT_BUDGET = 5;
 const REPOSITORIES_TTL_SECONDS = 60;
 /** An installation token is reused until this close to GitHub's one-hour expiry. */
 const TOKEN_MARGIN_MS = 5 * 60_000;
@@ -51,6 +74,8 @@ const PULLS_PER_PAGE = 100;
 @Injectable()
 export class PullRequestAccessResolver implements PullRequestAccessPort {
   private readonly installationTokens = new Map<number, { token: string; expiresAt: number }>();
+  /** One fill per snapshot key at a time; see {@link once}. */
+  private readonly inFlight = new Map<string, Promise<unknown>>();
 
   constructor(
     @Inject(GITHUB_INSTALLATION_REPOSITORY)
@@ -87,22 +112,66 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     return lists.flat();
   }
 
-  viewerLogin(userId: string): Promise<string | null> {
-    return this.userGrants.loginOf(userId);
+  /**
+   * Who the reader is on GitHub, which is what sorts a pull request into
+   * theirs, asked of them, or merely watched.
+   *
+   * Their stored grant answers it when they have connected GitHub through the
+   * console. Without one — an installation connected before the console kept a
+   * user token, or an account that signs in with another provider — a
+   * **personal** installation still answers it: GitHub lets nobody but the
+   * account itself install an App on a user account, so the account this
+   * person connected is this person. An organization's installation says
+   * nothing of the kind, and is not read as identity.
+   */
+  async viewerLogin(scope: AccessScope): Promise<string | null> {
+    const granted = await this.userGrants.loginOf(scope.userId);
+    if (granted) return granted;
+    const installations = await this.installations.findAll(scope);
+    return (
+      installations.find(
+        (installation) =>
+          installation.accountType === 'User' && installation.installedByUserId === scope.userId,
+      )?.accountLogin ?? null
+    );
+  }
+
+  /**
+   * One budget, opened by the handler and passed to every read it makes. The
+   * handler opens one per half of a view that reads two ways round (the
+   * figures' open and closed halves), so neither can take the other's slots.
+   */
+  readBudget(): ReadBudget {
+    let left = SNAPSHOT_BUDGET;
+    return {
+      reserve(wanted: number): number {
+        const granted = Math.max(0, Math.min(wanted, left));
+        left -= granted;
+        return granted;
+      },
+    };
   }
 
   async openPullRequests(
     scope: AccessScope,
     repository: WorkspaceRepository,
-  ): Promise<RepositoryPulls> {
+    budget: ReadBudget,
+  ): Promise<RepositoryPulls<PullRequestSnapshot>> {
     const listing = await this.list(scope, repository, 'open', OPEN_TTL_SECONDS);
     if (!listing.ok)
       return {
         repository,
         snapshots: [],
+        deferred: 0,
         gaps: [{ what: 'repository', refusal: listing.refusal }],
       };
-    return this.snapshotsOf(listing.credential, repository, listing.pulls, OPEN_TTL_SECONDS);
+    return this.snapshotsOf(
+      listing.credential,
+      repository,
+      listing.pulls,
+      OPEN_TTL_SECONDS,
+      budget,
+    );
   }
 
   async closedPullRequests(
@@ -110,7 +179,12 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     repositories: WorkspaceRepository[],
     since: Date,
     limit: number,
-  ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }> {
+    budget: ReadBudget,
+  ): Promise<{
+    pulls: RepositoryPulls<ClosedPullRequestSnapshot>[];
+    counted: GithubPullRequestSummary[];
+    complete: boolean;
+  }> {
     const listings = await Promise.all(
       repositories.map((repository) =>
         this.list(scope, repository, 'closed', OPEN_TTL_SECONDS * 4),
@@ -130,20 +204,28 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
       listings.map((listing, index) => {
         const repository = repositories[index] as WorkspaceRepository;
         return listing.ok
-          ? this.snapshotsOf(
+          ? this.closedSnapshotsOf(
               listing.credential,
               repository,
               plan.picks[index] ?? [],
               CLOSED_SNAPSHOT_TTL_SECONDS,
+              budget,
             )
           : {
               repository,
               snapshots: [],
+              deferred: 0,
               gaps: [{ what: 'repository' as const, refusal: listing.refusal }],
             };
       }),
     );
-    return { pulls, complete: plan.complete };
+    // Every pull request the window holds, as its listing gave it. What a
+    // figure counts and what the day chart draws are read from these, so a
+    // pull request whose parts this view had no budget to fill is still
+    // counted — the numbers are whole from the first read, and only the
+    // medians and the lane mix deepen as later reads fill more (#247).
+    const counted = plan.picks.flat();
+    return { pulls, counted, complete: plan.complete };
   }
 
   /** One repository's newest page of pull requests in a state, or the refusal GitHub gave. */
@@ -174,13 +256,12 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     const credential = await this.readCredential(scope, address.installationId);
     // Read live once to learn `updated_at`, so the snapshot key changes the moment GitHub's answer does.
     const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
-    return this.snapshot(
-      credential,
-      repository,
-      pull.number,
-      pull.updatedAt,
-      OPEN_TTL_SECONDS,
-      pull,
+    const key = snapshotKey(repository, pull.number, pull.updatedAt, true);
+    // One pull request on its own screen draws on no budget: it is the whole
+    // of what the reader asked for.
+    return (
+      (await this.cache.get<PullRequestSnapshot>(key)) ??
+      (await this.fill(credential, repository, pull.number, pull, key, OPEN_TTL_SECONDS))
     );
   }
 
@@ -274,21 +355,79 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     );
   }
 
-  /** Each pull request's snapshot, and every gap with the refusal GitHub gave for it. */
-  private async snapshotsOf(
+  /** Each open pull request's snapshot, and every gap with the refusal GitHub gave for it. */
+  private snapshotsOf(
     credential: GithubCredential,
     repository: WorkspaceRepository,
     pulls: GithubPullRequestSummary[],
     ttlSeconds: number,
-  ): Promise<RepositoryPulls> {
-    const settled = await Promise.allSettled(
-      pulls.map((pull) =>
-        this.snapshot(credential, repository, pull.number, pull.updatedAt, ttlSeconds),
-      ),
+    budget: ReadBudget,
+  ): Promise<RepositoryPulls<PullRequestSnapshot>> {
+    return this.readMany(
+      repository,
+      pulls,
+      budget,
+      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, true),
+      (entry) => this.fill(credential, repository, entry.pull.number, null, entry.key, ttlSeconds),
     );
-    const snapshots = settled.flatMap((result) =>
-      result.status === 'fulfilled' ? [result.value] : [],
+  }
+
+  /**
+   * The same for the closed pull requests the figures read. Their checks are
+   * not read — nothing shows a closed pull request's checks, and they cost two
+   * requests each — so these answer the shape that has no checks field, under
+   * a cache key of their own, so opening one afterwards does not find a
+   * snapshot with its checks missing.
+   */
+  private closedSnapshotsOf(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+    pulls: GithubPullRequestSummary[],
+    ttlSeconds: number,
+    budget: ReadBudget,
+  ): Promise<RepositoryPulls<ClosedPullRequestSnapshot>> {
+    return this.readMany(
+      repository,
+      pulls,
+      budget,
+      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, false),
+      (entry) => this.fillClosed(credential, repository, entry.pull.number, entry.key, ttlSeconds),
     );
+  }
+
+  /**
+   * One fill decision, made before any read begins.
+   *
+   * The cache is probed for every pull request first, because one already
+   * filled costs no GitHub request and must not draw on the budget. What is
+   * left is reserved in a single synchronous call, in listing order, and only
+   * those are read. The rest are `deferred`: not rows, so nothing shows a
+   * lane, a checks state or a blocker nobody read (#244), and not read either
+   * — paying a detail request per unfilled row on every `pullRequestsFilling`
+   * tick was the fan-out this is here to stop (#247).
+   */
+  private async readMany<TSnapshot extends PullRequestRead>(
+    repository: WorkspaceRepository,
+    pulls: GithubPullRequestSummary[],
+    budget: ReadBudget,
+    keyOf: (pull: GithubPullRequestSummary) => string,
+    fillOne: (entry: { pull: GithubPullRequestSummary; key: string }) => Promise<TSnapshot>,
+  ): Promise<RepositoryPulls<TSnapshot>> {
+    const keyed = pulls.map((pull) => ({ pull, key: keyOf(pull) }));
+    const probed = await Promise.all(keyed.map((entry) => this.cache.get<TSnapshot>(entry.key)));
+    const hits: TSnapshot[] = [];
+    const misses: { pull: GithubPullRequestSummary; key: string }[] = [];
+    for (const [index, entry] of keyed.entries()) {
+      const hit = probed[index];
+      if (hit) hits.push(hit);
+      else misses.push(entry);
+    }
+    const granted = budget.reserve(misses.length);
+    const settled = await Promise.allSettled(misses.slice(0, granted).map(fillOne));
+    const snapshots = [
+      ...hits,
+      ...settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : [])),
+    ];
     const gaps: ReadGap[] = settled.flatMap((result) =>
       result.status === 'rejected'
         ? [{ what: 'pull_requests' as const, refusal: refusalOf(result.reason) }]
@@ -296,45 +435,107 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     );
     for (const snapshot of snapshots) {
       if (snapshot.files.refusal) gaps.push({ what: 'files', refusal: snapshot.files.refusal });
-      if (snapshot.checks.refusal) gaps.push({ what: 'checks', refusal: snapshot.checks.refusal });
+      const checks = (snapshot as { checks?: Part<GithubChecks> }).checks;
+      if (checks?.refusal) gaps.push({ what: 'checks', refusal: checks.refusal });
       if (snapshot.reviews.refusal)
         gaps.push({ what: 'reviews', refusal: snapshot.reviews.refusal });
     }
-    return { repository, snapshots, gaps };
+    return { repository, snapshots, deferred: misses.length - granted, gaps };
   }
 
   /**
    * The pull request and its three parts. The pull request itself must be
    * read; files, checks and reviews each settle on their own, and a snapshot
-   * with a refused part is cached only briefly so the next read asks again.
+   * with a refused part is cached only briefly so the next read asks again —
+   * except one refused with "slow down", which is kept until the limit has had
+   * time to lift.
    */
-  private async snapshot(
+  private fill(
     credential: GithubCredential,
     repository: WorkspaceRepository,
     number: number,
-    updatedAt: string,
+    known: GithubPullRequestDetail | null,
+    key: string,
     ttlSeconds: number,
-    known?: GithubPullRequestDetail,
   ): Promise<PullRequestSnapshot> {
-    const key = `github:pulls:snapshot:${repository.installationId}:${repository.githubRepoId}:${number}:${updatedAt}`;
-    const cached = await this.cache.get<PullRequestSnapshot>(key);
-    if (cached) return cached;
+    return this.once(key, async () => {
+      const pull = await this.detailOf(credential, repository, number, known);
+      const [files, checks, reviews] = await Promise.all([
+        this.filesOf(credential, repository, pull.number),
+        partOf(this.pulls.readChecks(credential, repository.fullName, pull.headSha)),
+        partOf(this.pulls.listReviews(credential, repository.fullName, pull.number)),
+      ]);
+      const snapshot: PullRequestSnapshot = { repository, pull, files, checks, reviews };
+      await this.cache.set(
+        key,
+        snapshot,
+        ttlFor([files.refusal, checks.refusal, reviews.refusal], ttlSeconds),
+      );
+      return snapshot;
+    });
+  }
 
-    const pull =
-      known ?? (await this.pulls.readPullRequest(credential, repository.fullName, number));
-    const [files, checks, reviews] = await Promise.all([
-      partOf(
-        this.pulls
-          .listFiles(credential, repository.fullName, number)
-          .then((list) => list.map((file) => file.path)),
-      ),
-      partOf(this.pulls.readChecks(credential, repository.fullName, pull.headSha)),
-      partOf(this.pulls.listReviews(credential, repository.fullName, number)),
-    ]);
-    const snapshot: PullRequestSnapshot = { repository, pull, files, checks, reviews };
-    const whole = !files.refusal && !checks.refusal && !reviews.refusal;
-    await this.cache.set(key, snapshot, whole ? ttlSeconds : PARTIAL_TTL_SECONDS);
-    return snapshot;
+  /** The same without the checks, for the figures. */
+  private fillClosed(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+    number: number,
+    key: string,
+    ttlSeconds: number,
+  ): Promise<ClosedPullRequestSnapshot> {
+    return this.once(key, async () => {
+      const pull = await this.detailOf(credential, repository, number, null);
+      const [files, reviews] = await Promise.all([
+        this.filesOf(credential, repository, pull.number),
+        partOf(this.pulls.listReviews(credential, repository.fullName, pull.number)),
+      ]);
+      const snapshot: ClosedPullRequestSnapshot = { repository, pull, files, reviews };
+      await this.cache.set(key, snapshot, ttlFor([files.refusal, reviews.refusal], ttlSeconds));
+      return snapshot;
+    });
+  }
+
+  /**
+   * One read per key at a time. `get` → read → `set` is not single-flight, so
+   * two overlapping polls both missed and both spent the budget on the same
+   * pull request. The TTL still has to be chosen from the refusals *after* the
+   * read, so the duplicate is collapsed here rather than in the cache.
+   */
+  private once<T>(key: string, read: () => Promise<T>): Promise<T> {
+    const running = this.inFlight.get(key);
+    if (running) return running as Promise<T>;
+    const started = read().finally(() => this.inFlight.delete(key));
+    this.inFlight.set(key, started);
+    return started;
+  }
+
+  /**
+   * A listing row carries no additions, deletions or mergeable state, so the
+   * detail is a request of its own. A caller that has already read it says so
+   * by passing it — asked of the value rather than stated by the caller, this
+   * was a duck-check on a field a fixture happened to have.
+   */
+  private detailOf(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+    number: number,
+    known: GithubPullRequestDetail | null,
+  ): Promise<GithubPullRequestDetail> {
+    return known
+      ? Promise.resolve(known)
+      : this.pulls.readPullRequest(credential, repository.fullName, number);
+  }
+
+  private filesOf(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+    number: number,
+  ): Promise<Part<string[]>> {
+    return partOf(
+      this.pulls
+        .listFiles(credential, repository.fullName, number)
+        .then((list) => list.map((file) => file.path)),
+    );
   }
 
   private async repositoryOf(
@@ -404,6 +605,32 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     }
     return installation;
   }
+}
+
+/**
+ * A snapshot's cache key. `withChecks` is part of it because a read that left
+ * the checks out must not be found by one that needs them: storing both under
+ * one key meant opening a closed pull request within the six-hour window
+ * reported its checks as unavailable.
+ */
+function snapshotKey(
+  repository: WorkspaceRepository,
+  number: number,
+  updatedAt: string,
+  withChecks: boolean,
+): string {
+  const parts = `${repository.installationId}:${repository.githubRepoId}:${number}:${updatedAt}`;
+  return withChecks ? `github:pulls:snapshot:${parts}` : `github:pulls:snapshot:nochecks:${parts}`;
+}
+
+/**
+ * How long a snapshot is kept. A part refused for a rate limit is held until
+ * the limit has had time to lift, so the next poll does not earn the refusal
+ * again; any other refused part is held briefly so the next read asks again.
+ */
+function ttlFor(refusals: (GithubRefusal | null)[], whole: number): number {
+  if (refusals.includes('rate_limited')) return RATE_LIMITED_TTL_SECONDS;
+  return refusals.some(Boolean) ? PARTIAL_TTL_SECONDS : whole;
 }
 
 async function partOf<T>(read: Promise<T>): Promise<Part<T>> {

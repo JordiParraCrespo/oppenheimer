@@ -2275,7 +2275,6 @@ export type PullRequestLaneCountsDto = {
 };
 
 export type UnreadableRepositoryDto = {
-    fullName: string;
     /**
      * `repository`: its pull requests could not be listed; `pull_requests`: some could not be read; the rest: that part of some of them.
      */
@@ -2310,6 +2309,10 @@ export type PullRequestQueueResponseDto = {
      * Watched repositories this read could not fully answer.
      */
     unreadable: Array<UnreadableRepositoryDto>;
+    /**
+     * Some rows still have parts nobody has read: the next read fills more. Ask again while this is true.
+     */
+    filling: boolean;
 };
 
 export type AnalyticsFigureDto = {
@@ -2373,6 +2376,10 @@ export type PullRequestAnalyticsResponseDto = {
      */
     timeToMerge: AnalyticsMedianDto;
     days: Array<AnalyticsDayDto>;
+    /**
+     * What one entry of `days` covers: a day, or — over a quarter — the week it starts, as the artboard draws it.
+     */
+    bucket: 'day' | 'week';
     /**
      * Merged pull requests by lane.
      */

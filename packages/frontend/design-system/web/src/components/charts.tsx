@@ -125,7 +125,53 @@ interface BarDatum {
   label: string;
   /** Under the label: the month on the first day of one ("Sep"). */
   sublabel?: string;
+  /** What the readout calls this bar when the axis's own words are not enough ("Week of Aug 3"). */
+  readoutLabel?: string;
   values: Record<string, number>;
+}
+
+/**
+ * How many x labels the axis draws at most. A day chart over a quarter is
+ * ninety bars of eight pixels, and a label on every one of them is a label on
+ * none: they overlap into a single grey smear. Past this many, the axis keeps
+ * an evenly spaced subset — every bar still draws, and still answers the
+ * pointer and the screen reader with its own date.
+ */
+const MAX_X_LABELS = 16;
+
+/**
+ * The bars whose label is drawn: evenly spaced, and always a month's first
+ * day, never more than {@link MAX_X_LABELS} of them.
+ *
+ * The ceiling is the whole point, so a bar carrying a `sublabel` does not get
+ * a label *added* on top of the evenly spaced set — it takes the place of the
+ * nearest one. Treating "has a sublabel" as "must be labelled" let a month of
+ * day bars draw its stride plus every 1st, which is the smear this exists to
+ * prevent.
+ */
+function labelledBars(data: readonly BarDatum[]): (datum: BarDatum, index: number) => boolean {
+  if (data.length <= MAX_X_LABELS) return () => true;
+  const stride = Math.ceil(data.length / MAX_X_LABELS);
+  const chosen = new Set<number>();
+  for (let index = 0; index < data.length; index += stride) chosen.add(index);
+  const months = data.flatMap((datum, index) => (datum.sublabel === undefined ? [] : [index]));
+  const isMonth = new Set(months);
+  for (const index of months) {
+    if (chosen.has(index)) continue;
+    if (chosen.size >= MAX_X_LABELS) {
+      let nearest: number | null = null;
+      for (const candidate of chosen) {
+        if (isMonth.has(candidate)) continue;
+        if (nearest === null || Math.abs(candidate - index) < Math.abs(nearest - index))
+          nearest = candidate;
+      }
+      // Every label is already a month's: there is no room to make.
+      if (nearest === null) continue;
+      chosen.delete(nearest);
+    }
+    chosen.add(index);
+  }
+  return (_datum, index) => chosen.has(index);
 }
 
 function BarChart({
@@ -149,11 +195,17 @@ function BarChart({
   const [hover, setHover] = React.useState<number | null>(null);
   const max = Math.max(1, ...data.flatMap((d) => series.map((s) => d.values[s.key] ?? 0)));
   const hovered = hover === null ? null : data[hover];
+  const labelled = labelledBars(data);
   return (
     <figure data-slot="bar-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
       <ChartReadout
         series={series}
-        label={hovered ? `${hovered.sublabel ? `${hovered.sublabel} ` : ''}${hovered.label}` : undefined}
+        label={
+          hovered
+            ? (hovered.readoutLabel ??
+              `${hovered.sublabel ? `${hovered.sublabel} ` : ''}${hovered.label}`)
+            : undefined
+        }
         values={hovered?.values}
         format={format}
         idle={readout}
@@ -189,15 +241,24 @@ function BarChart({
         ))}
       </div>
       <div aria-hidden className="flex gap-[5px]">
-        {data.map((d, i) => (
-          <span
-            key={d.key}
-            className="flex min-w-0 flex-1 flex-col items-center gap-0.5 overflow-visible text-[11px] leading-[14px] whitespace-nowrap"
-          >
-            <span className={cn('figures', hover === i ? 'text-fg' : 'text-fg-subtle')}>{d.label}</span>
-            {d.sublabel ? <span className="text-fg-muted">{d.sublabel}</span> : null}
-          </span>
-        ))}
+        {data.map((d, i) => {
+          // The hovered bar names itself even where the axis is thinned, so a
+          // reader can always read the day under the pointer.
+          const drawn = labelled(d, i) || hover === i;
+          return (
+            <span
+              key={d.key}
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 overflow-visible text-[11px] leading-[14px] whitespace-nowrap"
+            >
+              {drawn ? (
+                <span className={cn('figures', hover === i ? 'text-fg' : 'text-fg-subtle')}>
+                  {d.label}
+                </span>
+              ) : null}
+              {drawn && d.sublabel ? <span className="text-fg-muted">{d.sublabel}</span> : null}
+            </span>
+          );
+        })}
       </div>
     </figure>
   );

@@ -5,20 +5,25 @@ import type {
   PullRequestScope,
 } from '@oppenheimer/shared';
 import type {
+  ClosedPullRequestSnapshot,
+  PullRequestRead,
   PullRequestSnapshot,
   RepositoryPulls,
   WorkspaceRepository,
 } from '../github/application/pull-request-access.port';
 import type {
   GithubPullRequestFile,
+  GithubPullRequestSummary,
   GithubReviewComment,
   GithubTimelineItem,
 } from '../github/infrastructure/github-pulls.port';
 import {
   type AnalyticsWindow,
-  daysOf,
+  barsOf,
+  bucketOf,
   hoursBetween,
   median,
+  mondayOf,
   periodOf,
 } from './domain/pull-request-analytics.policy';
 import { decideLane } from './domain/pull-request-lane.policy';
@@ -90,7 +95,7 @@ export class PullRequestMapper {
     rows: PullRequestRowDto[],
     scope: PullRequestScope,
     viewerLogin: string | null,
-    reads: RepositoryPulls[],
+    reads: RepositoryPulls<PullRequestSnapshot>[],
   ): PullRequestQueueResponseDto {
     const items = rows
       .filter((row) => row.scope === scope)
@@ -113,17 +118,26 @@ export class PullRequestMapper {
       withConflicts: count((row) => row.blocker === 'conflicts'),
       oldestWaitingSeconds: items[0]?.waitingSeconds ?? null,
       viewerLogin,
+      // This read left pull requests for the next one, so there are more rows
+      // to come: the client polls while that holds (#247).
+      filling: reads.some((read) => read.deferred > 0),
       unreadable: this.toUnreadable(reads),
     };
   }
 
-  /** Every gap the reads left, with GitHub's own refusal, once per repository, part and refusal (#244). */
-  toUnreadable(reads: RepositoryPulls[]): UnreadableRepositoryDto[] {
+  /**
+   * Every gap the reads left, with GitHub's own refusal, once per part and
+   * refusal — deliberately not per repository (#244). One toast says what
+   * GitHub did, so a second repository refusing the same part the same way
+   * adds nothing a reader could act on, and naming the repository would put
+   * it in the browser's persisted cache.
+   */
+  toUnreadable(reads: RepositoryPulls<PullRequestRead>[]): UnreadableRepositoryDto[] {
     const gaps = new Map<string, UnreadableRepositoryDto>();
     for (const read of reads) {
       for (const gap of read.gaps) {
-        const entry = { fullName: read.repository.fullName, what: gap.what, refusal: gap.refusal };
-        gaps.set(`${entry.fullName}|${entry.what}|${entry.refusal}`, entry);
+        const entry = { what: gap.what, refusal: gap.refusal };
+        gaps.set(`${entry.what}|${entry.refusal}`, entry);
       }
     }
     return [...gaps.values()];
@@ -210,7 +224,9 @@ export class PullRequestMapper {
     range: PullRequestAnalyticsRange;
     window: AnalyticsWindow;
     open: PullRequestSnapshot[];
-    closed: PullRequestSnapshot[];
+    closed: ClosedPullRequestSnapshot[];
+    /** Every pull request the window holds, as its listing gave it: what the figures count. */
+    counted: GithubPullRequestSummary[];
     viewerLogin: string | null;
     now: Date;
     complete: boolean;
@@ -218,17 +234,28 @@ export class PullRequestMapper {
   }): PullRequestAnalyticsResponseDto {
     const { window, viewerLogin, now } = input;
     const all = dedupe([...input.open, ...input.closed]);
-    const figure = (at: (s: PullRequestSnapshot) => string | null) => ({
+    // A figure counts listings, not snapshots: a pull request this read had no
+    // budget to fill is still one that was opened or merged, and the numbers
+    // must not move with how much of it we happened to read (#247). The
+    // medians and the lane mix below stay on what was read, and deepen.
+    const everyPull = dedupePulls([...all.map((s) => s.pull), ...input.counted]);
+    const figure = (at: (pull: GithubPullRequestSummary) => string | null) => ({
+      value: everyPull.filter((pull) => periodOf(at(pull), window) === 'current').length,
+      previous: everyPull.filter((pull) => periodOf(at(pull), window) === 'previous').length,
+    });
+    // What only a read can answer — who reviewed, and when — is counted over
+    // what was read, and grows as later views fill more.
+    const readFigure = (at: (s: PullRequestRead) => string | null) => ({
       value: all.filter((s) => periodOf(at(s), window) === 'current').length,
       previous: all.filter((s) => periodOf(at(s), window) === 'previous').length,
     });
     // Unread reviews count in neither review figure: GitHub saying no is not nobody reviewing.
-    const reviewedAt = (s: PullRequestSnapshot) =>
+    const reviewedAt = (s: PullRequestRead) =>
       viewerLogin
         ? (s.reviews.value?.find((r) => r.login === viewerLogin && r.submittedAt)?.submittedAt ??
           null)
         : null;
-    const firstReviewHours = (s: PullRequestSnapshot) => {
+    const firstReviewHours = (s: PullRequestRead) => {
       if (!s.reviews.value) return null;
       const first = s.reviews.value
         .filter((r) => r.login !== s.pull.authorLogin && r.submittedAt)
@@ -237,9 +264,9 @@ export class PullRequestMapper {
       return first ? hoursBetween(s.pull.createdAt, first) : null;
     };
     const medianOf = (
-      filter: (s: PullRequestSnapshot) => boolean,
-      measure: (s: PullRequestSnapshot) => number | null,
-      at: (s: PullRequestSnapshot) => string | null,
+      filter: (s: PullRequestRead) => boolean,
+      measure: (s: PullRequestRead) => number | null,
+      at: (s: PullRequestRead) => string | null,
     ) => {
       const values = (period: 'current' | 'previous') =>
         all
@@ -248,15 +275,31 @@ export class PullRequestMapper {
           .filter((v): v is number => v !== null);
       return { value: median(values('current')), previous: median(values('previous')) };
     };
-    const created = (s: PullRequestSnapshot) => s.pull.createdAt;
-    const merged = (s: PullRequestSnapshot) => s.pull.mergedAt;
-    const days = daysOf(window).map((date) => ({
+    const created = (pull: GithubPullRequestSummary) => pull.createdAt;
+    const merged = (pull: GithubPullRequestSummary) => pull.mergedAt;
+    const createdOf = (s: PullRequestRead) => s.pull.createdAt;
+    const mergedOf = (s: PullRequestRead) => s.pull.mergedAt;
+    // One bar per day, or per week over a quarter, as the artboard draws it.
+    const bucket = bucketOf(input.range);
+    const barOf = (at: string) => (bucket === 'week' ? mondayOf(at.slice(0, 10)) : at.slice(0, 10));
+    // Each bar counts this period only, the same test the headline figures use,
+    // so the bars sum to them. Over a quarter the first bar is the Monday of
+    // the week the window opens in, which is usually before `from`: without
+    // this, every pull request opened in the previous period's tail counted in
+    // the current quarter's first bar and the chart disagreed with the figure
+    // above it.
+    const inPeriod = (at: string | null) => at !== null && periodOf(at, window) === 'current';
+    const days = barsOf(window, bucket).map((date) => ({
       date,
-      created: all.filter((s) => s.pull.createdAt.slice(0, 10) === date).length,
-      merged: all.filter((s) => s.pull.mergedAt?.slice(0, 10) === date).length,
+      created: everyPull.filter(
+        (pull) => inPeriod(pull.createdAt) && barOf(pull.createdAt) === date,
+      ).length,
+      merged: everyPull.filter(
+        (pull) => inPeriod(pull.mergedAt) && barOf(pull.mergedAt as string) === date,
+      ).length,
     }));
     // The lane mix counts only pull requests whose files were read: a guessed lane would skew it.
-    const laneOf = (s: PullRequestSnapshot) =>
+    const laneOf = (s: PullRequestRead) =>
       s.files.value ? decideLane(s.files.value, s.pull.additions, s.pull.deletions).lane : null;
     const waiting = new Map<MergeBlocker, number[]>();
     for (const s of input.open) {
@@ -271,24 +314,25 @@ export class PullRequestMapper {
       to: window.to.toISOString(),
       created: figure(created),
       merged: figure(merged),
-      reviewedByYou: figure(reviewedAt),
-      waitForReview: medianOf(() => true, firstReviewHours, created),
+      reviewedByYou: readFigure(reviewedAt),
+      waitForReview: medianOf(() => true, firstReviewHours, createdOf),
       waitForReviewAgents: medianOf(
         (s) => isSessionBranch(s.pull.headRef),
         firstReviewHours,
-        created,
+        createdOf,
       ),
       waitForReviewPeople: medianOf(
         (s) => !isSessionBranch(s.pull.headRef),
         firstReviewHours,
-        created,
+        createdOf,
       ),
       timeToMerge: medianOf(
         (s) => s.pull.mergedAt !== null,
         (s) => hoursBetween(s.pull.createdAt, s.pull.mergedAt as string),
-        merged,
+        mergedOf,
       ),
       days,
+      bucket,
       lanes: LANES.map((lane) => ({
         lane,
         value: all.filter(
@@ -349,9 +393,20 @@ function foldersOf(paths: readonly string[]): string[] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([folder]) => folder);
 }
 
-function dedupe(snapshots: PullRequestSnapshot[]): PullRequestSnapshot[] {
-  const seen = new Map<string, PullRequestSnapshot>();
+function dedupe<T extends PullRequestRead>(snapshots: T[]): T[] {
+  const seen = new Map<string, T>();
   for (const s of snapshots)
     seen.set(`${s.repository.installationId}:${s.repository.githubRepoId}:${s.pull.number}`, s);
+  return [...seen.values()];
+}
+
+/**
+ * The same pull request reached twice — once as a snapshot's own detail, once
+ * as a listing row — is one pull request. Keyed by the html URL, which names
+ * the repository and the number without either being carried separately.
+ */
+function dedupePulls(pulls: GithubPullRequestSummary[]): GithubPullRequestSummary[] {
+  const seen = new Map<string, GithubPullRequestSummary>();
+  for (const pull of pulls) seen.set(pull.htmlUrl, pull);
   return [...seen.values()];
 }

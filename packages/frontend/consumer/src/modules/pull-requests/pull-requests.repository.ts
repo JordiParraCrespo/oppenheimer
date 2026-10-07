@@ -80,6 +80,7 @@ function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {
     withConflicts: dto.withConflicts,
     oldestWaitingSeconds: dto.oldestWaitingSeconds ?? null,
     viewerLogin: dto.viewerLogin ?? null,
+    filling: dto.filling,
     unreadable: dto.unreadable,
   };
 }
@@ -113,8 +114,8 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
     range: dto.range,
     complete: dto.complete,
     unreadable: dto.unreadable,
-    from: new Date(dto.from),
-    to: new Date(dto.to),
+    from: dto.from,
+    to: dto.to,
     created: dto.created,
     merged: dto.merged,
     reviewedByYou: dto.reviewedByYou,
@@ -123,6 +124,7 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
     waitForReviewPeople: median(dto.waitForReviewPeople),
     timeToMerge: median(dto.timeToMerge),
     days: dto.days,
+    bucket: dto.bucket,
     lanes: dto.lanes,
     waiting: dto.waiting.map((row) => ({
       reason: row.reason as PullRequestAnalytics['waiting'][number]['reason'],

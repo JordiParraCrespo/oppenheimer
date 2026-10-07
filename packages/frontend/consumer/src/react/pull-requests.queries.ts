@@ -25,6 +25,7 @@ import type {
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
+import { usePollWhile } from './live-poll';
 
 /**
  * Query key factory for the Pull requests area. Everything sits under one
@@ -58,8 +59,9 @@ export const pullRequestsKeys = {
   activity: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
-  analytics: (range: PullRequestAnalyticsRange) =>
-    [...pullRequestsKeys.all, 'analytics', range] as const,
+  analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
+  analyticsRange: (range: PullRequestAnalyticsRange) =>
+    [...pullRequestsKeys.analytics(), range] as const,
 };
 
 /**
@@ -77,6 +79,13 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
     queryFn: () => app.pullRequests.queue(scope),
     placeholderData: keepPreviousData,
     ...options,
+    // The rows are drawn from the first read; each poll fills a few more of
+    // their parts, until the answer says it has stopped filling (#247).
+    ...usePollWhile<PullRequestQueue>(
+      'pullRequestsFilling',
+      pullRequestsKeys.queue(scope),
+      (data) => data?.filling === true,
+    ),
   });
 }
 
@@ -127,17 +136,27 @@ export function useWatchedRepositories<TData = WatchedRepository[]>(
   });
 }
 
+/**
+ * The review period's numbers. The one read of this feature that is kept in
+ * the browser's cache, and it says so here: the queue and the details hold
+ * private repositories' code — titles, branches, file paths — while these are
+ * counts, medians, a lane mix and dates that name nothing. Reading them from
+ * storage is what spares the page a skeleton on every visit.
+ */
 export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
   const app = useConsumerApp();
   return useQuery<PullRequestAnalytics, Error>({
-    queryKey: pullRequestsKeys.analytics(range),
+    queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
     placeholderData: keepPreviousData,
+    meta: { persist: true },
   });
 }
 
 function useInvalidatePullRequests() {
   const queryClient = useQueryClient();
+  // One root covers the queue, the details and the period's numbers alike:
+  // watching a repository changes all of them.
   return () => queryClient.invalidateQueries({ queryKey: pullRequestsKeys.all });
 }
 

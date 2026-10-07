@@ -358,3 +358,9 @@ earlier note:
   stand down while it is live and poll again when it drops
   (`versions/mvp/03-control-plane.md`, 05). Issue #239 asked which version
   it belongs to: the MVP, since the polls it speeds up are the MVP's own.
+- `next-steps/0.2-pull-requests.md` had the queue read every repository
+  the installation reaches, so your pull requests and the reviews asked
+  of you came from anywhere while Watching stayed opt-in. It now reads
+  what the reader watches and nothing wider; the wider reach returns as
+  one search rather than a listing per repository. That note holds the
+  rule and what the reach cost (issue #247).

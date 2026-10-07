@@ -20672,10 +20672,6 @@
       "UnreadableRepositoryDto": {
         "type": "object",
         "properties": {
-          "fullName": {
-            "type": "string",
-            "example": "acme-labs/xrp-mobile"
-          },
           "what": {
             "type": "string",
             "enum": ["repository", "pull_requests", "files", "checks", "reviews"],
@@ -20687,7 +20683,7 @@
             "description": "The refusal GitHub gave: no access, gone, wait, or no answer."
           }
         },
-        "required": ["fullName", "what", "refusal"]
+        "required": ["what", "refusal"]
       },
       "PullRequestQueueResponseDto": {
         "type": "object",
@@ -20732,9 +20728,21 @@
             "items": {
               "$ref": "#/components/schemas/UnreadableRepositoryDto"
             }
+          },
+          "filling": {
+            "type": "boolean",
+            "description": "Some rows still have parts nobody has read: the next read fills more. Ask again while this is true."
           }
         },
-        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts", "unreadable"]
+        "required": [
+          "items",
+          "scopes",
+          "lanes",
+          "readyToMerge",
+          "withConflicts",
+          "unreadable",
+          "filling"
+        ]
       },
       "AnalyticsFigureDto": {
         "type": "object",
@@ -20889,6 +20897,11 @@
               "$ref": "#/components/schemas/AnalyticsDayDto"
             }
           },
+          "bucket": {
+            "type": "string",
+            "enum": ["day", "week"],
+            "description": "What one entry of `days` covers: a day, or — over a quarter — the week it starts, as the artboard draws it."
+          },
           "lanes": {
             "description": "Merged pull requests by lane.",
             "type": "array",
@@ -20926,6 +20939,7 @@
           "waitForReviewPeople",
           "timeToMerge",
           "days",
+          "bucket",
           "lanes",
           "waiting",
           "complete",

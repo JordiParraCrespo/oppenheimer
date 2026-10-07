@@ -52,4 +52,24 @@ describe('WatchedRepositoriesResolver', () => {
 
     expect(await resolver.watched(SCOPE)).toEqual([WEB]);
   });
+
+  // The queue and the analytics ask this before anything else, so a workspace
+  // that has picked no repository costs GitHub nothing: no repository listing,
+  // which is what every account's first visit used to pay for (#247).
+  it('answers whether anything is watched without asking GitHub', async () => {
+    const repositories = vi.fn().mockResolvedValue([MOBILE, WEB]);
+    const resolver = new WatchedRepositoriesResolver(
+      { repositories } as unknown as PullRequestAccessPort,
+      { findOwn: vi.fn().mockResolvedValue([]) } as unknown as WatchedRepositoryRepositoryPort,
+    );
+
+    expect(await resolver.anyWatched(SCOPE)).toBe(false);
+    expect(repositories).not.toHaveBeenCalled();
+  });
+
+  it('sees a watch row as something watched', async () => {
+    const resolver = resolverWith([{ installationId: 'installation-1', githubRepoId: 2 }]);
+
+    expect(await resolver.anyWatched(SCOPE)).toBe(true);
+  });
 });

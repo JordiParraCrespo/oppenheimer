@@ -1282,21 +1282,9 @@
       "nothingWaits": "Nothing holds an open pull request right now.",
       "loadFailed": "Could not load analytics.",
       "none": "—",
-      "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes."
-    },
-    "notices": {
-      "forbidden": "{{name}}: GitHub refused access to {{what}}.",
-      "not_found": "{{name}}: GitHub no longer finds {{what}}.",
-      "rate_limited": "{{name}}: GitHub asked us to slow down before it gave {{what}}. They show up on the next read.",
-      "failed": "{{name}}: GitHub did not answer for {{what}}.",
-      "what": {
-        "repository": "its pull requests",
-        "pull_requests": "some of its pull requests",
-        "files": "the files of some pull requests",
-        "checks": "the checks of some pull requests",
-        "reviews": "the reviews of some pull requests"
-      },
-      "checksPermission": "The GitHub App needs Checks: read and Commit statuses: read; accept the permission update on GitHub."
+      "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes.",
+      "weekOf": "Week of {{date}}",
+      "hoverWeek": "Hover a week"
     }
   },
   "tasks": {
@@ -1961,6 +1949,12 @@
     "goalAdded": "Goal added.",
     "taskSessionStarted": "Session started.",
     "taskSessionQueued": "Session queued. It starts when its host reconnects.",
+    "pullRequestsSlowedDown": "GitHub asked us to slow down, so some rows are missing a part. They fill on the next read.",
+    "pullRequestsRefused": "GitHub refused part of what this view shows.",
+    "pullRequestsGone": "GitHub no longer finds part of what this view shows.",
+    "pullRequestsUnanswered": "GitHub did not answer for part of what this view shows.",
+    "pullRequestsIncomplete": "Some rows are missing a part GitHub did not give.",
+    "pullRequestsChecksPermission": "GitHub refused the checks: the App needs Checks: read and Commit statuses: read.",
     "pullRequestMerged": "Merged {{reference}}.",
     "reviewSubmitted": "Review submitted.",
     "reviewApprovedMerged": "Approved and merged.",

@@ -46,6 +46,21 @@ export const LIVE_POLL = {
   pairing: { interval: 3000, inBackground: true },
   liveRun: { interval: 5000, inBackground: true },
   hostPresence: { interval: 15_000, inBackground: false },
+  /**
+   * A pull request answer that is still filling its parts. The rows are drawn
+   * from the first read; each poll fills a budget more, out of a cache that
+   * keeps what it has, until nothing is left unread (#247). Not in the
+   * background: nobody is watching a page they left, and GitHub's budget is
+   * better spent on the page in front of someone.
+   */
+  /**
+   * The PR queue filling the rows it deferred. `streamCanCover: false`
+   * because the workspace stream has no event for "the read has stopped
+   * filling": if this key were ever added to the coverage table, standing the
+   * poll down would leave the queue permanently short of the rows it has not
+   * read yet. The exclusion belongs here, not in a reviewer's memory.
+   */
+  pullRequestsFilling: { interval: 4000, inBackground: false, streamCanCover: false },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;
@@ -155,9 +170,13 @@ export function usePollWhile<TData>(
   queryKey: QueryKey,
   active: boolean | ((data: TData | undefined) => boolean),
 ): Poll<TData> {
+  const poll = LIVE_POLL[kind];
+  const streamCanCover = 'streamCanCover' in poll ? poll.streamCanCover : true;
+  // Called unconditionally: it is a hook, and whether the answer is used is
+  // the poll kind's business, not the render's.
   const covered = useStreamCovers(queryKey);
-  if (covered) {
-    return { refetchInterval: false, refetchIntervalInBackground: LIVE_POLL[kind].inBackground };
+  if (covered && streamCanCover) {
+    return { refetchInterval: false, refetchIntervalInBackground: poll.inBackground };
   }
   return pollWhile(kind, active);
 }

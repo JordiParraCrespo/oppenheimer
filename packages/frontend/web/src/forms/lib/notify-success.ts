@@ -10,6 +10,10 @@ export type ToastKey = keyof Messages['toasts'];
 const translate = (key: string, values?: Record<string, string>) =>
   (i18n.t as (key: string, options?: Record<string, string>) => string)(key, values);
 
+/** The same lookup for `notifyNotice`, so both tones take a `toasts.*` key and nothing else. */
+export const translateToast = (key: ToastKey, values?: Record<string, string>) =>
+  translate(`toasts.${key}`, values);
+
 /**
  * Says that a write landed, when its result is not where the reader is
  * looking (`.agents/rules/frontend-ui.md`). It takes a `toasts.*` key rather
