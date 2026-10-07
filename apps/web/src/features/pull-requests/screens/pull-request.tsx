@@ -3,7 +3,7 @@ import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend
 import { PaneBar } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import type { PullRequestView } from '../lib/pull-request-search';
+import { type PullRequestView, pullRequestSearch } from '../lib/pull-request-search';
 import { PullRequestBriefing } from '../sections/pull-request-briefing';
 import { PullRequestChanges } from '../sections/pull-request-changes';
 import { PullRequestDescription } from '../sections/pull-request-description';
@@ -29,8 +29,7 @@ export function PullRequestScreen({
   const navigate = useNavigate();
   const [pending, setPending] = useState<LineCommentInput[]>([]);
   const [layout, setLayout] = useState<DiffLayout>('unified');
-  const setView = (next: PullRequestView) =>
-    navigate({ to: '.', search: { view: next === 'description' ? undefined : next } });
+  const setView = (next: PullRequestView) => navigate({ to: '.', search: pullRequestSearch(next) });
 
   return (
     <>
@@ -46,21 +45,25 @@ export function PullRequestScreen({
           onDiscardPending={() => setPending([])}
         />
       </PaneBar>
-      {view === 'description' ? (
-        <PullRequestDescription address={address} />
-      ) : view === 'changes' ? (
-        <PullRequestChanges
-          address={address}
-          layout={layout}
-          pending={pending}
-          onAddPending={(comment) => setPending((current) => [...current, comment])}
-          onDiscardPending={(index) =>
-            setPending((current) => current.filter((_, i) => i !== index))
-          }
-        />
-      ) : (
-        <PullRequestBriefing address={address} onReviewChanges={() => setView('changes')} />
-      )}
+      {
+        {
+          description: <PullRequestDescription address={address} />,
+          briefing: (
+            <PullRequestBriefing address={address} onReviewChanges={() => setView('changes')} />
+          ),
+          changes: (
+            <PullRequestChanges
+              address={address}
+              layout={layout}
+              pending={pending}
+              onAddPending={(comment) => setPending((current) => [...current, comment])}
+              onDiscardPending={(index) =>
+                setPending((current) => current.filter((_, i) => i !== index))
+              }
+            />
+          ),
+        }[view]
+      }
     </>
   );
 }

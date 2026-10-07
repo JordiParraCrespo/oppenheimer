@@ -11,13 +11,17 @@ import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
+import {
+  DEFAULT_PULL_REQUEST_VIEW,
+  PULL_REQUEST_VIEWS,
+  type PullRequestView,
+} from '../lib/pull-request-search';
 import { ReviewPopover } from './review-popover';
 
 /**
  * The bar over a pull request, its one header: back to the queue and its
  * three views, GitHub, and Submit review. On Changes the views give way to
- * Back, to the description, and the diff's layout.
+ * Back and the diff's layout.
  */
 export function PullRequestToolbar({
   address,
@@ -45,7 +49,7 @@ export function PullRequestToolbar({
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
       {view === 'changes' ? (
         <>
-          <Button variant="ghost" size="sm" onClick={() => onViewChange('description')}>
+          <Button variant="ghost" size="sm" onClick={() => onViewChange(DEFAULT_PULL_REQUEST_VIEW)}>
             <ChevronLeft />
             {t('pullRequests.changes.back')}
           </Button>
