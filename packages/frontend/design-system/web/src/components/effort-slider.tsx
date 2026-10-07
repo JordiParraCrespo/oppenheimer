@@ -27,11 +27,11 @@ const KNOB = 30;
  * `EffortPicker` is the composer's form of it: a muted tool button reading
  * the current stop, opening a 268px popover with the "Effort · Medium"
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
- * ends, and the slider. While a drag is in progress the knob follows the
- * pointer but both labels hold the value the drag started from: a label that
- * changed width on every stop would shift the header and the button the
- * popover is anchored to. They catch up when the drag ends or the popover
- * closes.
+ * ends, and the slider. The header follows the knob, but while a drag is in
+ * progress the button holds the value the drag started from: it changes width
+ * with every stop, and the popover is anchored to it, so a live label would
+ * shift the composer's foot row and the popover with it. It catches up when
+ * the drag ends or the popover closes.
  */
 function EffortSlider<V extends string>({
   stops,
@@ -174,11 +174,11 @@ function EffortPicker<V extends string>({
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  // The value a drag started from, shown by both labels until it ends.
+  // The value a drag started from, shown by the button until it ends.
   const [held, setHeld] = React.useState<V | null>(null);
   const hintId = React.useId();
-  const shown = held ?? value;
-  const current = stops.find((stop) => stop.value === shown) ?? stops[0];
+  const current = stops.find((stop) => stop.value === value) ?? stops[0];
+  const shown = stops.find((stop) => stop.value === (held ?? value)) ?? stops[0];
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -190,7 +190,7 @@ function EffortPicker<V extends string>({
       <PopoverTrigger
         render={
           <ComposerToolButton tone="muted" open={open} disabled={disabled} className={className} aria-label={label}>
-            {current?.label}
+            {shown?.label}
           </ComposerToolButton>
         }
       />
@@ -202,7 +202,7 @@ function EffortPicker<V extends string>({
       >
         <div className="flex items-center gap-2 text-[13px]">
           <span className="text-fg-muted">{label}</span>
-          <span key={shown} className="motion-safe:animate-effort-in text-fg">
+          <span key={value} className="motion-safe:animate-effort-in text-fg">
             {current?.label}
           </span>
           <span className="flex-1" />
