@@ -23,9 +23,14 @@ export interface WorkspaceEventBusPort {
   /**
    * Resolves once the subscription is in place, so an event published after
    * that is delivered. The returned function ends it.
+   *
+   * `onLost` is called, once, if the subscription is dropped under the
+   * listener (the replica's connection to the bus closed): nothing published
+   * from then on reaches it, so its stream has to end and be dialled again.
    */
   subscribe(
     audiences: readonly WorkspaceEventAudience[],
     listener: (event: WorkspaceEvent) => void,
+    onLost: () => void,
   ): Promise<() => void>;
 }

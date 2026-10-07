@@ -1,9 +1,18 @@
-import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web';
-import { CircleCheck, GitPullRequest, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import {
+  DragProvider,
+  Rail,
+  RailItem,
+  RailMark,
+  SortableGroup,
+  SortableRailItem,
+} from '@oppenheimer/design-system-web';
 import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
+import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useConsoleList } from '@/lib/console';
+import { type ConsoleList, useConsoleList } from '@/lib/console';
+import { RAIL_GROUP, useRailOrder } from '../hooks/use-rail-order';
+import { type RailItemId, railEntry } from '../lib/rail-order';
 
 /**
  * The console's rail, switching the sidebar between its lists
@@ -12,6 +21,11 @@ import { useConsoleList } from '@/lib/console';
  * A section rather than kit because the counts are product reads: the
  * sessions the sidebar already subscribes to, and Plan's open tasks
  * (`18-plan-product.md` §1), the board's own read.
+ *
+ * The reader drags the items into their own order, as the design's rail
+ * does; a press still opens the list, and the order is kept on this device
+ * (`useRailOrder`). The rail is the console's only drag surface outside a
+ * page, so it carries its own `DragProvider`.
  */
 export function ConsoleRail() {
   const { t } = useTranslation();
@@ -20,40 +34,48 @@ export function ConsoleRail() {
     select: (rows) => rows.filter((row) => !row.isDone).length,
   });
   const list = useConsoleList();
+  const dragLabels = useDragLabels();
+  const { order, handlers } = useRailOrder();
+  const counts: Partial<Record<RailItemId, number>> = { sessions: sessionCount, plan: openTasks };
 
   return (
     <Rail aria-label={t('nav.primaryNavigation')}>
       <RailMark aria-hidden>O</RailMark>
-      <RailItem
-        label={t('nav.sessions')}
-        count={sessionCount}
-        active={list === 'sessions'}
-        render={<Link to="/sessions/new" />}
+      <DragProvider
+        {...handlers}
+        labels={dragLabels}
+        overlay={(active) => {
+          const entry = railEntry(active.id);
+          return entry ? (
+            <RailItem label={t(entry.labelKey)} active>
+              <entry.Icon />
+            </RailItem>
+          ) : null;
+        }}
       >
-        <Terminal />
-      </RailItem>
-      <RailItem
-        label={t('nav.pullRequests')}
-        active={list === 'pulls'}
-        render={<Link to="/pulls" />}
-      >
-        <GitPullRequest />
-      </RailItem>
-      <RailItem
-        label={t('nav.automations')}
-        active={list === 'automations'}
-        render={<Link to="/automations" />}
-      >
-        <Zap />
-      </RailItem>
-      <RailItem
-        label={t('nav.plan')}
-        count={openTasks}
-        active={list === 'tasks' || list === 'calendar'}
-        render={<Link to="/plan" />}
-      >
-        <CircleCheck />
-      </RailItem>
+        <SortableGroup id={RAIL_GROUP} items={order} accepts={['rail-item']}>
+          {/* The group owns no spacing of its own; the column's gap is the rail's. */}
+          <div className="flex flex-col gap-1.5">
+            {order.map((id) => {
+              const entry = railEntry(id);
+              if (!entry) return null;
+              const lists: readonly ConsoleList[] = entry.lists;
+              return (
+                <SortableRailItem
+                  key={id}
+                  id={id}
+                  label={t(entry.labelKey)}
+                  count={counts[id]}
+                  active={lists.includes(list)}
+                  render={<Link to={entry.to} />}
+                >
+                  <entry.Icon />
+                </SortableRailItem>
+              );
+            })}
+          </div>
+        </SortableGroup>
+      </DragProvider>
     </Rail>
   );
 }

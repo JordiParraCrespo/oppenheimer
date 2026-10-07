@@ -1,4 +1,4 @@
-import type { Step } from '@oppenheimer/design-system-web';
+import type { StatusState, Step } from '@oppenheimer/design-system-web';
 import type { PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 
@@ -29,4 +29,15 @@ export function laneReasonText(
 ): string {
   const { laneReason } = pull;
   return t(`pullRequests.laneReason.${laneReason.code}`, laneReason);
+}
+
+/** The state the header's pill shows: open, draft, merged or closed. */
+export function pullState(pull: PullRequestDetailEntity): {
+  state: StatusState;
+  key: 'open' | 'merged' | 'closed' | 'draft';
+} {
+  if (pull.state === 'merged') return { state: 'completed', key: 'merged' };
+  if (pull.state === 'closed') return { state: 'idle', key: 'closed' };
+  if (pull.draft) return { state: 'paused', key: 'draft' };
+  return { state: 'active', key: 'open' };
 }

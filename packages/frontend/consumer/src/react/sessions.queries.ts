@@ -20,7 +20,7 @@ import {
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
-import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
+import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
 import { seedDetails } from './seed-details';
 
 export const sessionsKeys = {
@@ -135,9 +135,11 @@ export function useSessions<TData = SessionEntity[]>(
       return listed;
     },
     ...options,
-    // Over the query's own rows, before any caller's `select`.
-    ...pollWhile<SessionEntity[]>(
+    // Over the query's own rows, before any caller's `select`. Stands down
+    // while the workspace event stream carries every change to these rows.
+    ...usePollWhile<SessionEntity[]>(
       'sessionStarting',
+      sessionsKeys.list(),
       (rows) =>
         rows?.some((session) => session.isProvisioning || closesOf(queryClient).has(session.id)) ??
         false,
@@ -150,7 +152,6 @@ export function useSession(
   options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
-
   const queryClient = useQueryClient();
 
   return useQuery({
@@ -164,8 +165,9 @@ export function useSession(
         }
       : skipToken,
     ...options,
-    ...pollWhile<SessionEntity>(
+    ...usePollWhile<SessionEntity>(
       'sessionOpening',
+      sessionsKeys.detail(id),
       (session) =>
         (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
     ),
@@ -203,7 +205,11 @@ export function useSessionStartProgress(
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     ...options,
-    ...pollWhile<SessionStartProgress>('sessionOpening', (progress) => !progress?.settled),
+    ...usePollWhile<SessionStartProgress>(
+      'sessionOpening',
+      sessionsKeys.start(id, failed),
+      (progress) => !progress?.settled,
+    ),
   });
 }
 

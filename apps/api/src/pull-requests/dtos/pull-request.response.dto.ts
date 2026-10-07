@@ -6,6 +6,16 @@ import {
   type PullRequestScope,
 } from '@oppenheimer/shared';
 
+const ACTIVITY_EVENTS = [
+  'review_requested',
+  'merged',
+  'closed',
+  'reopened',
+  'ready_for_review',
+  'convert_to_draft',
+  'head_ref_force_pushed',
+] as const;
+
 const LANE_REASONS = [
   'risky_path',
   'large_change',
@@ -319,6 +329,51 @@ export class PullRequestCommentDto {
 
   @ApiProperty({ format: 'date-time' })
   createdAt!: string;
+}
+
+/**
+ * One entry of a pull request's conversation, oldest first. `kind` says which
+ * fields carry it: a `comment` and a `review` have a `body`, a `review` its
+ * `state`, a `commit` its `sha` and its message as `body`, an `event` its
+ * `event` and, for a review request, the `subject` it was asked of.
+ */
+export class PullRequestActivityItemDto {
+  @ApiProperty({ example: 'comment:1874' })
+  id!: string;
+
+  @ApiProperty({ enum: ['comment', 'commit', 'review', 'event'] })
+  kind!: 'comment' | 'commit' | 'review' | 'event';
+
+  @ApiProperty({ description: 'A GitHub login; a commit’s author name.' })
+  author!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  at!: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description: 'Markdown, or a commit message.',
+  })
+  body!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: ['approved', 'changes_requested', 'commented', 'dismissed'],
+  })
+  state!: 'approved' | 'changes_requested' | 'commented' | 'dismissed' | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  sha!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: ACTIVITY_EVENTS,
+  })
+  event!: (typeof ACTIVITY_EVENTS)[number] | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  subject!: string | null;
 }
 
 export class WatchedRepositoryDto {

@@ -74,8 +74,8 @@ describe('RedisWorkspaceEventsAdapter', () => {
     const { adapter, connection } = setup();
     const mine = vi.fn();
     const theirs = vi.fn();
-    await adapter.subscribe([{ organizationId: 'org-1' }], mine);
-    await adapter.subscribe([{ organizationId: 'org-2' }], theirs);
+    await adapter.subscribe([{ organizationId: 'org-1' }], mine, vi.fn());
+    await adapter.subscribe([{ organizationId: 'org-2' }], theirs, vi.fn());
 
     const event = { type: 'session.changed', id: 's-1' };
     connection().emit('message', 'workspace-events:org:org-1', JSON.stringify(event));
@@ -90,8 +90,8 @@ describe('RedisWorkspaceEventsAdapter', () => {
   /** Two tabs of one workspace share a channel; the first to close must not deafen the other. */
   it('subscribes a channel once and unsubscribes it when its last listener leaves', async () => {
     const { adapter, connection } = setup();
-    const offA = await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn());
-    const offB = await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn());
+    const offA = await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), vi.fn());
+    const offB = await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), vi.fn());
     expect(connection().subscribe).toHaveBeenCalledTimes(1);
     expect(connection().subscribe).toHaveBeenCalledWith('workspace-events:org:org-1');
 
@@ -113,9 +113,9 @@ describe('RedisWorkspaceEventsAdapter', () => {
       acknowledge = resolve;
     });
     try {
-      const first = adapter.subscribe([{ organizationId: 'org-1' }], vi.fn());
+      const first = adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), vi.fn());
       let secondReady = false;
-      const second = adapter.subscribe([{ organizationId: 'org-1' }], vi.fn()).then(() => {
+      const second = adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), vi.fn()).then(() => {
         secondReady = true;
       });
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -128,5 +128,43 @@ describe('RedisWorkspaceEventsAdapter', () => {
     } finally {
       subscriber.gate = null;
     }
+  });
+
+  /**
+   * Nothing published while the connection was down reached this replica. A
+   * stream left open on it would read live and hear nothing.
+   */
+  it('tells every listener once when its connection closes, and keeps none of its channels', async () => {
+    const { adapter, connection } = setup();
+    const lostA = vi.fn();
+    const lostB = vi.fn();
+    const heard = vi.fn();
+    await adapter.subscribe([{ organizationId: 'org-1' }, { userId: 'u-1' }], heard, lostA);
+    await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), lostB);
+
+    connection().emit('close');
+    connection().emit(
+      'message',
+      'workspace-events:org:org-1',
+      JSON.stringify({ type: 'session.changed', id: 's-1' }),
+    );
+
+    expect(lostA).toHaveBeenCalledTimes(1);
+    expect(lostB).toHaveBeenCalledTimes(1);
+    expect(heard).not.toHaveBeenCalled();
+  });
+
+  /** Once ioredis gives up, that connection never comes back; a stream on it would wait forever. */
+  it('opens a new connection for the next stream once the old one has ended', async () => {
+    const { adapter, connection } = setup();
+    await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), vi.fn());
+    const ended = connection();
+
+    ended.emit('close');
+    ended.emit('end');
+    await adapter.subscribe([{ organizationId: 'org-1' }], vi.fn(), vi.fn());
+
+    expect(connection()).not.toBe(ended);
+    expect(connection().subscribe).toHaveBeenCalledWith('workspace-events:org:org-1');
   });
 });

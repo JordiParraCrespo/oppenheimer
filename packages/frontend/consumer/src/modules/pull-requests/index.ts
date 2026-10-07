@@ -6,6 +6,8 @@ export {
   type MergeGateId,
   type MergeGateState,
   type MergeMethod,
+  type PullRequestActivityEvent,
+  type PullRequestActivityItem,
   type PullRequestAddress,
   type PullRequestAnalytics,
   type PullRequestAnalyticsRange,

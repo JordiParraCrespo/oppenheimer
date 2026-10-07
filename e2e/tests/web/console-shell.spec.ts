@@ -112,3 +112,42 @@ test('switching the rail away from Plan leaves the console drawn', async ({ page
 
   await owner.api.dispose();
 });
+
+/**
+ * The rail's order is the reader's: dragging an item moves it, the order
+ * comes back after a reload, and a plain click on an item still opens its
+ * list rather than picking it up.
+ */
+test('the rail is dragged into the reader’s own order, which a reload keeps', async ({ page }) => {
+  const owner = await provisionedUser('consolerail');
+  await signInAs(page, owner.user);
+  await page.goto('/sessions');
+
+  const rail = page.getByRole('navigation', { name: 'Main navigation' });
+  const order = () =>
+    rail
+      .getByRole('link')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')));
+  await expect.poll(order).toEqual(['Sessions', 'Pull requests', 'Automations', 'Plan']);
+
+  // Plan dragged onto Sessions, in steps, so the drag layer sees a move past its 5px start.
+  const plan = await rail.getByRole('link', { name: 'Plan' }).boundingBox();
+  const sessions = await rail.getByRole('link', { name: 'Sessions' }).boundingBox();
+  if (!plan || !sessions) throw new Error('the rail drew no items');
+  await page.mouse.move(plan.x + plan.width / 2, plan.y + plan.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(plan.x + plan.width / 2, sessions.y + sessions.height / 2, { steps: 12 });
+  await page.mouse.up();
+
+  await expect.poll(order).toEqual(['Plan', 'Sessions', 'Pull requests', 'Automations']);
+  // The drop did not open Plan: a drag is not a click.
+  await expect(page).toHaveURL(/\/sessions/);
+
+  await page.reload();
+  await expect.poll(order).toEqual(['Plan', 'Sessions', 'Pull requests', 'Automations']);
+
+  await rail.getByRole('link', { name: 'Plan' }).click();
+  await expect(page).toHaveURL(/\/plan/);
+
+  await owner.api.dispose();
+});

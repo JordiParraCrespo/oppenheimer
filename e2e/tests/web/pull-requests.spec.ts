@@ -60,6 +60,22 @@ test.describe('Pull requests', () => {
       page.getByText('The wallet screen showed a spinner forever').first(),
     ).toBeVisible();
 
+    // Its description, GitHub's Markdown as elements: no syntax, no template comment.
+    await page.getByRole('button', { name: 'Description' }).click();
+    await expect(page).toHaveURL(/view=description/);
+    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible();
+    await expect(
+      page.getByRole('listitem').filter({ hasText: 'shows the prompt' }).getByRole('checkbox'),
+    ).toBeChecked();
+    await expect(page.getByRole('cell', { name: 'Spinner' })).toBeVisible();
+    await expect(page.getByText('What did you change')).toHaveCount(0);
+    // Its conversation: the commit, the review asked of the viewer, and both comments.
+    await expect(page.getByRole('heading', { name: 'Activity' })).toBeVisible();
+    await expect(page.getByText('1 commit', { exact: true })).toBeVisible();
+    await expect(page.getByText('lucia-m requested a review from ana-dev')).toBeVisible();
+    await expect(page.getByText('archived accounts are filtered out first')).toBeVisible();
+    await expect(page.getByText('@ana-dev').first()).toBeVisible();
+
     // Its changes, from GitHub's patch.
     await page.getByRole('button', { name: /^Changes/ }).click();
     await expect(page).toHaveURL(/view=changes/);

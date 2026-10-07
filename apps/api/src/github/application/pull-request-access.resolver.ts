@@ -16,6 +16,7 @@ import type {
   GithubPullsPort,
   GithubRefusal,
   GithubReviewComment,
+  GithubTimelineItem,
 } from '../infrastructure/github-pulls.port';
 import { type GithubActor, GithubUserGrantResolver } from './github-user-grant.resolver';
 import type {
@@ -196,6 +197,12 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     const repository = await this.repositoryOf(scope, address);
     const credential = await this.readCredential(scope, address.installationId);
     return this.pulls.listReviewComments(credential, repository.fullName, address.number);
+  }
+
+  async activity(scope: AccessScope, address: PullRequestAddress): Promise<GithubTimelineItem[]> {
+    const repository = await this.repositoryOf(scope, address);
+    const credential = await this.readCredential(scope, address.installationId);
+    return this.pulls.listTimeline(credential, repository.fullName, address.number);
   }
 
   async submitReview(

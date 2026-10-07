@@ -25,7 +25,7 @@ import type {
   UpdateAutomationInput,
 } from '../modules/automations/automation.entity';
 import { useConsumerApp } from './context';
-import { type PollKeys, pollWhile } from './live-poll';
+import { type PollKeys, usePollWhile } from './live-poll';
 import { seedDetails } from './seed-details';
 
 /** Query key factory for the `automations` feature. What each write refreshes is {@link settleAutomation}. */
@@ -67,8 +67,9 @@ export function useAutomations<TData = AutomationEntity[]>(
       return automations;
     },
     ...options,
-    ...pollWhile<AutomationEntity[]>(
+    ...usePollWhile<AutomationEntity[]>(
       'liveRun',
+      automationsKeys.list(),
       (rows) => rows?.some((automation) => automation.isRunning) ?? false,
     ),
   });
@@ -83,7 +84,11 @@ export function useAutomation(
     queryKey: automationsKeys.detail(id),
     queryFn: id ? () => app.automations.findById(id) : skipToken,
     ...options,
-    ...pollWhile<AutomationEntity>('liveRun', (automation) => automation?.isRunning ?? false),
+    ...usePollWhile<AutomationEntity>(
+      'liveRun',
+      automationsKeys.detail(id),
+      (automation) => automation?.isRunning ?? false,
+    ),
   });
 }
 
@@ -98,7 +103,11 @@ export function useAutomationRuns(filter: RunsFilter) {
     queryKey: automationsKeys.runList(filter),
     queryFn: () => app.automations.findRuns(filter),
     placeholderData: keepPreviousData,
-    ...pollWhile<RunPage>('liveRun', (page) => page?.items.some((run) => run.isLive) ?? false),
+    ...usePollWhile<RunPage>(
+      'liveRun',
+      automationsKeys.runList(filter),
+      (page) => page?.items.some((run) => run.isLive) ?? false,
+    ),
   });
 }
 

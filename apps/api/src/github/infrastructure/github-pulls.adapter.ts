@@ -11,10 +11,15 @@ import type {
   GithubPullsPort,
   GithubReviewComment,
   GithubReviewInput,
+  GithubTimelineEvent,
+  GithubTimelineItem,
 } from './github-pulls.port';
 
 /** A pull request's files, reviews and comments: GitHub stops listing files at 3,000 anyway. */
 const MAX_PAGES = 30;
+
+/** A conversation's timeline, a hundred entries a page: a thousand covers the longest-lived. */
+const TIMELINE_PAGES = 10;
 
 interface RawUser {
   login: string;
@@ -184,6 +189,21 @@ export class GithubPullsAdapter implements GithubPullsPort {
       login: comment.user?.login ?? 'ghost',
       createdAt: comment.created_at,
     }));
+  }
+
+  async listTimeline(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+  ): Promise<GithubTimelineItem[]> {
+    const raw = await this.paginate<RawTimelineEntry>(
+      `${this.repo(fullName)}/issues/${number}/timeline`,
+      credential,
+      TIMELINE_PAGES,
+    );
+    return raw
+      .map((entry, index) => timelineItemOf(entry, index))
+      .filter((item): item is GithubTimelineItem => item !== null);
   }
 
   /** Check runs and the older commit statuses together: a repository may use either. */
@@ -361,4 +381,87 @@ function toSummary(pull: RawPull): GithubPullRequestSummary {
     mergedAt: pull.merged_at,
     requestedReviewers: (pull.requested_reviewers ?? []).map((user) => user.login),
   };
+}
+
+/** An entry of `GET /repos/{owner}/{repo}/issues/{number}/timeline`, as far as this module reads it. */
+export interface RawTimelineEntry {
+  event?: string;
+  id?: number;
+  node_id?: string;
+  user?: { login: string } | null;
+  actor?: { login: string } | null;
+  body?: string | null;
+  created_at?: string;
+  submitted_at?: string;
+  state?: string;
+  sha?: string;
+  message?: string;
+  author?: { name?: string; date?: string } | null;
+  requested_reviewer?: { login: string } | null;
+  requested_team?: { name: string } | null;
+}
+
+const EVENTS = new Set<GithubTimelineEvent>([
+  'review_requested',
+  'merged',
+  'closed',
+  'reopened',
+  'ready_for_review',
+  'convert_to_draft',
+  'head_ref_force_pushed',
+]);
+
+const REVIEW_STATES = new Set(['approved', 'changes_requested', 'commented', 'dismissed']);
+
+/**
+ * One timeline entry in this module's vocabulary, or null for one the console
+ * does not show (labels, mentions, cross-references, a pending review…).
+ * `index` keeps an event's id unique when GitHub gives it none.
+ */
+export function timelineItemOf(entry: RawTimelineEntry, index: number): GithubTimelineItem | null {
+  const login = entry.user?.login ?? entry.actor?.login ?? 'ghost';
+  switch (entry.event) {
+    case 'commented':
+      return {
+        kind: 'comment',
+        id: `comment:${entry.id ?? index}`,
+        login,
+        body: entry.body ?? '',
+        at: entry.created_at ?? '',
+      };
+    case 'committed':
+      if (!entry.sha) return null;
+      return {
+        kind: 'commit',
+        id: `commit:${entry.sha}`,
+        sha: entry.sha,
+        login: entry.author?.name ?? 'ghost',
+        message: entry.message ?? '',
+        at: entry.author?.date ?? '',
+      };
+    case 'reviewed': {
+      const state = entry.state?.toLowerCase() ?? '';
+      if (!REVIEW_STATES.has(state)) return null;
+      return {
+        kind: 'review',
+        id: `review:${entry.id ?? index}`,
+        login,
+        state: state as 'approved' | 'changes_requested' | 'commented' | 'dismissed',
+        body: entry.body ?? '',
+        at: entry.submitted_at ?? entry.created_at ?? '',
+      };
+    }
+    default: {
+      const event = entry.event as GithubTimelineEvent | undefined;
+      if (!event || !EVENTS.has(event)) return null;
+      return {
+        kind: 'event',
+        id: `${event}:${entry.id ?? index}`,
+        login,
+        event,
+        subject: entry.requested_reviewer?.login ?? entry.requested_team?.name ?? null,
+        at: entry.created_at ?? '',
+      };
+    }
+  }
 }

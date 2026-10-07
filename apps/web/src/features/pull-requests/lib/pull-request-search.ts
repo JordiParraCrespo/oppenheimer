@@ -9,13 +9,13 @@ export const pullRequestSearchSchema = z.object({
 });
 
 /**
- * The page each view is: the description an article, the briefing a page of
- * cards, the changes a diff as wide and as tall as the pane. The route
- * declares it from its search, so the shell frames every view and the bar
- * stays above them.
+ * The page each view is: the description an article with its rail, the
+ * briefing a page of cards, the changes a diff as wide and as tall as the
+ * pane. The route declares it from its search, so the shell frames every view
+ * and the bar stays above them.
  */
-export function pullRequestPane(view: PullRequestView | undefined): 'narrow' | 'wide' | 'fluid' {
-  if (view === 'description') return 'narrow';
+export function pullRequestPane(view: PullRequestView | undefined): 'wide' | 'board' | 'fluid' {
+  if (view === 'description') return 'board';
   if (view === 'changes') return 'fluid';
   return 'wide';
 }
