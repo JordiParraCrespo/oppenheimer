@@ -23,5 +23,10 @@
   "taskDeleted": "Tarea eliminada.",
   "goalAdded": "Objetivo añadido.",
   "taskSessionStarted": "Sesión iniciada.",
-  "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar."
+  "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar.",
+  "pullRequestMerged": "{{reference}} fusionada.",
+  "reviewSubmitted": "Revisión enviada.",
+  "reviewApprovedMerged": "Aprobada y fusionada.",
+  "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
+  "reviewCommentPosted": "Comentario publicado."
 }

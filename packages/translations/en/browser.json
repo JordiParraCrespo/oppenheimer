@@ -1014,7 +1014,21 @@
       "session": "Session",
       "merged": "Merged",
       "mergeFailed": "GitHub did not merge it.",
-      "mergedToast": "Merged {{reference}}."
+      "columns": {
+        "lane": "Lane",
+        "title": "Pull request",
+        "size": "Size",
+        "checks": "Checks",
+        "conflicts": "Conflicts",
+        "waiting": "Waiting"
+      },
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "mergeButton": {
+        "merge": "Merge",
+        "confirm": "Confirm merge",
+        "cancel": "Cancel merge"
+      }
     },
     "lanes": {
       "deep": "Deep",
@@ -1162,10 +1176,8 @@
       "postsAs": "Posts as @{{login}}.",
       "discard": "Discard",
       "close": "Close",
-      "submitted": "Review submitted.",
-      "approvedMerged": "Approved and merged.",
-      "approvedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
-      "failed": "The review did not go through."
+      "failed": "The review did not go through.",
+      "optional": "Optional"
     },
     "changes": {
       "layout": "Layout",
@@ -1185,7 +1197,12 @@
       "hint": "⌘⏎ adds to review",
       "commentPlaceholder": "Leave a comment",
       "cancel": "Cancel",
-      "commentAdded": "Comment posted."
+      "expand": "Expand file",
+      "collapse": "Collapse file",
+      "markViewed": "Viewed",
+      "comments_one": "{{count}} comment",
+      "comments_other": "{{count}} comments",
+      "comments_many": "{{count}} comments"
     },
     "analytics": {
       "title": "Your review {{range}}",
@@ -1901,6 +1918,11 @@
     "taskDeleted": "Task deleted.",
     "goalAdded": "Goal added.",
     "taskSessionStarted": "Session started.",
-    "taskSessionQueued": "Session queued. It starts when its host reconnects."
+    "taskSessionQueued": "Session queued. It starts when its host reconnects.",
+    "pullRequestMerged": "Merged {{reference}}.",
+    "reviewSubmitted": "Review submitted.",
+    "reviewApprovedMerged": "Approved and merged.",
+    "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
+    "reviewCommentPosted": "Comment posted."
   }
 }

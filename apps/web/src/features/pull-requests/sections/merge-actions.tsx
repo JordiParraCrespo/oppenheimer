@@ -3,6 +3,7 @@ import { Eye } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
 import { useMergePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -18,8 +19,7 @@ export function MergeActions({
   const resolveError = useErrorMessage();
   const [confirming, setConfirming] = useState(false);
   const merge = useMergePullRequest({
-    onSuccess: () =>
-      toast.success(t('pullRequests.queue.mergedToast', { reference: pull.reference })),
+    onSuccess: () => notifySuccess('pullRequestMerged', { reference: pull.reference }),
     onError: (error) =>
       toast.error(resolveError(error, t('pullRequests.queue.mergeFailed')).message),
   });
@@ -39,6 +39,12 @@ export function MergeActions({
           merge.mutate({ address: pull.address });
         }}
         disabledReason={pull.blocker ? t(`pullRequests.blocker.${pull.blocker}`) : undefined}
+        labels={{
+          merge: t('pullRequests.queue.mergeButton.merge'),
+          confirm: t('pullRequests.queue.mergeButton.confirm'),
+          cancel: t('pullRequests.queue.mergeButton.cancel'),
+          merged: t('pullRequests.queue.merged'),
+        }}
       />
     </>
   );

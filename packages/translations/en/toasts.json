@@ -23,5 +23,10 @@
   "taskDeleted": "Task deleted.",
   "goalAdded": "Goal added.",
   "taskSessionStarted": "Session started.",
-  "taskSessionQueued": "Session queued. It starts when its host reconnects."
+  "taskSessionQueued": "Session queued. It starts when its host reconnects.",
+  "pullRequestMerged": "Merged {{reference}}.",
+  "reviewSubmitted": "Review submitted.",
+  "reviewApprovedMerged": "Approved and merged.",
+  "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
+  "reviewCommentPosted": "Comment posted."
 }

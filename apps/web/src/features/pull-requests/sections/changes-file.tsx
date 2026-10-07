@@ -17,7 +17,7 @@ import {
   usePullRequestComments,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useTheme } from '@oppenheimer/frontend-web';
+import { notifySuccess, useTheme } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DraftComment } from '../components/draft-comment';
@@ -55,7 +55,7 @@ export function ChangesFile({
   const addSingle = useAddPullRequestComment({
     onSuccess: () => {
       setDraft(null);
-      toast.success(t('pullRequests.changes.commentAdded'));
+      notifySuccess('reviewCommentPosted');
     },
     onError: (error) => toast.error(resolveError(error, t('pullRequests.review.failed')).message),
   });
@@ -72,6 +72,12 @@ export function ChangesFile({
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
         viewed={viewed}
+        labels={{
+          expand: t('pullRequests.changes.expand'),
+          collapse: t('pullRequests.changes.collapse'),
+          viewed: t('pullRequests.changes.markViewed'),
+          comments: (n) => t('pullRequests.changes.comments', { count: n }),
+        }}
         onViewedChange={(next) => {
           setViewed(next);
           if (next) setCollapsed(true);
