@@ -30,6 +30,7 @@ export type { Mapper } from './mapper.interface';
 export {
   type ClaimOptions,
   type EventfulAggregate,
+  type OutboxBacklog,
   OutboxService,
   type OutboxServiceOptions,
   type StageJobParams,

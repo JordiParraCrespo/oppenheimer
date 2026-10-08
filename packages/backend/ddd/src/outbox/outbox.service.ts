@@ -61,6 +61,14 @@ const DEFAULT_BATCH_SIZE = 20;
 /** Lease a claim holds before another relay may take the row; the relay renews it while it delivers. */
 export const DEFAULT_LEASE_MS = 30_000;
 
+/** What `OutboxService.backlog()` reads, all from one snapshot. */
+export interface OutboxBacklog {
+  pending: number;
+  failed: number;
+  /** When the oldest pending row was staged; `null` when nothing is pending. */
+  oldestPendingAt: Date | null;
+}
+
 /**
  * Transactional outbox: side effects (domain events, queued jobs) are written
  * as rows **inside the same transaction** as the state change that owes them,
@@ -317,15 +325,30 @@ export class OutboxService {
   }
 
   /**
-   * How many rows are parked as `failed`: owed side effects that ran out of
-   * attempts and wait for a person. For a gauge or a health detail; the
-   * count scans the table, which retention keeps to a week of rows.
+   * The outbox's backlog, read in one statement so its three numbers come
+   * from one snapshot: how many rows are owed (`pending`), how many are
+   * parked for a person (`failed`), and when the oldest pending row was
+   * staged (`null` when none is). For a gauge or a health detail.
+   *
+   * Each part reads a partial index and nothing else:
+   * `IDX_outbox_message_pending` for the pending count and its oldest row,
+   * `IDX_outbox_message_failed` for the parked count, so a sample costs what
+   * the backlog holds, not what the table holds.
    */
-  async countFailed(): Promise<number> {
-    const rows: { count: number }[] = await this.dataSource.query(
-      `SELECT count(*)::int AS "count" FROM "${OUTBOX_TABLE}" WHERE "status" = 'failed'`,
-    );
-    return rows[0]?.count ?? 0;
+  async backlog(): Promise<OutboxBacklog> {
+    const rows: { pending: number; failed: number; oldestPendingAt: Date | string | null }[] =
+      await this.dataSource.query(
+        `SELECT
+           (SELECT count(*)::int FROM "${OUTBOX_TABLE}" WHERE "status" = 'pending') AS "pending",
+           (SELECT count(*)::int FROM "${OUTBOX_TABLE}" WHERE "status" = 'failed') AS "failed",
+           (SELECT min("createdAt") FROM "${OUTBOX_TABLE}" WHERE "status" = 'pending') AS "oldestPendingAt"`,
+      );
+    const row = rows[0];
+    return {
+      pending: row?.pending ?? 0,
+      failed: row?.failed ?? 0,
+      oldestPendingAt: row?.oldestPendingAt ? new Date(row.oldestPendingAt) : null,
+    };
   }
 
   /**

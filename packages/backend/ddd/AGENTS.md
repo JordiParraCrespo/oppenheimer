@@ -51,8 +51,11 @@ src/
   that end a delivery only touch rows the relay still owns. `wake()` is fire-and-forget: it asks the
   relay for a drain and returns without waiting for delivery; at most one
   drain runs, and wakes during it collapse into one more pass. Delivery is at
-  least once. `stageJob` records the request context's correlation id unless
-  given one; `countFailed()` counts the parked rows. `deleteProcessedBefore` is the retention delete the app
+  least once. `stageJob` takes the correlation id from its caller (a command's
+  or an event's `metadata.correlationId`, `null` for a sweep) and never reads
+  ambient context; `backlog()` reads pending, failed and the oldest pending row
+  in one index-backed statement. `markProcessed` returns the ids it still owned,
+  and only those count as delivered. `deleteProcessedBefore` is the retention delete the app
   schedules. The `outbox_message` table is created by a migration in the
   consuming app, mirroring `OutboxMessageSchema`.
 

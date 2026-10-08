@@ -1,6 +1,5 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import {
-  Inject,
   Injectable,
   Logger,
   type OnApplicationBootstrap,
@@ -9,9 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ModuleRef } from '@nestjs/core';
 import { describeError, InjectMetric, type ModuleMetrics } from '@oppenheimer/backend-core';
-import { OUTBOX_TABLE, OutboxService } from '@oppenheimer/backend-ddd';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
-import { DataSource } from 'typeorm';
 
 export const QUEUE_JOBS = 'queue_jobs';
 export const OUTBOX_MESSAGES = 'outbox_messages';
@@ -66,13 +64,19 @@ interface CountableQueue {
  *
  * On a timer rather than at scrape time, so a slow database cannot stall the
  * scrape, and only while `METRICS_TOKEN` is set: nothing reads the gauges
- * otherwise. A failed sample keeps the last values and says so in
- * `backlog_sample_success`; a stale one shows in the timestamp.
+ * otherwise. The next pass is scheduled when the current one settles, so a
+ * slow dependency spaces the samples out instead of stacking them. A failed
+ * sample keeps the last values and says so in `backlog_sample_success`; a
+ * stale one shows in the timestamp.
+ *
+ * Every queue is resolved at bootstrap, metrics or not: a queue that is not
+ * registered fails the boot naming it, rather than the first sample.
  */
 @Injectable()
 export class BacklogMetricsSampler implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(BacklogMetricsSampler.name);
   private timer: NodeJS.Timeout | undefined;
+  private stopped = false;
   private queues: [string, CountableQueue][] = [];
 
   constructor(
@@ -82,25 +86,20 @@ export class BacklogMetricsSampler implements OnApplicationBootstrap, OnModuleDe
     @InjectMetric(BACKLOG_SAMPLE_SUCCESS) private readonly sampleSuccess: GaugeLike,
     @InjectMetric(BACKLOG_SAMPLE_TIMESTAMP_SECONDS) private readonly sampleTimestamp: GaugeLike,
     private readonly outbox: OutboxService,
-    @Inject(DataSource) private readonly dataSource: DataSource,
     private readonly moduleRef: ModuleRef,
     private readonly configService: ConfigService,
   ) {}
 
   onApplicationBootstrap(): void {
+    this.queues = Object.values(QUEUE_NAMES).map((name) => [name, this.resolveQueue(name)]);
     for (const source of SOURCES) this.sampleSuccess.set({ source }, 0);
     if (!this.configService.get<string>('health.metricsToken')) return;
-    this.queues = Object.values(QUEUE_NAMES).map((name) => [
-      name,
-      this.moduleRef.get<CountableQueue>(getQueueToken(name), { strict: false }),
-    ]);
-    void this.sample();
-    this.timer = setInterval(() => void this.sample(), this.intervalMs);
-    this.timer.unref();
+    void this.loop();
   }
 
   onModuleDestroy(): void {
-    clearInterval(this.timer);
+    this.stopped = true;
+    clearTimeout(this.timer);
   }
 
   /** One pass over both sources; each records its own success, neither throws. */
@@ -109,6 +108,26 @@ export class BacklogMetricsSampler implements OnApplicationBootstrap, OnModuleDe
       this.record('queues', () => this.sampleQueues()),
       this.record('outbox', () => this.sampleOutbox()),
     ]);
+  }
+
+  /** Sample, then schedule the next pass only once this one has settled. */
+  private async loop(): Promise<void> {
+    await this.sample();
+    if (this.stopped) return;
+    this.timer = setTimeout(() => void this.loop(), this.intervalMs);
+    this.timer.unref();
+  }
+
+  private resolveQueue(name: string): CountableQueue {
+    try {
+      // Not `strict`: the queue tokens are declared by `BullModule`, which
+      // `QueueModule` re-exports, not by this module.
+      return this.moduleRef.get<CountableQueue>(getQueueToken(name), { strict: false });
+    } catch (error) {
+      throw new Error(
+        `Backlog metrics: queue "${name}" is not registered in QueueModule (${describeError(error)})`,
+      );
+    }
   }
 
   private async sampleQueues(): Promise<void> {
@@ -123,17 +142,13 @@ export class BacklogMetricsSampler implements OnApplicationBootstrap, OnModuleDe
   }
 
   private async sampleOutbox(): Promise<void> {
-    if (!this.dataSource.isInitialized) throw new Error('the database is not connected');
-    // Both read through `IDX_outbox_message_pending`, the claim's own index.
-    const [pending]: { count: number; oldest: Date | null }[] = await this.dataSource.query(
-      `SELECT count(*)::int AS "count", min("createdAt") AS "oldest"
-         FROM "${OUTBOX_TABLE}" WHERE "status" = 'pending'`,
-    );
-    const failed = await this.outbox.countFailed();
-    this.outboxMessages.set({ status: 'pending' }, pending?.count ?? 0);
+    // One statement, one snapshot: every gauge below comes from the same read.
+    const { pending, failed, oldestPendingAt } = await this.outbox.backlog();
+    this.outboxMessages.set({ status: 'pending' }, pending);
     this.outboxMessages.set({ status: 'failed' }, failed);
-    const oldest = pending?.oldest ? new Date(pending.oldest).getTime() : undefined;
-    this.oldestPending.set(oldest === undefined ? 0 : Math.max(0, (Date.now() - oldest) / 1_000));
+    this.oldestPending.set(
+      oldestPendingAt ? Math.max(0, (Date.now() - oldestPendingAt.getTime()) / 1_000) : 0,
+    );
   }
 
   private async record(source: (typeof SOURCES)[number], read: () => Promise<void>): Promise<void> {

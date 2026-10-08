@@ -101,17 +101,28 @@ describe('OutboxService', () => {
     });
   });
 
-  describe('countFailed', () => {
-    it('reads the count of parked rows, and 0 from an empty answer', async () => {
+  describe('backlog', () => {
+    it('reads pending, failed and the oldest pending row in one statement', async () => {
+      const oldest = new Date('2026-10-01T00:00:00Z');
       const query = vi
         .fn()
-        .mockResolvedValueOnce([{ count: 3 }])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([{ pending: 4, failed: 2, oldestPendingAt: oldest.toISOString() }])
+        .mockResolvedValueOnce([{ pending: 0, failed: 0, oldestPendingAt: null }]);
       const service = new OutboxService({ query } as unknown as DataSource);
 
-      await expect(service.countFailed()).resolves.toBe(3);
-      await expect(service.countFailed()).resolves.toBe(0);
+      await expect(service.backlog()).resolves.toEqual({
+        pending: 4,
+        failed: 2,
+        oldestPendingAt: oldest,
+      });
+      await expect(service.backlog()).resolves.toEqual({
+        pending: 0,
+        failed: 0,
+        oldestPendingAt: null,
+      });
+      expect(query).toHaveBeenCalledTimes(2);
       expect(query.mock.calls[0][0]).toContain(`"status" = 'failed'`);
+      expect(query.mock.calls[0][0]).toContain(`"status" = 'pending'`);
     });
   });
 
