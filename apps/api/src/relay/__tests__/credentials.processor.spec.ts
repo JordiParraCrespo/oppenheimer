@@ -41,6 +41,7 @@ function harness(target: Awaited<ReturnType<SessionLookupPort['findCredentialTar
   } as unknown as RunnerLink;
   const sessions = {
     findAttachTarget: vi.fn(),
+    findShareLinkTarget: vi.fn().mockResolvedValue(null),
     findCredentialTarget: vi.fn().mockResolvedValue(target),
   } as unknown as SessionLookupPort;
   const repositories = {

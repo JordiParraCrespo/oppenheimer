@@ -40,6 +40,8 @@ type Terminals struct {
 	sessions map[string]*fakeSession
 	// Attached counts live attachments.
 	Attached int
+	// ReadOnlyAttached counts the attaches that asked to only watch.
+	ReadOnlyAttached int
 	// Pastes is every text pasted, in order.
 	Pastes []string
 	// FailPaste makes the next paste fail, standing in for a window that
@@ -277,7 +279,7 @@ func (t *Terminals) Paste(_ context.Context, target, _ string, text string) erro
 }
 
 // Attach implements app.Terminals with a pipe that records detaching.
-func (t *Terminals) Attach(_ context.Context, target string, _ app.Size) (app.Attachment, error) {
+func (t *Terminals) Attach(_ context.Context, target string, _ app.Size, readOnly bool) (app.Attachment, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	name, _, err := splitTarget(target)
@@ -288,6 +290,9 @@ func (t *Terminals) Attach(_ context.Context, target string, _ app.Size) (app.At
 		return nil, domain.ErrTmuxCommand.WithDetail("no session %q", name)
 	}
 	t.Attached++
+	if readOnly {
+		t.ReadOnlyAttached++
+	}
 	return &attachment{server: t, screen: t.Screens[target]}, nil
 }
 

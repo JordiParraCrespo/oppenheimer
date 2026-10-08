@@ -11,7 +11,30 @@ export interface AttachTicket {
   sessionId: string;
   organizationId: string;
   window: number;
+  /**
+   * The person the attach is judged as. Through a share link, the link's
+   * creator: the link opens what they could open, and no more.
+   */
   userId: string;
+  /** Present when the attach came through a share link. */
+  share?: AttachTicketShare;
+}
+
+export interface AttachTicketShare {
+  linkId: string;
+  /** A `read` link: the relay drops the attachment's input, the host attaches read-only. */
+  readOnly: boolean;
+  /** The signed-in holder, re-checked as an active account; `null` for nobody signed in. */
+  viewerUserId: string | null;
+}
+
+/** A share link as the relay re-checks it. */
+export interface SessionShareLinkTarget {
+  sessionId: string;
+  organizationId: string;
+  createdByUserId: string;
+  /** Neither revoked nor expired. */
+  live: boolean;
 }
 
 export interface SessionAttachTarget {
@@ -49,6 +72,8 @@ export interface SessionCredentialTarget {
 export interface SessionLookupPort {
   /** Unscoped: the ticket already proved who asked, and the caller re-checks membership. */
   findAttachTarget(sessionId: string): Promise<SessionAttachTarget | null>;
+  /** Unscoped: the ticket named the link, and the caller checks it is the ticket's session's. */
+  findShareLinkTarget(linkId: string): Promise<SessionShareLinkTarget | null>;
   /** Unscoped: the runner proved which host it is, and the caller checks it matches. */
   findCredentialTarget(
     sessionId: string,

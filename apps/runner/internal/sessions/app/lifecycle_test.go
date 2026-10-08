@@ -265,7 +265,7 @@ func TestAttachOpensALiveWindow(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
-	attachment, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{Cols: 80, Rows: 24})
+	attachment, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{Cols: 80, Rows: 24}, false)
 	if err != nil || attachment == nil || h.terminals.Attached != 1 {
 		t.Fatalf("attach to window 0: attachment=%v attached=%d err=%v", attachment, h.terminals.Attached, err)
 	}
@@ -278,7 +278,7 @@ func TestAttachRefusesAWindowThatDoesNotExist(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
-	_, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{})
+	_, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{}, false)
 
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_001" {
@@ -296,7 +296,7 @@ func TestAttachRefusesAStoppedSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{})
+	_, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{}, false)
 
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_003" {

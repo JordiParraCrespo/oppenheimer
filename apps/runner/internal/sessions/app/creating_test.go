@@ -198,7 +198,7 @@ func TestAnAttachIsServedWhileTheCreateIsStillCloning(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	attachment, err := svc.Attach(ctx, creatingID, 0, app.Size{Cols: 80, Rows: 24})
+	attachment, err := svc.Attach(ctx, creatingID, 0, app.Size{Cols: 80, Rows: 24}, false)
 	if err != nil {
 		t.Fatalf("attach while cloning: %v; want the pane", err)
 	}
@@ -230,7 +230,7 @@ func TestAnAttachWaitsForThePaneRatherThanBeingRefused(t *testing.T) {
 	// The pane is not there yet, so this attach waits and its caller times out.
 	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
 	defer cancel()
-	if _, err := svc.Attach(ctx, creatingID, 0, app.Size{Cols: 80, Rows: 24}); err == nil {
+	if _, err := svc.Attach(ctx, creatingID, 0, app.Size{Cols: 80, Rows: 24}, false); err == nil {
 		t.Fatal("attached to a session whose pane has not been made yet")
 	}
 
@@ -238,7 +238,7 @@ func TestAnAttachWaitsForThePaneRatherThanBeingRefused(t *testing.T) {
 	close(terminals.release)
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel2()
-	attachment, err := svc.Attach(ctx2, creatingID, 0, app.Size{Cols: 80, Rows: 24})
+	attachment, err := svc.Attach(ctx2, creatingID, 0, app.Size{Cols: 80, Rows: 24}, false)
 	if err != nil {
 		t.Fatalf("attach after the pane landed: %v", err)
 	}

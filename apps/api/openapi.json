@@ -8351,6 +8351,158 @@
         "tags": ["Projects"]
       }
     },
+    "/api/v1/shared-sessions/lookup": {
+      "post": {
+        "description": "The session’s name and state, and what the link lets the caller do. Works signed out for a link shared with anyone.",
+        "operationId": "findSharedSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindSharedSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedSessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "SESSIONS_022 — Sign in to open it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSIONS_023 — Not shared with you",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_021 — Share link not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "What a share link opens",
+        "tags": ["Shared sessions"]
+      }
+    },
+    "/api/v1/shared-sessions/attach-ticket": {
+      "post": {
+        "description": "Single use, 60 seconds, one window, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.",
+        "operationId": "issueSharedAttachTicket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueSharedAttachTicketRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachTicketResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "SESSIONS_022 — Sign in to open it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSIONS_023 — Not shared with you",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_021 — Share link not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_008 — A terminal ticket could not be issued",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mint a terminal ticket through a share link",
+        "tags": ["Shared sessions"]
+      }
+    },
     "/api/v1/sessions": {
       "get": {
         "description": "Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
@@ -8891,6 +9043,223 @@
           }
         ],
         "summary": "Mint a ticket for a terminal on this session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/share-links": {
+      "get": {
+        "description": "Live and revoked or expired, newest first. Never the secrets.",
+        "operationId": "findShareLinks",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareLinkResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The session’s share links",
+        "tags": ["Sessions"]
+      },
+      "post": {
+        "description": "The answer carries the link’s secret, once. `read` links watch; `write` links type, as you. The audience is anyone with the link, any signed-in account, or the accounts whose emails you list. Revoking, the session closing, or your losing the host ends the link.",
+        "operationId": "createShareLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShareLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedShareLinkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_024 — Too many share links\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Share this session’s terminal with a link",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/share-links/{linkId}": {
+      "delete": {
+        "description": "Nothing opens through it again. A terminal already open through it closes within a minute.",
+        "operationId": "revokeShareLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "linkId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_021 — Share link not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a share link",
         "tags": ["Sessions"]
       }
     },
@@ -18099,6 +18468,84 @@
           }
         }
       },
+      "FindSharedSessionRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          }
+        },
+        "required": ["token"]
+      },
+      "SharedSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Fix the wallet list empty state"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["live", "stopped"],
+            "description": "`stopped` is tmux gone with the work kept; only a member can restart it."
+          },
+          "access": {
+            "type": "string",
+            "enum": ["read", "write"]
+          },
+          "sharedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who shared it."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["name", "state", "access"]
+      },
+      "IssueSharedAttachTicketRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "window": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false
+          }
+        },
+        "required": ["token"]
+      },
+      "AttachTicketResponseDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the relay socket — never in the URL."
+          },
+          "url": {
+            "type": "string",
+            "description": "The path to open the WebSocket on, on this API’s own origin.",
+            "example": "/api/v1/relay/attach"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "window": {
+            "type": "number",
+            "description": "The tmux window this ticket authorises. Tabs are tmux windows.",
+            "example": 0
+          }
+        },
+        "required": ["ticket", "url", "expiresAt", "window"]
+      },
       "SessionLaunchResponseDto": {
         "type": "object",
         "properties": {
@@ -18541,29 +18988,156 @@
           }
         }
       },
-      "AttachTicketResponseDto": {
+      "ShareLinkResponseDto": {
         "type": "object",
         "properties": {
-          "ticket": {
+          "id": {
             "type": "string",
-            "description": "Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the relay socket — never in the URL."
+            "format": "uuid"
           },
-          "url": {
+          "sessionId": {
             "type": "string",
-            "description": "The path to open the WebSocket on, on this API’s own origin.",
-            "example": "/api/v1/relay/attach"
+            "format": "uuid"
+          },
+          "access": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "`read` watches the terminal; `write` types into it, as the person who shared it."
+          },
+          "audience": {
+            "type": "string",
+            "enum": ["anyone", "accounts", "people"],
+            "description": "`anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`."
+          },
+          "people": {
+            "description": "Emails; empty unless `audience` is `people`.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
           },
           "expiresAt": {
             "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
-          "window": {
-            "type": "number",
-            "description": "The tmux window this ticket authorises. Tabs are tmux windows.",
-            "example": 0
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "live": {
+            "type": "boolean",
+            "description": "Neither revoked nor expired."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
           }
         },
-        "required": ["ticket", "url", "expiresAt", "window"]
+        "required": ["id", "sessionId", "access", "audience", "people", "live", "createdAt"]
+      },
+      "CreateShareLinkRequest": {
+        "type": "object",
+        "properties": {
+          "access": {
+            "type": "string",
+            "enum": ["read", "write"]
+          },
+          "audience": {
+            "type": "string",
+            "enum": ["anyone", "accounts", "people"]
+          },
+          "people": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 320
+            }
+          },
+          "lifetime": {
+            "type": "string",
+            "enum": ["1h", "1d", "7d", "30d", null],
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "required": ["access", "audience"]
+      },
+      "CreatedShareLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "access": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "`read` watches the terminal; `write` types into it, as the person who shared it."
+          },
+          "audience": {
+            "type": "string",
+            "enum": ["anyone", "accounts", "people"],
+            "description": "`anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`."
+          },
+          "people": {
+            "description": "Emails; empty unless `audience` is `people`.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "live": {
+            "type": "boolean",
+            "description": "Neither revoked nor expired."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "description": "The link’s secret. Shown once and never again: only its digest is stored. The console puts it in the URL fragment, `/shared#<token>`."
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "access",
+          "audience",
+          "people",
+          "live",
+          "createdAt",
+          "token"
+        ]
       },
       "PrepareSessionRequest": {
         "type": "object",

@@ -311,6 +311,13 @@ export const sessionAttachSchema = z.object({
   /** The browser's viewport at attach, so the pane is not resized a frame later. */
   cols: z.number().int().min(1).max(10_000),
   rows: z.number().int().min(1).max(10_000),
+  /**
+   * A watcher, not a typist: the host attaches tmux with `read-only,ignore-size`,
+   * so the client can neither type into the pane nor resize it for the people
+   * who can. The relay drops a read-only attachment's input as well; this is
+   * the host's half of the same rule. Absent is a writer, as before.
+   */
+  readOnly: z.boolean().optional(),
 });
 
 export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;

@@ -485,7 +485,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <div class="tablewrap"><table>
 <thead><tr><th>#</th><th>Boundary</th><th>Control</th></tr></thead>
 <tbody>
-<tr><td class="num">F1</td><td>browser to relay</td><td>Terminal sockets present a single-use, seconds-lived ticket minted after an ownership check. A session id alone is never enough.</td></tr>
+<tr><td class="num">F1</td><td>browser to relay</td><td>Terminal sockets present a single-use, seconds-lived ticket minted after an ownership check. A session id alone is never enough. A share link mints one judged as its creator's, so it opens nothing they could not; a read-only link's keystrokes are dropped by the relay and by tmux.</td></tr>
 <tr><td class="num">F6</td><td>runner to control plane</td><td>The install command pins the control plane URL and key fingerprint. A runner refuses any other host, so nobody can hand it jobs.</td></tr>
 <tr><td class="num">F7</td><td>job payloads</td><td>Every job is encrypted to the runner's public key at the API layer. Relay, logs, and database never hold plaintext secrets.</td></tr>
 <tr><td class="num">F13</td><td>account volumes</td><td>One per account, owned by one human. A VM attaches only the accounts its session selected. Each mounted by one VM at a time under a host lock. Encrypted at rest. Never in snapshots or images.</td></tr>

@@ -209,7 +209,8 @@
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
     "writeFailed": "That change did not land. Try again.",
-    "loadFailed": "Could not load your sessions."
+    "loadFailed": "Could not load your sessions.",
+    "share": "Share…"
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -239,5 +240,93 @@
     "recent": "Last activity",
     "oldest": "Oldest first",
     "name": "Name"
+  },
+  "share": {
+    "title": "Share “{{name}}”",
+    "description": "A link that opens this session’s terminal for someone outside your workspace. It works for as long as you can open the session, until it expires or you revoke it.",
+    "access": "They can",
+    "read": "Watch",
+    "readHint": "See the terminal live. Nothing they type reaches it.",
+    "write": "Type",
+    "writeHint": "Type into the terminal: a shell on your host, as you.",
+    "readBadge": "Watch only",
+    "writeBadge": "Can type",
+    "audience": "Who can open it",
+    "people": "Only people I name",
+    "peopleHint": "They sign in with one of these verified emails.",
+    "accounts": "Anyone signed in",
+    "accountsHint": "Anyone with the link and an Oppenheimer account.",
+    "anyone": "Anyone with the link",
+    "anyoneHint": "No sign-in needed. Whoever has the link has the terminal.",
+    "emails": "Emails",
+    "emailsPlaceholder": "ada@example.com, grace@example.com",
+    "emailsHint": "Separate them with commas, spaces or new lines.",
+    "peopleInvalid": "Enter at least one email, and only emails.",
+    "lifetime": "Expires",
+    "lifetimes": {
+      "1h": "In 1 hour",
+      "1d": "In 1 day",
+      "7d": "In 7 days",
+      "30d": "In 30 days",
+      "never": "Never"
+    },
+    "lifetimeSearch": "Find an expiry",
+    "lifetimeNone": "No such expiry",
+    "writeWarning": "Anyone who opens this link can run commands on your host as you. Prefer naming the people, and a short expiry.",
+    "writeNote": "The people you name can run commands on your host as you.",
+    "create": "Create link",
+    "creating": "Creating…",
+    "failed": "The link could not be created.",
+    "linkTitle": "Share link",
+    "onceOnly": "Copy it now: it is shown only once. If it is lost, revoke it and make another.",
+    "another": "Another link",
+    "live": "Active links",
+    "none": "No active links.",
+    "listFailed": "The links could not be loaded.",
+    "revoke": "Revoke",
+    "revoking": "Revoking…",
+    "revokeFailed": "The link could not be revoked.",
+    "until": "Until {{date}}",
+    "noExpiry": "No expiry",
+    "audiences": {
+      "anyone": "Anyone with the link",
+      "accounts": "Anyone signed in"
+    }
+  },
+  "shared": {
+    "watching": "Watching",
+    "typing": "You can type",
+    "sharedBy": "Shared by {{name}}",
+    "status": {
+      "connecting": "Connecting…",
+      "live": "Live",
+      "offline": "Host offline",
+      "closed": "Disconnected"
+    },
+    "ended": {
+      "stopped": "The session was stopped.",
+      "resolved": "The session was closed.",
+      "missing": "The session is gone.",
+      "unauthorized": "This link no longer opens the session.",
+      "forbidden": "This link no longer opens the session.",
+      "refused": "The host refused the terminal."
+    },
+    "gone": {
+      "title": "This link doesn’t open anything",
+      "body": "It may have expired or been revoked, or the session was closed. Ask whoever shared it for a new one."
+    },
+    "signIn": {
+      "title": "Sign in to open this session",
+      "body": "This link is shared with Oppenheimer accounts.",
+      "action": "Sign in"
+    },
+    "notInvited": {
+      "title": "This link isn’t shared with you",
+      "body": "It opens only for the people it names, by a verified email. Ask whoever shared it to add yours."
+    },
+    "stopped": {
+      "title": "This session is stopped",
+      "body": "Its terminal isn’t running. Whoever shared it can restart it, and this link will open it again."
+    }
   }
 }

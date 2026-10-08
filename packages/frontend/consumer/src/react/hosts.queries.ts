@@ -59,14 +59,17 @@ export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>)
  * less than the whole list, as on `useHosts`.
  */
 export function useHostPresence<TData = HostEntity[]>({
+  enabled = true,
   watching = true,
   select,
 }: {
+  /** `false` reads nothing at all: a caller with no host to watch. */
+  enabled?: boolean;
   watching?: boolean;
   select?: (hosts: HostEntity[]) => TData;
 } = {}) {
-  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), watching);
-  return useHostList<TData>(select ? { select } : undefined, poll);
+  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), enabled && watching);
+  return useHostList<TData>({ enabled, ...(select ? { select } : {}) }, poll);
 }
 
 type HostListOptions<TData> = Omit<

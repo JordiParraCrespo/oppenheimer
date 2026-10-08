@@ -136,6 +136,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     findAttachTarget: vi.fn(async (id) =>
       id === SESSION ? { id, organizationId: ORG, hostId: HOST, state: 'live' as const } : null,
     ),
+    findShareLinkTarget: vi.fn().mockResolvedValue(null),
     findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
   const tickets = new Map<string, AttachTicket>();
@@ -1296,6 +1297,105 @@ describe('browser attach socket', () => {
           h.owners,
         ).reauthorizeIntervalMs,
       ).toBe(REAUTHORIZE_INTERVAL_MS);
+    });
+  });
+
+  describe('through a share link', () => {
+    const LINK = 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b';
+    const VIEWER = 'f0e1d2c3-b4a5-4697-8a9b-cadbecfd0e1f';
+
+    function shareTicket(readOnly: boolean, viewerUserId: string | null = null): string {
+      const ticket = `s-${Math.random().toString(36).slice(2)}`;
+      h.tickets.set(`attach:${ticket}`, {
+        sessionId: SESSION,
+        organizationId: ORG,
+        window: 0,
+        userId: USER,
+        share: { linkId: LINK, readOnly, viewerUserId },
+      });
+      return ticket;
+    }
+
+    function linkIs(live: boolean) {
+      vi.mocked(h.lookup.findShareLinkTarget).mockResolvedValue({
+        sessionId: SESSION,
+        organizationId: ORG,
+        createdByUserId: USER,
+        live,
+      });
+    }
+
+    async function attachedThrough(ticket: string) {
+      const runner = await runnerUp(h);
+      sockets.push(runner);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
+      sockets.push(browser);
+      await opened(browser);
+      const attach = nextMessage(runner);
+      const attached = nextMessage(browser);
+      browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+      const message = (await attach).text;
+      expect((await attached).text).toEqual({ type: 'attached', window: 0 });
+      return { runner, browser, attach: message };
+    }
+
+    it('attaches a read link read-only and never forwards its keystrokes', async () => {
+      linkIs(true);
+      const { runner, browser, attach } = await attachedThrough(shareTicket(true));
+      expect(attach).toMatchObject({ type: 'session.attach', readOnly: true });
+
+      // Regression guard: a watcher's typing reaching the PTY is a shell for
+      // anyone holding a read link. The resize after it is what arrives.
+      const next = nextMessage(runner);
+      browser.send(Buffer.from('rm -rf ~\r'), { binary: true });
+      browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
+      expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
+    });
+
+    it('forwards a write link’s keystrokes, judged as the person who shared it', async () => {
+      linkIs(true);
+      const { runner, browser, attach } = await attachedThrough(shareTicket(false));
+      expect(attach).not.toHaveProperty('readOnly');
+      expect(h.workspaces.isMember).toHaveBeenCalledWith(ORG, USER);
+
+      const input = nextMessage(runner);
+      browser.send(Buffer.from('ls\r'), { binary: true });
+      expect(((await input).bytes as Buffer).subarray(4).toString()).toBe('ls\r');
+    });
+
+    it('refuses a link that was revoked or expired before the socket opened', async () => {
+      linkIs(false);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(false)]);
+      sockets.push(browser);
+      const gone = closed(browser);
+      const why = nextMessage(browser);
+      await opened(browser);
+
+      expect((await why).text).toEqual({ type: 'closed', reason: 'unauthorized' });
+      await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
+    });
+
+    it('closes a terminal open through a link once a re-check finds it revoked', async () => {
+      linkIs(true);
+      h.browsers.reauthorizeIntervalMs = 25;
+      const { browser } = await attachedThrough(shareTicket(false));
+      const gone = closed(browser);
+      linkIs(false);
+
+      await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
+    });
+
+    it('closes when the signed-in holder’s own account may no longer act', async () => {
+      linkIs(true);
+      vi.mocked(h.owners.findActiveOwner).mockImplementation(async (id) =>
+        id === VIEWER ? null : ({ id } as never),
+      );
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(true, VIEWER)]);
+      sockets.push(browser);
+      const gone = closed(browser);
+      await opened(browser);
+
+      await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.FORBIDDEN });
     });
   });
 

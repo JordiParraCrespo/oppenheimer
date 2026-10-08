@@ -19,7 +19,8 @@ import (
 // belongs to the link that allocated it — the next may give it to another
 // browser — so a PTY opened for a link that is gone is closed, not streamed.
 func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch uint64) {
-	pty, err := h.app.Sessions.Attach(ctx, m.SessionID, m.Window, sessionsapp.Size{Cols: clampSize(m.Cols), Rows: clampSize(m.Rows)})
+	readOnly := m.ReadOnly
+	pty, err := h.app.Sessions.Attach(ctx, m.SessionID, m.Window, sessionsapp.Size{Cols: clampSize(m.Cols), Rows: clampSize(m.Rows)}, readOnly)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
@@ -27,7 +28,7 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	readCtx, cancel := context.WithCancel(context.Background())
 	att := &attachment{
 		id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel,
-		flow: newFlowWindow(), epoch: epoch, input: make(chan []byte, attachmentInput),
+		flow: newFlowWindow(), epoch: epoch, input: make(chan []byte, attachmentInput), readOnly: readOnly,
 	}
 	h.mu.Lock()
 	if !h.linkUp || h.epoch != epoch {

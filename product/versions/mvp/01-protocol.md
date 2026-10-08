@@ -116,6 +116,10 @@ runner does with it and point back.
   agent was launched, and a console that watched the start keeps its steps
   on screen until then (05), so the reader sees the agent and never a shell
   waiting on a clone.
+- **`session.attach` may be read-only** (`readOnly: true`, 21): the host
+  attaches tmux with `-f read-only,ignore-size` and drops the attachment's
+  keystroke frames. The relay drops them first, so a runner that predates
+  the field is still read-only to a watcher. Absent is a writer.
 - **`session.attach` is served while a create is still running.** It needs
   the session's tmux name and nothing else, and that exists from
   `session.started`; the host makes the attach wait for the pane rather than

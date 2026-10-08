@@ -32,6 +32,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 18 | [Plan: the product](18-plan-product.md) | What the Plan frames say, screen by screen: the board, the dialogs, tasks that start or link sessions, and the gaps the frames leave |
 | 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
 | 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
+| 21 | [Session share links](21-session-share-links.md) | A link that opens a session's terminal outside the workspace: watch or type, for anyone, any account or named people; acts as its creator; read-only held by the relay and tmux |
 
 ## Decision log
 
@@ -619,3 +620,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   when its replica's Redis subscriber connection closes, and every time one
   comes up, the first connect included, the reads it covers are refetched
   once. Behind the `workspace_event_stream` flag.
+- 2026-10-08: **A session can be shared with a link** (21, 08, 01). A link
+  watches or types, and opens for anyone, any signed-in account, or the
+  accounts it names by verified email. It acts as the member who made it,
+  re-checked as their terminal is, so it never opens more than they could;
+  read-only is held by the relay and by tmux (`session.attach` gains
+  `readOnly`). The secret is stored as a digest and travels in the URL
+  fragment and request bodies only.

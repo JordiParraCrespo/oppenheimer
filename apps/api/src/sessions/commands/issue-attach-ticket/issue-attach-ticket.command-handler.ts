@@ -1,43 +1,17 @@
-import { randomBytes } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { CacheService } from '@oppenheimer/backend-cache';
-import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
+import {
+  AttachTicketFactory,
+  type IssuedAttachTicket,
+} from '../../application/attach-ticket.factory';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
-import { ATTACH_TICKET_PREFIX, type AttachTicket } from '../../application/session-lookup.port';
-import { SessionErrors } from '../../domain/sessions.errors';
 import { IssueAttachTicketCommand } from './issue-attach-ticket.command';
 
 /**
- * A ticket is a **Redis key, not a table**: a row whose whole life is shorter than a
- * request timeout earns no table.
- *
- * Sixty seconds, not thirty. Single use is the real control, bounding the risk to one
- * attach, so the lifetime buys reliability: mint, DNS, TLS and upgrade on a cold radio
- * can take five to ten seconds, and too tight means "the terminal did not open" on
- * precisely the device this product exists for.
- */
-export const ATTACH_TICKET_TTL_SECONDS = 60;
-/** The path the console opens the socket on, on this API's own origin. */
-const ATTACH_URL = '/api/v1/relay/attach';
-
-export interface IssuedAttachTicket {
-  ticket: string;
-  url: string;
-  expiresAt: Date;
-  window: number;
-}
-
-/**
- * Mints a single-use ticket for one window of one session.
- *
- * The ticket **travels in `Sec-WebSocket-Protocol`**, never the query string: a
- * browser can set a subprotocol but not WebSocket headers, and proxies, CDNs and load
- * balancers log request lines by default, while this ticket buys an interactive
- * shell. It is **claimed atomically**: `setIfAbsent` is a `SET … NX`, so two mints
- * never collide, and the consumer's read-and-delete makes it single use.
+ * Mints a single-use ticket for one window of one session (`AttachTicketFactory`
+ * says how it travels and why it lives sixty seconds).
  *
  * Authorization is not frozen at mint: the consumer re-checks that the session is live
  * and the person is still a workspace member who may use its host, or stopping the
@@ -52,7 +26,7 @@ export class IssueAttachTicketCommandHandler
     private readonly loader: SessionLoaderResolver,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
-    private readonly cache: CacheService,
+    private readonly tickets: AttachTicketFactory,
   ) {}
 
   async execute(command: IssueAttachTicketCommand): Promise<IssuedAttachTicket> {
@@ -61,29 +35,11 @@ export class IssueAttachTicketCommandHandler
     // revoked, or a host unpaired, since the session was created ends the PTY.
     await this.hosts.assertUsable(command.scope, session.hostId);
 
-    // 32 bytes of `node:crypto`, base64url: unguessable, and URL-safe because it
-    // travels as a subprotocol token.
-    const ticket = randomBytes(32).toString('base64url');
-    const claimed = await this.cache.setIfAbsent<AttachTicket>(
-      `${ATTACH_TICKET_PREFIX}${ticket}`,
-      {
-        sessionId: session.id,
-        organizationId: session.organizationId,
-        window: command.window,
-        userId: command.userId,
-      },
-      ATTACH_TICKET_TTL_SECONDS,
-    );
-    if (!claimed) throw new AppError(SessionErrors.ATTACH_TICKET_UNAVAILABLE);
-
-    // No hint here, deliberately: this handler never asks a dispatcher, so any
-    // hint it invented would be a guess about a link it cannot see. Whether the
-    // host is reachable is the relay's answer, on the socket that tries.
-    return {
-      ticket,
-      url: ATTACH_URL,
-      expiresAt: new Date(Date.now() + ATTACH_TICKET_TTL_SECONDS * 1000),
+    return this.tickets.issue({
+      sessionId: session.id,
+      organizationId: session.organizationId,
       window: command.window,
-    };
+      userId: command.userId,
+    });
   }
 }

@@ -37,6 +37,12 @@ export interface SessionTerminalOptions {
    * caller uses this to tell a slow start from a broken one.
    */
   onFirstOutput?: () => void;
+  /**
+   * A watcher's pane, through a read-only share link: xterm takes no input.
+   * The relay and the host drop a watcher's keystrokes as well; this only
+   * keeps the pane from looking as though typing would do something.
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -72,6 +78,7 @@ export function mountSessionTerminal(
     // tmux runs with `mouse on`, so a plain drag is the program's. Shift
     // forces a selection everywhere but macOS, where it is Option.
     macOptionClickForcesSelection: true,
+    disableStdin: options.readOnly ?? false,
   });
 
   const fit = new FitAddon();

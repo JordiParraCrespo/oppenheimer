@@ -210,6 +210,27 @@ export class BrowserAttachGateway {
    * retries, and on the timer it keeps the socket.
    */
   private async authorize(claim: AttachTicket): Promise<AttachVerdict> {
+    // Through a share link, the link first: revoked or expired ends it
+    // whatever its creator may still do, and a signed-in holder whose own
+    // account was banned since holds nothing either. The rest is the
+    // creator's judgement, below, exactly as their own terminal's.
+    if (claim.share) {
+      const link = await this.sessions.findShareLinkTarget(claim.share.linkId);
+      if (
+        !link?.live ||
+        link.sessionId !== claim.sessionId ||
+        link.organizationId !== claim.organizationId ||
+        link.createdByUserId !== claim.userId
+      ) {
+        return refuse('unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
+      }
+      if (
+        claim.share.viewerUserId &&
+        !(await this.owners.findActiveOwner(claim.share.viewerUserId))
+      ) {
+        return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+      }
+    }
     const target = await this.sessions.findAttachTarget(claim.sessionId);
     if (!target || target.organizationId !== claim.organizationId) {
       return refuse('missing', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
@@ -429,6 +450,10 @@ class BrowserAttachment implements AttachmentSink {
    */
   private input(bytes: Buffer): void {
     if (!this.attached || this.attachmentId === null || bytes.byteLength === 0) return;
+    // A read-only share link watches. The host attached tmux read-only too;
+    // this is the relay's half, so a runner that predates the flag still
+    // never sees a keystroke from it.
+    if (this.claim.share?.readOnly) return;
     this.link.sendBinary(this.attachmentId, bytes);
   }
 
@@ -444,6 +469,7 @@ class BrowserAttachment implements AttachmentSink {
       attachmentId: this.attachmentId,
       cols: viewport.cols,
       rows: viewport.rows,
+      ...(this.claim.share?.readOnly ? { readOnly: true } : {}),
     });
     if (!sent) {
       this.closed('link_lost');

@@ -29,6 +29,7 @@ export function ProjectGroup({
   query,
   onNewSessionHere,
   onSettings,
+  onShare,
   onDelete,
   onWrite,
 }: {
@@ -42,6 +43,7 @@ export function ProjectGroup({
   query: string;
   onNewSessionHere: (project: ProjectEntity) => void;
   onSettings: (project: ProjectEntity) => void;
+  onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
   onWrite: (error: Error | null) => void;
 }) {
@@ -109,6 +111,7 @@ export function ProjectGroup({
               key={session.id}
               session={session}
               now={now}
+              onShare={onShare}
               onDelete={onDelete}
               onWrite={onWrite}
             />

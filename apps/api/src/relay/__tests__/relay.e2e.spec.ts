@@ -175,6 +175,7 @@ async function boot(): Promise<World> {
   const lookup: SessionLookupPort = {
     findAttachTarget: async (id) =>
       id === SESSION ? { id, organizationId: ORG, hostId: HOST, state: 'live' } : null,
+    findShareLinkTarget: vi.fn().mockResolvedValue(null),
     findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
   const workspaces_: WorkspaceLookupPort = {

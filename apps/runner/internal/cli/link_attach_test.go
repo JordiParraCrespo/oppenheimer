@@ -81,9 +81,12 @@ type heldAttach struct {
 	pty     *heldPTY
 	gate    chan struct{}
 	entered chan struct{}
+	// readOnly is what the last attach asked for.
+	readOnly bool
 }
 
-func (t *heldAttach) Attach(context.Context, string, sessionsapp.Size) (sessionsapp.Attachment, error) {
+func (t *heldAttach) Attach(_ context.Context, _ string, _ sessionsapp.Size, readOnly bool) (sessionsapp.Attachment, error) {
+	t.readOnly = readOnly
 	t.entered <- struct{}{}
 	if t.gate != nil {
 		<-t.gate
@@ -221,6 +224,31 @@ func TestFramesReachThePTYInOrder(t *testing.T) {
 			t.Fatalf("the PTY got %q, want every frame in order", written)
 		}
 		time.Sleep(time.Millisecond)
+	}
+}
+
+// A watcher's attachment, opened through a read-only share link: tmux is
+// asked for a read-only client, and keystrokes that reach the link anyway
+// never reach the PTY.
+func TestAReadOnlyAttachmentTakesNoInput(t *testing.T) {
+	pty := newHeldPTY(false)
+	h, _, terminals := newAttachHarness(t, pty, nil)
+	h.Message(context.Background(), message(t, "session.attach", map[string]any{
+		"commandId": "55555555-5555-4555-8555-555555555555", "sessionId": sessionUnderTest,
+		"attachmentId": attachmentUnderTest, "window": 0, "cols": 80, "rows": 24, "readOnly": true,
+	}))
+	waitForAttachment(t, h)
+	if !terminals.readOnly {
+		t.Fatal("tmux was not asked for a read-only client")
+	}
+
+	h.Frame(context.Background(), attachmentUnderTest, []byte("rm -rf ~\r"))
+	time.Sleep(20 * time.Millisecond)
+	pty.mu.Lock()
+	written := string(pty.written)
+	pty.mu.Unlock()
+	if written != "" {
+		t.Fatalf("a read-only attachment's PTY got %q", written)
 	}
 }
 

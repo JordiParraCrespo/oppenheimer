@@ -3,19 +3,24 @@ import {
   heyApiSdk,
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
+  type ShareLinkResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
+import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
 import { injectable } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
 import {
   type AttachTicket,
+  type CreatedShareLink,
   type CreateSessionInput,
   type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
+  type SharedSession,
+  type ShareLink,
 } from './session.entity';
 import { type SessionStartEntry, settlesStart, toStartEntry } from './session-steps';
 import { SessionsErrors } from './sessions.errors';
@@ -37,6 +42,29 @@ function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
     data.baseBranch,
     data.branch,
   );
+}
+
+function toShareLink(data: ShareLinkResponseDto): ShareLink {
+  return {
+    id: data.id,
+    access: data.access,
+    audience: data.audience,
+    people: data.people,
+    label: data.label ?? null,
+    expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+    revokedAt: data.revokedAt ? new Date(data.revokedAt) : null,
+    live: data.live,
+    createdAt: new Date(data.createdAt),
+  };
+}
+
+function toTicket(data: { ticket: string; url: string; expiresAt: string; window: number }) {
+  return {
+    ticket: data.ticket,
+    url: data.url,
+    expiresAt: new Date(data.expiresAt),
+    window: data.window,
+  };
 }
 
 function toEntity(data: SessionResponseDto): SessionEntity {
@@ -258,12 +286,65 @@ export class SessionsRepository {
       heyApiSdk.issueAttachTicket({ path: { id }, body: { window } }),
       SessionsErrors.ATTACH_TICKET_FAILED,
     );
+    return toTicket(data);
+  }
+
+  /** A session's share links, live and not, newest first. */
+  @MapApiError(SessionsErrors.SHARE_LINKS_FAILED)
+  async findShareLinks(id: string): Promise<ShareLink[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findShareLinks({ path: { id } }),
+      SessionsErrors.SHARE_LINKS_FAILED,
+    );
+    return data.map(toShareLink);
+  }
+
+  /** A new link, with its secret: the one answer that carries it. */
+  @MapApiError(SessionsErrors.SHARE_FAILED)
+  async createShareLink(id: string, input: CreateShareLinkDto): Promise<CreatedShareLink> {
+    const data = await unwrapBody(
+      heyApiSdk.createShareLink({ path: { id }, body: input }),
+      SessionsErrors.SHARE_FAILED,
+    );
+    return { ...toShareLink(data), token: data.token };
+  }
+
+  @MapApiError(SessionsErrors.REVOKE_SHARE_FAILED)
+  async revokeShareLink(id: string, linkId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.revokeShareLink({ path: { id, linkId } }),
+      SessionsErrors.REVOKE_SHARE_FAILED,
+    );
+  }
+
+  /**
+   * What a link opens. The secret goes in the body: it came from the URL's
+   * fragment, which the browser never sent anywhere, and stays out of every
+   * path and query string.
+   */
+  @MapApiError(SessionsErrors.SHARED_SESSION_FAILED)
+  async findSharedSession(token: string): Promise<SharedSession> {
+    const data = await unwrapBody(
+      heyApiSdk.findSharedSession({ body: { token } }),
+      SessionsErrors.SHARED_SESSION_FAILED,
+    );
     return {
-      ticket: data.ticket,
-      url: data.url,
-      expiresAt: new Date(data.expiresAt),
-      window: data.window,
+      name: data.name,
+      state: data.state,
+      access: data.access,
+      sharedBy: data.sharedBy ?? null,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
     };
+  }
+
+  /** A ticket through a share link: never cached, never retried on its own. */
+  @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
+  async issueSharedAttachTicket(token: string, window = 0): Promise<AttachTicket> {
+    const data = await unwrapBody(
+      heyApiSdk.issueSharedAttachTicket({ body: { token, window } }),
+      SessionsErrors.ATTACH_TICKET_FAILED,
+    );
+    return toTicket(data);
   }
 
   /**

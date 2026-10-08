@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
   skipToken,
@@ -10,10 +11,12 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
+  CreatedShareLink,
   CreateSessionInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SharedSession,
 } from '../modules/sessions/session.entity';
 import {
   deriveSessionStartProgress,
@@ -31,6 +34,9 @@ export const sessionsKeys = {
   detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
   start: (id: string | undefined, failed: boolean) =>
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
+  shareLinks: (id: string) => [...sessionsKeys.detail(id), 'share-links'] as const,
+  /** Under `sessions`, so a link's secret never reaches the persisted cache. */
+  shared: (token: string | undefined) => [...sessionsKeys.all, 'shared', token] as const,
 };
 
 /**
@@ -416,6 +422,67 @@ export function usePasteSessionFile(
   const app = useConsumerApp();
   return useMutation({
     mutationFn: (file: Blob) => app.sessions.pasteFile(sessionId, file, window),
+    ...options,
+  });
+}
+
+/** A session's share links, for the people who may manage them. */
+export function useShareLinks(sessionId: string) {
+  const app = useConsumerApp();
+  return useQuery({
+    queryKey: sessionsKeys.shareLinks(sessionId),
+    queryFn: () => app.sessions.findShareLinks(sessionId),
+  });
+}
+
+export interface CreateShareLinkVariables {
+  sessionId: string;
+  input: CreateShareLinkDto;
+}
+
+/** Make a link. Its secret is on the answer, and nowhere in the cache. */
+export function useCreateShareLink(
+  options?: UseMutationOptions<CreatedShareLink, Error, CreateShareLinkVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, input }: CreateShareLinkVariables) =>
+      app.sessions.createShareLink(sessionId, input),
+    ...withCacheOnSuccess(options, (_link, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.shareLinks(sessionId) });
+    }),
+  });
+}
+
+export interface RevokeShareLinkVariables {
+  sessionId: string;
+  linkId: string;
+}
+
+export function useRevokeShareLink(
+  options?: UseMutationOptions<void, Error, RevokeShareLinkVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, linkId }: RevokeShareLinkVariables) =>
+      app.sessions.revokeShareLink(sessionId, linkId),
+    ...withCacheOnSuccess(options, (_result, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.shareLinks(sessionId) });
+    }),
+  });
+}
+
+/** What a share link opens, for whoever holds it, signed in or not. */
+export function useSharedSession(
+  token: string | undefined,
+  options?: Omit<UseQueryOptions<SharedSession, Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+  return useQuery({
+    queryKey: sessionsKeys.shared(token),
+    queryFn: token ? () => app.sessions.findSharedSession(token) : skipToken,
     ...options,
   });
 }

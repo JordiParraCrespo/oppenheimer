@@ -8,6 +8,7 @@ import { LinksModule } from '../links/links.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { UsersModule } from '../users/user.module';
+import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
@@ -20,14 +21,19 @@ import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
 import { SessionProjectUsage } from './application/session-project-usage.resolver';
 import { SessionReconciliationResolver } from './application/session-reconciliation.resolver';
+import { ShareLinkAccessResolver } from './application/share-link-access.resolver';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
 import { CloseSessionHttpController } from './commands/close-session/close-session.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
+import { CreateShareLinkCommandHandler } from './commands/create-share-link/create-share-link.command-handler';
+import { CreateShareLinkHttpController } from './commands/create-share-link/create-share-link.http.controller';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { IssueSharedAttachTicketCommandHandler } from './commands/issue-shared-attach-ticket/issue-shared-attach-ticket.command-handler';
+import { IssueSharedAttachTicketHttpController } from './commands/issue-shared-attach-ticket/issue-shared-attach-ticket.http.controller';
 import { MoveSessionCommandHandler } from './commands/move-session/move-session.command-handler';
 import { MoveSessionHttpController } from './commands/move-session/move-session.http.controller';
 import { PasteSessionImageCommandHandler } from './commands/paste-session-image/paste-session-image.command-handler';
@@ -41,11 +47,15 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { RevokeShareLinkCommandHandler } from './commands/revoke-share-link/revoke-share-link.command-handler';
+import { RevokeShareLinkHttpController } from './commands/revoke-share-link/revoke-share-link.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
 import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionShareLinkOrmEntity } from './database/session-share-link.orm-entity';
+import { SessionShareLinkRepository } from './database/session-share-link.repository';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
@@ -56,10 +66,16 @@ import { FindSessionEventsHttpController } from './queries/find-session-events/f
 import { FindSessionEventsQueryHandler } from './queries/find-session-events/find-session-events.query-handler';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
+import { FindShareLinksHttpController } from './queries/find-share-links/find-share-links.http.controller';
+import { FindShareLinksQueryHandler } from './queries/find-share-links/find-share-links.query-handler';
+import { FindSharedSessionHttpController } from './queries/find-shared-session/find-shared-session.http.controller';
+import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
+import { SessionShareLinkMapper } from './session-share-link.mapper';
 import {
   RECORD_SESSION_EVENTS,
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
+  SESSION_SHARE_LINK_REPOSITORY,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
 import { SessionResource } from './sessions.resource';
@@ -71,11 +87,17 @@ import { WorkSessionMapper } from './work-session.mapper';
  * Within the parameterized ones, the longer paths come first for the same reason.
  */
 const httpControllers = [
+  // `shared-sessions/*`: a holder's two routes, under a path of their own.
+  FindSharedSessionHttpController,
+  IssueSharedAttachTicketHttpController,
   FindSessionsHttpController,
   CreateSessionHttpController,
   UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
   IssueAttachTicketHttpController,
+  FindShareLinksHttpController,
+  CreateShareLinkHttpController,
+  RevokeShareLinkHttpController,
   PasteSessionImageHttpController,
   StopSessionHttpController,
   PrepareSessionHttpController,
@@ -99,6 +121,9 @@ const commandHandlers: Provider[] = [
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,
   IssueAttachTicketCommandHandler,
+  CreateShareLinkCommandHandler,
+  RevokeShareLinkCommandHandler,
+  IssueSharedAttachTicketCommandHandler,
   PasteSessionImageCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
@@ -108,6 +133,8 @@ const queryHandlers: Provider[] = [
   FindSessionsQueryHandler,
   FindSessionQueryHandler,
   FindSessionEventsQueryHandler,
+  FindShareLinksQueryHandler,
+  FindSharedSessionQueryHandler,
 ];
 
 const adapters: Provider[] = [
@@ -125,6 +152,7 @@ const adapters: Provider[] = [
       SessionCheckoutOrmEntity,
       WorkSessionEventOrmEntity,
       SessionTurnOrmEntity,
+      SessionShareLinkOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
@@ -149,6 +177,9 @@ const adapters: Provider[] = [
     ...queryHandlers,
     ...adapters,
     WorkSessionMapper,
+    SessionShareLinkMapper,
+    AttachTicketFactory,
+    ShareLinkAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,
     SessionNamingResolver,
@@ -163,6 +194,7 @@ const adapters: Provider[] = [
     ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
     HostUnpairedStopsSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
+    { provide: SESSION_SHARE_LINK_REPOSITORY, useClass: SessionShareLinkRepository },
   ],
   // The three application ports, and nothing else. The repository is this module's
   // persistence adapter: publishing it would let the next slice read and append

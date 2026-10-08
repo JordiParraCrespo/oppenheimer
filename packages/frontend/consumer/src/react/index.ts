@@ -96,23 +96,29 @@ export {
 export {
   type CloseSessionVariables,
   type CreateSessionVariables,
+  type CreateShareLinkVariables,
   type MoveSessionVariables,
   type RenameSessionVariables,
+  type RevokeShareLinkVariables,
   useCloseSession,
   useCreateSession,
+  useCreateShareLink,
   useInvalidateSession,
   useMoveSession,
   usePasteSessionFile,
   usePrepareSession,
   useRenameSession,
   useRestartSession,
+  useRevokeShareLink,
   useSession,
   useSessionOpening,
   useSessionStartProgress,
   useSessions,
+  useSharedSession,
+  useShareLinks,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream } from './sessions.stream';
+export { useSessionStream, useSharedSessionStream } from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
