@@ -12,10 +12,6 @@ export interface PersistenceTracked {
   markPersisted(): void;
 }
 
-function isPersistenceTracked(entity: object): entity is PersistenceTracked {
-  return typeof (entity as Partial<PersistenceTracked>).markPersisted === 'function';
-}
-
 /**
  * The write path a non-tenant TypeORM adapter would otherwise copy: map the
  * aggregate to its record, write it through `OutboxService.writeWithEvents`
@@ -86,38 +82,44 @@ export abstract class TypeOrmRepositoryBase<
    * cannot both apply, and the loser is told instead of silently
    * overwriting the winner.
    *
-   * The aggregate's events are staged in the same transaction only on a win,
-   * and cleared then; a lost race stages nothing and leaves them, since they
-   * describe a change that did not happen. On a win the aggregate's
-   * `markPersisted()` is called when it has one, so a second conditional
-   * write in the same attempt is conditioned on the state this one stored.
-   * A caller that gets `false` abandons: it reloads if it still has work,
-   * it never retries the same instance.
+   * One path whatever the aggregate owes: the `UPDATE` runs on the manager
+   * of an `OutboxService.transaction`, and only when it won are the events
+   * staged on that manager (so they commit with the write, and the relay is
+   * woken after the commit), then cleared, and the aggregate's
+   * `markPersisted()` called, so a second conditional write in the same
+   * attempt is conditioned on the state this one stored. A lost race stages
+   * nothing, so its transaction commits no change, wakes nothing and leaves
+   * the events on the aggregate, since they describe a change that did not
+   * happen. A caller that gets `false` abandons: it reloads if it still has
+   * work, it never retries the same instance.
+   *
+   * The aggregate must be `PersistenceTracked`: a conditional write is
+   * conditioned on the state it was loaded in, so it has to be told when that
+   * state moved.
    *
    * Protected: the condition names columns, so a concrete repository wraps
    * it in a port method named for the transition (`claim(run)`).
    */
-  protected async saveIf(entity: Aggregate, condition: FindOptionsWhere<Orm>): Promise<boolean> {
+  protected async saveIf(
+    entity: Aggregate & PersistenceTracked,
+    condition: FindOptionsWhere<Orm>,
+  ): Promise<boolean> {
     const changes: Record<string, unknown> = { ...this.mapper.toPersistence(entity) };
     delete changes[this.idColumn];
     const where = { ...condition, ...this.byId(entity.id) } as FindOptionsWhere<Orm>;
     // Cast around TypeORM's `QueryDeepPartialEntity` recursion (see `insert`).
     type Changes = Parameters<Repository<Orm>['update']>[1];
-    const events = entity.domainEvents;
-    const won =
-      events.length === 0
-        ? (await this.repository.update(where, changes as Changes)).affected === 1
-        : await this.outbox.transaction(async (manager) => {
-            const result = await manager
-              .getRepository<Orm>(this.repository.target)
-              .update(where, changes as Changes);
-            if (result.affected !== 1) return false;
-            await this.outbox.stageEvents(manager, events);
-            return true;
-          });
+    const won = await this.outbox.transaction(async (manager) => {
+      const result = await manager
+        .getRepository<Orm>(this.repository.target)
+        .update(where, changes as Changes);
+      if (result.affected !== 1) return false;
+      await this.outbox.stageEvents(manager, entity.domainEvents);
+      return true;
+    });
     if (!won) return false;
     entity.clearEvents();
-    if (isPersistenceTracked(entity)) entity.markPersisted();
+    entity.markPersisted();
     return true;
   }
 

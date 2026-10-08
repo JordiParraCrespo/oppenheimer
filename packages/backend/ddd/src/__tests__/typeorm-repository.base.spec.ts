@@ -189,13 +189,31 @@ describe('TypeOrmRepositoryBase', () => {
       expect(t.statusAtLoad).toBe('open');
     });
 
-    it('needs no transaction when nothing is owed, and still reports the race', async () => {
+    it('runs the same one UPDATE on the transaction manager when nothing is owed, and wakes nothing', async () => {
       const won = harness();
-      await expect(won.repository.close(thing())).resolves.toBe(true);
-      expect(won.transaction).not.toHaveBeenCalled();
+      const t = thing();
+      await expect(won.repository.close(t)).resolves.toBe(true);
+      expect(won.transaction).toHaveBeenCalledTimes(1);
+      expect(won.orm.update).toHaveBeenCalledTimes(1);
+      expect(won.outboxInsert).not.toHaveBeenCalled();
+      expect(won.drainer).not.toHaveBeenCalled();
+      expect(t.statusAtLoad).toBe('open');
 
       const lost = harness({ update: vi.fn().mockResolvedValue({ affected: 0 }) });
       await expect(lost.repository.close(thing())).resolves.toBe(false);
+      expect(lost.outboxInsert).not.toHaveBeenCalled();
+    });
+
+    it('leaves the events and the loaded state alone when the commit fails', async () => {
+      const { repository, transaction } = harness();
+      transaction.mockRejectedValueOnce(new Error('commit failed'));
+      const t = thing();
+      t.close();
+
+      await expect(repository.close(t)).rejects.toThrow('commit failed');
+
+      expect(t.domainEvents).toHaveLength(1);
+      expect(t.statusAtLoad).toBe('open');
     });
   });
 });

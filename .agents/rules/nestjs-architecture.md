@@ -138,8 +138,9 @@ state, both decide, and the second write silently undoes the first.
   was loaded in.
 
 `TypeOrmRepositoryBase.saveIf(entity, condition)` is all of that for a
-non-tenant repository: one `UPDATE`, inside `OutboxService.transaction` when
-events are owed, staging and clearing the events and calling `markPersisted()` only when it
+non-tenant repository whose aggregate is `PersistenceTracked`: one `UPDATE`
+on the manager of an `OutboxService.transaction`, whatever the aggregate owes,
+staging and clearing the events and calling `markPersisted()` only when it
 won, and answering whether it did. It is `protected`, because the condition
 names columns: the port exposes the transition (`claim(run): Promise<boolean>`)
 and the adapter calls `this.saveIf(run, { status: run.statusAtLoad })`. A
