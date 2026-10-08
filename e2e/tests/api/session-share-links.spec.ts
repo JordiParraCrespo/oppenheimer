@@ -180,10 +180,20 @@ test.describe('Session share links', () => {
     });
     await expectProblemDocument(list, { status: 404, code: 'SESSIONS_001' });
     const make = await outsider.api.post(`/api/v1/sessions/${sessionId}/share-links`, {
-      data: { access: 'write', audience: 'anyone' },
+      data: { access: 'write', audience: 'anyone', lifetime: '1d' },
       failOnStatusCode: false,
     });
     await expectProblemDocument(make, { status: 404, code: 'SESSIONS_001' });
+
+    // A link that lets anyone type expires within seven days, enforced by the API.
+    const owned = await sharedSession();
+    for (const lifetime of [null, '30d']) {
+      const refused = await owned.owner.api.post(
+        `/api/v1/sessions/${owned.sessionId}/share-links`,
+        { data: { access: 'write', audience: 'anyone', lifetime }, failOnStatusCode: false },
+      );
+      expect(refused.status(), `lifetime ${lifetime}`).toBe(400);
+    }
 
     const guess = await (await newContext()).post('/api/v1/shared-sessions/lookup', {
       data: { token: 'A'.repeat(43) },

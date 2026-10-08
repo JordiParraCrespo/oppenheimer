@@ -696,6 +696,8 @@
       },
       "lifetimeSearch": "Find an expiry",
       "lifetimeNone": "No such expiry",
+      "lifetimeCapped": "Links that let anyone type expire within 7 days.",
+      "lifetimeTooLong": "A link that lets anyone type must expire within 7 days.",
       "writeWarning": "Anyone who opens this link can run commands on your host as you. Prefer naming the people, and a short expiry.",
       "writeNote": "The people you name can run commands on your host as you.",
       "create": "Create link",

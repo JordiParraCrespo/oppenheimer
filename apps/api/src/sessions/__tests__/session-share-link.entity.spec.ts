@@ -63,4 +63,15 @@ describe('SessionShareLinkEntity', () => {
     revoked.revoke(NOW);
     expect(revoked.refusalFor(null, NOW)).toBe('gone');
   });
+
+  it('refuses a link that lets anyone type unless it expires within seven days', () => {
+    // A shell for whoever finds the link: never "until revoked", never a month.
+    expect(() => issue({ access: 'write', audience: 'anyone' })).toThrow();
+    expect(() => issue({ access: 'write', audience: 'anyone', lifetime: '30d' })).toThrow();
+    const { link } = issue({ access: 'write', audience: 'anyone', lifetime: '7d' });
+    expect(link.expiresAt).toEqual(new Date(NOW.getTime() + 7 * 24 * 60 * 60 * 1000));
+    // Every other pair may live until revoked.
+    expect(() => issue({ access: 'write', audience: 'accounts' })).not.toThrow();
+    expect(() => issue({ access: 'read', audience: 'anyone' })).not.toThrow();
+  });
 });

@@ -15,8 +15,11 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * session's list and the live-link count at a create
  * (`IDX_…_session`, which also backs the composite foreign key); an
  * account's erasure (`IDX_…_created_by`, backing its foreign key). `access`
- * and `audience` are closed vocabularies with a `CHECK` each, and a list of
- * people exists exactly when the audience is `people`.
+ * and `audience` are closed vocabularies with a `CHECK` each, a list of
+ * people exists exactly when the audience is `people`, and a link that lets
+ * anyone type expires within seven days of being made (the minute of slack
+ * is the gap between the app's clock, which sets `expiresAt`, and the
+ * database's, which sets `createdAt`).
  */
 export class AddSessionShareLinks1791000600000 implements MigrationInterface {
   name = 'AddSessionShareLinks1791000600000';
@@ -40,7 +43,8 @@ export class AddSessionShareLinks1791000600000 implements MigrationInterface {
         CONSTRAINT "PK_session_share_link" PRIMARY KEY (id),
         CONSTRAINT "CHK_session_share_link_access" CHECK (access IN ('read', 'write')),
         CONSTRAINT "CHK_session_share_link_audience" CHECK (audience IN ('anyone', 'accounts', 'people')),
-        CONSTRAINT "CHK_session_share_link_people" CHECK ((audience = 'people') = (cardinality(people) > 0))
+        CONSTRAINT "CHK_session_share_link_people" CHECK ((audience = 'people') = (cardinality(people) > 0)),
+        CONSTRAINT "CHK_session_share_link_open_write_expires" CHECK (NOT (access = 'write' AND audience = 'anyone') OR ("expiresAt" IS NOT NULL AND "expiresAt" <= "createdAt" + interval '7 days 1 minute'))
       )`,
     );
     await queryRunner.query(

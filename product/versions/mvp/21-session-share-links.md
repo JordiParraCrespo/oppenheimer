@@ -22,6 +22,12 @@ like anyone or some user"). This note records what was built and why.
   made without anybody revoking them, and a link can never open more than
   its creator could. `write` is a shell on the host *as the creator*; the
   dialog says so, louder when the audience is wider than named people.
+- **A link that lets anyone type expires within seven days** (decided
+  2026-10-08). It is a shell for whoever finds it, so it is never "until
+  revoked" and never a month. The API's schema refuses anything longer, the
+  aggregate refuses to issue one, and a `CHECK` holds it in the table; the
+  dialog offers nothing past the cap for that pair. Every other link may
+  live until revoked.
 - **Read-only is enforced twice, neither by the browser.** The relay drops
   every keystroke frame from a read-only attachment, and the runner attaches
   tmux with `-f read-only,ignore-size` (tmux 3.2+) and drops the frames too.
@@ -76,8 +82,8 @@ take back what a viewer already read. `openclaw attach` grants are short and
 end with the process. Two things taken from it: the dialog says that a viewer
 sees everything the terminal shows and that revoking does not un-see it, and
 the creator-access rule matches its "an approver never grants more than they
-hold". Left open below: a server-enforced ceiling on lifetime, and a
-transcript-only level under `read`.
+hold". Its server-side cap on every grant became the seven-day cap on a link that
+lets anyone type; a transcript-only level under `read` is left open below.
 
 ## Open questions
 
@@ -89,10 +95,7 @@ transcript-only level under `read`.
    next step, with a way to drop one.
 3. **Windows other than the agent's.** A link opens window 0 only, as the
    console's own pane does today.
-4. **A ceiling on lifetime.** A `write` link for `anyone` may be made with
-   no expiry. OpenClaw caps every grant on the server; a cap here (or
-   refusing "never" for that pair) is a product call not yet made.
-5. **A transcript-only level.** Below `read`: the conversation as text,
+4. **A transcript-only level.** Below `read`: the conversation as text,
    without the terminal, as OpenClaw's Session Share does.
-6. **Notifying the people named.** A `people` link is shared by hand; an
+5. **Notifying the people named.** A `people` link is shared by hand; an
    email to each address is the teams slice's mail.

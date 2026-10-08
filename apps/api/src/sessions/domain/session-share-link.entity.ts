@@ -2,13 +2,16 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   AggregateRoot,
   ArgumentNotProvidedException,
+  ArgumentOutOfRangeException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import {
+  maxShareLinkLifetime,
   SHARE_LINK_LIFETIME_MS,
   type ShareLinkAccess,
   type ShareLinkAudience,
   type ShareLinkLifetime,
+  shareLinkLifetimeAllowed,
 } from '@oppenheimer/shared';
 
 /** Bytes of entropy in a link's secret: 256 bits, 43 base64url characters. */
@@ -74,6 +77,11 @@ export class SessionShareLinkEntity extends AggregateRoot<SessionShareLinkProps>
 
   /** A new link, and its secret: the only time the secret exists. */
   static issue(props: IssueShareLinkProps): { link: SessionShareLinkEntity; token: string } {
+    if (!shareLinkLifetimeAllowed(props.access, props.audience, props.lifetime)) {
+      throw new ArgumentOutOfRangeException(
+        `A ${props.access} link for ${props.audience} expires within ${maxShareLinkLifetime(props.access, props.audience)}`,
+      );
+    }
     const now = props.now ?? new Date();
     const token = randomBytes(SHARE_TOKEN_BYTES).toString('base64url');
     const people =

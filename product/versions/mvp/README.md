@@ -627,3 +627,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   read-only is held by the relay and by tmux (`session.attach` gains
   `readOnly`). The secret is stored as a digest and travels in the URL
   fragment and request bodies only.
+- 2026-10-08: **A link that lets anyone type expires within seven days**
+  (21). The API, the aggregate and a `CHECK` refuse a longer one, or one
+  with no expiry; every other link may still live until revoked.

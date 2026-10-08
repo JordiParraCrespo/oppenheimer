@@ -34,6 +34,29 @@ export const SHARE_LINK_LIFETIME_MS: Record<ShareLinkLifetime, number> = {
   '30d': 30 * 24 * 60 * 60 * 1000,
 };
 
+/**
+ * The longest a link may live, by what it opens and to whom: a link that
+ * lets anyone with it type is a shell for whoever finds it, so it expires
+ * within seven days and never lives "until revoked". Every other link may.
+ */
+export function maxShareLinkLifetime(
+  access: ShareLinkAccess,
+  audience: ShareLinkAudience,
+): ShareLinkLifetime | null {
+  return access === 'write' && audience === 'anyone' ? '7d' : null;
+}
+
+/** Whether `lifetime` (`null`: no expiry) is within {@link maxShareLinkLifetime}. */
+export function shareLinkLifetimeAllowed(
+  access: ShareLinkAccess,
+  audience: ShareLinkAudience,
+  lifetime: ShareLinkLifetime | null | undefined,
+): boolean {
+  const max = maxShareLinkLifetime(access, audience);
+  if (max === null) return true;
+  return lifetime != null && SHARE_LINK_LIFETIME_MS[lifetime] <= SHARE_LINK_LIFETIME_MS[max];
+}
+
 /** The most people one link names: a list longer than this is an audience of `accounts`. */
 export const MAX_SHARE_LINK_PEOPLE = 50;
 
@@ -61,6 +84,10 @@ export const createShareLinkSchema = z
   // audience would read as a restriction that is not enforced.
   .refine((link) => link.audience === 'people' || !link.people?.length, {
     path: ['people'],
+  })
+  .refine((link) => shareLinkLifetimeAllowed(link.access, link.audience, link.lifetime), {
+    params: { i18nKey: 'validation.invalid' },
+    path: ['lifetime'],
   });
 
 export type CreateShareLinkDto = z.infer<typeof createShareLinkSchema>;

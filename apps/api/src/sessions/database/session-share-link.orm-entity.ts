@@ -22,6 +22,10 @@ import {
 @Check('CHK_session_share_link_access', `access IN ('read', 'write')`)
 @Check('CHK_session_share_link_audience', `audience IN ('anyone', 'accounts', 'people')`)
 @Check('CHK_session_share_link_people', `(audience = 'people') = (cardinality(people) > 0)`)
+@Check(
+  'CHK_session_share_link_open_write_expires',
+  `NOT (access = 'write' AND audience = 'anyone') OR ("expiresAt" IS NOT NULL AND "expiresAt" <= "createdAt" + interval '7 days 1 minute')`,
+)
 @Index('IDX_session_share_link_session', ['organizationId', 'sessionId'])
 @Index('IDX_session_share_link_created_by', ['createdByUserId'])
 export class SessionShareLinkOrmEntity {

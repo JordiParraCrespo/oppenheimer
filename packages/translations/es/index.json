@@ -698,6 +698,8 @@
       },
       "lifetimeSearch": "Buscar una caducidad",
       "lifetimeNone": "No hay esa caducidad",
+      "lifetimeCapped": "Los enlaces que permiten escribir a cualquiera caducan en 7 días como máximo.",
+      "lifetimeTooLong": "Un enlace que permite escribir a cualquiera debe caducar en 7 días como máximo.",
       "writeWarning": "Quien abra este enlace podrá ejecutar comandos en tu máquina como tú. Mejor indicar las personas y una caducidad corta.",
       "writeNote": "Las personas que indiques podrán ejecutar comandos en tu máquina como tú.",
       "create": "Crear enlace",
