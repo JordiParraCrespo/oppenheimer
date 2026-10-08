@@ -383,11 +383,6 @@ pnpm changeset          # Create a changeset for versioning
   lives at the owner boundary, and needs no test-only production seam;
   auditing existing tests is `.agents/skills/test-audit/`; how a backend
   test is written is `.agents/rules/testing-backend.md`
-- Before the commit that finishes a change, run the `/sync-docs` closeout: it
-  decides whether the docs site, an `AGENTS.md`/`ARCHITECTURE.md`, a rule or
-  skill, a `product/` decision note, a changeset or `.env.example` is owed,
-  and applies the minimal edits. `/update-agent-files` is the deeper pass over
-  the agent files alone
 - New env vars go in the root `.env.example` with a note on what they do; never
   add a per-package `.env` (see `.agents/rules/api-config.md`)
 - New API endpoints need Swagger decorators and `@RequireScopes`; without the
