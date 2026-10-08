@@ -1,5 +1,13 @@
 # Eval results
 
+## 2026-10-08 — the routine reviews every module
+
+The prompt changed from "the files changed since the base, plus one deep-dive
+module a day" to a full sweep of every module on every run, fanned out to
+subagents and verified by the coordinator. The `planted` run now uses the full
+sweep (no `--module`), as the scheduled run does. Neither run has been repeated
+against this prompt yet; the 2026-09-26 numbers below are for the old one.
+
 ## 2026-09-26 — first two iterations
 
 Fixture: `main` @ 3496e36 plus `plant.mjs`. There was one run per version.

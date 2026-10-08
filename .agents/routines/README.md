@@ -7,7 +7,7 @@ you change what the routine does.
 
 | Routine | Prompt | What it does |
 | --- | --- | --- |
-| Daily hexagon audit | [`hexagon-audit.md`](hexagon-audit.md) | Audits `apps/api` against its Domain-Driven Hexagon contract. Keeps one `hexagon-audit` issue current and opens a small fix PR for the blocking findings it is sure about. |
+| Daily hexagon audit | [`hexagon-audit.md`](hexagon-audit.md) | Audits every `apps/api` module against its Domain-Driven Hexagon contract on every run, fanned out to subagents. Keeps one `hexagon-audit` issue current and opens a small fix PR for the blocking findings it is sure about. |
 | Frontend audit | `/frontend-audit routine` ([the skill](../skills/frontend-audit/SKILL.md), "Routine mode") | Audits `apps/web` and `packages/frontend/*` against the frontend rules, the re-renders the React Compiler does not prevent included. Keeps one `frontend-audit` issue current and one `frontend-audit/fix-<date>` PR for the findings it is safe to fix. |
 | Main red | [`main-red.md`](main-red.md) | Runs one hour after each scheduled CI run (the `cron` in `.github/workflows/ci.yml`). Owns the `main-red` issue that run opens: reproduces the failure with `pnpm ci:local --all`, and opens the pull request that fixes the root cause. Does nothing when `main` is green. |
 

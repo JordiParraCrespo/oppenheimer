@@ -3,8 +3,8 @@
   "runs": {
     "planted": {
       "setup": "worktree at origin/main + plant.mjs, committed as one commit",
-      "args": "--since HEAD~1 --module profile --dry-run <out>/planted.md",
-      "measures": "recall on planted violations; no false positives on decoys or on the profile deep dive"
+      "args": "--since HEAD~1 --dry-run <out>/planted.md",
+      "measures": "recall on planted violations across the full sweep the scheduled run does; no false positives on decoys or on the untouched modules"
     },
     "clean": {
       "setup": "worktree at origin/main, untouched",

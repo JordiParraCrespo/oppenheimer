@@ -9,8 +9,8 @@ the daily issue does.
 
 | Run | Setup | Question |
 | --- | --- | --- |
-| `planted` | `origin/main` plus `plant.mjs`, committed as one commit | Does it catch known violations of each checklist key (**recall**) while leaving the decoys alone? |
-| `clean` | `origin/main`, untouched, deep dive on `users/` | Does it stay quiet on the module `ARCHITECTURE.md` tells you to copy (**precision**)? |
+| `planted` | `origin/main` plus `plant.mjs`, committed as one commit, full sweep | Does it catch known violations of each checklist key (**recall**) while leaving the decoys alone? |
+| `clean` | `origin/main`, untouched, `--module users` | Does it stay quiet on the module `ARCHITECTURE.md` tells you to copy (**precision**)? |
 
 `cases.json` holds the expected verdict for every planted item (`P*`) and every
 decoy (`N*`), plus the pass bar.
@@ -36,7 +36,7 @@ directory. The prompt is the routine file followed by the run's arguments from
 `cases.json`, for example:
 
 > Read `.agents/routines/hexagon-audit.md` and follow it exactly with
-> `--since HEAD~1 --module profile --dry-run $SP/out/planted.md`.
+> `--since HEAD~1 --dry-run $SP/out/planted.md`.
 > The repository root is `$SP/planted`.
 
 Grade the two reports against `cases.json` by hand, or hand both reports and the

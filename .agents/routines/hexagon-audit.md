@@ -1,4 +1,4 @@
-# Routine: daily Domain-Driven Hexagon audit of `apps/api`
+# Routine: daily Domain-Driven Hexagon audit of `apps/api`, every module
 
 You are auditing the NestJS API in this repository against its own
 Domain-Driven Hexagon contract. You are a **reviewer first**: steps 1–6 are
@@ -22,10 +22,11 @@ differently" do not count.
 
 The prompt may end with arguments. Defaults are for the scheduled run.
 
-- `--since <git-ref-or-date>`: base of the incremental review. Default:
-  `26 hours ago` on the default branch (two hours of overlap, so a late run
-  never leaves a gap).
-- `--module <name>`: force the deep-dive module (step 4).
+- `--since <git-ref-or-date>`: base for the ledger diff (step 3) and for
+  telling a new finding from one already open. Default: `26 hours ago` on the
+  default branch (two hours of overlap, so a late run never leaves a gap).
+- `--module <name>`: review only this module instead of all of them (step 4).
+  For evals and one-off checks; the scheduled run never passes it.
 - `--dry-run <path>`: write the report to `<path>` as Markdown and do not touch
   GitHub at all.
 
@@ -72,8 +73,8 @@ Count the ledgers with these exact commands, never by eye, so the number is
 comparable from one day to the next:
 
 ```bash
-grep -cE "path: 'apps/api/src/" scripts/check-api-structure.mjs              # structure (18 on 2026-09-26)
-grep -oE "'\^src/[^']*\\\\\.ts\\$'" apps/api/.dependency-cruiser.cjs | wc -l  # dependency (25 on 2026-09-26)
+grep -cE "path: 'apps/api/src/" scripts/check-api-structure.mjs              # structure (0 on 2026-10-08)
+grep -oE "'\^src/[^']*\\\\\.ts\\$'" apps/api/.dependency-cruiser.cjs | wc -l  # dependency (17 on 2026-10-08)
 ```
 
 Nothing already on a ledger is a new finding. Do not report ledgered files again
@@ -82,19 +83,54 @@ controller that is already ledgered as `route-outside-slice`.
 
 ## 4. Scope of the judgment review
 
-Review two sets of files, and no others:
+**Every module, on every run.** The point of the routine is that the whole API
+follows the contract, not only the code that changed today, so the review
+covers:
 
-- **Incremental:** every file under `apps/api/src/**` and
-  `packages/backend/ddd/src/**` changed since the base
-  (`git diff --name-only <base>...HEAD`, or `git log --since=… --name-only`).
-  Skip `*.spec.ts`, `migrations/` and generated files.
-- **Deep dive:** one whole module, so the full codebase gets covered over time
-  even when nobody touches it. List the directories under `apps/api/src/` that
-  contain a `*.module.ts`, sort them by name, and take index
-  `(day-of-year) mod (count)`. `--module` overrides this. Name the chosen module
-  in the report.
+- every directory under `apps/api/src/` that contains a `*.module.ts`, in full;
+- `packages/backend/ddd/src/**`, the building blocks those modules extend.
 
-If both sets are empty, skip to step 6.
+Skip `*.spec.ts`, `migrations/` and generated files. `--module <name>` narrows
+the review to that one module.
+
+List the modules and their size, so the split is by lines and not by count:
+
+```bash
+cd apps/api/src && for d in $(ls -d */ | sed 's#/##' | sort); do
+  ls "$d"/*.module.ts >/dev/null 2>&1 &&
+    echo "$d $(find "$d" -name '*.ts' ! -name '*.spec.ts' ! -path '*migrations*' | xargs cat | wc -l)"
+done
+```
+
+**Fan out.** The API is too large to read file by file in one context. Split
+the modules into at most six groups of roughly equal line count (give
+`packages/backend/ddd` to the smallest group) and hand each group to a
+subagent, all in parallel. Each subagent's brief is the same:
+
+- the group's directories, and that it is read-only: no edits, no checkout;
+- read the four contract sources above, then steps 3 and 5, "Verify before
+  reporting" and the severities in step 6 of this file, and skim
+  `apps/api/src/users/`, the reference module;
+- check every file in the group against the step 5 rows for its layer, and
+  verify each candidate as step 5 says;
+- return candidates only, each with its key, severity, fingerprint,
+  `path:line` for every occurrence, the offending lines verbatim (≤8), the
+  rule sentence quoted with its source, a one-sentence fix, and whether the
+  fix is local and leaves the HTTP contract alone; then "worth a look" items;
+  then any pattern it suspects repeats in other modules.
+
+**A subagent's finding is a candidate, not a finding.** When they are all back,
+you run "Verify before reporting" again on every candidate yourself: open the
+file at the cited line and quote the rule. Then merge across groups: the same
+pattern from two groups is one row, and a pattern a subagent flagged as
+possibly repeated is `grep`ped across all of `apps/api/src` before you decide
+between a single finding and **systemic** (step 6).
+
+Name each finding **new** when its fingerprint is not in the issue's current
+body (step 6), and **open** when it is. Files changed since the base (`git diff
+--name-only <base>...HEAD`) are where new findings usually come from; say in
+the report when a new one is in old code, because that means an earlier run
+missed it.
 
 ## 5. Judgment checklist
 
@@ -171,7 +207,7 @@ edits.
 Use this Markdown:
 
 ```markdown
-## Hexagon audit — <YYYY-MM-DD> (base <ref>, deep dive: <module>)
+## Hexagon audit — <YYYY-MM-DD> (base <ref>, <n> modules reviewed)
 
 **Mechanical:** structure ✅/❌ · boundaries ✅/❌ · error catalog ✅/❌ · route policies ✅/❌
 **Ledger:** <n> structure + <m> dependency entries (<+added / −removed> since base)
@@ -201,9 +237,10 @@ checkout came from (`git remote get-url origin`):
    with the title `Hexagon audit: open findings`, creating the label first if it
    is missing.
 2. The issue **body** is the current state: the table of every open finding,
-   keyed by fingerprint. Rewrite it on each run. Carry over findings from the
-   previous body whose file still shows the violation, add the new ones, and
-   remove those that are fixed.
+   keyed by fingerprint. Rewrite it on each run from the full sweep. A
+   finding in the previous body that the sweep did not return is fixed only
+   when you open its file and the violation is gone; if it is still there,
+   the sweep missed it, so carry it over and keep it.
 3. Add a **comment** only when something changed: a new finding, a fixed one, a
    ledger change, or a red mechanical check. The comment is the dated report
    above, restricted to what changed. On a quiet day with everything green and
@@ -259,4 +296,4 @@ Everything else stays in the issue only. When in doubt, leave it out.
 7. Link the PR from that day's issue comment.
 
 End the session with a one-line summary, for example:
-`hexagon audit 2026-09-26: 2 new, 1 fixed, mechanical green, deep dive users, PR #123 (1 fix)`.
+`hexagon audit 2026-09-26: 27 modules, 2 new, 1 fixed, 5 open, mechanical green, PR #123 (1 fix)`.
