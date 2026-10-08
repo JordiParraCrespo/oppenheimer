@@ -17,6 +17,7 @@ src/
 ├── decorators/     # Swagger decorators (ApiProblemResponse)
 ├── dtos/           # Swagger models (ProblemDetailsDto)
 ├── logging/        # hardened nestjs-pino setup (LoggingModule + helpers, correlation ids)
+├── metrics/        # Prometheus: the registry module, metric providers, HTTP request metrics
 ├── middleware/     # Nest middleware (RequestContextMiddleware)
 ├── pipes/          # validation & transform pipes
 ├── requests/       # request-scoped helpers
@@ -38,6 +39,10 @@ src/
   `AppError`'s `detail`/`extensions`, never interpolated into the message. When
   adding an error code, add a row to `apps/docs/docs/errors.md`: problem `type`
   URIs are anchors on that page.
+- **Metric labels are closed sets.** A label value comes from a list the code
+  owns (a route group, a queue name, an outcome), never from a request: an id,
+  a path or a user turns one series into millions. `HttpMetricsModule` takes
+  the route policy from the app and refuses one past its budget.
 
 ## Commands
 

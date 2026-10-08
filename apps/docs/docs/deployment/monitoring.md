@@ -1,0 +1,58 @@
+---
+sidebar_position: 2
+---
+
+# Monitoring
+
+What the API tells an operator about itself, and how to read it.
+
+## Metrics
+
+The API exports Prometheus metrics at `GET /api/v1/metrics`. The endpoint is
+an optional capability: it exists only when `METRICS_TOKEN` is set (at least 32
+characters; `openssl rand -hex 32`), and Prometheus presents that token as the
+password of HTTP Basic auth. Without the token, or with the wrong one, the
+answer is a plain 404, the same as any path that does not exist.
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: oppenheimer-api
+    metrics_path: /api/v1/metrics
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/oppenheimer-metrics-token
+    static_configs:
+      - targets: ["api:3001"]
+```
+
+Basic rather than a bearer token: every bearer the API sees is resolved as a
+credential (an API token, an OAuth grant, a session) and refused when it is
+none of them. Scrape the API on its private address where you can: the
+console's nginx proxies all of `/api` to it, so the token is what keeps the
+endpoint closed on a public origin.
+
+| Metric                                      | Type      | Labels                  |
+| ------------------------------------------- | --------- | ----------------------- |
+| `http_requests_total`                       | counter   | `route`, `status_class` |
+| `http_request_duration_seconds`             | histogram | `route`                 |
+| `process_*`, `nodejs_*`                     | various   | —                       |
+
+Every series also carries `app="api"`.
+
+- **`route` is a group, never a path.** The policy in
+  `apps/api/src/health/infrastructure/http-metrics.config.ts` maps route
+  templates to about fifteen product areas (`sessions`, `hosts`, `github`,
+  `account`, …); anything it does not know, including every unknown URL, is
+  `other`. `events` (the server-sent change feed, open as long as a tab is) and
+  `webhooks` (GitHub's deliveries) are separate because their latency means
+  something else. A new controller prefix fails the API's unit tests until it
+  is given a group.
+- **`status_class`** is `1xx`–`5xx`, `aborted` for a connection the client
+  closed before the answer was written (counted, never timed), or `other`.
+  Every group and class exists from boot at zero, so a rate over "5xx" is 0,
+  not absent, before the first failure.
+- **What is not counted:** the probes (`/health`, `/ready`) and the scrape
+  itself; and the routes mounted before Nest's middleware, Better Auth's
+  `/api/auth/*` and Bull Board's `/admin/queues`, which record as nothing
+  rather than as `other`.

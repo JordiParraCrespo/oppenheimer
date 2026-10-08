@@ -11,6 +11,7 @@ import {
   AllExceptionsFilter,
   createAuthRouteLoggingMiddleware,
   LoggingModule,
+  MetricsModule,
   RequestContextMiddleware,
 } from '@oppenheimer/backend-core';
 import { EmailModule } from '@oppenheimer/backend-email';
@@ -40,6 +41,7 @@ import {
   databaseConfig,
   emailConfig,
   githubAppConfig,
+  healthConfig,
   hostsConfig,
   llmConfig,
   llmConfigFrom,
@@ -91,6 +93,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         storageConfig,
         oauthConfig,
         githubAppConfig,
+        healthConfig,
         hostsConfig,
         llmConfig,
         sessionsConfig,
@@ -109,6 +112,9 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         level: configService.get('database.logQueries') ? 'debug' : undefined,
       }),
     }),
+    // The registry `/api/v1/metrics` renders; every module's metrics register
+    // on it. Process metrics (heap, event loop lag, GC) come with it.
+    MetricsModule.forRoot({ defaultLabels: { app: 'api' } }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
