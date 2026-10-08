@@ -34,31 +34,23 @@ export function SharedSessionScreen() {
   }
   if (shared.error) {
     const refusal = shareRefusalOf(shared.error);
-    if (refusal === 'sign_in') {
-      return (
-        <SharedNotice
-          title={t('sessions.shared.signIn.title')}
-          body={t('sessions.shared.signIn.body')}
-          action={
+    if (!refusal) return <RouteError error={shared.error} />;
+    return (
+      <SharedNotice
+        title={t(`sessions.shared.${refusal}.title`)}
+        body={t(`sessions.shared.${refusal}.body`)}
+        action={
+          refusal === 'signIn' ? (
             <Button
               render={<Link to="/login" search={{ redirect: '/shared' }} />}
               onClick={() => keepShareToken(token)}
             >
               {t('sessions.shared.signIn.action')}
             </Button>
-          }
-        />
-      );
-    }
-    if (refusal) {
-      return (
-        <SharedNotice
-          title={t(`sessions.shared.${refusal === 'gone' ? 'gone' : 'notInvited'}.title`)}
-          body={t(`sessions.shared.${refusal === 'gone' ? 'gone' : 'notInvited'}.body`)}
-        />
-      );
-    }
-    return <RouteError error={shared.error} />;
+          ) : undefined
+        }
+      />
+    );
   }
 
   const session = shared.data;

@@ -79,21 +79,6 @@ the creator-access rule matches its "an approver never grants more than they
 hold". Left open below: a server-enforced ceiling on lifetime, and a
 transcript-only level under `read`.
 
-## Where it lives
-
-- Wire: `packages/shared/src/schemas/session-share.schema.ts`, and
-  `readOnly` on `session.attach` in `packages/shared/src/protocol/messages.ts`.
-- API: `apps/api/src/sessions/` — `session_share_link` (migration
-  `1791000600000-AddSessionShareLinks`), the aggregate
-  `domain/session-share-link.entity.ts`, the slices `create-share-link`,
-  `revoke-share-link`, `find-share-links`, `find-shared-session` and
-  `issue-shared-attach-ticket`; the relay's half in
-  `relay/infrastructure/browser-attach.gateway.ts`.
-- Runner: `internal/cli/link_attachments.go`, and the tmux adapter's
-  `Attach`.
-- Console: Share… in a session row's menu (`dialogs/share-session.tsx`), and
-  the page `/shared` (`screens/shared-session.tsx`).
-
 ## Open questions
 
 1. **Re-copying a link.** Only the digest is kept, so the address cannot be

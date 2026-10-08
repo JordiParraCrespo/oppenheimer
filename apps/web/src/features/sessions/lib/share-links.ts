@@ -1,3 +1,4 @@
+import { AppError } from '@oppenheimer/frontend-core';
 import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
 
 /** The emails in what someone typed: split on commas, spaces and lines. */
@@ -67,17 +68,17 @@ export function keepShareToken(token: string): void {
   }
 }
 
-/** Why a link did not open, from the API's answer, or `null` for a failure to retry. */
-export function shareRefusalOf(error: unknown): 'gone' | 'sign_in' | 'not_invited' | null {
-  const code = (error as { code?: unknown } | null)?.code;
-  switch (code) {
-    case 'SESSIONS_021':
-      return 'gone';
-    case 'SESSIONS_022':
-      return 'sign_in';
-    case 'SESSIONS_023':
-      return 'not_invited';
-    default:
-      return null;
-  }
+/** Why a link did not open, by the API's code; a code not here is a failure to retry. */
+const SHARE_REFUSALS = {
+  SESSIONS_021: 'gone',
+  SESSIONS_022: 'signIn',
+  SESSIONS_023: 'notInvited',
+} as const;
+
+export type ShareRefusal = (typeof SHARE_REFUSALS)[keyof typeof SHARE_REFUSALS];
+
+/** Why a link did not open, or `null` for a failure to retry. */
+export function shareRefusalOf(error: unknown): ShareRefusal | null {
+  if (!(error instanceof AppError)) return null;
+  return SHARE_REFUSALS[error.code as keyof typeof SHARE_REFUSALS] ?? null;
 }

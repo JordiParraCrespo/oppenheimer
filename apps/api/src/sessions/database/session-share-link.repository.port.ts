@@ -13,7 +13,8 @@ export interface SessionShareLinkRepositoryPort {
     limit: number,
     now: Date,
   ): Promise<'inserted' | 'limit_reached'>;
-  save(link: SessionShareLinkEntity): Promise<void>;
+  /** Records a revoke: the one column a link ever changes. */
+  saveRevoked(link: SessionShareLinkEntity): Promise<void>;
   findOneByTokenHash(tokenHash: string): Promise<Option<SessionShareLinkEntity>>;
   findOneById(id: string): Promise<Option<SessionShareLinkEntity>>;
   /** Every link of the session, live or not, newest first. */

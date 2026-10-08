@@ -4,12 +4,12 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
-import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { OptionalApiAuthGuard } from '../../../auth/guards/optional-api-auth.guard';
 import type { IssuedAttachTicket } from '../../application/attach-ticket.factory';
+import { CurrentShareViewer } from '../../decorators/current-share-viewer.decorator';
+import type { ShareLinkViewer } from '../../domain/session-share-link.entity';
 import { AttachTicketResponseDto } from '../../dtos/session.response.dto';
-import { SessionShareLinkMapper } from '../../session-share-link.mapper';
 import { IssueSharedAttachTicketCommand } from './issue-shared-attach-ticket.command';
 import { IssueSharedAttachTicketRequest } from './issue-shared-attach-ticket.request.dto';
 
@@ -17,10 +17,7 @@ import { IssueSharedAttachTicketRequest } from './issue-shared-attach-ticket.req
 @UseGuards(OptionalApiAuthGuard)
 @Controller('shared-sessions')
 export class IssueSharedAttachTicketHttpController {
-  constructor(
-    private readonly commandBus: CommandBus,
-    private readonly mapper: SessionShareLinkMapper,
-  ) {}
+  constructor(private readonly commandBus: CommandBus) {}
 
   @Post('attach-ticket')
   @Version('1')
@@ -45,13 +42,10 @@ export class IssueSharedAttachTicketHttpController {
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   issue(
     @Body() body: IssueSharedAttachTicketRequest,
-    @CurrentUser() user: unknown,
+    @CurrentShareViewer() viewer: ShareLinkViewer | null,
   ): Promise<IssuedAttachTicket> {
     return this.commandBus.execute(
-      new IssueSharedAttachTicketCommand({
-        token: body.token,
-        viewer: this.mapper.toViewer(user),
-      }),
+      new IssueSharedAttachTicketCommand({ token: body.token, viewer }),
     );
   }
 }

@@ -9,6 +9,7 @@ import {
 import { useZodResolver } from '@oppenheimer/frontend-web';
 import {
   type CreateShareLinkDto,
+  createShareLinkSchema,
   shareLinkAccessSchema,
   shareLinkAudienceSchema,
   shareLinkLifetimeSchema,
@@ -18,14 +19,14 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { SharePeopleField } from '../components/share-people-field';
 import { ShareWriteWarning } from '../components/share-write-warning';
-import { peopleOf, type ShareLinkValues, shareLinkInput } from '../lib/share-links';
+import { type ShareLinkValues, shareLinkInput } from '../lib/share-links';
 
 /**
  * The form's own shape over the shared vocabulary: people are typed as one
- * block of text and become the request's list on submit, and "never" is a
- * lifetime the request spells as `null`. Whether that list holds at least one
- * email and nothing else is this form's check, so its message is handed in
- * translated.
+ * block of text and "never" is a lifetime the request spells as `null`. What
+ * it may hold is the API's own schema, asked of the request the form would
+ * send, so the cap on people and the email check are one rule on both sides.
+ * Only the people field can fail it, so its message is handed in translated.
  */
 function shareLinkFormSchema(peopleMessage: string): z.ZodType<ShareLinkValues> {
   return z
@@ -35,16 +36,11 @@ function shareLinkFormSchema(peopleMessage: string): z.ZodType<ShareLinkValues> 
       people: z.string(),
       lifetime: z.union([shareLinkLifetimeSchema, z.literal('never')]),
     })
-    .refine(
-      (values) => {
-        if (values.audience !== 'people') return true;
-        const people = peopleOf(values.people);
-        return (
-          people.length > 0 && people.every((email) => z.string().email().safeParse(email).success)
-        );
-      },
-      { path: ['people'], message: peopleMessage },
-    );
+    .superRefine((values, ctx) => {
+      if (!createShareLinkSchema.safeParse(shareLinkInput(values)).success) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['people'], message: peopleMessage });
+      }
+    });
 }
 
 const LIFETIMES = ['1h', '1d', '7d', '30d', 'never'] as const;

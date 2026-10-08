@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { CredentialOwner } from '../auth/domain/scope-context.types';
 import { SessionShareLinkOrmEntity } from './database/session-share-link.orm-entity';
-import { SessionShareLinkEntity, type ShareLinkViewer } from './domain/session-share-link.entity';
+import { SessionShareLinkEntity } from './domain/session-share-link.entity';
 import type { WorkSessionEntity } from './domain/work-session.entity';
 import {
   SharedSessionResponseDto,
@@ -82,20 +82,5 @@ export class SessionShareLinkMapper
     dto.sharedBy = owner ? `${owner.firstName} ${owner.lastName}`.trim() || null : null;
     dto.expiresAt = link.expiresAt;
     return dto;
-  }
-
-  /**
-   * The caller as a link sees them, from `request.user`: an account, or
-   * `null` when nobody is signed in (`OptionalApiAuthGuard`).
-   */
-  toViewer(user: unknown): ShareLinkViewer | null {
-    if (!user || typeof user !== 'object') return null;
-    const record = user as Record<string, unknown>;
-    if (typeof record.id !== 'string' || typeof record.email !== 'string') return null;
-    return {
-      userId: record.id,
-      email: record.email,
-      emailVerified: record.emailVerified === true,
-    };
   }
 }

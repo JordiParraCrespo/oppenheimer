@@ -213,26 +213,23 @@ export class BrowserAttachGateway {
    * retries, and on the timer it keeps the socket.
    */
   private async authorize(claim: AttachTicket): Promise<AttachVerdict> {
-    // Through a share link, the link first: revoked or expired ends it
-    // whatever its creator may still do, and a signed-in holder whose own
-    // account was banned since holds nothing either. The rest is the
-    // creator's judgement, below, exactly as their own terminal's.
+    // Through a share link, the link's own judgment first, asked again as at
+    // mint: revoked, expired, or no longer for this holder ends it whatever
+    // its creator may still do. A signed-in holder is judged as their
+    // account is now; one banned since holds nothing. The rest is the
+    // creator's judgement, below, as their own terminal's.
     if (claim.share) {
-      const link = await this.sessions.findShareLinkTarget(claim.share.linkId);
-      if (
-        !link?.live ||
-        link.sessionId !== claim.sessionId ||
-        link.organizationId !== claim.organizationId ||
-        link.createdByUserId !== claim.userId
-      ) {
-        return refuse('unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
-      }
-      if (
-        claim.share.viewerUserId &&
-        !(await this.owners.findActiveOwner(claim.share.viewerUserId))
-      ) {
-        return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
-      }
+      const viewerId = claim.share.viewerUserId;
+      const viewer = viewerId ? await this.owners.findActiveOwner(viewerId) : null;
+      if (viewerId && !viewer) return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+      const admitted = await this.sessions.shareLinkAdmits(
+        claim.share.linkId,
+        claim.sessionId,
+        viewer
+          ? { userId: viewer.id, email: viewer.email, emailVerified: viewer.emailVerified }
+          : null,
+      );
+      if (!admitted) return refuse('unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
     }
     const target = await this.sessions.findAttachTarget(claim.sessionId);
     if (!target || target.organizationId !== claim.organizationId) {
@@ -334,6 +331,8 @@ class BrowserAttachment implements AttachmentSink {
   private rechecking = false;
   private attached = false;
   private finished = false;
+  /** A read-only share link's attachment: no input, and the host told so. */
+  private readonly readOnly: boolean;
 
   constructor(
     private readonly ws: WebSocket,
@@ -345,7 +344,9 @@ class BrowserAttachment implements AttachmentSink {
       everyMs: number;
       logger: Logger;
     },
-  ) {}
+  ) {
+    this.readOnly = claim.share?.readOnly ?? false;
+  }
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
   start(early: readonly EarlyFrame[] = []): void {
@@ -471,7 +472,7 @@ class BrowserAttachment implements AttachmentSink {
     // A read-only share link watches. The host attached tmux read-only too;
     // this is the relay's half, so a runner that predates the flag still
     // never sees a keystroke from it.
-    if (this.claim.share?.readOnly) return;
+    if (this.readOnly) return;
     this.link.sendBinary(this.attachmentId, bytes);
   }
 
@@ -487,7 +488,7 @@ class BrowserAttachment implements AttachmentSink {
       attachmentId: this.attachmentId,
       cols: viewport.cols,
       rows: viewport.rows,
-      ...(this.claim.share?.readOnly ? { readOnly: true } : {}),
+      ...(this.readOnly ? { readOnly: true } : {}),
     });
     if (!sent) {
       this.closed('link_lost');

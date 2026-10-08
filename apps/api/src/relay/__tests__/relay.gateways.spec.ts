@@ -139,7 +139,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     findAttachTarget: vi.fn(async (id) =>
       id === SESSION ? { id, organizationId: ORG, hostId: HOST, state: 'live' as const } : null,
     ),
-    findShareLinkTarget: vi.fn().mockResolvedValue(null),
+    shareLinkAdmits: vi.fn().mockResolvedValue(false),
     findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
   const tickets = new Map<string, AttachTicket>();
@@ -1330,13 +1330,9 @@ describe('browser attach socket', () => {
       return ticket;
     }
 
-    function linkIs(live: boolean) {
-      vi.mocked(h.lookup.findShareLinkTarget).mockResolvedValue({
-        sessionId: SESSION,
-        organizationId: ORG,
-        createdByUserId: USER,
-        live,
-      });
+    /** What the link's own judgment answers: still open for this holder, or not. */
+    function linkIs(admits: boolean) {
+      vi.mocked(h.lookup.shareLinkAdmits).mockResolvedValue(admits);
     }
 
     async function attachedThrough(ticket: string) {
@@ -1387,6 +1383,7 @@ describe('browser attach socket', () => {
 
       expect((await why).text).toEqual({ type: 'closed', reason: 'unauthorized' });
       await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
+      expect(h.lookup.shareLinkAdmits).toHaveBeenCalledWith(LINK, SESSION, null);
     });
 
     it('closes a terminal open through a link once a re-check finds it revoked', async () => {
@@ -1417,6 +1414,24 @@ describe('browser attach socket', () => {
       expect(h.abilities.forRequest).toHaveBeenCalledWith({
         user: expect.objectContaining({ id: USER }),
         tenant: { organizationId: ORG },
+      });
+    });
+
+    it('asks the link about the signed-in holder as their account is now', async () => {
+      linkIs(true);
+      vi.mocked(h.owners.findActiveOwner).mockImplementation(async (id) =>
+        id === VIEWER
+          ? ({ id, email: 'ada@example.com', emailVerified: true } as never)
+          : ({ id } as never),
+      );
+      await attachedThrough(shareTicket(true, VIEWER));
+
+      // A `people` link's list is matched against this, so an address
+      // changed since mint is judged as the one the account has now.
+      expect(h.lookup.shareLinkAdmits).toHaveBeenCalledWith(LINK, SESSION, {
+        userId: VIEWER,
+        email: 'ada@example.com',
+        emailVerified: true,
       });
     });
 

@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { SessionShareLinkRepositoryPort } from '../database/session-share-link.repository.port';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
+import type { ShareLinkViewer } from '../domain/session-share-link.entity';
 import { SESSION_SHARE_LINK_REPOSITORY, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 import type {
   SessionAttachTarget,
   SessionCredentialTarget,
   SessionLookupPort,
-  SessionShareLinkTarget,
 } from './session-lookup.port';
 
 @Injectable()
@@ -18,16 +18,15 @@ export class SessionLookupResolver implements SessionLookupPort {
     private readonly links: SessionShareLinkRepositoryPort,
   ) {}
 
-  async findShareLinkTarget(linkId: string): Promise<SessionShareLinkTarget | null> {
+  async shareLinkAdmits(
+    linkId: string,
+    sessionId: string,
+    viewer: ShareLinkViewer | null,
+  ): Promise<boolean> {
     const found = await this.links.findOneById(linkId);
-    if (found.isNone()) return null;
+    if (found.isNone()) return false;
     const link = found.unwrap();
-    return {
-      sessionId: link.sessionId,
-      organizationId: link.organizationId,
-      createdByUserId: link.createdByUserId,
-      live: link.isLive(),
-    };
+    return link.sessionId === sessionId && link.refusalFor(viewer) === null;
   }
 
   async findAttachTarget(sessionId: string): Promise<SessionAttachTarget | null> {

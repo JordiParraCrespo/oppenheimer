@@ -4,11 +4,11 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
-import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { OptionalApiAuthGuard } from '../../../auth/guards/optional-api-auth.guard';
+import { CurrentShareViewer } from '../../decorators/current-share-viewer.decorator';
+import type { ShareLinkViewer } from '../../domain/session-share-link.entity';
 import { SharedSessionResponseDto } from '../../dtos/session-share-link.response.dto';
-import { SessionShareLinkMapper } from '../../session-share-link.mapper';
 import { FindSharedSessionQuery } from './find-shared-session.query';
 import { FindSharedSessionRequest } from './find-shared-session.request.dto';
 
@@ -20,10 +20,7 @@ import { FindSharedSessionRequest } from './find-shared-session.request.dto';
 @UseGuards(OptionalApiAuthGuard)
 @Controller('shared-sessions')
 export class FindSharedSessionHttpController {
-  constructor(
-    private readonly queryBus: QueryBus,
-    private readonly mapper: SessionShareLinkMapper,
-  ) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   @Post('lookup')
   @Version('1')
@@ -43,10 +40,8 @@ export class FindSharedSessionHttpController {
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   lookup(
     @Body() body: FindSharedSessionRequest,
-    @CurrentUser() user: unknown,
+    @CurrentShareViewer() viewer: ShareLinkViewer | null,
   ): Promise<SharedSessionResponseDto> {
-    return this.queryBus.execute(
-      new FindSharedSessionQuery({ token: body.token, viewer: this.mapper.toViewer(user) }),
-    );
+    return this.queryBus.execute(new FindSharedSessionQuery({ token: body.token, viewer }));
   }
 }

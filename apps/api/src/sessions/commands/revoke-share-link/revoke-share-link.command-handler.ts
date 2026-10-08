@@ -32,7 +32,7 @@ export class RevokeShareLinkCommandHandler
       throw new AppError(SessionErrors.SHARE_LINK_NOT_FOUND);
     }
     link.revoke();
-    await this.links.save(link);
+    await this.links.saveRevoked(link);
     return link.id;
   }
 }

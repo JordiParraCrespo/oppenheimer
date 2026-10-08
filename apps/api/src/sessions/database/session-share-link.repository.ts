@@ -23,7 +23,8 @@ export class SessionShareLinkRepository implements SessionShareLinkRepositoryPor
     // No domain events, so no outbox: a plain transaction holds the lock.
     return this.repository.manager.transaction(async (manager) => {
       // One mint per session at a time, so two at once cannot both count
-      // the same free slot.
+      // the same free slot. "Live" is `SessionShareLinkEntity.isLive` in SQL:
+      // not revoked, and no expiry or one still ahead.
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
         `session_share_link:${link.sessionId}`,
       ]);
@@ -41,8 +42,8 @@ export class SessionShareLinkRepository implements SessionShareLinkRepositoryPor
     });
   }
 
-  async save(link: SessionShareLinkEntity): Promise<void> {
-    await this.repository.save(this.mapper.toPersistence(link));
+  async saveRevoked(link: SessionShareLinkEntity): Promise<void> {
+    await this.repository.update({ id: link.id }, { revokedAt: link.revokedAt });
   }
 
   async findOneByTokenHash(tokenHash: string): Promise<Option<SessionShareLinkEntity>> {
