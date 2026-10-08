@@ -70,8 +70,14 @@ list() {}
 ```
 
 Use `@AllowAnyScope()` only for routes that expose nothing but the caller's own
-identity or data already served to anonymous callers (currently
-`GET /v1/me/credential` and the `GET /health/capabilities` probe).
+identity, its own work, or data already served to anonymous callers. Each one
+carries its reason in `ANY_SCOPE` in
+`apps/api/src/__tests__/route-scope-coverage.spec.ts`, which is the current list.
+
+Every route's scope requirement is written down in
+`apps/api/src/__tests__/route-scopes.inventory.json` and checked against the
+source both ways: a new route, or a changed `@RequireScopes`, is an inventory
+change in the same diff. A `GET` may not require a write scope.
 
 ## Credential handling
 
