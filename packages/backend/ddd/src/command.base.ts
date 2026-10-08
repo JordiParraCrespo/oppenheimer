@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { ArgumentNotProvidedException } from './exceptions';
-import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface CommandMetadata {
@@ -28,7 +27,10 @@ export class CommandBase {
   readonly metadata: CommandMetadata;
 
   constructor(props: CommandProps<unknown>) {
-    if (Guard.isEmpty(props)) {
+    // Only a missing props object is a mistake. An empty one is a command
+    // with no payload, and `Guard.isEmpty({})` is true, so guarding on it
+    // refused every payload-free command.
+    if (props === undefined || props === null) {
       throw new ArgumentNotProvidedException('Command props should not be empty');
     }
     this.id = props.id ?? randomUUID();

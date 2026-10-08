@@ -22,6 +22,7 @@ export {
   ConflictException,
   type ErrorDefinition,
   ExceptionBase,
+  GenericErrorCode,
   NotFoundException,
 } from './exceptions';
 export { Guard } from './guard';

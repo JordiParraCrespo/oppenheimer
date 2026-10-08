@@ -13,8 +13,9 @@ interface RequestContext {
 export class RequestContextService {
   private static storage = new AsyncLocalStorage<RequestContext>();
 
-  static run(context: RequestContext, fn: () => void) {
-    RequestContextService.storage.run(context, fn);
+  /** Run `fn` with `context` in scope, and return what it returns. */
+  static run<T>(context: RequestContext, fn: () => T): T {
+    return RequestContextService.storage.run(context, fn);
   }
 
   static getCorrelationId(): string | undefined {
