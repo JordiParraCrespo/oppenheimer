@@ -368,5 +368,7 @@ earlier note:
   installed on does not appear in the queue. On 2026-10-08 the owner
   pointed at organisations where it never will be: such a repository's
   PRs now fill the same queue row by a search on the person's own
-  `notifications` token, kept encrypted in the control plane, with their
-  notifications as the wake-up (§6.1). Sessions and note 09 are unchanged.
+  token, opt-in and kept encrypted in the control plane, with their
+  notifications as the wake-up; private repositories take a second,
+  read-only token (§6.1). The App stays the main path; sessions and note
+  09 are unchanged.
