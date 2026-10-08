@@ -30,7 +30,6 @@
     "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/platform-express": "^11.1.28",
     "@nestjs/swagger": "^11.4.6",
-    "@nestjs/terminus": "^11.1.1",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.3",
     "@oppenheimer/auth": "workspace:*",

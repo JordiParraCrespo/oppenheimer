@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmHealthIndicator } from '@nestjs/terminus';
 import { describeError } from '@oppenheimer/backend-core';
+import { DataSource } from 'typeorm';
 import {
   DEPENDENCY_UNAVAILABLE,
   type DependencyStatus,
@@ -10,7 +10,6 @@ import {
 import { DependencyTimeoutError, withDeadline } from '../infrastructure/dependency-deadline.util';
 import { RedisHealthIndicator } from '../infrastructure/redis-health.adapter';
 
-const DATABASE = 'database';
 const up: DependencyStatus = Object.freeze({ status: 'ok' });
 const unavailable: DependencyStatus = Object.freeze({
   status: 'error',
@@ -22,17 +21,18 @@ const unavailable: DependencyStatus = Object.freeze({
  * deadline, checked concurrently, so the probe's worst case is the longer
  * timeout and not their sum.
  *
- * Each check answers rather than throws, and only an explicit `up` is up:
- * Terminus reports a failed ping by *resolving* with `down`, and a result of
- * a shape this code does not recognise is not evidence of a working
- * database. What went wrong is logged; the answer says one word.
+ * Each check answers rather than throws, and only a dependency that answered
+ * inside its deadline is up: PostgreSQL is `SELECT 1` on the application's
+ * own pool (so a pool that cannot hand out a connection is not ready either),
+ * Redis a `PING` on the shared connection. What went wrong is logged; the
+ * answer says one word.
  */
 @Injectable()
 export class ReadinessIndicator {
   private readonly logger = new Logger(ReadinessIndicator.name);
 
   constructor(
-    private readonly database: TypeOrmHealthIndicator,
+    @Inject(DataSource) private readonly dataSource: DataSource,
     private readonly redis: RedisHealthIndicator,
     private readonly configService: ConfigService,
   ) {}
@@ -45,23 +45,12 @@ export class ReadinessIndicator {
   }
 
   private async checkDatabase(): Promise<DependencyStatus> {
-    const timeoutMs = this.databaseTimeoutMs;
     try {
-      // Terminus gets the bound too, so its `down` names the timeout it used;
-      // the outer deadline is what guarantees an answer.
-      const result = await withDeadline('PostgreSQL', timeoutMs, () =>
-        this.database.pingCheck(DATABASE, { timeout: timeoutMs }),
+      if (!this.dataSource.isInitialized) throw new Error('the data source is not initialized');
+      await withDeadline('PostgreSQL', this.databaseTimeoutMs, () =>
+        this.dataSource.query('SELECT 1'),
       );
-      const detail = (
-        result as Record<string, { status?: unknown; message?: unknown }> | undefined
-      )?.[DATABASE];
-      if (detail?.status === 'up') return up;
-      this.logger.error({
-        message: 'Readiness: PostgreSQL is not up',
-        reported: typeof detail?.status === 'string' ? detail.status : 'no result',
-        ...(typeof detail?.message === 'string' ? { detail: detail.message } : {}),
-      });
-      return unavailable;
+      return up;
     } catch (error) {
       return this.failed('PostgreSQL', error);
     }

@@ -1,60 +1,71 @@
 /**
  * Readiness reads each dependency's answer strictly and within its own
- * deadline: anything but an explicit `up` is unavailable, a hung dependency
+ * deadline: PostgreSQL is a `SELECT 1` on the app's pool, a data source that
+ * is not connected is unavailable without a query, a hung dependency
  * cannot hold the probe past its timeout, the checks run side by side, and
  * the answer carries one word while the reason goes to the log. The HTTP
  * status it maps to is `health.probe.controller.spec.ts`.
  */
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { TypeOrmHealthIndicator } from '@nestjs/terminus';
+import type { DataSource } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RedisHealthIndicator } from '../infrastructure/redis-health.adapter';
 import { ReadinessIndicator } from '../probes/readiness.indicator';
 
 const never = () => new Promise<never>(() => {});
 
-function indicator(pingCheck: () => Promise<unknown>, ping: () => Promise<void> = async () => {}) {
-  const database = { pingCheck: vi.fn(pingCheck) } as unknown as TypeOrmHealthIndicator;
+function indicator(
+  query: () => Promise<unknown>,
+  ping: () => Promise<void> = async () => {},
+  isInitialized = true,
+) {
+  const dataSource = { isInitialized, query: vi.fn(query) };
   const redis = { ping: vi.fn(ping) } as unknown as RedisHealthIndicator;
   const config = new ConfigService({ health: { databaseTimeoutMs: 2_000, redisTimeoutMs: 1_000 } });
-  return { readiness: new ReadinessIndicator(database, redis, config), database };
+  return {
+    readiness: new ReadinessIndicator(dataSource as unknown as DataSource, redis, config),
+    dataSource,
+  };
 }
 
-const databaseUp = async () => ({ database: { status: 'up' } });
+const databaseUp = async () => [{ '?column?': 1 }];
 
 describe('readiness', () => {
   const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
   beforeEach(() => error.mockClear());
   afterEach(() => vi.useRealTimers());
 
-  it('is ok only when both dependencies answered up', async () => {
-    const { readiness, database } = indicator(databaseUp);
+  it('is ok only when both dependencies answered', async () => {
+    const { readiness, dataSource } = indicator(databaseUp);
 
     await expect(readiness.check()).resolves.toEqual({
       status: 'ok',
       checks: { database: { status: 'ok' }, redis: { status: 'ok' } },
     });
-    // Terminus is handed the same bound the probe enforces
-    expect(database.pingCheck).toHaveBeenCalledWith('database', { timeout: 2_000 });
+    expect(dataSource.query).toHaveBeenCalledWith('SELECT 1');
     expect(error).not.toHaveBeenCalled();
   });
 
-  it.each([
-    [
-      'a resolved down',
-      async () => ({ database: { status: 'down', message: 'timeout of 2000ms' } }),
-    ],
-    ['a result without the key', async () => ({})],
-    ['no result at all', async () => undefined],
-  ])('treats %s from the database as unavailable', async (_label, pingCheck) => {
-    const { readiness } = indicator(pingCheck);
+  it('treats a failed query as unavailable', async () => {
+    const { readiness } = indicator(async () => {
+      throw new Error('Connection terminated unexpectedly');
+    });
 
     await expect(readiness.check()).resolves.toMatchObject({
       status: 'error',
       checks: { database: { status: 'error', message: 'unavailable' }, redis: { status: 'ok' } },
     });
     expect(error).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats a data source that is not connected as unavailable without querying it', async () => {
+    const { readiness, dataSource } = indicator(databaseUp, async () => {}, false);
+
+    await expect(readiness.check()).resolves.toMatchObject({
+      checks: { database: { status: 'error', message: 'unavailable' } },
+    });
+    expect(dataSource.query).not.toHaveBeenCalled();
   });
 
   it('answers one word for a failure and keeps the driver message for the log', async () => {
