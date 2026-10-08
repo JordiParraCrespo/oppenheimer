@@ -43,6 +43,22 @@
       "Bash(git branch * -D *)",
       "Bash(git push * --delete *)",
       "Bash(git push * :*)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push * master)",
+      "Bash(git push * master *)",
+      "Bash(git push * HEAD:main*)",
+      "Bash(git push * HEAD:master*)",
+      "Bash(git push --all*)",
+      "Bash(git push * --all*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push * --mirror*)",
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .)",
+      "Bash(git add . *)",
+      "Bash(git add .env)",
+      "Bash(git add .env.local)",
       "Edit(~/.bashrc)",
       "Edit(~/.zshrc)",
       "Edit(~/.profile)",
@@ -69,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".agents/hooks/git-guard.sh",
+            "command": "node .agents/hooks/git-guard.mjs",
             "timeout": 10,
             "statusMessage": "Checking the git command..."
           }

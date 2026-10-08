@@ -142,9 +142,14 @@ When you add a file that mentions an optional app (CI, compose,
 - Agent guardrails live in `.claude/settings.json`: it denies force pushes,
   `git reset --hard`, deleting branches, `sudo`, piping a download into a
   shell and reading credential files, asks before `rm -rf` or reading an
-  env file, and runs `.agents/hooks/git-guard.sh` before every shell call,
-  which refuses a push to `main`/`master`, `git add -A`/`--all`/`.`/`*` and
-  staging an env file other than `.env.example`. Stage files by path. The
+  env file, and runs `.agents/hooks/git-guard.mjs` before every shell call,
+  which refuses a push to `main`/`master`, a force push, deleting a remote
+  branch, `git reset --hard`, `git branch -D`, `git add -A`/`--all`/`.`/`*`
+  and staging an env file other than `.env.example`, however the command is
+  spelled (`git -C <dir>`, `-c k=v`, quotes, `--`, chained commands). The
+  settings' glob denies are the same policy where a prefix can say it; the
+  hook is the precise check, and `pnpm check:hooks` runs its cases. Stage
+  files by path. The
   same file formats every edit with Biome and runs the architecture check
   (`.agents/hooks/arch-check.sh`) before a task ends
 
