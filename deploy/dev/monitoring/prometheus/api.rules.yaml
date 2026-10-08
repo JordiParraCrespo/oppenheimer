@@ -1,0 +1,199 @@
+# Prometheus alerting rules for the API.
+#
+# No Prometheus runs on the dev server yet: these rules are the source of
+# truth, loaded by whoever runs the monitoring stack (`rule_files:` in its
+# Prometheus config). Every series the API exports carries `app="api"` from
+# `MetricsModule.forRoot` in `apps/api/src/app.module.ts`; adjust the matcher
+# if the stack relabels it. `apps/api/src/__tests__/monitoring-config.spec.ts`
+# fails when an expression names a metric the API does not export.
+#
+# What the metrics are: apps/docs/docs/deployment/monitoring.md.
+
+groups:
+  - name: api.availability
+    rules:
+      # A metric the API itself exports, not `up`: `up` carries the scrape
+      # job's labels, which live in the stack's config rather than here.
+      - alert: ApiAbsent
+        expr: absent(process_start_time_seconds{app="api"})
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The API has not answered a scrape for 5 minutes"
+          description: >-
+            Either the API is down or the scrape is failing (a wrong
+            METRICS_TOKEN answers 404). Check `oppctl status` and the API log.
+          runbook: "deploy/dev/README.md"
+
+      - alert: ApiRestarting
+        expr: changes(process_start_time_seconds{app="api"}[30m]) > 2
+        labels:
+          severity: warning
+        annotations:
+          summary: "The API restarted {{ $value }} times in 30 minutes"
+          description: >-
+            Liveness checks no dependency, so a restart is a crash or an
+            out-of-memory exit. The API log before each start says which.
+
+  - name: api.http
+    rules:
+      # Ratios are guarded by a minimum rate so a quiet night with one failed
+      # request is not an incident.
+      - alert: ApiServerErrors
+        expr: |
+          (
+            sum(rate(http_requests_total{app="api", status_class="5xx"}[5m]))
+              /
+            sum(rate(http_requests_total{app="api", status_class!="aborted"}[5m]))
+          ) > 0.05
+          and sum(rate(http_requests_total{app="api"}[5m])) > 0.1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of API responses are 5xx"
+          description: >-
+            More than 5 % of answered requests failed on the server for 10
+            minutes. Break it down by `route` on the dashboard; the problem
+            documents' correlation ids lead to the log lines.
+
+      - alert: ApiServerErrorsByRoute
+        expr: |
+          (
+            sum by (route) (rate(http_requests_total{app="api", status_class="5xx"}[15m]))
+              /
+            sum by (route) (rate(http_requests_total{app="api", status_class!="aborted"}[15m]))
+          ) > 0.2
+          and sum by (route) (rate(http_requests_total{app="api"}[15m])) > 0.02
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.route }}: {{ $value | humanizePercentage }} of responses are 5xx"
+
+      # `events` is a server-sent stream, open as long as a tab is: its
+      # "latency" is a session length, not a response time.
+      - alert: ApiSlowResponses
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le, route) (rate(http_request_duration_seconds_bucket{app="api", route!="events"}[5m]))
+          ) > 2
+          and sum by (route) (rate(http_request_duration_seconds_count{app="api", route!="events"}[5m])) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.route }}: p95 latency is {{ $value | humanizeDuration }}"
+          description: >-
+            The 95th percentile has been over 2 s for 15 minutes. Check the
+            database pool (`DB_POOL_MAX`) and statement timeouts first.
+
+      - alert: ApiClientsAborting
+        expr: |
+          (
+            sum(rate(http_requests_total{app="api", status_class="aborted", route!="events"}[15m]))
+              /
+            sum(rate(http_requests_total{app="api", route!="events"}[15m]))
+          ) > 0.1
+          and sum(rate(http_requests_total{app="api", route!="events"}[15m])) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of API requests are abandoned by the client"
+          description: >-
+            Clients are hanging up before the answer: usually responses slow
+            enough that a proxy or a browser gives up first.
+
+  - name: api.process
+    rules:
+      - alert: ApiEventLoopLag
+        expr: nodejs_eventloop_lag_p99_seconds{app="api"} > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The API's event loop p99 lag is {{ $value | humanizeDuration }}"
+          description: >-
+            Something synchronous is holding the loop: every request on the
+            process waits behind it.
+
+      # A heap near its ceiling is an alert, not a liveness failure: the
+      # probe restarting a busy process at its peak is what this replaced.
+      - alert: ApiHeapNearLimit
+        expr: |
+          sum(nodejs_heap_space_size_used_bytes{app="api"})
+            /
+          sum(nodejs_heap_space_size_total_bytes{app="api"}) > 0.9
+          and sum(nodejs_heap_size_used_bytes{app="api"}) > 512 * 1024 * 1024
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The API heap is over 90 % of its size and above 512 MiB"
+
+  - name: api.backlog
+    rules:
+      - alert: OutboxDeliveryStalled
+        expr: outbox_oldest_pending_age_seconds{app="api"} > 300
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The oldest pending outbox row is {{ $value | humanizeDuration }} old"
+          description: >-
+            Side effects the API committed to (events, queued jobs) are not
+            going out. The relay wakes after each commit and polls as a
+            safety net; a row this old means neither is delivering. Check the
+            relay's log lines and Redis.
+
+      - alert: OutboxMessagesFailed
+        expr: outbox_messages{app="api", status="failed"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} outbox rows ran out of attempts"
+          description: >-
+            Failed rows are kept, never purged, with their reason and last
+            error: `SELECT * FROM outbox_message WHERE status = 'failed'`.
+
+      - alert: QueueBacklog
+        expr: queue_jobs{app="api", state="waiting"} > 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.queue }} has had over 100 jobs waiting for 15 minutes"
+
+      - alert: QueueJobsFailing
+        expr: delta(queue_jobs{app="api", state="failed"}[1h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.queue }} has new failed jobs"
+          description: >-
+            A job spent its attempts. Bull Board (`/admin/queues`, when
+            configured) shows the job and its error.
+
+      # The two above say nothing when the gauges stop moving.
+      - alert: BacklogSampleFailing
+        expr: backlog_sample_success{app="api"} == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The {{ $labels.source }} backlog sample keeps failing"
+          description: >-
+            The backlog gauges are stale, so the backlog alerts cannot fire.
+            The API log says why (`Backlog sample failed`).
+
+      - alert: BacklogSampleStale
+        expr: time() - backlog_sample_timestamp_seconds{app="api"} > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The {{ $labels.source }} backlog has not been sampled for 5 minutes"

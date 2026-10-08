@@ -35,6 +35,7 @@ applies them to Oppenheimer.
 | `systemd/` | `oppenheimer-backup@.service` and the three timers that run it, plus a unit that alerts when one fails |
 | `cloud-init.yaml` | First-boot setup: users, Docker, Tailscale, ufw, security updates |
 | `config/*.example` | The server's settings. `oppctl setup` writes the real files to `/srv/oppenheimer/config` |
+| `monitoring/` | The API's Prometheus alert rules and Grafana dashboard, for whoever runs the monitoring stack (none runs here yet) |
 
 ## What it costs and what you need
 

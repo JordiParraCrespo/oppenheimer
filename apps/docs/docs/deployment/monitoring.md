@@ -87,3 +87,16 @@ Every series also carries `app="api"`.
   states `waiting`, `active`, `delayed`, `prioritized` and `failed`;
   `outbox_messages` is what the outbox still owes. A failed sample keeps the
   last values and sets `backlog_sample_success` to 0.
+
+## Alerts and the dashboard
+
+`deploy/dev/monitoring/` holds the Prometheus alert rules
+(`prometheus/api.rules.yaml`) and a Grafana dashboard (`grafana/api.json`),
+kept in the repository as the source of truth and loaded by whoever runs the
+monitoring stack; its README has the scrape config. The rules cover the API
+being absent or restarting, the 5xx ratio overall and by route, p95 latency,
+clients aborting, event-loop lag and heap, an outbox row left undelivered for
+five minutes, failed outbox rows and queue jobs, and the backlog sampler
+itself failing or going stale. A spec in the API fails when a rule or a panel
+names a metric the API does not export.
+
