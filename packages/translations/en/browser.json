@@ -667,7 +667,7 @@
     },
     "share": {
       "title": "Share “{{name}}”",
-      "description": "A link that opens this session’s terminal for someone outside your workspace. It works for as long as you can open the session, until it expires or you revoke it.",
+      "description": "A link that opens this session’s terminal for someone outside your workspace, for as long as you can open it yourself, until it expires or you revoke it. They see everything the terminal shows, secrets and paths included, and revoking doesn’t take back what they have already seen.",
       "access": "They can",
       "read": "Watch",
       "readHint": "See the terminal live. Nothing they type reaches it.",

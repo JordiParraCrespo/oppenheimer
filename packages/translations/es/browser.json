@@ -669,7 +669,7 @@
     },
     "share": {
       "title": "Compartir «{{name}}»",
-      "description": "Un enlace que abre el terminal de esta sesión a alguien de fuera de tu espacio de trabajo. Funciona mientras tú puedas abrir la sesión, hasta que caduque o lo revoques.",
+      "description": "Un enlace que abre el terminal de esta sesión a alguien de fuera de tu espacio de trabajo, mientras tú puedas abrirla, hasta que caduque o lo revoques. Verán todo lo que muestre el terminal, secretos y rutas incluidos, y revocarlo no borra lo que ya hayan visto.",
       "access": "Pueden",
       "read": "Mirar",
       "readHint": "Ver el terminal en directo. Nada de lo que escriban le llega.",

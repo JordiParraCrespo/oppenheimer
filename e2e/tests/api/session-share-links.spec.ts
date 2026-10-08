@@ -21,10 +21,25 @@ import { connectInstallation, createSession, pairHost } from '../../support/sess
  * is that the guards, the schema and the error filter agree with them.
  */
 
+/**
+ * One owner, host and installation for the file: pairing goes through
+ * `POST /hosts/register`, whose rate limit the whole suite shares, so each
+ * test makes a session rather than a host.
+ */
+let owner: Awaited<ReturnType<typeof signedUpContext>>;
+let hostId: string;
+let installationId: string;
+
+// One worker for the file, so `beforeAll` pairs one host, not one per worker.
+test.describe.configure({ mode: 'default' });
+
+test.beforeAll(async () => {
+  owner = await signedUpContext('sharer');
+  hostId = await pairHost(owner.api, 'Shared box');
+  installationId = await connectInstallation(owner.api);
+});
+
 async function sharedSession() {
-  const owner = await signedUpContext('sharer');
-  const hostId = await pairHost(owner.api, 'Shared box');
-  const installationId = await connectInstallation(owner.api);
   const sessionId = await createSession(owner.api, hostId, installationId);
   return { owner, sessionId };
 }

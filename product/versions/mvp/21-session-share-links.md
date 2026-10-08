@@ -62,6 +62,21 @@ like anyone or some user"). This note records what was built and why.
   opening a terminal: sharing one is opening it for somebody else. Listing a
   session's links is `read Session`.
 
+## Compared with OpenClaw
+
+Checked on 2026-10-08 against its docs (docs.openclaw.ai: `plugins/session-share`,
+`concepts/session-attachment`, `cli/attach`, `gateway/security`). OpenClaw has
+no bearer link: a URL only selects a session, and access always needs a paired,
+approved device. Its Session Share plugin is read-only by allowlist, shares
+user and assistant text only (no tool output), is polled rather than live, and
+re-checks sharing on every read; its docs say plainly that revoking does not
+take back what a viewer already read. `openclaw attach` grants are short and
+end with the process. Two things taken from it: the dialog says that a viewer
+sees everything the terminal shows and that revoking does not un-see it, and
+the creator-access rule matches its "an approver never grants more than they
+hold". Left open below: a server-enforced ceiling on lifetime, and a
+transcript-only level under `read`.
+
 ## Where it lives
 
 - Wire: `packages/shared/src/schemas/session-share.schema.ts`, and
@@ -87,5 +102,10 @@ like anyone or some user"). This note records what was built and why.
    next step, with a way to drop one.
 3. **Windows other than the agent's.** A link opens window 0 only, as the
    console's own pane does today.
-4. **Notifying the people named.** A `people` link is shared by hand; an
+4. **A ceiling on lifetime.** A `write` link for `anyone` may be made with
+   no expiry. OpenClaw caps every grant on the server; a cap here (or
+   refusing "never" for that pair) is a product call not yet made.
+5. **A transcript-only level.** Below `read`: the conversation as text,
+   without the terminal, as OpenClaw's Session Share does.
+6. **Notifying the people named.** A `people` link is shared by hand; an
    email to each address is the teams slice's mail.
