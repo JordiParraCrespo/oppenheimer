@@ -173,13 +173,17 @@ The rest are backend (scoped to `apps/api`, `packages/backend`, and—for `rbac-
 
 - `nestjs-di.md` — DI import rules, `import type` restrictions, repository-port DI tokens
 - `nestjs-architecture.md` — DDD vertical slices, CQRS handlers, domain layer, ports/adapters, mappers, errors, events
-- `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions
+- `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions,
+  conditional `UPDATE`s for racing transitions
+- `testing-backend.md` — Vitest tiers (domain, handler, adapter,
+  testcontainers integration, seam, meta), where each spec lives, and the
+  assertion discipline; the value bar is `/test-audit`
 - `database-design.md` — the standard a table is held to: keys, types,
   `timestamptz`, foreign keys and their indexes, access-pattern indexes,
   tenancy, lifecycle, scale and lock-safe migrations. `/design-database`
   walks the process
 - `backend-packages.md` — CJS exports, package structure (pluggable vs library), email template setup
-- `api-config.md` — OAuth graceful handling, controllers, Swagger decorators, rate limiting, versioning
+- `api-config.md` — OAuth graceful handling, settings as an input to the domain, controllers, Swagger decorators, rate limiting, versioning
 
 Errors are **RFC 7807 problem documents** (`application/problem+json`) produced by
 the global `AllExceptionsFilter`; the catalog message is the stable problem
@@ -372,7 +376,13 @@ pnpm changeset          # Create a changeset for versioning
 - Shared types/schemas go in `packages/shared`, not duplicated in apps
 - A test names the behavior it protects and the regression that breaks it,
   lives at the owner boundary, and needs no test-only production seam;
-  auditing existing tests is `.agents/skills/test-audit/`
+  auditing existing tests is `.agents/skills/test-audit/`; how a backend
+  test is written is `.agents/rules/testing-backend.md`
+- Before the commit that finishes a change, run the `/sync-docs` closeout: it
+  decides whether the docs site, an `AGENTS.md`/`ARCHITECTURE.md`, a rule or
+  skill, a `product/` decision note, a changeset or `.env.example` is owed,
+  and applies the minimal edits. `/update-agent-files` is the deeper pass over
+  the agent files alone
 - New env vars go in the root `.env.example` with a note on what they do; never
   add a per-package `.env` (see `.agents/rules/api-config.md`)
 - New API endpoints need Swagger decorators and `@RequireScopes`; without the
