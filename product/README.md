@@ -364,10 +364,3 @@ earlier note:
   what the reader watches and nothing wider; the wider reach returns as
   one search rather than a listing per repository. That note holds the
   rule and what the reach cost (issue #247).
-- Note 09 made the App installation the only way GitHub reaches us, and
-  0.2's §6 said a repository the App is not on does not appear. On
-  2026-10-08 the owner pointed at organisations where the App will never
-  be installed: PR activity there now comes from the person's own
-  notifications, polled with a classic token of theirs, feeding the same
-  events as the webhooks. Sessions keep note 09's boundary
-  (`next-steps/0.2-pull-requests.md` §6.1, note 09 §6).

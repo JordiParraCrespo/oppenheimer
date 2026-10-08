@@ -108,18 +108,6 @@ scoping are identical either way.
 
 All of it lands in step 4 of the MVP order in note 07.
 
-## 6. Where the App will never be installed (2026-10-08)
-
-Installing the App needs an admin of the account it goes on. In an
-organisation where you are only a member, it will not be installed, and
-that is fine for sessions: §2's boundary stands, and on a host you own
-git falls back to the host's own credentials for a repository no
-installation covers. What is lost is the App's webhooks, so PR activity
-from those repositories comes from your own notifications instead,
-polled with a token of yours.
-[`next-steps/0.2-pull-requests.md`](next-steps/0.2-pull-requests.md) §6.1
-holds that design.
-
 ## Sources
 
 - GitHub App installation flow and "All / Only select repositories":
