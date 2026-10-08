@@ -77,7 +77,10 @@ carries its reason in `ANY_SCOPE` in
 Every route's scope requirement is written down in
 `apps/api/src/__tests__/route-scopes.inventory.json` and checked against the
 source both ways: a new route, or a changed `@RequireScopes`, is an inventory
-change in the same diff. A `GET` may not require a write scope.
+change in the same diff. A `GET` may not require a write scope. The scan
+(`route-scopes.ts`) fails closed: keep route paths, scopes and `@Version` as
+string literals and one controller class per `*.controller.ts` file, or the
+spec refuses to guess.
 
 ## Credential handling
 

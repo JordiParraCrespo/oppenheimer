@@ -1,6 +1,9 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { PERMISSION_GROUPS } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { declaredRoutes, type ScopeDeclaration } from './route-scopes';
+import { type ScopeDeclaration, scanRoutes } from './route-scopes';
 import inventory from './route-scopes.inventory.json';
 
 /**
@@ -14,10 +17,12 @@ import inventory from './route-scopes.inventory.json';
  * new route arrives without one. So the whole map is written down in
  * `route-scopes.inventory.json` and checked against the source both ways; a
  * change to it is a change a reviewer sees. The textual scan is
- * `route-scopes.ts`; `ScopesGuard`'s behaviour is its own spec.
+ * `route-scopes.ts`, and it fails closed: a declaration it cannot read for
+ * certain fails this spec instead of being counted as `session-only`.
+ * `ScopesGuard`'s behaviour is its own spec.
  */
 
-const routes = declaredRoutes();
+const { routes, unreadable } = scanRoutes();
 const declared = Object.fromEntries(routes.map((route) => [route.route, route.scopes]));
 const expected = inventory as Record<string, ScopeDeclaration>;
 const catalog = new Set(
@@ -54,6 +59,10 @@ describe('route scope coverage', () => {
   it('finds the routes to check', () => {
     // A scan that silently matched nothing would pass every assertion below.
     expect(routes.length).toBeGreaterThan(150);
+  });
+
+  it('reads every route declaration for certain', () => {
+    expect(unreadable).toEqual([]);
   });
 
   it('declares each route once', () => {
@@ -109,5 +118,80 @@ describe('route scope coverage', () => {
       )
       .map((route) => route.route);
     expect(overAsked).toEqual([]);
+  });
+});
+
+describe('the route scan', () => {
+  /** Scan one fixture controller (and the files beside it) in a directory of its own. */
+  function scan(files: Record<string, string>) {
+    const directory = mkdtempSync(join(tmpdir(), 'route-scan-'));
+    try {
+      for (const [name, body] of Object.entries(files)) {
+        mkdirSync(join(directory, name, '..'), { recursive: true });
+        writeFileSync(join(directory, name), body);
+      }
+      return scanRoutes(directory);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }
+
+  const controller = (body: string, prelude = "@Controller('things')") =>
+    `${prelude}\nexport class ThingsHttpController {\n${body}\n}\n`;
+
+  it('reads a decorator whose arguments span lines, and a class version', () => {
+    const { routes, unreadable } = scan({
+      'things.http.controller.ts': controller(
+        [
+          "  @Post(':id')",
+          '  @RequireScopes(',
+          "    'things:write',",
+          "    'things:read',",
+          '  )',
+          "  // @Get('commented-out') is not a route",
+          '  update() {}',
+        ].join('\n'),
+        "@Controller('things')\n@Version('2')",
+      ),
+    });
+
+    expect(unreadable).toEqual([]);
+    expect(routes.map((route) => [route.route, route.scopes])).toEqual([
+      ['POST /v2/things/:id', ['things:write', 'things:read']],
+    ]);
+  });
+
+  it.each([
+    ['a template-literal path', `  @Get(\`\${PREFIX}/x\`)\n  find() {}`, 'is not literal'],
+    [
+      'a scope held in a constant',
+      '  @Get()\n  @RequireScopes(SCOPE)\n  find() {}',
+      'is not literal',
+    ],
+    ['a version held in a constant', '  @Get()\n  @Version(V)\n  find() {}', 'is not literal'],
+    [
+      'a route decorator it cannot pin to a method',
+      '  @Get()\n  get thing() { return 1; }',
+      'read on a method',
+    ],
+  ])('fails closed on %s instead of calling it session-only', (_case, body, reason) => {
+    const { routes, unreadable } = scan({ 'things.http.controller.ts': controller(body) });
+
+    expect(routes.filter((route) => route.scopes === 'session-only')).toEqual([]);
+    expect(unreadable).toEqual([expect.stringContaining(reason)]);
+  });
+
+  it('fails closed on a second class in a controller file', () => {
+    const { unreadable } = scan({
+      'things.http.controller.ts': `${controller('  @Get()\n  find() {}')}export class Other {}\n`,
+    });
+
+    expect(unreadable).toEqual([expect.stringContaining('2 classes')]);
+  });
+
+  it('fails closed on a controller in a file it would not otherwise open', () => {
+    const { unreadable } = scan({ 'things.ts': controller('  @Get()\n  find() {}') });
+
+    expect(unreadable).toEqual([expect.stringContaining('outside a *.controller.ts file')]);
   });
 });
