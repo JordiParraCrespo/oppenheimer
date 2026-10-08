@@ -145,9 +145,7 @@ describe('Redis (integration)', () => {
   });
 
   it('reports Redis healthy through the shared client', async () => {
-    await expect(app.get(RedisHealthIndicator).isHealthy('redis')).resolves.toEqual({
-      redis: { status: 'up' },
-    });
+    await expect(app.get(RedisHealthIndicator).ping()).resolves.toBeUndefined();
   });
 
   it('closes the shared client with the app', async () => {

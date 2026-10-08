@@ -6,6 +6,27 @@ sidebar_position: 2
 
 What the API tells an operator about itself, and how to read it.
 
+## Probes
+
+| Probe             | Checks                                   | Answers                          |
+| ----------------- | ---------------------------------------- | -------------------------------- |
+| `GET /api/v1/health` | nothing: the process answered HTTP    | always `200 {"status":"ok"}`     |
+| `GET /api/v1/ready`  | PostgreSQL and Redis, side by side    | `200` when both are `ok`, else `503` |
+
+- **Liveness checks no dependency.** It is what a container restart acts on,
+  and a restart fixes nothing about a database outage. It checks no heap
+  threshold either: a fixed number restarts a busy process at its peak, and a
+  process that really runs out of memory is ended by V8 anyway. The heap is
+  a metric (`nodejs_heap_size_used_bytes`) and an alert, not a probe.
+- **Readiness has a deadline per dependency** (`HEALTH_DATABASE_TIMEOUT_MS`,
+  2 s, and `HEALTH_REDIS_TIMEOUT_MS`, 1 s), enforced by the probe rather than
+  the driver, so its worst case is the longer of the two. Only an explicit
+  answer of "up" counts as up.
+- **The body is a fixed vocabulary.** Each check is `{"status":"ok"}` or
+  `{"status":"error","message":"unavailable"}`; whether it timed out or what
+  the driver said is in the API log (`Readiness: PostgreSQL timed out`), never
+  in a public response.
+
 ## Metrics
 
 The API exports Prometheus metrics at `GET /api/v1/metrics`. The endpoint is
