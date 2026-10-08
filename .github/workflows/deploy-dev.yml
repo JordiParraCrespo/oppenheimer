@@ -114,8 +114,20 @@ jobs:
             --advertise-tags=tag:ci --hostname="ci-deploy-dev-${GITHUB_RUN_ID}"
           echo "TS=$ts/tailscale --socket=$ts/tailscaled.sock" >> "$GITHUB_ENV"
           # Fail here, not in the deploy, if the ACL does not let tag:ci in.
-          timeout 30 "$ts/tailscale" --socket="$ts/tailscaled.sock" nc "$DEV_SSH_HOST" 22 </dev/null | head -c 64 | grep -q '^SSH-' \
-            || { cat "$ts/tailscaled.log" | tail -20; echo "::error::$DEV_SSH_HOST:22 is not reachable as tag:ci"; exit 1; }
+          # `tailscale nc` closes the connection when its stdin ends, so hold
+          # stdin open long enough for the server's SSH banner to arrive; and
+          # retry, since the first WireGuard handshake can still be under way.
+          for _ in 1 2 3 4 5; do
+            if (sleep 5) | timeout 10 "$ts/tailscale" --socket="$ts/tailscaled.sock" nc "$DEV_SSH_HOST" 22 \
+                | head -c 64 | grep -q '^SSH-'; then
+              echo "$DEV_SSH_HOST:22 answers over the tailnet as tag:ci"
+              exit 0
+            fi
+            sleep 3
+          done
+          tail -20 "$ts/tailscaled.log"
+          echo "::error::$DEV_SSH_HOST:22 is not reachable as tag:ci"
+          exit 1
 
       - name: SSH key and pinned host key
         env:
