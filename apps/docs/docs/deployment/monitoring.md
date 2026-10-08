@@ -57,6 +57,10 @@ endpoint closed on a public origin.
 | ------------------------------------------- | --------- | ----------------------- |
 | `http_requests_total`                       | counter   | `route`, `status_class` |
 | `http_request_duration_seconds`             | histogram | `route`                 |
+| `queue_jobs`                                | gauge     | `queue`, `state`        |
+| `outbox_messages`                           | gauge     | `status` (`pending`, `failed`) |
+| `outbox_oldest_pending_age_seconds`         | gauge     | —                       |
+| `backlog_sample_success`, `backlog_sample_timestamp_seconds` | gauge | `source` (`queues`, `outbox`) |
 | `process_*`, `nodejs_*`                     | various   | —                       |
 
 Every series also carries `app="api"`.
@@ -77,3 +81,9 @@ Every series also carries `app="api"`.
   itself; and the routes mounted before Nest's middleware, Better Auth's
   `/api/auth/*` and Bull Board's `/admin/queues`, which record as nothing
   rather than as `other`.
+- **The backlog gauges are sampled**, every `METRICS_SAMPLE_INTERVAL_MS`
+  (15 s) and only while `METRICS_TOKEN` is set, not at scrape time, so a slow
+  database cannot stall a scrape. `queue_jobs` is every BullMQ queue in the
+  states `waiting`, `active`, `delayed`, `prioritized` and `failed`;
+  `outbox_messages` is what the outbox still owes. A failed sample keeps the
+  last values and sets `backlog_sample_success` to 0.

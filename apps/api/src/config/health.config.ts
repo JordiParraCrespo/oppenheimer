@@ -24,6 +24,8 @@ const timeoutMs = (fallback: number) =>
 const schema = z.object({
   databaseTimeoutMs: timeoutMs(2_000),
   redisTimeoutMs: timeoutMs(1_000),
+  /** How often the backlog gauges (queues, outbox) are re-read while metrics are on. */
+  metricsSampleIntervalMs: z.coerce.number().int().min(1_000).max(300_000).default(15_000),
   metricsToken: z.string().min(32, 'must be at least 32 characters').optional(),
 });
 
@@ -33,6 +35,7 @@ export const healthConfig = registerAs('health', () =>
   parseEnv('health', schema, {
     databaseTimeoutMs: 'HEALTH_DATABASE_TIMEOUT_MS',
     redisTimeoutMs: 'HEALTH_REDIS_TIMEOUT_MS',
+    metricsSampleIntervalMs: 'METRICS_SAMPLE_INTERVAL_MS',
     metricsToken: 'METRICS_TOKEN',
   }),
 );
