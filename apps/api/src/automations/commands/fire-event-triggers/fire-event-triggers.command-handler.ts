@@ -93,6 +93,7 @@ export class FireEventTriggersCommandHandler
             ? AutomationRunEntity.skipped(props, verdict.reason, now)
             : AutomationRunEntity.fire(props, now);
         },
+        command.metadata.correlationId,
       );
       if (inserted && run.isPending) queued += 1;
     }

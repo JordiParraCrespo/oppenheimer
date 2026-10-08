@@ -1,6 +1,5 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import type { DomainEvent } from '../domain-event.base';
-import { RequestContextService } from '../request-context.service';
 import {
   OUTBOX_TABLE,
   type OutboxChannel,
@@ -27,8 +26,15 @@ export interface StageJobParams {
   /** Why this job is owed — recorded on the row so it is self-explaining. */
   reason: string;
   aggregateId?: string;
-  /** Defaults to the request context's correlation id, so a job stays traceable to the request that owed it. */
-  correlationId?: string;
+  /**
+   * The correlation id of what owes the job, passed by the caller the way an
+   * event carries `metadata.correlationId`: a command's
+   * `metadata.correlationId`, or the event's when a handler stages it. `null`
+   * for work nothing traceable caused (a sweep re-staging lost jobs). Never
+   * read from ambient context here, so a job staged outside a request cannot
+   * pick up whatever scope happens to be open.
+   */
+  correlationId: string | null;
   /** Earliest delivery time; defaults to now. */
   availableAt?: Date;
 }
@@ -198,7 +204,7 @@ export class OutboxService {
       aggregateId: params.aggregateId ?? null,
       payload: params.payload,
       reason: params.reason,
-      correlationId: params.correlationId ?? RequestContextService.getCorrelationId() ?? null,
+      correlationId: params.correlationId,
       availableAt: params.availableAt,
     });
     // Same `QueryDeepPartialEntity` cast as `stageEvents`.

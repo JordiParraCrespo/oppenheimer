@@ -58,6 +58,7 @@ function command(actorIsOwnApp = false) {
     externalId: 'delivery-1',
     actorIsOwnApp,
     attributes: { baseBranch: 'main' },
+    metadata: { correlationId: 'delivery-corr' },
   });
 }
 
@@ -120,6 +121,8 @@ describe('FireEventTriggersCommandHandler', () => {
         expect(call[0]).toBe('org-1');
         expect(call[1]).toBe(candidates[index].automation.id);
         expect(call[2].toISOString()).toBe('2026-09-27T09:00:00.000Z');
+        // The dispatch it stages stays traceable to the delivery's correlation id.
+        expect(call[4]).toBe('delivery-corr');
       }
     } finally {
       vi.useRealTimers();

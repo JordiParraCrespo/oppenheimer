@@ -15,7 +15,15 @@ export interface CommandMetadata {
   readonly timestamp: number;
 }
 
-export type CommandProps<T> = Omit<T, 'id' | 'metadata'> & Partial<CommandBase>;
+/**
+ * A command's own fields, plus an optional id and the metadata a caller wants
+ * to carry over (a handler passes its event's `correlationId`); the rest of
+ * the metadata is filled in, as for a domain event.
+ */
+export type CommandProps<T> = Omit<T, 'id' | 'metadata'> & {
+  id?: string;
+  metadata?: Partial<CommandMetadata>;
+};
 
 /**
  * Base class for commands. A command is a state-changing intention dispatched

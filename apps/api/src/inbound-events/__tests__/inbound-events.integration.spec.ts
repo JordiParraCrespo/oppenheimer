@@ -72,6 +72,7 @@ describe('inbound events store (integration)', () => {
       eventName: 'issues',
       payload: { action },
       payloadDigest,
+      correlationId: `corr-${deliveryId}`,
     };
   }
 

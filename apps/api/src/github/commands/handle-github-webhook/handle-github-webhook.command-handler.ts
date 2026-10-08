@@ -91,6 +91,7 @@ export class HandleGithubWebhookCommandHandler
         eventName: command.event,
         payload: body,
         payloadDigest: payloadDigest(command.payload),
+        metadata: { correlationId: command.metadata.correlationId },
       }),
     );
   }

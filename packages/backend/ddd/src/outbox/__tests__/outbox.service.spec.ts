@@ -73,6 +73,7 @@ describe('OutboxService', () => {
         jobName: 'send-verification',
         payload: { to: 'a@b.c' },
         reason: 'User signed up; a verification email is owed',
+        correlationId: 'req-7',
       });
 
       expect(insert.mock.calls[0][0]).toMatchObject({
@@ -86,18 +87,17 @@ describe('OutboxService', () => {
   });
 
   describe('stageJob correlation', () => {
-    it("records the request's correlation id unless the caller passes one", async () => {
+    it('records the correlation id the caller passes and ignores an open request scope', async () => {
       const insert = vi.fn().mockResolvedValue(undefined);
       const service = new OutboxService({} as DataSource);
       const job = { queue: 'email', jobName: 'send', payload: {}, reason: 'owed' };
 
       await RequestContextService.run({ correlationId: 'req-1' }, async () => {
-        await service.stageJob(managerWith(insert), job);
         await service.stageJob(managerWith(insert), { ...job, correlationId: 'given' });
+        await service.stageJob(managerWith(insert), { ...job, correlationId: null });
       });
-      await service.stageJob(managerWith(insert), job);
 
-      expect(insert.mock.calls.map(([row]) => row.correlationId)).toEqual(['req-1', 'given', null]);
+      expect(insert.mock.calls.map(([row]) => row.correlationId)).toEqual(['given', null]);
     });
   });
 
@@ -207,6 +207,7 @@ describe('OutboxService', () => {
       jobName: 'send',
       payload: {},
       reason: 'a test owes a job',
+      correlationId: null,
     };
 
     it('wakes once, after the commit, when events were staged', async () => {

@@ -173,6 +173,7 @@ export class AutomationRepository
       scheduledFor: Date,
       context: FiringContext,
     ) => DueScheduleDecision,
+    correlationId: string,
   ): Promise<AutomationRunEntity[]> {
     // Every statement of the tick runs on this transaction's connection: it
     // borrows no other from the pool while it holds the claim, and its counts
@@ -229,7 +230,13 @@ export class AutomationRepository
             : { run: null, nextFireAt: null };
         if (
           decision.run &&
-          (await insertRunWithin(manager, this.outbox, this.runMapper, decision.run)) &&
+          (await insertRunWithin(
+            manager,
+            this.outbox,
+            this.runMapper,
+            decision.run,
+            correlationId,
+          )) &&
           decision.run.isPending
         ) {
           // A queued run counts against the caps for the rest of the batch.

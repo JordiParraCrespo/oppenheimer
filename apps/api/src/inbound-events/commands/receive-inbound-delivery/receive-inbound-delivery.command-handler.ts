@@ -46,6 +46,7 @@ export class ReceiveInboundDeliveryCommandHandler
       eventName: command.eventName,
       payload: command.payload,
       payloadDigest: command.payloadDigest,
+      correlationId: command.metadata.correlationId,
     });
     return stored ? 'stored' : 'duplicate';
   }

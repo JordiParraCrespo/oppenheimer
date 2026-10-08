@@ -170,6 +170,7 @@ describe('AutomationRepository.fireDueSchedules', () => {
         );
         return { run, nextFireAt: null };
       },
+      'tick-1',
     );
 
     expect(locks).toEqual(['for_no_key_update', 'skip_locked']);
@@ -185,11 +186,19 @@ describe('AutomationRepository.fireDueSchedules', () => {
     expect(queued.map((run) => run.automationId)).toEqual(automations.map((a) => a.id));
     expect(outbox.transaction).toHaveBeenCalledTimes(1);
     expect(outbox.stageJob).toHaveBeenCalledTimes(2);
+    // Each dispatch carries the tick's correlation id, passed in, not read ambiently.
+    for (const [, job] of outbox.stageJob.mock.calls) expect(job.correlationId).toBe('tick-1');
   });
 
   it('takes the firing locks before it counts', async () => {
     const { repository, statements } = harness();
-    await repository.fireDueSchedules(now, 200, since, () => ({ run: null, nextFireAt: null }));
+    await repository.fireDueSchedules(
+      now,
+      200,
+      since,
+      () => ({ run: null, nextFireAt: null }),
+      'corr-1',
+    );
     const lock = statements.findIndex((sql) => sql.includes('pg_advisory_xact_lock'));
     const count = statements.findIndex((sql) => sql.includes('GROUPING SETS'));
     expect(lock).toBeGreaterThanOrEqual(0);
