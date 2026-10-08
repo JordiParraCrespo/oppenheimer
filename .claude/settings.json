@@ -1,5 +1,81 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "ask": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.*.local)",
+      "Read(.env.production)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.production)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)"
+    ],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(mkfs *)",
+      "Bash(dd *)",
+      "Bash(chmod 777 *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(chown *)",
+      "Bash(wget *|bash*)",
+      "Bash(wget *| bash*)",
+      "Bash(wget *|sh*)",
+      "Bash(wget *| sh*)",
+      "Bash(curl *|bash*)",
+      "Bash(curl *| bash*)",
+      "Bash(curl *|sh*)",
+      "Bash(curl *| sh*)",
+      "Bash(git push --force *)",
+      "Bash(git push --force-with-lease *)",
+      "Bash(git push * --force)",
+      "Bash(git push * --force *)",
+      "Bash(git push * --force-with-lease)",
+      "Bash(git push * --force-with-lease *)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git branch -D *)",
+      "Bash(git branch * -D)",
+      "Bash(git branch * -D *)",
+      "Bash(git push * --delete *)",
+      "Bash(git push * :*)",
+      "Edit(~/.bashrc)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.profile)",
+      "Edit(~/.bash_profile)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.git-credentials)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.kube/**)",
+      "Read(~/.npmrc)",
+      "Read(~/.pypirc)",
+      "Read(~/Library/Keychains/**)"
+    ]
+  },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/git-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking the git command..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

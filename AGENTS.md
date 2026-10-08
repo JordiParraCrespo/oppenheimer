@@ -139,6 +139,14 @@ When you add a file that mentions an optional app (CI, compose,
   `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
   a new root-level file every package relies on is a pattern in its
   `GLOBAL_PATHS`
+- Agent guardrails live in `.claude/settings.json`: it denies force pushes,
+  `git reset --hard`, deleting branches, `sudo`, piping a download into a
+  shell and reading credential files, asks before `rm -rf` or reading an
+  env file, and runs `.agents/hooks/git-guard.sh` before every shell call,
+  which refuses a push to `main`/`master`, `git add -A`/`--all`/`.`/`*` and
+  staging an env file other than `.env.example`. Stage files by path. The
+  same file formats every edit with Biome and runs the architecture check
+  (`.agents/hooks/arch-check.sh`) before a task ends
 
 ### Backend (`apps/api` + `packages/backend/*`)
 
