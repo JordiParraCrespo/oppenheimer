@@ -4,7 +4,11 @@ import { usePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type PendingNote, pendingByPath } from '../lib/review-draft';
 import { ChangesFile } from './changes-file';
+
+/** One array for every file with nothing pending, so adding a comment leaves those files alone. */
+const NO_PENDING: readonly PendingNote[] = [];
 
 /**
  * Changes: every file's diff, unified or split as the bar says, edge to edge
@@ -28,6 +32,7 @@ export function PullRequestChanges({
   const { t } = useTranslation();
   const files = usePullRequestFiles(address);
   const [selected, setSelected] = useState<string | undefined>(undefined);
+  const pendingOn = pendingByPath(pending);
 
   return (
     <QueryState
@@ -50,7 +55,7 @@ export function PullRequestChanges({
                 address={address}
                 file={file}
                 layout={layout}
-                pending={pending}
+                pending={pendingOn.get(file.path) ?? NO_PENDING}
                 onAddPending={onAddPending}
                 onDiscardPending={onDiscardPending}
               />
