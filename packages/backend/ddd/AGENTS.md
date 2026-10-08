@@ -18,7 +18,7 @@ src/
 ├── command.base.ts             # CQRS command base
 ├── query.base.ts               # CQRS query base
 ├── repository.port.ts          # repository port interface (insert/save/findOneById/delete), Paginated
-├── typeorm-repository.base.ts  # non-tenant TypeORM adapter base: the port's four methods over writeWithEvents
+├── typeorm-repository.base.ts  # non-tenant TypeORM adapter base: the port's four methods over writeWithEvents, saveIf (conditional write)
 ├── mapper.interface.ts         # domain <-> persistence mapper contract
 ├── outbox/
 │   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message), TIMESTAMP_COLUMN_TYPE

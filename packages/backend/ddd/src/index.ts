@@ -50,7 +50,7 @@ export {
 export { QueryBase } from './query.base';
 export { Paginated, type RepositoryPort } from './repository.port';
 export { RequestContextService } from './request-context.service';
-export { TypeOrmRepositoryBase } from './typeorm-repository.base';
+export { type PersistenceTracked, TypeOrmRepositoryBase } from './typeorm-repository.base';
 export { convertPropsToObject } from './utils';
 export {
   type DomainPrimitive,

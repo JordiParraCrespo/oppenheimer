@@ -7,9 +7,24 @@ import { TypeOrmRepositoryBase } from '../typeorm-repository.base';
 
 class ThingRenamedDomainEvent extends DomainEvent {}
 
-class Thing extends AggregateRoot<{ name: string }> {
+class Thing extends AggregateRoot<{ name: string; status: string }> {
+  private _statusAtLoad = this.props.status;
+
   get name(): string {
     return this.props.name;
+  }
+
+  get statusAtLoad(): string {
+    return this._statusAtLoad;
+  }
+
+  close(): void {
+    this.props.status = 'closed';
+    this.addEvent(new ThingRenamedDomainEvent({ aggregateId: this.id }));
+  }
+
+  markPersisted(): void {
+    this._statusAtLoad = this.props.status;
   }
 
   rename(name: string): void {
@@ -23,15 +38,26 @@ class Thing extends AggregateRoot<{ name: string }> {
 interface ThingRecord {
   id: string;
   name: string;
+  status: string;
 }
 
 class ThingTarget {}
 
 class ThingRepository extends TypeOrmRepositoryBase<Thing, ThingRecord> {
   protected readonly mapper = {
-    toPersistence: (thing: Thing): ThingRecord => ({ id: thing.id, name: thing.name }),
-    toDomain: (record: ThingRecord) => new Thing({ id: record.id, props: { name: record.name } }),
+    toPersistence: (thing: Thing): ThingRecord => ({
+      id: thing.id,
+      name: thing.name,
+      status: thing.getProps().status,
+    }),
+    toDomain: (record: ThingRecord) =>
+      new Thing({ id: record.id, props: { name: record.name, status: record.status } }),
   };
+
+  /** The port method a conditional write sits behind. */
+  close(thing: Thing): Promise<boolean> {
+    return this.saveIf(thing, { status: thing.statusAtLoad });
+  }
 
   constructor(
     protected readonly repository: Repository<ThingRecord>,
@@ -47,11 +73,12 @@ class ThingRepository extends TypeOrmRepositoryBase<Thing, ThingRecord> {
  * rows land in `outboxInsert`, so a write can be shown to map, stage and
  * commit through one manager.
  */
-function harness(overrides: Partial<Record<'findOneBy' | 'delete', unknown>> = {}) {
+function harness(overrides: Partial<Record<'findOneBy' | 'delete' | 'update', unknown>> = {}) {
   const orm = {
     insert: vi.fn().mockResolvedValue({}),
     save: vi.fn(async (record: ThingRecord) => record),
     delete: vi.fn().mockResolvedValue({ affected: 1 }),
+    update: vi.fn().mockResolvedValue({ affected: 1 }),
     findOneBy: vi.fn().mockResolvedValue(null),
     ...overrides,
   };
@@ -72,7 +99,7 @@ function harness(overrides: Partial<Record<'findOneBy' | 'delete', unknown>> = {
   return { repository, orm, outboxInsert, transaction, drainer };
 }
 
-const thing = (id = 'thing-1') => new Thing({ id, props: { name: 'before' } });
+const thing = (id = 'thing-1') => new Thing({ id, props: { name: 'before', status: 'open' } });
 
 describe('TypeOrmRepositoryBase', () => {
   it('insert maps every aggregate and stages their events in the same transaction', async () => {
@@ -85,8 +112,8 @@ describe('TypeOrmRepositoryBase', () => {
 
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(orm.insert).toHaveBeenCalledWith([
-      { id: 'thing-1', name: 'after' },
-      { id: 'thing-2', name: 'before' },
+      { id: 'thing-1', name: 'after', status: 'open' },
+      { id: 'thing-2', name: 'before', status: 'open' },
     ]);
     expect(outboxInsert).toHaveBeenCalledTimes(1);
     expect(one.domainEvents).toHaveLength(0);
@@ -99,7 +126,7 @@ describe('TypeOrmRepositoryBase', () => {
     const saved = await repository.save(thing());
 
     expect(transaction).not.toHaveBeenCalled();
-    expect(orm.save).toHaveBeenCalledWith({ id: 'thing-1', name: 'before' });
+    expect(orm.save).toHaveBeenCalledWith({ id: 'thing-1', name: 'before', status: 'open' });
     expect(saved).toBeInstanceOf(Thing);
     expect(saved.name).toBe('before');
     expect(drainer).not.toHaveBeenCalled();
@@ -125,5 +152,50 @@ describe('TypeOrmRepositoryBase', () => {
 
     await expect(repository.delete(thing())).resolves.toBe(expected);
     expect(orm.delete).toHaveBeenCalledWith({ id: 'thing-1' });
+  });
+
+  describe('saveIf, the conditional write', () => {
+    it('updates only the row still in the loaded state, stages the events with it, and marks it persisted', async () => {
+      const { repository, orm, outboxInsert, transaction, drainer } = harness();
+      const t = thing();
+      t.close();
+
+      await expect(repository.close(t)).resolves.toBe(true);
+
+      expect(transaction).toHaveBeenCalledTimes(1);
+      expect(orm.update).toHaveBeenCalledWith(
+        { status: 'open', id: 'thing-1' },
+        { name: 'before', status: 'closed' },
+      );
+      expect(outboxInsert).toHaveBeenCalledTimes(1);
+      expect(t.domainEvents).toHaveLength(0);
+      // A second write in the same attempt is conditioned on what this one stored.
+      expect(t.statusAtLoad).toBe('closed');
+      expect(drainer).toHaveBeenCalledTimes(1);
+    });
+
+    it('answers false on a lost race and stages nothing for the change that did not happen', async () => {
+      const { repository, outboxInsert, drainer } = harness({
+        update: vi.fn().mockResolvedValue({ affected: 0 }),
+      });
+      const t = thing();
+      t.close();
+
+      await expect(repository.close(t)).resolves.toBe(false);
+
+      expect(outboxInsert).not.toHaveBeenCalled();
+      expect(drainer).not.toHaveBeenCalled();
+      expect(t.domainEvents).toHaveLength(1);
+      expect(t.statusAtLoad).toBe('open');
+    });
+
+    it('needs no transaction when nothing is owed, and still reports the race', async () => {
+      const won = harness();
+      await expect(won.repository.close(thing())).resolves.toBe(true);
+      expect(won.transaction).not.toHaveBeenCalled();
+
+      const lost = harness({ update: vi.fn().mockResolvedValue({ affected: 0 }) });
+      await expect(lost.repository.close(thing())).resolves.toBe(false);
+    });
   });
 });
