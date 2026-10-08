@@ -2,7 +2,7 @@ import { AppError } from '@oppenheimer/frontend-core';
 import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
 
 /** The emails in what someone typed: split on commas, spaces and lines. */
-export function peopleOf(text: string): string[] {
+function peopleOf(text: string): string[] {
   return text
     .split(/[\s,;]+/)
     .map((email) => email.trim().toLowerCase())
