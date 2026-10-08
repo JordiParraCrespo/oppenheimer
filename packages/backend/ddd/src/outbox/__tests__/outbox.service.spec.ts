@@ -1,6 +1,7 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
 import { DomainEvent, type DomainEventProps } from '../../domain-event.base';
+import { RequestContextService } from '../../request-context.service';
 import { OutboxService } from '../outbox.service';
 
 class ThingDeletedDomainEvent extends DomainEvent {
@@ -81,6 +82,36 @@ describe('OutboxService', () => {
         payload: { to: 'a@b.c' },
         reason: 'User signed up; a verification email is owed',
       });
+    });
+  });
+
+  describe('stageJob correlation', () => {
+    it("records the request's correlation id unless the caller passes one", async () => {
+      const insert = vi.fn().mockResolvedValue(undefined);
+      const service = new OutboxService({} as DataSource);
+      const job = { queue: 'email', jobName: 'send', payload: {}, reason: 'owed' };
+
+      await RequestContextService.run({ correlationId: 'req-1' }, async () => {
+        await service.stageJob(managerWith(insert), job);
+        await service.stageJob(managerWith(insert), { ...job, correlationId: 'given' });
+      });
+      await service.stageJob(managerWith(insert), job);
+
+      expect(insert.mock.calls.map(([row]) => row.correlationId)).toEqual(['req-1', 'given', null]);
+    });
+  });
+
+  describe('countFailed', () => {
+    it('reads the count of parked rows, and 0 from an empty answer', async () => {
+      const query = vi
+        .fn()
+        .mockResolvedValueOnce([{ count: 3 }])
+        .mockResolvedValueOnce([]);
+      const service = new OutboxService({ query } as unknown as DataSource);
+
+      await expect(service.countFailed()).resolves.toBe(3);
+      await expect(service.countFailed()).resolves.toBe(0);
+      expect(query.mock.calls[0][0]).toContain(`"status" = 'failed'`);
     });
   });
 

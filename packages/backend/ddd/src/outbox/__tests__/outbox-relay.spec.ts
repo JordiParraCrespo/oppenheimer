@@ -66,6 +66,30 @@ describe('OutboxRelay', () => {
     expect(outbox.markFailed).not.toHaveBeenCalled();
   });
 
+  it('publishes the rows of a batch concurrently, and marks the batch once all settle', async () => {
+    const rows = [message({ id: 'a' }), message({ id: 'b' }), message({ id: 'c' })];
+    outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);
+    const started: string[] = [];
+    const releases: Array<() => void> = [];
+    const relay = relayWith(async (m) => {
+      started.push(m.id);
+      await new Promise<void>((resolve) => releases.push(resolve));
+      if (m.id === 'b') throw new Error('listener failed');
+    });
+
+    const drain = relay.drainOnce();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Every row is in flight before any of them finished.
+    expect(started).toEqual(['a', 'b', 'c']);
+    expect(outbox.markProcessed).not.toHaveBeenCalled();
+
+    for (const release of releases.reverse()) release();
+    await expect(drain).resolves.toBe(2);
+    expect(outbox.markFailed).toHaveBeenCalledWith(rows[1], 'listener failed');
+    expect(outbox.markProcessed).toHaveBeenCalledTimes(1);
+    expect([...outbox.markProcessed.mock.calls[0][0]].sort()).toEqual(['a', 'c']);
+  });
+
   it('marks a failed row failed alone and the rest of the batch processed in one call', async () => {
     const rows = [message({ id: 'a' }), message({ id: 'bad' }), message({ id: 'c' })];
     outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);

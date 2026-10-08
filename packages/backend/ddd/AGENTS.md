@@ -44,12 +44,15 @@ src/
   (or `writeWithEvents` for a single write), which wakes the relay after
   commit when something was staged and never after a rollback;
   `OutboxRelay` (hosted by the app) claims rows with `FOR UPDATE SKIP LOCKED`, so replicas lease disjoint rows
-  and expired leases are reclaimed. While it delivers a batch the relay renews
+  and expired leases are reclaimed. A claimed batch is published concurrently
+  (bounded by `batchSize`, settled with `Promise.allSettled`), so rows carry
+  no delivery order a listener may rely on. While it delivers a batch the relay renews
   the lease (`extendLease`, a heartbeat at a third of the lease), and the marks
   that end a delivery only touch rows the relay still owns. `wake()` is fire-and-forget: it asks the
   relay for a drain and returns without waiting for delivery; at most one
   drain runs, and wakes during it collapse into one more pass. Delivery is at
-  least once. `deleteProcessedBefore` is the retention delete the app
+  least once. `stageJob` records the request context's correlation id unless
+  given one; `countFailed()` counts the parked rows. `deleteProcessedBefore` is the retention delete the app
   schedules. The `outbox_message` table is created by a migration in the
   consuming app, mirroring `OutboxMessageSchema`.
 

@@ -1,5 +1,6 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import type { DomainEvent } from '../domain-event.base';
+import { RequestContextService } from '../request-context.service';
 import {
   OUTBOX_TABLE,
   type OutboxChannel,
@@ -26,6 +27,7 @@ export interface StageJobParams {
   /** Why this job is owed — recorded on the row so it is self-explaining. */
   reason: string;
   aggregateId?: string;
+  /** Defaults to the request context's correlation id, so a job stays traceable to the request that owed it. */
   correlationId?: string;
   /** Earliest delivery time; defaults to now. */
   availableAt?: Date;
@@ -196,7 +198,7 @@ export class OutboxService {
       aggregateId: params.aggregateId ?? null,
       payload: params.payload,
       reason: params.reason,
-      correlationId: params.correlationId ?? null,
+      correlationId: params.correlationId ?? RequestContextService.getCorrelationId() ?? null,
       availableAt: params.availableAt,
     });
     // Same `QueryDeepPartialEntity` cast as `stageEvents`.
@@ -302,6 +304,18 @@ export class OutboxService {
       [cutoff, batch],
     );
     return affected ?? 0;
+  }
+
+  /**
+   * How many rows are parked as `failed`: owed side effects that ran out of
+   * attempts and wait for a person. For a gauge or a health detail; the
+   * count scans the table, which retention keeps to a week of rows.
+   */
+  async countFailed(): Promise<number> {
+    const rows: { count: number }[] = await this.dataSource.query(
+      `SELECT count(*)::int AS "count" FROM "${OUTBOX_TABLE}" WHERE "status" = 'failed'`,
+    );
+    return rows[0]?.count ?? 0;
   }
 
   /**
