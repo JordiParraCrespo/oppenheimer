@@ -84,32 +84,38 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      # A self-hosted runner can already be a tailnet node: then the server is
-      # reachable as it is, and the action below would need passwordless sudo
-      # to install a second tailscaled beside the host's own. Only a runner
-      # that cannot reach the server joins.
-      - name: Is the server already reachable over the tailnet?
-        id: tailnet
-        env:
-          DEV_SSH_HOST: ${{ vars.DEV_SSH_HOST }}
-        run: |
-          if timeout 5 bash -c 'exec 3<>"/dev/tcp/$DEV_SSH_HOST/22"' 2>/dev/null; then
-            echo "reachable=true" >> "$GITHUB_OUTPUT"
-            echo "$DEV_SSH_HOST:22 is reachable from this runner's own tailnet node; not joining"
-          else
-            echo "reachable=false" >> "$GITHUB_OUTPUT"
-          fi
-
       # Joins the tailnet as an ephemeral node tagged tag:ci. The tailnet
       # policy lets tag:ci reach tag:oppenheimer-dev on port 22 and nothing
       # else (deploy/dev/README.md has the ACL).
-      - if: steps.tailnet.outputs.reachable != 'true'
-        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-          ping: ${{ vars.DEV_SSH_HOST }}
+      #
+      # Userspace networking, not tailscale/github-action: the gha-vm runners
+      # are throwaway VMs whose user has no passwordless sudo, and the action
+      # installs tailscaled as root. Here tailscaled runs as the job's user
+      # with no TUN device, and SSH reaches the server through `tailscale nc`.
+      # The OAuth client secret is accepted as an auth key for a tagged node.
+      - name: Join the tailnet (userspace, as tag:ci)
+        env:
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          DEV_SSH_HOST: ${{ vars.DEV_SSH_HOST }}
+          TS_VERSION: 1.94.2
+        run: |
+          ts="$RUNNER_TEMP/tailscale"
+          mkdir -p "$ts"
+          tgz="tailscale_${TS_VERSION}_amd64.tgz"
+          curl -fsSL "https://pkgs.tailscale.com/stable/$tgz" -o "$ts/$tgz"
+          want="$(curl -fsSL "https://pkgs.tailscale.com/stable/$tgz.sha256" | awk '{print $1}')"
+          echo "$want  $ts/$tgz" | sha256sum -c -
+          tar -xzf "$ts/$tgz" -C "$ts" --strip-components=1
+          "$ts/tailscaled" --tun=userspace-networking --state=mem: \
+            --socket="$ts/tailscaled.sock" --statedir="$ts/state" > "$ts/tailscaled.log" 2>&1 &
+          for _ in $(seq 1 30); do [ -S "$ts/tailscaled.sock" ] && break; sleep 1; done
+          "$ts/tailscale" --socket="$ts/tailscaled.sock" up --timeout=2m \
+            --auth-key="${TS_OAUTH_SECRET}?ephemeral=true&preauthorized=true" \
+            --advertise-tags=tag:ci --hostname="ci-deploy-dev-${GITHUB_RUN_ID}"
+          echo "TS=$ts/tailscale --socket=$ts/tailscaled.sock" >> "$GITHUB_ENV"
+          # Fail here, not in the deploy, if the ACL does not let tag:ci in.
+          timeout 30 "$ts/tailscale" --socket="$ts/tailscaled.sock" nc "$DEV_SSH_HOST" 22 </dev/null | head -c 64 | grep -q '^SSH-' \
+            || { cat "$ts/tailscaled.log" | tail -20; echo "::error::$DEV_SSH_HOST:22 is not reachable as tag:ci"; exit 1; }
 
       - name: SSH key and pinned host key
         env:
@@ -134,9 +140,14 @@ jobs:
           ( umask 077; printf '%s\n' "$GH_TOKEN" > "$bundle/registry-token" )
           tar -czf - -C "$bundle" deploy registry-token \
             | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+                  -o ProxyCommand="$TS nc %h %p" \
                   -o ConnectTimeout=30 -o ServerAliveInterval=30 \
                   "deploy@$DEV_SSH_HOST" "deploy $GITHUB_SHA"
           rm -rf "$bundle"
+
+      - name: Leave the tailnet
+        if: always() && env.TS != ''
+        run: $TS logout || true
 
       # From outside, through Cloudflare's edge and the tunnel to nginx, the
       # API, Postgres and Redis: the one path the server cannot check itself.

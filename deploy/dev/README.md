@@ -216,11 +216,10 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 
 1. The workflow builds `api`, `web` and `backup` for the commit and pushes
    them to GHCR, tagged with the sha.
-2. It joins the tailnet, unless the runner can already reach the server: a
-   self-hosted runner that is itself a tailnet node deploys through that node
-   (and with that node's ACL reach) instead of installing a second
-   `tailscaled`, which would need passwordless sudo. It pipes this directory,
-   plus the job's own `GITHUB_TOKEN`, to the deploy gate.
+2. It joins the tailnet as an ephemeral `tag:ci` node, running `tailscaled`
+   in userspace as the job's own user (the runners have no passwordless sudo),
+   and reaches the server's SSH through `tailscale nc`. It pipes this
+   directory, plus the job's own `GITHUB_TOKEN`, to the deploy gate.
 3. `oppctl deploy` on the server does the following:
    - pulls the three images with that token, then throws the token away
    - writes `release.env` with each image pinned by digest
