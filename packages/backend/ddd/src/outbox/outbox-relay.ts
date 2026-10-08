@@ -149,16 +149,17 @@ export class OutboxRelay {
         return delivered;
       }
       if (batch.length === 0) return delivered;
-      const published: string[] = [];
       const leased = new Set(batch.map((message) => message.id));
       const stopHeartbeat = this.startHeartbeat(leased);
+      let published: string[];
       try {
-        await this.deliver(batch, published, leased);
+        published = await this.deliver(batch, leased);
       } finally {
         stopHeartbeat();
       }
+      let marked: string[];
       try {
-        await this.outbox.markProcessed(published, this.options.owner);
+        marked = await this.outbox.markProcessed(published, this.options.owner);
       } catch (error) {
         // The rows stay leased until it lapses, then are delivered again.
         this.options.logger?.warn(
@@ -166,16 +167,20 @@ export class OutboxRelay {
         );
         return delivered;
       }
-      delivered += published.length;
+      // A row whose lease was lost mid-delivery belongs to the relay that
+      // claimed it since; it finishes (and counts) it.
+      delivered += marked.length;
       if (batch.length < batchSize) return delivered;
     }
   }
 
   /**
-   * Publish every row of a claimed batch at once, recording the ids that went
-   * out and marking the rest failed, and settle when all of them have. A
-   * failed row leaves `leased`: `markFailed` releases its lease, so the
-   * heartbeat stops renewing it.
+   * Publish every row of a claimed batch at once and resolve, once all of
+   * them have settled, with the ids that went out, read from the settled
+   * results rather than collected by the callbacks. A row that fails is
+   * marked failed as soon as it does, so its backoff starts then: it leaves
+   * `leased` first (the heartbeat's set of rows it renews, which only this
+   * relay's own bookkeeping touches), since `markFailed` releases its lease.
    *
    * Concurrent, not one row after another: in sequence the relay's
    * throughput is the reciprocal of one publish's latency, whatever the pool
@@ -186,33 +191,47 @@ export class OutboxRelay {
    */
   private async deliver(
     batch: readonly OutboxMessageRecord[],
-    published: string[],
     leased: Set<string>,
-  ): Promise<void> {
-    await Promise.allSettled(
+  ): Promise<string[]> {
+    const settled = await Promise.allSettled(
       batch.map(async (message) => {
         try {
-          this.delivering += 1;
-          try {
-            await this.publisher(message);
-          } finally {
-            this.delivering -= 1;
-          }
-          published.push(message.id);
+          await this.publish(message);
         } catch (error) {
-          this.options.logger?.warn(
-            `Outbox delivery of ${message.eventName} (${message.id}) failed: ${describe(error)}`,
-          );
-          leased.delete(message.id);
-          try {
-            await this.outbox.markFailed(message, describe(error));
-          } catch {
-            // Can't reach the database to record the failure; the lease
-            // expires and the row is reclaimed on a later pass.
-          }
+          await this.fail(message, error, leased);
+          throw error;
         }
+        return message.id;
       }),
     );
+    return settled.flatMap((outcome) => (outcome.status === 'fulfilled' ? [outcome.value] : []));
+  }
+
+  private async publish(message: OutboxMessageRecord): Promise<void> {
+    this.delivering += 1;
+    try {
+      await this.publisher(message);
+    } finally {
+      this.delivering -= 1;
+    }
+  }
+
+  private async fail(
+    message: OutboxMessageRecord,
+    error: unknown,
+    leased: Set<string>,
+  ): Promise<void> {
+    const reason = describe(error);
+    this.options.logger?.warn(
+      `Outbox delivery of ${message.eventName} (${message.id}) failed: ${reason}`,
+    );
+    leased.delete(message.id);
+    try {
+      await this.outbox.markFailed(message, reason);
+    } catch {
+      // Can't reach the database to record the failure; the lease
+      // expires and the row is reclaimed on a later pass.
+    }
   }
 
   /**

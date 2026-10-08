@@ -271,18 +271,22 @@ export class OutboxService {
   }
 
   /**
-   * Mark delivered rows, releasing their leases. With `owner`, only rows that
-   * owner still leases are marked: a row another relay claimed after this one
-   * lost the lease is that relay's to finish.
+   * Mark delivered rows, releasing their leases, and return the ids it marked.
+   * With `owner`, only rows that owner still leases are marked: a row another
+   * relay claimed after this one lost the lease is that relay's to finish, and
+   * is missing from the result (the same shape as `extendLease`).
    */
-  async markProcessed(ids: readonly string[], owner?: string): Promise<void> {
-    if (ids.length === 0) return;
-    await this.dataSource.query(
+  async markProcessed(ids: readonly string[], owner?: string): Promise<string[]> {
+    if (ids.length === 0) return [];
+    // TypeORM returns `[rows, affectedCount]` for UPDATE on Postgres.
+    const [rows]: [{ id: string }[], number] = await this.dataSource.query(
       `UPDATE "${OUTBOX_TABLE}"
        SET "status" = 'processed', "processedAt" = now(), "lockedBy" = NULL, "lockedUntil" = NULL
-       WHERE "id" = ANY($1) AND ($2::varchar IS NULL OR "lockedBy" = $2::varchar)`,
+       WHERE "id" = ANY($1) AND ($2::varchar IS NULL OR "lockedBy" = $2::varchar)
+       RETURNING "id"`,
       [ids, owner ?? null],
     );
+    return rows.map((row) => row.id);
   }
 
   /**
