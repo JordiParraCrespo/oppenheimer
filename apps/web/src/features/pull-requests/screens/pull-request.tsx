@@ -41,15 +41,14 @@ export function PullRequestScreen({
           onViewChange={setView}
           layout={layout}
           onLayoutChange={setLayout}
-          review={(viewerLogin) => (
+          review={
             <ReviewPopover
               address={address}
-              viewerLogin={viewerLogin}
               pending={pending}
               onSubmitted={() => setPending([])}
               onDiscard={() => setPending([])}
             />
-          )}
+          }
         />
       </PaneBar>
       {

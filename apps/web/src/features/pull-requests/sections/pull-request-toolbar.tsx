@@ -22,7 +22,7 @@ import {
  * The bar over a pull request, its one header: back to the queue and its
  * three views, GitHub, and Submit review. On Changes the views give way to
  * Back and the diff's layout. Submit review is the screen's, which holds the
- * pending comments it posts; the bar only says where it goes and when.
+ * pending comments it posts; the bar only places it while the pull is open.
  */
 export function PullRequestToolbar({
   address,
@@ -37,8 +37,8 @@ export function PullRequestToolbar({
   onViewChange: (view: PullRequestView) => void;
   layout: DiffLayout;
   onLayoutChange: (layout: DiffLayout) => void;
-  /** Submit review, drawn while the pull request is open, posting as `viewerLogin`. */
-  review: (viewerLogin: string | null) => ReactNode;
+  /** Submit review, placed while the pull request is open. */
+  review: ReactNode;
 }) {
   const { t } = useTranslation();
   const { data: pull } = usePullRequest(address);
@@ -99,7 +99,7 @@ export function PullRequestToolbar({
           <SquareArrowOutUpRight />
         </IconButton>
       ) : null}
-      {pull?.isOpen ? review(pull.viewerLogin) : null}
+      {pull?.isOpen ? review : null}
     </div>
   );
 }

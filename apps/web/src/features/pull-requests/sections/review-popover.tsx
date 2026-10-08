@@ -11,7 +11,7 @@ import type {
   PullRequestAddress,
   ReviewVerdict,
 } from '@oppenheimer/frontend-consumer';
-import { useSubmitPullRequestReview } from '@oppenheimer/frontend-consumer/react';
+import { usePullRequest, useSubmitPullRequestReview } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
 import { REVIEW_VERDICTS } from '@oppenheimer/shared/schemas/pull-request';
@@ -25,19 +25,18 @@ import { useTranslation } from 'react-i18next';
  */
 export function ReviewPopover({
   address,
-  viewerLogin,
   pending,
   onSubmitted,
   onDiscard,
 }: {
   address: PullRequestAddress;
-  viewerLogin: string | null;
   pending: readonly LineCommentInput[];
   onSubmitted: () => void;
   onDiscard: () => void;
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
+  const viewerLogin = usePullRequest(address).data?.viewerLogin ?? null;
   const [open, setOpen] = useState(false);
   const [verdict, setVerdict] = useState<ReviewVerdict>('approve');
   const [comment, setComment] = useState('');
