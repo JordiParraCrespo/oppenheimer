@@ -7,6 +7,12 @@ import { ShareLinkAccessResolver } from '../../application/share-link-access.res
 import { IssueSharedAttachTicketCommand } from './issue-shared-attach-ticket.command';
 
 /**
+ * A link opens the agent's window and nothing else: the holder never names
+ * one, so a link cannot reach a shell window someone opened beside it.
+ */
+const SHARED_WINDOW = 0;
+
+/**
  * A ticket for a share link's holder. The claim names the link's creator as
  * the person, so the relay judges it the way it judges theirs — still a
  * member, still active, the host still theirs to use — and names the link,
@@ -27,7 +33,7 @@ export class IssueSharedAttachTicketCommandHandler
     return this.tickets.issue({
       sessionId: session.id,
       organizationId: session.organizationId,
-      window: command.window,
+      window: SHARED_WINDOW,
       userId: link.createdByUserId,
       share: {
         linkId: link.id,

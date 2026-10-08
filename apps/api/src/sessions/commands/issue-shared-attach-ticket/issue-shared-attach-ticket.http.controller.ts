@@ -31,7 +31,7 @@ export class IssueSharedAttachTicketHttpController {
   @ApiOperation({
     summary: 'Mint a terminal ticket through a share link',
     description:
-      'Single use, 60 seconds, one window, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.',
+      'Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.',
   })
   @ApiResponse({ status: 201, type: AttachTicketResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Share link not found', code: 'SESSIONS_021' })
@@ -51,7 +51,6 @@ export class IssueSharedAttachTicketHttpController {
       new IssueSharedAttachTicketCommand({
         token: body.token,
         viewer: this.mapper.toViewer(user),
-        window: body.window ?? 0,
       }),
     );
   }

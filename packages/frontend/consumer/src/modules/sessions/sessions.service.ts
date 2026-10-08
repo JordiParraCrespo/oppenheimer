@@ -98,10 +98,10 @@ export class SessionsService {
    * each ticket minted through the link. A `read` link's stream is the same
    * stream; the relay and the host are what keep its keystrokes out.
    */
-  openSharedStream(token: string, window = 0): SessionStream {
+  openSharedStream(token: string): SessionStream {
     return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
-      issueTicket: () => this.repository.issueSharedAttachTicket(token, window),
+      issueTicket: () => this.repository.issueSharedAttachTicket(token),
     });
   }
 

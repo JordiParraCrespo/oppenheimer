@@ -8,6 +8,7 @@ import type { HttpAdapterHost } from '@nestjs/core';
 import type { ScopeResolverPort } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import {
   ATTACH_CLOSE_CODES,
   helloSchema,
@@ -16,6 +17,7 @@ import {
 } from '@oppenheimer/shared/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
+import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
@@ -100,6 +102,7 @@ interface Harness {
   scopes: ScopeResolverPort;
   hostAccess: HostAccessPort;
   owners: CredentialOwnerPort;
+  abilities: AbilityPort;
   registry: InProcessLinkRegistry;
   browsers: BrowserAttachGateway;
   close(): Promise<void>;
@@ -181,6 +184,14 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     findActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
     requireActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
   };
+  // The workspace owner's rule, as the seeded `owner` role grants it.
+  const abilities: AbilityPort = {
+    forRequest: vi.fn(async () =>
+      defineAbilitiesFromPermissions([
+        { action: 'manage', subject: 'Session', conditions: { organizationId: ORG } },
+      ]),
+    ),
+  };
   const processor = new RelayEventsProcessor(events, presence, reconciliation);
   const credentials = new CredentialsProcessor(
     lookup,
@@ -198,6 +209,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     scopes,
     hostAccess,
     owners,
+    abilities,
   );
   const server = createServer((_request, response) => response.writeHead(404).end());
   const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers);
@@ -216,6 +228,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     scopes,
     hostAccess,
     owners,
+    abilities,
     registry,
     browsers,
     close: () => new Promise((resolve) => server.close(() => resolve())),
@@ -1295,6 +1308,7 @@ describe('browser attach socket', () => {
           h.scopes,
           h.hostAccess,
           h.owners,
+          h.abilities,
         ).reauthorizeIntervalMs,
       ).toBe(REAUTHORIZE_INTERVAL_MS);
     });
@@ -1383,6 +1397,27 @@ describe('browser attach socket', () => {
       linkIs(false);
 
       await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
+    });
+
+    it('closes once the person who shared it may no longer update the session', async () => {
+      linkIs(true);
+      h.browsers.reauthorizeIntervalMs = 25;
+      const { browser } = await attachedThrough(shareTicket(false));
+      const gone = closed(browser);
+      // Still a member, still on the host: only the role that let them open
+      // a terminal was taken away. Their own ticket was judged on it at mint;
+      // a link mints with nobody signed in as them, so the relay asks.
+      vi.mocked(h.abilities.forRequest).mockResolvedValue(
+        defineAbilitiesFromPermissions([
+          { action: 'read', subject: 'Session', conditions: { organizationId: ORG } },
+        ]),
+      );
+
+      await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.FORBIDDEN });
+      expect(h.abilities.forRequest).toHaveBeenCalledWith({
+        user: expect.objectContaining({ id: USER }),
+        tenant: { organizationId: ORG },
+      });
     });
 
     it('closes when the signed-in holder’s own account may no longer act', async () => {

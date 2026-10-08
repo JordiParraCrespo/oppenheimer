@@ -1281,7 +1281,7 @@ export const findSharedSession = <ThrowOnError extends boolean = false>(options:
 /**
  * Mint a terminal ticket through a share link
  *
- * Single use, 60 seconds, one window, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.
+ * Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.
  */
 export const issueSharedAttachTicket = <ThrowOnError extends boolean = false>(options: Options<IssueSharedAttachTicketData, ThrowOnError>): RequestResult<IssueSharedAttachTicketResponses, IssueSharedAttachTicketErrors, ThrowOnError> => (options.client ?? client).post<IssueSharedAttachTicketResponses, IssueSharedAttachTicketErrors, ThrowOnError>({
     url: '/api/v1/shared-sessions/attach-ticket',

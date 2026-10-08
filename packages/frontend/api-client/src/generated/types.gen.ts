@@ -1371,7 +1371,6 @@ export type SharedSessionResponseDto = {
 
 export type IssueSharedAttachTicketRequest = {
     token: string;
-    window?: number;
 };
 
 export type AttachTicketResponseDto = {

@@ -3,7 +3,7 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
+import { canAccessRow, SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import {
@@ -24,8 +24,9 @@ type AttachVerdict =
   | { allowed: false; reason: AttachClosedReason; code: number };
 
 import { type WebSocket, WebSocketServer } from 'ws';
+import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
-import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
+import { ABILITY, CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../hosts/hosts.di-tokens';
 import type {
@@ -125,6 +126,8 @@ export class BrowserAttachGateway {
     private readonly hostAccess: HostAccessPort,
     @Inject(CREDENTIAL_OWNER)
     private readonly owners: CredentialOwnerPort,
+    @Inject(ABILITY)
+    private readonly abilities: AbilityPort,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -242,8 +245,23 @@ export class BrowserAttachGateway {
       return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
     }
     // A banned or deactivated account holds no PTY, whatever its ticket says.
-    if (!(await this.owners.findActiveOwner(claim.userId))) {
+    const owner = await this.owners.findActiveOwner(claim.userId);
+    if (!owner) {
       return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+    }
+    // A share link keeps minting tickets with nobody signed in as its
+    // creator, so the policy their own ticket passed at mint (`update
+    // Session`) is asked again here, on their current roles: a role change
+    // that took it away ends every link they made.
+    if (claim.share) {
+      const ability = await this.abilities.forRequest({
+        user: { ...owner },
+        tenant: { organizationId: claim.organizationId },
+      });
+      const row = { id: claim.sessionId, organizationId: claim.organizationId };
+      if (!canAccessRow(ability, 'update', 'Session', row)) {
+        return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+      }
     }
     // The same own-or-granted predicate a create asks, so a revoked grant or
     // an unpaired host ends the PTY. `isPlatformAdmin: false` is deliberate: a

@@ -58,7 +58,7 @@ describe('IssueSharedAttachTicketCommandHandler', () => {
   });
 
   const command = (viewer: IssueSharedAttachTicketCommand['viewer'] = null) =>
-    new IssueSharedAttachTicketCommand({ token, viewer, window: 0 });
+    new IssueSharedAttachTicketCommand({ token, viewer });
 
   it('mints a ticket judged as the creator, naming the link and its access', async () => {
     await handler.execute(command());

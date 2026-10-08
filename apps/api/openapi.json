@@ -8424,7 +8424,7 @@
     },
     "/api/v1/shared-sessions/attach-ticket": {
       "post": {
-        "description": "Single use, 60 seconds, one window, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.",
+        "description": "Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.",
         "operationId": "issueSharedAttachTicket",
         "parameters": [],
         "requestBody": {
@@ -18513,11 +18513,6 @@
           "token": {
             "type": "string",
             "pattern": "^[A-Za-z0-9_-]{43}$"
-          },
-          "window": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": false
           }
         },
         "required": ["token"]

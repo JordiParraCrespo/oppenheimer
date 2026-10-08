@@ -339,9 +339,9 @@ export class SessionsRepository {
 
   /** A ticket through a share link: never cached, never retried on its own. */
   @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
-  async issueSharedAttachTicket(token: string, window = 0): Promise<AttachTicket> {
+  async issueSharedAttachTicket(token: string): Promise<AttachTicket> {
     const data = await unwrapBody(
-      heyApiSdk.issueSharedAttachTicket({ body: { token, window } }),
+      heyApiSdk.issueSharedAttachTicket({ body: { token } }),
       SessionsErrors.ATTACH_TICKET_FAILED,
     );
     return toTicket(data);

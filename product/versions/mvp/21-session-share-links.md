@@ -15,8 +15,9 @@ like anyone or some user"). This note records what was built and why.
   link: watch, signed-in accounts, one day.
 - **A link has no authority of its own: it acts as the person who made it.**
   Every attach through a link is judged as its creator's terminal would be —
-  still a member of the workspace, account still active, host still theirs
-  to use, session not stopped or closed — at redemption and every minute
+  still a member of the workspace, account still active, still holding
+  `update Session` on their current roles, host still theirs to use,
+  session not stopped or closed — at redemption and every minute
   after (`REAUTHORIZE_INTERVAL_MS`). So losing access ends every link one
   made without anybody revoking them, and a link can never open more than
   its creator could. `write` is a shell on the host *as the creator*; the
@@ -56,8 +57,9 @@ like anyone or some user"). This note records what was built and why.
   CASCADE`).
 - **The public page shows only the session's name, its state, the access the
   link gives and who shared it.** Nothing about the workspace, project, host
-  or repository. It opens window 0, the agent's. A stopped session says so;
-  only a member can restart it.
+  or repository. It opens window 0, the agent's, and the holder's request
+  names no window, so a link never reaches a shell window opened beside it.
+  A stopped session says so; only a member can restart it.
 - **Sharing is `update Session` behind `sessions:write`**, the same rule as
   opening a terminal: sharing one is opening it for somebody else. Listing a
   session's links is `read Session`.

@@ -10,9 +10,6 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { useTerminal } from '../hooks/use-terminal';
 
-/** Window 0 is the agent's; a link opens that one. */
-const AGENT_WINDOW = 0;
-
 /**
  * A session's terminal as a share link's holder sees it: the same grid and
  * socket as a member's, with each ticket minted through the link. A `read`
@@ -21,7 +18,7 @@ const AGENT_WINDOW = 0;
  */
 export function SharedSessionTerminal({ token, readOnly }: { token: string; readOnly: boolean }) {
   const { t } = useTranslation();
-  const createStream = useSharedSessionStream(token, AGENT_WINDOW);
+  const createStream = useSharedSessionStream(token);
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     agentWindow: true,
     readOnly,

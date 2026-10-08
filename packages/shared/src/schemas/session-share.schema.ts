@@ -79,10 +79,13 @@ export const findSharedSessionSchema = z.object({
 
 export type FindSharedSessionDto = z.infer<typeof findSharedSessionSchema>;
 
-/** `POST /shared-sessions/attach-ticket`. */
+/**
+ * `POST /shared-sessions/attach-ticket`. No window: a link opens the agent's
+ * (window 0) and nothing else, so a holder cannot reach a shell window
+ * opened beside it.
+ */
 export const issueSharedAttachTicketSchema = z.object({
   token: shareTokenSchema,
-  window: z.number().int().min(0).optional(),
 });
 
 export type IssueSharedAttachTicketDto = z.infer<typeof issueSharedAttachTicketSchema>;
