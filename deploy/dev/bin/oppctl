@@ -8,6 +8,7 @@
 #   oppctl status | logs [service…] | psql
 #   oppctl backup {daily|weekly|check}            dump → encrypt → R2 (weekly: B2)
 #   oppctl restore                                plaintext pg_dump -Fc on stdin
+#   oppctl publish-release [--check] <dir | ->    a signed runner release (-: a tar on stdin)
 #
 # Nothing is built here. A release is the deploy/dev directory of one commit
 # plus `release.env`, which pins the images the `Deploy dev` workflow built for
@@ -407,6 +408,265 @@ cmd_restore() {
   ok "restored"
 }
 
+# oppenheimer:begin runner
+# --------------------------------------------------------- runner releases ---
+
+# What hosts install and update from, served read-only by the `releases`
+# container: public/install.sh, and public/releases → .releases/<set>, one
+# directory per publish. A publish builds the next set beside the live one and
+# repoints the link with a rename, so a host never reads a manifest from one
+# release and its signature or artifacts from another. The tunnel routes only
+# /releases/ and /install.sh there, so the sets themselves are not reachable.
+PUBLIC="$ROOT/public"
+RELEASE_SETS="$PUBLIC/.releases"
+KEEP_RELEASE_SETS=3
+# A ceiling on what stdin may carry, so a directory streamed by mistake stops.
+PUBLISH_MAX_BYTES=500000000
+
+# An OpenSSL that can verify Ed25519 over raw bytes (3.x), found the way the
+# installer finds one. Ubuntu's is; macOS's LibreSSL, where tests may run, is not.
+release_openssl() {
+  local candidate
+  for candidate in openssl /opt/homebrew/opt/openssl@3/bin/openssl /usr/local/opt/openssl@3/bin/openssl; do
+    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" version 2>/dev/null | grep -q '^OpenSSL 3'; then
+      printf '%s' "$candidate"; return 0
+    fi
+  done
+  return 1
+}
+
+file_sha256() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
+
+# The release keys stamped into an installer (scripts/runner/release.sh).
+installer_keys() { sed -n 's/^RELEASE_PUBLIC_KEYS="\([^"]*\)"$/\1/p' "$1" | head -n1; }
+
+# signed_by <manifest> <signature file> "<keys>" — the installer's
+# verify_manifest (scripts/runner/install.sh): 0 when one of the keys signed
+# exactly these bytes.
+signed_by() {
+  local manifest="$1" signature="$2" keys="$3" ssl work key rc=1
+  ssl="$(release_openssl)" || die "no OpenSSL 3 here, so a manifest signature cannot be checked"
+  work="$(mktemp -d)"
+  if "$ssl" base64 -d -A -in "$signature" -out "$work/sig.bin" 2>/dev/null && [ -s "$work/sig.bin" ]; then
+    for key in $keys; do
+      # An Ed25519 SubjectPublicKeyInfo is a fixed 12-byte header and the raw
+      # key; the header is exactly 16 base64 characters, so the two concatenate.
+      printf -- '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA%s\n-----END PUBLIC KEY-----\n' "$key" > "$work/release.pub"
+      if "$ssl" pkeyutl -verify -pubin -inkey "$work/release.pub" -rawin \
+          -in "$manifest" -sigfile "$work/sig.bin" >/dev/null 2>&1; then
+        rc=0; break
+      fi
+    done
+  fi
+  rm -rf "$work"
+  return "$rc"
+}
+
+# check_release <dir> [--new-keys] — everything a publish refuses, checked
+# before anything is touched: an installer carrying release keys; a manifest
+# per channel whose signature verifies against them, and against the keys
+# already published so the hosts in the field accept it; every artifact the
+# manifest names present with its digest and size, on this server's /releases;
+# and nothing else in the directory.
+check_release() {
+  local dir="$1" new_keys="${2:-}" keys key live_keys f channel manifests="" name file url want got size
+  local base="https://$DEV_HOSTNAME/releases"
+  local expected=" install.sh install.env SHA256SUMS "
+
+  [ -d "$dir" ] || die "no such directory: $dir"
+  [ -z "$(find "$dir" -mindepth 1 \( ! -type f -o -path "$dir/*/*" \) -print -quit)" ] \
+    || die "$dir holds something other than plain files (a directory or a link); refusing"
+
+  [ -s "$dir/install.sh" ] || die "no install.sh in $dir; publish the dist/runner directory release.sh wrote"
+  keys="$(installer_keys "$dir/install.sh")"
+  [ -n "$keys" ] || die "install.sh carries no release keys, so nothing it installs would be checked; refusing"
+  for key in $keys; do
+    [[ "$key" =~ ^[A-Za-z0-9+/]{43}=$ ]] || die "install.sh carries \"$key\", which is not a base64 Ed25519 public key"
+  done
+
+  for channel in stable beta; do
+    [ -e "$dir/$channel.json" ] || continue
+    manifests="$manifests $channel"
+    expected="$expected$channel.json $channel.json.sig "
+    [ -s "$dir/$channel.json.sig" ] || die "$channel.json has no $channel.json.sig; an unsigned manifest is never published"
+    signed_by "$dir/$channel.json" "$dir/$channel.json.sig" "$keys" \
+      || die "$channel.json.sig does not verify against the keys in install.sh; refusing"
+    if [ -s "$PUBLIC/install.sh" ] && [ "$new_keys" != --new-keys ]; then
+      live_keys="$(installer_keys "$PUBLIC/install.sh")"
+      if [ -n "$live_keys" ] && ! signed_by "$dir/$channel.json" "$dir/$channel.json.sig" "$live_keys"; then
+        die "$channel.json is not signed by a key the published runners trust ($live_keys), so no host already installed would take it. Sign it with that key, or pass --new-keys to strand them on purpose"
+      fi
+    fi
+
+    jq -e --arg c "$channel" '.schema == "oppenheimer.release/v1" and .channel == $c
+        and (.version | type == "string" and length > 0) and (.artifacts | type == "object" and length > 0)' \
+        "$dir/$channel.json" >/dev/null 2>&1 \
+      || die "$channel.json is not an oppenheimer.release/v1 manifest for the $channel channel"
+    while IFS=$'\t' read -r name url want size; do
+      file="${url##*/}"
+      [ "$url" = "$base/$file" ] \
+        || die "$channel.json points $name at $url, not at $base/ (build it with RELEASE_BASE_URL=$base)"
+      [[ "$file" =~ ^runner_[0-9A-Za-z.+-]+_(darwin|linux)_(amd64|arm64)\.tar\.gz$ ]] \
+        || die "$channel.json names an artifact this server does not serve: $file"
+      [ -f "$dir/$file" ] || die "$channel.json names $file, which is not in $dir"
+      got="$(file_sha256 "$dir/$file")"
+      [ "$got" = "$want" ] || die "$file does not match $channel.json: sha256 $got, the manifest signed $want; refusing"
+      [ "$(wc -c < "$dir/$file" | tr -d ' ')" = "$size" ] || die "$file is not the size $channel.json signed ($size bytes)"
+      expected="$expected$file "
+    done < <(jq -r '.artifacts | to_entries[] | [.key, .value.url, .value.sha256, (.value.size | tostring)] | @tsv' "$dir/$channel.json")
+    ok "$channel.json $(jq -r .version "$dir/$channel.json") is signed and every artifact matches it"
+  done
+  [ -n "$manifests" ] || die "no stable.json or beta.json in $dir"
+
+  if [ -e "$dir/install.env" ]; then
+    [ "$(cat "$dir/install.env")" = "RUNNER_INSTALL_SHA256=$(file_sha256 "$dir/install.sh")" ] \
+      || die "install.env does not hold install.sh's digest; the directory changed after release.sh wrote it"
+  fi
+  if [ -e "$dir/SHA256SUMS" ]; then
+    while read -r want f; do
+      f="${f#./}"
+      [ -f "$dir/$f" ] && [ "$(file_sha256 "$dir/$f")" = "$want" ] || die "SHA256SUMS disagrees with $f"
+    done < "$dir/SHA256SUMS"
+  fi
+  for f in "$dir"/*; do
+    case "$expected" in
+      *" ${f##*/} "*) ;;
+      *) die "$dir has ${f##*/}, which no manifest names; refusing to publish it" ;;
+    esac
+  done
+  ok "install.sh carries the release keys; its sha256 is $(file_sha256 "$dir/install.sh")"
+}
+
+# set_env <file> <KEY> <value> [--if-empty] — rewrite one KEY= line, or append
+# it; the file is replaced with a rename and keeps its mode.
+set_env() {
+  local file="$1" key="$2" value="$3" only_empty="${4:-}" tmp
+  if [ "$only_empty" = --if-empty ] && [ -n "$(sed -n "s/^$key=//p" "$file" | tail -n1)" ]; then return 0; fi
+  tmp="$(mktemp "$file.XXXXXX")"
+  chmod --reference="$file" "$tmp" 2>/dev/null || chmod 0600 "$tmp"
+  awk -v k="$key" -v v="$value" 'BEGIN { done = 0 }
+    index($0, k "=") == 1 { if (!done) print k "=" v; done = 1; next }
+    { print }
+    END { if (!done) print k "=" v }' "$file" > "$tmp"
+  mv -f "$tmp" "$file"
+}
+
+# Hard-link a file of the live set into the next one, unless the publish
+# brings its own. A file in a set is never written again once it lands there.
+carry() { [ -e "$2/${1##*/}" ] || ln "$1" "$2/${1##*/}"; }
+
+cmd_publish_release() {
+  local src="" new_keys="" check_only="" work="" arg
+  local usage="usage: oppctl publish-release [--check] [--new-keys] <dir | - for a tar on stdin>"
+  for arg in "$@"; do
+    case "$arg" in
+      --new-keys) new_keys=--new-keys ;;
+      --check) check_only=1 ;;
+      -) src=- ;;
+      -*) die "$usage" ;;
+      *) src="$arg" ;;
+    esac
+  done
+  [ -n "$src" ] || die "$usage"
+  load_host_env
+  [ -n "${DEV_HOSTNAME:-}" ] || die "DEV_HOSTNAME is empty in $CONFIG/host.env"
+
+  if [ "$src" = - ]; then
+    [ ! -t 0 ] || die "pipe a tar of the release directory into stdin"
+    work="$(mktemp -d "$ROOT/.publish.XXXXXX")"
+    # shellcheck disable=SC2064 # the path is fixed now, on purpose
+    trap "rm -rf '$work'" EXIT
+    head -c "$PUBLISH_MAX_BYTES" | tar -xf - -C "$work" --no-same-owner --no-same-permissions \
+      || die "stdin is not a tar of the release directory"
+    src="$work"
+  fi
+  check_release "$src" "$new_keys"
+  [ -z "$check_only" ] || { ok "would publish (--check: nothing changed)"; return 0; }
+
+  lock
+  local stamp set live channel other version digest old_digest api_changed=0 rel f name
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  for channel in stable beta; do
+    [ -e "$src/$channel.json" ] && version="$(jq -r .version "$src/$channel.json")" && break
+  done
+  set="$RELEASE_SETS/$stamp-$version"
+  install -d -m 0755 "$RELEASE_SETS" "$set"
+  for f in "$src"/*.tar.gz "$src"/*.json "$src"/*.json.sig "$src"/SHA256SUMS; do
+    [ ! -e "$f" ] || install -m 0644 "$f" "$set/"
+  done
+
+  # A channel this publish does not carry keeps what it had, artifacts included.
+  live="$(readlink -f "$PUBLIC/releases" 2>/dev/null || true)"
+  if [ -n "$live" ] && [ -d "$live" ]; then
+    for other in stable beta; do
+      [ ! -e "$src/$other.json" ] && [ -s "$live/$other.json" ] && [ -s "$live/$other.json.sig" ] || continue
+      carry "$live/$other.json" "$set"; carry "$live/$other.json.sig" "$set"
+      while read -r f; do [ ! -f "$live/$f" ] || carry "$live/$f" "$set"; done \
+        < <(jq -r '.artifacts[].url | sub(".*/"; "")' "$live/$other.json")
+      log "kept the $other channel ($(jq -r .version "$live/$other.json"))"
+    done
+  fi
+
+  # The first publish finds the directory `oppctl setup` made: it moves in
+  # with the sets and the link takes its place, a gap of one rename.
+  if [ -d "$PUBLIC/releases" ] && [ ! -L "$PUBLIC/releases" ]; then
+    mv "$PUBLIC/releases" "$RELEASE_SETS/$stamp-before-publish"
+  fi
+  ln -sfn ".releases/${set##*/}" "$PUBLIC/.releases.next"
+  mv -Tf "$PUBLIC/.releases.next" "$PUBLIC/releases"
+  install -m 0644 "$src/install.sh" "$PUBLIC/.install.sh.next"
+  mv -f "$PUBLIC/.install.sh.next" "$PUBLIC/install.sh"
+  ok "published runner $version: /releases → ${set##*/}, and /install.sh"
+
+  # The newest few sets stay, for a look at what was live before; never the live one.
+  find "$RELEASE_SETS" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r | tail -n +$((KEEP_RELEASE_SETS + 1)) \
+    | while read -r name; do [ "$RELEASE_SETS/$name" = "$set" ] || rm -rf "${RELEASE_SETS:?}/$name"; done
+
+  # The console shows the installer's digest under the install command.
+  digest="$(file_sha256 "$PUBLIC/install.sh")"
+  old_digest="$(sed -n 's/^RUNNER_INSTALL_SHA256=//p' "$CONFIG/api.env" | tail -n1)"
+  cp -p "$CONFIG/api.env" "$CONFIG/api.env.before-publish"
+  set_env "$CONFIG/api.env" RUNNER_INSTALL_SHA256 "$digest"
+  set_env "$CONFIG/api.env" RUNNER_RELEASE_BASE_URL "https://$DEV_HOSTNAME/releases" --if-empty
+  set_env "$CONFIG/api.env" RUNNER_INSTALL_URL "https://$DEV_HOSTNAME/install.sh" --if-empty
+  cmp -s "$CONFIG/api.env" "$CONFIG/api.env.before-publish" || api_changed=1
+  [ "$old_digest" = "$digest" ] || ok "RUNNER_INSTALL_SHA256=$digest in api.env"
+
+  rel="$(current_release)"
+  if [ -z "$rel" ]; then
+    rm -f "$CONFIG/api.env.before-publish"
+    warn "nothing is deployed yet; the API reads api.env on its first deploy"
+    return 0
+  fi
+  compose "$rel" up -d releases
+  for channel in stable beta; do
+    [ -e "$set/$channel.json.sig" ] || continue
+    compose "$rel" exec -T releases wget -qO /dev/null "http://127.0.0.1/releases/$channel.json.sig" \
+      || warn "the releases container does not serve /releases/$channel.json.sig"
+  done
+  if [ "$api_changed" = 1 ]; then
+    # The API reads api.env when it starts. nginx in web resolves `api` once,
+    # when it starts, so it follows the API's new container.
+    log "recreating the API (and the console's nginx) so it reads api.env"
+    compose "$rel" up -d --no-deps --force-recreate api
+    # oppenheimer:begin web
+    wait_healthy "$rel" api && compose "$rel" up -d --no-deps --force-recreate web
+    # oppenheimer:end web
+    if ! verify_release "$rel"; then
+      warn "the release did not come back healthy; putting the previous api.env back"
+      mv -f "$CONFIG/api.env.before-publish" "$CONFIG/api.env"
+      compose "$rel" up -d --no-deps --force-recreate api
+      # oppenheimer:begin web
+      compose "$rel" up -d --no-deps --force-recreate web
+      # oppenheimer:end web
+      die "the files are published but api.env is as it was; see 'oppctl logs api', then publish again"
+    fi
+  fi
+  rm -f "$CONFIG/api.env.before-publish"
+  ok "runner $version is live at https://$DEV_HOSTNAME/install.sh"
+}
+# oppenheimer:end runner
+
 # ---------------------------------------------------------------- the rest ---
 
 cmd_status() {
@@ -502,9 +762,12 @@ case "${1:-}" in
   rollback) cmd_rollback ;;
   backup)   shift; cmd_backup "$@" ;;
   restore)  cmd_restore ;;
+  # oppenheimer:begin runner
+  publish-release) shift; cmd_publish_release "$@" ;;
+  # oppenheimer:end runner
   status)   cmd_status ;;
   logs)     shift; load_host_env; compose "$(need_current)" logs --tail 200 "$@" ;;
   psql)     load_host_env; compose "$(need_current)" exec postgres psql -U oppenheimer oppenheimer ;;
   notify)   shift; load_host_env; notify "$*" ;;
-  *) sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+  *) sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
