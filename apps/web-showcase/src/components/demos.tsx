@@ -72,7 +72,7 @@ import { SessionItem, SessionList, SortableSessionItem } from '@oppenheimer/desi
 import {
   SidebarEmptyRow,
   SidebarListHead,
-  SidebarProjectGroup,
+  SortableSidebarProjectGroup,
   SidebarProjectHeader,
   SidebarSearch,
 } from '@oppenheimer/design-system-web/sidebar';
@@ -797,6 +797,8 @@ const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
 /** The shell's one order: the rail's items, and each project's sessions. */
 const FIRST_ORDER: SortableGroups = {
   rail: ['sessions', 'pulls', 'automations', 'plan'],
+  // A project's item id; its name is the group its sessions sit in.
+  projects: PROJECTS.map((project) => `project:${project}`),
   'XRP Mobile': ['peersyst', 'cleanup', 'router'],
   Atlas: ['ingest', 'triage', 'retriever', 'summariser'],
   'Client sites': [],
@@ -884,8 +886,15 @@ function SortableRail({ items, sessions }: { items: readonly string[]; sessions:
   );
 }
 
-/** The lifted copy: a rail item or a session row. */
+/** The lifted copy: a rail item, a project's header or a session row. */
 function DragCopy({ id, name }: { id: string; name: string }) {
+  if (id.startsWith('project:')) {
+    return (
+      <div className="w-60 rounded-sm bg-card">
+        <SidebarProjectHeader name={id.slice('project:'.length)} open={false} />
+      </div>
+    );
+  }
   const rail = RAIL_ITEMS[id];
   if (rail) {
     return (
@@ -964,12 +973,14 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 </EmptyState>
               </div>
             ) : (
-              projects.map((project) => {
+              <SortableGroup id="projects" items={order.projects ?? []} accepts={['project']}>
+              {(order.projects ?? []).map((item) => {
+                const project = item.slice('project:'.length);
                 const open = !closed.includes(project);
                 const ids = order[project] ?? [];
                 return (
-                  <SortableGroup key={project} id={project} items={open ? ids : []} accepts={['session']} data={{ label: project }}>
-                    <SidebarProjectGroup>
+                  <SortableSidebarProjectGroup key={item} id={item} label={project}>
+                  <SortableGroup id={project} items={open ? ids : []} accepts={['session']} data={{ label: project }} className="flex flex-col">
                       <SidebarProjectHeader
                         name={project}
                         count={ids.length}
@@ -1038,10 +1049,11 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                           </SessionList>
                         )
                       ) : null}
-                    </SidebarProjectGroup>
                   </SortableGroup>
+                  </SortableSidebarProjectGroup>
                 );
-              })
+              })}
+              </SortableGroup>
             )}
           </div>
           <div className="border-t border-sidebar-border px-2 py-2">

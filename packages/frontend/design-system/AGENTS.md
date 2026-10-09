@@ -173,7 +173,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   are `SortableRailItem`s in one `SortableGroup`, and each project's sessions
   are `SortableSessionItem`s in a `SortableGroup` per project, so a row
   reorders in its project or moves to another, a folded or empty one
-  included. They sit in the shell's one `DragProvider`; the order and the
+  included. The projects reorder too: each is a
+  `SortableSidebarProjectGroup` in a `SortableGroup` that takes `project`,
+  its `SidebarProjectHeader` the handle (a click still folds it; its
+  actions never pick it up). They sit in the shell's one `DragProvider`; the order and the
   project are the app's (`useSortableGroups`' `onMove`, the same write as
   Move to project…). A sortable item that is also a link or a button is a
   `useSortableControl`: Space picks it up and Enter opens it, and the

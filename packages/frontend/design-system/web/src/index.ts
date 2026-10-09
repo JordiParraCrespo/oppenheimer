@@ -339,6 +339,7 @@ export {
   SidebarSearch,
   SidebarSeparator,
   SidebarTrigger,
+  SortableSidebarProjectGroup,
   useSidebar,
 } from './components/sidebar';
 export { Skeleton } from './components/skeleton';

@@ -1,5 +1,5 @@
-import { SessionItem } from '@oppenheimer/design-system-web';
-import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
+import { SortableSessionItem } from '@oppenheimer/design-system-web';
+import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
   useProjectsSnapshot,
@@ -10,27 +10,8 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
+import { dotFor } from '../lib/session-dot';
 import { projectsForMove } from '../lib/session-groups';
-
-/**
- * How a session's **group** reads as a dot. The sidebar shows the group
- * because it is organised by what needs you, not what a process is doing
- * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
- * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
- * that is the **lifecycle**, and {@link dotFor} combines the two.
- */
-const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
-  working: 'running',
-  'waiting-on-you': 'failed',
-  'ready-for-review': 'running',
-  landing: 'pending',
-  idle: 'idle',
-  resolved: 'completed',
-};
-
-function dotFor(session: SessionEntity) {
-  return session.isProvisioning ? 'pending' : DOT[session.state];
-}
 
 /**
  * The age is derived on render: `compactAge` returns unit and count, the words
@@ -43,16 +24,20 @@ function dotFor(session: SessionEntity) {
  * and a failed write, which the sidebar shows because a menu closes on its pick
  * and the row has no room. It subscribes to one boolean for being the open
  * session, not the route, so a navigation re-renders only the two rows whose
- * highlight moved; `now` is its group's one-minute clock.
+ * highlight moved; `now` is its group's one-minute clock. The row drags, up
+ * or down its project or into another; the sidebar keeps where it lands.
  */
 export function SessionRow({
   session,
   now,
+  dragDisabled,
   onDelete,
   onWrite,
 }: {
   session: SessionEntity;
   now: number;
+  /** Whether the row stays put: while a filter or the search hides some of its neighbours. */
+  dragDisabled: boolean;
   onDelete: (session: SessionEntity) => void;
   /** A write this row made settled: its error, or null when it landed. */
   onWrite: (error: Error | null) => void;
@@ -97,7 +82,7 @@ export function SessionRow({
     setDraft(null);
   }
 
-  const renameField: ComponentProps<typeof SessionItem>['rename'] =
+  const renameField: ComponentProps<typeof SortableSessionItem>['rename'] =
     draft === null
       ? undefined
       : {
@@ -109,7 +94,9 @@ export function SessionRow({
         };
 
   return (
-    <SessionItem
+    <SortableSessionItem
+      id={session.id}
+      disabled={dragDisabled}
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}

@@ -1,13 +1,22 @@
-import { EmptyState, SessionList, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  DragProvider,
+  EmptyState,
+  SessionList,
+  Skeleton,
+  SortableGroup,
+} from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
-import { combineQueries, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { combineQueries, ErrorAlert, QueryState, useDragLabels } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
+import { SidebarDragCopy } from '../components/sidebar-drag-copy';
+import { useSidebarOrder } from '../hooks/use-sidebar-order';
+import { dotFor } from '../lib/session-dot';
 import {
   ALL,
   activeFilters,
@@ -20,7 +29,8 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { groupByProject, matchesQuery } from '../lib/session-groups';
+import { matchesQuery } from '../lib/session-groups';
+import { PROJECTS_GROUP, projectIdOf, projectItemId } from '../lib/sidebar-order';
 import { NewSessionButton } from './new-session-button';
 import { ProjectGroup } from './project-group';
 
@@ -42,6 +52,9 @@ const DeleteSessionDialog = lazy(() =>
  *
  * Filters and search are state, not URL: the console's URL is the open
  * session, and a filter must not change which one that is.
+ *
+ * The projects and their sessions drag into the reader's own order
+ * (`useSidebarOrder`), on the sidebar's own `DragProvider`.
  */
 export function SessionsSidebar() {
   const { t } = useTranslation();
@@ -60,6 +73,9 @@ export function SessionsSidebar() {
   // A later write that lands clears it, and so does Dismiss.
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
+  const dragLabels = useDragLabels();
+  const labelOf = (project: { isUnassigned: boolean; name: string }) =>
+    project.isUnassigned ? t('projects.unassigned') : project.name;
 
   const all = sessions ?? [];
   const options = sessions
@@ -67,7 +83,7 @@ export function SessionsSidebar() {
         project: projectOptions(
           projects.data?.map((project) => ({
             id: project.id,
-            name: project.isUnassigned ? t('projects.unassigned') : project.name,
+            name: labelOf(project),
           })),
           t('sessions.filters.allProjects'),
         ),
@@ -84,7 +100,13 @@ export function SessionsSidebar() {
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
-  const groups = groupByProject(projects.data ?? [], visible);
+  const { groups, handlers } = useSidebarOrder({
+    projects: projects.data ?? [],
+    sessions: visible,
+    custom: filters.sort === 'custom',
+    onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
+    onWrite: setFailure,
+  });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -147,32 +169,63 @@ export function SessionsSidebar() {
             ),
           }}
         >
-          {(ready) =>
-            ready.map(({ project, sessions: members }) => {
-              const key = project?.id ?? 'unfiled';
-              return (
-                <ProjectGroup
-                  key={key}
-                  project={project}
-                  sessions={members}
-                  open={!closed.includes(key)}
-                  onOpenChange={(next) =>
-                    setClosed((current) =>
-                      next ? current.filter((id) => id !== key) : [...current, key],
-                    )
-                  }
-                  narrowed={narrowed}
-                  query={query}
-                  onNewSessionHere={(target) =>
-                    navigate({ to: '/sessions/new', search: { project: target.id } })
-                  }
-                  onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
-                  onDelete={setDeleting}
-                  onWrite={setFailure}
-                />
-              );
-            })
-          }
+          {(ready) => (
+            <DragProvider
+              {...handlers}
+              labels={dragLabels}
+              overlay={(active) => {
+                if (active.data.type === 'project') {
+                  const group = ready.find(({ project }) => project?.id === projectIdOf(active.id));
+                  return group?.project ? (
+                    <SidebarDragCopy
+                      kind="project"
+                      name={labelOf(group.project)}
+                      count={group.sessions.length}
+                    />
+                  ) : null;
+                }
+                const session = ready
+                  .flatMap((group) => group.sessions)
+                  .find((row) => row.id === active.id);
+                return session ? (
+                  <SidebarDragCopy kind="session" name={session.name} state={dotFor(session)} />
+                ) : null;
+              }}
+            >
+              <SortableGroup
+                id={PROJECTS_GROUP}
+                items={ready.flatMap(({ project }) => (project ? [projectItemId(project.id)] : []))}
+                accepts={['project']}
+              >
+                {ready.map(({ project, sessions: members }) => {
+                  const key = project?.id ?? 'unfiled';
+                  return (
+                    <ProjectGroup
+                      key={key}
+                      project={project}
+                      sessions={members}
+                      open={!closed.includes(key)}
+                      onOpenChange={(next) =>
+                        setClosed((current) =>
+                          next ? current.filter((id) => id !== key) : [...current, key],
+                        )
+                      }
+                      narrowed={narrowed}
+                      query={query}
+                      onNewSessionHere={(target) =>
+                        navigate({ to: '/sessions/new', search: { project: target.id } })
+                      }
+                      onSettings={(target) =>
+                        dialogs.open({ kind: 'project', projectId: target.id })
+                      }
+                      onDelete={setDeleting}
+                      onWrite={setFailure}
+                    />
+                  );
+                })}
+              </SortableGroup>
+            </DragProvider>
+          )}
         </QueryState>
       </div>
 

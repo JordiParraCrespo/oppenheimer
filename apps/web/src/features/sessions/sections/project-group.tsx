@@ -4,6 +4,8 @@ import {
   SidebarEmptyRow,
   SidebarProjectGroup,
   SidebarProjectHeader,
+  SortableGroup,
+  SortableSidebarProjectGroup,
   useNow,
 } from '@oppenheimer/design-system-web';
 import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
@@ -11,6 +13,7 @@ import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consume
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { projectItemId } from '../lib/sidebar-order';
 import { SessionRow } from './session-row';
 
 /**
@@ -19,6 +22,10 @@ import { SessionRow } from './session-row';
  * its ages' clock, and is a section rather than a component because the
  * header's "one of mine is open" mark subscribes to the route, a boolean per
  * group, so a navigation re-renders only the groups whose mark moved.
+ *
+ * A project's group drags by its header among the others, and its rows are a
+ * `SortableGroup` that takes sessions, folded or empty; the group with no
+ * project takes none and its rows stay put.
  */
 export function ProjectGroup({
   project,
@@ -36,7 +43,11 @@ export function ProjectGroup({
   sessions: SessionEntity[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Whether a filter or the search is narrowing the list, which changes what an empty group says. */
+  /**
+   * Whether a filter or the search is narrowing the list, which changes what
+   * an empty group says, and holds the rows still: a drop would lose the
+   * places of the ones it hides.
+   */
   narrowed: boolean;
   /** The settled search, which an empty group repeats back. */
   query: string;
@@ -60,8 +71,15 @@ export function ProjectGroup({
       sessions.some((session) => state.location.pathname === `/sessions/${session.id}`),
   });
 
-  return (
-    <SidebarProjectGroup>
+  const rows = (
+    <SortableGroup
+      id={project?.id ?? 'unfiled'}
+      // A folded group's rows are not drawn, so it holds none; a drop on it still lands.
+      items={open ? sessions.map((session) => session.id) : []}
+      accepts={project ? ['session'] : []}
+      data={{ label }}
+      className="flex flex-col"
+    >
       <SidebarProjectHeader
         name={label}
         count={sessions.length}
@@ -109,12 +127,21 @@ export function ProjectGroup({
               key={session.id}
               session={session}
               now={now}
+              dragDisabled={!project || narrowed}
               onDelete={onDelete}
               onWrite={onWrite}
             />
           ))}
         </SessionList>
       )}
-    </SidebarProjectGroup>
+    </SortableGroup>
+  );
+
+  return project ? (
+    <SortableSidebarProjectGroup id={projectItemId(project.id)} label={label}>
+      {rows}
+    </SortableSidebarProjectGroup>
+  ) : (
+    <SidebarProjectGroup>{rows}</SidebarProjectGroup>
   );
 }

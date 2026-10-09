@@ -62,13 +62,6 @@ describe('projectsForMove', () => {
   });
 });
 
-describe('groupByProject, Unassigned', () => {
-  it('puts the Unassigned project first', () => {
-    const groups = groupByProject([project('newer', []), project('unassigned', [])], []);
-    expect(groups.map((group) => group.project?.id)).toEqual(['unassigned', 'newer']);
-  });
-});
-
 describe('matchesQuery', () => {
   it('narrows on the name, ignoring case and blank queries', () => {
     const row = session('s', 'p', [], 'Wallet empty state');
