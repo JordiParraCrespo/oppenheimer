@@ -197,6 +197,104 @@ func TestGitNeverAsksForAPassword(t *testing.T) {
 	}
 }
 
+// Every git says "there was no credential" in its own words, and each must
+// reach the console as GIT_004, not as a generic git failure. The real git
+// on the machine running the tests shows only its own wording, so a stand-in
+// git prints each one: Apple's (/usr/bin/git on every Mac) is the one a
+// runner on macOS meets, and it names neither a username nor a prompt.
+func TestEveryGitsWordForAMissingCredentialIsGIT004(t *testing.T) {
+	for name, out := range map[string]string{
+		"upstream, no prompt":   "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+		"upstream, no password": "fatal: could not read Password for 'https://x-access-token@github.com': terminal prompts disabled",
+		"Apple git":             "fatal: unable to get password from user",
+		"refused token":         "remote: Invalid username or password.\nfatal: Authentication failed for 'https://github.com/jordi/oppenheimer.git/'",
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := gitadapter.New(gitadapter.Options{
+				Layout:           domain.Layout{Root: t.TempDir()},
+				Binary:           failingGit(t, out),
+				CredentialHelper: "runner credential-helper",
+			})
+			t.Cleanup(c.Wait)
+
+			err := c.Ensure(domain.WithSession(context.Background(), sessionID), repo, "https://github.com/jordi/oppenheimer.git", "main")
+
+			var prob *problem.Error
+			if !isProblem(err, &prob, "GIT_004") {
+				t.Fatalf("err = %v, want GIT_004", err)
+			}
+			if strings.Contains(prob.Detail, "unable to get password") || strings.Contains(prob.Detail, "could not read") {
+				t.Fatalf("the detail relays git's prompt, which nobody was shown: %s", prob.Detail)
+			}
+		})
+	}
+
+	// And a failure that is not about a credential stays what it is.
+	c := gitadapter.New(gitadapter.Options{
+		Layout: domain.Layout{Root: t.TempDir()},
+		Binary: failingGit(t, "fatal: unable to access 'https://github.com/jordi/oppenheimer.git/': Could not resolve host: github.com"),
+	})
+	t.Cleanup(c.Wait)
+	var prob *problem.Error
+	if err := c.Ensure(context.Background(), repo, "https://github.com/jordi/oppenheimer.git", "main"); err == nil || isProblem(err, &prob, "GIT_004") {
+		t.Fatalf("err = %v, want a git failure that is not GIT_004", err)
+	}
+}
+
+// failingGit writes a git that prints out and exits 128, as git does when it
+// gives up.
+func failingGit(t *testing.T, out string) string {
+	t.Helper()
+	script := filepath.Join(t.TempDir(), "git")
+	body := "#!/bin/sh\ncat >&2 <<'EOF'\n" + out + "\nEOF\nexit 128\n"
+	if err := os.WriteFile(script, []byte(body), 0o700); err != nil { //nolint:gosec // a test stand-in must be executable
+		t.Fatal(err)
+	}
+	return script
+}
+
+// A helper the host account configured — osxkeychain in Apple's system
+// gitconfig, a credential manager in ~/.gitconfig — is never asked for a
+// session's token: it would answer with whatever the account stored, for
+// any session, and the control plane would never have said yes. Here the
+// configured helper even has the right token; the clone must still fail for
+// a session the runner's helper refuses.
+func TestOnlyTheRunnersHelperIsAsked(t *testing.T) {
+	remote := privateOrigin(t)
+	c, _, _ := privateClient(t)
+	dir := t.TempDir()
+	marker := filepath.Join(dir, "asked")
+	keychain := filepath.Join(dir, "keychain")
+	body := "#!/bin/sh\n" +
+		"[ \"$1\" = get ] || exit 0\n" +
+		"cat >/dev/null\n" +
+		"echo asked >> '" + marker + "'\n" +
+		"printf 'username=" + privateUser + "\\npassword=" + privateToken + "\\n'\n"
+	if err := os.WriteFile(keychain, []byte(body), 0o700); err != nil { //nolint:gosec // a test helper must be executable
+		t.Fatal(err)
+	}
+	global := filepath.Join(dir, "gitconfig")
+	if err := os.WriteFile(global, []byte("[credential]\n\thelper = "+keychain+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_CONFIG_GLOBAL", global)
+
+	err := c.Ensure(domain.WithSession(context.Background(), "a-session-the-control-plane-refuses"), repo, remote, "main")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, "GIT_004") {
+		t.Fatalf("err = %v, want GIT_004", err)
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Fatal("git asked the account's own credential helper")
+	}
+	// The stand-in is a working keychain: any other git on the host gets in.
+	git(t, "", "ls-remote", remote)
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatal("the configured helper was never asked by a plain git either; the test proves nothing")
+	}
+}
+
 func TestEnsureClearsAnEmptyMirrorAnOlderRunnerLeft(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)

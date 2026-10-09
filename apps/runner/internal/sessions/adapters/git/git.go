@@ -475,6 +475,10 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 	// that halves the step a person waits on for a worktree (14).
 	full := []string{"-c", "advice.detachedHead=false", "-c", "checkout.workers=0"}
 	if c.credentialHelper != "" {
+		// The empty value clears every helper the system, global and repo
+		// config named before it (osxkeychain in Apple's system gitconfig, a
+		// person's GCM): only the runner's helper is asked, so a token for
+		// one session never comes from a keychain the host account filled.
 		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
 	}
 	full = append(full, args...)
@@ -529,12 +533,17 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 }
 
 // needsCredential recognises git giving up for want of a credential: it asked
-// the helper, got nothing, and was not allowed to ask a person.
+// the helper, got nothing, and was not allowed to ask a person. Each git
+// words that differently: upstream git names the prompt it could not show
+// ("could not read Username for '…': terminal prompts disabled"), while
+// Apple's git — /usr/bin/git on every Mac, the Xcode command-line tools —
+// prompt variables say.
 func needsCredential(out string) bool {
 	for _, sign := range []string{
 		"could not read Username",
 		"could not read Password",
 		"terminal prompts disabled",
+		"unable to get password from user",
 		"Authentication failed",
 	} {
 		if strings.Contains(out, sign) {
@@ -545,7 +554,8 @@ func needsCredential(out string) bool {
 }
 
 // credentialRefused says what a reader can act on. git's own words — "could
-// not read Username" — point at a prompt nobody was shown.
+// not read Username", "unable to get password from user" — point at a prompt
+// nobody was shown.
 func credentialRefused(verb, repo, session string) *problem.Error {
 	subject := "the repository"
 	if repo != "" {
