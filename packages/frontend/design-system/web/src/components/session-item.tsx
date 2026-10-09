@@ -157,8 +157,9 @@ function SessionItem({
  * one still takes it). The row is the sortable node and its button the
  * control (`useSortableControl`), so a click or Enter opens the session and
  * a drag past 5px or Space picks it up; its place is the drop slot while it
- * moves. It sits in the shell's `DragProvider`; where the order and the
- * project are kept is the app's. `hidden` keeps a row the reader filtered
+ * moves. Its drag data carries its `label` and `state`, so a lifted copy
+ * draws from the drag alone. It sits in the shell's `DragProvider`; where
+ * the order and the project are kept is the app's. `hidden` keeps a row the reader filtered
  * out in its group's order without drawing it.
  */
 function SortableSessionItem({
@@ -171,7 +172,11 @@ function SortableSessionItem({
   disabled?: boolean;
   hidden?: boolean;
 }) {
-  const { node, control } = useSortableControl({ id, data: { type: 'session', label: props.name }, disabled });
+  const { node, control } = useSortableControl({
+    id,
+    data: { type: 'session', label: props.name, state: props.state },
+    disabled,
+  });
   return (
     <SessionItem
       {...props}

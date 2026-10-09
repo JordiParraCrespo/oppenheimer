@@ -13,7 +13,6 @@ import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consume
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { projectItemId } from '../lib/sidebar-order';
 import { SessionRow } from './session-row';
 
 /**
@@ -138,7 +137,7 @@ export function ProjectGroup({
   );
 
   return project ? (
-    <SortableSidebarProjectGroup id={projectItemId(project.id)} label={label}>
+    <SortableSidebarProjectGroup id={project.id} label={label}>
       {rows}
     </SortableSidebarProjectGroup>
   ) : (

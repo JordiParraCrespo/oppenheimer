@@ -413,13 +413,25 @@ const ProjectHandle = React.createContext<{
 } | null>(null);
 
 /**
+ * The id a `SortableSidebarProjectGroup` sorts by, for its `SortableGroup`'s
+ * `items`. A project's own id names the `SortableGroup` its sessions sit
+ * in, and one drag has one namespace, so the group's item id is a
+ * different one.
+ */
+function sortableProjectId(projectId: string): string {
+  return `project:${projectId}`;
+}
+
+/**
  * SortableSidebarProjectGroup — a `SidebarProjectGroup` the reader can drag
- * up or down among the others, in a `SortableGroup` that takes `project`.
- * Its `SidebarProjectHeader` is the handle: a press on the header past 5px
- * or Space on its fold button picks the whole group up, while a click
- * still folds it and the header's actions never pick it up. Its rows stay
- * their own sortables, so a session inside still drags on its own. While
- * it moves its place is the drop slot. Where the order is kept is the app's.
+ * up or down among the others, in a `SortableGroup` that takes `project`
+ * and lists `sortableProjectId`s. Its `SidebarProjectHeader` is the handle:
+ * a press on the header past 5px or Space on its fold button picks the
+ * whole group up, while a click still folds it and the header's actions
+ * never pick it up. Its rows stay their own sortables, so a session inside
+ * still drags on its own. While it moves its place is the drop slot. Its
+ * drag data carries the project's id as `projectId` and its `label`; where
+ * the order is kept is the app's.
  */
 function SortableSidebarProjectGroup({
   id,
@@ -428,8 +440,17 @@ function SortableSidebarProjectGroup({
   className,
   children,
   ...props
-}: Omit<React.ComponentProps<'div'>, 'id'> & { id: string; label: string; disabled?: boolean }) {
-  const { node, control } = useSortableControl({ id, data: { type: 'project', label }, disabled });
+}: Omit<React.ComponentProps<'div'>, 'id'> & {
+  /** The project's id. */
+  id: string;
+  label: string;
+  disabled?: boolean;
+}) {
+  const { node, control } = useSortableControl({
+    id: sortableProjectId(id),
+    data: { type: 'project', label, projectId: id },
+    disabled,
+  });
   const { onPointerDown, onKeyDown, ref, style, className: slot, ...rest } = node;
   return (
     <ProjectHandle.Provider value={{ handle: { onPointerDown, onKeyDown }, control }}>
@@ -912,6 +933,7 @@ export {
   SidebarProjectGroup,
   SidebarProjectHeader,
   SortableSidebarProjectGroup,
+  sortableProjectId,
   SidebarRail,
   SidebarSearch,
   SidebarSeparator,

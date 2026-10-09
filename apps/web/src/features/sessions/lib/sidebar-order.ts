@@ -14,18 +14,6 @@ export interface SidebarOrder {
 
 export const SIDEBAR_ORDER_KEY = 'oppenheimer.sidebar.order';
 
-/** The `SortableGroup` the projects sit in; a project's sessions sit in one named by its id. */
-export const PROJECTS_GROUP = 'projects';
-
-/** A project's item id: its own id names the group its sessions sit in, and ids are one namespace. */
-export function projectItemId(projectId: string): string {
-  return `project:${projectId}`;
-}
-
-export function projectIdOf(itemId: string): string {
-  return itemId.slice('project:'.length);
-}
-
 const EMPTY: SidebarOrder = { projects: [], sessions: [] };
 
 function ids(value: unknown): string[] {

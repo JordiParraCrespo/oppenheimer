@@ -4,6 +4,7 @@ import {
   SessionList,
   Skeleton,
   SortableGroup,
+  sortableProjectId,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
@@ -15,8 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
-import { useSidebarOrder } from '../hooks/use-sidebar-order';
-import { dotFor } from '../lib/session-dot';
+import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import {
   ALL,
   activeFilters,
@@ -30,7 +30,6 @@ import {
   type SessionFilters,
 } from '../lib/session-filters';
 import { matchesQuery } from '../lib/session-groups';
-import { PROJECTS_GROUP, projectIdOf, projectItemId } from '../lib/sidebar-order';
 import { NewSessionButton } from './new-session-button';
 import { ProjectGroup } from './project-group';
 
@@ -74,8 +73,6 @@ export function SessionsSidebar() {
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
   const dragLabels = useDragLabels();
-  const labelOf = (project: { isUnassigned: boolean; name: string }) =>
-    project.isUnassigned ? t('projects.unassigned') : project.name;
 
   const all = sessions ?? [];
   const options = sessions
@@ -83,7 +80,7 @@ export function SessionsSidebar() {
         project: projectOptions(
           projects.data?.map((project) => ({
             id: project.id,
-            name: labelOf(project),
+            name: project.isUnassigned ? t('projects.unassigned') : project.name,
           })),
           t('sessions.filters.allProjects'),
         ),
@@ -173,28 +170,13 @@ export function SessionsSidebar() {
             <DragProvider
               {...handlers}
               labels={dragLabels}
-              overlay={(active) => {
-                if (active.data.type === 'project') {
-                  const group = ready.find(({ project }) => project?.id === projectIdOf(active.id));
-                  return group?.project ? (
-                    <SidebarDragCopy
-                      kind="project"
-                      name={labelOf(group.project)}
-                      count={group.sessions.length}
-                    />
-                  ) : null;
-                }
-                const session = ready
-                  .flatMap((group) => group.sessions)
-                  .find((row) => row.id === active.id);
-                return session ? (
-                  <SidebarDragCopy kind="session" name={session.name} state={dotFor(session)} />
-                ) : null;
-              }}
+              overlay={(active) => <SidebarDragCopy item={active} />}
             >
               <SortableGroup
                 id={PROJECTS_GROUP}
-                items={ready.flatMap(({ project }) => (project ? [projectItemId(project.id)] : []))}
+                items={ready.flatMap(({ project }) =>
+                  project ? [sortableProjectId(project.id)] : [],
+                )}
                 accepts={['project']}
               >
                 {ready.map(({ project, sessions: members }) => {

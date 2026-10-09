@@ -15,13 +15,11 @@ export interface ProjectGroup {
 export function groupByProject(
   projects: readonly ProjectEntity[],
   sessions: readonly SessionEntity[],
-  /** Which project a session is drawn in: its own, or where a drop is still moving it. */
-  projectOf: (session: SessionEntity) => string = (session) => session.projectId,
 ): ProjectGroup[] {
   const byProject = new Map<string, SessionEntity[]>(projects.map((project) => [project.id, []]));
   const orphans: SessionEntity[] = [];
   for (const session of sessions) {
-    const list = byProject.get(projectOf(session));
+    const list = byProject.get(session.projectId);
     if (list) list.push(session);
     else orphans.push(session);
   }

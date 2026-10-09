@@ -1,5 +1,5 @@
 import { SortableSessionItem } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
   useProjectsSnapshot,
@@ -10,8 +10,27 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
-import { dotFor } from '../lib/session-dot';
 import { projectsForMove } from '../lib/session-groups';
+
+/**
+ * How a session's **group** reads as a dot. The sidebar shows the group
+ * because it is organised by what needs you, not what a process is doing
+ * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
+ * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
+ * that is the **lifecycle**, and {@link dotFor} combines the two.
+ */
+const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
+  working: 'running',
+  'waiting-on-you': 'failed',
+  'ready-for-review': 'running',
+  landing: 'pending',
+  idle: 'idle',
+  resolved: 'completed',
+};
+
+function dotFor(session: SessionEntity) {
+  return session.isProvisioning ? 'pending' : DOT[session.state];
+}
 
 /**
  * The age is derived on render: `compactAge` returns unit and count, the words

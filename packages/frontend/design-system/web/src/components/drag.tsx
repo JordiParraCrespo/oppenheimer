@@ -608,8 +608,11 @@ type SortableGroups = Record<string, readonly string[]>;
  * between them: an item crosses into another group the moment it is over
  * it (so the slot opens there and the neighbours slide), takes its final
  * place on drop, and everything goes back on cancel. Spread the handlers on
- * the `DragProvider`; `onChange` gets each new value, and `onMove` the
- * finished move once, for the caller to save.
+ * the `DragProvider`; `onChange` gets each new value, with `settled` on the
+ * last one of a drag (the drop's, or the start again on a cancel), so a
+ * caller that draws the live value while dragging knows when to stop; and
+ * `onMove` the finished move once with the value it settled on, for the
+ * caller to save.
  *
  * With `{ live: true }`, under a `live` provider, `over` is the slot (what
  * the item goes before, or a group for its end) and the item takes it the
@@ -622,8 +625,8 @@ type SortableGroups = Record<string, readonly string[]>;
  */
 function useSortableGroups(
   value: SortableGroups,
-  onChange: (next: SortableGroups) => void,
-  onMove?: (move: { id: string; from: string; to: string; index: number }) => void,
+  onChange: (next: SortableGroups, change: { settled: boolean }) => void,
+  onMove?: (move: { id: string; from: string; to: string; index: number }, next: SortableGroups) => void,
   { live: liveOrder = false }: { live?: boolean } = {},
 ) {
   const drag = React.useRef<{ start: SortableGroups; from: string; live: SortableGroups } | null>(null);
@@ -636,7 +639,7 @@ function useSortableGroups(
 
   const publish = (next: SortableGroups) => {
     if (drag.current) drag.current.live = next;
-    onChange(next);
+    onChange(next, { settled: false });
   };
 
   /** `live` with the item in the slot `over` names, or `live` itself when it is already there. */
@@ -691,7 +694,7 @@ function useSortableGroups(
       } else {
         const to = itemGroup(live, active.id);
         if (!over || !to) {
-          onChange(start);
+          onChange(start, { settled: true });
           return;
         }
         const list = live[to] ?? [];
@@ -701,19 +704,19 @@ function useSortableGroups(
       }
       const to = itemGroup(next, active.id);
       if (!to) {
-        onChange(start);
+        onChange(start, { settled: true });
         return;
       }
-      if (next !== value) onChange(next);
+      onChange(next, { settled: true });
       const index = (next[to] ?? []).indexOf(active.id);
       if (to !== from || index !== (start[from] ?? []).indexOf(active.id)) {
-        onMove?.({ id: active.id, from, to, index });
+        onMove?.({ id: active.id, from, to, index }, next);
       }
     },
     onDragCancel: () => {
       const current = drag.current;
       drag.current = null;
-      if (current) onChange(current.start);
+      if (current) onChange(current.start, { settled: true });
     },
   };
 }

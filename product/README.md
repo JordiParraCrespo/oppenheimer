@@ -364,10 +364,3 @@ earlier note:
   what the reader watches and nothing wider; the wider reach returns as
   one search rather than a listing per repository. That note holds the
   rule and what the reach cost (issue #247).
-- `versions/mvp/05-screens.md` fixed the sidebar's order: the Unassigned
-  project first, then the projects newest first, and each project's
-  sessions by the sort. Since 2026-10-09 the reader drags the projects
-  and the sessions into their own order, kept on the device like the
-  rail's; a session dropped in another project is moved there, the same
-  write as Move to project…, and the filter menu's sort gains Custom
-  order, its new default (05).
