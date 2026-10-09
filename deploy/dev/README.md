@@ -197,7 +197,8 @@ every push to `main` deploys.
 
 The first account you register is an ordinary user. To make it an admin, put
 its id in `BETTER_AUTH_ADMIN_USER_IDS` in `api.env`, then run
-`oppctl deploy` again, or `docker restart oppenheimer-dev-api-1`.
+`sudo -u deploy oppctl reload` (see [Changing the
+configuration](#changing-the-configuration)).
 
 ## Runner releases
 
@@ -227,7 +228,7 @@ ssh admin@oppenheimer-dev 'sudo -u deploy cp /tmp/install.sh /srv/oppenheimer/pu
 
 Then, in `api.env`, set `RUNNER_RELEASE_BASE_URL=https://dev.example.com/releases`,
 `RUNNER_INSTALL_URL=https://dev.example.com/install.sh` and the printed
-`RUNNER_INSTALL_SHA256`, and deploy again. Keep `RELEASE_PUBLIC_KEYS` the same
+`RUNNER_INSTALL_SHA256`, and run `oppctl reload`. Keep `RELEASE_PUBLIC_KEYS` the same
 from release to release: a runner only accepts updates signed by a key it was
 built with.
 
@@ -241,8 +242,32 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 | `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow |
 | `oppctl psql` | psql as the app's role |
 | `oppctl rollback` | Run the previous release's images and config again |
+| `oppctl reload [service…]` | Recreate services from the current release so a change to `config/` takes effect. Default `api web` |
 | `oppctl backup daily` | Dump and upload outside the schedule |
 | `oppctl doctor` | Checks config, keys, remotes, timers and Docker, and says when a reboot is due |
+
+Every subcommand runs from `/`, whatever directory you call it from, so
+`sudo -u deploy oppctl …` works from a home directory `deploy` cannot read.
+
+### Changing the configuration
+
+A change to `/srv/oppenheimer/config/api.env` reaches the API only when its
+container is created again: `env_file` is read when a container is created,
+and `docker restart` keeps the environment it was created with. Run
+
+```bash
+sudo -u deploy oppctl reload          # api and web
+sudo -u deploy oppctl reload api      # the same: web always follows api
+```
+
+It takes the deploy lock, recreates the named services from the current
+release with `host.env` loaded again, waits for them to be healthy and runs
+the same checks a deploy ends with. `web` is recreated whenever `api` is:
+its nginx resolves `api` once, when it starts, and a recreated API has a new
+address, so a console left running would proxy `/api` to nothing.
+
+The tunnel's `cloudflared.yml` is rendered from `host.env` at deploy time, so
+a change to `DEV_HOSTNAME` or `TUNNEL_ID` needs a deploy, not a reload.
 
 ### How a deploy works
 
