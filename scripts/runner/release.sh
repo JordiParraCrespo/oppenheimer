@@ -3,21 +3,54 @@
 # the manifest the hosts read. Signing is a separate, offline step:
 # scripts/runner/sign-release.sh.
 #
-#   scripts/runner/release.sh 1.2.3 [stable|beta]
+#   RELEASE_PUBLIC_KEYS=<key> RELEASE_BASE_URL=https://<host>/releases \
+#     scripts/runner/release.sh 1.2.3 [stable|beta]
+#
+# Both variables are required. RELEASE_PUBLIC_KEYS is the public half of the
+# offline key (`sign-release.sh --pubkey`), space-separated when a second one
+# is being rolled in; RELEASE_BASE_URL is where the manifest and artifacts
+# will be served, which every artifact URL in the manifest is built from.
 #
 # Output, in dist/runner/:
 #   runner_<version>_<os>_<arch>.tar.gz   one static binary each
 #   SHA256SUMS                            what a person verifies by hand
 #   <channel>.json                        the manifest, still unsigned
+#   install.sh                            the installer, release keys stamped in
+#   install.env                           RUNNER_INSTALL_SHA256=<installer digest>
 set -euo pipefail
 
 VERSION="${1:?usage: release.sh <version> [channel]}"
 CHANNEL="${2:-stable}"
 MIN_SUPPORTED="${MIN_SUPPORTED:-}"
-BASE_URL="${RELEASE_BASE_URL:-https://get.oppenheimer.dev/releases}"
+# Where hosts will fetch from. No default: a manifest whose URLs point at a
+# host that does not serve it installs nowhere, and the runner refuses an
+# artifact that is not on the release host it was registered with.
+BASE_URL="${RELEASE_BASE_URL:-}"
 # The public half of the offline signing key, compiled into every binary so
 # the update path does not depend on the network to know what to trust.
 PUBLIC_KEYS="${RELEASE_PUBLIC_KEYS:-}"
+
+case "$CHANNEL" in
+stable | beta) ;;
+*) echo "error: unknown channel $CHANNEL; use stable or beta" >&2; exit 1 ;;
+esac
+if [ -z "$PUBLIC_KEYS" ]; then
+	echo "error: RELEASE_PUBLIC_KEYS is empty. Binaries built without a release key refuse every" >&2
+	echo "       update; print it with: scripts/runner/sign-release.sh --pubkey <key file>" >&2
+	exit 1
+fi
+for key in $PUBLIC_KEYS; do
+	# A raw Ed25519 public key is 32 bytes: 44 base64 characters ending in '='.
+	[[ "$key" =~ ^[A-Za-z0-9+/]{43}=$ ]] || {
+		echo "error: RELEASE_PUBLIC_KEYS holds \"$key\", which is not a base64 Ed25519 public key" >&2
+		exit 1
+	}
+done
+case "$BASE_URL" in
+https://?*) BASE_URL="${BASE_URL%/}" ;;
+"") echo "error: RELEASE_BASE_URL is empty; set it to where hosts will fetch the release, e.g. https://dev.example.com/releases" >&2; exit 1 ;;
+*) echo "error: RELEASE_BASE_URL must be https://, got $BASE_URL" >&2; exit 1 ;;
+esac
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$ROOT/dist/runner"
@@ -26,10 +59,6 @@ COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
-
-if [ -z "$PUBLIC_KEYS" ]; then
-	echo "warning: RELEASE_PUBLIC_KEYS is empty — these binaries will refuse every update" >&2
-fi
 
 targets=("darwin/arm64" "darwin/amd64" "linux/amd64" "linux/arm64")
 for target in "${targets[@]}"; do
@@ -80,5 +109,8 @@ if ! grep -q "^RELEASE_PUBLIC_KEYS=\"$PUBLIC_KEYS\"\$" "$OUT/install.sh"; then
 	exit 1
 fi
 install_digest="$(cd "$OUT" && if command -v sha256sum >/dev/null; then sha256sum install.sh; else shasum -a 256 install.sh; fi | cut -d' ' -f1)"
+# The line the control plane's api.env needs, kept for the steps after this
+# one (scripts/runner/publish-dev.sh, `oppctl publish-release`).
+printf 'RUNNER_INSTALL_SHA256=%s\n' "$install_digest" >"$OUT/install.env"
 echo "==> wrote $OUT/install.sh"
-echo "    RUNNER_INSTALL_SHA256=$install_digest"
+echo "    RUNNER_INSTALL_SHA256=$install_digest  (also in $OUT/install.env)"
