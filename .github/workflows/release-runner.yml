@@ -5,9 +5,10 @@
 # update lives offline and never enters CI — that is the whole property F26
 # buys (see product/versions/mvp/09-runner-install-and-update.md §5). This
 # workflow produces the artifacts and the unsigned manifest; whoever holds the
-# key signs it on their own machine and uploads `<channel>.json.sig`. A
-# manifest without its signature installs nowhere, which is the intended
-# failure mode.
+# key signs and publishes on their own machine with
+# scripts/runner/publish-dev.sh, which rebuilds the same tag, signs it, and
+# hands it to `oppctl publish-release` on the server (deploy/dev/README.md,
+# "Runner releases"). A manifest without its signature is never published.
 name: Release runner
 
 on:
@@ -50,8 +51,8 @@ jobs:
 
       # The public half of the signing key is a repository variable, not a
       # secret: it is public by nature, and it must be identical in every
-      # binary we ship. An empty value builds runners that refuse every
-      # update rather than runners that trust anything.
+      # binary we ship. release.sh fails when it or RUNNER_RELEASE_BASE_URL
+      # is empty, rather than build runners that refuse every update.
       - name: Build every target
         env:
           RELEASE_PUBLIC_KEYS: ${{ vars.RUNNER_RELEASE_PUBLIC_KEYS }}
@@ -82,17 +83,21 @@ jobs:
             "dist/runner/${{ steps.release.outputs.channel }}.json" --clobber
 
       - name: Say what is left to do
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          CHANNEL: ${{ steps.release.outputs.channel }}
         run: |
           {
-            echo "### Runner ${{ steps.release.outputs.version }} built"
+            echo "### Runner $VERSION built"
             echo
-            echo "Not yet installable: the manifest is unsigned. On the machine holding the offline key:"
+            echo "Not yet installable: the manifest is unsigned, and the signing key never comes to CI."
+            echo "To sign and publish it to the dev deployment, on the machine holding the offline key, from a checkout of \`$GITHUB_SHA\`:"
             echo
             echo '```'
-            echo "gh release download $GITHUB_REF_NAME -p '${{ steps.release.outputs.channel }}.json'"
-            echo "scripts/runner/sign-release.sh ${{ steps.release.outputs.channel }}.json release.key"
-            echo "gh release upload $GITHUB_REF_NAME ${{ steps.release.outputs.channel }}.json.sig"
+            echo "DEV_SSH_HOST=<tailnet host> DEV_HOSTNAME=<public host> \\"
+            echo "  scripts/runner/publish-dev.sh $VERSION /path/to/release.key $CHANNEL"
             echo '```'
             echo
-            echo "Then publish both to the release host; hosts read \`<base>/<channel>.json\` and \`.sig\`."
+            echo "It builds, signs, and hands the result to \`oppctl publish-release\`, which refuses anything"
+            echo "unsigned or mismatched (deploy/dev/README.md, \"Runner releases\")."
           } >> "$GITHUB_STEP_SUMMARY"

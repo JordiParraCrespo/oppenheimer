@@ -28,7 +28,7 @@ applies them to Oppenheimer.
 | File | What it is |
 |---|---|
 | `compose.yml` | The stack. Upstream images are pinned by digest. The app images come from `release.env` |
-| `bin/oppctl` | Everything you do on the server: setup, doctor, deploy, rollback, backup, restore, status. Installed once, outside every release |
+| `bin/oppctl` | Everything you do on the server: setup, doctor, deploy, rollback, backup, restore, status, publishing a runner release. Installed once, outside every release |
 | `bin/deploy-gate` | The forced command on CI's SSH key. It accepts `deploy <sha>` and a bundle on stdin, nothing else |
 | `cloudflared.yml.tmpl` | Tunnel ingress. It is in this repo, not in the Cloudflare dashboard |
 | `backup/` | The dump sidecar image, `dump.sh` and `upload.sh` (started from the skill, maintained here), and the restore-drill assertions |
@@ -208,28 +208,63 @@ release is in place the API answers every pairing with HOSTS_004 ("Hosts
 are not configured").
 
 A release is built and signed on your machine. The Ed25519 key that signs it
-never comes to the server, and a manifest without its signature installs
-nowhere.
+never goes to CI or to the server, and a manifest without its signature is
+never published. One command does the whole thing from the machine that holds
+the key:
 
 ```bash
 # once: the offline release key; its public half goes into every binary
 scripts/runner/sign-release.sh --keygen ~/secure/runner-release.key
 
-RELEASE_PUBLIC_KEYS=<public key> RELEASE_BASE_URL=https://dev.example.com/releases \
-  scripts/runner/release.sh 0.1.0 stable          # prints RUNNER_INSTALL_SHA256
-scripts/runner/sign-release.sh dist/runner/stable.json ~/secure/runner-release.key
-
-scp dist/runner/install.sh admin@oppenheimer-dev:/tmp/
-scp dist/runner/*.tar.gz dist/runner/SHA256SUMS dist/runner/stable.json* admin@oppenheimer-dev:/tmp/releases/
-ssh admin@oppenheimer-dev 'sudo -u deploy cp /tmp/install.sh /srv/oppenheimer/public/ &&
-  sudo -u deploy cp /tmp/releases/* /srv/oppenheimer/public/releases/'
+DEV_SSH_HOST=oppenheimer-dev DEV_HOSTNAME=dev.example.com \
+  scripts/runner/publish-dev.sh 0.1.0 ~/secure/runner-release.key   # [stable|beta]
 ```
 
-Then, in `api.env`, set `RUNNER_RELEASE_BASE_URL=https://dev.example.com/releases`,
-`RUNNER_INSTALL_URL=https://dev.example.com/install.sh` and the printed
-`RUNNER_INSTALL_SHA256`, and deploy again. Keep `RELEASE_PUBLIC_KEYS` the same
-from release to release: a runner only accepts updates signed by a key it was
-built with.
+`publish-dev.sh` runs three steps:
+
+1. `release.sh`, with the key's public half as `RELEASE_PUBLIC_KEYS` and
+   `https://$DEV_HOSTNAME/releases` as `RELEASE_BASE_URL`. Both are required:
+   a build without a key would make runners that refuse every update. It
+   writes `dist/runner/install.env` with the installer's
+   `RUNNER_INSTALL_SHA256`.
+2. `sign-release.sh`, locally.
+3. Streams `dist/runner` as a tar over SSH to
+   `sudo -u deploy oppctl publish-release -` on the server.
+
+`oppctl publish-release` checks everything again before it touches anything,
+and refuses the release when any check fails:
+
+- the manifest's `.sig` must verify against the keys stamped into the
+  `install.sh` it came with (the same OpenSSL check the installer runs), and
+  against the keys of the `install.sh` already published, so the runners
+  already installed will take the update
+- every artifact must match the SHA-256 and size the manifest signed, and
+  its URL must be under `https://$DEV_HOSTNAME/releases/`
+- the directory may hold nothing the manifest does not name
+
+Then it puts the release in place without a moment where a host could read a
+manifest from one release and its signature from another. The files go into
+a new directory, `public/.releases/<stamp>-<version>`, and `public/releases`
+is a symlink that is renamed onto it; a channel this publish does not carry
+keeps its files. Then `install.sh` is renamed into place. It sets
+`RUNNER_INSTALL_SHA256` in `api.env` (and `RUNNER_RELEASE_BASE_URL` and
+`RUNNER_INSTALL_URL` when they are empty), and recreates the API and then
+`web`, because nginx resolves `api` only when it starts. If they do not come
+back healthy, it restores the previous `api.env`. The three newest release
+directories are kept.
+
+`oppctl publish-release --check <dir>` runs only the checks. `PUBLISH_FLAGS=--new-keys`
+accepts a manifest the published runners do not trust. Every installed host
+is then stranded until it is installed again, so use it only for a deliberate
+key reset. To roll in a second key, build with
+`RELEASE_PUBLIC_KEYS="<current> <next>"` and keep signing with the current
+key until every host runs a build that carries both.
+
+`publish-release` is new in `oppctl`, so the server needs the copy from this
+commit: re-run `oppctl setup` from a checkout (step 3 above). The `Release
+runner` workflow builds the same artifacts on a `runner-v*` tag and attaches
+them, unsigned, to the GitHub release. Publishing to this server is always
+`publish-dev.sh`, because it is the only place the key is.
 
 ## Day to day
 

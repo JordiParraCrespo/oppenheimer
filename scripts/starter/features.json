@@ -83,7 +83,7 @@
         "e2e/tests/fleet",
         "e2e/support/fleet-local.ts"
       ],
-      "scripts": ["dev:mvp"]
+      "scripts": ["dev:mvp", "check:runner-release"]
     },
     "e2e": {
       "title": "End-to-end tests",
