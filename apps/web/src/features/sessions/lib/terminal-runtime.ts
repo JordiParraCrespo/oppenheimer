@@ -228,6 +228,16 @@ export function mountSessionTerminal(
   };
   document.fonts?.addEventListener('loadingdone', onFontsLoaded);
 
+  // A tab that comes back from the background can find WebGL's glyph atlas
+  // gone bad without the context ever being reported lost (Orca rebuilds on
+  // return for the same reason). Rebuilding costs one repaint.
+  const onVisible = () => {
+    if (document.visibilityState !== 'visible') return;
+    term.clearTextureAtlas();
+    term.refresh(0, term.rows - 1);
+  };
+  document.addEventListener('visibilitychange', onVisible);
+
   // `useAppliedTheme` toggles `.dark` / `.light` on <html>. xterm holds
   // resolved colour strings, not the tokens, so the ramp is re-read here.
   const themeObserver = new MutationObserver(() => {
@@ -282,6 +292,7 @@ export function mountSessionTerminal(
     input.dispose();
     cursorFrames.dispose();
     document.fonts?.removeEventListener('loadingdone', onFontsLoaded);
+    document.removeEventListener('visibilitychange', onVisible);
     themeObserver.disconnect();
     resizeObserver.disconnect();
     ptySize.dispose();
@@ -305,6 +316,11 @@ function copyToClipboard(text: string) {
  * rather than degrading, and the GPU can take a context back later. Either
  * way this terminal stays on the DOM renderer for the rest of its life; the
  * next terminal tries again.
+ *
+ * The xterm packages are pinned to the 6.1 / addon-webgl 0.20 betas (Orca's
+ * set) on purpose: 0.19 corrupts its glyph atlas when it merges pages, so a
+ * long session full of diffs drew its cells as solid blocks (xterm.js #5883,
+ * #6055). Move back to a `^` range once a stable release carries the fix.
  */
 function loadWebgl(term: Terminal, fallBack: () => void) {
   try {
