@@ -364,3 +364,10 @@ earlier note:
   what the reader watches and nothing wider; the wider reach returns as
   one search rather than a listing per repository. That note holds the
   rule and what the reach cost (issue #247).
+- Note 01 put the serialized scrollback in the "Later" column, and the
+  console closed a session's terminal whenever the reader switched away,
+  so every switch dialled again in front of a blank pane. The MVP now
+  keeps the last few terminals attached, draws a closed one's last frame
+  while the next dials, and mints the attach ticket when the pointer
+  rests on a session's row. Frames live in the tab's memory only and go
+  at sign-out; scrollback that survives a reload stays in 0.7.

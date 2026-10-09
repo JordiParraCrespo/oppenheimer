@@ -112,7 +112,7 @@ export {
   useSessions,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream } from './sessions.stream';
+export { usePrimeSessionStream, useSessionStream } from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,

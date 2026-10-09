@@ -1,4 +1,5 @@
 import { inject, injectable, optional } from 'inversify';
+import { CONSUMER_CONFIG } from '../../config';
 import { TOKENS } from '../../di/tokens';
 import type {
   AttachTicket,
@@ -13,6 +14,9 @@ import { AttachSessionStream, type SessionStream } from './stream/session-stream
 
 @injectable()
 export class SessionsService {
+  /** Tickets minted ahead of a dial (`primeAttachTicket`), by session and window. */
+  private readonly primedTickets = new Map<string, PrimedTicket>();
+
   constructor(
     @inject(TOKENS.SessionsRepository)
     private readonly repository: SessionsRepository,
@@ -82,7 +86,55 @@ export class SessionsService {
   openStream(id: string, window = 0): SessionStream {
     return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
-      issueTicket: () => this.issueAttachTicket(id, window),
+      issueTicket: () => this.takeAttachTicket(id, window),
     });
   }
+
+  /**
+   * Mint a window's attach ticket before the terminal asks for one, so the
+   * dial that follows a click skips a round trip. Nothing waits on it: a mint
+   * that fails is forgotten, and the stream's own mint reports the reason. A
+   * ticket already waiting and still fresh is kept, so a pointer passing back
+   * and forth over a row mints once.
+   */
+  primeAttachTicket(id: string, window = 0): void {
+    const key = ticketKey(id, window);
+    const waiting = this.primedTickets.get(key);
+    if (waiting && isFresh(waiting)) return;
+    const primed: PrimedTicket = {
+      ticket: this.repository.issueAttachTicket(id, window),
+      mintedAt: Date.now(),
+    };
+    this.primedTickets.set(key, primed);
+    primed.ticket.catch(() => {
+      if (this.primedTickets.get(key) === primed) this.primedTickets.delete(key);
+    });
+  }
+
+  /**
+   * The ticket a dial uses: the primed one when it is still fresh, a new one
+   * otherwise. Taken, never shared, because the gateway spends a ticket on
+   * the socket that presents it.
+   */
+  private takeAttachTicket(id: string, window: number): Promise<AttachTicket> {
+    const key = ticketKey(id, window);
+    const primed = this.primedTickets.get(key);
+    this.primedTickets.delete(key);
+    if (!primed || !isFresh(primed)) return this.issueAttachTicket(id, window);
+    return primed.ticket.catch(() => this.issueAttachTicket(id, window));
+  }
+}
+
+interface PrimedTicket {
+  ticket: Promise<AttachTicket>;
+  /** The browser's clock, not the API's `expiresAt`: the two need not agree. */
+  mintedAt: number;
+}
+
+function ticketKey(id: string, window: number): string {
+  return `${id}:${window}`;
+}
+
+function isFresh(primed: PrimedTicket): boolean {
+  return Date.now() - primed.mintedAt < CONSUMER_CONFIG.stream.primedTicketMs;
 }

@@ -1,5 +1,6 @@
 import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
 import { FitAddon } from '@xterm/addon-fit';
+import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
@@ -14,6 +15,9 @@ import {
   terminalMinimumContrastRatio,
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
+
+/** How long a restored frame waits for a glyph once the attachment has started talking. */
+const RESTORED_FRAME_HOLD_MS = 1_000;
 
 /** The platform test xterm itself uses to pick its Mac behaviour. */
 const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
@@ -37,12 +41,34 @@ export interface SessionTerminalOptions {
    * caller uses this to tell a slow start from a broken one.
    */
   onFirstOutput?: () => void;
+  /**
+   * The last frame of an earlier terminal for this window (`serialize`),
+   * drawn at once so the pane is never blank while the stream dials. The
+   * first chunk with a glyph replaces it: the attachment replays the session
+   * whole, so keeping both would print its scrollback twice.
+   */
+  restore?: string;
+}
+
+/** A mounted terminal: what the pool that keeps it needs from it. */
+export interface MountedSessionTerminal {
+  /** Something has been drawn on it: output from the far end, or a restored frame. */
+  readonly hasOutput: boolean;
+  /** The screen and its recent scrollback as escape sequences, for `restore`. */
+  serialize(scrollback: number): string;
+  /** The container moved back into the page: refit to it and repaint. */
+  shown(): void;
+  dispose(): void;
 }
 
 /**
- * One session terminal: xterm.js in `container`, wired to `stream`, until the
- * returned function disposes it. Everything that talks to xterm lives here;
+ * One session terminal: xterm.js in `container`, wired to `stream`, until
+ * `dispose()`. Everything that talks to xterm lives here;
  * the stream is the caller's and this never disposes it.
+ *
+ * The container may leave the page and come back (`terminal-pool.ts` parks it
+ * while the reader is on another session); the terminal keeps writing what the
+ * stream says meanwhile, and `shown()` refits it when it is back.
  *
  * **Nothing moves the picture of the grid.** Claude Code lays its turn out
  * across the whole terminal, so its prompt rests on the last rows; Codex puts
@@ -55,7 +81,7 @@ export function mountSessionTerminal(
   container: HTMLElement,
   stream: SessionStream,
   options: SessionTerminalOptions = {},
-): () => void {
+): MountedSessionTerminal {
   const term = new Terminal({
     ...TERMINAL_FONT,
     theme: readTerminalTheme(),
@@ -79,6 +105,8 @@ export function mountSessionTerminal(
   const unicode = new Unicode11Addon();
   term.loadAddon(unicode);
   term.unicode.activeVersion = '11';
+  const serializer = new SerializeAddon();
+  term.loadAddon(serializer);
 
   term.open(container);
 
@@ -243,14 +271,49 @@ export function mountSessionTerminal(
   // it. A chunk counts once it carries a glyph (`hasVisibleText`), since an
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
-  const offData = stream.onData((chunk, consumed) => {
-    if (!announcedOutput && hasVisibleText(chunk)) {
-      announcedOutput = true;
-      options.onFirstOutput?.();
-    }
+  // A restored frame holds the grid until the attachment has something to
+  // draw over it. The chunks before that (tmux's preamble: the alternate
+  // screen, modes, a clear) are held rather than written, because the reset
+  // that takes the frame away would undo them, and written they would blank
+  // the frame early.
+  //
+  // A session whose screen really is blank never sends that glyph, and held
+  // chunks are bytes the runner has not been credited for, so the frame gives
+  // way a moment after the first one is held whatever it carried.
+  let held: { chunk: Uint8Array | string; consumed: () => void }[] | null = null;
+  let heldTimer: ReturnType<typeof setTimeout> | null = null;
+  if (options.restore) {
+    term.write(options.restore);
+    announcedOutput = true;
+    held = [];
+  }
+  const write = (chunk: Uint8Array | string, consumed: () => void) => {
     // xterm's write callback fires once the parser has drained the chunk:
     // that is the moment the bytes are consumed, and the credit goes with it.
     term.write(cursorFrames.frame(chunk), consumed);
+  };
+  const releaseHeld = () => {
+    if (heldTimer !== null) clearTimeout(heldTimer);
+    heldTimer = null;
+    if (held === null) return;
+    const early = held;
+    held = null;
+    term.reset();
+    for (const { chunk, consumed } of early) write(chunk, consumed);
+  };
+  const offData = stream.onData((chunk, consumed) => {
+    const visible = (!announcedOutput || held !== null) && hasVisibleText(chunk);
+    if (!announcedOutput && visible) {
+      announcedOutput = true;
+      options.onFirstOutput?.();
+    }
+    if (held !== null && !visible) {
+      held.push({ chunk, consumed });
+      heldTimer ??= setTimeout(releaseHeld, RESTORED_FRAME_HOLD_MS);
+      return;
+    }
+    releaseHeld();
+    write(chunk, consumed);
   });
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
@@ -272,7 +335,8 @@ export function mountSessionTerminal(
   });
   const input = term.onData((data) => stream.send(data));
 
-  return () => {
+  const dispose = () => {
+    if (heldTimer !== null) clearTimeout(heldTimer);
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();
@@ -286,6 +350,20 @@ export function mountSessionTerminal(
     resizeObserver.disconnect();
     ptySize.dispose();
     term.dispose();
+  };
+
+  return {
+    get hasOutput() {
+      return announcedOutput;
+    },
+    serialize: (scrollback) => serializer.serialize({ scrollback }),
+    shown: () => {
+      // The WebGL canvas kept its pixels while it was out of the page, but
+      // the size it was drawn at may not be the pane's any more.
+      refit();
+      term.refresh(0, term.rows - 1);
+    },
+    dispose,
   };
 }
 

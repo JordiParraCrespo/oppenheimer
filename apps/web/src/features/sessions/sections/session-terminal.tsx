@@ -17,10 +17,8 @@ import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
+import { AGENT_WINDOW, terminalKey } from '../lib/terminal-pool';
 import { HostLinkFix } from './host-link-fix';
-
-/** Window 0 is the agent's (05); the pane shows only that one today. */
-const AGENT_WINDOW = 0;
 
 /**
  * The session's terminal: the scrollback and the status band. No window
@@ -55,7 +53,7 @@ export function SessionTerminal({
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
-  const terminal = useTerminal(createStream, {
+  const terminal = useTerminal(terminalKey(sessionId, AGENT_WINDOW), createStream, {
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,

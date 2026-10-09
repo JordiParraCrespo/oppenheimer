@@ -16,6 +16,25 @@ export const CONSUMER_CONFIG = {
   stream: {
     /** The delays between reconnect attempts, with jitter on top (`product/12-lessons-from-grok-bot.md`). */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
+    /**
+     * How long a ticket minted ahead of a dial (a pointer resting on a
+     * session's row) may wait to be used. The API keeps one for sixty seconds;
+     * this leaves the rest for the dial and a clock that disagrees.
+     */
+    primedTicketMs: 30_000,
+    /** How long a pointer rests on a session's row before its ticket is minted. */
+    primeDelayMs: 120,
+    /**
+     * How many terminals stay attached after the reader leaves them, so going
+     * back is instant: each costs a socket and an attachment on the host.
+     */
+    warmTerminals: 4,
+    /** How long a terminal the reader left stays attached before it is closed. */
+    warmForMs: 5 * 60_000,
+    /** How many closed terminals keep their last frame, drawn while the next one dials. */
+    lastFrames: 24,
+    /** Scrollback rows a last frame keeps above the screen. */
+    lastFrameScrollback: 1_000,
   },
   automations: {
     /** How long a GitHub trigger's "would have matched" preview stays fresh. */

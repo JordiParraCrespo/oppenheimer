@@ -10,6 +10,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
+import { useTerminalPrime } from '../hooks/use-terminal-prime';
 import { projectsForMove } from '../lib/session-groups';
 
 /**
@@ -90,6 +91,8 @@ export function SessionRow({
     onError: onWrite,
   });
   const age = compactAge(session.createdAt, now);
+  // Resting on the row readies its terminal's dial, when it has one to attach to.
+  const prime = useTerminalPrime(session.id, session.isLive);
 
   function commitRename() {
     const name = draft?.trim();
@@ -114,7 +117,7 @@ export function SessionRow({
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}
       active={active}
-      render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
+      render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} {...prime} />}
       menuOpen={menuOpen}
       rename={renameField}
       action={

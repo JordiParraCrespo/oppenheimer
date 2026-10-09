@@ -14,3 +14,15 @@ export function useSessionStream(sessionId: string, window = 0): () => SessionSt
   const app = useConsumerApp();
   return useCallback(() => app.sessions.openStream(sessionId, window), [app, sessionId, window]);
 }
+
+/**
+ * Mint a session window's attach ticket ahead of the click that opens it
+ * (`SessionsService.primeAttachTicket`). Stable for the app's lifetime.
+ */
+export function usePrimeSessionStream(): (sessionId: string, window?: number) => void {
+  const app = useConsumerApp();
+  return useCallback(
+    (sessionId: string, window = 0) => app.sessions.primeAttachTicket(sessionId, window),
+    [app],
+  );
+}

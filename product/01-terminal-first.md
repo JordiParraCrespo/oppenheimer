@@ -115,7 +115,7 @@ painless on a headless target:
 
 | Layer | MVP | Later |
 |-------|-----|-------|
-| Terminal | xterm.js WebGL, binary WS, reattach, splits | serialize scrollback, search, links |
+| Terminal | xterm.js WebGL, binary WS, reattach, splits, recent terminals kept warm, last frame drawn while dialling | scrollback that survives a reload, search, links |
 | Runner | node-pty + tmux-backed sessions, outbound WS, ring buffer | own PTY ownership, prebuilt binaries |
 | Workspace | git worktree per session | Docker per session, microVM |
 | Agents | none built in: whatever you type | status hooks, "new session with prompt" |

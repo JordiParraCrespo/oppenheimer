@@ -1,22 +1,26 @@
 import '@xterm/xterm/css/xterm.css';
 import type { SessionStream, StreamEnd, StreamStatus } from '@oppenheimer/frontend-consumer';
 import { useHostPresence } from '@oppenheimer/frontend-consumer/react';
+import { useOppenheimerApp } from '@oppenheimer/frontend-core/react';
 import { useEffect, useRef, useState } from 'react';
 import { RECONNECTED_FOR_MS } from '../lib/host-link-phase';
-import { mountSessionTerminal } from '../lib/terminal-runtime';
+import { claimTerminal, clearTerminalsOnSignOut } from '../lib/terminal-pool';
 
 /**
- * Mounts a session terminal (`mountSessionTerminal`) in `containerRef` for the
- * component's lifetime and reports the link status.
+ * Shows the session terminal kept under `key` (`claimTerminal`) in
+ * `containerRef` for the component's lifetime and reports the link status.
+ * Leaving hands it back to the pool, which keeps it attached for a while, so
+ * coming back to the session shows it as it is now without dialling.
  *
  * The grid's size is deliberately not state: a refit runs once per animation
  * frame during a resize, and state there re-rendered the pane sixty times a
  * second; the runtime hands the size straight to the PTY.
  *
- * The stream is *created* here so one effect owns one lifetime: a stream held
- * in state and closed by a second effect does not survive StrictMode's
- * remount, and the next terminal renders blank in development.
- * `createStream` must be a stable reference.
+ * The claim is made and handed back by one effect, so one effect owns one
+ * lifetime: a stream held in state and closed by a second effect did not
+ * survive StrictMode's remount, and the next terminal rendered blank in
+ * development. `createStream` is called only when the pool has no terminal
+ * for `key`, and must be a stable reference.
  *
  * `retryNow` dials at once between reconnects and opens a new stream after an
  * end. Coming back online or visible does the first on its own, so a waking
@@ -37,6 +41,7 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  * `hostName`, the list's name for it.
  */
 export function useTerminal(
+  key: string,
   createStream: () => SessionStream,
   options: {
     onEnd?: (reason: StreamEnd) => void;
@@ -71,20 +76,30 @@ export function useTerminal(
   });
   const agentWindow = options.agentWindow ?? false;
 
+  // The kernel's auth store: a sign-out closes every terminal the pool keeps.
+  const authStore = useOppenheimerApp().auth.store;
+  useEffect(() => clearTerminalsOnSignOut(authStore), [authStore]);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const stream = createStream();
+    const claim = claimTerminal(
+      key,
+      container,
+      createStream,
+      {
+        onFiles: (files) => onFilesRef.current?.(files),
+        // A reconnect replays the scrollback, and a kept terminal has already
+        // drawn, so a session that has run answers this at once and the
+        // waiting state never shows.
+        onFirstOutput: () => setHasOutput(true),
+      },
+      { agentWindow },
+    );
+    const stream = claim.stream;
     streamRef.current = stream;
-    const unmount = mountSessionTerminal(container, stream, {
-      agentWindow,
-      onFiles: (files) => onFilesRef.current?.(files),
-      // A reconnect replays the scrollback, so a session that has already run
-      // answers this on its first frame and the waiting state never shows.
-      onFirstOutput: () => setHasOutput(true),
-    });
     const offStatus = stream.onStatus((next) => {
       setStatus(next);
       if (next === 'offline' && awayRef.current === null) {
@@ -114,11 +129,10 @@ export function useTerminal(
       document.removeEventListener('visibilitychange', wake);
       offStatus();
       offEnd();
-      unmount();
-      stream.dispose();
+      claim.release();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, generation]);
+  }, [key, createStream, agentWindow, generation]);
 
   const hostId = options.hostId;
   const presence = useHostPresence({

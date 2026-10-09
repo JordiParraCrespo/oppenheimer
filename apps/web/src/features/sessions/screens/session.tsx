@@ -122,7 +122,14 @@ export function SessionScreen({
        surface in dark mode. */
     <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        <SessionTerminal sessionId={session.id} hostId={session.hostId} statusItem={statusItem} />
+        {/* Keyed by session: the link's state (live, away, ended) is one
+          terminal's, and must not carry over to the next session's pane. */}
+        <SessionTerminal
+          key={session.id}
+          sessionId={session.id}
+          hostId={session.hostId}
+          statusItem={statusItem}
+        />
       </div>
     </div>
   );
