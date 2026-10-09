@@ -20,6 +20,7 @@
     "check:structure": "node scripts/check-frontend-structure.mjs && node --test scripts/check-frontend-structure.test.mjs",
     "check:compiler": "node scripts/check-react-compiler.mjs",
     "check:unused": "knip --workspace apps/web --workspace packages/frontend/core --workspace packages/frontend/consumer --workspace packages/frontend/web",
+    "check:singletons": "node scripts/check-singletons.mjs && node --test scripts/check-singletons.test.mjs",
     "check:flags": "node --no-warnings scripts/check-feature-flags.mjs && node --no-warnings --test scripts/check-feature-flags.test.mjs",
     "starter:prune": "node scripts/starter/prune.mjs",
     "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
@@ -50,6 +51,19 @@
     "oxlint": "1.83.0",
     "turbo": "^2.10.7",
     "typescript": "^6.0.3"
+  },
+  "singletons": {
+    "importers": [
+      "apps/web"
+    ],
+    "packages": [
+      "react",
+      "react-dom",
+      "@tanstack/react-query",
+      "@tanstack/react-router",
+      "i18next",
+      "react-i18next"
+    ]
   },
   "pnpm": {
     "overrides": {

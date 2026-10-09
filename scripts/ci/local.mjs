@@ -14,6 +14,7 @@
  * goes here and nowhere else. The jobs, chosen by `affected.mjs`:
  *
  *   lint         Biome, the design-system lint, architecture, structure, flags,
+ *                React singletons (one installed copy each),
  *                compiler bail-outs, unused code, eval anchors, starter manifest
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, generated files committed, unit tests, bundle budget
@@ -167,6 +168,13 @@ job('lint', [
   // Unused exports, files and dependencies in the console and the frontend
   // packages (knip, `knip.json`): an export nobody imports is deleted.
   ['Unused code', 'pnpm', ['check:unused']],
+  // Two installed copies of a React singleton (react-i18next twice, #274)
+  // only showed in the production image. The lockfile already held both, so
+  // read it: a lockfile change runs everything, and a frontend package.json
+  // change affects the console, so either reaches this row.
+  ...(touches(packages, '@oppenheimer/web')
+    ? [['One copy of each React singleton', 'pnpm', ['check:singletons']]]
+    : []),
   // oppenheimer:end web
   // The hexagon audit's eval plants its violations by anchoring on exact
   // lines of apps/api; a refactor that moves one silently retires the eval.
