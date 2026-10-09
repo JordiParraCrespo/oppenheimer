@@ -61,6 +61,12 @@ export const CLIENT_CAPABILITIES = [
   'github_app',
   // Plan's calendar offers Connect Google Calendar only when it can work.
   'google_calendar',
+  // Whether this server can pair a machine at all. Without it every mint
+  // answers HOSTS_004, so a console that only learnt it by minting showed a
+  // red error and a wait that could never end; with it the pairing surfaces
+  // explain instead of asking. A boolean the host routes already reveal to
+  // anyone signed in.
+  'hosts',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

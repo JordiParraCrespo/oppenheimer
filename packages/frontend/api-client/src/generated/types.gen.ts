@@ -2581,6 +2581,10 @@ export type CapabilitiesResponseDto = {
      */
     google_calendar: boolean;
     /**
+     * This server can pair a host: the runner release settings are configured. `false` means every pairing request answers `HOSTS_004`, so a console explains rather than minting a token.
+     */
+    hosts: boolean;
+    /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
     github_app_install_url: string | null;
@@ -9362,7 +9366,7 @@ export type DeploymentCapabilitiesData = {
 
 export type DeploymentCapabilitiesResponses = {
     /**
-     * Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.
+     * Which client-relevant optional features (sign-in providers, the GitHub App, host pairing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.
      */
     200: CapabilitiesResponseDto;
 };

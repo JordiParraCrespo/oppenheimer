@@ -23,6 +23,12 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   google_calendar!: boolean;
 
   @ApiProperty({
+    description:
+      'This server can pair a host: the runner release settings are configured. `false` means every pairing request answers `HOSTS_004`, so a console explains rather than minting a token.',
+  })
+  hosts!: boolean;
+
+  @ApiProperty({
     nullable: true,
     type: String,
     example: 'https://github.com/apps/oppenheimer/installations/new',
