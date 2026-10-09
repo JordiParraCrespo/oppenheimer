@@ -31,13 +31,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
     },
-    // One i18next, the one main.tsx initializes. i18next declares TypeScript as
-    // a peer, and this app compiles with TypeScript 7 while the frontend
-    // packages resolve 6 from the root, so pnpm installs two copies. Without
-    // this, a package's useTranslation() finds no instance: `t` returns keys
-    // and `i18n.exists` is undefined, which crashed every screen that showed
-    // an API error code (onboarding's host step on a server without hosts).
-    dedupe: ['i18next', 'react-i18next'],
   },
   build: {
     rollupOptions: {
