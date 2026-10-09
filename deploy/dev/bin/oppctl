@@ -450,7 +450,7 @@ cmd_setup() {
   command -v openssl jq flock docker tee >/dev/null || die "need openssl, jq, flock and docker"
   [ -f "$HERE/config/host.env.example" ] || die "run setup from a checkout's deploy/dev, not the installed copy"
 
-  install -d -o deploy -g deploy -m 0755 "$ROOT" "$RELEASES"
+  install -d -o deploy -g deploy -m 0755 "$ROOT" "$RELEASES" "$ROOT/public" "$ROOT/public/releases"
   install -d -o deploy -g deploy -m 0700 "$CONFIG"
 
   gen() { [ -s "$CONFIG/$1" ] || { openssl rand -hex 32 > "$CONFIG/$1"; log "generated $1"; }; }
