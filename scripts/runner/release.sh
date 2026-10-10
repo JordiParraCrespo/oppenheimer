@@ -3,21 +3,53 @@
 # the manifest the hosts read. Signing is a separate, offline step:
 # scripts/runner/sign-release.sh.
 #
-#   scripts/runner/release.sh 1.2.3 [stable|beta]
+#   RELEASE_PUBLIC_KEYS=<key> RELEASE_BASE_URL=https://<host>/releases \
+#     scripts/runner/release.sh 1.2.3 [stable|beta]
+#
+# Both variables are required. RELEASE_PUBLIC_KEYS is the public half of the
+# offline key (`sign-release.sh --pubkey`), space-separated when a second one
+# is being rolled in; RELEASE_BASE_URL is where the manifest and artifacts
+# will be served, which every artifact URL in the manifest is built from.
 #
 # Output, in dist/runner/:
 #   runner_<version>_<os>_<arch>.tar.gz   one static binary each
 #   SHA256SUMS                            what a person verifies by hand
 #   <channel>.json                        the manifest, still unsigned
+#   install.sh                            the installer, release keys stamped in
 set -euo pipefail
 
 VERSION="${1:?usage: release.sh <version> [channel]}"
 CHANNEL="${2:-stable}"
 MIN_SUPPORTED="${MIN_SUPPORTED:-}"
-BASE_URL="${RELEASE_BASE_URL:-https://get.oppenheimer.dev/releases}"
+# Where hosts will fetch from. No default: a manifest whose URLs point at a
+# host that does not serve it installs nowhere, and the runner refuses an
+# artifact that is not on the release host it was registered with.
+BASE_URL="${RELEASE_BASE_URL:-}"
 # The public half of the offline signing key, compiled into every binary so
 # the update path does not depend on the network to know what to trust.
 PUBLIC_KEYS="${RELEASE_PUBLIC_KEYS:-}"
+
+case "$CHANNEL" in
+stable | beta) ;;
+*) echo "error: unknown channel $CHANNEL; use stable or beta" >&2; exit 1 ;;
+esac
+if [ -z "$PUBLIC_KEYS" ]; then
+	echo "error: RELEASE_PUBLIC_KEYS is empty. Binaries built without a release key refuse every" >&2
+	echo "       update; print it with: scripts/runner/sign-release.sh --pubkey <key file>" >&2
+	exit 1
+fi
+"$(cd "$(dirname "$0")" && pwd)/sign-release.sh" --check-keys "$PUBLIC_KEYS" || {
+	echo "error: RELEASE_PUBLIC_KEYS must hold base64 Ed25519 public keys (sign-release.sh --pubkey)" >&2
+	exit 1
+}
+# Space-separated on one line: the linker's -X carries one quoted value, and
+# the runner's selfupdate.ParsePublicKeys splits the block on any whitespace.
+PUBLIC_KEYS="$(printf '%s' "$PUBLIC_KEYS" | tr -s ' \t\n' ' ' | sed 's/^ //; s/ $//')"
+case "$BASE_URL" in
+https://?*) BASE_URL="${BASE_URL%/}" ;;
+"") echo "error: RELEASE_BASE_URL is empty; set it to where hosts will fetch the release, e.g. https://dev.example.com/releases" >&2; exit 1 ;;
+*) echo "error: RELEASE_BASE_URL must be https://, got $BASE_URL" >&2; exit 1 ;;
+esac
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$ROOT/dist/runner"
@@ -27,10 +59,6 @@ COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-if [ -z "$PUBLIC_KEYS" ]; then
-	echo "warning: RELEASE_PUBLIC_KEYS is empty — these binaries will refuse every update" >&2
-fi
-
 targets=("darwin/arm64" "darwin/amd64" "linux/amd64" "linux/arm64")
 for target in "${targets[@]}"; do
 	os="${target%/*}"
@@ -39,7 +67,7 @@ for target in "${targets[@]}"; do
 	mkdir -p "$stage"
 	echo "==> building $target"
 	( cd "$ROOT/apps/runner" && CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
-		-ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X ${KEYS_VAR}=${PUBLIC_KEYS}" \
+		-ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X '${KEYS_VAR}=${PUBLIC_KEYS}'" \
 		-o "$stage/runner" ./cmd/runner )
 	cp "$ROOT/LICENSE" "$stage/" 2>/dev/null || true
 	tar -czf "$OUT/runner_${VERSION}_${os}_${arch}.tar.gz" -C "$OUT/stage" "runner_${VERSION}_${os}_${arch}"
