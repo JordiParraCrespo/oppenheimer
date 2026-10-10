@@ -4,6 +4,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
+import { bindLocalEcho } from './local-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
 import {
@@ -82,6 +83,9 @@ export function mountSessionTerminal(
 
   term.open(container);
 
+  // Keys drawn before the relay brings their echo back (`bindLocalEcho`).
+  const localEcho = bindLocalEcho(term);
+
   // The console's keys (05), decided before xterm encodes them.
   term.attachCustomKeyEventHandler((event) => {
     const verdict = classifyKey(event, {
@@ -103,6 +107,7 @@ export function mountSessionTerminal(
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();
+      localEcho.reset();
       stream.send(verdict.data);
     }
     return false;
@@ -270,13 +275,17 @@ export function mountSessionTerminal(
     stream.resize(term.cols, term.rows);
     term.scrollToBottom();
   });
-  const input = term.onData((data) => stream.send(data));
+  const input = term.onData((data) => {
+    localEcho.typed(data);
+    stream.send(data);
+  });
 
   return () => {
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();
     userTurns?.dispose();
+    localEcho.dispose();
     offData();
     offStatus();
     input.dispose();
