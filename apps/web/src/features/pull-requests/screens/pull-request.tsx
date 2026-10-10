@@ -8,6 +8,7 @@ import { PullRequestBriefing } from '../sections/pull-request-briefing';
 import { PullRequestChanges } from '../sections/pull-request-changes';
 import { PullRequestDescription } from '../sections/pull-request-description';
 import { PullRequestToolbar } from '../sections/pull-request-toolbar';
+import { ReviewPopover } from '../sections/review-popover';
 
 /**
  * A pull request: the bar and one of its three views. The review's pending
@@ -40,9 +41,14 @@ export function PullRequestScreen({
           onViewChange={setView}
           layout={layout}
           onLayoutChange={setLayout}
-          pending={pending}
-          onReviewSubmitted={() => setPending([])}
-          onDiscardPending={() => setPending([])}
+          review={
+            <ReviewPopover
+              address={address}
+              pending={pending}
+              onSubmitted={() => setPending([])}
+              onDiscard={() => setPending([])}
+            />
+          }
         />
       </PaneBar>
       {

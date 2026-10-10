@@ -4,6 +4,11 @@
 tunnel: ${TUNNEL_ID}
 credentials-file: /etc/cloudflared/credentials.json
 ingress:
+  # The runner's releases and installer, from the `releases` container. First,
+  # so these two paths never reach the console's nginx.
+  - hostname: ${DEV_HOSTNAME}
+    path: ^/(releases/|install\.sh$)
+    service: http://releases:80
   # oppenheimer:begin web
   # One origin: nginx serves the console and proxies /api (and its WebSockets:
   # the terminal relay and the runners' link) to the API.

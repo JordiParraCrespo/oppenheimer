@@ -199,6 +199,38 @@ The first account you register is an ordinary user. To make it an admin, put
 its id in `BETTER_AUTH_ADMIN_USER_IDS` in `api.env`, then run
 `oppctl deploy` again, or `docker restart oppenheimer-dev-api-1`.
 
+## Runner releases
+
+Hosts install and update the runner from this server: the `releases` container
+serves `/srv/oppenheimer/public` read-only, and the tunnel sends
+`/releases/…` and `/install.sh` there instead of to the console. Until a
+release is in place the API answers every pairing with HOSTS_004 ("Hosts
+are not configured").
+
+A release is built and signed on your machine. The Ed25519 key that signs it
+never comes to the server, and a manifest without its signature installs
+nowhere.
+
+```bash
+# once: the offline release key; its public half goes into every binary
+scripts/runner/sign-release.sh --keygen ~/secure/runner-release.key
+
+RELEASE_PUBLIC_KEYS=<public key> RELEASE_BASE_URL=https://dev.example.com/releases \
+  scripts/runner/release.sh 0.1.0 stable          # prints RUNNER_INSTALL_SHA256
+scripts/runner/sign-release.sh dist/runner/stable.json ~/secure/runner-release.key
+
+scp dist/runner/install.sh admin@oppenheimer-dev:/tmp/
+scp dist/runner/*.tar.gz dist/runner/SHA256SUMS dist/runner/stable.json* admin@oppenheimer-dev:/tmp/releases/
+ssh admin@oppenheimer-dev 'sudo -u deploy cp /tmp/install.sh /srv/oppenheimer/public/ &&
+  sudo -u deploy cp /tmp/releases/* /srv/oppenheimer/public/releases/'
+```
+
+Then, in `api.env`, set `RUNNER_RELEASE_BASE_URL=https://dev.example.com/releases`,
+`RUNNER_INSTALL_URL=https://dev.example.com/install.sh` and the printed
+`RUNNER_INSTALL_SHA256`, and deploy again. Keep `RELEASE_PUBLIC_KEYS` the same
+from release to release: a runner only accepts updates signed by a key it was
+built with.
+
 ## Day to day
 
 From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl …`.
@@ -216,8 +248,10 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 
 1. The workflow builds `api`, `web` and `backup` for the commit and pushes
    them to GHCR, tagged with the sha.
-2. It joins the tailnet. It pipes this directory, plus the job's own
-   `GITHUB_TOKEN`, to the deploy gate.
+2. It joins the tailnet as an ephemeral `tag:ci` node, running `tailscaled`
+   in userspace as the job's own user (the runners have no passwordless sudo),
+   and reaches the server's SSH through `tailscale nc`. It pipes this
+   directory, plus the job's own `GITHUB_TOKEN`, to the deploy gate.
 3. `oppctl deploy` on the server does the following:
    - pulls the three images with that token, then throws the token away
    - writes `release.env` with each image pinned by digest

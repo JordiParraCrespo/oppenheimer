@@ -21,7 +21,13 @@ import { notifySuccess, useTheme } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DraftComment } from '../components/draft-comment';
-import { type DiffNote, type DraftLine, notesOf, toGithubSide } from '../lib/review-draft';
+import {
+  type DiffNote,
+  type DraftLine,
+  notesOf,
+  type PendingNote,
+  toGithubSide,
+} from '../lib/review-draft';
 import { patchOf } from '../lib/view';
 
 /**
@@ -41,7 +47,8 @@ export function ChangesFile({
   address: PullRequestAddress;
   file: PullRequestFile;
   layout: DiffLayout;
-  pending: readonly LineCommentInput[];
+  /** The review's pending comments on this file. */
+  pending: readonly PendingNote[];
   onAddPending: (comment: LineCommentInput) => void;
   onDiscardPending: (index: number) => void;
 }) {
