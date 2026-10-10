@@ -71,8 +71,7 @@ test('a new account walks the first-run flow into the console', async ({ page })
 
 /**
  * A deployment with no runner release configured reports `hosts: false`, and
- * the host step reads that before it mints. It used to mint on mount anyway,
- * get `HOSTS_004`, and show a red error over "Waiting for the host…" forever.
+ * the host step reads that before it mints: it explains, and Skip is the way on.
  *
  * The capability is answered here rather than read off the stack, so the spec
  * holds whichever way the deployment under test is configured; what it proves

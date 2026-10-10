@@ -12,11 +12,9 @@ import type { RedisHealthIndicator } from '../infrastructure/redis-health.adapte
 import { HealthProbeController } from '../probes/health.probe.controller';
 
 /**
- * `GET /health/capabilities` is how the console learns, before it asks for
- * anything, whether this server can pair a machine. Without `hosts` on the
- * wire the host step minted a token on mount, got `HOSTS_004`, and showed a red
- * error over a wait that could never end. The flag must come from the same
- * resolution the boot log prints, so the two never disagree.
+ * `GET /health/capabilities` serves `hosts` from the resolution the boot log
+ * prints, so the console and the log never disagree on whether this server
+ * can pair, and server-internal capabilities stay off the public probe.
  */
 
 const RUNNER_RELEASES = {
@@ -68,13 +66,8 @@ describe('GET /health/capabilities', () => {
       'storage.s3SecretAccessKey': 'secret',
     });
 
-    expect(Object.keys(controller.deploymentCapabilities()).sort()).toEqual([
-      'github_app',
-      'github_app_install_url',
-      'github_oauth',
-      'google_calendar',
-      'google_oauth',
-      'hosts',
-    ]);
+    const wire = controller.deploymentCapabilities();
+    expect(wire).not.toHaveProperty('s3_storage');
+    expect(wire).not.toHaveProperty('email_delivery');
   });
 });

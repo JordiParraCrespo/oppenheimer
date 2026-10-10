@@ -1,17 +1,19 @@
-import { Button, Callout, Skeleton, StepHeader } from '@oppenheimer/design-system-web';
+import { Button, StepHeader, Link as TextLink } from '@oppenheimer/design-system-web';
+import { PairingChrome } from '@oppenheimer/frontend-web';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHostsAvailability } from '../hooks/use-hosts-availability';
-import { OnboardingHostPairing } from '../sections/onboarding-host-pairing';
+import { PairingGate } from '../components/pairing-gate';
+import { usePairing } from '../hooks/use-pairing';
 
 /**
  * Onboarding: pair the first host (`design/version1/AddHost.dc.html`, the
- * 2026-09-27 export). This step owns the header and asks the deployment first
- * whether it can pair at all. Where it can, the pairing column mints and waits
- * (`OnboardingHostPairing`). Where it cannot (no runner releases configured,
- * `hosts` off), nothing is minted: every mint would answer `HOSTS_004`, which
- * used to leave a red error over "Waiting for the host…" forever. The step
- * says so calmly and makes Skip the way on.
+ * 2026-09-27 export). This step owns the header and the wait: Continue waits
+ * for the runner to come online (`usePairing`'s rules). The column is the
+ * kit's `PairingChrome`, shared with the console's Add a host dialog.
+ *
+ * Skip is there in every state, the answer about pairing still on its way
+ * included. Where this deployment cannot pair, it is the primary action and
+ * Continue goes.
  */
 export function OnboardingHostScreen({
   step,
@@ -24,11 +26,15 @@ export function OnboardingHostScreen({
   total: number;
   back: ReactElement;
   next: (hostId: string | undefined) => ReactElement;
-  /** Skip's link; the primary action on a deployment that cannot pair a machine yet. */
+  /** Skip's link, for a deployment that cannot pair a machine yet. */
   skip: ReactElement;
 }) {
   const { t } = useTranslation();
-  const availability = useHostsAvailability();
+  // Online, not merely registered: the row appears when the runner registers,
+  // and its service may still be starting (`usePairing`'s rules).
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done, availability } =
+    usePairing(t('onboarding.flow.host.defaultName'), 'online');
+  const unavailable = availability === 'unavailable';
 
   return (
     <div className="flex flex-col gap-5">
@@ -43,21 +49,41 @@ export function OnboardingHostScreen({
         {t('onboarding.flow.host.description')}
       </StepHeader>
 
-      {availability === 'available' ? (
-        <OnboardingHostPairing next={next} skip={skip} />
-      ) : availability === 'unavailable' ? (
-        <div className="flex flex-col items-start gap-3.5">
-          <Callout>{t('hosts.pairing.unavailable')}</Callout>
-          <Button size="lg" render={skip}>
-            {t('onboarding.flow.host.skip')}
+      <PairingGate availability={availability}>
+        <PairingChrome
+          pairing={pairing ?? null}
+          expiresAt={expiresAt}
+          expired={expired}
+          onRegenerate={regenerate}
+          busy={isPending}
+          host={host}
+          error={error}
+          layout="step"
+        />
+      </PairingGate>
+
+      <div className="flex flex-col items-start gap-3.5">
+        {!unavailable && (
+          <Button size="lg" disabled={!done} render={next(host?.id)}>
+            {t('onboarding.flow.continue')}
           </Button>
+        )}
+
+        {/* Skippable even where pairing works: a machine may not be at hand,
+            and it is what makes Ready's "no host yet" row reachable. */}
+        <div className="flex flex-col items-start gap-1.5">
+          {unavailable ? (
+            <Button size="lg" render={skip}>
+              {t('onboarding.flow.host.skip')}
+            </Button>
+          ) : (
+            <TextLink render={skip}>{t('onboarding.flow.host.skip')}</TextLink>
+          )}
           <p className="text-xs leading-normal text-fg-subtle">
             {t('onboarding.flow.host.skipNote')}
           </p>
         </div>
-      ) : (
-        <Skeleton className="h-40 w-full" />
-      )}
+      </div>
     </div>
   );
 }

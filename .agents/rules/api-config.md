@@ -55,11 +55,8 @@ config**, and the code must work without it. Model absence honestly:
   `email_delivery`, `hosts`, `session_namer` — is computed once at boot and
   logged at startup, so a self-hoster learns what the deployment can do from
   the log. Only the **client-facing subset** (`CLIENT_CAPABILITIES` in
-  `@oppenheimer/shared`: the OAuth providers, `github_app`, `google_calendar`
-  and `hosts`) is served by `GET /health/capabilities`, so clients can hide UI
-  for capabilities that are off (the web login page only renders configured
-  providers; the pairing surfaces explain rather than mint when `hosts` is
-  off). Server-internal
+  `@oppenheimer/shared`) is served by `GET /health/capabilities`, so clients
+  can hide UI for capabilities that are off. Server-internal
   capabilities (`s3_storage`, `email_delivery`) never go over the wire — a
   public endpoint must not describe a deployment's infrastructure beyond what
   its UI already reveals. Add a capability to `CLIENT_CAPABILITIES` only when
