@@ -22,9 +22,9 @@ describe('hostLinkPhaseOf', () => {
     expect(at({ status: 'connecting', away: true })).toBe('catching-up');
   });
 
-  it('says nothing for a dial inside its grace', () => {
+  it('stays live for a dial inside its grace', () => {
     // Switching sessions dials; "Connecting… Retry now" flashed on every switch.
-    expect(at({ status: 'connecting' })).toBeNull();
+    expect(at({ status: 'connecting' })).toBe('live');
   });
 
   it('says reconnected for a moment after coming back, then live', () => {

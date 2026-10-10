@@ -166,10 +166,7 @@ export function SessionTerminal({
         ) : (
           <TerminalStatusBar>
             {statusItem}
-            {/* No phase while open is a dial inside its grace: nothing to say yet. */}
-            {status === 'closed' ? (
-              <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
-            ) : null}
+            <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
           </TerminalStatusBar>
         )}
       </Terminal>

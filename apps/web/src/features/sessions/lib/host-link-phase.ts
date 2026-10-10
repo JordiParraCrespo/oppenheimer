@@ -23,7 +23,8 @@ export const DIAL_GRACE_MS = 2000;
  *   from the fix. That reading only redials (`useTerminal`).
  * - `connecting` is `reconnecting`, a blip, unless the link was away, when it
  *   is the host coming back (`catching-up`). A dial still inside its grace
- *   (`slow` false) has no phase yet: the pane draws a plain status bar.
+ *   (`slow` false) stays `live`: the one a pane opens with, and most blips,
+ *   land inside it, and saying so for them only flashed.
  * - `live` reads `reconnected` for a moment after coming back from away.
  * - `closed` has no phase: the stream ended, and the pane says why itself.
  */
@@ -44,7 +45,7 @@ export function hostLinkPhaseOf({
       return 'offline';
     case 'connecting':
       if (away) return 'catching-up';
-      return slow ? 'reconnecting' : null;
+      return slow ? 'reconnecting' : 'live';
     case 'live':
       return reconnected ? 'reconnected' : 'live';
     default:

@@ -148,6 +148,8 @@ export function useTerminal(
   }, [reconnected]);
 
   // A dial says so only once it is slow; the one a pane opens with lands first.
+  // The clock lives here because something has to re-render when the grace
+  // runs out; what the grace means is `hostLinkPhaseOf`'s.
   const [slowDial, setSlowDial] = useState(false);
   useEffect(() => {
     if (status !== 'connecting') {
