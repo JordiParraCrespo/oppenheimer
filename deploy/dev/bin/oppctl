@@ -9,6 +9,7 @@
 #   oppctl status | logs [service…] | psql
 #   oppctl backup {daily|weekly|check}            dump → encrypt → R2 (weekly: B2)
 #   oppctl restore                                plaintext pg_dump -Fc on stdin
+#   oppctl publish-release [--check] [--new-keys] <dir | ->  a signed runner release (-: tar on stdin)
 #
 # Nothing is built here. A release is the deploy/dev directory of one commit
 # plus `release.env`, which pins the images the `Deploy dev` workflow built for
@@ -522,6 +523,11 @@ cmd_setup() {
   # and outside every release.
   install -d -m 0755 -o root -g root "$LIBEXEC"
   install -m 0755 -o root -g root "$HERE/bin/oppctl" "$HERE/bin/deploy-gate" "$LIBEXEC/"
+  # oppenheimer:begin runner
+  # publish-release, and the one signature check it shares with release.sh.
+  install -m 0644 -o root -g root "$HERE/bin/publish-release.sh" "$LIBEXEC/"
+  install -m 0755 -o root -g root "$HERE/../../scripts/runner/sign-release.sh" "$LIBEXEC/"
+  # oppenheimer:end runner
   ln -sfn "$LIBEXEC/oppctl" /usr/local/bin/oppctl
   if [ -n "$ci_key" ]; then
     install -d -o deploy -g deploy -m 0700 ~deploy/.ssh
@@ -545,6 +551,13 @@ case "${1:-}" in
   reload)   shift; cmd_reload "$@" ;;
   backup)   shift; cmd_backup "$@" ;;
   restore)  cmd_restore ;;
+  # oppenheimer:begin runner
+  publish-release)
+    shift
+    # shellcheck source=deploy/dev/bin/publish-release.sh
+    . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/publish-release.sh"
+    cmd_publish_release "$@" ;;
+  # oppenheimer:end runner
   status)   cmd_status ;;
   logs)     shift; load_host_env; compose "$(need_current)" logs --tail 200 "$@" ;;
   psql)     load_host_env; compose "$(need_current)" exec postgres psql -U oppenheimer oppenheimer ;;

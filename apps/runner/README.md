@@ -69,9 +69,16 @@ written to stop only the runner process.
 
 ```bash
 scripts/runner/sign-release.sh --keygen release.key       # once, offline
-RELEASE_PUBLIC_KEYS=<public key> scripts/runner/release.sh 1.2.3
+RELEASE_PUBLIC_KEYS=<public key> RELEASE_BASE_URL=https://<host>/releases \
+  scripts/runner/release.sh 1.2.3                            # both required
 scripts/runner/sign-release.sh dist/runner/stable.json release.key
 ```
+
+For the dev deployment, the `Release runner` workflow builds on a `runner-v*`
+tag, and `scripts/runner/publish-dev.sh <version> <key>` downloads what it
+attached, signs the manifest locally and hands those files to
+`oppctl publish-release` on the server (`deploy/dev/README.md`, "Runner
+releases").
 
 The private key never touches CI. Every binary carries the public half, so a
 runner verifies a manifest without asking anyone what to trust.
