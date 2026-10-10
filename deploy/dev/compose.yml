@@ -159,6 +159,22 @@ services:
       retries: 3
   # oppenheimer:end web
 
+  # The runner's releases, for hosts to install and update from: the signed
+  # manifest, the binaries and the installer. Built and signed off this server
+  # (README, "Runner releases") and copied into /srv/oppenheimer/public; served
+  # read-only, and reached through the tunnel's /releases/ and /install.sh.
+  releases:
+    image: nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
+    restart: unless-stopped
+    networks: [edge]
+    volumes:
+      - /srv/oppenheimer/public:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/install.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   cloudflared:
     image: cloudflare/cloudflared:2026.10.0@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
     restart: unless-stopped
