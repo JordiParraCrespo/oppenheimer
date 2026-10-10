@@ -19,6 +19,8 @@ import { WATCHED_REPOSITORY_REPOSITORY } from './pull-requests.di-tokens';
 import { PullRequestResource } from './pull-requests.resource';
 import { FindPullRequestHttpController } from './queries/find-pull-request/find-pull-request.http.controller';
 import { FindPullRequestQueryHandler } from './queries/find-pull-request/find-pull-request.query-handler';
+import { FindPullRequestActivityHttpController } from './queries/find-pull-request-activity/find-pull-request-activity.http.controller';
+import { FindPullRequestActivityQueryHandler } from './queries/find-pull-request-activity/find-pull-request-activity.query-handler';
 import { FindPullRequestAnalyticsHttpController } from './queries/find-pull-request-analytics/find-pull-request-analytics.http.controller';
 import { FindPullRequestAnalyticsQueryHandler } from './queries/find-pull-request-analytics/find-pull-request-analytics.query-handler';
 import { FindPullRequestCommentsHttpController } from './queries/find-pull-request-comments/find-pull-request-comments.http.controller';
@@ -39,6 +41,7 @@ const httpControllers = [
   FindPullRequestHttpController,
   FindPullRequestFilesHttpController,
   FindPullRequestCommentsHttpController,
+  FindPullRequestActivityHttpController,
   SubmitPullRequestReviewHttpController,
   AddPullRequestCommentHttpController,
   MergePullRequestHttpController,
@@ -56,6 +59,7 @@ const queryHandlers: Provider[] = [
   FindPullRequestQueryHandler,
   FindPullRequestFilesQueryHandler,
   FindPullRequestCommentsQueryHandler,
+  FindPullRequestActivityQueryHandler,
   FindWatchedRepositoriesQueryHandler,
   FindPullRequestAnalyticsQueryHandler,
 ];

@@ -76,6 +76,8 @@ describe('a pull request read in part', () => {
         window: analyticsWindow('week', NOW),
         open: [],
         closed: [closed],
+        // The figures count listings; this read filled the one it has.
+        counted: [closed.pull],
         viewerLogin: 'ana',
         now: NOW,
         complete: true,
@@ -123,8 +125,8 @@ describe('a pull request read in part', () => {
         { repository, snapshots: [], gaps: [{ what: 'pull_requests', refusal: 'rate_limited' }] },
       ]),
     ).toEqual([
-      { fullName: 'acme/xrp', what: 'checks', refusal: 'forbidden' },
-      { fullName: 'acme/xrp', what: 'pull_requests', refusal: 'rate_limited' },
+      { what: 'checks', refusal: 'forbidden' },
+      { what: 'pull_requests', refusal: 'rate_limited' },
     ]);
   });
 });

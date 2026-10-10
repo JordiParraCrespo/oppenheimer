@@ -6,6 +6,16 @@ import {
   type PullRequestScope,
 } from '@oppenheimer/shared';
 
+const ACTIVITY_EVENTS = [
+  'review_requested',
+  'merged',
+  'closed',
+  'reopened',
+  'ready_for_review',
+  'convert_to_draft',
+  'head_ref_force_pushed',
+] as const;
+
 const LANE_REASONS = [
   'risky_path',
   'large_change',
@@ -154,11 +164,15 @@ export class PullRequestLaneCountsDto {
 
 const READ_GAPS = ['repository', 'pull_requests', 'files', 'checks', 'reviews'] as const;
 
-/** Something GitHub did not give on this read: which repository, what, and the refusal GitHub gave. */
+/**
+ * Something GitHub did not give on this read: what, and the refusal it gave.
+ *
+ * It names no repository. Nothing shows one — the notice is one line about
+ * what GitHub did, not a list — and the period's numbers are kept in the
+ * browser's storage, where a private repository's name does not belong
+ * (`frontend-consumer`'s `persistence.ts`).
+ */
 export class UnreadableRepositoryDto {
-  @ApiProperty({ example: 'acme-labs/xrp-mobile' })
-  fullName!: string;
-
   @ApiProperty({
     enum: READ_GAPS,
     description:
@@ -206,6 +220,12 @@ export class PullRequestQueueResponseDto {
     description: 'Watched repositories this read could not fully answer.',
   })
   unreadable!: UnreadableRepositoryDto[];
+
+  @ApiProperty({
+    description:
+      'Some rows still have parts nobody has read: the next read fills more. Ask again while this is true.',
+  })
+  filling!: boolean;
 }
 
 export class PullRequestGateDto {
@@ -319,6 +339,51 @@ export class PullRequestCommentDto {
 
   @ApiProperty({ format: 'date-time' })
   createdAt!: string;
+}
+
+/**
+ * One entry of a pull request's conversation, oldest first. `kind` says which
+ * fields carry it: a `comment` and a `review` have a `body`, a `review` its
+ * `state`, a `commit` its `sha` and its message as `body`, an `event` its
+ * `event` and, for a review request, the `subject` it was asked of.
+ */
+export class PullRequestActivityItemDto {
+  @ApiProperty({ example: 'comment:1874' })
+  id!: string;
+
+  @ApiProperty({ enum: ['comment', 'commit', 'review', 'event'] })
+  kind!: 'comment' | 'commit' | 'review' | 'event';
+
+  @ApiProperty({ description: 'A GitHub login; a commit’s author name.' })
+  author!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  at!: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description: 'Markdown, or a commit message.',
+  })
+  body!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: ['approved', 'changes_requested', 'commented', 'dismissed'],
+  })
+  state!: 'approved' | 'changes_requested' | 'commented' | 'dismissed' | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  sha!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: ACTIVITY_EVENTS,
+  })
+  event!: (typeof ACTIVITY_EVENTS)[number] | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  subject!: string | null;
 }
 
 export class WatchedRepositoryDto {

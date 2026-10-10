@@ -46,4 +46,15 @@ export class WatchedRepositoriesResolver {
       .filter((entry) => entry.watching)
       .map((entry) => entry.repository);
   }
+
+  /**
+   * Whether the caller watches anything at all, answered by their own rows and
+   * nothing else. A workspace that has picked no repository is the state every
+   * account starts in, and the queue and the analytics ask this first so that
+   * state costs GitHub nothing — no repository listing, no viewer, no reads.
+   */
+  async anyWatched(scope: AccessScope): Promise<boolean> {
+    if (!scope.organizationId) throw new AppError(PullRequestsErrors.NO_ACTIVE_ORGANIZATION);
+    return (await this.watches.findOwn(scope)).length > 0;
+  }
 }

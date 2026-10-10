@@ -386,8 +386,12 @@ describe('useSessionOpening', () => {
     const startProgress = vi.fn().mockResolvedValue(progress(false));
     const { wrapper } = setup({ startProgress });
 
-    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+    const { result, rerender } = renderHook(() => useSessionOpening(live), { wrapper });
 
+    expect(result.current).toBe(false);
+    // The screen renders again when its row changes; that must not turn a
+    // start nobody watched into a watched one.
+    rerender();
     expect(result.current).toBe(false);
     await pause(100);
     expect(startProgress).not.toHaveBeenCalled();

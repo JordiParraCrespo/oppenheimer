@@ -1,0 +1,6 @@
+tunnel: <%= ENV.fetch("TUNNEL_ID") %>
+credentials-file: /etc/cloudflared/credentials.json
+ingress:
+  - hostname: <%= ENV.fetch("DEV_HOSTNAME") %>
+    service: http://kamal-proxy:80
+  - service: http_status:404

@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
   pullRequestPane,
   pullRequestSearchSchema,
+  resolvePullRequestView,
 } from '@/features/pull-requests/lib/pull-request-search';
 import { PullRequestScreen } from '@/features/pull-requests/screens/pull-request';
 
@@ -17,7 +18,7 @@ export const Route = createFileRoute(
 )({
   validateSearch: pullRequestSearchSchema,
   component: PullRequestRoute,
-  staticData: { pane: (search) => pullRequestPane(search.view) },
+  staticData: { pane: (search) => pullRequestPane(pullRequestSearchSchema.parse(search).view) },
 });
 
 function PullRequestRoute() {
@@ -28,7 +29,7 @@ function PullRequestRoute() {
     <PullRequestScreen
       key={`${installationId}/${githubRepoId}/${number}`}
       address={address}
-      view={view ?? 'briefing'}
+      view={resolvePullRequestView(view)}
     />
   );
 }

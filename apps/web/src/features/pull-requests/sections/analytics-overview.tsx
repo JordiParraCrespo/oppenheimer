@@ -20,8 +20,8 @@ import { QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_ANALYTICS_RANGES } from '@oppenheimer/shared/schemas/pull-request';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsDelta } from '../components/analytics-figure';
-import { ReadNotices } from '../components/read-notices';
 import { useAnalyticsRange } from '../hooks/use-analytics-range';
+import { useReadNotices } from '../hooks/use-read-notices';
 import { LANE_TONE, rangeLabel, shareOf } from '../lib/analytics-view';
 import { deltaOf, formatHours } from '../lib/view';
 import { CreatedMergedPanel } from './created-merged-panel';
@@ -37,6 +37,7 @@ export function AnalyticsOverview() {
   const locale = useLocale();
   const { range, setRange } = useAnalyticsRange();
   const analytics = usePullRequestAnalytics(range);
+  useReadNotices(analytics.data?.unreadable);
   const rangeWord = t(`pullRequests.analytics.rangeWord.${range}`);
 
   return (
@@ -66,7 +67,9 @@ export function AnalyticsOverview() {
               <span className="figures text-fg">{rangeLabel(analytics.data, locale)}</span>{' '}
               {t('pullRequests.analytics.compared', {
                 days: Math.round(
-                  (analytics.data.to.getTime() - analytics.data.from.getTime()) / 86_400_000,
+                  (new Date(analytics.data.to).getTime() -
+                    new Date(analytics.data.from).getTime()) /
+                    86_400_000,
                 ),
               })}
             </span>
@@ -84,7 +87,6 @@ export function AnalyticsOverview() {
           const from = (value: string) => t('pullRequests.analytics.from', { value });
           return (
             <>
-              <ReadNotices unreadable={data.unreadable} />
               {data.complete ? null : (
                 <Callout>{t('pullRequests.analytics.capped', { range: rangeWord })}</Callout>
               )}

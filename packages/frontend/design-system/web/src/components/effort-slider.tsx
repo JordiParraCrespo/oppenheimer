@@ -27,12 +27,18 @@ const KNOB = 30;
  * `EffortPicker` is the composer's form of it: a muted tool button reading
  * the current stop, opening a 268px popover with the "Effort · Medium"
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
- * ends, and the slider.
+ * ends, and the slider. The header follows the knob, but while a drag is in
+ * progress the button holds the value the drag started from: it changes width
+ * with every stop, and the popover is anchored to it, so a live label would
+ * shift the composer's foot row and the popover with it. It catches up when
+ * the drag ends or the popover closes. The button is as wide as its longest
+ * stop, so the label changing never moves it.
  */
 function EffortSlider<V extends string>({
   stops,
   value,
   onValueChange,
+  onDraggingChange,
   className,
   'aria-label': ariaLabel = 'Effort',
   ...props
@@ -40,6 +46,8 @@ function EffortSlider<V extends string>({
   stops: readonly EffortStop<V>[];
   value: V;
   onValueChange: (value: V) => void;
+  /** True when a pointer takes the knob, false when it lets go. */
+  onDraggingChange?: (dragging: boolean) => void;
 }) {
   const track = React.useRef<HTMLDivElement>(null);
   const index = Math.max(
@@ -58,6 +66,8 @@ function EffortSlider<V extends string>({
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault();
     track.current?.setPointerCapture(event.pointerId);
+    // Only a capture that took is a drag; `lostpointercapture` ends it.
+    if (track.current?.hasPointerCapture(event.pointerId)) onDraggingChange?.(true);
     const next = fromPointer(event.clientX);
     if (next) onValueChange(next);
   }
@@ -66,6 +76,10 @@ function EffortSlider<V extends string>({
     if (!track.current?.hasPointerCapture(event.pointerId)) return;
     const next = fromPointer(event.clientX);
     if (next && next !== value) onValueChange(next);
+  }
+
+  function onLostPointerCapture() {
+    onDraggingChange?.(false);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -104,6 +118,7 @@ function EffortSlider<V extends string>({
       data-effort={value}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
+      onLostPointerCapture={onLostPointerCapture}
       onKeyDown={onKeyDown}
       className={cn(
         'relative h-7 cursor-pointer touch-none overflow-hidden rounded-sm bg-hover-surface outline-none select-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
@@ -161,14 +176,34 @@ function EffortPicker<V extends string>({
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
+  // The value a drag started from, shown by the button until it ends.
+  const [held, setHeld] = React.useState<V | null>(null);
   const hintId = React.useId();
   const current = stops.find((stop) => stop.value === value) ?? stops[0];
+  const shown = stops.find((stop) => stop.value === (held ?? value)) ?? stops[0];
+
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) setHeld(null);
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger
         render={
           <ComposerToolButton tone="muted" open={open} disabled={disabled} className={className} aria-label={label}>
-            {current?.label}
+            {/* Every stop in one cell: the cell is as wide as the longest, only the shown one paints. */}
+            <span className="grid">
+              {stops.map((stop) => (
+                <span
+                  key={stop.value}
+                  aria-hidden={stop.value !== shown?.value}
+                  className={cn('col-start-1 row-start-1', stop.value !== shown?.value && 'invisible')}
+                >
+                  {stop.label}
+                </span>
+              ))}
+            </span>
           </ComposerToolButton>
         }
       />
@@ -201,6 +236,7 @@ function EffortPicker<V extends string>({
             stops={stops}
             value={value}
             onValueChange={onValueChange}
+            onDraggingChange={(dragging) => setHeld(dragging ? value : null)}
             aria-label={label}
             aria-describedby={hintId}
           />

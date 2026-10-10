@@ -20,7 +20,7 @@ export class FindPullRequestQueryHandler
   async execute({ scope, address }: FindPullRequestQuery): Promise<PullRequestDetailResponseDto> {
     const [snapshot, viewerLogin] = await Promise.all([
       this.access.pullRequest(scope, address),
-      this.access.viewerLogin(scope.userId),
+      this.access.viewerLogin(scope),
     ]);
     return this.mapper.toDetail(snapshot, viewerLogin, new Date());
   }

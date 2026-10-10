@@ -11,6 +11,7 @@ import {
   type LaneReason,
   type LineCommentInput,
   type MergeMethod,
+  type PullRequestActivityItem,
   type PullRequestAddress,
   type PullRequestAnalytics,
   type PullRequestAnalyticsRange,
@@ -79,6 +80,7 @@ function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {
     withConflicts: dto.withConflicts,
     oldestWaitingSeconds: dto.oldestWaitingSeconds ?? null,
     viewerLogin: dto.viewerLogin ?? null,
+    filling: dto.filling,
     unreadable: dto.unreadable,
   };
 }
@@ -112,8 +114,8 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
     range: dto.range,
     complete: dto.complete,
     unreadable: dto.unreadable,
-    from: new Date(dto.from),
-    to: new Date(dto.to),
+    from: dto.from,
+    to: dto.to,
     created: dto.created,
     merged: dto.merged,
     reviewedByYou: dto.reviewedByYou,
@@ -122,6 +124,7 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
     waitForReviewPeople: median(dto.waitForReviewPeople),
     timeToMerge: median(dto.timeToMerge),
     days: dto.days,
+    bucket: dto.bucket,
     lanes: dto.lanes,
     waiting: dto.waiting.map((row) => ({
       reason: row.reason as PullRequestAnalytics['waiting'][number]['reason'],
@@ -180,6 +183,33 @@ export class PullRequestsRepository {
       line: comment.line ?? null,
       createdAt: new Date(comment.createdAt),
     }));
+  }
+
+  @MapApiError(PullRequestsErrors.FETCH_ACTIVITY_FAILED)
+  async activity(address: PullRequestAddress): Promise<PullRequestActivityItem[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findPullRequestActivity({ path: address }),
+      PullRequestsErrors.FETCH_ACTIVITY_FAILED,
+    );
+    return data.flatMap((item): PullRequestActivityItem[] => {
+      const base = { id: item.id, author: item.author, at: new Date(item.at) };
+      switch (item.kind) {
+        case 'comment':
+          return [{ ...base, kind: 'comment', body: item.body ?? '' }];
+        case 'commit':
+          return [{ ...base, kind: 'commit', sha: item.sha ?? '', message: item.body ?? '' }];
+        case 'review':
+          return item.state
+            ? [{ ...base, kind: 'review', state: item.state, body: item.body ?? '' }]
+            : [];
+        case 'event':
+          return item.event
+            ? [{ ...base, kind: 'event', event: item.event, subject: item.subject ?? null }]
+            : [];
+        default:
+          return [];
+      }
+    });
   }
 
   /** Answers whether approving also merged it; GitHub may hold the merge, and then it waits. */

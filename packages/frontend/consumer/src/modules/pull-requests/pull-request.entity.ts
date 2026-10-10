@@ -31,9 +31,8 @@ export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none' | 'un
 /** Why GitHub did not answer a read: no access, gone, asked to wait, or no answer. */
 export type ReadRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
 
-/** What GitHub did not give on a read: which repository, what of it, and the refusal it gave. */
+/** What GitHub did not give on a read: what of it, and the refusal it gave. It names no repository. */
 export interface UnreadableRepository {
-  fullName: string;
   /** `repository`: nothing could be listed; `pull_requests`: some could not be read; else that part of some. */
   what: 'repository' | 'pull_requests' | 'files' | 'checks' | 'reviews';
   refusal: ReadRefusal;
@@ -117,6 +116,8 @@ export interface PullRequestQueue {
   items: PullRequestEntity[];
   /** Watched repositories this read could not fully answer (#244). */
   unreadable: UnreadableRepository[];
+  /** Some rows still have parts nobody has read; the next read fills more (#247). */
+  filling: boolean;
   scopes: Record<PullRequestScope, number>;
   /** Within the scope asked for. */
   lanes: Record<PullRequestLane, number>;
@@ -201,6 +202,28 @@ export interface PullRequestComment {
   createdAt: Date;
 }
 
+/** What else happened on a pull request that its conversation shows. */
+export type PullRequestActivityEvent =
+  | 'review_requested'
+  | 'merged'
+  | 'closed'
+  | 'reopened'
+  | 'ready_for_review'
+  | 'convert_to_draft'
+  | 'head_ref_force_pushed';
+
+/** One entry of a pull request's conversation, oldest first. */
+export type PullRequestActivityItem = { id: string; author: string; at: Date } & (
+  | { kind: 'comment'; body: string }
+  | { kind: 'commit'; sha: string; message: string }
+  | {
+      kind: 'review';
+      state: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+      body: string;
+    }
+  | { kind: 'event'; event: PullRequestActivityEvent; subject: string | null }
+);
+
 export interface LineCommentInput {
   path: string;
   line: number;
@@ -239,8 +262,13 @@ export interface PullRequestAnalytics {
   /** False when more closed in the window than one read takes in full: the figures count the most recent. */
   complete: boolean;
   unreadable: UnreadableRepository[];
-  from: Date;
-  to: Date;
+  /**
+   * ISO 8601, not `Date`. These numbers are kept in the browser's storage, and
+   * what comes back from JSON is a string: a `Date` here is a crash on the
+   * first read after a reload, not a type error anywhere the compiler looks.
+   */
+  from: string;
+  to: string;
   created: AnalyticsFigure;
   merged: AnalyticsFigure;
   reviewedByYou: AnalyticsFigure;
@@ -248,8 +276,10 @@ export interface PullRequestAnalytics {
   waitForReviewAgents: AnalyticsMedian;
   waitForReviewPeople: AnalyticsMedian;
   timeToMerge: AnalyticsMedian;
-  /** `YYYY-MM-DD`, oldest first. */
+  /** `YYYY-MM-DD`, oldest first: a day each, or the Monday of a week over a quarter. */
   days: { date: string; created: number; merged: number }[];
+  /** What one entry of `days` covers. */
+  bucket: 'day' | 'week';
   lanes: ({ lane: PullRequestLane } & AnalyticsFigure)[];
   waiting: { reason: PullRequestBlocker; value: number; medianHours: number | null }[];
 }

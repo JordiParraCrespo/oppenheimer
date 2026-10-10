@@ -1018,7 +1018,21 @@
       "session": "Sesión",
       "merged": "Fusionada",
       "mergeFailed": "GitHub no la fusionó.",
-      "mergedToast": "{{reference}} fusionada."
+      "columns": {
+        "lane": "Carril",
+        "title": "Pull request",
+        "size": "Tamaño",
+        "checks": "Checks",
+        "conflicts": "Conflictos",
+        "waiting": "Esperando"
+      },
+      "previousPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "mergeButton": {
+        "merge": "Fusionar",
+        "confirm": "Confirmar la fusión",
+        "cancel": "Cancelar la fusión"
+      }
     },
     "lanes": {
       "deep": "A fondo",
@@ -1126,6 +1140,8 @@
       "reviewChanges": "Revisar los cambios",
       "brief": "Resumen",
       "noDescription": "Sin descripción.",
+      "copyCode": "Copiar código",
+      "codeCopied": "Copiado",
       "whatChanges": "Qué cambia",
       "risk": "Carril",
       "where": "Sobre todo {{folders}}",
@@ -1139,7 +1155,46 @@
       },
       "opened": "{{author}} quiere fusionar {{head}} en {{base}}",
       "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
-      "filesUnread": "GitHub no devolvió los archivos en esta lectura."
+      "filesUnread": "GitHub no devolvió los archivos en esta lectura.",
+      "rail": {
+        "mergeStatus": "Estado de la fusión",
+        "canMerge": "Se puede fusionar sin conflictos",
+        "conflicts": "Tiene conflictos con {{base}}",
+        "merged": "Fusionada en {{base}}",
+        "closed": "Cerrada sin fusionar",
+        "reviews": "Revisiones",
+        "checksSummary": "{{passed}} de {{total}} correctas",
+        "noChecks": "Sin comprobaciones",
+        "comments": "Comentarios",
+        "noComments": "Sin comentarios",
+        "commentCount_one": "{{count}} comentario",
+        "commentCount_other": "{{count}} comentarios",
+        "commentCount_many": "{{count}} comentarios"
+      },
+      "editOnGithub": "Editar en GitHub",
+      "activity": {
+        "title": "Actividad",
+        "empty": "Aún no ha pasado nada aquí.",
+        "loadFailed": "No se pudo cargar la actividad.",
+        "commits_one": "{{count}} commit",
+        "commits_other": "{{count}} commits",
+        "commits_many": "{{count}} commits",
+        "review": {
+          "approved": "{{author}} aprobó estos cambios",
+          "changes_requested": "{{author}} pidió cambios",
+          "commented": "{{author}} revisó",
+          "dismissed": "Se descartó la revisión de {{author}}"
+        },
+        "event": {
+          "review_requested": "{{author}} pidió una revisión a {{subject}}",
+          "merged": "{{author}} fusionó esta pull request",
+          "closed": "{{author}} cerró esta pull request",
+          "reopened": "{{author}} reabrió esta pull request",
+          "ready_for_review": "{{author}} la marcó como lista para revisar",
+          "convert_to_draft": "{{author}} la convirtió en borrador",
+          "head_ref_force_pushed": "{{author}} hizo force-push de la rama"
+        }
+      }
     },
     "review": {
       "submit": "Enviar revisión",
@@ -1166,12 +1221,11 @@
       "postsAs": "Se publica como @{{login}}.",
       "discard": "Descartar",
       "close": "Cerrar",
-      "submitted": "Revisión enviada.",
-      "approvedMerged": "Aprobada y fusionada.",
-      "approvedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
-      "failed": "La revisión no se envió."
+      "failed": "La revisión no se envió.",
+      "optional": "Opcional"
     },
     "changes": {
+      "back": "Volver",
       "layout": "Disposición",
       "unified": "Unificada",
       "split": "Dividida",
@@ -1189,7 +1243,12 @@
       "hint": "⌘⏎ lo añade a la revisión",
       "commentPlaceholder": "Deja un comentario",
       "cancel": "Cancelar",
-      "commentAdded": "Comentario publicado."
+      "expand": "Expandir el archivo",
+      "collapse": "Contraer el archivo",
+      "markViewed": "Visto",
+      "comments_one": "{{count}} comentario",
+      "comments_other": "{{count}} comentarios",
+      "comments_many": "{{count}} comentarios"
     },
     "analytics": {
       "title": "Tu {{range}} de revisiones",
@@ -1227,21 +1286,9 @@
       "nothingWaits": "Ahora mismo nada frena ninguna pull request abierta.",
       "loadFailed": "No se pudo cargar la analítica.",
       "none": "—",
-      "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez."
-    },
-    "notices": {
-      "forbidden": "{{name}}: GitHub denegó el acceso a {{what}}.",
-      "not_found": "{{name}}: GitHub ya no encuentra {{what}}.",
-      "rate_limited": "{{name}}: GitHub nos pidió ir más despacio antes de dar {{what}}. Aparecerán en la próxima lectura.",
-      "failed": "{{name}}: GitHub no respondió para {{what}}.",
-      "what": {
-        "repository": "sus pull requests",
-        "pull_requests": "algunas de sus pull requests",
-        "files": "los archivos de algunas pull requests",
-        "checks": "los checks de algunas pull requests",
-        "reviews": "las revisiones de algunas pull requests"
-      },
-      "checksPermission": "La app de GitHub necesita Checks: read y Commit statuses: read; acepta la actualización de permisos en GitHub."
+      "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez.",
+      "weekOf": "Semana del {{date}}",
+      "hoverWeek": "Pasa por una semana"
     }
   },
   "tasks": {
@@ -1907,6 +1954,17 @@
     "taskDeleted": "Tarea eliminada.",
     "goalAdded": "Objetivo añadido.",
     "taskSessionStarted": "Sesión iniciada.",
-    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar."
+    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar.",
+    "pullRequestsSlowedDown": "GitHub nos pidió ir más despacio, así que a algunas filas les falta una parte. Aparecerá en la siguiente lectura.",
+    "pullRequestsRefused": "GitHub rechazó parte de lo que muestra esta vista.",
+    "pullRequestsGone": "GitHub ya no encuentra parte de lo que muestra esta vista.",
+    "pullRequestsUnanswered": "GitHub no respondió a parte de lo que muestra esta vista.",
+    "pullRequestsIncomplete": "A algunas filas les falta una parte que GitHub no dio.",
+    "pullRequestsChecksPermission": "GitHub rechazó las comprobaciones: la App necesita Checks: read y Commit statuses: read.",
+    "pullRequestMerged": "{{reference}} fusionada.",
+    "reviewSubmitted": "Revisión enviada.",
+    "reviewApprovedMerged": "Aprobada y fusionada.",
+    "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
+    "reviewCommentPosted": "Comentario publicado."
   }
 }

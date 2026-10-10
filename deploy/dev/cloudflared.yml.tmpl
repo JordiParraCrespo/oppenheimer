@@ -1,0 +1,20 @@
+# Locally-managed tunnel: ingress is reviewed here, not edited in the
+# dashboard. `oppctl` renders ${TUNNEL_ID} and ${DEV_HOSTNAME} from
+# config/host.env into the release's cloudflared.yml.
+tunnel: ${TUNNEL_ID}
+credentials-file: /etc/cloudflared/credentials.json
+ingress:
+  # The runner's releases and installer, from the `releases` container. First,
+  # so these two paths never reach the console's nginx.
+  - hostname: ${DEV_HOSTNAME}
+    path: ^/(releases/|install\.sh$)
+    service: http://releases:80
+  # oppenheimer:begin web
+  # One origin: nginx serves the console and proxies /api (and its WebSockets:
+  # the terminal relay and the runners' link) to the API.
+  - hostname: ${DEV_HOSTNAME}
+    service: http://web:3000
+  # oppenheimer:end web
+  - hostname: ${DEV_HOSTNAME}
+    service: http://api:3001
+  - service: http_status:404

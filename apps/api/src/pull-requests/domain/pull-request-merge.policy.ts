@@ -101,17 +101,3 @@ export function scopeOf(
   if (viewerLogin !== null && pull.requestedReviewers.includes(viewerLogin)) return 'requested';
   return 'watching';
 }
-
-/**
- * Whether a pull request is in the queue at all: yours and the reviews asked
- * of you come from every repository, the rest only from one you watch.
- */
-export function visibleInQueue(scope: PullRequestScope, repositoryWatched: boolean): boolean {
-  switch (scope) {
-    case 'mine':
-    case 'requested':
-      return true;
-    case 'watching':
-      return repositoryWatched;
-  }
-}

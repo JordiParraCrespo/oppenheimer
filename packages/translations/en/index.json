@@ -1014,7 +1014,21 @@
       "session": "Session",
       "merged": "Merged",
       "mergeFailed": "GitHub did not merge it.",
-      "mergedToast": "Merged {{reference}}."
+      "columns": {
+        "lane": "Lane",
+        "title": "Pull request",
+        "size": "Size",
+        "checks": "Checks",
+        "conflicts": "Conflicts",
+        "waiting": "Waiting"
+      },
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "mergeButton": {
+        "merge": "Merge",
+        "confirm": "Confirm merge",
+        "cancel": "Cancel merge"
+      }
     },
     "lanes": {
       "deep": "Deep",
@@ -1122,6 +1136,8 @@
       "reviewChanges": "Review changes",
       "brief": "Brief",
       "noDescription": "No description.",
+      "copyCode": "Copy code",
+      "codeCopied": "Copied",
       "whatChanges": "What changes",
       "risk": "Lane",
       "where": "Mostly {{folders}}",
@@ -1135,7 +1151,46 @@
       },
       "opened": "{{author}} wants to merge {{head}} into {{base}}",
       "reviewsUnread": "GitHub did not return the reviews on this read.",
-      "filesUnread": "GitHub did not return the files on this read."
+      "filesUnread": "GitHub did not return the files on this read.",
+      "rail": {
+        "mergeStatus": "Merge status",
+        "canMerge": "Can merge without conflicts",
+        "conflicts": "Has conflicts with {{base}}",
+        "merged": "Merged into {{base}}",
+        "closed": "Closed without merging",
+        "reviews": "Reviews",
+        "checksSummary": "{{passed}} of {{total}} passing",
+        "noChecks": "No checks",
+        "comments": "Comments",
+        "noComments": "No comments",
+        "commentCount_one": "{{count}} comment",
+        "commentCount_other": "{{count}} comments",
+        "commentCount_many": "{{count}} comments"
+      },
+      "editOnGithub": "Edit on GitHub",
+      "activity": {
+        "title": "Activity",
+        "empty": "Nothing has happened here yet.",
+        "loadFailed": "Could not load the activity.",
+        "commits_one": "{{count}} commit",
+        "commits_other": "{{count}} commits",
+        "commits_many": "{{count}} commits",
+        "review": {
+          "approved": "{{author}} approved these changes",
+          "changes_requested": "{{author}} requested changes",
+          "commented": "{{author}} reviewed",
+          "dismissed": "{{author}}’s review was dismissed"
+        },
+        "event": {
+          "review_requested": "{{author}} requested a review from {{subject}}",
+          "merged": "{{author}} merged this pull request",
+          "closed": "{{author}} closed this pull request",
+          "reopened": "{{author}} reopened this pull request",
+          "ready_for_review": "{{author}} marked this ready for review",
+          "convert_to_draft": "{{author}} converted this to a draft",
+          "head_ref_force_pushed": "{{author}} force-pushed the branch"
+        }
+      }
     },
     "review": {
       "submit": "Submit review",
@@ -1162,12 +1217,11 @@
       "postsAs": "Posts as @{{login}}.",
       "discard": "Discard",
       "close": "Close",
-      "submitted": "Review submitted.",
-      "approvedMerged": "Approved and merged.",
-      "approvedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
-      "failed": "The review did not go through."
+      "failed": "The review did not go through.",
+      "optional": "Optional"
     },
     "changes": {
+      "back": "Back",
       "layout": "Layout",
       "unified": "Unified",
       "split": "Split",
@@ -1185,7 +1239,12 @@
       "hint": "⌘⏎ adds to review",
       "commentPlaceholder": "Leave a comment",
       "cancel": "Cancel",
-      "commentAdded": "Comment posted."
+      "expand": "Expand file",
+      "collapse": "Collapse file",
+      "markViewed": "Viewed",
+      "comments_one": "{{count}} comment",
+      "comments_other": "{{count}} comments",
+      "comments_many": "{{count}} comments"
     },
     "analytics": {
       "title": "Your review {{range}}",
@@ -1223,21 +1282,9 @@
       "nothingWaits": "Nothing holds an open pull request right now.",
       "loadFailed": "Could not load analytics.",
       "none": "—",
-      "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes."
-    },
-    "notices": {
-      "forbidden": "{{name}}: GitHub refused access to {{what}}.",
-      "not_found": "{{name}}: GitHub no longer finds {{what}}.",
-      "rate_limited": "{{name}}: GitHub asked us to slow down before it gave {{what}}. They show up on the next read.",
-      "failed": "{{name}}: GitHub did not answer for {{what}}.",
-      "what": {
-        "repository": "its pull requests",
-        "pull_requests": "some of its pull requests",
-        "files": "the files of some pull requests",
-        "checks": "the checks of some pull requests",
-        "reviews": "the reviews of some pull requests"
-      },
-      "checksPermission": "The GitHub App needs Checks: read and Commit statuses: read; accept the permission update on GitHub."
+      "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes.",
+      "weekOf": "Week of {{date}}",
+      "hoverWeek": "Hover a week"
     }
   },
   "tasks": {
@@ -1901,7 +1948,18 @@
     "taskDeleted": "Task deleted.",
     "goalAdded": "Goal added.",
     "taskSessionStarted": "Session started.",
-    "taskSessionQueued": "Session queued. It starts when its host reconnects."
+    "taskSessionQueued": "Session queued. It starts when its host reconnects.",
+    "pullRequestsSlowedDown": "GitHub asked us to slow down, so some rows are missing a part. They fill on the next read.",
+    "pullRequestsRefused": "GitHub refused part of what this view shows.",
+    "pullRequestsGone": "GitHub no longer finds part of what this view shows.",
+    "pullRequestsUnanswered": "GitHub did not answer for part of what this view shows.",
+    "pullRequestsIncomplete": "Some rows are missing a part GitHub did not give.",
+    "pullRequestsChecksPermission": "GitHub refused the checks: the App needs Checks: read and Commit statuses: read.",
+    "pullRequestMerged": "Merged {{reference}}.",
+    "reviewSubmitted": "Review submitted.",
+    "reviewApprovedMerged": "Approved and merged.",
+    "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
+    "reviewCommentPosted": "Comment posted."
   },
   "emails": {
     "common": {

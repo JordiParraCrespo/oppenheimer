@@ -21,9 +21,11 @@ import { cn } from '../lib/utils';
  * - `status` (420px) and `composer` (720px) are a column centred in the pane
  *   both ways: a session being prepared, New session's composer.
  * - `narrow` (760px), a form, a single card or an article; `wide` (920px), a
- *   page that holds a table or a briefing; `board` (1240px), Plan's columns;
- *   `fluid`, no measure, for a page as wide as the pane (a diff). These open
- *   at the top.
+ *   page that holds a table or a briefing; `board` (1240px), Plan's columns.
+ *   These open at the top.
+ * - `fluid`, no measure and no gutter, for a page that is the pane edge to
+ *   edge (a diff): the body fills the frame, so the page never scrolls and
+ *   the screen owns its scrolling columns.
  *
  * The body owns the gutter. A child that has to reach the frame's edge opts in
  * with `data-bleed`, and the body cancels its gutter for it: the task board's
@@ -67,7 +69,7 @@ const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
   narrow: 'max-w-190 pt-6 pb-18',
   wide: 'max-w-230 pt-7 pb-18',
   board: 'max-w-310 pt-7 pb-18',
-  fluid: 'pt-6 pb-12',
+  fluid: 'min-h-0 flex-1 gap-0 px-0 sm:px-0',
 };
 
 /** The page's gutter, cancelled for a child that opts in to the frame's edge. */

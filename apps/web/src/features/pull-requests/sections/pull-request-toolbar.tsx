@@ -1,60 +1,95 @@
 import {
+  Button,
+  type DiffLayout,
   DiffStat,
   IconButton,
   SegmentedControl,
   SegmentedControlItem,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, SquareArrowOutUpRight } from '@oppenheimer/design-system-web/icons';
-import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
+import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
-import { ReviewPopover } from './review-popover';
+import {
+  DEFAULT_PULL_REQUEST_VIEW,
+  PULL_REQUEST_VIEWS,
+  type PullRequestView,
+} from '../lib/pull-request-search';
 
-/** The bar over a pull request: back to the queue, its three views, GitHub, and Submit review. */
+/**
+ * The bar over a pull request, its one header: back to the queue and its
+ * three views, GitHub, and Submit review. On Changes the views give way to
+ * Back and the diff's layout. Submit review is the screen's, which holds the
+ * pending comments it posts; the bar only places it while the pull is open.
+ */
 export function PullRequestToolbar({
   address,
   view,
   onViewChange,
-  pending,
-  onReviewSubmitted,
-  onDiscardPending,
+  layout,
+  onLayoutChange,
+  review,
 }: {
   address: PullRequestAddress;
   view: PullRequestView;
   onViewChange: (view: PullRequestView) => void;
-  pending: readonly LineCommentInput[];
-  onReviewSubmitted: () => void;
-  onDiscardPending: () => void;
+  layout: DiffLayout;
+  onLayoutChange: (layout: DiffLayout) => void;
+  /** Submit review, placed while the pull request is open. */
+  review: ReactNode;
 }) {
   const { t } = useTranslation();
   const { data: pull } = usePullRequest(address);
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
-      <IconButton
-        size="sm"
-        aria-label={t('pullRequests.detail.back')}
-        render={<Link to="/pulls" />}
-      >
-        <ChevronLeft />
-      </IconButton>
-      <SegmentedControl
-        size="md"
-        value={view}
-        onValueChange={(next) => onViewChange(next as PullRequestView)}
-        aria-label={t('pullRequests.detail.viewLabel')}
-      >
-        {PULL_REQUEST_VIEWS.map((value) => (
-          <SegmentedControlItem key={value} value={value}>
-            {t(`pullRequests.detail.views.${value}`)}
-            {value === 'changes' && pull ? (
-              <DiffStat additions={pull.additions} deletions={pull.deletions} />
-            ) : null}
-          </SegmentedControlItem>
-        ))}
-      </SegmentedControl>
+      {view === 'changes' ? (
+        <>
+          <Button variant="ghost" size="sm" onClick={() => onViewChange(DEFAULT_PULL_REQUEST_VIEW)}>
+            <ChevronLeft />
+            {t('pullRequests.changes.back')}
+          </Button>
+          <SegmentedControl
+            value={layout}
+            onValueChange={(next) => onLayoutChange(next as DiffLayout)}
+            aria-label={t('pullRequests.changes.layout')}
+          >
+            <SegmentedControlItem value="unified">
+              {t('pullRequests.changes.unified')}
+            </SegmentedControlItem>
+            <SegmentedControlItem value="split">
+              {t('pullRequests.changes.split')}
+            </SegmentedControlItem>
+          </SegmentedControl>
+        </>
+      ) : (
+        <>
+          <IconButton
+            size="sm"
+            aria-label={t('pullRequests.detail.back')}
+            render={<Link to="/pulls" />}
+          >
+            <ChevronLeft />
+          </IconButton>
+          <SegmentedControl
+            size="md"
+            value={view}
+            onValueChange={(next) => onViewChange(next as PullRequestView)}
+            aria-label={t('pullRequests.detail.viewLabel')}
+          >
+            {PULL_REQUEST_VIEWS.map((value) => (
+              <SegmentedControlItem key={value} value={value}>
+                {t(`pullRequests.detail.views.${value}`)}
+                {value === 'changes' && pull ? (
+                  <DiffStat additions={pull.additions} deletions={pull.deletions} />
+                ) : null}
+              </SegmentedControlItem>
+            ))}
+          </SegmentedControl>
+        </>
+      )}
       <span className="flex-1" />
       {pull ? (
         <IconButton
@@ -64,15 +99,7 @@ export function PullRequestToolbar({
           <SquareArrowOutUpRight />
         </IconButton>
       ) : null}
-      {pull?.isOpen ? (
-        <ReviewPopover
-          address={address}
-          viewerLogin={pull.viewerLogin}
-          pending={pending}
-          onSubmitted={onReviewSubmitted}
-          onDiscard={onDiscardPending}
-        />
-      ) : null}
+      {pull?.isOpen ? review : null}
     </div>
   );
 }

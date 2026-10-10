@@ -11,8 +11,9 @@ import type {
   PullRequestAddress,
   ReviewVerdict,
 } from '@oppenheimer/frontend-consumer';
-import { useSubmitPullRequestReview } from '@oppenheimer/frontend-consumer/react';
+import { usePullRequest, useSubmitPullRequestReview } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { REVIEW_VERDICTS } from '@oppenheimer/shared/schemas/pull-request';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,19 +25,18 @@ import { useTranslation } from 'react-i18next';
  */
 export function ReviewPopover({
   address,
-  viewerLogin,
   pending,
   onSubmitted,
   onDiscard,
 }: {
   address: PullRequestAddress;
-  viewerLogin: string | null;
   pending: readonly LineCommentInput[];
   onSubmitted: () => void;
   onDiscard: () => void;
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
+  const viewerLogin = usePullRequest(address).data?.viewerLogin ?? null;
   const [open, setOpen] = useState(false);
   const [verdict, setVerdict] = useState<ReviewVerdict>('approve');
   const [comment, setComment] = useState('');
@@ -45,12 +45,12 @@ export function ReviewPopover({
       setOpen(false);
       setComment('');
       onSubmitted();
-      toast.success(
+      notifySuccess(
         verdict !== 'approve'
-          ? t('pullRequests.review.submitted')
+          ? 'reviewSubmitted'
           : merged
-            ? t('pullRequests.review.approvedMerged')
-            : t('pullRequests.review.approvedWaiting'),
+            ? 'reviewApprovedMerged'
+            : 'reviewApprovedWaiting',
       );
     },
     onError: (error) => toast.error(resolveError(error, t('pullRequests.review.failed')).message),
@@ -96,6 +96,7 @@ export function ReviewPopover({
           labels={{
             title: t('pullRequests.review.title'),
             comment: t('pullRequests.review.comment'),
+            optional: t('pullRequests.review.optional'),
             placeholder: t('pullRequests.review.placeholder'),
             discard: t('pullRequests.review.discard'),
             close: t('pullRequests.review.close'),

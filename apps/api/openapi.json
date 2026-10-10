@@ -13429,6 +13429,140 @@
         "tags": ["Pull requests"]
       }
     },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/activity": {
+      "get": {
+        "description": "Its comments, pushed commits, reviews and events (review requests, merge, close, reopen, force-push), oldest first, as GitHub’s timeline gives them.",
+        "operationId": "findPullRequestActivity",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PullRequestActivityItemDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A pull request’s conversation",
+        "tags": ["Pull requests"]
+      }
+    },
     "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/reviews": {
       "post": {
         "description": "Posted to GitHub in the caller’s own name with its line comments: comment, request changes, or approve — which then merges when GitHub allows it, and otherwise leaves the pull request waiting.",
@@ -20538,10 +20672,6 @@
       "UnreadableRepositoryDto": {
         "type": "object",
         "properties": {
-          "fullName": {
-            "type": "string",
-            "example": "acme-labs/xrp-mobile"
-          },
           "what": {
             "type": "string",
             "enum": ["repository", "pull_requests", "files", "checks", "reviews"],
@@ -20553,7 +20683,7 @@
             "description": "The refusal GitHub gave: no access, gone, wait, or no answer."
           }
         },
-        "required": ["fullName", "what", "refusal"]
+        "required": ["what", "refusal"]
       },
       "PullRequestQueueResponseDto": {
         "type": "object",
@@ -20598,9 +20728,21 @@
             "items": {
               "$ref": "#/components/schemas/UnreadableRepositoryDto"
             }
+          },
+          "filling": {
+            "type": "boolean",
+            "description": "Some rows still have parts nobody has read: the next read fills more. Ask again while this is true."
           }
         },
-        "required": ["items", "scopes", "lanes", "readyToMerge", "withConflicts", "unreadable"]
+        "required": [
+          "items",
+          "scopes",
+          "lanes",
+          "readyToMerge",
+          "withConflicts",
+          "unreadable",
+          "filling"
+        ]
       },
       "AnalyticsFigureDto": {
         "type": "object",
@@ -20755,6 +20897,11 @@
               "$ref": "#/components/schemas/AnalyticsDayDto"
             }
           },
+          "bucket": {
+            "type": "string",
+            "enum": ["day", "week"],
+            "description": "What one entry of `days` covers: a day, or — over a quarter — the week it starts, as the artboard draws it."
+          },
           "lanes": {
             "description": "Merged pull requests by lane.",
             "type": "array",
@@ -20792,6 +20939,7 @@
           "waitForReviewPeople",
           "timeToMerge",
           "days",
+          "bucket",
           "lanes",
           "waiting",
           "complete",
@@ -21109,6 +21257,59 @@
           }
         },
         "required": ["id", "path", "side", "body", "author", "createdAt"]
+      },
+      "PullRequestActivityItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "comment:1874"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["comment", "commit", "review", "event"]
+          },
+          "author": {
+            "type": "string",
+            "description": "A GitHub login; a commit’s author name."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "body": {
+            "type": "string",
+            "nullable": true,
+            "description": "Markdown, or a commit message."
+          },
+          "state": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["approved", "changes_requested", "commented", "dismissed"]
+          },
+          "sha": {
+            "type": "string",
+            "nullable": true
+          },
+          "event": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "review_requested",
+              "merged",
+              "closed",
+              "reopened",
+              "ready_for_review",
+              "convert_to_draft",
+              "head_ref_force_pushed"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "kind", "author", "at"]
       },
       "SubmitPullRequestReviewRequest": {
         "type": "object",

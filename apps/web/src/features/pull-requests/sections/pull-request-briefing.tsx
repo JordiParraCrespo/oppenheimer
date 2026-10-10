@@ -8,29 +8,18 @@ import {
   Skeleton,
   StatBar,
   StatCard,
-  type StatusState,
 } from '@oppenheimer/design-system-web';
 import { CircleAlert, CircleCheck } from '@oppenheimer/design-system-web/icons';
-import type { PullRequestAddress, PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
+import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { LaneBadge } from '../components/lane-badge';
 import { ReviewerRow } from '../components/reviewer-row';
-import { laneReasonText, mergeSteps } from '../lib/briefing';
+import { laneReasonText, mergeSteps, pullState } from '../lib/briefing';
 import { leadOf } from '../lib/markdown';
 import { folderList } from '../lib/view';
 import { MergeActions } from './merge-actions';
-
-function stateOf(pull: PullRequestDetailEntity): {
-  state: StatusState;
-  key: 'open' | 'merged' | 'closed' | 'draft';
-} {
-  if (pull.state === 'merged') return { state: 'completed', key: 'merged' };
-  if (pull.state === 'closed') return { state: 'idle', key: 'closed' };
-  if (pull.draft) return { state: 'paused', key: 'draft' };
-  return { state: 'active', key: 'open' };
-}
 
 /**
  * The briefing: the header, size, files, checks and conflicts, the path to
@@ -55,7 +44,7 @@ export function PullRequestBriefing({
     >
       {(pull) => {
         const total = pull.additions + pull.deletions || 1;
-        const state = stateOf(pull);
+        const state = pullState(pull);
         const steps = mergeSteps(pull, t);
         const done = steps.filter((step) => step.state === 'done').length;
         const lead = leadOf(pull.body);

@@ -12,6 +12,7 @@ import {
 import type {
   LineCommentInput,
   MergeMethod,
+  PullRequestActivityItem,
   PullRequestAddress,
   PullRequestAnalytics,
   PullRequestAnalyticsRange,
@@ -24,6 +25,7 @@ import type {
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
+import { usePollWhile } from './live-poll';
 
 /**
  * Query key factory for the Pull requests area. Everything sits under one
@@ -33,7 +35,7 @@ import { useConsumerApp } from './context';
  * ```
  * ['pullRequests', 'queue', scope]
  * ['pullRequests', 'detail', installationId, githubRepoId, number]
- * ['pullRequests', 'detail', …, 'files' | 'comments']
+ * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity']
  * ['pullRequests', 'repositories']
  * ['pullRequests', 'analytics', range]
  * ```
@@ -54,9 +56,12 @@ export const pullRequestsKeys = {
     [...pullRequestsKeys.detail(address), 'files'] as const,
   comments: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'comments'] as const,
+  activity: (address: PullRequestAddress | undefined) =>
+    [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
-  analytics: (range: PullRequestAnalyticsRange) =>
-    [...pullRequestsKeys.all, 'analytics', range] as const,
+  analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
+  analyticsRange: (range: PullRequestAnalyticsRange) =>
+    [...pullRequestsKeys.analytics(), range] as const,
 };
 
 /**
@@ -74,6 +79,13 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
     queryFn: () => app.pullRequests.queue(scope),
     placeholderData: keepPreviousData,
     ...options,
+    // The rows are drawn from the first read; each poll fills a few more of
+    // their parts, until the answer says it has stopped filling (#247).
+    ...usePollWhile<PullRequestQueue>(
+      'pullRequestsFilling',
+      pullRequestsKeys.queue(scope),
+      (data) => data?.filling === true,
+    ),
   });
 }
 
@@ -103,6 +115,15 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
   });
 }
 
+/** Its conversation: comments, commits, reviews and events, drawn under the description. */
+export function usePullRequestActivity(address: PullRequestAddress | undefined) {
+  const app = useConsumerApp();
+  return useQuery<PullRequestActivityItem[], Error>({
+    queryKey: pullRequestsKeys.activity(address),
+    queryFn: address ? () => app.pullRequests.activity(address) : skipToken,
+  });
+}
+
 /** Every repository the workspace's installations reach, and whether the caller watches it. */
 export function useWatchedRepositories<TData = WatchedRepository[]>(
   options?: Omit<UseQueryOptions<WatchedRepository[], Error, TData>, 'queryKey' | 'queryFn'>,
@@ -115,17 +136,27 @@ export function useWatchedRepositories<TData = WatchedRepository[]>(
   });
 }
 
+/**
+ * The review period's numbers. The one read of this feature that is kept in
+ * the browser's cache, and it says so here: the queue and the details hold
+ * private repositories' code — titles, branches, file paths — while these are
+ * counts, medians, a lane mix and dates that name nothing. Reading them from
+ * storage is what spares the page a skeleton on every visit.
+ */
 export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
   const app = useConsumerApp();
   return useQuery<PullRequestAnalytics, Error>({
-    queryKey: pullRequestsKeys.analytics(range),
+    queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
     placeholderData: keepPreviousData,
+    meta: { persist: true },
   });
 }
 
 function useInvalidatePullRequests() {
   const queryClient = useQueryClient();
+  // One root covers the queue, the details and the period's numbers alike:
+  // watching a repository changes all of them.
   return () => queryClient.invalidateQueries({ queryKey: pullRequestsKeys.all });
 }
 
