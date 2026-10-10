@@ -14,7 +14,7 @@ export const CONSUMER_CONFIG = {
   },
   /** The terminal's link to the host (`product/versions/mvp/01-protocol.md`). */
   stream: {
-    /** The delays between reconnect attempts, with jitter on top (`product/12-lessons-from-grok-bot.md`). */
+    /** The delays between reconnect attempts, with jitter on top (`product/research/lessons-from-grok-bot.md`). */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
   },
   automations: {
