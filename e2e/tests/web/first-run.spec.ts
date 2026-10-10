@@ -70,6 +70,48 @@ test('a new account walks the first-run flow into the console', async ({ page })
 });
 
 /**
+ * A deployment with no runner release configured reports `hosts: false`, and
+ * the host step reads that before it mints: it explains, and Skip is the way on.
+ *
+ * The capability is answered here rather than read off the stack, so the spec
+ * holds whichever way the deployment under test is configured; what it proves
+ * is that the console takes the server's word and asks for no token.
+ */
+test('the host step explains, and mints nothing, on a deployment that cannot pair', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/health/capabilities', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), hosts: false } });
+  });
+  const mints: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().includes('/api/v1/hosts/pairing')) {
+      mints.push(request.url());
+    }
+  });
+
+  const user = newUser('firstrunnohosts');
+  await registerThroughUi(page, user);
+  await claimWorkspaceThroughUi(page, 'NoHosts');
+
+  await page.getByRole('link', { name: /skip for now/i }).click();
+  await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+  await expect(page.getByRole('heading', { name: /add your first host/i })).toBeVisible();
+
+  await expect(page.getByText(/can't pair machines yet/i)).toBeVisible();
+  await expect(page.getByText(/waiting for the host/i)).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /continue/i })).toHaveCount(0);
+  expect(mints, 'no pairing token is asked for').toEqual([]);
+
+  // Skip is the way on, and Ready says there is no host rather than an error.
+  await page.getByRole('link', { name: /skip for now/i }).click();
+  await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
+  await expect(page.getByText(/no host yet/i)).toBeVisible();
+  expect(mints).toEqual([]);
+});
+
+/**
  * The gate: a workspace that has been named is finished with this step.
  * Without it, every visit to the flow re-opens the slug form over an address
  * `check-slug` now counts as taken — its own.

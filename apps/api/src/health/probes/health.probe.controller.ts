@@ -50,7 +50,7 @@ export class HealthProbeController {
     status: 200,
     type: CapabilitiesResponseDto,
     description:
-      'Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.',
+      'Which client-relevant optional features (sign-in providers, the GitHub App, host pairing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.',
   })
   deploymentCapabilities(): CapabilitiesResponseDto {
     const flags = this.capabilities.pick(CLIENT_CAPABILITIES);

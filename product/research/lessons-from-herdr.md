@@ -1,4 +1,4 @@
-# 13 — Lessons from herdr and from a minimal SSH web terminal
+# Lessons from herdr and from a minimal SSH web terminal (formerly note 13)
 
 Two codebases read in full after the runner was built, to check the
 architecture against prior art: `herdrdev/herdr` (Rust, ~366 source

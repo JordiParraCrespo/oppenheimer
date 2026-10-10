@@ -33,6 +33,7 @@ clean:
 	rm -rf dist
 
 # Cross-compile every supported target and write the release manifest; see
-# scripts/runner/release.sh for the signing step, which stays offline.
+# scripts/runner/release.sh for the signing step, which stays offline. Needs
+# RELEASE_PUBLIC_KEYS and RELEASE_BASE_URL in the environment.
 release:
 	../../scripts/runner/release.sh $(VERSION)
