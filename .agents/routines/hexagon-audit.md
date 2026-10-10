@@ -22,11 +22,12 @@ differently" do not count.
 
 The prompt may end with arguments. Defaults are for the scheduled run.
 
-- `--since <git-ref-or-date>`: base for the ledger diff (step 3) and for
-  telling a new finding from one already open. Default: `26 hours ago` on the
-  default branch (two hours of overlap, so a late run never leaves a gap).
-- `--module <name>`: review only this module instead of all of them (step 4).
-  For evals and one-off checks; the scheduled run never passes it.
+- `--since <git-ref-or-date>`: base for the ledger diff (step 3), and nothing
+  else. Default: `26 hours ago` on the default branch (two hours of overlap,
+  so a late run never leaves a gap in the ledger history).
+- `--module <name>`: review only `apps/api/src/<name>/` (or
+  `packages/backend/ddd` when the name is `ddd`) instead of every directory
+  in step 4. For evals and one-off checks; the scheduled run never passes it.
 - `--dry-run <path>`: write the report to `<path>` as Markdown and do not touch
   GitHub at all.
 
@@ -73,8 +74,8 @@ Count the ledgers with these exact commands, never by eye, so the number is
 comparable from one day to the next:
 
 ```bash
-grep -cE "path: 'apps/api/src/" scripts/check-api-structure.mjs              # structure (0 on 2026-10-08)
-grep -oE "'\^src/[^']*\\\\\.ts\\$'" apps/api/.dependency-cruiser.cjs | wc -l  # dependency (17 on 2026-10-08)
+grep -cE "path: 'apps/api/src/" scripts/check-api-structure.mjs              # structure
+grep -oE "'\^src/[^']*\\\\\.ts\\$'" apps/api/.dependency-cruiser.cjs | wc -l  # dependency
 ```
 
 Nothing already on a ledger is a new finding. Do not report ledgered files again
@@ -91,46 +92,31 @@ covers:
 - `packages/backend/ddd/src/**`, the building blocks those modules extend.
 
 Skip `*.spec.ts`, `migrations/` and generated files. `--module <name>` narrows
-the review to that one module.
+the review to that one directory.
 
-List the modules and their size, so the split is by lines and not by count:
+List the directories in scope with their size, one row each, so the split is
+by lines and not by count:
 
 ```bash
-cd apps/api/src && for d in $(ls -d */ | sed 's#/##' | sort); do
-  ls "$d"/*.module.ts >/dev/null 2>&1 &&
-    echo "$d $(find "$d" -name '*.ts' ! -name '*.spec.ts' ! -path '*migrations*' | xargs cat | wc -l)"
+{ for m in $(find apps/api/src -mindepth 2 -name '*.module.ts' -printf '%h\n' | cut -d/ -f1-4 | sort -u); do echo "$m"; done
+  echo packages/backend/ddd/src; } | while read -r d; do
+  n=$(find "$d" -name '*.ts' ! -name '*.spec.ts' ! -path '*/migrations/*' -print0 | wc -l --files0-from=- | tail -1 | awk '{print $1}')
+  echo "$d ${n:-0}"
 done
 ```
 
-**Fan out.** The API is too large to read file by file in one context. Split
-the modules into at most six groups of roughly equal line count (give
-`packages/backend/ddd` to the smallest group) and hand each group to a
-subagent, all in parallel. Each subagent's brief is the same:
+**Fan out.** Split that list into groups of roughly equal line count, each
+small enough for one reader to hold in a single read, and hand each group to
+a read-only subagent, all in parallel. The brief is the same for every group:
+the group's directories; follow steps 3 and 5 of this file for them; return
+candidates in the step 6 Findings shape, plus any pattern it suspects repeats
+elsewhere; do not verify, edit or check anything out.
 
-- the group's directories, and that it is read-only: no edits, no checkout;
-- read the four contract sources above, then steps 3 and 5, "Verify before
-  reporting" and the severities in step 6 of this file, and skim
-  `apps/api/src/users/`, the reference module;
-- check every file in the group against the step 5 rows for its layer, and
-  verify each candidate as step 5 says;
-- return candidates only, each with its key, severity, fingerprint,
-  `path:line` for every occurrence, the offending lines verbatim (≤8), the
-  rule sentence quoted with its source, a one-sentence fix, and whether the
-  fix is local and leaves the HTTP contract alone; then "worth a look" items;
-  then any pattern it suspects repeats in other modules.
-
-**A subagent's finding is a candidate, not a finding.** When they are all back,
-you run "Verify before reporting" again on every candidate yourself: open the
-file at the cited line and quote the rule. Then merge across groups: the same
-pattern from two groups is one row, and a pattern a subagent flagged as
-possibly repeated is `grep`ped across all of `apps/api/src` before you decide
-between a single finding and **systemic** (step 6).
-
-Name each finding **new** when its fingerprint is not in the issue's current
-body (step 6), and **open** when it is. Files changed since the base (`git diff
---name-only <base>...HEAD`) are where new findings usually come from; say in
-the report when a new one is in old code, because that means an earlier run
-missed it.
+**You are the only verifier.** When the groups are back, run "Verify before
+reporting" (step 5) on every candidate yourself. Merge across groups: the same
+pattern from two groups is one row, and a suspected repeat is `grep`ped across
+all of `apps/api/src` before you decide between a single finding and
+**systemic** (step 6).
 
 ## 5. Judgment checklist
 
@@ -202,7 +188,8 @@ Rate each finding:
 
 Give each finding a fingerprint: `<KEY>:<path>:<symbol>`, where the symbol is
 the class or method name, never the line number, so the fingerprint survives
-edits.
+edits. Its **status** is **new** when the fingerprint is not in the issue's
+current body, and **open** when it is; that is the only definition of new.
 
 Use this Markdown:
 
@@ -213,9 +200,9 @@ Use this Markdown:
 **Ledger:** <n> structure + <m> dependency entries (<+added / −removed> since base)
 
 ### Findings
-| Sev | Key | Where | What | Fix |
-| --- | --- | --- | --- | --- |
-| blocking | HEX-CMD-RETURN | [`path:line`](permalink) | one sentence, quoting the code | one sentence |
+| Status | Sev | Key | Where | What | Fix |
+| --- | --- | --- | --- | --- | --- |
+| new | blocking | HEX-CMD-RETURN | [`path:line`](permalink) | one sentence, quoting the code | one sentence |
 
 <details><summary>Evidence</summary>
 For each finding: the offending lines (≤8) and the rule sentence it breaks, with its source.
