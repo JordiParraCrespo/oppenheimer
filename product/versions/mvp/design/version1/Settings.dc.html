@@ -169,6 +169,7 @@ Listening for this host…
 </div>
 
 <div style="display:flex;flex-direction:column;gap:18px">
+<span class="op-hint">These apply to every watched repository.</span>
 <div style="display:flex;flex-direction:column;gap:8px"><span class="op-label">Track</span><div class="op-pchips"><sc-for list="{{ wTrack }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div><span class="op-hint">{{ wTrackHint }}</span></div>
 <div style="display:flex;flex-direction:column;gap:8px"><span class="op-label">Starts in lane</span><div class="op-pchips"><sc-for list="{{ wLane }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div><span class="op-hint">Auto lets the lane agent pick from the size and paths changed.</span></div>
 <label class="op-switch" style="justify-content:space-between;gap:16px"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Notify me about new pull requests</span><span style="font-size:12.5px;color:var(--fg-muted)">One notification per pull request, when it opens.</span></span><input type="checkbox" checked="{{ wNotify }}" onChange="{{ toggleWNotify }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span></label>

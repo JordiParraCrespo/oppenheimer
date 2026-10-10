@@ -832,9 +832,9 @@ class Component extends DCLogic {
       && (!q || (p.title + ' ' + p.repo + ' ' + p.num + ' ' + p.author + ' ' + p.branch).toLowerCase().includes(q)))
       .sort((a, b) => LANE_ORDER[this.laneOf(a)] - LANE_ORDER[this.laneOf(b)] || b.wait - a.wait);
   }
-  componentDidUpdate() { if (!VIEWS.some(v => v.id === this.state.view) && this.state.view !== 'watchset') this.setState({ view: 'all' }); }
+  componentDidUpdate() { if (!VIEWS.some(v => v.id === this.state.view)) this.setState({ view: 'all' }); }
   componentDidMount() {
-    if (!VIEWS.some(v => v.id === this.state.view) && this.state.view !== 'watchset') this.setState({ view: 'all' });
+    if (!VIEWS.some(v => v.id === this.state.view)) this.setState({ view: 'all' });
     this.onKey = e => {
       if (/input|textarea/i.test(e.target.tagName)) return;
       if (this.state.open) { if (e.key === 'Escape') { if (this.state.rvOpen) this.setState({ rvOpen: false }); else this.setState({ open: null }); } return; }
@@ -1163,7 +1163,7 @@ class Component extends DCLogic {
             if (p.add + p.del > 500) fac.push([-10, (p.add + p.del).toLocaleString('en-US') + ' lines']);
             if (p.view === 'waiting') fac.push([-10, 'blocked on GitHub']);
             const sc = Math.max(0, 100 + fac.reduce((x, f) => x + f[0], 0));
-            const blocked = p.ck === 'fail' || p.conflict;
+            const blocked = p.ck === 'fail' || p.conflict || p.view === 'waiting';
             return { score: sc, scoreFg: blocked || sc < 50 ? 'var(--danger)' : sc < 75 ? 'var(--warning)' : 'var(--success)',
               verdict: p.view === 'auto' || (s.merged || {})[p.id] ? 'Merged' : blocked ? 'Not ready to merge' : sc >= 80 ? 'Safe to merge' : sc >= 60 ? 'Read the changes first' : 'Review closely',
               factors: fac.map(([n, label]) => ({ pts: '−' + Math.abs(n), label })), hasFactors: fac.length ? 'true' : undefined,
@@ -1257,47 +1257,6 @@ class Component extends DCLogic {
       stop: e => e.stopPropagation(),
       apply: () => !invalid && applyRange(from, to),
     };
-  }
-  watchSetVals() {
-    const s = this.state;
-    if (s.view !== 'watchset') return { isWatchSet: undefined };
-    const w = this.watched(), cfg = s.repoCfg || {};
-    const all = REPOS.concat(s.extraRepos || []);
-    const q = (s.wsQ || '').trim().toLowerCase(), f = s.wsFilter || 'all';
-    const openN = name => PRS.filter(p => p.view !== 'auto' && p.repo === name && p.scope === 'watching').length;
-    const list = all.filter(r => (!q || (r.org + '/' + r.name).toLowerCase().includes(q)) && (f === 'all' || (f === 'on') === !!w[r.name]));
-    const set = (name, k, v) => this.setState(st => ({ repoCfg: { ...(st.repoCfg || {}), [name]: { ...((st.repoCfg || {})[name] || {}), [k]: v } } }));
-    const seg = (opts, cur, name, k) => opts.map(([id, label]) => ({ name: label, bg: cur === id ? 'var(--card)' : 'transparent', fg: cur === id ? 'var(--fg)' : 'var(--fg-muted)', pick: () => set(name, k, id) }));
-    const wide = s.w >= 980;
-    const GH = [
-      { org: 'oppenheimer-ai', name: 'console-web', role: 'Write', commits: 0 },
-      { org: 'oppenheimer-ai', name: 'helm-charts', role: 'Read', commits: 0 },
-      { org: 'peersyst', name: 'xrpl-js', role: 'Contributor', commits: 4 },
-      { org: 'peersyst', name: 'react-native-ui', role: 'Read', commits: 0 },
-    ].filter(g => !all.some(r => r.name === g.name) && q.length >= 2 && (g.org + '/' + g.name).toLowerCase().includes(q));
-    const inQueueView = { isWatchSet: 'true', isQueueView: undefined, isAnalytics: undefined, hasSel: undefined };
-    return { ...inQueueView,
-      ws: {
-        back: () => this.setState({ view: 'all', scope: 'watching' }),
-        onN: all.filter(r => w[r.name]).length, totalN: all.length,
-        q: s.wsQ || '', qOn: s.wsQ ? 'true' : undefined, onQ: e => this.setState({ wsQ: e.target.value }), qClear: () => this.setState({ wsQ: '' }),
-        qKey: e => { if (e.key === 'Escape') { e.stopPropagation(); this.setState({ wsQ: '' }); e.target.blur(); } },
-        filters: [['all', 'All', all.length], ['on', 'Watching', all.filter(r => w[r.name]).length], ['off', 'Not watching', all.filter(r => !w[r.name]).length]].map(([id, name, n]) => ({ name, n, on: f === id ? 'true' : 'false', pick: () => this.setState({ wsFilter: id }) })),
-        wide: wide ? 'true' : undefined, narrow: wide ? undefined : 'true',
-        cols: wide ? 'minmax(0,1fr) 44px 268px 236px 52px' : 'minmax(0,1fr) 44px',
-        cellDisp: wide ? 'contents' : 'flex', cellSpan: wide ? 'auto' : '1 / -1',
-        rows: list.map(r => { const on = !!w[r.name], c = cfg[r.name] || {}, ntf = !!c.notify;
-          return { full: r.org + '/' + r.name, sub: r.role + (r.commits ? ' · ' + r.commits + ' commits by you' : '') + (openN(r.name) ? ' · ' + openN(r.name) + ' open' : ''),
-            onS: on ? 'true' : 'false', track: on ? 'var(--primary)' : 'var(--border)', knob: on ? 'flex-end' : 'flex-start',
-            toggle: () => this.setState(st => ({ watched: { ...this.watched(), [r.name]: !on } })),
-            op: on ? 1 : 0.45, pe: on ? 'auto' : 'none',
-            trackOpts: seg([['all', 'All PRs'], ['owner', 'My code paths'], ['new', 'New only']], c.track || 'all', r.name, 'track'),
-            laneOpts: seg([['auto', 'Auto'], ['Deep', 'Deep'], ['Medium', 'Medium'], ['Quick', 'Quick']], c.lane || 'auto', r.name, 'lane'),
-            ntfOn: ntf ? 'true' : 'false', ntfTrack: ntf ? 'var(--primary)' : 'var(--border)', ntfKnob: ntf ? 'flex-end' : 'flex-start', ntfToggle: () => set(r.name, 'notify', !ntf) }; }),
-        hasSuggest: GH.length ? 'true' : undefined,
-        suggest: GH.map(g => ({ full: g.org + '/' + g.name, sub: g.role + ' access', add: () => this.setState(st => ({ extraRepos: (st.extraRepos || []).concat([g]), watched: { ...this.watched(), [g.name]: true }, wsQ: '' })) })),
-        none: !list.length && !GH.length ? 'true' : undefined,
-      } };
   }
   analyticsVals() {
     const s = this.state;
@@ -1489,7 +1448,6 @@ class Component extends DCLogic {
         const wtList = REPOS.concat(s.extraRepos || []).filter(r => !wq || (r.org + '/' + r.name).toLowerCase().includes(wq));
         return { show: (s.scope || 'mine') === 'watching' ? 'true' : undefined, open: s.wtOpen ? 'true' : undefined,
           openS: s.wtOpen ? 'true' : 'false', label: (() => { const on = REPOS.concat(s.extraRepos || []).filter(r => w[r.name]).map(r => r.name); return on.length ? on.join(', ') : 'No repositories'; })(),
-          openSettings: e => { if (e) e.stopPropagation(); this.setState({ view: 'watchset', wtOpen: false, wsQ: '', sel: null }); },
           toggleOpen: e => { e.stopPropagation(); const willOpen = !s.wtOpen; this.setState({ wtOpen: willOpen, wtQ: '' }); if (willOpen) setTimeout(() => { const el = document.querySelector('[data-wtq]'); if (el) el.focus(); }, 40); },
           on: REPOS.concat(s.extraRepos || []).filter(r => w[r.name]).map(r => ({ name: r.name, toggle: tg(r.name) })),
           q: s.wtQ || '', onQ: e => this.setState({ wtQ: e.target.value }), qKey: e => { if (e.key === 'Escape') { e.stopPropagation(); if (s.wtQ) this.setState({ wtQ: '' }); else this.setState({ wtOpen: false }); } },
@@ -1527,7 +1485,7 @@ class Component extends DCLogic {
       emptyTitle: s.prQ ? 'No pull requests match "' + s.prQ + '"' : (s.scope || 'mine') === 'watching' && !Object.values(this.watched()).some(Boolean) ? 'You are not watching any repositories' : 'Nothing in this view',
       emptySub: (s.scope || 'mine') === 'watching' ? 'Add repositories in Settings → Watched repositories. Their open pull requests show up here.' : 'Pull requests opened by your sessions or teammates land here with a lane already picked.',
       hasSel: undefined,
-      ...this.analyticsVals(), ...this.accountVals(), s: sv, ...this.watchSetVals(),
+      ...this.analyticsVals(), ...this.accountVals(), s: sv,
       ...this.detailVals(),
       openDiff: () => sel && this.setState({ open: sel.id, tab: 'changes' }),
       closeSel: () => this.setState({ sel: null }), reviewNext: () => this.next(),
