@@ -66,6 +66,7 @@ export function SessionTerminal({
     status,
     away: awaySince !== null,
     reconnected: terminal.reconnected,
+    slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
 
@@ -165,7 +166,10 @@ export function SessionTerminal({
         ) : (
           <TerminalStatusBar>
             {statusItem}
-            <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
+            {/* No phase while open is a dial inside its grace: nothing to say yet. */}
+            {status === 'closed' ? (
+              <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
+            ) : null}
           </TerminalStatusBar>
         )}
       </Terminal>
