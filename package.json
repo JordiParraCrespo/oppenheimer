@@ -22,6 +22,7 @@
     "check:unused": "knip --workspace apps/web --workspace packages/frontend/core --workspace packages/frontend/consumer --workspace packages/frontend/web",
     "check:hooks": "node --test .agents/hooks/git-guard.test.mjs",
     "check:flags": "node --no-warnings scripts/check-feature-flags.mjs && node --no-warnings --test scripts/check-feature-flags.test.mjs",
+    "check:runner-release": "node --test scripts/runner/publish.test.mjs",
     "starter:prune": "node scripts/starter/prune.mjs",
     "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
     "test": "turbo run test",

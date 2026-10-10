@@ -161,6 +161,10 @@ job('lint', [
   ['Feature flags', 'pnpm', ['check:flags']],
   // The agent git guard (`.agents/hooks/git-guard.mjs`): its policy, case by case.
   ['Agent git guard', 'pnpm', ['check:hooks']],
+  // oppenheimer:begin runner
+  // The runner release path's refusals: no keys, unsigned, tampered.
+  ['Runner release publishing', 'pnpm', ['check:runner-release']],
+  // oppenheimer:end runner
   // oppenheimer:begin web
   ['Frontend structure', 'pnpm', ['check:structure']],
   // The React Compiler gives up silently on a function it cannot compile (the
