@@ -1,4 +1,5 @@
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
+import { useHostsAvailability } from './use-hosts-availability';
 
 /**
  * When a pairing surface lets the reader move on.
@@ -16,11 +17,15 @@ import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 export type PairingDoneWhen = 'online' | 'registered';
 
 /**
- * `useHostPairing`, plus whether the surface is done by its rule. The flow's
- * fields are passed on as they are; each surface draws what it needs of them.
+ * `useHostPairing`, gated on whether this deployment can pair
+ * (`useHostsAvailability`): the flow mints only when it is `available`, so a
+ * surface calls this once and draws `availability` through `PairingGate`. The
+ * flow's fields are passed on as they are, plus whether the surface is done
+ * by its rule.
  */
 export function usePairing(defaultName: string, doneWhen: PairingDoneWhen) {
-  const flow = useHostPairing(defaultName);
+  const availability = useHostsAvailability();
+  const flow = useHostPairing(defaultName, { enabled: availability === 'available' });
   const done = doneWhen === 'online' ? Boolean(flow.host?.online) : flow.host !== null;
-  return { ...flow, done };
+  return { ...flow, done, availability };
 }

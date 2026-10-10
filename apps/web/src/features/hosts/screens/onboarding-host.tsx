@@ -2,6 +2,7 @@ import { Button, StepHeader, Link as TextLink } from '@oppenheimer/design-system
 import { PairingChrome } from '@oppenheimer/frontend-web';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PairingGate } from '../components/pairing-gate';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
@@ -9,6 +10,10 @@ import { usePairing } from '../hooks/use-pairing';
  * 2026-09-27 export). This step owns the header and the wait: Continue waits
  * for the runner to come online (`usePairing`'s rules). The column is the
  * kit's `PairingChrome`, shared with the console's Add a host dialog.
+ *
+ * Skip is there in every state, the answer about pairing still on its way
+ * included. Where this deployment cannot pair, it is the primary action and
+ * Continue goes.
  */
 export function OnboardingHostScreen({
   step,
@@ -27,10 +32,9 @@ export function OnboardingHostScreen({
   const { t } = useTranslation();
   // Online, not merely registered: the row appears when the runner registers,
   // and its service may still be starting (`usePairing`'s rules).
-  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
-    t('onboarding.flow.host.defaultName'),
-    'online',
-  );
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done, availability } =
+    usePairing(t('onboarding.flow.host.defaultName'), 'online');
+  const unavailable = availability === 'unavailable';
 
   return (
     <div className="flex flex-col gap-5">
@@ -45,29 +49,36 @@ export function OnboardingHostScreen({
         {t('onboarding.flow.host.description')}
       </StepHeader>
 
-      <PairingChrome
-        pairing={pairing ?? null}
-        expiresAt={expiresAt}
-        expired={expired}
-        onRegenerate={regenerate}
-        busy={isPending}
-        host={host}
-        error={error}
-        layout="step"
-      />
+      <PairingGate availability={availability}>
+        <PairingChrome
+          pairing={pairing ?? null}
+          expiresAt={expiresAt}
+          expired={expired}
+          onRegenerate={regenerate}
+          busy={isPending}
+          host={host}
+          error={error}
+          layout="step"
+        />
+      </PairingGate>
 
       <div className="flex flex-col items-start gap-3.5">
-        <Button size="lg" disabled={!done} render={next(host?.id)}>
-          {t('onboarding.flow.continue')}
-        </Button>
+        {!unavailable && (
+          <Button size="lg" disabled={!done} render={next(host?.id)}>
+            {t('onboarding.flow.continue')}
+          </Button>
+        )}
 
-        {/* The step is skippable for the same reason Connect GitHub is: a
-            deployment with no runner release configured answers HOSTS_004 to
-            every mint, and without a way past this the first-run flow every
-            sign-up now walks would have no exit. It is also what makes Ready's
-            "no host yet" row reachable. */}
+        {/* Skippable even where pairing works: a machine may not be at hand,
+            and it is what makes Ready's "no host yet" row reachable. */}
         <div className="flex flex-col items-start gap-1.5">
-          <TextLink render={skip}>{t('onboarding.flow.host.skip')}</TextLink>
+          {unavailable ? (
+            <Button size="lg" render={skip}>
+              {t('onboarding.flow.host.skip')}
+            </Button>
+          ) : (
+            <TextLink render={skip}>{t('onboarding.flow.host.skip')}</TextLink>
+          )}
           <p className="text-xs leading-normal text-fg-subtle">
             {t('onboarding.flow.host.skipNote')}
           </p>
