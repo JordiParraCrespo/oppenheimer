@@ -18,6 +18,7 @@ import {
 } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { PairingGate } from '../components/pairing-gate';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
@@ -26,16 +27,15 @@ import { usePairing } from '../hooks/use-pairing';
  * around it; the console pairs in a dialog instead (`hosts/dialogs/add-host.tsx`).
  * The Install and Connect steps tick done on the same event, because
  * installing is what connects. Both finish on a registered host
- * (`usePairing`'s rules).
+ * (`usePairing`'s rules). On a deployment that cannot pair, the steps give
+ * way to the explanation and the header keeps only Cancel.
  */
 export function AddHostScreen() {
   const { t } = useTranslation();
   const back = { to: '/settings/hosts' as const };
   const navigate = useNavigate();
-  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
-    t('hosts.add.defaultName'),
-    'registered',
-  );
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done, availability } =
+    usePairing(t('hosts.add.defaultName'), 'registered');
 
   return (
     <>
@@ -55,9 +55,11 @@ export function AddHostScreen() {
               <Button type="button" variant="secondary" size="sm" render={<Link {...back} />}>
                 {t('common.cancel')}
               </Button>
-              <Button type="button" size="sm" disabled={!done} onClick={() => navigate(back)}>
-                {t('hosts.add.done')}
-              </Button>
+              {availability === 'available' && (
+                <Button type="button" size="sm" disabled={!done} onClick={() => navigate(back)}>
+                  {t('hosts.add.done')}
+                </Button>
+              )}
             </>
           }
         />
@@ -66,41 +68,43 @@ export function AddHostScreen() {
         </PageHeaderMeta>
       </PageHeader>
 
-      <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} className="mb-6" />
+      <PairingGate availability={availability}>
+        <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} className="mb-6" />
 
-      <RoutineSteps>
-        <RoutineStep
-          number={1}
-          title={t('hosts.add.install.title')}
-          subtitle={t('hosts.add.install.subtitle')}
-          done={done}
-          summary={t('hosts.add.install.done')}
-        >
-          <div className="flex flex-col gap-2">
-            <PairingInstruction pairing={pairing ?? null} layout="panel" />
+        <RoutineSteps>
+          <RoutineStep
+            number={1}
+            title={t('hosts.add.install.title')}
+            subtitle={t('hosts.add.install.subtitle')}
+            done={done}
+            summary={t('hosts.add.install.done')}
+          >
+            <div className="flex flex-col gap-2">
+              <PairingInstruction pairing={pairing ?? null} layout="panel" />
 
-            <PairingToken
-              expiresAt={expiresAt}
-              expired={expired}
-              onRegenerate={regenerate}
-              busy={isPending}
-            />
-          </div>
-        </RoutineStep>
+              <PairingToken
+                expiresAt={expiresAt}
+                expired={expired}
+                onRegenerate={regenerate}
+                busy={isPending}
+              />
+            </div>
+          </RoutineStep>
 
-        <RoutineStep
-          number={2}
-          title={t('hosts.add.connect.title')}
-          subtitle={t('hosts.add.connect.subtitle')}
-          done={done}
-          summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
-          last
-        >
-          <div className="rounded-md border border-border-subtle bg-card px-3.5">
-            <PairingStatus host={host} />
-          </div>
-        </RoutineStep>
-      </RoutineSteps>
+          <RoutineStep
+            number={2}
+            title={t('hosts.add.connect.title')}
+            subtitle={t('hosts.add.connect.subtitle')}
+            done={done}
+            summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
+            last
+          >
+            <div className="rounded-md border border-border-subtle bg-card px-3.5">
+              <PairingStatus host={host} />
+            </div>
+          </RoutineStep>
+        </RoutineSteps>
+      </PairingGate>
     </>
   );
 }

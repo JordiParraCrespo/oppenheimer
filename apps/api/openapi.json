@@ -13865,7 +13865,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.",
+            "description": "Which client-relevant optional features (sign-in providers, the GitHub App, host pairing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21174,6 +21174,10 @@
             "type": "boolean",
             "description": "Plan’s calendar can connect a Google Calendar."
           },
+          "hosts": {
+            "type": "boolean",
+            "description": "Host pairing is configured (the runner release settings)."
+          },
           "github_app_install_url": {
             "type": "string",
             "nullable": true,
@@ -21186,6 +21190,7 @@
           "github_oauth",
           "github_app",
           "google_calendar",
+          "hosts",
           "github_app_install_url"
         ]
       },
