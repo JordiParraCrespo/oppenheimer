@@ -21423,7 +21423,7 @@
           },
           "hosts": {
             "type": "boolean",
-            "description": "This server can pair a host: the runner release settings are configured. `false` means every pairing request answers `HOSTS_004`, so a console explains rather than minting a token."
+            "description": "Host pairing is configured (the runner release settings)."
           },
           "github_app_install_url": {
             "type": "string",

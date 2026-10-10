@@ -2581,7 +2581,7 @@ export type CapabilitiesResponseDto = {
      */
     google_calendar: boolean;
     /**
-     * This server can pair a host: the runner release settings are configured. `false` means every pairing request answers `HOSTS_004`, so a console explains rather than minting a token.
+     * Host pairing is configured (the runner release settings).
      */
     hosts: boolean;
     /**
