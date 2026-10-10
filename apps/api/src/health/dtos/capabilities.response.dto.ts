@@ -22,6 +22,9 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   @ApiProperty({ description: 'Plan’s calendar can connect a Google Calendar.' })
   google_calendar!: boolean;
 
+  @ApiProperty({ description: 'Host pairing is configured (the runner release settings).' })
+  hosts!: boolean;
+
   @ApiProperty({
     nullable: true,
     type: String,

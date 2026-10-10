@@ -1497,6 +1497,7 @@
   },
   "hosts": {
     "pairing": {
+      "unavailable": "Este servidor aún no puede vincular máquinas: quien lo administra todavía no ha configurado las descargas del runner. Cuando lo haga, podrás añadir un host aquí.",
       "tokenExpires": "El token caduca en {{time}} · un solo uso",
       "tokenExpired": "Token caducado: genera uno nuevo.",
       "newToken": "Nuevo token",

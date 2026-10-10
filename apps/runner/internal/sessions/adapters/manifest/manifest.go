@@ -12,7 +12,7 @@
 //
 // The format is ours. The shape of it — regions, priorities, negative guards,
 // the terminal title as the most trustworthy signal — is what reading herdr's
-// detection engine taught us (product/13-lessons-from-herdr.md).
+// detection engine taught us (product/research/lessons-from-herdr.md).
 package manifest
 
 import (
