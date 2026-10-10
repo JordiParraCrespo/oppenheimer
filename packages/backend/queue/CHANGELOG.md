@@ -1,5 +1,20 @@
 # @oppenheimer/backend-queue
 
+## 0.2.0
+
+### Minor Changes
+
+- d79d831: Bull Board sign-in is limited and refuses weak passwords.
+
+  - After `maxFailures` (default 10) failed Basic sign-ins from one client
+    address within `failureWindowMs` (default 15 minutes), the dashboard answers
+    `429` with `Retry-After` and does not check the credentials. The limiter is
+    in memory, per process, and bounded (`maxTrackedClients`, default 10 000).
+  - `setupBullBoard` returns `false` and mounts nothing when the password is
+    shorter than `BULL_BOARD_MIN_PASSWORD_LENGTH` (16), which is now exported.
+
+- 9ffae03: BullMQ jobs no longer stay in Redis for ever: every queue removes completed jobs after an hour (at most 1,000) and failed ones after a week, and the durable queues keep their 24-hour window. Emails are retried five times with exponential backoff instead of failing on the first provider error. Each queue is registered once, in the API's `QueueModule`, so every producer gets the same options. The unused `file-processing` queue (`QUEUE_NAMES.FILE_PROCESSING`) and the unused `QueueModule` export of `@oppenheimer/backend-queue` are removed; the package now exports `setupBullBoard` only.
+
 ## 0.1.1
 
 ### Patch Changes
