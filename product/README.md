@@ -361,10 +361,6 @@ earlier note:
   what the reader watches and nothing wider; the wider reach returns as
   one search rather than a listing per repository. That note holds the
   rule and what the reach cost (issue #247).
-- On 2026-10-10 notes 12, 13, 14 and 16 moved into `research/`. The
-  research from #51, #49 and #43 landed there too, as reads and as
-  proposals not adopted; none changed an MVP or next-steps note, and
-  #43's `packages/backend/machines` was not carried over.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06
