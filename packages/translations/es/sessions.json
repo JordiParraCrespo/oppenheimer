@@ -236,6 +236,7 @@
     "noMatches": "Ninguna sesión coincide con estos filtros."
   },
   "sort": {
+    "custom": "Orden personalizado",
     "recent": "Última actividad",
     "oldest": "Más antiguas primero",
     "name": "Nombre"

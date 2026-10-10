@@ -22,7 +22,7 @@ import {
   type SessionSort,
 } from '../lib/session-filters';
 
-const SORTS: SessionSort[] = ['recent', 'oldest', 'name'];
+const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
  * The filter button beside the session count and its menu (the artboard's

@@ -54,8 +54,17 @@
   confirm over the close that says whether to discard work that is not
   pushed. The row stays until the host confirms the close, and the
   sidebar never lists a resolved session (the API keeps it as a
-  tombstone). The workspace's **Unassigned** project is the first group: a
-  session that names no project is listed there. Its settings edit its
+  tombstone). The order is the reader's: a project drags by its header among the
+  others and a session drags within its project or into another one,
+  folded or empty, which moves it as Move to project… does. The order is
+  kept on the device, like the rail's; a project or session made since
+  the last drag lands on top, and the sort's default, Custom order, is
+  that order (a session dropped under another sort keeps what the reader
+  was looking at and switches to it). Sessions hold still while a filter
+  or the search hides some of them, since a drop would lose the hidden
+  ones' places. The workspace's **Unassigned** project is the first group
+  until the reader moves it: a session that names no project is listed
+  there. Its settings edit its
   repositories and defaults like any project's, but its name is fixed
   and it has no Delete (`PROJECTS_008`).
 - The sidebar **is** the console's navigation: no nav rows, no chrome

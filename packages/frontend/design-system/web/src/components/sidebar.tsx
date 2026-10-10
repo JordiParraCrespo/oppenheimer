@@ -9,6 +9,7 @@ import { useControlled } from '../hooks/use-controlled';
 import { useIsMobile } from '../hooks/use-mobile';
 import { cn } from '../lib/utils';
 import { Button } from './button';
+import { dragIgnore, useSortableControl } from './drag';
 import { Input } from './input';
 import { Separator } from './separator';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../internal/sheet';
@@ -403,6 +404,66 @@ function SidebarProjectGroup({ className, ...props }: React.ComponentProps<'div'
   );
 }
 
+type SortableControl = ReturnType<typeof useSortableControl>;
+
+/** What a sortable group hands its header: the pointer and keys that pick it up, and the fold button as the control. */
+const ProjectHandle = React.createContext<{
+  handle: Pick<SortableControl['node'], 'onPointerDown' | 'onKeyDown'>;
+  control: SortableControl['control'];
+} | null>(null);
+
+/**
+ * The id a `SortableSidebarProjectGroup` sorts by, for its `SortableGroup`'s
+ * `items`. A project's own id names the `SortableGroup` its sessions sit
+ * in, and one drag has one namespace, so the group's item id is a
+ * different one.
+ */
+function sortableProjectId(projectId: string): string {
+  return `project:${projectId}`;
+}
+
+/**
+ * SortableSidebarProjectGroup — a `SidebarProjectGroup` the reader can drag
+ * up or down among the others, in a `SortableGroup` that takes `project`
+ * and lists `sortableProjectId`s. Its `SidebarProjectHeader` is the handle:
+ * a press on the header past 5px or Space on its fold button picks the
+ * whole group up, while a click still folds it and the header's actions
+ * never pick it up. Its rows stay their own sortables, so a session inside
+ * still drags on its own. While it moves its place is the drop slot. Its
+ * drag data carries the project's id as `projectId` and its `label`; where
+ * the order is kept is the app's.
+ */
+function SortableSidebarProjectGroup({
+  id,
+  label,
+  disabled,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'id'> & {
+  /** The project's id. */
+  id: string;
+  label: string;
+  disabled?: boolean;
+}) {
+  const { node, control } = useSortableControl({
+    id: sortableProjectId(id),
+    data: { type: 'project', label, projectId: id },
+    disabled,
+  });
+  const { onPointerDown, onKeyDown, ref, style, className: slot, ...rest } = node;
+  return (
+    <ProjectHandle.Provider value={{ handle: { onPointerDown, onKeyDown }, control }}>
+      <SidebarProjectGroup className={className} {...props}>
+        {/* The slot is the group's own box inside the inset, and only the header takes the touch. */}
+        <div ref={ref} style={style} className={cn(slot, 'flex touch-auto flex-col rounded-sm')} {...rest}>
+          {children}
+        </div>
+      </SidebarProjectGroup>
+    </ProjectHandle.Provider>
+  );
+}
+
 /**
  * SidebarProjectHeader — a project's row in the grouped list: a chevron
  * that folds the group, the name, a mono count, and actions (new session,
@@ -428,6 +489,8 @@ function SidebarProjectHeader({
   /** Icon buttons, 22px, shown on hover. */
   actions?: React.ReactNode;
 }) {
+  // Inside a `SortableSidebarProjectGroup` the header is the group's handle.
+  const sortable = React.useContext(ProjectHandle);
   return (
     <div
       data-slot="sidebar-project-header"
@@ -435,12 +498,15 @@ function SidebarProjectHeader({
       data-current={current || undefined}
       className={cn(
         'group/project relative mx-1.5 flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-1.5 transition-colors duration-fast hover:bg-hover-surface',
+        sortable && 'touch-none',
         className,
       )}
       {...props}
+      {...sortable?.handle}
     >
       <button
         type="button"
+        {...sortable?.control}
         aria-expanded={open}
         onClick={() => onOpenChange?.(!open)}
         className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left text-[12.5px] font-medium tracking-[-0.006em] text-sidebar-muted outline-none transition-colors duration-fast hover:text-fg group-data-current/project:text-fg focus-visible:text-fg"
@@ -458,7 +524,9 @@ function SidebarProjectHeader({
         ) : null}
       </button>
       {actions ? (
-        <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/project:opacity-100 group-focus-within/project:opacity-100 [&_button]:size-[22px] [&_button]:rounded-xs [&_button]:text-sidebar-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
+        <span
+          {...(sortable ? dragIgnore : {})}
+          className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/project:opacity-100 group-focus-within/project:opacity-100 [&_button]:size-[22px] [&_button]:rounded-xs [&_button]:text-sidebar-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
           {actions}
         </span>
       ) : null}
@@ -864,6 +932,8 @@ export {
   SidebarListHead,
   SidebarProjectGroup,
   SidebarProjectHeader,
+  SortableSidebarProjectGroup,
+  sortableProjectId,
   SidebarRail,
   SidebarSearch,
   SidebarSeparator,
