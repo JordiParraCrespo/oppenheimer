@@ -181,6 +181,27 @@ export class SessionEntity {
   get isHostOffline(): boolean {
     return this.hints.includes('host_offline');
   }
+
+  /** The same session in another project: what a list draws while a move to it is on its way. */
+  inProject(projectId: string): SessionEntity {
+    return new SessionEntity(
+      this.id,
+      this.organizationId,
+      projectId,
+      this.hostId,
+      this.name,
+      this.slug,
+      this.agent,
+      this.launch,
+      this.state,
+      this.lifecycle,
+      this.cwdCheckoutId,
+      this.checkouts,
+      this.stoppedAt,
+      this.hints,
+      this.createdAt,
+    );
+  }
 }
 
 /** One repository to check out, as New session names it. */

@@ -50,9 +50,15 @@ export interface HostPairingFlow {
  * `redeemedHostId` once a runner spends it, and only then is the host looked
  * up. A regenerated token is a different id, so the host it offered goes with
  * it.
+ *
+ * Reading the current token is what mints it, so `enabled: false` keeps the
+ * flow idle: nothing is minted, and nothing polls.
  */
-export function useHostPairing(hostName: string): HostPairingFlow {
-  const { data: pairing, isPending, error } = useCurrentPairing(hostName);
+export function useHostPairing(
+  hostName: string,
+  { enabled = true }: { enabled?: boolean } = {},
+): HostPairingFlow {
+  const { data: pairing, isPending, error } = useCurrentPairing(hostName, { enabled });
   const replace = useReplacePairing(hostName);
   // The token that has run out, by id, so a regenerated token starts unexpired
   // without anything having to reset this.

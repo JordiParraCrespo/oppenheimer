@@ -7,10 +7,11 @@ the daily issue does.
 
 ## What it measures
 
-| Run | Setup | Question |
-| --- | --- | --- |
-| `planted` | `origin/main` plus `plant.mjs`, committed as one commit | Does it catch known violations of each checklist key (**recall**) while leaving the decoys alone? |
-| `clean` | `origin/main`, untouched, deep dive on `users/` | Does it stay quiet on the module `ARCHITECTURE.md` tells you to copy (**precision**)? |
+The two runs, their setup, arguments and what each measures are in
+`cases.json` under `runs`; that file is the one home for them. `planted`
+grades recall, including a violation in a module the diff never touches,
+which only the full sweep can find. `clean` runs the same full sweep the
+scheduled run does on untouched `main`, and grades its precision.
 
 `cases.json` holds the expected verdict for every planted item (`P*`) and every
 decoy (`N*`), plus the pass bar.
@@ -27,16 +28,18 @@ eval tests.
 ```bash
 SP=$(mktemp -d)
 git worktree add --detach "$SP/planted" origin/main
+node .agents/routines/evals/hexagon-audit/plant.mjs "$SP/planted" --old
+(cd "$SP/planted" && git commit -qam "fix(hosts): rename copy")
 node .agents/routines/evals/hexagon-audit/plant.mjs "$SP/planted"
 (cd "$SP/planted" && pnpm install --frozen-lockfile && git commit -qam "feat(users): planted fixture")
 ```
 
 Then start one Claude Code session per run, each with no access to this
-directory. The prompt is the routine file followed by the run's arguments from
+directory. The prompt is the routine file followed by the run's `args` from
 `cases.json`, for example:
 
 > Read `.agents/routines/hexagon-audit.md` and follow it exactly with
-> `--since HEAD~1 --module profile --dry-run $SP/out/planted.md`.
+> `--since HEAD~1 --dry-run $SP/out/planted.md`.
 > The repository root is `$SP/planted`.
 
 Grade the two reports against `cases.json` by hand, or hand both reports and the

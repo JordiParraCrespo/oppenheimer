@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>body{margin:0;background:var(--background)}a{color:var(--link)}a:hover{color:var(--link)}</style>
+</helmet>
+<section style="padding:48px;display:flex;flex-direction:column;gap:28px;font-family:var(--font-sans);color:var(--fg);background:var(--background);border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:760px">
+<span style="font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);font-weight:500">Turn 2 · Agent as a session</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:40px;font-weight:600;letter-spacing:-0.024em">A session you talk to.</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted);text-wrap:pretty;line-height:1.5">Oppenheimer sits in the session list like any other session, pinned above projects. Instead of a terminal it opens a chat, scoped to the whole workspace or one project.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+<div id="2a" style="display:flex;flex-direction:column;gap:12px;width:1000px">
+<div style="display:flex;align-items:center;gap:10px"><span class="op-badge op-badge--neutral" style="font-family:var(--font-mono)">2a</span><span style="font-size:15px;font-weight:600">New chat</span><span style="font-size:13px;color:var(--fg-muted)">Empty state: one question, the composer, and the scope.</span></div>
+<div style="display:flex;height:620px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--card)">
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" data-active="true" aria-label="Sessions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Pull requests"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Automations"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import></button>
+</nav>
+<nav class="op-sidebar" style="width:248px;min-width:248px;overflow:hidden">
+<div class="op-sidebar__head"><span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span></div>
+<div style="padding:0 12px 10px"><button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button></div>
+<div class="op-sessionlist" style="padding-bottom:6px"><button class="op-session" type="button" data-active="true"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Oppenheimer</span></button></div>
+<div class="op-listhead"><span class="op-listhead__title">Projects</span><span class="op-listhead__count">2</span></div>
+<div class="op-sidebar__scroll"><div class="op-sessionlist">
+<div class="op-pgroup">
+<div class="op-phead" data-open="true"><button class="op-phead__toggle" type="button" aria-expanded="true"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">console</span><span class="op-phead__count">4</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="completed"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-provider-config</span><span class="op-session__age">2h</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="running"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-callback-handler</span><span class="op-session__age">now</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="waiting"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-login-screen</span><span class="op-session__age">14m</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="completed"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-docs</span><span class="op-session__age">1h</span></button></div>
+</div>
+<div class="op-pgroup"><div class="op-phead" data-open="false"><button class="op-phead__toggle" type="button" aria-expanded="false"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">billing</span><span class="op-phead__count">5</span></button></div></div>
+</div></div>
+</nav>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:0 40px 28px">
+<div style="flex:1;width:100%;max-width:560px;display:flex;flex-direction:column;justify-content:center;gap:14px">
+<span style="width:40px;height:40px;border-radius:980px;background:var(--control);color:var(--fg-muted);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="20" hint-size="20px,20px"></x-import></span>
+<h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.016em">What should we check?</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);text-wrap:pretty">Oppenheimer reads 9 sessions, 12 tasks and 3 open pull requests in this workspace.</p>
+</div>
+<div style="width:100%;max-width:560px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:14px;padding:8px 14px 18px;margin-bottom:-12px;border-radius:18px 18px 0 0;background:var(--control);font-size:12.5px;color:var(--fg-muted)">
+<span style="display:flex;align-items:center;gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import>All projects</span>
+<span style="display:flex;align-items:center;gap:6px;color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import>9 sessions</span>
+</div>
+<div style="position:relative;display:flex;flex-direction:column;gap:14px;padding:12px 10px 10px 14px;border:1px solid var(--field-border);border-radius:18px;background:var(--field)">
+<span style="font-size:14px;color:var(--fg-subtle)">Ask about progress, tasks or what is ready to merge</span>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Attach"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+<span style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="13" hint-size="13px,13px"></x-import>Ask before acting</span>
+<span style="flex:1"></span>
+<span style="display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--fg-muted)">Claude Sonnet<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span>
+<button class="op-iconbtn op-iconbtn--sm op-iconbtn--solid" type="button" aria-label="Send"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="2b" style="display:flex;flex-direction:column;gap:12px;width:1000px">
+<div style="display:flex;align-items:center;gap:10px"><span class="op-badge op-badge--neutral" style="font-family:var(--font-mono)">2b</span><span style="font-size:15px;font-weight:600">In conversation</span><span style="font-size:13px;color:var(--fg-muted)">Answers point back at sessions and PRs; actions wait for approval.</span></div>
+<div style="display:flex;height:620px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--card)">
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" data-active="true" aria-label="Sessions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Pull requests"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Automations"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import></button>
+</nav>
+<nav class="op-sidebar" style="width:248px;min-width:248px;overflow:hidden">
+<div class="op-sidebar__head"><span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span></div>
+<div style="padding:0 12px 10px"><button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button></div>
+<div class="op-sessionlist" style="padding-bottom:6px"><button class="op-session" type="button" data-active="true"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Oppenheimer</span><span class="op-session__age">now</span></button></div>
+<div class="op-listhead"><span class="op-listhead__title">Projects</span><span class="op-listhead__count">2</span></div>
+<div class="op-sidebar__scroll"><div class="op-sessionlist">
+<div class="op-pgroup">
+<div class="op-phead" data-open="true"><button class="op-phead__toggle" type="button" aria-expanded="true"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">console</span><span class="op-phead__count">4</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="completed"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-provider-config</span><span class="op-session__age">2h</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="completed"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-callback-handler</span><span class="op-session__age">6m</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="waiting"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-login-screen</span><span class="op-session__age">14m</span></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-state="completed"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">sso-docs</span><span class="op-session__age">1h</span></button></div>
+</div>
+<div class="op-pgroup"><div class="op-phead" data-open="false"><button class="op-phead__toggle" type="button" aria-expanded="false"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">billing</span><span class="op-phead__count">5</span></button></div></div>
+</div></div>
+</nav>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<div style="height:48px;flex:none;display:flex;align-items:center;gap:8px;padding:0 20px;border-bottom:1px solid var(--border-subtle);font-size:13px"><span style="font-weight:600">SSO status and merge</span><span style="color:var(--fg-subtle)">· console</span></div>
+<div style="flex:1;overflow:hidden;display:flex;justify-content:center;padding:20px 40px 0">
+<div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:16px;font-size:14px;line-height:1.55">
+<div style="align-self:flex-end;max-width:80%;background:var(--control);padding:8px 14px;border-radius:18px">How is SSO going? Can we merge what’s done?</div>
+<p style="margin:0;text-wrap:pretty">3 of 4 sessions are done; <span style="font-weight:500">sso-login-screen</span> needs input on the password fallback. Plan is at <span style="font-family:var(--font-mono);font-size:13px">5 / 7</span> tasks.</p>
+<p style="margin:0;text-wrap:pretty">#142 and #145 both touch <span style="font-family:var(--font-mono);font-size:13px">internal/auth/session.go</span>. I rebased #145 on #142; tests pass. Proposed order:</p>
+<div style="border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;font-size:13px">
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);width:12px">1</span><span style="flex:1">Provider config</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">#142 · +214 −12</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);width:12px">2</span><span style="flex:1">Callback handler</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">#145 · +388 −41</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);width:12px">3</span><span style="flex:1">Docs</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">#147 · +96 −0</span></div>
+<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--border-subtle);background:var(--background)"><span style="flex:1;font-size:12.5px;color:var(--fg-muted)">Merge 3 pull requests into main</span><button class="op-btn op-btn--sm op-btn--ghost" type="button">Review diffs</button><button class="op-btn op-btn--sm op-btn--primary" type="button">Approve</button></div>
+</div>
+</div>
+</div>
+<div style="display:flex;justify-content:center;padding:12px 40px 24px">
+<div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:12px;padding:12px 10px 10px 14px;border:1px solid var(--field-border);border-radius:18px;background:var(--field)">
+<span style="font-size:14px;color:var(--fg-subtle)">Reply to Oppenheimer</span>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Attach"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+<span style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="13" hint-size="13px,13px"></x-import>Ask before acting</span>
+<span style="flex:1"></span>
+<span style="display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--fg-muted)">Claude Sonnet<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span>
+<button class="op-iconbtn op-iconbtn--sm op-iconbtn--solid" type="button" aria-label="Send"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+<section style="padding:48px;display:flex;flex-direction:column;gap:28px;font-family:var(--font-sans);color:var(--fg);background:var(--background)">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:760px">
+<span style="font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);font-weight:500">Turn 1 · Exploration · Oppenheimer agent</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:40px;font-weight:600;letter-spacing:-0.024em">One agent that sees every session.</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted);text-wrap:pretty;line-height:1.5">It reads sessions, the plan and pull requests, answers “how is this going”, and turns several sessions’ work into one mergeable request. Three ways to give it a place in the console.</p>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+<div id="1a" style="display:flex;flex-direction:column;gap:12px;width:820px">
+<div style="display:flex;align-items:center;gap:10px"><span class="op-badge op-badge--neutral" style="font-family:var(--font-mono)">1a</span><span style="font-size:15px;font-weight:600">Docked panel</span><span style="font-size:13px;color:var(--fg-muted)">Always one keystroke away, beside whatever you are looking at.</span></div>
+<div style="display:flex;height:560px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--card)">
+<div style="width:52px;flex:none;background:var(--sidebar);border-right:1px solid var(--sidebar-border);display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:14px;color:var(--fg-subtle)">
+<span style="font-family:var(--font-display);font-weight:600;color:var(--fg)">O</span>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="17" hint-size="17px,17px" style="margin-top:12px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="17" hint-size="17px,17px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="17" hint-size="17px,17px"></x-import>
+</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--term-bg);border-right:1px solid var(--border-subtle)">
+<div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--border-subtle);font-size:13px"><span style="width:7px;height:7px;border-radius:980px;background:var(--success)"></span><span style="font-weight:500">sso-callback-handler</span><span style="color:var(--fg-subtle)">· Claude Code · mac-studio</span></div>
+<div style="flex:1;padding:16px;font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--fg-muted)">
+<div>› Editing internal/auth/callback.go</div>
+<div>› go test ./internal/auth/... </div>
+<div style="color:var(--success)">ok   internal/auth   0.412s</div>
+<div>› Writing tests for state mismatch</div>
+</div>
+</div>
+<div style="width:340px;flex:none;display:flex;flex-direction:column;background:var(--card)">
+<div style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border-subtle)"><span style="font-size:13px;font-weight:600">Oppenheimer</span><span style="font-size:12px;color:var(--fg-subtle)">Sees 4 sessions · 3 PRs</span><span style="flex:1"></span><span class="op-kbd">⌘J</span></div>
+<div style="flex:1;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.5">
+<div style="align-self:flex-end;max-width:85%;background:var(--control);padding:8px 12px;border-radius:14px">How is SSO going?</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<p style="margin:0;text-wrap:pretty">2 of 4 sessions are done, one is running, and one needs input before the request can merge.</p>
+<div style="border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span><span style="flex:1">sso-provider-config</span><span style="color:var(--fg-subtle)">Completed</span></div>
+<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;border-top:1px solid var(--border-subtle)"><span style="width:6px;height:6px;border-radius:980px;background:var(--info)"></span><span style="flex:1">sso-callback-handler</span><span style="color:var(--fg-subtle)">Running</span></div>
+<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;border-top:1px solid var(--border-subtle)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span><span style="flex:1">sso-login-screen</span><span style="color:var(--fg-subtle)">Needs input</span></div>
+<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;border-top:1px solid var(--border-subtle)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span><span style="flex:1">sso-docs</span><span style="color:var(--fg-subtle)">Completed</span></div>
+</div>
+<p style="margin:0;color:var(--fg-muted);text-wrap:pretty">Plan: <span style="font-family:var(--font-mono)">5 / 7</span> tasks. The login screen is asking whether to keep the password form as a fallback.</p>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="op-btn op-btn--sm op-btn--secondary" type="button">Open session</button><button class="op-btn op-btn--sm op-btn--ghost" type="button">Answer for me</button></div>
+</div>
+</div>
+<div style="padding:12px;border-top:1px solid var(--border-subtle)"><div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 6px 0 12px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);font-size:13px;color:var(--fg-subtle)"><span style="flex:1">Ask about any session…</span><button class="op-iconbtn op-iconbtn--sm op-iconbtn--solid" type="button" aria-label="Send"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="14" hint-size="14px,14px"></x-import></button></div></div>
+</div>
+</div>
+<p style="margin:0;font-size:13px;color:var(--fg-muted);max-width:760px;text-wrap:pretty">Good for status checks without losing context. Weak for the merge itself — a narrow panel can’t show a diff or a merge order comfortably, so it would hand off to the PR page.</p>
+</div>
+
+<div id="1b" style="display:flex;flex-direction:column;gap:12px;width:820px">
+<div style="display:flex;align-items:center;gap:10px"><span class="op-badge op-badge--neutral" style="font-family:var(--font-mono)">1b</span><span style="font-size:15px;font-weight:600">Request page</span><span style="font-size:13px;color:var(--fg-muted)">The agent owns a “request” that spans sessions, and lands it.</span></div>
+<div style="display:flex;height:560px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--card)">
+<div style="width:52px;flex:none;background:var(--sidebar);border-right:1px solid var(--sidebar-border);display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:14px;color:var(--fg-subtle)">
+<span style="font-family:var(--font-display);font-weight:600;color:var(--fg)">O</span>
+<span style="margin-top:12px;width:32px;height:32px;border-radius:980px;background:var(--selected-surface);color:var(--primary);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="17" hint-size="17px,17px"></x-import></span>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="17" hint-size="17px,17px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="17" hint-size="17px,17px"></x-import>
+</div>
+<div style="flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 300px">
+<div style="display:flex;flex-direction:column;border-right:1px solid var(--border-subtle)">
+<div style="padding:18px 20px 12px;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Request · console</span><span style="font-size:21px;font-weight:600;letter-spacing:-0.012em">Add SSO to the console</span></div>
+<div style="flex:1;padding:4px 20px 16px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.5;overflow:hidden">
+<div style="align-self:flex-end;max-width:80%;background:var(--control);padding:8px 12px;border-radius:14px">Everything except the login screen is done. Can we merge?</div>
+<p style="margin:0;text-wrap:pretty">Three branches are ready. Two of them both edit <span style="font-family:var(--font-mono);font-size:12px">internal/auth/session.go</span>; I rebased the callback branch on the provider branch and the tests pass. Proposed order:</p>
+<div style="border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);width:14px">1</span><span style="flex:1">Provider config</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">#142 · +214 −12</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);width:14px">2</span><span style="flex:1">Callback handler</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">#145 · +388 −41</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);width:14px">3</span><span style="flex:1">Docs</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">#147 · +96 −0</span></div>
+</div>
+<p style="margin:0;color:var(--fg-muted);text-wrap:pretty">The login screen stays out until you answer its question. I can merge these three now, or wait and open one combined PR.</p>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="op-btn op-btn--sm op-btn--primary" type="button">Merge 3 in order</button><button class="op-btn op-btn--sm op-btn--secondary" type="button">Combine into one PR</button><button class="op-btn op-btn--sm op-btn--ghost" type="button">Review diffs</button></div>
+</div>
+<div style="padding:12px 20px 16px"><div style="display:flex;align-items:center;height:34px;padding:0 12px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);font-size:13px;color:var(--fg-subtle)">Message Oppenheimer…</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px;padding:18px 16px;background:var(--background);overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);font-weight:500">Progress</span><span style="flex:1"></span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">5 / 7</span></div>
+<div style="height:4px;border-radius:980px;background:var(--control);overflow:hidden"><div style="width:71%;height:100%;background:var(--fg)"></div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);font-weight:500">Sessions</span>
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:4px 0"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span><span style="flex:1">sso-provider-config</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">#142</span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:4px 0"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span><span style="flex:1">sso-callback-handler</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">#145</span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:4px 0"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span><span style="flex:1">sso-login-screen</span><span style="font-size:11.5px;color:var(--fg-subtle)">Needs input</span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:4px 0"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span><span style="flex:1">sso-docs</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">#147</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);font-weight:500">Tasks left</span>
+<div style="font-size:12.5px;color:var(--fg-muted);padding:2px 0">Decide on password fallback</div>
+<div style="font-size:12.5px;color:var(--fg-muted);padding:2px 0">Login screen copy review</div>
+</div>
+</div>
+</div>
+</div>
+<p style="margin:0;font-size:13px;color:var(--fg-muted);max-width:760px;text-wrap:pretty">Introduces a new noun — a request groups sessions, tasks and PRs under one goal. Strongest fit for “organize and merge the full request”. Costs a new top-level page.</p>
+</div>
+
+<div id="1c" style="display:flex;flex-direction:column;gap:12px;width:820px">
+<div style="display:flex;align-items:center;gap:10px"><span class="op-badge op-badge--neutral" style="font-family:var(--font-mono)">1c</span><span style="font-size:15px;font-weight:600">Ask bar</span><span style="font-size:13px;color:var(--fg-muted)">Transient: ask, get a short answer, act, dismiss.</span></div>
+<div style="position:relative;height:560px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--card)">
+<div style="position:absolute;inset:0;padding:20px 24px;display:flex;flex-direction:column;gap:10px;opacity:.35">
+<div style="height:14px;width:40%;border-radius:6px;background:var(--control)"></div>
+<div style="height:14px;width:62%;border-radius:6px;background:var(--control)"></div>
+<div style="height:14px;width:50%;border-radius:6px;background:var(--control)"></div>
+</div>
+<div style="position:absolute;inset:0;background:var(--overlay)"></div>
+<div style="position:absolute;top:64px;left:50%;transform:translateX(-50%);width:560px;background:var(--popover);border-radius:14px;box-shadow:var(--shadow-modal);overflow:hidden">
+<div style="display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--border-subtle);font-size:15px"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="16" hint-size="16px,16px"></x-import></span><span style="flex:1">What’s blocking the release?</span><span class="op-kbd">⏎</span></div>
+<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.5">
+<p style="margin:0;text-wrap:pretty">Two things across 9 sessions:</p>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--hover-surface)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span><span style="flex:1"><span style="font-weight:500">sso-login-screen</span> <span style="color:var(--fg-muted)">needs input on password fallback</span></span><span style="font-size:12px;color:var(--fg-subtle)">Open</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger)"></span><span style="flex:1"><span style="font-weight:500">billing-webhooks</span> <span style="color:var(--fg-muted)">failed on <span style="font-family:var(--font-mono);font-size:12px">go vet</span></span></span><span style="font-size:12px;color:var(--fg-subtle)">Re-queue</span></div>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:10px 16px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--fg-subtle)"><span>Try</span><span>“Merge what’s ready”</span><span>“Summarise today”</span><span style="flex:1"></span><span>Continue in panel</span><span class="op-kbd">⌘J</span></div>
+</div>
+</div>
+<p style="margin:0;font-size:13px;color:var(--fg-muted);max-width:760px;text-wrap:pretty">Cheapest to add and fastest for quick questions. Not a home for longer work; pairs naturally with <a href="#1a">1a</a> or <a href="#1b">1b</a> as the entry point.</p>
+</div>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px;max-width:760px;padding-top:12px">
+<span style="font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);font-weight:500">Open questions</span>
+<ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--fg-muted);line-height:1.5">
+<li>Can it act, or only report? Merging, re-queueing and answering a session’s question all need a permission model.</li>
+<li>Does it start sessions itself — split a request into sessions — or only gather ones you started?</li>
+<li>Merge strategy: land each PR in order, or fold them into one combined PR?</li>
+<li>Scope: one agent per workspace, or one per project?</li>
+</ol>
+</div>
+</section>
+</x-dc>
+</body>
+</html>

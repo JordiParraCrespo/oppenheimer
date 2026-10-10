@@ -14,6 +14,7 @@
  * goes here and nowhere else. The jobs, chosen by `affected.mjs`:
  *
  *   lint         Biome, the design-system lint, architecture, structure, flags,
+ *                React singletons (one installed copy each),
  *                compiler bail-outs, unused code, eval anchors, starter manifest
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, generated files committed, unit tests, bundle budget
@@ -159,6 +160,10 @@ job('lint', [
   ...(any ? [['Architecture boundaries', 'pnpm', ['turbo', 'run', 'arch', ...filters]]] : []),
   ['API structure', 'pnpm', ['check:api-structure']],
   ['Feature flags', 'pnpm', ['check:flags']],
+  // oppenheimer:begin runner
+  // The runner release path's refusals: no keys, unsigned, tampered.
+  ['Runner release publishing', 'pnpm', ['check:runner-release']],
+  // oppenheimer:end runner
   // oppenheimer:begin web
   ['Frontend structure', 'pnpm', ['check:structure']],
   // The React Compiler gives up silently on a function it cannot compile (the
@@ -167,6 +172,10 @@ job('lint', [
   // Unused exports, files and dependencies in the console and the frontend
   // packages (knip, `knip.json`): an export nobody imports is deleted.
   ['Unused code', 'pnpm', ['check:unused']],
+  // `pnpm check:singletons`: apps/web's module-state libraries, once each.
+  ...(touches(packages, '@oppenheimer/web')
+    ? [['One copy of each React singleton', 'pnpm', ['check:singletons']]]
+    : []),
   // oppenheimer:end web
   // The hexagon audit's eval plants its violations by anchoring on exact
   // lines of apps/api; a refactor that moves one silently retires the eval.

@@ -1,4 +1,4 @@
-import { SessionItem } from '@oppenheimer/design-system-web';
+import { SortableSessionItem } from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
@@ -43,18 +43,22 @@ function dotFor(session: SessionEntity) {
  * and a failed write, which the sidebar shows because a menu closes on its pick
  * and the row has no room. It subscribes to one boolean for being the open
  * session, not the route, so a navigation re-renders only the two rows whose
- * highlight moved; `now` is its group's one-minute clock.
+ * highlight moved; `now` is its group's one-minute clock. The row drags, up
+ * or down its project or into another; the sidebar keeps where it lands.
  */
 export function SessionRow({
   session,
   now,
   onShare,
+  dragDisabled,
   onDelete,
   onWrite,
 }: {
   session: SessionEntity;
   now: number;
   onShare: (session: SessionEntity) => void;
+  /** Whether the row stays put: while a filter or the search hides some of its neighbours. */
+  dragDisabled: boolean;
   onDelete: (session: SessionEntity) => void;
   /** A write this row made settled: its error, or null when it landed. */
   onWrite: (error: Error | null) => void;
@@ -99,7 +103,7 @@ export function SessionRow({
     setDraft(null);
   }
 
-  const renameField: ComponentProps<typeof SessionItem>['rename'] =
+  const renameField: ComponentProps<typeof SortableSessionItem>['rename'] =
     draft === null
       ? undefined
       : {
@@ -111,7 +115,9 @@ export function SessionRow({
         };
 
   return (
-    <SessionItem
+    <SortableSessionItem
+      id={session.id}
+      disabled={dragDisabled}
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}

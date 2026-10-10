@@ -14,6 +14,29 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
+// TestMain keeps the developer's ~/.gitconfig out of every git this package
+// starts, the adapter's and the fixtures' alike: a commit.gpgsign, a
+// core.hooksPath or a url.insteadOf there would otherwise decide whether a
+// test passes. The system gitconfig stays in play, as it is on a host; what
+// keeps its credential helper out is the adapter's own reset, which
+// TestOnlyTheRunnersHelperIsAsked holds.
+func TestMain(m *testing.M) {
+	os.Exit(hermetic(m))
+}
+
+func hermetic(m *testing.M) int {
+	empty, err := os.CreateTemp("", "gitconfig-")
+	if err != nil {
+		panic(err)
+	}
+	_ = empty.Close()
+	defer os.Remove(empty.Name())
+	if err := os.Setenv("GIT_CONFIG_GLOBAL", empty.Name()); err != nil {
+		panic(err)
+	}
+	return m.Run()
+}
+
 // origin builds a bare repository with one commit on `main`, standing in for
 // GitHub. Everything below then goes through the same code paths a real host
 // would: clone, fetch, worktree add, push.

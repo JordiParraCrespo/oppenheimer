@@ -7,6 +7,8 @@
  * Run it in a throwaway worktree, never in your own checkout:
  *
  *   git worktree add ../hexagon-eval origin/main
+ *   node .agents/routines/evals/hexagon-audit/plant.mjs ../hexagon-eval --old
+ *   (cd ../hexagon-eval && git commit -qam "fix(hosts): rename copy")
  *   node .agents/routines/evals/hexagon-audit/plant.mjs ../hexagon-eval
  *   (cd ../hexagon-eval && git commit -qam "feat(users): planted fixture")
  *
@@ -18,6 +20,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const root = resolve(process.argv[2] ?? '.');
+// `--old` plants only the items that must predate the `--since` base (P12),
+// so the full sweep is graded on code the diff never touches.
+const oldStage = process.argv.includes('--old');
 const api = (p) => join(root, 'apps/api/src', p);
 
 function edit(caseId, file, anchor, replacement) {
@@ -29,6 +34,34 @@ function edit(caseId, file, anchor, replacement) {
   }
   // A function replacement, so `$'` and friends in the fixture stay literal.
   writeFileSync(file, text.replace(anchor, () => replacement));
+}
+
+// P12 HEX-ERRORS in a module the diff never touches: planted by `--old`, in
+// its own commit before the base, so only a full sweep can find it. Without
+// `--old` the anchors are only checked (unless already planted), so CI's
+// plantability step covers them too.
+const p12 = api('hosts/commands/rename-host/rename-host.command-handler.ts');
+const p12Edits = [
+  [`import { Inject } from '@nestjs/common';`, `import { Inject, NotFoundException } from '@nestjs/common';`],
+  [`import { AppError } from '@oppenheimer/backend-core';\n`, ''],
+  [`import { HostErrors } from '../../domain/hosts.errors';\n`, ''],
+  [
+    `throw new AppError(HostErrors.NOT_FOUND, { detail: \`No host with id \${command.hostId}\` });`,
+    `throw new NotFoundException(\`No host with id \${command.hostId}\`);`,
+  ],
+];
+if (oldStage) {
+  for (const [anchor, replacement] of p12Edits) edit('P12', p12, anchor, replacement);
+  console.log(`planted P12 in ${root}`);
+  process.exit(0);
+}
+if (!readFileSync(p12, 'utf8').includes('NotFoundException')) {
+  for (const [anchor] of p12Edits) {
+    if (readFileSync(p12, 'utf8').split(anchor).length !== 2) {
+      console.error(`P12: anchor not found once in ${p12} — update plant.mjs`);
+      process.exit(1);
+    }
+  }
 }
 
 // P1 HEX-CMD-RETURN: a command handler returns the entity, not the id.

@@ -28,7 +28,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — the rail's third item: tasks by status (To do, In progress, Later, Done) per project, goals, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
 | [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the rail's fourth item: the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge |
-| [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
+| [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace, watched repositories and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
@@ -94,6 +94,11 @@ an agent to ask or run a command, conflicts, and Merge behind a confirm.
 `version1/assets/filetypes/` holds the file-type marks its file tree uses.
 `version1/rail-order.js`, loaded by the three console frames, lets a
 person drag the rail's items into their own order, kept per browser.
+
+Watched repositories are configured in Settings only, and `PullRequests`
+links there; the merge card's score is drawn, not a rule.
+`version1/explore-oppenheimer-agent.dc.html` is an exploration kept out of
+the screen list above (see the last section).
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -168,5 +173,12 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   and the rail's sortable items); the diff and the file tree are
   @pierre/diffs and @pierre/trees, and the tree's published icon set
   stands in for `version1/assets/filetypes/`.
+- `explore-oppenheimer-agent.dc.html` (2026-10-06) sketches an agent of
+  the product's own, in no note: that agent is 0.6
+  (`../../../next-steps/0.6-mcp-cli-and-agent.md`), which still has its
+  form open, and the sketch decides none of it.
+- Watched repositories and the merge verdict are pull-request policy, owned
+  by `../../../next-steps/0.2-pull-requests.md`; the Settings section and
+  the Merge confidence score are visuals of it, not decisions.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

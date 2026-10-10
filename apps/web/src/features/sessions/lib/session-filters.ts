@@ -3,8 +3,11 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 /** The value every facet starts on, and the one that means "do not narrow". */
 export const ALL = 'all';
 
-/** How the list is ordered, in the order the artboard's menu lists them. */
-export type SessionSort = 'recent' | 'oldest' | 'name';
+/**
+ * How the list is ordered, in the order the menu lists them: the reader's
+ * own, dragged into place (`sidebar-order.ts`), then the artboard's three.
+ */
+export type SessionSort = 'custom' | 'recent' | 'oldest' | 'name';
 
 /**
  * What the sidebar's filter menu holds
@@ -24,7 +27,7 @@ export const DEFAULT_FILTERS: SessionFilters = {
   repository: ALL,
   agent: ALL,
   host: ALL,
-  sort: 'recent',
+  sort: 'custom',
 };
 
 export interface FilterOption {
@@ -136,6 +139,7 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
     )
     .sort((a, b) => {
       if (filters.sort === 'name') return a.name.localeCompare(b.name);
+      // Custom starts from the newest; what the reader placed is put in place after.
       const delta = a.createdAt.getTime() - b.createdAt.getTime();
       return filters.sort === 'oldest' ? delta : -delta;
     });

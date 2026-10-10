@@ -14,9 +14,11 @@
         "scripts/evals/frontend-audit",
         ".agents/skills/frontend-audit",
         ".agents/skills/scaffold-feature/evals",
-        "knip.json"
+        "knip.json",
+        "scripts/check-singletons.mjs",
+        "scripts/check-singletons.test.mjs"
       ],
-      "scripts": ["dev:mvp", "check:unused"],
+      "scripts": ["dev:mvp", "check:unused", "check:singletons"],
       "json": [
         {
           "file": "package.json",
@@ -73,6 +75,7 @@
         "apps/runner",
         "packages/go",
         "scripts/runner",
+        "deploy/dev/bin/publish-release.sh",
         "go.work",
         ".golangci.yml",
         ".agents/rules/go.md",
@@ -83,7 +86,7 @@
         "e2e/tests/fleet",
         "e2e/support/fleet-local.ts"
       ],
-      "scripts": ["dev:mvp"]
+      "scripts": ["dev:mvp", "check:runner-release"]
     },
     "e2e": {
       "title": "End-to-end tests",

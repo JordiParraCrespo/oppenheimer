@@ -327,9 +327,11 @@ function useSessionPatch<TVariables>(
 
   return useMutation({
     mutationFn: (variables: TVariables) => patch(app, variables),
+    // Pending until the lists have refetched, so a reader drawing the write
+    // while it is in flight (a moved row) hands over to a list that has it.
     ...withCacheOnSuccess(options, (session) => {
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
 }

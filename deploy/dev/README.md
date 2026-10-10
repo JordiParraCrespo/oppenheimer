@@ -28,7 +28,7 @@ applies them to Oppenheimer.
 | File | What it is |
 |---|---|
 | `compose.yml` | The stack. Upstream images are pinned by digest. The app images come from `release.env` |
-| `bin/oppctl` | Everything you do on the server: setup, doctor, deploy, rollback, backup, restore, status. Installed once, outside every release |
+| `bin/oppctl` | Everything you do on the server: setup, doctor, deploy, rollback, backup, restore, status, publishing a runner release. Installed once, outside every release |
 | `bin/deploy-gate` | The forced command on CI's SSH key. It accepts `deploy <sha>` and a bundle on stdin, nothing else |
 | `cloudflared.yml.tmpl` | Tunnel ingress. It is in this repo, not in the Cloudflare dashboard |
 | `backup/` | The dump sidecar image, `dump.sh` and `upload.sh` (started from the skill, maintained here), and the restore-drill assertions |
@@ -197,7 +197,84 @@ every push to `main` deploys.
 
 The first account you register is an ordinary user. To make it an admin, put
 its id in `BETTER_AUTH_ADMIN_USER_IDS` in `api.env`, then run
-`oppctl deploy` again, or `docker restart oppenheimer-dev-api-1`.
+`sudo -u deploy oppctl reload` (see [Changing the
+configuration](#changing-the-configuration)).
+
+## Runner releases
+
+Hosts install and update the runner from this server: the `releases` container
+serves `/srv/oppenheimer/public` read-only, and the tunnel sends
+`/releases/…` and `/install.sh` there instead of to the console. Until a
+release is in place the API answers every pairing with HOSTS_004 ("Hosts
+are not configured").
+
+A release is built by the `Release runner` workflow on a `runner-v*` tag
+and signed on your machine. The Ed25519 key that signs it never goes to CI or
+to the server, and a manifest without its signature is never published. The
+workflow needs the repository variables `RUNNER_RELEASE_PUBLIC_KEYS` (the
+key's public half) and `RUNNER_RELEASE_BASE_URL`
+(`https://dev.example.com/releases`); it fails without them. Then, from the
+machine that holds the key:
+
+```bash
+# once: the offline release key; its public half goes into every binary
+scripts/runner/sign-release.sh --keygen ~/secure/runner-release.key
+
+DEV_SSH_HOST=oppenheimer-dev DEV_HOSTNAME=dev.example.com \
+  scripts/runner/publish-dev.sh 0.1.0 ~/secure/runner-release.key   # [stable|beta]
+```
+
+`publish-dev.sh` downloads what the workflow attached to the GitHub release
+`runner-v0.1.0` (the artifacts, `SHA256SUMS`, `install.sh` and the unsigned
+manifest), signs the manifest locally, and streams those same files as a tar
+over SSH to `sudo -u deploy oppctl publish-release -`. The bytes published
+are the bytes CI built. `RELEASE_DIR=dist/runner` publishes a local
+`release.sh` build instead.
+
+`oppctl publish-release` takes only a tar whose members are regular files at
+its top level, under a size ceiling, and refuses the release when any check
+fails:
+
+- the manifest's `.sig` must verify against the keys stamped into the
+  `install.sh` it came with, and against the keys of the `install.sh` already
+  published, so the runners already installed will take the update. The check
+  is `sign-release.sh --verify`, installed beside `oppctl`, the same OpenSSL
+  check the installer runs
+- every artifact must match the SHA-256 and size the manifest signed, and
+  its URL must be under `https://$DEV_HOSTNAME/releases/`
+- the release may hold nothing the manifest does not name
+
+A publish is one rename. Each release is a set,
+`public/.releases/<stamp>-<version>`, holding `install.sh`, the manifests,
+their signatures and the artifacts. `public/releases` is a symlink to the
+live set and `public/install.sh` a symlink to `releases/install.sh`, so
+renaming `public/releases` onto the next set publishes the installer and the
+release together, and no host reads a manifest from one release and its
+signature, artifacts or installer from another. A channel this publish does
+not carry is copied into the next set as it is live, and the whole set is
+checked before the swap: the new installer must accept every manifest in it,
+and two channels naming the same file must agree on its bytes.
+
+After the swap it sets `RUNNER_INSTALL_SHA256` in `api.env` to the new
+installer's digest (and `RUNNER_RELEASE_BASE_URL` and `RUNNER_INSTALL_URL`
+when they are empty) and, when that changed it, recreates the API and then
+`web`, because the API reads `api.env` when it starts and nginx resolves
+`api` only when it starts. If they do not come back healthy, it renames
+`public/releases` back onto the previous set and restores the previous
+`api.env`, so nothing changed. Only then are older sets pruned; the three
+newest are kept.
+
+`oppctl publish-release --check <dir>` runs only the checks. `PUBLISH_FLAGS=--new-keys`
+accepts a manifest the published runners do not trust. Every installed host
+is then stranded until it is installed again, so use it only for a deliberate
+key reset. To roll in a second key, build with
+`RUNNER_RELEASE_PUBLIC_KEYS="<current> <next>"` and keep signing with the
+current key until every host runs a build that carries both. Retire the old
+key only once every live channel is signed with the new one: a publish whose
+installer would refuse a channel it keeps is refused.
+
+`publish-release` is new in `oppctl`, so the server needs the copy from this
+commit: re-run `oppctl setup` from a checkout (step 3 above).
 
 ## Day to day
 
@@ -209,8 +286,36 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 | `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow |
 | `oppctl psql` | psql as the app's role |
 | `oppctl rollback` | Run the previous release's images and config again |
+| `oppctl reload` | Recreate api, web and cloudflared from the current release so a change to `config/` takes effect |
 | `oppctl backup daily` | Dump and upload outside the schedule |
 | `oppctl doctor` | Checks config, keys, remotes, timers and Docker, and says when a reboot is due |
+
+`oppctl` runs docker compose from `/`, so `sudo -u deploy oppctl …` works
+from a home directory `deploy` cannot read.
+
+### Changing the configuration
+
+A change to `/srv/oppenheimer/config/api.env` reaches the API only when its
+container is created again: `env_file` is read when a container is created,
+and `docker restart` keeps the environment it was created with. Run
+
+```bash
+sudo -u deploy oppctl reload
+```
+
+Under the deploy lock, it recreates from the current release, in order and
+each only once the one before is healthy: `api`; then `web`, whose nginx
+resolves `api` once, when it starts; then `cloudflared`, whose origins are
+`web` and `api`. Postgres and Redis are not touched. It ends with the checks
+a deploy ends with.
+
+`api.env` is not part of a release, so `oppctl rollback` does not bring the
+previous one back. A reload that ends healthy keeps a copy as
+`config/api.env.last-good`; one that does not stops before the next service
+and points at that copy.
+
+The tunnel's `cloudflared.yml` is rendered from `host.env` at deploy time, so
+a change to `DEV_HOSTNAME` or `TUNNEL_ID` needs a deploy, not a reload.
 
 ### How a deploy works
 

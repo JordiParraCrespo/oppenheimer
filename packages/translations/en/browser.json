@@ -661,6 +661,7 @@
       "noMatches": "No sessions match these filters."
     },
     "sort": {
+      "custom": "Custom order",
       "recent": "Last activity",
       "oldest": "Oldest first",
       "name": "Name"
@@ -1587,6 +1588,7 @@
   },
   "hosts": {
     "pairing": {
+      "unavailable": "This server can't pair machines yet: whoever runs it hasn't set up the runner downloads. Once they do, you can add a host here.",
       "tokenExpires": "Token expires in {{time}} · single use",
       "tokenExpired": "Token expired — generate a new one.",
       "newToken": "New token",

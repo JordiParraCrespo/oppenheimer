@@ -1,9 +1,8 @@
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 
 /**
- * The sidebar's groups: one per project, the workspace's Unassigned project
- * first and then newest first as the API lists them, each holding the
- * sessions that belong to it — so an empty project is still a group, with the
+ * The sidebar's groups: one per project, in the order given (the reader's,
+ * `orderProjects`), each holding the sessions that belong to it — so an empty project is still a group, with the
  * empty row inside it, and a session whose project the list does not hold
  * (archived meanwhile, or not yet loaded) goes last under no header rather
  * than vanishing.
@@ -24,11 +23,7 @@ export function groupByProject(
     if (list) list.push(session);
     else orphans.push(session);
   }
-  const ordered = [
-    ...projects.filter((project) => project.isUnassigned),
-    ...projects.filter((project) => !project.isUnassigned),
-  ];
-  const groups: ProjectGroup[] = ordered.map((project) => ({
+  const groups: ProjectGroup[] = projects.map((project) => ({
     project,
     sessions: byProject.get(project.id) ?? [],
   }));

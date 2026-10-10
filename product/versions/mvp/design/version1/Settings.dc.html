@@ -26,6 +26,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <div style="display:flex;flex-direction:column;gap:2px">
 <span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Account</span>
 <button class="op-navitem" type="button" data-active="{{ isProfile }}" onClick="{{ goProfile }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="user" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Profile</span></button>
+<button class="op-navitem" type="button" data-active="{{ isWatching }}" onClick="{{ goWatching }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="eye" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Watched repositories</span><span class="op-navitem__meta" style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ watchCount }}</span></button>
 </div>
 <div style="display:flex;flex-direction:column;gap:2px">
 <span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Workspace</span>
@@ -127,6 +128,51 @@ Listening for this host…
 </div>
 </div>
 </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isWatching }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em">Watched repositories</h1>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);text-wrap:pretty">Open pull requests from these repositories show up in the Watching tab of the PR queue, even when nobody asked for your review.</p>
+</div>
+
+<div class="op-field">
+<span class="op-label">Repositories</span>
+<div style="position:relative">
+<label class="op-input op-input--md" style="cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="15" hint-size="15px,15px"></x-import></span><input class="op-input__el" type="text" role="combobox" aria-expanded="{{ wAddOpenS }}" aria-label="Add a repository" placeholder="Add a repository…" value="{{ wQuery }}" onChange="{{ setWQuery }}" onFocus="{{ openWAdd }}" onBlur="{{ blurWAdd }}" onKeyDown="{{ wAddKey }}"></label>
+<sc-if value="{{ wAddOpen }}">
+<div class="op-listbox" role="listbox" style="right:0">
+<sc-for list="{{ wAddOpts }}" as="o" hint-placeholder-count="4">
+<button class="op-option" type="button" role="option" onMouseDown="{{ o.pick }}" style="padding:7px 10px;gap:10px;font-size:13px">
+<img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;opacity:.7;filter:var(--brand-glyph-filter,none)">
+<span class="op-option__stack" style="min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.full }}</span><span class="op-option__desc" style="margin-top:1px;font-size:11.5px">{{ o.desc }}</span></span>
+</button>
+</sc-for>
+<sc-if value="{{ wAddNone }}"><div class="op-listbox__empty">{{ wAddEmpty }}</div></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ wAny }}">
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px">
+<sc-for list="{{ wRows }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;min-height:40px;padding:0 6px 0 12px;border-top:{{ r.sep }}">
+<img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;opacity:.7;filter:var(--brand-glyph-filter,none)">
+<span style="flex:1;min-width:0;font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ r.full }}">{{ r.full }}</span>
+<span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap">{{ r.desc }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Stop watching {{ r.full }}" onClick="{{ r.remove }}" style="flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ wNone }}"><span class="op-hint">Add a repository to start tracking its pull requests.</span></sc-if>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:18px">
+<span class="op-hint">These apply to every watched repository.</span>
+<div style="display:flex;flex-direction:column;gap:8px"><span class="op-label">Track</span><div class="op-pchips"><sc-for list="{{ wTrack }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div><span class="op-hint">{{ wTrackHint }}</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span class="op-label">Starts in lane</span><div class="op-pchips"><sc-for list="{{ wLane }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div><span class="op-hint">Auto lets the lane agent pick from the size and paths changed.</span></div>
+<label class="op-switch" style="justify-content:space-between;gap:16px"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Notify me about new pull requests</span><span style="font-size:12.5px;color:var(--fg-muted)">One notification per pull request, when it opens.</span></span><input type="checkbox" checked="{{ wNotify }}" onChange="{{ toggleWNotify }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span></label>
 </div>
 </sc-if>
 
@@ -268,12 +314,23 @@ Listening for this host…
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;profile&quot;,&quot;hosts&quot;],&quot;default&quot;:&quot;profile&quot;,&quot;tsType&quot;:&quot;'profile' | 'hosts'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostsEmpty&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;profile&quot;,&quot;watching&quot;,&quot;hosts&quot;],&quot;default&quot;:&quot;profile&quot;,&quot;tsType&quot;:&quot;'profile' | 'hosts'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostsEmpty&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;}}">
 const SEED_HOSTS = [
   { id: 'h_7f3a', name: 'jordis-mac-studio', meta: 'macOS 15 · local · runner 0.14.2', status: 'running', sessions: 2, seen: 'now' },
   { id: 'h_2c91', name: 'optimus', meta: 'Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2', status: 'idle', sessions: 0, seen: 'now' },
   { id: 'h_b40e', name: 'fable', meta: 'Debian 12 · 16 vCPU · us-east · runner 0.13.8', status: 'offline', sessions: 0, seen: '2 days ago', waiting: 3, queued: 1, outdated: true },
 ];
+const WATCH_REPOS = [
+  { value: 'oppenheimer', label: 'oppenheimer-ai/oppenheimer', desc: 'Maintainer · 214 commits by you' },
+  { value: 'runner', label: 'oppenheimer-ai/runner', desc: 'Write · 88 commits by you' },
+  { value: 'docs', label: 'oppenheimer-ai/docs', desc: 'Write · 31 commits by you' },
+  { value: 'protocol-spec', label: 'oppenheimer-ai/protocol-spec', desc: 'Write · 6 commits by you' },
+  { value: 'xrp-mobile', label: 'peersyst/xrp-mobile', desc: 'Contributor · 12 commits by you' },
+  { value: 'xrpl-js', label: 'peersyst/xrpl-js', desc: 'Contributor · 4 commits by you' },
+  { value: 'console-web', label: 'oppenheimer-ai/console-web', desc: 'Write' },
+];
+const WKEY = 'op.watching';
+const loadW = () => { try { const v = JSON.parse(localStorage.getItem(WKEY)); if (v && Array.isArray(v.repos)) return v; } catch (e) {} return { repos: ['runner', 'docs'], track: 'all', lane: 'auto', notify: false }; };
 const PROFILE = { name: 'Jordi Parra Crespo', username: 'jordiparra99' };
 
 class Component extends DCLogic {
@@ -285,7 +342,8 @@ class Component extends DCLogic {
 
   componentDidMount() {
     const q = new URLSearchParams(window.location.search).get('section');
-    if (q === 'hosts' || q === 'profile') this.setState({ section: q });
+    if (q === 'hosts' || q === 'profile' || q === 'watching') this.setState({ section: q });
+    this.setState({ watch: loadW() });
     this._tick = setInterval(() => { if (this.state.addOpen) this.setState(s => ({ secs: Math.max(0, s.secs - 1) })); }, 1000);
   }
   componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._chk); clearTimeout(this._reg); clearTimeout(this._copy); clearTimeout(this._saved); }
@@ -300,6 +358,7 @@ class Component extends DCLogic {
     this._copy = setTimeout(() => this.setState({ copied: null }), 1600);
   }
 
+  setWatch(patch) { const w = { ...(this.state.watch || loadW()), ...patch }; try { localStorage.setItem(WKEY, JSON.stringify(w)); } catch (e) {} this.setState({ watch: w }); }
   commitRename() {
     const v = this.state.renameVal.trim();
     this.setState(s => ({ renameId: null, hosts: v ? s.hosts.map(h => h.id === s.renameId ? { ...h, name: v } : h) : s.hosts }));
@@ -324,6 +383,32 @@ class Component extends DCLogic {
       addS2Sum: s.addDone ? 'build-02 · Ubuntu 24.04' : '',
       goProfile: () => this.setState({ section: 'profile' }),
       goHosts: () => this.setState({ section: 'hosts' }),
+      goWatching: () => this.setState({ section: 'watching' }),
+      ...(() => {
+        const w = s.watch || loadW();
+        const q = (s.wQuery || '').trim().toLowerCase();
+        const opts = WATCH_REPOS.filter(r => !w.repos.includes(r.value) && (!q || r.label.toLowerCase().includes(q)));
+        const sel = WATCH_REPOS.filter(r => w.repos.includes(r.value));
+        const add = r => { this.setWatch({ repos: w.repos.concat([r.value]) }); this.setState({ wQuery: '' }); };
+        const chips = (list, cur, k) => list.map(([v, label]) => ({ label, on: cur === v ? 'true' : 'false', pick: () => this.setWatch({ [k]: v }) }));
+        return {
+          isWatching: section === 'watching' && !s.addOpen ? 'true' : undefined,
+          watchCount: w.repos.length,
+          wQuery: s.wQuery || '', setWQuery: e => this.setState({ wQuery: e.target.value, wAdd: true }),
+          openWAdd: () => this.setState({ wAdd: true }), blurWAdd: () => this.setState({ wAdd: false }),
+          wAddKey: e => { if (e.key === 'Escape') { this.setState({ wAdd: false, wQuery: '' }); e.target.blur(); } if (e.key === 'Enter' && opts[0]) { e.preventDefault(); add(opts[0]); } },
+          wAddOpen: s.wAdd ? 'true' : undefined, wAddOpenS: s.wAdd ? 'true' : 'false',
+          wAddOpts: opts.map(r => ({ full: r.label, desc: r.desc, pick: e => { e.preventDefault(); add(r); } })),
+          wAddNone: opts.length ? undefined : 'true',
+          wAddEmpty: q ? 'No repository matches “' + s.wQuery.trim() + '”' : 'Every repository is watched',
+          wAny: sel.length ? 'true' : undefined, wNone: sel.length ? undefined : 'true',
+          wRows: sel.map((r, i) => ({ full: r.label, desc: r.desc.split(' · ')[0], sep: i ? '1px solid var(--border-subtle)' : '0', remove: () => this.setWatch({ repos: w.repos.filter(x => x !== r.value) }) })),
+          wTrack: chips([['all', 'All pull requests'], ['owner', 'Touching my code paths'], ['new', 'New since I joined']], w.track, 'track'),
+          wTrackHint: w.track === 'owner' ? 'Only pull requests that change files where you are a code owner or recent author.' : w.track === 'new' ? 'Pull requests opened after you started watching.' : 'Every open pull request in these repositories.',
+          wLane: chips([['auto', 'Auto'], ['Deep', 'Deep'], ['Medium', 'Medium'], ['Quick', 'Quick']], w.lane, 'lane'),
+          wNotify: !!w.notify, toggleWNotify: () => this.setWatch({ notify: !w.notify }),
+        };
+      })(),
       hostCount: hosts.length,
       initials,
       name: s.draft.name,

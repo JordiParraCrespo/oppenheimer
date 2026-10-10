@@ -72,7 +72,8 @@ import { SessionItem, SessionList, SortableSessionItem } from '@oppenheimer/desi
 import {
   SidebarEmptyRow,
   SidebarListHead,
-  SidebarProjectGroup,
+  SortableSidebarProjectGroup,
+  sortableProjectId,
   SidebarProjectHeader,
   SidebarSearch,
 } from '@oppenheimer/design-system-web/sidebar';
@@ -797,6 +798,7 @@ const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
 /** The shell's one order: the rail's items, and each project's sessions. */
 const FIRST_ORDER: SortableGroups = {
   rail: ['sessions', 'pulls', 'automations', 'plan'],
+  projects: PROJECTS.map(sortableProjectId),
   'XRP Mobile': ['peersyst', 'cleanup', 'router'],
   Atlas: ['ingest', 'triage', 'retriever', 'summariser'],
   'Client sites': [],
@@ -884,8 +886,15 @@ function SortableRail({ items, sessions }: { items: readonly string[]; sessions:
   );
 }
 
-/** The lifted copy: a rail item or a session row. */
-function DragCopy({ id, name }: { id: string; name: string }) {
+/** The lifted copy: a rail item, a project's header or a session row. */
+function DragCopy({ id, name, type }: { id: string; name: string; type?: string }) {
+  if (type === 'project') {
+    return (
+      <div className="w-60 rounded-sm bg-card">
+        <SidebarProjectHeader name={name} open={false} />
+      </div>
+    );
+  }
   const rail = RAIL_ITEMS[id];
   if (rail) {
     return (
@@ -925,7 +934,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
   const total = projects.reduce((n, project) => n + (order[project]?.length ?? 0), 0);
   return (
     <div className="flex h-150 shrink-0 overflow-hidden">
-      <DragProvider {...sortable} overlay={(item) => <DragCopy id={item.id} name={nameOf(item.id)} />}>
+      <DragProvider {...sortable} overlay={(item) => <DragCopy id={item.id} name={item.data.label ?? nameOf(item.id)} type={item.data.type} />}>
         <SortableRail items={order.rail ?? []} sessions={total} />
         <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
           <div className="flex h-14 items-center px-4">
@@ -964,12 +973,13 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 </EmptyState>
               </div>
             ) : (
-              projects.map((project) => {
+              <SortableGroup id="projects" items={order.projects ?? []} accepts={['project']}>
+              {(order.projects ?? []).flatMap((item) => PROJECTS.filter((p) => sortableProjectId(p) === item)).map((project) => {
                 const open = !closed.includes(project);
                 const ids = order[project] ?? [];
                 return (
-                  <SortableGroup key={project} id={project} items={open ? ids : []} accepts={['session']} data={{ label: project }}>
-                    <SidebarProjectGroup>
+                  <SortableSidebarProjectGroup key={project} id={project} label={project}>
+                  <SortableGroup id={project} items={open ? ids : []} accepts={['session']} data={{ label: project }} className="flex flex-col">
                       <SidebarProjectHeader
                         name={project}
                         count={ids.length}
@@ -1038,10 +1048,11 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                           </SessionList>
                         )
                       ) : null}
-                    </SidebarProjectGroup>
                   </SortableGroup>
+                  </SortableSidebarProjectGroup>
                 );
-              })
+              })}
+              </SortableGroup>
             )}
           </div>
           <div className="border-t border-sidebar-border px-2 py-2">
