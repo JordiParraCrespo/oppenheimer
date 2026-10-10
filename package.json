@@ -52,19 +52,6 @@
     "turbo": "^2.10.7",
     "typescript": "^6.0.3"
   },
-  "singletons": {
-    "importers": [
-      "apps/web"
-    ],
-    "packages": [
-      "react",
-      "react-dom",
-      "@tanstack/react-query",
-      "@tanstack/react-router",
-      "i18next",
-      "react-i18next"
-    ]
-  },
   "pnpm": {
     "overrides": {
       "react": "19.2.3",

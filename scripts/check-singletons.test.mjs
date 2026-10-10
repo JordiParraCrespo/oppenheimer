@@ -1,12 +1,12 @@
 /**
- * The singleton check against lockfiles built for the purpose. The first
- * fixture is the #274 incident in miniature: the app compiles with
+ * The singleton check against lockfiles built for the purpose. The split
+ * fixture is a peer-suffix split in miniature: the app compiles with
  * TypeScript 7, `packages/frontend/core` with 6, `i18next` takes TypeScript
  * as a peer, so pnpm resolves `i18next` and `react-i18next` twice.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findDuplicateSingletons, parseLockfile } from './check-singletons.mjs';
+import { parseLockfile, resolveSingletons } from './check-singletons.mjs';
 
 const SINGLETONS = ['react', 'react-dom', '@tanstack/react-query', 'i18next', 'react-i18next'];
 
@@ -15,8 +15,20 @@ const reactI18n = (ts) =>
   `react-i18next@17.0.14(${i18n(ts)})(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@${ts})`;
 const suffix = (key) => key.slice(key.indexOf('@', 1) + 1);
 
-/** A v9 lockfile where `apps/web` uses `appTs` and `packages/frontend/core` uses `coreTs`. */
-function lockfile({ appTs = '7.0.2', coreTs = '7.0.2', extraImporters = '' } = {}) {
+/**
+ * A v9 lockfile where `apps/web` uses `appTs`, `packages/frontend/core` uses
+ * `coreTs`, and react-i18next's optional react-dom peer resolves to
+ * `peerReactDom` while the app itself depends on `appReactDom` (none: no
+ * direct dependency).
+ */
+function lockfile({
+  appTs = '7.0.2',
+  coreTs = '7.0.2',
+  peerReactDom = '19.2.3',
+  appReactDom,
+  extraImporters = '',
+  extraSnapshots = '',
+} = {}) {
   const variants = [...new Set([appTs, coreTs])];
   return `lockfileVersion: '9.0'
 
@@ -49,7 +61,14 @@ importers:
       react:
         specifier: 19.2.3
         version: 19.2.3
-      react-i18next:
+${
+  appReactDom
+    ? `      react-dom:
+        specifier: 19.2.3
+        version: ${appReactDom}(react@19.2.3)
+`
+    : ''
+}      react-i18next:
         specifier: ^17.0.14
         version: ${suffix(reactI18n(appTs))}
     devDependencies:
@@ -95,119 +114,98 @@ ${variants
       i18next: ${suffix(i18n(ts))}
       react: 19.2.3
     optionalDependencies:
-      react-dom: 19.2.3(react@19.2.3)
+      react-dom: ${peerReactDom}(react@19.2.3)
       typescript: ${ts}
 
   typescript@${ts}: {}
 `,
   )
   .join('')}
-  react-dom@19.2.3(react@19.2.3):
+${[...new Set([peerReactDom, appReactDom ?? peerReactDom])]
+  .map(
+    (version) => `
+  react-dom@${version}(react@19.2.3):
     dependencies:
       react: 19.2.3
       scheduler: 0.27.0
-
+`,
+  )
+  .join('')}${extraSnapshots}
   react@19.2.3: {}
 
   scheduler@0.27.0: {}
 `;
 }
 
-test('the TS6/TS7 split behind #274 fails, naming both copies and who pulls each', () => {
-  const duplicates = findDuplicateSingletons({
-    lockfile: lockfile({ appTs: '7.0.2', coreTs: '6.0.3' }),
-    importers: ['apps/web'],
-    singletons: SINGLETONS,
+const check = (options, importer = 'apps/web', singletons = SINGLETONS) =>
+  resolveSingletons({ lockfile: lockfile(options), importer, singletons });
+const counts = (result) => Object.fromEntries(result.map((r) => [r.name, r.variants.length]));
+
+test('a peer-suffix split fails, naming both copies and who pulls each', () => {
+  const result = check({ appTs: '7.0.2', coreTs: '6.0.3' });
+  assert.deepEqual(counts(result), {
+    react: 1,
+    'react-dom': 1,
+    '@tanstack/react-query': 1,
+    i18next: 2,
+    'react-i18next': 2,
   });
-  assert.deepEqual(duplicates.map((d) => d.name).sort(), ['i18next', 'react-i18next']);
-  const reactI18next = duplicates.find((d) => d.name === 'react-i18next');
-  assert.deepEqual(reactI18next.variants.map((v) => v.key).sort(), [
-    reactI18n('6.0.3'),
-    reactI18n('7.0.2'),
-  ]);
+  const reactI18next = result.find((r) => r.name === 'react-i18next');
   const fromCore = reactI18next.variants.find((v) => v.key === reactI18n('6.0.3'));
   assert.deepEqual(fromCore.via, ['apps/web', 'packages/frontend/core', reactI18n('6.0.3')]);
 });
 
-test('the same packages on one TypeScript resolve once and pass', () => {
-  const duplicates = findDuplicateSingletons({
-    lockfile: lockfile(),
-    importers: ['apps/web'],
-    singletons: SINGLETONS,
-  });
-  assert.deepEqual(duplicates, []);
+test('aligned packages resolve to exactly one snapshot each', () => {
+  const result = check();
+  assert.deepEqual(
+    result.map((r) => [r.name, r.variants.map((v) => v.key)]),
+    [
+      ['react', ['react@19.2.3']],
+      ['react-dom', ['react-dom@19.2.3(react@19.2.3)']],
+      ['@tanstack/react-query', ['@tanstack/react-query@5.102.8(react@19.2.3)']],
+      ['i18next', [i18n('7.0.2')]],
+      ['react-i18next', [reactI18n('7.0.2')]],
+    ],
+  );
 });
 
-test('a split in a project the app never reaches does not fail the app', () => {
-  const extra = `
+test('a listed name the closure never reaches comes back with no snapshot, which fails', () => {
+  const result = check({}, 'apps/web', [...SINGLETONS, '@tanstack/react-router']);
+  assert.deepEqual(result.find((r) => r.name === '@tanstack/react-router').variants, []);
+});
+
+test('a split in a project the app never reaches does not count for the app', () => {
+  const options = {
+    extraImporters: `
   apps/other:
     dependencies:
       i18next:
         specifier: ^26.4.2
         version: 26.4.2(typescript@6.0.3)
-`;
-  const text = lockfile({ extraImporters: extra }).replace(
-    '\n  react-dom@19.2.3(react@19.2.3):',
-    `\n  ${i18n('6.0.3')}: {}\n\n  react-dom@19.2.3(react@19.2.3):`,
-  );
-  assert.deepEqual(
-    findDuplicateSingletons({ lockfile: text, importers: ['apps/web'], singletons: SINGLETONS }),
-    [],
-  );
-  assert.deepEqual(
-    findDuplicateSingletons({
-      lockfile: text,
-      importers: ['apps/web', 'apps/other'],
-      singletons: SINGLETONS,
-    }).map((d) => d.name),
-    ['i18next'],
-  );
+`,
+    extraSnapshots: `
+  ${i18n('6.0.3')}: {}
+`,
+  };
+  assert.equal(counts(check(options)).i18next, 1);
+  assert.equal(counts(check(options, 'apps/other', ['i18next'])).i18next, 1);
 });
 
 test('a package off the list may resolve twice', () => {
-  const duplicates = findDuplicateSingletons({
-    lockfile: lockfile({ appTs: '7.0.2', coreTs: '6.0.3' }),
-    importers: ['apps/web'],
-    singletons: ['react', 'react-dom'],
+  assert.deepEqual(counts(check({ appTs: '7.0.2', coreTs: '6.0.3' }, 'apps/web', ['react'])), {
+    react: 1,
   });
-  assert.deepEqual(duplicates, []);
 });
 
 test('a singleton reached only through another snapshot is still counted', () => {
-  // react-dom is no importer's direct dependency here: only react-i18next's
-  // optional peer reaches it. Give it a second variant and it must fail.
-  const text = lockfile()
-    .replace(
-      'optionalDependencies:\n      react-dom: 19.2.3(react@19.2.3)',
-      'optionalDependencies:\n      react-dom: 19.2.4(react@19.2.3)',
-    )
-    .replace(
-      '\n  react@19.2.3: {}',
-      '\n  react-dom@19.2.4(react@19.2.3):\n    dependencies:\n      react: 19.2.3\n\n  react@19.2.3: {}',
-    )
-    .replace(
-      '      react:\n        specifier: 19.2.3\n        version: 19.2.3\n',
-      '      react:\n        specifier: 19.2.3\n        version: 19.2.3\n      react-dom:\n        specifier: 19.2.3\n        version: 19.2.3(react@19.2.3)\n',
-    );
-  const duplicates = findDuplicateSingletons({
-    lockfile: text,
-    importers: ['apps/web'],
-    singletons: SINGLETONS,
-  });
-  assert.deepEqual(
-    duplicates.map((d) => [d.name, d.variants.length]),
-    [['react-dom', 2]],
-  );
+  // react-i18next's optional peer is the only way to react-dom@19.2.4.
+  const result = check({ peerReactDom: '19.2.4', appReactDom: '19.2.3' });
+  assert.equal(counts(result)['react-dom'], 2);
 });
 
 test('an importer missing from the lockfile is an error, not a silent pass', () => {
   assert.throws(
-    () =>
-      findDuplicateSingletons({
-        lockfile: lockfile(),
-        importers: ['apps/renamed'],
-        singletons: SINGLETONS,
-      }),
+    () => check({}, 'apps/renamed'),
     /importer "apps\/renamed" is not in pnpm-lock.yaml/,
   );
 });
@@ -223,19 +221,39 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(react@19.2.3)
 
+  packages/empty: {}
+
 snapshots:
 
   '@scope/pkg@1.0.0(react@19.2.3)':
     dependencies:
       string-width-cjs: string-width@4.2.3
-    devDependencies:
-      ignored: 1.0.0
+    optional: true
+    transitivePeerDependencies:
+      - '@scope/peer'
 
   string-width@4.2.3: {}
 `);
   assert.deepEqual(importers.get('.'), [{ name: '@scope/pkg', version: '1.0.0(react@19.2.3)' }]);
+  assert.deepEqual(importers.get('packages/empty'), []);
   assert.deepEqual(snapshots.get('@scope/pkg@1.0.0(react@19.2.3)'), [
     { name: 'string-width-cjs', version: 'string-width@4.2.3' },
   ]);
   assert.deepEqual(snapshots.get('string-width@4.2.3'), []);
+});
+
+test('a line the parser does not know throws instead of being skipped', () => {
+  const shapes = [
+    // a field it does not read
+    '  react@19.2.3:\n    peerDependencies:\n      typescript: 7.0.2\n',
+    // a block scalar
+    '  react@19.2.3:\n    dependencies:\n      scheduler: |\n        0.27.0\n',
+    // a double-quoted value
+    '  react@19.2.3:\n    dependencies:\n      scheduler: "0.27.0"\n',
+    // a deeper indent
+    '  react@19.2.3:\n    dependencies:\n        scheduler: 0.27.0\n',
+  ];
+  for (const shape of shapes) {
+    assert.throws(() => parseLockfile(`snapshots:\n\n${shape}`), /pnpm-lock\.yaml:\d+:/, shape);
+  }
 });

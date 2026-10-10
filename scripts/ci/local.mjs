@@ -168,10 +168,7 @@ job('lint', [
   // Unused exports, files and dependencies in the console and the frontend
   // packages (knip, `knip.json`): an export nobody imports is deleted.
   ['Unused code', 'pnpm', ['check:unused']],
-  // Two installed copies of a React singleton (react-i18next twice, #274)
-  // only showed in the production image. The lockfile already held both, so
-  // read it: a lockfile change runs everything, and a frontend package.json
-  // change affects the console, so either reaches this row.
+  // `pnpm check:singletons`: apps/web's module-state libraries, once each.
   ...(touches(packages, '@oppenheimer/web')
     ? [['One copy of each React singleton', 'pnpm', ['check:singletons']]]
     : []),

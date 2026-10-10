@@ -24,11 +24,6 @@
           "file": "package.json",
           "path": "devDependencies",
           "deleteKeys": ["knip"]
-        },
-        {
-          "file": "package.json",
-          "path": "singletons.importers",
-          "remove": ["apps/web"]
         }
       ]
     },
