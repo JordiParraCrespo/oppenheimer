@@ -1,12 +1,38 @@
 # Eval results
 
-## 2026-10-08 — the routine reviews every module
+## 2026-10-10 — the full sweep (v3)
 
-The prompt changed from "the files changed since the base, plus one deep-dive
-module a day" to a full sweep of every module on every run, fanned out to
-subagents and verified by the coordinator. The `planted` run now uses the full
-sweep (no `--module`), as the scheduled run does. Neither run has been repeated
-against this prompt yet; the 2026-09-26 numbers below are for the old one.
+The prompt changed from "the files changed since the base, plus one
+deep-dive module a day" to every module on every run, fanned out to
+read-only subagents with the coordinator as the only verifier. Fixture:
+the prompt's own commit plus `plant.mjs --old` (P12, in `hosts/`, one
+commit before the base) and `plant.mjs` as HEAD. One run per case, each
+in a fresh session with the eval directory removed from its checkout; both
+fanned out to seven subagents.
+
+| | v3 planted | v3 clean |
+| --- | --- | --- |
+| Planted items caught (of 13 in `expected`) | **13** (P12 folded into the HEX-ERRORS row with P3) | – |
+| P12, in code older than the base | ✅ | – |
+| Decoys under Findings (N1–N5) | 0 | 0 |
+| Decoys mentioned anywhere | 1 (N3, as a rule-vs-reference note) | 0 |
+| Rows under Findings | 16 | 11 |
+| Rows in `users/` on clean (false positives) | – | **0** |
+| Mechanical breach (P8) reported as blocking | ✅ | – |
+| Ledger addition (P11) caught | ✅ | – |
+| Ledger counts | 0 + 18 (17 + P11) | 0 + 17 |
+
+The rows outside the planted set were checked against the code; each
+quotes the line and the rule. The same seven turned up in both runs
+(the calendar query that writes, the projects and admin commands that
+return an entity or a DTO, the profile avatar port in controllers, the
+run-history totals, `TaskEntity.file`, the github grant port, systemic
+field copying), so the sweep is stable on untouched code. One spread to
+watch: the projects command handlers were blocking in clean and folded
+into a systemic drift row in planted.
+
+**Pass bar:** recall 1.0, zero decoys under Findings, every finding
+cites a rule. v3 passes and is the version that ships.
 
 ## 2026-09-26 — first two iterations
 
@@ -31,7 +57,7 @@ so there is no legacy controller to plant against, and the key left the
 checklist with it. Later runs count against `cases.json`'s `expected`.
 
 **Pass bar** (`cases.json`): recall ≥ 0.85, zero decoys under Findings, and
-every finding cites a rule. v1 and v2 both pass. v2 is the version that ships.
+every finding cites a rule. v1 and v2 both pass. v2 shipped until 2026-10-10.
 
 ### What v1 got wrong, and what changed
 
