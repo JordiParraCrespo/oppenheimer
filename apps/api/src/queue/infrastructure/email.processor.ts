@@ -44,6 +44,7 @@ export class EmailProcessor extends WorkerHost {
 
   async process(job: Job): Promise<void> {
     this.logger.log(`Processing email job ${job.id}: ${job.name}`);
+    if (!job.data) throw new Error(`Email job ${job.id} has no payload`);
     try {
       await this.send(job);
     } catch (error) {

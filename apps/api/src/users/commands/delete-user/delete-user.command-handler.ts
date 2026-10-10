@@ -1,10 +1,12 @@
-import { Inject } from '@nestjs/common';
+import { ForbiddenException, Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionCachePort } from '../../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import { AccountErasureRegistry } from '../../application/account-erasure.registry';
 import type { UserRepositoryPort } from '../../database/user.repository.port';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserDeletedDomainEvent } from '../../domain/events/user-deleted.domain-event';
 import { UserErrors } from '../../domain/user.errors';
 import { USER_REPOSITORY } from '../../user.di-tokens';
 import { DeleteUserCommand } from './delete-user.command';
@@ -28,6 +30,7 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepositoryPort,
+    private readonly events: EventEmitter2,
     private readonly erasure: AccountErasureRegistry,
     @Inject(SESSION_CACHE)
     private readonly sessionCache: SessionCachePort,
@@ -37,6 +40,9 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
     const found = await this.userRepository.findOneById(command.userId);
     if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
     const user = found.unwrap();
+    if (user.role === 'admin') {
+      throw new ForbiddenException('Admins cannot be deleted through this endpoint');
+    }
 
     if (
       command.confirmation !== undefined &&
@@ -49,6 +55,10 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
     await this.erasure.eraseFor(user.id);
     user.delete();
     await this.userRepository.delete(user);
+    this.events.emit(
+      'UserDeletedDomainEvent',
+      new UserDeletedDomainEvent({ aggregateId: user.id, email: user.email }),
+    );
     await this.sessionCache.evictUser(user.id);
   }
 }

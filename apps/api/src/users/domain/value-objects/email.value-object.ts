@@ -1,5 +1,5 @@
+import { BadRequestException } from '@nestjs/common';
 import {
-  ArgumentInvalidException,
   type DomainPrimitive,
   ValueObject,
 } from '@oppenheimer/backend-ddd';
@@ -14,7 +14,7 @@ export class Email extends ValueObject<string> {
 
   protected validate({ value }: DomainPrimitive<string>): void {
     if (!Email.EMAIL_REGEX.test(value)) {
-      throw new ArgumentInvalidException(`Invalid email address: ${value}`);
+      throw new BadRequestException(`Invalid email address: ${value}`);
     }
   }
 }

@@ -50,6 +50,8 @@ export interface UpdateUserProps {
  * Identity, password and OAuth links remain owned by Better Auth.
  */
 export class UserEntity extends AggregateRoot<UserProps> {
+  protected _id!: string;
+
   static create(create: CreateEntityProps<UserProps>): UserEntity {
     return new UserEntity(create);
   }
@@ -132,6 +134,12 @@ export class UserEntity extends AggregateRoot<UserProps> {
     this.validate();
   }
 
+  rename(fullName: string): void {
+    const [first, ...rest] = fullName.split(' ');
+    this.props.firstName = first ?? '';
+    this.props.lastName = rest.join(' ');
+  }
+
   delete(): void {
     this.addEvent(
       new UserDeletedDomainEvent({
@@ -140,6 +148,14 @@ export class UserEntity extends AggregateRoot<UserProps> {
         reason: 'User account was deleted; downstream cleanup (sessions, files, analytics) is owed',
       }),
     );
+  }
+
+  /** Clear the optional contact fields in one step. */
+  clearContactDetails(): void {
+    this.props.phone = null;
+    this.props.jobTitle = null;
+    this.setUpdatedAt(new Date());
+    this.validate();
   }
 
   public validate(): void {

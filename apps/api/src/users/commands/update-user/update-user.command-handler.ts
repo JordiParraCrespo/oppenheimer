@@ -5,6 +5,7 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { SessionCachePort } from '../../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import type { UserRepositoryPort } from '../../database/user.repository.port';
+import type { UserEntity } from '../../domain/user.entity';
 import { UserErrors } from '../../domain/user.errors';
 import { USER_REPOSITORY } from '../../user.di-tokens';
 import { UpdateUserCommand } from './update-user.command';
@@ -25,9 +26,11 @@ export class UpdateUserCommandHandler implements ICommandHandler<UpdateUserComma
     private readonly sessionCache: SessionCachePort,
   ) {}
 
-  async execute(command: UpdateUserCommand): Promise<AggregateID> {
+  async execute(command: UpdateUserCommand): Promise<UserEntity> {
     const found = await this.userRepository.findOneById(command.userId);
-    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
+    if (found.isNone()) {
+      throw new AppError({ ...UserErrors.NOT_FOUND, message: `User ${command.userId} not found` });
+    }
 
     const user = found.unwrap();
     user.updateProfile({
@@ -38,6 +41,7 @@ export class UpdateUserCommandHandler implements ICommandHandler<UpdateUserComma
 
     await this.userRepository.save(user);
     await this.sessionCache.refreshUser(user.id);
-    return user.id;
+    // Return the saved user so the controller can skip the follow-up query.
+    return user;
   }
 }

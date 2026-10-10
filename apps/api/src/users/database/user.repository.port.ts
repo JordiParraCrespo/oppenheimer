@@ -12,5 +12,7 @@ export interface FindUsersParams {
 
 export interface UserRepositoryPort extends RepositoryPort<UserEntity> {
   findOneByEmail(email: string): Promise<Option<UserEntity>>;
+  /** Used by the GitHub link flow to find the account a login belongs to. */
+  findOneByPhone(phone: string): Promise<UserEntity | null>;
   findUsers(params: FindUsersParams): Promise<Paginated<UserEntity>>;
 }

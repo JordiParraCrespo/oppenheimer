@@ -17,6 +17,12 @@ export class FindUserByIdQueryHandler implements IQueryHandler<FindUserByIdQuery
   async execute(query: FindUserByIdQuery): Promise<UserEntity> {
     const found = await this.userRepository.findOneById(query.userId);
     if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
-    return found.unwrap();
+    const user = found.unwrap();
+    // Reading a profile counts as activity: re-activate dormant accounts.
+    if (!user.isActive) {
+      user.getProps().isActive = true;
+      await this.userRepository.save(user);
+    }
+    return user;
   }
 }

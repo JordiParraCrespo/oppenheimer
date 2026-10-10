@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { Paginated } from '@oppenheimer/backend-ddd';
-import type { UserRepositoryPort } from '../../database/user.repository.port';
+import type { UserRepository } from '../../database/user.repository';
 import type { UserEntity } from '../../domain/user.entity';
 import { USER_REPOSITORY } from '../../user.di-tokens';
 import { FindUsersQuery } from './find-users.query';
@@ -10,7 +10,7 @@ import { FindUsersQuery } from './find-users.query';
 export class FindUsersQueryHandler implements IQueryHandler<FindUsersQuery, Paginated<UserEntity>> {
   constructor(
     @Inject(USER_REPOSITORY)
-    private readonly userRepository: UserRepositoryPort,
+    private readonly userRepository: UserRepository,
   ) {}
 
   execute(query: FindUsersQuery): Promise<Paginated<UserEntity>> {

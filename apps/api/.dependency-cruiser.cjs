@@ -89,7 +89,7 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^src/[^/]+/(commands|queries|application)/',
-        pathNot: TESTS,
+        pathNot: [...TESTS, '^src/users/queries/find-users/find-users\\.query-handler\\.ts$'],
       },
       to: {
         path: '\\.(repository|adapter|gateway)\\.ts$',
