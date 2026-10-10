@@ -21,8 +21,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * is the gap between the app's clock, which sets `expiresAt`, and the
  * database's, which sets `createdAt`).
  */
-export class AddSessionShareLinks1791000600000 implements MigrationInterface {
-  name = 'AddSessionShareLinks1791000600000';
+export class AddSessionShareLinks1791000700000 implements MigrationInterface {
+  name = 'AddSessionShareLinks1791000700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
