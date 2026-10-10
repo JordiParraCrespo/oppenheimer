@@ -339,6 +339,8 @@ export {
   SidebarSearch,
   SidebarSeparator,
   SidebarTrigger,
+  SortableSidebarProjectGroup,
+  sortableProjectId,
   useSidebar,
 } from './components/sidebar';
 export { Skeleton } from './components/skeleton';

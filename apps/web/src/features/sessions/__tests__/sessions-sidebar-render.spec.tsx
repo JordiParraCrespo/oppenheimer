@@ -11,7 +11,7 @@ import { SessionsSidebar } from '../sections/sessions-sidebar';
  * query (a poll while anything starts, a refetch on window focus), the route,
  * the minute ages move by, and the search box. It guards against a poll
  * handing every row a new entity, a subscription to the whole pathname, and
- * ages reading the clock in render. Rows are counted at `SessionItem`.
+ * ages reading the clock in render. Rows are counted at `SortableSessionItem`.
  */
 
 vi.mock('react-i18next', () => ({
@@ -49,7 +49,15 @@ const world = vi.hoisted(() => {
 
 vi.mock('@oppenheimer/design-system-web', async (original) => ({
   ...(await original<typeof import('@oppenheimer/design-system-web')>()),
-  SessionItem: ({ name, age, active }: { name: string; age?: string; active?: boolean }) => {
+  SortableSessionItem: ({
+    name,
+    age,
+    active,
+  }: {
+    name: string;
+    age?: string;
+    active?: boolean;
+  }) => {
     renders.set(name, (renders.get(name) ?? 0) + 1);
     return (
       <div data-active={active ? '' : undefined}>
@@ -129,6 +137,13 @@ function rendered(): string[] {
 }
 
 beforeEach(() => {
+  // The drag layer asks whether the reader prefers reduced motion; jsdom has no media queries.
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
   world.set({ sessions: ROWS, pathname: '/sessions/alpha', now: START });
   // The console's dialog owner sits above the sidebar in the app; here it
   // holds nothing and renders nothing, so it costs the budget no row.
@@ -140,7 +155,10 @@ beforeEach(() => {
   rendered();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  vi.unstubAllGlobals();
+  cleanup();
+});
 
 describe('SessionsSidebar', () => {
   /**

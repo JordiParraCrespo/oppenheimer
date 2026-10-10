@@ -236,6 +236,7 @@
     "noMatches": "No sessions match these filters."
   },
   "sort": {
+    "custom": "Custom order",
     "recent": "Last activity",
     "oldest": "Oldest first",
     "name": "Name"
