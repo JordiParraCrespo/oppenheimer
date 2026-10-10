@@ -1,4 +1,4 @@
-# 12 — Lessons from the reconstructed Grok Bot desktop app
+# Lessons from the reconstructed Grok Bot desktop app (formerly note 12)
 
 Source: `b-nnett/grok-bot-0.18-reconstructed`, an unofficial
 reverse-engineering of a macOS Electron app into readable TypeScript,

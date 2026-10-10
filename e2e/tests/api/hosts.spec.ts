@@ -100,6 +100,22 @@ const FACTS = {
 };
 
 test.describe('Hosts', () => {
+  test('capabilities say whether pairing works before anyone mints', async () => {
+    // The console decides from `hosts` whether to mint at all, so the flag must
+    // answer what minting would: a `true` here with HOSTS_004 below is a host
+    // step that mints, fails and waits forever; a `false` with a working mint
+    // hides pairing on a deployment that has it.
+    const capabilities = await (
+      await (await newContext()).get('/api/v1/health/capabilities', { failOnStatusCode: false })
+    ).json();
+    expect(typeof capabilities.hosts).toBe('boolean');
+
+    const { api } = await signedUpContext('hostcap');
+    const minted = await mintPairingToken(api);
+
+    expect(minted.status === 503 && minted.code === 'HOSTS_004').toBe(!capabilities.hosts);
+  });
+
   test('a machine pairs, appears online-aware, and unpairs itself', async () => {
     const { api, userId } = await signedUpContext('hostowner');
 
@@ -233,9 +249,9 @@ test.describe('Hosts', () => {
 
   test('a made-up registration token is refused, and says no more than that', async () => {
     // Registration refuses an unconfigured deployment before it looks at a
-    // token, and an anonymous caller cannot ask whether pairing is configured
-    // (`GET /health/capabilities` does not report `hosts`), so the guard is
-    // read from minting, as every other pairing test here reads it.
+    // token, so the guard is read from minting, as every other pairing test
+    // here reads it (`GET /health/capabilities` reports the same `hosts`
+    // answer; the test above holds the two together).
     const { api } = await signedUpContext('hostbogus');
     const minted = await mintPairingToken(api);
     test.skip(
