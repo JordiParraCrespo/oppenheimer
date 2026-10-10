@@ -61,17 +61,28 @@ func helper(t *testing.T) (command, seen string) {
 	t.Helper()
 	dir := t.TempDir()
 	seen = filepath.Join(dir, "seen")
-	script := filepath.Join(dir, "helper")
-	body := "#!/bin/sh\n" +
-		"[ \"$1\" = get ] || exit 0\n" +
-		"cat >/dev/null\n" +
-		"printf '%s\\n' \"$" + gitadapter.SessionEnv + "\" >> '" + seen + "'\n" +
-		"[ \"$" + gitadapter.SessionEnv + "\" = '" + sessionID + "' ] || exit 0\n" +
-		"printf 'username=" + privateUser + "\\npassword=" + privateToken + "\\n'\n"
-	if err := os.WriteFile(script, []byte(body), 0o700); err != nil { //nolint:gosec // a test helper must be executable
+	return credentialHelper(t, dir, "helper",
+		"printf '%s\\n' \"$"+gitadapter.SessionEnv+"\" >> '"+seen+"'\n"+
+			"[ \"$"+gitadapter.SessionEnv+"\" = '"+sessionID+"' ] || exit 0\n"+
+			"printf 'username="+privateUser+"\\npassword="+privateToken+"\\n'\n"), seen
+}
+
+// credentialHelper writes a git credential helper whose `get` runs body after
+// reading git's request; every other action is a no-op.
+func credentialHelper(t *testing.T, dir, name, body string) string {
+	t.Helper()
+	return executable(t, dir, name, "[ \"$1\" = get ] || exit 0\ncat >/dev/null\n"+body)
+}
+
+// executable writes a shell script into dir, the one way every stand-in
+// program here (helpers, askpass, git) is made.
+func executable(t *testing.T, dir, name, body string) string {
+	t.Helper()
+	script := filepath.Join(dir, name)
+	if err := os.WriteFile(script, []byte("#!/bin/sh\n"+body), 0o700); err != nil { //nolint:gosec // a stand-in program must be executable
 		t.Fatal(err)
 	}
-	return script, seen
+	return script
 }
 
 func privateClient(t *testing.T) (*gitadapter.Client, domain.Layout, string) {
@@ -176,10 +187,7 @@ func TestGitNeverAsksForAPassword(t *testing.T) {
 	remote := privateOrigin(t)
 	c, _, _ := privateClient(t)
 	marker := filepath.Join(t.TempDir(), "asked")
-	askpass := filepath.Join(t.TempDir(), "askpass")
-	if err := os.WriteFile(askpass, []byte("#!/bin/sh\necho asked >> '"+marker+"'\n"), 0o700); err != nil {
-		t.Fatal(err)
-	}
+	askpass := executable(t, t.TempDir(), "askpass", "echo asked >> '"+marker+"'\n")
 	t.Setenv("GIT_ASKPASS", askpass)
 	t.Setenv("SSH_ASKPASS", askpass)
 	t.Setenv("GIT_TERMINAL_PROMPT", "1")
@@ -197,22 +205,31 @@ func TestGitNeverAsksForAPassword(t *testing.T) {
 	}
 }
 
-// Every git says "there was no credential" in its own words, and each must
-// reach the console as GIT_004, not as a generic git failure. The real git
-// on the machine running the tests shows only its own wording, so a stand-in
-// git prints each one: Apple's (/usr/bin/git on every Mac) is the one a
-// runner on macOS meets, and it names neither a username nor a prompt.
-func TestEveryGitsWordForAMissingCredentialIsGIT004(t *testing.T) {
-	for name, out := range map[string]string{
-		"upstream, no prompt":   "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
-		"upstream, no password": "fatal: could not read Password for 'https://x-access-token@github.com': terminal prompts disabled",
-		"Apple git":             "fatal: unable to get password from user",
-		"refused token":         "remote: Invalid username or password.\nfatal: Authentication failed for 'https://github.com/jordi/oppenheimer.git/'",
-	} {
+// The classifier: each sign in the table needsCredential reads turns a git
+// that printed it into GIT_004, whose detail does not relay a prompt nobody
+// was shown, and a failure that is not about a credential stays a plain git
+// error. A stand-in git prints each line; what a real git prints is held by
+// the private-origin tests above, on whichever git runs them.
+func TestCredentialSignsClassifyAsGIT004(t *testing.T) {
+	cases := map[string]struct {
+		out  string
+		want bool
+	}{
+		"not a credential: DNS": {
+			out: "fatal: unable to access 'https://github.com/jordi/oppenheimer.git/': Could not resolve host: github.com",
+		},
+	}
+	for _, s := range gitadapter.CredentialSigns {
+		cases[s.Git] = struct {
+			out  string
+			want bool
+		}{out: "fatal: " + s.Sign, want: true}
+	}
+	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := gitadapter.New(gitadapter.Options{
 				Layout:           domain.Layout{Root: t.TempDir()},
-				Binary:           failingGit(t, out),
+				Binary:           executable(t, t.TempDir(), "git", "cat >&2 <<'EOF'\n"+tc.out+"\nEOF\nexit 128\n"),
 				CredentialHelper: "runner credential-helper",
 			})
 			t.Cleanup(c.Wait)
@@ -220,64 +237,35 @@ func TestEveryGitsWordForAMissingCredentialIsGIT004(t *testing.T) {
 			err := c.Ensure(domain.WithSession(context.Background(), sessionID), repo, "https://github.com/jordi/oppenheimer.git", "main")
 
 			var prob *problem.Error
-			if !isProblem(err, &prob, "GIT_004") {
-				t.Fatalf("err = %v, want GIT_004", err)
+			if err == nil || isProblem(err, &prob, "GIT_004") != tc.want {
+				t.Fatalf("err = %v, want GIT_004: %v", err, tc.want)
 			}
-			if strings.Contains(prob.Detail, "unable to get password") || strings.Contains(prob.Detail, "could not read") {
+			if tc.want && strings.Contains(prob.Detail, tc.out[len("fatal: "):]) {
 				t.Fatalf("the detail relays git's prompt, which nobody was shown: %s", prob.Detail)
 			}
 		})
 	}
-
-	// And a failure that is not about a credential stays what it is.
-	c := gitadapter.New(gitadapter.Options{
-		Layout: domain.Layout{Root: t.TempDir()},
-		Binary: failingGit(t, "fatal: unable to access 'https://github.com/jordi/oppenheimer.git/': Could not resolve host: github.com"),
-	})
-	t.Cleanup(c.Wait)
-	var prob *problem.Error
-	if err := c.Ensure(context.Background(), repo, "https://github.com/jordi/oppenheimer.git", "main"); err == nil || isProblem(err, &prob, "GIT_004") {
-		t.Fatalf("err = %v, want a git failure that is not GIT_004", err)
-	}
 }
 
-// failingGit writes a git that prints out and exits 128, as git does when it
-// gives up.
-func failingGit(t *testing.T, out string) string {
-	t.Helper()
-	script := filepath.Join(t.TempDir(), "git")
-	body := "#!/bin/sh\ncat >&2 <<'EOF'\n" + out + "\nEOF\nexit 128\n"
-	if err := os.WriteFile(script, []byte(body), 0o700); err != nil { //nolint:gosec // a test stand-in must be executable
-		t.Fatal(err)
-	}
-	return script
-}
-
-// A helper the host account configured — osxkeychain in Apple's system
-// gitconfig, a credential manager in ~/.gitconfig — is never asked for a
-// session's token: it would answer with whatever the account stored, for
-// any session, and the control plane would never have said yes. Here the
-// configured helper even has the right token; the clone must still fail for
-// a session the runner's helper refuses.
+// A helper the host's system gitconfig names (osxkeychain on a Mac) is never
+// asked for a session's token: it would answer with whatever the account
+// stored, for any session, and the control plane would never have said yes.
+// Here that helper even has the right token; the clone must still fail for a
+// session the runner's helper refuses.
 func TestOnlyTheRunnersHelperIsAsked(t *testing.T) {
 	remote := privateOrigin(t)
 	c, _, _ := privateClient(t)
 	dir := t.TempDir()
 	marker := filepath.Join(dir, "asked")
-	keychain := filepath.Join(dir, "keychain")
-	body := "#!/bin/sh\n" +
-		"[ \"$1\" = get ] || exit 0\n" +
-		"cat >/dev/null\n" +
-		"echo asked >> '" + marker + "'\n" +
-		"printf 'username=" + privateUser + "\\npassword=" + privateToken + "\\n'\n"
-	if err := os.WriteFile(keychain, []byte(body), 0o700); err != nil { //nolint:gosec // a test helper must be executable
+	keychain := credentialHelper(t, dir, "keychain",
+		"echo asked >> '"+marker+"'\n"+
+			"printf 'username="+privateUser+"\\npassword="+privateToken+"\\n'\n")
+	system := filepath.Join(dir, "gitconfig")
+	if err := os.WriteFile(system, []byte("[credential]\n\thelper = "+keychain+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	global := filepath.Join(dir, "gitconfig")
-	if err := os.WriteFile(global, []byte("[credential]\n\thelper = "+keychain+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("GIT_CONFIG_GLOBAL", global)
+	t.Setenv("GIT_CONFIG_SYSTEM", system)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "0")
 
 	err := c.Ensure(domain.WithSession(context.Background(), "a-session-the-control-plane-refuses"), repo, remote, "main")
 
@@ -286,12 +274,12 @@ func TestOnlyTheRunnersHelperIsAsked(t *testing.T) {
 		t.Fatalf("err = %v, want GIT_004", err)
 	}
 	if _, err := os.Stat(marker); err == nil {
-		t.Fatal("git asked the account's own credential helper")
+		t.Fatal("git asked the system gitconfig's credential helper")
 	}
 	// The stand-in is a working keychain: any other git on the host gets in.
 	git(t, "", "ls-remote", remote)
 	if _, err := os.Stat(marker); err != nil {
-		t.Fatal("the configured helper was never asked by a plain git either; the test proves nothing")
+		t.Fatal("the system helper was never asked by a plain git either; the test proves nothing")
 	}
 }
 

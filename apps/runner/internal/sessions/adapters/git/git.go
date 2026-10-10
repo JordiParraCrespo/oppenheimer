@@ -532,30 +532,36 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 	return text, nil
 }
 
+// credentialSigns are the lines git prints when it gives up for want of a
+// credential, each beside the git that prints it. `run` makes the runner's
+// helper the only source and forbids a prompt (GIT_TERMINAL_PROMPT=0, an
+// empty GIT_ASKPASS), so a helper that answered nothing ends in one of these.
+var credentialSigns = []struct{ Git, Sign string }{
+	// Upstream git, for a username or a password: "fatal: could not read
+	// Username for 'https://github.com': terminal prompts disabled".
+	{"upstream git, no username", "could not read Username"},
+	{"upstream git, no password", "could not read Password"},
+	{"upstream git, the prompt it may not show", "terminal prompts disabled"},
+	// Apple's git (/usr/bin/git, the Xcode command-line tools) names neither:
+	// "fatal: unable to get password from user".
+	{"Apple git", "unable to get password from user"},
+	// Any git, when the server refused the credential it was given.
+	{"any git, a refused credential", "Authentication failed"},
+}
+
 // needsCredential recognises git giving up for want of a credential: it asked
-// the helper, got nothing, and was not allowed to ask a person. Each git
-// words that differently: upstream git names the prompt it could not show
-// ("could not read Username for '…': terminal prompts disabled"), while
-// Apple's git — /usr/bin/git on every Mac, the Xcode command-line tools —
-// prompt variables say.
+// the helper, got nothing, and was not allowed to ask a person.
 func needsCredential(out string) bool {
-	for _, sign := range []string{
-		"could not read Username",
-		"could not read Password",
-		"terminal prompts disabled",
-		"unable to get password from user",
-		"Authentication failed",
-	} {
-		if strings.Contains(out, sign) {
+	for _, s := range credentialSigns {
+		if strings.Contains(out, s.Sign) {
 			return true
 		}
 	}
 	return false
 }
 
-// credentialRefused says what a reader can act on. git's own words — "could
-// not read Username", "unable to get password from user" — point at a prompt
-// nobody was shown.
+// credentialRefused says what a reader can act on. git's own words
+// (credentialSigns) point at a prompt nobody was shown.
 func credentialRefused(verb, repo, session string) *problem.Error {
 	subject := "the repository"
 	if repo != "" {

@@ -14,12 +14,12 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// TestMain keeps the developer's own git configuration out of every git this
-// package starts, the adapter's and the fixtures' alike: a commit.gpgsign, a
-// core.hooksPath, a url.insteadOf or a credential helper in ~/.gitconfig or
-// the system gitconfig would otherwise decide whether a test passes. A test
-// that wants a configuration (TestOnlyTheRunnersHelperIsAsked) points
-// GIT_CONFIG_GLOBAL at its own.
+// TestMain keeps the developer's ~/.gitconfig out of every git this package
+// starts, the adapter's and the fixtures' alike: a commit.gpgsign, a
+// core.hooksPath or a url.insteadOf there would otherwise decide whether a
+// test passes. The system gitconfig stays in play, as it is on a host; what
+// keeps its credential helper out is the adapter's own reset, which
+// TestOnlyTheRunnersHelperIsAsked holds.
 func TestMain(m *testing.M) {
 	os.Exit(hermetic(m))
 }
@@ -31,13 +31,8 @@ func hermetic(m *testing.M) int {
 	}
 	_ = empty.Close()
 	defer os.Remove(empty.Name())
-	for key, value := range map[string]string{
-		"GIT_CONFIG_GLOBAL":   empty.Name(),
-		"GIT_CONFIG_NOSYSTEM": "1",
-	} {
-		if err := os.Setenv(key, value); err != nil {
-			panic(err)
-		}
+	if err := os.Setenv("GIT_CONFIG_GLOBAL", empty.Name()); err != nil {
+		panic(err)
 	}
 	return m.Run()
 }
