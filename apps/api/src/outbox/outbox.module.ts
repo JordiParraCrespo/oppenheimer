@@ -1,8 +1,10 @@
 import { Global, Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { createMetricsProvider } from '@oppenheimer/backend-core';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { QueueModule } from '../queue/queue.module';
+import { BacklogMetrics, BacklogMetricsSampler } from './infrastructure/backlog-metrics.adapter';
 import { OutboxRelayService } from './infrastructure/outbox-relay.adapter';
 import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.processor';
 
@@ -24,6 +26,10 @@ import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.proc
     },
     OutboxRelayService,
     OutboxRetentionProcessor,
+    // What the API owes, as gauges: here because the outbox is what feeds the
+    // queues, and this module already holds a handle on each of them.
+    ...createMetricsProvider(BacklogMetrics),
+    BacklogMetricsSampler,
   ],
   exports: [OutboxService],
 })

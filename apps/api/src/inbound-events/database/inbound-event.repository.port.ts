@@ -13,6 +13,8 @@ export interface NewDelivery {
   payload: Record<string, unknown>;
   /** SHA-256 hex of the raw bytes the provider signed. */
   payloadDigest: string;
+  /** The receiving command's correlation id, recorded on the processing job it stages. */
+  correlationId: string;
 }
 
 export interface InboundEventRepositoryPort {

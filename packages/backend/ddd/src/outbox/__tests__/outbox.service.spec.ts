@@ -1,6 +1,7 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
 import { DomainEvent, type DomainEventProps } from '../../domain-event.base';
+import { RequestContextService } from '../../request-context.service';
 import { OutboxService } from '../outbox.service';
 
 class ThingDeletedDomainEvent extends DomainEvent {
@@ -72,6 +73,7 @@ describe('OutboxService', () => {
         jobName: 'send-verification',
         payload: { to: 'a@b.c' },
         reason: 'User signed up; a verification email is owed',
+        correlationId: 'req-7',
       });
 
       expect(insert.mock.calls[0][0]).toMatchObject({
@@ -81,6 +83,46 @@ describe('OutboxService', () => {
         payload: { to: 'a@b.c' },
         reason: 'User signed up; a verification email is owed',
       });
+    });
+  });
+
+  describe('stageJob correlation', () => {
+    it('records the correlation id the caller passes and ignores an open request scope', async () => {
+      const insert = vi.fn().mockResolvedValue(undefined);
+      const service = new OutboxService({} as DataSource);
+      const job = { queue: 'email', jobName: 'send', payload: {}, reason: 'owed' };
+
+      await RequestContextService.run({ correlationId: 'req-1' }, async () => {
+        await service.stageJob(managerWith(insert), { ...job, correlationId: 'given' });
+        await service.stageJob(managerWith(insert), { ...job, correlationId: null });
+      });
+
+      expect(insert.mock.calls.map(([row]) => row.correlationId)).toEqual(['given', null]);
+    });
+  });
+
+  describe('backlog', () => {
+    it('reads pending, failed and the oldest pending row in one statement', async () => {
+      const oldest = new Date('2026-10-01T00:00:00Z');
+      const query = vi
+        .fn()
+        .mockResolvedValueOnce([{ pending: 4, failed: 2, oldestPendingAt: oldest.toISOString() }])
+        .mockResolvedValueOnce([{ pending: 0, failed: 0, oldestPendingAt: null }]);
+      const service = new OutboxService({ query } as unknown as DataSource);
+
+      await expect(service.backlog()).resolves.toEqual({
+        pending: 4,
+        failed: 2,
+        oldestPendingAt: oldest,
+      });
+      await expect(service.backlog()).resolves.toEqual({
+        pending: 0,
+        failed: 0,
+        oldestPendingAt: null,
+      });
+      expect(query).toHaveBeenCalledTimes(2);
+      expect(query.mock.calls[0][0]).toContain(`"status" = 'failed'`);
+      expect(query.mock.calls[0][0]).toContain(`"status" = 'pending'`);
     });
   });
 
@@ -176,6 +218,7 @@ describe('OutboxService', () => {
       jobName: 'send',
       payload: {},
       reason: 'a test owes a job',
+      correlationId: null,
     };
 
     it('wakes once, after the commit, when events were staged', async () => {

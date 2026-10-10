@@ -55,6 +55,7 @@ describe('the outbox table (integration)', () => {
     const index = await indexes();
     expect([...index.keys()].sort()).toEqual([
       'IDX_outbox_message_created_brin',
+      'IDX_outbox_message_failed',
       'IDX_outbox_message_pending',
       'PK_outbox_message',
     ]);
@@ -63,6 +64,10 @@ describe('the outbox table (integration)', () => {
       /\("createdAt"\) WHERE \(\(status\)::text = 'pending'::text\)/,
     );
     expect(index.get('IDX_outbox_message_created_brin')?.definition).toMatch(/USING brin/);
+    // The backlog gauge counts parked rows every sample; retention never deletes them.
+    expect(index.get('IDX_outbox_message_failed')?.definition).toMatch(
+      /\("createdAt"\) WHERE \(\(status\)::text = 'failed'::text\)/,
+    );
   };
 
   /**
@@ -85,7 +90,7 @@ describe('the outbox table (integration)', () => {
       [count, status, availableAt, lockedUntil ?? null],
     );
 
-  it('indexes pending rows by age, and every row by a BRIN on createdAt', async () => {
+  it('indexes pending and failed rows by age, and every row by a BRIN on createdAt', async () => {
     await expectNewIndexes();
   });
 

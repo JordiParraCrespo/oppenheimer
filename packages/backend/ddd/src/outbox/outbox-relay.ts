@@ -31,7 +31,8 @@ const DEFAULT_BATCH_SIZE = 20;
 
 /**
  * Drains the outbox: claims due rows (leased via `FOR UPDATE SKIP LOCKED`, so
- * concurrent replicas work disjoint sets), hands each to the publisher, and
+ * concurrent replicas work disjoint sets), hands the batch to the publisher
+ * at once (one call per row, all in flight together), and
  * marks the batch processed, or a row failed.
  *
  * Runs on two triggers: a background poll (the safety net that picks up rows
@@ -65,8 +66,8 @@ export class OutboxRelay {
   private running?: Promise<number>;
   /** Set when a drain was requested while one was running: run one more pass. */
   private again = false;
-  /** True only while a publisher's promise is pending. */
-  private delivering = false;
+  /** How many publisher promises are pending; above zero only inside a delivery. */
+  private delivering = 0;
 
   constructor(
     private readonly outbox: OutboxService,
@@ -125,12 +126,12 @@ export class OutboxRelay {
    * Drain until no due rows remain, and wait for it. Returns the number of rows
    * delivered. Called from inside a delivery, the pass is requested and the
    * call resolves at once with 0, since waiting would mean the drain waiting on
-   * itself. The flag is relay-wide, not per caller: an unrelated `drainOnce()`
+   * itself. The count is relay-wide, not per caller: an unrelated `drainOnce()`
    * made while a publisher is pending also resolves at once with 0.
    */
   drainOnce(): Promise<number> {
     const run = this.requestDrain();
-    return this.delivering ? Promise.resolve(0) : run;
+    return this.delivering > 0 ? Promise.resolve(0) : run;
   }
 
   private async drainBatches(): Promise<number> {
@@ -148,16 +149,17 @@ export class OutboxRelay {
         return delivered;
       }
       if (batch.length === 0) return delivered;
-      const published: string[] = [];
       const leased = new Set(batch.map((message) => message.id));
       const stopHeartbeat = this.startHeartbeat(leased);
+      let published: string[];
       try {
-        await this.deliver(batch, published, leased);
+        published = await this.deliver(batch, leased);
       } finally {
         stopHeartbeat();
       }
+      let marked: string[];
       try {
-        await this.outbox.markProcessed(published, this.options.owner);
+        marked = await this.outbox.markProcessed(published, this.options.owner);
       } catch (error) {
         // The rows stay leased until it lapses, then are delivered again.
         this.options.logger?.warn(
@@ -165,42 +167,70 @@ export class OutboxRelay {
         );
         return delivered;
       }
-      delivered += published.length;
+      // A row whose lease was lost mid-delivery belongs to the relay that
+      // claimed it since; it finishes (and counts) it.
+      delivered += marked.length;
       if (batch.length < batchSize) return delivered;
     }
   }
 
   /**
-   * Publish each row of a claimed batch, recording the ids that went out and
-   * marking the rest failed. A failed row leaves `leased`: `markFailed`
-   * releases its lease, so the heartbeat stops renewing it.
+   * Publish every row of a claimed batch at once and resolve, once all of
+   * them have settled, with the ids that went out, read from the settled
+   * results rather than collected by the callbacks. A row that fails is
+   * marked failed as soon as it does, so its backoff starts then: it leaves
+   * `leased` first (the heartbeat's set of rows it renews, which only this
+   * relay's own bookkeeping touches), since `markFailed` releases its lease.
+   *
+   * Concurrent, not one row after another: in sequence the relay's
+   * throughput is the reciprocal of one publish's latency, whatever the pool
+   * or the workers allow. The batch is bounded by `batchSize`, so this is
+   * bounded concurrency. Nothing is lost by it: rows of one batch never had
+   * an order a listener could rely on, since a failed row is retried after
+   * the rows behind it and replicas claim neighbouring rows in parallel.
    */
   private async deliver(
     batch: readonly OutboxMessageRecord[],
-    published: string[],
+    leased: Set<string>,
+  ): Promise<string[]> {
+    const settled = await Promise.allSettled(
+      batch.map(async (message) => {
+        try {
+          await this.publish(message);
+        } catch (error) {
+          await this.fail(message, error, leased);
+          throw error;
+        }
+        return message.id;
+      }),
+    );
+    return settled.flatMap((outcome) => (outcome.status === 'fulfilled' ? [outcome.value] : []));
+  }
+
+  private async publish(message: OutboxMessageRecord): Promise<void> {
+    this.delivering += 1;
+    try {
+      await this.publisher(message);
+    } finally {
+      this.delivering -= 1;
+    }
+  }
+
+  private async fail(
+    message: OutboxMessageRecord,
+    error: unknown,
     leased: Set<string>,
   ): Promise<void> {
-    for (const message of batch) {
-      try {
-        this.delivering = true;
-        try {
-          await this.publisher(message);
-        } finally {
-          this.delivering = false;
-        }
-        published.push(message.id);
-      } catch (error) {
-        this.options.logger?.warn(
-          `Outbox delivery of ${message.eventName} (${message.id}) failed: ${describe(error)}`,
-        );
-        leased.delete(message.id);
-        try {
-          await this.outbox.markFailed(message, describe(error));
-        } catch {
-          // Can't reach the database to record the failure; the lease
-          // expires and the row is reclaimed on a later pass.
-        }
-      }
+    const reason = describe(error);
+    this.options.logger?.warn(
+      `Outbox delivery of ${message.eventName} (${message.id}) failed: ${reason}`,
+    );
+    leased.delete(message.id);
+    try {
+      await this.outbox.markFailed(message, reason);
+    } catch {
+      // Can't reach the database to record the failure; the lease
+      // expires and the row is reclaimed on a later pass.
     }
   }
 

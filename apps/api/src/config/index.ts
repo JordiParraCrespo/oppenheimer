@@ -4,6 +4,7 @@ export { calendarConfig, calendarTokenKeyOf } from './calendar.config';
 export { databaseConfig } from './database.config';
 export { emailConfig } from './email.config';
 export { githubAppConfig } from './github.config';
+export { healthConfig } from './health.config';
 export { hostsAreConfigured, hostsConfig } from './hosts.config';
 export { llmConfig, llmConfigFrom } from './llm.config';
 export { oauthConfig } from './oauth.config';

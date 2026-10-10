@@ -41,6 +41,7 @@ export class FireDueSchedulesCommandHandler
       this.limits.schedulerBatch,
       new Date(now.getTime() - HOUR),
       (candidate, scheduledFor, context) => this.decide(candidate, scheduledFor, context, now),
+      command.metadata.correlationId,
     );
     return queued.length;
   }

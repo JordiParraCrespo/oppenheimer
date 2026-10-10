@@ -101,6 +101,7 @@ export async function insertRunWithin(
   outbox: OutboxService,
   mapper: AutomationRunMapper,
   run: AutomationRunEntity,
+  correlationId: string | null,
 ): Promise<boolean> {
   const record = mapper.toRecord(run);
   const inserted: { id: string }[] = await manager.query(
@@ -130,7 +131,7 @@ export async function insertRunWithin(
     ],
   );
   if (inserted.length === 0) return false;
-  if (run.isPending) await stageDispatch(manager, outbox, run);
+  if (run.isPending) await stageDispatch(manager, outbox, run, correlationId);
   await outbox.stageEvents(manager, run.domainEvents);
   run.clearEvents();
   return true;
@@ -140,6 +141,7 @@ async function stageDispatch(
   manager: EntityManager,
   outbox: OutboxService,
   run: AutomationRunEntity,
+  correlationId: string | null,
 ): Promise<void> {
   await outbox.stageJob(manager, {
     queue: QUEUE_NAMES.AUTOMATION_RUNS,
@@ -148,6 +150,7 @@ async function stageDispatch(
     reason: `automation ${run.automationId} fired (${run.cause}) and its run owes a dispatch`,
     aggregateId: run.id,
     availableAt: run.availableAt,
+    correlationId,
   });
 }
 
@@ -280,9 +283,12 @@ export class AutomationRunRepository
     super();
   }
 
-  async insertFiring(run: AutomationRunEntity): Promise<{ runId: string; inserted: boolean }> {
+  async insertFiring(
+    run: AutomationRunEntity,
+    correlationId: string,
+  ): Promise<{ runId: string; inserted: boolean }> {
     const inserted = await this.outbox.transaction((manager) =>
-      insertRunWithin(manager, this.outbox, this.mapper, run),
+      insertRunWithin(manager, this.outbox, this.mapper, run, correlationId),
     );
     if (inserted) return { runId: run.id, inserted };
     const existing: { id: string }[] = await this.dataSource.query(
@@ -304,13 +310,14 @@ export class AutomationRunRepository
     automationId: string,
     since: Date,
     decide: (recent: { automation: number; workspace: number }) => AutomationRunEntity,
+    correlationId: string,
   ): Promise<{ run: AutomationRunEntity; runId: string; inserted: boolean }> {
     const { run, inserted } = await this.outbox.transaction(async (manager) => {
       await lockWorkspaceFiring(manager, [organizationId]);
       const decided = decide(await countRecentWithin(manager, organizationId, automationId, since));
       return {
         run: decided,
-        inserted: await insertRunWithin(manager, this.outbox, this.mapper, decided),
+        inserted: await insertRunWithin(manager, this.outbox, this.mapper, decided, correlationId),
       };
     });
     if (inserted) return { run, runId: run.id, inserted };
@@ -348,6 +355,8 @@ export class AutomationRunRepository
           payload: { runId: row.id },
           reason: `automation ${row.automationId}'s ${row.cause} run was still pending at the sweep`,
           aggregateId: row.id,
+          // A sweep: no request owes this job, so it carries no correlation.
+          correlationId: null,
         });
       }
       return due.length;
@@ -364,7 +373,7 @@ export class AutomationRunRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async save(run: AutomationRunEntity): Promise<void> {
+  async save(run: AutomationRunEntity, correlationId: string): Promise<void> {
     const record = this.mapper.toRecord(run);
     await this.outbox.transaction(async (manager) => {
       await manager.query(
@@ -384,7 +393,7 @@ export class AutomationRunRepository
         ],
       );
       // A deferral owes another look later; the delay rides the outbox row.
-      if (run.isPending) await stageDispatch(manager, this.outbox, run);
+      if (run.isPending) await stageDispatch(manager, this.outbox, run, correlationId);
       await this.outbox.stageEvents(manager, run.domainEvents);
     });
     run.clearEvents();

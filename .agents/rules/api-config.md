@@ -125,6 +125,24 @@ private get defaultAcceptUrl(): string {
 }
 ```
 
+### Settings are an input to the domain, never a lookup inside it
+
+A rule that depends on a setting (a ceiling, a TTL, a batch size) is written as
+a pure function or policy in `domain/` that **takes the values as arguments**.
+`ConfigService` is read outside the domain, in one place per set of values:
+
+- a handler's private getter, when that handler is the only reader
+  (`MintPairingTokenCommandHandler`'s `lifetimeMs`);
+- a resolver in `application/`, when several readers share the values or they
+  combine with stored ones: `AutomationLimitsResolver` reads the platform
+  ceilings from config and hands them, with the workspace's saved overrides,
+  to `resolveAutomationLimits` in `domain/automation-limits.policy.ts`.
+
+So a policy spec passes numbers, not a mocked `ConfigService`, and a setting's
+key and default live once, in the reader. The domain cannot import
+`@nestjs/config` anyway (`nestjs-architecture.md`); this is the shape that
+keeps the rule there instead of moving it into the reader.
+
 Config files (`config/*.config.ts`) still own env parsing/validation via Zod;
 normalize blank env vars (`FOO=`) to `undefined` before validation so
 `.url().optional()` and friends still boot (e.g. an `orUndefined` helper).

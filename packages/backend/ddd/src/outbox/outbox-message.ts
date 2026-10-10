@@ -99,6 +99,12 @@ export const OutboxMessageSchema = new EntitySchema<OutboxMessageRecord>({
       columns: ['createdAt'],
       where: `"status" = 'pending'`,
     },
+    // The backlog gauge's failed count: parked rows only (`OutboxService.backlog`).
+    {
+      name: 'IDX_outbox_message_failed',
+      columns: ['createdAt'],
+      where: `"status" = 'failed'`,
+    },
     // Retention: BRIN, which EntitySchema cannot express. The migration owns it.
     { name: 'IDX_outbox_message_created_brin', columns: ['createdAt'], synchronize: false },
   ],

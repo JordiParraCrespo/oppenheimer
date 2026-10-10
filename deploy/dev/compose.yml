@@ -129,9 +129,10 @@ services:
       UPLOAD_DIR: /data/uploads
     volumes:
       - uploads:/data/uploads
-    # Liveness only: `/ready` also fails on disk and heap thresholds, and a
-    # restart does not free a full disk. Migrations run at boot, before the
-    # server listens, hence the long start period.
+    # Liveness only: `/health` checks no dependency, so a PostgreSQL or Redis
+    # outage does not mark the API unhealthy and restart it; the deploy gate
+    # checks `/ready` itself. Migrations run at boot, before the server
+    # listens, hence the long start period.
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/v1/health"]
       interval: 10s

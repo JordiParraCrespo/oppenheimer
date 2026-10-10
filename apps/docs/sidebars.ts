@@ -31,7 +31,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Deployment',
-      items: ['deployment/tier-1-cheap'],
+      items: ['deployment/tier-1-cheap', 'deployment/monitoring'],
     },
   ],
 };

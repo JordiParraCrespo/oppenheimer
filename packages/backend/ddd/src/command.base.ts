@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { ArgumentNotProvidedException } from './exceptions';
-import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface CommandMetadata {
@@ -16,7 +15,15 @@ export interface CommandMetadata {
   readonly timestamp: number;
 }
 
-export type CommandProps<T> = Omit<T, 'id' | 'metadata'> & Partial<CommandBase>;
+/**
+ * A command's own fields, plus an optional id and the metadata a caller wants
+ * to carry over (a handler passes its event's `correlationId`); the rest of
+ * the metadata is filled in, as for a domain event.
+ */
+export type CommandProps<T> = Omit<T, 'id' | 'metadata'> & {
+  id?: string;
+  metadata?: Partial<CommandMetadata>;
+};
 
 /**
  * Base class for commands. A command is a state-changing intention dispatched
@@ -28,7 +35,10 @@ export class CommandBase {
   readonly metadata: CommandMetadata;
 
   constructor(props: CommandProps<unknown>) {
-    if (Guard.isEmpty(props)) {
+    // Only a missing props object is a mistake. An empty one is a command
+    // with no payload, and `Guard.isEmpty({})` is true, so guarding on it
+    // refused every payload-free command.
+    if (props === undefined || props === null) {
       throw new ArgumentNotProvidedException('Command props should not be empty');
     }
     this.id = props.id ?? randomUUID();

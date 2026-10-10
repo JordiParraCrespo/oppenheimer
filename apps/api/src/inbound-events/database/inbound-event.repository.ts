@@ -62,6 +62,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
         payload: { inboundDeliveryId: inserted[0].id },
         reason: `${delivery.source} delivery ${delivery.deliveryId} (${delivery.eventName}) is stored and owes normalizing`,
         aggregateId: inserted[0].id,
+        correlationId: delivery.correlationId,
       });
       return true;
     });
@@ -207,6 +208,8 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
           payload: { inboundDeliveryId: row.id },
           reason: `${row.source} delivery ${row.deliveryId} was still unprocessed at the sweep`,
           aggregateId: row.id,
+          // A sweep: no request owes this job, so it carries no correlation.
+          correlationId: null,
         });
       }
       return { restaged: due.length, abandoned: abandoned.length };

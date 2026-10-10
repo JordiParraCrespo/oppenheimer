@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
  */
 
 const SRC = resolve(__dirname, '..');
-const HTTP_METHOD = /^\s*@(Get|Post|Patch|Put|Delete|Head|Options|All)\(/;
+const HTTP_METHOD = /^\s*@(Get|Post|Patch|Put|Delete|Head|Options|All|Sse)\(/;
 const METHOD_SIGNATURE =
   /^\s{2}(?:public\s+|private\s+|protected\s+)?(?:async\s+)?[A-Za-z_]\w*\s*\(/;
 const CLASS_DECLARATION = /^export class /;

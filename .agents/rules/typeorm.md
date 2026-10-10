@@ -70,6 +70,18 @@ How a table is designed (keys, types, indexes, constraints, migrations) is
   Auth table), leave the rest unset in `toPersistence()` so `save()` doesn't
   clobber columns another system manages
 
+## A racing state transition is a conditional `UPDATE`, not a `save`
+
+`Repository.save` is an upsert keyed on the primary key: it writes whatever
+the instance holds, whatever the row holds now. When two writers can make the
+same transition, write it as `update({ id, status: statusAtLoad }, changes)`
+and read `result.affected === 1` as "this write won"; on `0`, stage nothing
+and abandon. `TypeOrmRepositoryBase.saveIf` does exactly this (and stages the
+events only on a win). The rule and its reasons are in `nestjs-architecture.md`
+("A transition two writers can race is a conditional write"). The mapper's
+record minus its id is the `SET` list, so a column `toPersistence()` leaves
+unset is left alone, the same as for `save`.
+
 ## `manager.query` does not answer an `UPDATE` the way it answers a `SELECT`
 
 `PostgresQueryRunner.query` switches on the command postgres reports: a

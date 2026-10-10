@@ -2647,6 +2647,13 @@ export type MergePullRequestRequest = {
     method?: 'squash' | 'merge' | 'rebase';
 };
 
+export type LivenessResponseDto = {
+    /**
+     * Always `ok`: the process answered.
+     */
+    status: 'ok';
+};
+
 export type CapabilitiesResponseDto = {
     /**
      * Sign-in with Google is configured.
@@ -2672,6 +2679,36 @@ export type CapabilitiesResponseDto = {
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
     github_app_install_url: string | null;
+};
+
+export type DependencyStatusDto = {
+    /**
+     * `ok` when the dependency answered in time, `error` otherwise.
+     */
+    status: 'ok' | 'error';
+    /**
+     * Present only with `error`, and always this one word. Why it failed is in the API log, never here.
+     */
+    message?: 'unavailable';
+};
+
+export type ReadinessChecksDto = {
+    /**
+     * PostgreSQL, proved by a ping within `HEALTH_DATABASE_TIMEOUT_MS`.
+     */
+    database: DependencyStatusDto;
+    /**
+     * Redis, proved by a `PING` within `HEALTH_REDIS_TIMEOUT_MS`.
+     */
+    redis: DependencyStatusDto;
+};
+
+export type ReadinessResponseDto = {
+    /**
+     * `ok` only when every check is `ok`; served with 200, and `error` with 503.
+     */
+    status: 'ok' | 'error';
+    checks: ReadinessChecksDto;
 };
 
 export type GetUserSettingsData = {
@@ -9560,62 +9597,11 @@ export type CheckData = {
     url: '/api/v1/health';
 };
 
-export type CheckErrors = {
-    /**
-     * The Health Check is not successful
-     */
-    503: {
-        status?: string;
-        info?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        error?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        details?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        };
-    };
-};
-
-export type CheckError = CheckErrors[keyof CheckErrors];
-
 export type CheckResponses = {
     /**
-     * App is alive
-     *
-     * The Health Check is successful
+     * The process answered
      */
-    200: {
-        status?: string;
-        info?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        error?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        details?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        };
-    };
+    200: LivenessResponseDto;
 };
 
 export type CheckResponse = CheckResponses[keyof CheckResponses];
@@ -9645,60 +9631,18 @@ export type ReadinessData = {
 
 export type ReadinessErrors = {
     /**
-     * The Health Check is not successful
+     * A dependency is unavailable; this replica must not serve. Same body shape.
      */
-    503: {
-        status?: string;
-        info?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        error?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        details?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        };
-    };
+    503: ReadinessResponseDto;
 };
 
 export type ReadinessError = ReadinessErrors[keyof ReadinessErrors];
 
 export type ReadinessResponses = {
     /**
-     * App is ready to receive traffic
-     *
-     * The Health Check is successful
+     * This replica can serve
      */
-    200: {
-        status?: string;
-        info?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        error?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        } | null;
-        details?: {
-            [key: string]: {
-                status: string;
-                [key: string]: unknown;
-            };
-        };
-    };
+    200: ReadinessResponseDto;
 };
 
 export type ReadinessResponse = ReadinessResponses[keyof ReadinessResponses];

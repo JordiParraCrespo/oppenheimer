@@ -37,7 +37,7 @@ describe('OutboxRelay', () => {
   beforeEach(() => {
     outbox = {
       claim: vi.fn().mockResolvedValue([]),
-      markProcessed: vi.fn().mockResolvedValue(undefined),
+      markProcessed: vi.fn(async (ids: string[]) => ids),
       markFailed: vi.fn().mockResolvedValue(undefined),
       extendLease: vi.fn(async (_owner: string, ids: string[]) => ids),
       registerDrainer: vi.fn(),
@@ -66,6 +66,30 @@ describe('OutboxRelay', () => {
     expect(outbox.markFailed).not.toHaveBeenCalled();
   });
 
+  it('publishes the rows of a batch concurrently, and marks the batch once all settle', async () => {
+    const rows = [message({ id: 'a' }), message({ id: 'b' }), message({ id: 'c' })];
+    outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);
+    const started: string[] = [];
+    const releases: Array<() => void> = [];
+    const relay = relayWith(async (m) => {
+      started.push(m.id);
+      await new Promise<void>((resolve) => releases.push(resolve));
+      if (m.id === 'b') throw new Error('listener failed');
+    });
+
+    const drain = relay.drainOnce();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Every row is in flight before any of them finished.
+    expect(started).toEqual(['a', 'b', 'c']);
+    expect(outbox.markProcessed).not.toHaveBeenCalled();
+
+    for (const release of releases.reverse()) release();
+    await expect(drain).resolves.toBe(2);
+    expect(outbox.markFailed).toHaveBeenCalledWith(rows[1], 'listener failed');
+    expect(outbox.markProcessed).toHaveBeenCalledTimes(1);
+    expect([...outbox.markProcessed.mock.calls[0][0]].sort()).toEqual(['a', 'c']);
+  });
+
   it('marks a failed row failed alone and the rest of the batch processed in one call', async () => {
     const rows = [message({ id: 'a' }), message({ id: 'bad' }), message({ id: 'c' })];
     outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);
@@ -82,6 +106,20 @@ describe('OutboxRelay', () => {
     );
     expect(outbox.markProcessed).toHaveBeenCalledTimes(1);
     expect(outbox.markProcessed).toHaveBeenCalledWith(['a', 'c'], 'test:1');
+  });
+
+  it('does not count a row whose lease was lost mid-delivery', async () => {
+    const rows = [message({ id: 'a' }), message({ id: 'stolen' }), message({ id: 'c' })];
+    outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);
+    // Another relay claimed `stolen` while it was delivered: the fenced mark
+    // leaves it alone and does not return it.
+    outbox.markProcessed.mockImplementationOnce(async (ids: string[]) =>
+      ids.filter((id) => id !== 'stolen'),
+    );
+    const relay = relayWith(async () => {});
+
+    await expect(relay.drainOnce()).resolves.toBe(2);
+    expect(outbox.markProcessed).toHaveBeenCalledWith(['a', 'stolen', 'c'], 'test:1');
   });
 
   it('stops the drain when the batch cannot be marked, leaving the leases to lapse', async () => {
@@ -220,7 +258,7 @@ describe('OutboxRelay', () => {
     vi.spyOn(service, 'claim')
       .mockResolvedValueOnce([message({ id: 'slow' })])
       .mockResolvedValue([]);
-    const markProcessed = vi.spyOn(service, 'markProcessed').mockResolvedValue(undefined);
+    const markProcessed = vi.spyOn(service, 'markProcessed').mockResolvedValue(['slow']);
     const relay = new OutboxRelay(service, () => slow, { owner: 'test:1' });
     relay.start();
 
