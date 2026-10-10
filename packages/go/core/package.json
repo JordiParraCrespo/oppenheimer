@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/go-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "RFC 7807 problem documents and slog setup shared by every Go service",
   "scripts": {

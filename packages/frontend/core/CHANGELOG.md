@@ -1,5 +1,175 @@
 # @oppenheimer/frontend-core
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Add a pluggable `analytics` module with feature flags: an adapter implements `getFeatureFlags()`, and `NoopAnalyticsClient` stands in whenever no provider is configured.
+- f099524: Add `useDeploymentCapabilities()`, so a consumer renders only the social providers a deployment has configured.
+- f099524: Add `createErrorMessageResolver`, which translates a failure from its problem `code`.
+- a0e23bd: Pass-through services are removed (`app.<module>` is the repository); `useHostPresence` and `refetchEverythingForNewIdentity` are added.
+- ba9abd0: Timing and retry decisions move to `CORE_CONFIG`
+  (`@oppenheimer/frontend-core/config`) and `CONSUMER_CONFIG`
+  (`@oppenheimer/frontend-consumer/config`); `createQueryClient`'s `staleTime`
+  now defaults to the kernel's. Values are unchanged.
+- ab97201: Unused code is removed, and each barrel exports only what the console imports; `pnpm check:unused` holds it there.
+- e717f42: Harden the runner link. PTY bytes are no longer dropped when a queue fills,
+  and the runner's writer sends control frames first, then takes attachments in
+  turn, so one pane's output no longer delays another pane's echo. Both sides
+  now ping every 15 s, a runner the control plane cannot write to is closed
+  rather than skipped, and epochs keep rising across API restarts. The
+  terminal's transport (`SessionStream`, the resize coalescer, the replay
+  stream) moves from `apps/web` into `@oppenheimer/frontend-consumer`, behind
+  `SessionsService.openStream` and `useSessionStream`.
+- 1a51afc: Add `ConfigManager` under `@oppenheimer/frontend-core/config`.
+- f099524: Add a shared TanStack Query cache-persistence policy, and reconcile a restored cache against the signed-in user so it cannot outlive its session on a shared browser or device.
+- bfa1020: Breaking: `profileQueryKey` is no longer exported from `@oppenheimer/frontend-core/react`; use `usersKeys.me()`. The capabilities query is keyed `['capabilities', 'deployment']` (was `['capabilities']`), and the persist revision is bumped to drop the old entry. `usersKeys.detail` takes `string | undefined` and `useUser` fetches with `skipToken` when there is no id. New `withCacheOnSuccess(options, update)`; every mutation hook uses it, so a caller's `onSuccess` no longer replaces the hook's cache update (logout clears the cache again). `useUpdateUser` invalidates `lists()` and `me()` instead of `all`; `useDeleteUser` removes the deleted `detail(id)`.
+- b32d3b8: - `@oppenheimer/frontend-core`: `useQuery` and `useQueries` that share entities across refetches.
+  - `@oppenheimer/frontend-consumer`: every query hook goes through them.
+  - `@oppenheimer/frontend-web`: `createDialogSlot` replaces `ConsoleDialogProvider`, `useConsoleDialog` and `useConsoleList`; `SidebarSearchField` is added.
+  - `@oppenheimer/design-system-web`: `useNow` shares one timer per interval; `FieldSelect` no longer reads a ref in render.
+  - `@oppenheimer/web`: fewer re-renders in the sidebars and the project dialog.
+- f099524: Expose `toAppError` and the `@MapApiError` decorator, so screens can show the server's `detail` and per-field errors.
+- f099524: Add a `/validation` entrypoint exporting `createZodErrorMap`, which resolves a Zod issue to a `validation.*` translation key.
+- 8fab63d: Add server-evaluated feature flags, wired into the API and the console.
+
+  Flags are declared in code, targeted in the database, evaluated on the server
+  and read on every client from one endpoint — the shape Stripe and Revolut
+  describe for their own. Ported from the Flama starter.
+
+  - **`@oppenheimer/shared`** gains `feature-flags/`: the `FEATURE_FLAGS` catalog
+    (every flag the code may read, with its kind, owner, safe default and — for
+    temporary flags — expiry), the pure evaluator (ordered rules, segments,
+    semver targeting on the app build, deterministic MurmurHash3 percentage
+    splits bucketed by organization), and the Zod schemas for targeting writes.
+    Like `agents` and `protocol` it is reached through its own subpaths, not the
+    root barrel: `@oppenheimer/shared/feature-flags`, and the Zod-free
+    `@oppenheimer/shared/feature-flags/catalog` for the web bundle. A `flags`
+    scope group, a `FeatureFlag` subject and a `GET /feature-flags/admin`
+    endpoint policy join the catalogs.
+  - **`@oppenheimer/api`** gains a `feature-flags` module. Every replica holds
+    all targeting in memory and evaluates without I/O, polling a cheap
+    fingerprint to stay in sync and keeping its last good snapshot through a
+    database blip. `GET /v1/feature-flags` serves the caller's evaluated client
+    flags (signed out too); the endpoints under `/v1/feature-flags/admin`,
+    `/segments` and `/changes` edit targeting, pull kill switches, manage
+    segments, explain an evaluation and read the audit trail, which every change
+    lands on through the outbox. `@RequireFlag('key')` gates a route on a flag,
+    and token creation is now behind the `api_token_creation` kill switch. New
+    error codes `FLAG_001`–`FLAG_007`. Migration `AddFeatureFlags`, every point
+    in time `timestamptz`.
+  - **`@oppenheimer/api-client`**: the regenerated client carries the feature
+    flag operations and DTOs.
+  - **`@oppenheimer/frontend-core`**: a `feature-flags` kernel module and
+    `useFeatureFlag` / `useFeatureFlagValue` / `useFeatureFlags`, typed by the
+    catalog, reading the API rather than PostHog. Flags are prefetched as soon as
+    the session is known, persisted with the query cache, and an `experiment`
+    flag records a `feature_flag_exposed` event. `OppenheimerApp.create` takes
+    `featureFlags: { platform, appVersion }`.
+
+    **Breaking:** feature flags leave the analytics port. `IAnalyticsClient` no
+    longer has `getFeatureFlags` / `onFeatureFlags`, `AnalyticsService` no longer
+    serves flags, `analyticsKeys.flags` is gone, and `isFlagEnabled` moved to the
+    `feature-flags` module. `useFeatureFlag(key)` keeps its name but now takes a
+    catalog key and reads the server's answer.
+
+  - **`@oppenheimer/frontend-web`**: the PostHog adapter drops its flag methods
+    and switches PostHog's own flag loading off.
+  - **`@oppenheimer/translations`**: messages for `FLAG_001`–`FLAG_007`, and the
+    control-plane copy for a flags screen (`control.flags`, `nav.featureFlags`).
+  - **`@oppenheimer/web`** reports its platform and build when it asks for its
+    flags.
+
+  `pnpm check:flags` (in CI) fails on a temporary flag past its expiry date and
+  on a flag the catalog declares but no code reads.
+
+- f099524: `UsersRepository.findAll` / `UsersService.findAll` widen their `role` filter to `Role`, matching the database-backed roles the API accepts.
+
+### Patch Changes
+
+- 9d7efce: `useErrorMessage` falls back to the generic message when react-i18next has no i18next instance, instead of throwing.
+- 669b0d3: Narrow the caller's effective permissions instead of casting them: `GET /users/me/permissions` serves free-form CASL rules, and the repository now keeps the ones that carry an `action` and a `subject`.
+- c412130: The Pull requests area reads the repositories you watch, and nothing until you
+  watch one. The queue answers with the rows it could fill and fills more over
+  the reads that follow, rather than making you wait for every part of every row;
+  a pull request it has not read yet is left out instead of shown with a lane and
+  a checks state nobody read. Your own pull requests are recognised from a
+  personal installation when you have no stored GitHub grant. The review
+  period's numbers are kept in the browser's cache, so Analytics draws them at
+  once instead of a skeleton, and a quarter's chart is drawn by the week, as the
+  artboard draws it. What a read could not show is one notice rather than a
+  callout per repository, part and refusal.
+- Updated dependencies [951a622]
+- Updated dependencies [27af598]
+- Updated dependencies [cb56034]
+- Updated dependencies [a0e23bd]
+- Updated dependencies [2063d42]
+- Updated dependencies [f099524]
+- Updated dependencies [604707a]
+- Updated dependencies [64d3f7a]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [669b0d3]
+- Updated dependencies [a880b19]
+- Updated dependencies [9ed9703]
+- Updated dependencies [7945f7e]
+- Updated dependencies [1094480]
+- Updated dependencies [09cea4c]
+- Updated dependencies [f099524]
+- Updated dependencies [7ed4e17]
+- Updated dependencies [79e30e5]
+- Updated dependencies [79e30e5]
+- Updated dependencies [83f3617]
+- Updated dependencies [cdc6219]
+- Updated dependencies [c078d0d]
+- Updated dependencies [8e2de68]
+- Updated dependencies [8e2de68]
+- Updated dependencies [fc0e75d]
+- Updated dependencies [88f7898]
+- Updated dependencies [a7aa829]
+- Updated dependencies [1a51afc]
+- Updated dependencies [2202daa]
+- Updated dependencies [5bd4a8b]
+- Updated dependencies [ed28ce2]
+- Updated dependencies [1c2ae71]
+- Updated dependencies [2dc27d2]
+- Updated dependencies [e505b9e]
+- Updated dependencies [0918701]
+- Updated dependencies [2701a0c]
+- Updated dependencies [a23b14e]
+- Updated dependencies [173bb4c]
+- Updated dependencies [cefbc53]
+- Updated dependencies [2d84b28]
+- Updated dependencies [9ffae03]
+- Updated dependencies [38b511f]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [dcc5fe1]
+- Updated dependencies [bbacd49]
+- Updated dependencies [5b93fd7]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [024f31b]
+- Updated dependencies [8fab63d]
+- Updated dependencies [b2fd6a1]
+- Updated dependencies [a566fac]
+- Updated dependencies [064c443]
+- Updated dependencies [3404cd3]
+- Updated dependencies [bb3c4e8]
+- Updated dependencies [ca05d90]
+- Updated dependencies [f101364]
+- Updated dependencies [f101364]
+- Updated dependencies [8f5fd3d]
+- Updated dependencies [097956a]
+- Updated dependencies [b6676f8]
+- Updated dependencies [b336aae]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+  - @oppenheimer/api-client@0.3.0
+  - @oppenheimer/shared@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
@@ -42,7 +212,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no
