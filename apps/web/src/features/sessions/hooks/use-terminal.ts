@@ -43,6 +43,8 @@ export function useTerminal(
     agentWindow?: boolean;
     onFiles?: (files: File[]) => void;
     hostId?: string;
+    /** A watcher's pane: no input (`SessionTerminalOptions.readOnly`). */
+    readOnly?: boolean;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -70,6 +72,7 @@ export function useTerminal(
     onFilesRef.current = options.onFiles;
   });
   const agentWindow = options.agentWindow ?? false;
+  const readOnly = options.readOnly ?? false;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -80,6 +83,7 @@ export function useTerminal(
     streamRef.current = stream;
     const unmount = mountSessionTerminal(container, stream, {
       agentWindow,
+      readOnly,
       onFiles: (files) => onFilesRef.current?.(files),
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
@@ -118,10 +122,13 @@ export function useTerminal(
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, generation]);
+  }, [createStream, agentWindow, readOnly, generation]);
 
   const hostId = options.hostId;
+  // No host, no list to watch: a shared pane's holder may not be signed in,
+  // and the hosts are not theirs to read.
   const presence = useHostPresence({
+    enabled: hostId !== undefined,
     watching: hostId !== undefined && status === 'offline',
     select: (hosts) => hosts.find((host) => host.id === hostId),
   });

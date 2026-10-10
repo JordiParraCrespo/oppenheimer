@@ -167,7 +167,7 @@ func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	attachment, err := s.Attach(ctx, "opp-attach:0", app.Size{Cols: 80, Rows: 24})
+	attachment, err := s.Attach(ctx, "opp-attach:0", app.Size{Cols: 80, Rows: 24}, false)
 	if err != nil {
 		t.Fatalf("attach: %v", err)
 	}

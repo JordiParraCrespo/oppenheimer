@@ -110,6 +110,9 @@ type attachment struct {
 	// input is the keystrokes waiting for the PTY. inputPump writes them, so
 	// a PTY that stops taking them never blocks the read loop.
 	input chan []byte
+	// readOnly is a watcher's attachment: its keystrokes are dropped here,
+	// whatever reached the link, as well as by tmux and by the relay.
+	readOnly bool
 }
 
 // newRunID mints the id every event key of this process starts with.
@@ -302,7 +305,7 @@ func (h *linkHandler) Disconnected(uint64) {
 // PTY, whose write blocks once the client behind it stops reading.
 func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte) {
 	att := h.attachmentByID(attachmentID)
-	if att == nil {
+	if att == nil || att.readOnly {
 		return
 	}
 	// The frame may be a view into the read buffer, which is not ours to keep.

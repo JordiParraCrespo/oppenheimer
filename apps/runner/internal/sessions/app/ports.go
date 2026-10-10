@@ -52,8 +52,9 @@ type Terminals interface {
 	// never share anything.
 	Paste(ctx context.Context, target, id, text string) error
 	// Attach runs `tmux attach` on a PTY and returns it. Closing the
-	// returned Attachment detaches without touching the session.
-	Attach(ctx context.Context, target string, size Size) (Attachment, error)
+	// returned Attachment detaches without touching the session. A
+	// read-only attachment neither types into the pane nor sizes it.
+	Attach(ctx context.Context, target string, size Size, readOnly bool) (Attachment, error)
 }
 
 // Pane is one pane of the tmux server, as the poll loop sees it.

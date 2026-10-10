@@ -4,6 +4,7 @@ import { Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { HostErrors } from '../../../../hosts/domain/hosts.errors';
+import { AttachTicketFactory } from '../../../application/attach-ticket.factory';
 import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
@@ -51,7 +52,7 @@ describe('IssueAttachTicketCommandHandler', () => {
     handler = new IssueAttachTicketCommandHandler(
       new SessionLoaderResolver(sessions),
       hosts as unknown as HostAccessPort,
-      cache as unknown as CacheService,
+      new AttachTicketFactory(cache as unknown as CacheService),
     );
   });
 

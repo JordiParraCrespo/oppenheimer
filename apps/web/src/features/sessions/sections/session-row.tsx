@@ -39,7 +39,7 @@ function dotFor(session: SessionEntity) {
  *
  * The row owns what only it reads (its menu, the half-typed rename, the rename
  * and move writes), so one row's keystroke redraws no other row. What it cannot
- * own goes up as one call each: the delete dialog, which must outlive the row,
+ * own goes up as one call each: the delete and share dialogs, which must outlive the row,
  * and a failed write, which the sidebar shows because a menu closes on its pick
  * and the row has no room. It subscribes to one boolean for being the open
  * session, not the route, so a navigation re-renders only the two rows whose
@@ -49,12 +49,14 @@ function dotFor(session: SessionEntity) {
 export function SessionRow({
   session,
   now,
+  onShare,
   dragDisabled,
   onDelete,
   onWrite,
 }: {
   session: SessionEntity;
   now: number;
+  onShare: (session: SessionEntity) => void;
   /** Whether the row stays put: while a filter or the search hides some of its neighbours. */
   dragDisabled: boolean;
   onDelete: (session: SessionEntity) => void;
@@ -129,6 +131,7 @@ export function SessionRow({
           onOpenChange={setMenuOpen}
           onRename={() => setDraft(session.name)}
           onMove={(projectId) => move.mutate({ id: session.id, projectId })}
+          onShare={() => onShare(session)}
           onDelete={() => onDelete(session)}
           projects={(menuOpen ? moveTargets() : []).map((target) => ({
             id: target.id,

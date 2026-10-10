@@ -82,6 +82,38 @@ export interface AttachTicket {
 }
 
 /**
+ * A link that opens a session's terminal to somebody outside the workspace,
+ * as its members see it. Never the secret: that exists once, in
+ * {@link CreatedShareLink}.
+ */
+export interface ShareLink {
+  id: string;
+  access: 'read' | 'write';
+  audience: 'anyone' | 'accounts' | 'people';
+  people: string[];
+  label: string | null;
+  expiresAt: Date | null;
+  revokedAt: Date | null;
+  /** Neither revoked nor expired. */
+  live: boolean;
+  createdAt: Date;
+}
+
+/** A link just made, and the secret that opens it — shown this once. */
+export interface CreatedShareLink extends ShareLink {
+  token: string;
+}
+
+/** What a link's holder may know about the session it opens. */
+export interface SharedSession {
+  name: string;
+  state: 'live' | 'stopped';
+  access: 'read' | 'write';
+  sharedBy: string | null;
+  expiresAt: Date | null;
+}
+
+/**
  * A session as the console needs it: a terminal, an agent, and a set of
  * checkouts on a host.
  *

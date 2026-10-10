@@ -1,3 +1,5 @@
+import type { ShareLinkViewer } from '../domain/session-share-link.entity';
+
 /** The Redis namespace of attach tickets, `attach:<random>`. */
 export const ATTACH_TICKET_PREFIX = 'attach:';
 
@@ -11,7 +13,21 @@ export interface AttachTicket {
   sessionId: string;
   organizationId: string;
   window: number;
+  /**
+   * The person the attach is judged as. Through a share link, the link's
+   * creator: the link opens what they could open, and no more.
+   */
   userId: string;
+  /** Present when the attach came through a share link. */
+  share?: AttachTicketShare;
+}
+
+export interface AttachTicketShare {
+  linkId: string;
+  /** A `read` link: the relay drops the attachment's input, the host attaches read-only. */
+  readOnly: boolean;
+  /** The signed-in holder, judged again on each re-check; `null` for nobody signed in. */
+  viewerUserId: string | null;
 }
 
 export interface SessionAttachTarget {
@@ -49,6 +65,16 @@ export interface SessionCredentialTarget {
 export interface SessionLookupPort {
   /** Unscoped: the ticket already proved who asked, and the caller re-checks membership. */
   findAttachTarget(sessionId: string): Promise<SessionAttachTarget | null>;
+  /**
+   * Whether a share link still opens this session for this holder: the same
+   * judgment (`SessionShareLinkEntity.refusalFor`) its ticket passed at mint,
+   * asked again. Unscoped: the ticket named the link.
+   */
+  shareLinkAdmits(
+    linkId: string,
+    sessionId: string,
+    viewer: ShareLinkViewer | null,
+  ): Promise<boolean>;
   /** Unscoped: the runner proved which host it is, and the caller checks it matches. */
   findCredentialTarget(
     sessionId: string,

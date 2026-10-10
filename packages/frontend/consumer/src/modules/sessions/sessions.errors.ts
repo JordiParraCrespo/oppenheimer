@@ -53,6 +53,22 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_014',
     message: 'Failed to get the host ready',
   },
+  SHARE_LINKS_FAILED: {
+    code: 'SESSIONS_CLIENT_015',
+    message: "Failed to load the session's share links",
+  },
+  SHARE_FAILED: {
+    code: 'SESSIONS_CLIENT_016',
+    message: 'Failed to share the session',
+  },
+  REVOKE_SHARE_FAILED: {
+    code: 'SESSIONS_CLIENT_017',
+    message: 'Failed to revoke the share link',
+  },
+  SHARED_SESSION_FAILED: {
+    code: 'SESSIONS_CLIENT_018',
+    message: 'Failed to open the shared session',
+  },
   /**
    * The API's own code for a file over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader

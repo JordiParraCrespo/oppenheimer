@@ -611,8 +611,9 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 }
 
 // Attach opens a PTY onto one window. Several devices may attach to the same
-// window; tmux sizes it to the one that resized last.
-func (s *Service) Attach(ctx context.Context, id string, window int, size Size) (Attachment, error) {
+// window; tmux sizes it to the writer that resized last. A read-only
+// attachment watches: it is never the one that sizes the window.
+func (s *Service) Attach(ctx context.Context, id string, window int, size Size, readOnly bool) (Attachment, error) {
 	session, err := s.awaitAttachable(ctx, id)
 	if err != nil {
 		return nil, err
@@ -620,7 +621,7 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size) 
 	if _, ok := session.Window(window); !ok {
 		return nil, domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
 	}
-	return s.terminals.Attach(ctx, session.Target(window), size)
+	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
 }
 
 // Send types into a window, which is how the browser's keystrokes arrive

@@ -361,6 +361,11 @@ earlier note:
   what the reader watches and nothing wider; the wider reach returns as
   one search rather than a listing per repository. That note holds the
   rule and what the reach cost (issue #247).
+- `versions/mvp/08-auth.md` had a terminal open only to a member of the
+  session's workspace. Since 2026-10-08 a member can share one with a
+  link, to watch or to type, for anyone, any account or named people
+  (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
+  as its creator's, so it opens nothing they could not.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06

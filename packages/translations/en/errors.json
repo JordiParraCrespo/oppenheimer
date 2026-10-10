@@ -182,7 +182,11 @@
     "GIT_003": "The branch could not be pushed.",
     "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
     "GIT_005": "A git command on the host took too long and was stopped.",
-    "CONSENT_CLIENT_002": "The server did not say where to send you next."
+    "CONSENT_CLIENT_002": "The server did not say where to send you next.",
+    "SESSIONS_021": "That share link doesn’t open anything. It may have expired or been revoked.",
+    "SESSIONS_022": "Sign in to open this share link.",
+    "SESSIONS_023": "This share link isn’t shared with you.",
+    "SESSIONS_024": "This session has as many share links as it can hold. Revoke one, then try again."
   },
   "notFound": {
     "title": "That page does not exist",

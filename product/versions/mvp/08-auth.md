@@ -88,7 +88,9 @@ history) to work on the MVP.
   and refuses otherwise. Attaching to a session needs a session in the
   caller's workspace plus a short-lived attach ticket minted by the
   control plane (01-protocol.md). The relay checks the ticket, never the
-  browser cookie, on the socket.
+  browser cookie, on the socket. The one way in from outside the
+  workspace is a share link (21), whose ticket is judged as its
+  creator's, so it opens nothing they could not.
 - **GitHub access is per session.** The control plane mints a one-hour
   installation token narrowed to the session's repository and hands it
   to the runner over the relay; nothing lands on disk (00-scope.md).

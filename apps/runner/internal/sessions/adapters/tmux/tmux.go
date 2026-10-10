@@ -352,9 +352,19 @@ func (s *Server) Paste(ctx context.Context, target, id, text string) error {
 // Attach runs `tmux attach` on a PTY. Detaching closes the PTY and leaves the
 // session running, which is the difference between a browser closing a tab
 // and a session ending.
-func (s *Server) Attach(ctx context.Context, target string, size app.Size) (app.Attachment, error) {
+//
+// A read-only client is attached with `-f read-only,ignore-size` (tmux 3.2):
+// tmux takes no keys from it and leaves it out of `window-size latest`, so
+// someone watching through a shared link cannot shrink the pane under the
+// people typing in it. The link handler drops its input too; this is the
+// half of that rule tmux itself holds.
+func (s *Server) Attach(ctx context.Context, target string, size app.Size, readOnly bool) (app.Attachment, error) {
 	// -d would detach other clients; several devices may watch one window.
-	cmd := exec.CommandContext(ctx, s.binary, s.args("attach-session", "-t", target)...) //nolint:gosec // fixed binary, arguments built here
+	rest := []string{"attach-session", "-t", target}
+	if readOnly {
+		rest = append(rest, "-f", "read-only,ignore-size")
+	}
+	cmd := exec.CommandContext(ctx, s.binary, s.args(rest...)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 	file, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
 	if err != nil {

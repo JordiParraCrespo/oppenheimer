@@ -332,6 +332,7 @@ type SessionAttach struct {
 	AttachmentID uint32 `json:"attachmentId"`
 	Cols         int    `json:"cols"`
 	Rows         int    `json:"rows"`
+	ReadOnly     bool   `json:"readOnly,omitempty"`
 }
 
 // SessionInput is the `session.input` message.

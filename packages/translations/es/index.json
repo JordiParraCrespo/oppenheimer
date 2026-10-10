@@ -248,7 +248,11 @@
       "GIT_003": "No se ha podido subir la rama.",
       "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
       "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido.",
-      "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar."
+      "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar.",
+      "SESSIONS_021": "Ese enlace no abre nada. Puede que haya caducado o se haya revocado.",
+      "SESSIONS_022": "Inicia sesión para abrir este enlace.",
+      "SESSIONS_023": "Este enlace no está compartido contigo.",
+      "SESSIONS_024": "Esta sesión ya tiene todos los enlaces que admite. Revoca uno e inténtalo de nuevo."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -631,7 +635,8 @@
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
-      "loadFailed": "No se han podido cargar tus sesiones."
+      "loadFailed": "No se han podido cargar tus sesiones.",
+      "share": "Compartir…"
     },
     "deleteSession": {
       "title": "¿Eliminar “{{name}}”?",
@@ -662,6 +667,96 @@
       "recent": "Última actividad",
       "oldest": "Más antiguas primero",
       "name": "Nombre"
+    },
+    "share": {
+      "title": "Compartir «{{name}}»",
+      "description": "Un enlace que abre el terminal de esta sesión a alguien de fuera de tu espacio de trabajo, mientras tú puedas abrirla, hasta que caduque o lo revoques. Verán todo lo que muestre el terminal, secretos y rutas incluidos, y revocarlo no borra lo que ya hayan visto.",
+      "access": "Pueden",
+      "read": "Mirar",
+      "readHint": "Ver el terminal en directo. Nada de lo que escriban le llega.",
+      "write": "Escribir",
+      "writeHint": "Escribir en el terminal: una shell en tu máquina, como tú.",
+      "readBadge": "Solo mirar",
+      "writeBadge": "Puede escribir",
+      "audience": "Quién puede abrirlo",
+      "people": "Solo las personas que indique",
+      "peopleHint": "Entran con uno de estos correos verificados.",
+      "accounts": "Cualquiera con sesión iniciada",
+      "accountsHint": "Cualquiera con el enlace y una cuenta de Oppenheimer.",
+      "anyone": "Cualquiera con el enlace",
+      "anyoneHint": "Sin iniciar sesión. Quien tenga el enlace tiene el terminal.",
+      "emails": "Correos",
+      "emailsPlaceholder": "ada@example.com, grace@example.com",
+      "emailsHint": "Sepáralos con comas, espacios o saltos de línea.",
+      "peopleInvalid": "Escribe al menos un correo, y solo correos.",
+      "lifetime": "Caduca",
+      "lifetimes": {
+        "1h": "En 1 hora",
+        "1d": "En 1 día",
+        "7d": "En 7 días",
+        "30d": "En 30 días",
+        "never": "Nunca"
+      },
+      "lifetimeSearch": "Buscar una caducidad",
+      "lifetimeNone": "No hay esa caducidad",
+      "lifetimeCapped": "Los enlaces que permiten escribir a cualquiera caducan en 7 días como máximo.",
+      "lifetimeTooLong": "Un enlace que permite escribir a cualquiera debe caducar en 7 días como máximo.",
+      "writeWarning": "Quien abra este enlace podrá ejecutar comandos en tu máquina como tú. Mejor indicar las personas y una caducidad corta.",
+      "writeNote": "Las personas que indiques podrán ejecutar comandos en tu máquina como tú.",
+      "create": "Crear enlace",
+      "creating": "Creando…",
+      "failed": "No se pudo crear el enlace.",
+      "linkTitle": "Enlace para compartir",
+      "onceOnly": "Cópialo ahora: solo se muestra una vez. Si se pierde, revócalo y crea otro.",
+      "another": "Otro enlace",
+      "live": "Enlaces activos",
+      "none": "No hay enlaces activos.",
+      "listFailed": "No se pudieron cargar los enlaces.",
+      "revoke": "Revocar",
+      "revoking": "Revocando…",
+      "revokeFailed": "No se pudo revocar el enlace.",
+      "until": "Hasta el {{date}}",
+      "noExpiry": "Sin caducidad",
+      "audiences": {
+        "anyone": "Cualquiera con el enlace",
+        "accounts": "Cualquiera con sesión iniciada"
+      }
+    },
+    "shared": {
+      "watching": "Mirando",
+      "typing": "Puedes escribir",
+      "sharedBy": "Compartida por {{name}}",
+      "status": {
+        "connecting": "Conectando…",
+        "live": "En directo",
+        "offline": "Máquina desconectada",
+        "closed": "Desconectado"
+      },
+      "ended": {
+        "stopped": "La sesión se detuvo.",
+        "resolved": "La sesión se cerró.",
+        "missing": "La sesión ya no existe.",
+        "unauthorized": "Este enlace ya no abre la sesión.",
+        "forbidden": "Este enlace ya no abre la sesión.",
+        "refused": "La máquina rechazó el terminal."
+      },
+      "gone": {
+        "title": "Este enlace no abre nada",
+        "body": "Puede que haya caducado o se haya revocado, o que la sesión se cerrara. Pide uno nuevo a quien lo compartió."
+      },
+      "signIn": {
+        "title": "Inicia sesión para abrir esta sesión",
+        "body": "Este enlace está compartido con cuentas de Oppenheimer.",
+        "action": "Iniciar sesión"
+      },
+      "notInvited": {
+        "title": "Este enlace no está compartido contigo",
+        "body": "Solo se abre para las personas que indica, por un correo verificado. Pide a quien lo compartió que añada el tuyo."
+      },
+      "stopped": {
+        "title": "Esta sesión está detenida",
+        "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y este enlace volverá a abrirla."
+      }
     }
   },
   "automations": {

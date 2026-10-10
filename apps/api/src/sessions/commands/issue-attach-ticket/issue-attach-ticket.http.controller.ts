@@ -20,9 +20,9 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import type { IssuedAttachTicket } from '../../application/attach-ticket.factory';
 import { AttachTicketResponseDto } from '../../dtos/session.response.dto';
 import { IssueAttachTicketCommand } from './issue-attach-ticket.command';
-import type { IssuedAttachTicket } from './issue-attach-ticket.command-handler';
 import { IssueAttachTicketRequest } from './issue-attach-ticket.request.dto';
 
 @ApiTags('Sessions')

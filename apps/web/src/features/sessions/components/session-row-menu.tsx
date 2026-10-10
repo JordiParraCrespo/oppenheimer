@@ -25,6 +25,7 @@ export function SessionRowMenu({
   onOpenChange,
   onRename,
   onMove,
+  onShare,
   onDelete,
   projects,
 }: {
@@ -32,6 +33,7 @@ export function SessionRowMenu({
   onOpenChange: (open: boolean) => void;
   onRename: () => void;
   onMove: (projectId: string) => void;
+  onShare: () => void;
   onDelete: () => void;
   projects: { id: string; name: string; isUnassigned?: boolean }[];
 }) {
@@ -58,6 +60,7 @@ export function SessionRowMenu({
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}
             </DropdownMenuPaneItem>
+            <DropdownMenuItem onClick={onShare}>{t('sessions.sidebar.share')}</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               {t('sessions.sidebar.delete')}
