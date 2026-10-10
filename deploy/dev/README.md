@@ -228,7 +228,7 @@ ssh admin@oppenheimer-dev 'sudo -u deploy cp /tmp/install.sh /srv/oppenheimer/pu
 
 Then, in `api.env`, set `RUNNER_RELEASE_BASE_URL=https://dev.example.com/releases`,
 `RUNNER_INSTALL_URL=https://dev.example.com/install.sh` and the printed
-`RUNNER_INSTALL_SHA256`, and run `oppctl reload`. Keep `RELEASE_PUBLIC_KEYS` the same
+`RUNNER_INSTALL_SHA256`, and run `sudo -u deploy oppctl reload`. Keep `RELEASE_PUBLIC_KEYS` the same
 from release to release: a runner only accepts updates signed by a key it was
 built with.
 
@@ -242,12 +242,12 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 | `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow |
 | `oppctl psql` | psql as the app's role |
 | `oppctl rollback` | Run the previous release's images and config again |
-| `oppctl reload [service…]` | Recreate services from the current release so a change to `config/` takes effect. Default `api web` |
+| `oppctl reload` | Recreate api, web and cloudflared from the current release so a change to `config/` takes effect |
 | `oppctl backup daily` | Dump and upload outside the schedule |
 | `oppctl doctor` | Checks config, keys, remotes, timers and Docker, and says when a reboot is due |
 
-Every subcommand runs from `/`, whatever directory you call it from, so
-`sudo -u deploy oppctl …` works from a home directory `deploy` cannot read.
+`oppctl` runs docker compose from `/`, so `sudo -u deploy oppctl …` works
+from a home directory `deploy` cannot read.
 
 ### Changing the configuration
 
@@ -256,15 +256,19 @@ container is created again: `env_file` is read when a container is created,
 and `docker restart` keeps the environment it was created with. Run
 
 ```bash
-sudo -u deploy oppctl reload          # api and web
-sudo -u deploy oppctl reload api      # the same: web always follows api
+sudo -u deploy oppctl reload
 ```
 
-It takes the deploy lock, recreates the named services from the current
-release with `host.env` loaded again, waits for them to be healthy and runs
-the same checks a deploy ends with. `web` is recreated whenever `api` is:
-its nginx resolves `api` once, when it starts, and a recreated API has a new
-address, so a console left running would proxy `/api` to nothing.
+Under the deploy lock, it recreates from the current release, in order and
+each only once the one before is healthy: `api`; then `web`, whose nginx
+resolves `api` once, when it starts; then `cloudflared`, whose origins are
+`web` and `api`. Postgres and Redis are not touched. It ends with the checks
+a deploy ends with.
+
+`api.env` is not part of a release, so `oppctl rollback` does not bring the
+previous one back. A reload that ends healthy keeps a copy as
+`config/api.env.last-good`; one that does not stops before the next service
+and points at that copy.
 
 The tunnel's `cloudflared.yml` is rendered from `host.env` at deploy time, so
 a change to `DEV_HOSTNAME` or `TUNNEL_ID` needs a deploy, not a reload.

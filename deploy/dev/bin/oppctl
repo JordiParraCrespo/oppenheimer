@@ -5,7 +5,7 @@
 #   oppctl doctor                                 is this server ready to deploy?
 #   oppctl deploy <sha> <bundle-dir>              what the CI deploy gate runs
 #   oppctl rollback                               back to the previous release
-#   oppctl reload [service…]                      recreate services (api web) to apply config/
+#   oppctl reload                                 recreate api, web, cloudflared to apply config/
 #   oppctl status | logs [service…] | psql
 #   oppctl backup {daily|weekly|check}            dump → encrypt → R2 (weekly: B2)
 #   oppctl restore                                plaintext pg_dump -Fc on stdin
@@ -35,12 +35,6 @@ KEEP_RELEASES=5
 HEALTH_TIMEOUT="${OPP_HEALTH_TIMEOUT:-300}"
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 HERE="$(cd "$(dirname "$SELF")/.." && pwd)"
-# Run from / whatever the caller's cwd: docker compose stats the working
-# directory, and `sudo -u deploy oppctl …` from a home `deploy` cannot read
-# fails with "stat .: permission denied". A relative path an argument names
-# (deploy's bundle) is resolved against CALLER_PWD.
-CALLER_PWD="$PWD"
-cd /
 APPS=(
   api
   # oppenheimer:begin web
@@ -48,6 +42,9 @@ APPS=(
   # oppenheimer:end web
   backup
 )
+
+# The header above: its title and the command list, up to the second bare `#`.
+usage() { awk 'NR > 1 && /^#$/ && ++bare == 2 { exit } NR > 1 { sub(/^# ?/, ""); print }' "$SELF" >&2; }
 
 log()  { printf '[oppctl] %s\n' "$*" >&2; }
 ok()   { printf '[oppctl] ok   %s\n' "$*" >&2; }
@@ -63,11 +60,13 @@ load_host_env() {
 }
 
 # Every compose call goes through here, so a release is always run with its own
-# compose file and image pins and this server's settings.
+# compose file and image pins and this server's settings. It runs from /:
+# compose stats its working directory, and `sudo -u deploy oppctl …` from a
+# home `deploy` cannot read would fail with "stat .: permission denied".
 compose() {
   local rel="$1"; shift
-  OPP_CONFIG="$CONFIG" docker compose -p "$PROJECT" --project-directory "$rel" -f "$rel/compose.yml" \
-    --env-file "$CONFIG/host.env" --env-file "$rel/release.env" "$@"
+  (cd / && OPP_CONFIG="$CONFIG" docker compose -p "$PROJECT" --project-directory "$rel" -f "$rel/compose.yml" \
+    --env-file "$CONFIG/host.env" --env-file "$rel/release.env" "$@")
 }
 
 current_release() { readlink -e "$CURRENT" 2>/dev/null || true; }
@@ -264,7 +263,6 @@ deploy_unwind() {
 cmd_deploy() {
   local sha="${1:-}" bundle="${2:-}"
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || die "usage: oppctl deploy <40-char sha> <bundle-dir>"
-  [[ "$bundle" = /* ]] || bundle="$CALLER_PWD/$bundle"
   [ -d "$bundle/deploy" ] || die "no deploy/ directory in $bundle"
   load_host_env
   check_config || die "this server is not configured — run 'oppctl doctor'"
@@ -329,38 +327,37 @@ cmd_rollback() {
 
 # Apply a change to config/ (api.env above all) to the running release.
 # `docker restart` is not enough: a container keeps the environment it was
-# created with, and env_file is read only when it is created. So the services
-# are recreated from the current release, with this server's settings loaded
-# again. Recreating the API gives it a new address, and nginx in `web`
-# resolves `api` once at start, so `web` is recreated with it, after it.
+# created with, and env_file is read only when it is created. One fixed
+# sequence, each step only once the one before is healthy: the API, then
+# web (its nginx resolves `api` once, at start), then cloudflared (its
+# origins are web and api). Nothing upstream is recreated (--no-deps).
+#
+# api.env is not part of a release, so `oppctl rollback` cannot bring the
+# previous one back: a reload that ends healthy keeps a copy as
+# api.env.last-good, and one that does not stops before touching the next
+# service and says where that copy is.
 cmd_reload() {
+  [ "$#" -eq 0 ] || die "usage: oppctl reload"
   load_host_env
-  local rel; rel="$(need_current)"
-  local -a svcs=("$@")
-  local known s
-  if [ "${#svcs[@]}" -eq 0 ]; then
-    svcs=(
-      api
-      # oppenheimer:begin web
-      web
-      # oppenheimer:end web
-    )
-  fi
-  known="$(compose "$rel" config --services)" || die "compose rejected $rel/compose.yml"
-  for s in "${svcs[@]}"; do
-    grep -qxF -- "$s" <<< "$known" || die "no service '$s' in $(basename "$rel") (one of: $(tr '\n' ' ' <<< "$known"))"
-  done
-  # oppenheimer:begin web
-  if printf '%s\n' "${svcs[@]}" | grep -qxF api && ! printf '%s\n' "${svcs[@]}" | grep -qxF web; then
-    log "recreating web too: its nginx resolved the old API address"
-    svcs+=(web)
-  fi
-  # oppenheimer:end web
   lock
-  log "recreating ${svcs[*]} from $(basename "$rel")"
-  compose "$rel" up -d --force-recreate --no-deps --wait "${svcs[@]}" || die "compose up failed for ${svcs[*]}"
+  local rel svc
+  local -a order=(
+    api
+    # oppenheimer:begin web
+    web
+    # oppenheimer:end web
+    cloudflared
+  )
+  rel="$(need_current)"
+  for svc in "${order[@]}"; do
+    log "recreating $svc from $(basename "$rel")"
+    compose "$rel" up -d --force-recreate --no-deps "$svc" \
+      && wait_healthy "$rel" "$svc" \
+      || die "$svc did not come back healthy; nothing after it was recreated. The last api.env that ran healthy is $CONFIG/api.env.last-good (diff it, fix api.env, reload again)"
+  done
   verify_release "$rel" || die "reloaded, but the release is not healthy"
-  ok "reloaded ${svcs[*]}"
+  cp -p "$CONFIG/api.env" "$CONFIG/api.env.last-good"
+  ok "reloaded api, web and cloudflared with this server's config"
 }
 
 # ---------------------------------------------------------------- backups ---
@@ -552,5 +549,5 @@ case "${1:-}" in
   logs)     shift; load_host_env; compose "$(need_current)" logs --tail 200 "$@" ;;
   psql)     load_host_env; compose "$(need_current)" exec postgres psql -U oppenheimer oppenheimer ;;
   notify)   shift; load_host_env; notify "$*" ;;
-  *) sed -n '2,13p' "$SELF" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+  *) usage; exit 2 ;;
 esac
