@@ -154,6 +154,7 @@ export type {
   SessionLaunchResponseDto,
   SessionPageMetaDto,
   SessionResponseDto,
+  SetHostSessionLimitRequest,
   SetRepositoryWatchRequest,
   SetUserPasswordRequest,
   SetUserRoleRequest,

@@ -198,3 +198,19 @@ export function useRenameHost(
     }),
   });
 }
+
+/** Refreshes the list for the same reason a rename does. */
+export function useSetHostSessionLimit(
+  options?: UseMutationOptions<HostEntity, Error, { id: string; maxSessions: number | null }>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, maxSessions }: { id: string; maxSessions: number | null }) =>
+      app.hosts.setSessionLimit(id, maxSessions),
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
+    }),
+  });
+}

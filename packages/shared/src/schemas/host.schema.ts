@@ -54,6 +54,23 @@ export const renameHostSchema = z.object({
 export type RenameHostDto = z.infer<typeof renameHostSchema>;
 
 /**
+ * The most sessions one host may run at once, whatever it is set to. Past this
+ * a person is not limiting the machine, and the number is a typo.
+ */
+export const HOST_MAX_SESSIONS_CEILING = 64;
+
+/**
+ * `PUT /hosts/{id}/session-limit`. How many sessions may have their agent up on
+ * the host at once; `null` goes back to the default derived from the machine
+ * (one per CPU, one per 2 GiB of memory, whichever is fewer).
+ */
+export const setHostSessionLimitSchema = z.object({
+  maxSessions: z.number().int().min(1).max(HOST_MAX_SESSIONS_CEILING).nullable(),
+});
+
+export type SetHostSessionLimitDto = z.infer<typeof setHostSessionLimitSchema>;
+
+/**
  * What a host row says about itself, in one word — the Settings hosts list's
  * right-hand column. Derived on read from three facts, never stored:
  *

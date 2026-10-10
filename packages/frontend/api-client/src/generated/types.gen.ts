@@ -790,6 +790,14 @@ export type HostResponseDto = {
      * Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.
      */
     runningSessionCount: number;
+    /**
+     * The session limit the owner set on this host; null when it uses the default derived from the machine.
+     */
+    maxSessions?: number | null;
+    /**
+     * How many sessions may run here at once: `maxSessions` when set, else one per CPU and one per 2 GiB of memory, whichever is fewer. Null for a host that has not reported its size, which is not limited.
+     */
+    sessionLimit?: number | null;
     lastSeenAt?: string | null;
     /**
      * What the machine is. Null until the runner has reported its facts.
@@ -995,6 +1003,10 @@ export type HostTimelinePageResponseDto = {
 
 export type RenameHostRequest = {
     name: string;
+};
+
+export type SetHostSessionLimitRequest = {
+    maxSessions: number | null;
 };
 
 export type AdminUserResponseDto = {
@@ -5517,6 +5529,38 @@ export type FindHostTimelineResponses = {
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
 
+export type SetHostSessionLimitData = {
+    body: SetHostSessionLimitRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/session-limit';
+};
+
+export type SetHostSessionLimitErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type SetHostSessionLimitError = SetHostSessionLimitErrors[keyof SetHostSessionLimitErrors];
+
+export type SetHostSessionLimitResponses = {
+    200: HostResponseDto;
+};
+
+export type SetHostSessionLimitResponse = SetHostSessionLimitResponses[keyof SetHostSessionLimitResponses];
+
 export type ListUsersData = {
     body?: never;
     path?: never;
@@ -6788,6 +6832,8 @@ export type CreateSessionErrors = {
     /**
      * SESSIONS_017 — The host’s runner takes no images
      *
+     * SESSIONS_021 — Host at capacity
+     *
      * SESSIONS_011 — The host's runner is older than the agent picked
      *
      * SESSIONS_006 — That project is archived
@@ -7112,6 +7158,8 @@ export type RestartSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_021 — Host at capacity
+     *
      * SESSIONS_005 — That session is closed
      */
     409: ProblemDetailsDto;

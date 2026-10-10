@@ -50,6 +50,7 @@ function host() {
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: new Date(),
       unpairedAt: null,
+      maxSessions: null,
     },
   });
 }

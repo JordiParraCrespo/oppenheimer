@@ -619,3 +619,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   when its replica's Redis subscriber connection closes, and every time one
   comes up, the first connect included, the reads it covers are refetched
   once. Behind the `workspace_event_stream` flag.
+- 2026-10-09: **A host has a session limit** (14). One per CPU and one
+  per 2 GiB of memory by default, whichever is fewer; its owner can set
+  1–64 from the host's menu. A create, a task start, an automation run or
+  a restart of a stopped session past it is refused (`SESSIONS_021`);
+  nothing queues, and nothing running is stopped.

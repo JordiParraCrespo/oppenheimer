@@ -13,6 +13,14 @@ export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
 export interface HostDetails {
   status: HostStatus;
   runningSessionCount: number;
+  /** The limit the owner set; `null` when the host uses the derived default. */
+  maxSessions: number | null;
+  /**
+   * How many sessions may run at once — `maxSessions`, or one per CPU and one
+   * per 2 GiB of memory, whichever is fewer. `null` for a host that has not
+   * reported its size, which is not limited.
+   */
+  sessionLimit: number | null;
   osName: string | null;
   cpuCount: number | null;
   memoryTotalBytes: number | null;
@@ -26,6 +34,8 @@ export interface HostDetails {
 const NO_DETAILS: HostDetails = {
   status: 'offline',
   runningSessionCount: 0,
+  maxSessions: null,
+  sessionLimit: null,
   osName: null,
   cpuCount: null,
   memoryTotalBytes: null,

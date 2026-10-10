@@ -37,6 +37,7 @@ function host(
       publicKeyFingerprint: FINGERPRINT,
       lastSeenAt: null,
       unpairedAt,
+      maxSessions: null,
     },
   });
 }
@@ -64,11 +65,25 @@ describe('HostAccessResolver', () => {
 
     await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({
       probedTools: ['git', 'grok'],
+      sessionLimit: null,
+    });
+  });
+
+  it('reports the session limit the machine’s size gives when none was set', async () => {
+    vi.mocked(hosts.findOneById).mockResolvedValue(
+      Some(host(null, { cpus: 4, memoryTotalBytes: 7.6 * 1024 ** 3 })),
+    );
+
+    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toMatchObject({
+      sessionLimit: 3,
     });
   });
 
   it('admits a host the caller can reach', async () => {
-    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({ probedTools: null });
+    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({
+      probedTools: null,
+      sessionLimit: null,
+    });
     expect(hosts.findOneById).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'jordi' }),
       'host-1',

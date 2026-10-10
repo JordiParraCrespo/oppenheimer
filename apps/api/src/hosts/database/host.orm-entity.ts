@@ -1,5 +1,13 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Check,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import type { HostCapabilities } from '../domain/host.entity';
 
 /**
@@ -9,6 +17,7 @@ import type { HostCapabilities } from '../domain/host.entity';
  * Why the key is a column here is on `HostEntity`.
  */
 @Entity('host')
+@Check('CHK_host_maxSessions', '"maxSessions" BETWEEN 1 AND 64')
 @Index(['ownerUserId'])
 export class HostOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
@@ -53,6 +62,10 @@ export class HostOrmEntity {
   /** Set when the host is unpaired. Unpairing never deletes the row. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   unpairedAt!: Date | null;
+
+  /** The owner's cap on running sessions; null is the default derived from the machine. */
+  @Column({ type: 'smallint', nullable: true })
+  maxSessions!: number | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

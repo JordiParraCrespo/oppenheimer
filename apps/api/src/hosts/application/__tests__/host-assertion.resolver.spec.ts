@@ -65,6 +65,7 @@ function hostWith(props: {
       capabilities: null,
       lastSeenAt: null,
       unpairedAt: null,
+      maxSessions: null,
       ...props,
     },
   });

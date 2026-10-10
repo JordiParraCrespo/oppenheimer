@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HostActionsMenu } from '../components/host-actions-menu';
 import { RemoveHostDialog } from '../dialogs/remove-host';
+import { SessionLimitDialog } from '../dialogs/session-limit';
 import { RenameHostForm } from '../forms/rename-host';
 import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
 
@@ -14,14 +15,15 @@ import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
  * One host on Settings (`design/version1/Settings.dc.html`): its dot, name
  * and meta line, its state and when it was last seen, and the ellipsis.
  *
- * The row owns what its menu opens — the inline rename and the remove dialog —
- * because the menu's content unmounts when it closes, and nothing above a row
- * reads either.
+ * The row owns what its menu opens — the inline rename, the session limit and
+ * the remove dialog — because the menu's content unmounts when it closes, and
+ * nothing above a row reads any of them.
  */
 export function HostRow({ host }: { host: HostEntity }) {
   const { t } = useTranslation();
   const [renaming, setRenaming] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [limiting, setLimiting] = useState(false);
   const resolveError = useErrorMessage();
   const rename = useRenameHost({
     onSuccess: (renamed) => {
@@ -69,7 +71,12 @@ export function HostRow({ host }: { host: HostEntity }) {
         meta={metaPartsOf(host).map(wordOf).join(' · ') || undefined}
         state={
           status === 'running'
-            ? t('hosts.settings.state.running', { count: host.details.runningSessionCount })
+            ? host.details.sessionLimit !== null
+              ? t('hosts.settings.state.runningOfLimit', {
+                  count: host.details.runningSessionCount,
+                  limit: host.details.sessionLimit,
+                })
+              : t('hosts.settings.state.running', { count: host.details.runningSessionCount })
             : t(`hosts.settings.state.${status}`)
         }
         // The frame's words: "connected" while the link is up, "last seen 2
@@ -90,10 +97,12 @@ export function HostRow({ host }: { host: HostEntity }) {
           <HostActionsMenu
             name={host.name}
             onRename={() => setRenaming(true)}
+            onLimit={() => setLimiting(true)}
             onRemove={() => setRemoving(true)}
           />
         }
       />
+      {limiting ? <SessionLimitDialog host={host} onClose={() => setLimiting(false)} /> : null}
       {removing ? <RemoveHostDialog host={host} onClose={() => setRemoving(false)} /> : null}
     </>
   );

@@ -15,6 +15,7 @@
   "projectSaved": "“{{name}}” saved.",
   "projectDeleted": "“{{name}}” deleted.",
   "hostRenamed": "Renamed to “{{name}}”.",
+  "hostSessionLimitChanged": "Session limit for “{{name}}” saved.",
   "hostRemoved": "“{{name}}” removed.",
   "deviceSignedOut": "“{{name}}” signed out.",
   "otherDevicesSignedOut": "Your other devices are signed out.",

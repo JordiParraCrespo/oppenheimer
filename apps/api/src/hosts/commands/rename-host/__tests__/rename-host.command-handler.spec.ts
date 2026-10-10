@@ -25,6 +25,7 @@ function host() {
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: null,
       unpairedAt: null,
+      maxSessions: null,
     },
   });
 }

@@ -21,6 +21,8 @@ function toEntity(data: HostDto): HostEntity {
     {
       status: data.status,
       runningSessionCount: data.runningSessionCount,
+      maxSessions: data.maxSessions ?? null,
+      sessionLimit: data.sessionLimit ?? null,
       osName: data.machine?.osName ?? null,
       cpuCount: data.machine?.cpuCount ?? null,
       memoryTotalBytes: data.machine?.memoryTotalBytes ?? null,
@@ -81,6 +83,19 @@ export class HostsRepository {
     const data = await unwrapBody(
       heyApiSdk.renameHost({ path: { id }, body: { name } }),
       HostsErrors.RENAME_FAILED,
+    );
+    return toEntity(data);
+  }
+
+  /**
+   * How many sessions may run on the host at once; `null` goes back to the
+   * default the API derives from the machine. Running sessions are never stopped.
+   */
+  @MapApiError(HostsErrors.SESSION_LIMIT_FAILED)
+  async setSessionLimit(id: string, maxSessions: number | null): Promise<HostEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.setHostSessionLimit({ path: { id }, body: { maxSessions } }),
+      HostsErrors.SESSION_LIMIT_FAILED,
     );
     return toEntity(data);
   }

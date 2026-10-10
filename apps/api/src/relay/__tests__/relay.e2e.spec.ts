@@ -131,6 +131,7 @@ async function boot(): Promise<World> {
       publicKeyFingerprint: keyFingerprint(keys.publicBase64) as string,
       lastSeenAt: null,
       unpairedAt: null,
+      maxSessions: null,
     },
   });
   const hosts = {

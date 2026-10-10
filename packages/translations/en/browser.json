@@ -208,6 +208,7 @@
       "SESSIONS_017": "This host needs a newer runner before it can take that file. Update the runner, then try again.",
       "SESSIONS_019": "An attached file expired before the session started. Send again to upload it anew.",
       "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
+      "SESSIONS_021": "This host is already running as many sessions as its limit allows. Stop one, or raise the limit in Settings → Hosts.",
       "HOSTS_007": "No file is waiting for that command.",
       "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
       "AUTOMATIONS_002": "Choose a workspace before working with automations.",
@@ -1530,6 +1531,8 @@
       "state": {
         "running_one": "Running · {{count}} session",
         "running_other": "Running · {{count}} sessions",
+        "runningOfLimit_one": "Running · {{count}} of {{limit}} sessions",
+        "runningOfLimit_other": "Running · {{count}} of {{limit}} sessions",
         "idle": "Idle",
         "offline": "Offline"
       },
@@ -1554,7 +1557,16 @@
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
       "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
-      "removeFailed": "Could not remove this host. Try again."
+      "removeFailed": "Could not remove this host. Try again.",
+      "sessionLimit": {
+        "action": "Session limit",
+        "title": "Session limit for {{name}}",
+        "description": "How many sessions may run on this host at once. Past it, starting a session is refused until one stops; lowering it stops nothing.",
+        "label": "Sessions at once",
+        "emptyDefault": "Leave empty for this machine’s default: {{limit}}, one per CPU and one per 2 GB of memory, whichever is fewer.",
+        "empty": "Leave empty for this machine’s default: one per CPU and one per 2 GB of memory, whichever is fewer.",
+        "failed": "Could not change the session limit. Try again."
+      }
     }
   },
   "settings": {
@@ -1940,6 +1952,7 @@
     "projectSaved": "“{{name}}” saved.",
     "projectDeleted": "“{{name}}” deleted.",
     "hostRenamed": "Renamed to “{{name}}”.",
+    "hostSessionLimitChanged": "Session limit for “{{name}}” saved.",
     "hostRemoved": "“{{name}}” removed.",
     "deviceSignedOut": "“{{name}}” signed out.",
     "otherDevicesSignedOut": "Your other devices are signed out.",

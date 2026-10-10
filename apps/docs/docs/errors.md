@@ -470,6 +470,7 @@ are never reissued.
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 | `SESSIONS_019` <a id="sessions_019" /> | An attached file is no longer waiting           | 410  |
 | `SESSIONS_020` <a id="sessions_020" /> | Too many files are waiting to be sent           | 429  |
+| `SESSIONS_021` <a id="sessions_021" /> | The host is running as many sessions as it allows | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -516,6 +517,16 @@ create that names them in `attachmentIds` answers `016` or `017` before it write
 anything, when the host cannot take them now, and `019` when an id is not waiting for
 the caller: it expired, or it was never theirs. The two are one answer, so an id cannot
 be probed.
+
+`SESSIONS_021` is a host at its session limit: starting a session there, or restarting
+a stopped one, would put more agents on the machine than its owner allows. The limit
+is set per host (`PUT /hosts/{id}/session-limit`, 1 to 64), and a host with none set
+gets one per CPU and one per 2 GiB of memory, whichever is fewer; a host whose runner
+has not reported its size is not limited. Restarting a session that is still running
+is never refused, since it already holds its slot, and lowering a limit stops nothing.
+The check is not a lock, so two starts racing for the last slot can both land. Nothing
+is queued: stop a session, or raise the limit, and start again. The problem's
+`running` and `limit` members say how full the host is.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a

@@ -5,6 +5,7 @@ import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
+import { requireHostCapacity } from '../../application/require-host-capacity.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
@@ -46,9 +47,11 @@ export class RestartSessionCommandHandler
     const session = await this.loader.requireLive(command.scope, command.sessionId);
 
     // Nothing restarts under a retired project, or on a host the caller can no
-    // longer use (a grant revoked, the host unpaired).
+    // longer use (a grant revoked, the host unpaired). A stopped session coming
+    // back takes a slot; a running one restarting already holds its own.
     await requireActiveProject(this.projects, command.scope, session.projectId);
-    await this.hosts.assertUsable(command.scope, session.hostId);
+    const host = await this.hosts.assertUsable(command.scope, session.hostId);
+    if (!session.isRunning) await requireHostCapacity(this.sessions, session.hostId, host);
 
     await this.sessions.appendEvents(session, [
       {

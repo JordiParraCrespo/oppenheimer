@@ -38,6 +38,8 @@
     "state": {
       "running_one": "Running · {{count}} session",
       "running_other": "Running · {{count}} sessions",
+      "runningOfLimit_one": "Running · {{count}} of {{limit}} sessions",
+      "runningOfLimit_other": "Running · {{count}} of {{limit}} sessions",
       "idle": "Idle",
       "offline": "Offline"
     },
@@ -62,6 +64,15 @@
     "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
     "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
     "renameFailed": "Could not rename this host. Try again.",
-    "removeFailed": "Could not remove this host. Try again."
+    "removeFailed": "Could not remove this host. Try again.",
+    "sessionLimit": {
+      "action": "Session limit",
+      "title": "Session limit for {{name}}",
+      "description": "How many sessions may run on this host at once. Past it, starting a session is refused until one stops; lowering it stops nothing.",
+      "label": "Sessions at once",
+      "emptyDefault": "Leave empty for this machine’s default: {{limit}}, one per CPU and one per 2 GB of memory, whichever is fewer.",
+      "empty": "Leave empty for this machine’s default: one per CPU and one per 2 GB of memory, whichever is fewer.",
+      "failed": "Could not change the session limit. Try again."
+    }
   }
 }

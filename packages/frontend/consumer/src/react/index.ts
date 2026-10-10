@@ -37,6 +37,7 @@ export {
   useHostsSnapshot,
   useRemoveHost,
   useRenameHost,
+  useSetHostSessionLimit,
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,

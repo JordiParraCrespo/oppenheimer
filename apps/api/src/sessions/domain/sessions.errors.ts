@@ -167,4 +167,13 @@ export const SessionErrors = {
     message: 'Too many files are waiting to be sent',
     httpStatus: 429,
   },
+  /**
+   * The host already runs as many sessions as its limit allows. Stopping one,
+   * or raising the limit in the host's settings, makes room; nothing is queued.
+   */
+  HOST_AT_CAPACITY: {
+    code: 'SESSIONS_021',
+    message: 'The host is running as many sessions as it allows',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

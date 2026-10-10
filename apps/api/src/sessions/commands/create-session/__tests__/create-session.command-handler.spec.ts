@@ -115,13 +115,14 @@ describe('CreateSessionCommandHandler', () => {
     links = linksWith(['session.image', 'session.create.images']);
     sessions = {
       findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
+      countRunningByHost: vi.fn().mockResolvedValue(new Map()),
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
         session,
         created: true,
         refused: null,
       })),
     } as unknown as WorkSessionRepositoryPort;
-    hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
+    hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null, sessionLimit: null }) };
     dispatch = {
       create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
     } as unknown as SessionDispatchPort;
@@ -286,12 +287,42 @@ describe('CreateSessionCommandHandler', () => {
     // unknown agent after the session was recorded.
     hosts.assertUsable.mockResolvedValue({
       probedTools: ['git', 'tmux', 'claude', 'codex', 'opencode'],
+      sessionLimit: null,
     });
     const grok = command({ input: { ...INPUT, agent: 'grok' } });
 
     await expect(handler.execute(grok)).rejects.toMatchObject({ code: 'SESSIONS_011' });
     expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
     expect(dispatch.create).not.toHaveBeenCalled();
+  });
+
+  describe('the host’s session limit', () => {
+    it('refuses a session on a host already running as many as it allows, before writing anything', async () => {
+      hosts.assertUsable.mockResolvedValue({ probedTools: null, sessionLimit: 3 });
+      vi.mocked(sessions.countRunningByHost).mockResolvedValue(new Map([[INPUT.hostId, 3]]));
+
+      await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_021' });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+      expect(dispatch.create).not.toHaveBeenCalled();
+    });
+
+    it('starts the session that takes the last free slot', async () => {
+      hosts.assertUsable.mockResolvedValue({ probedTools: null, sessionLimit: 3 });
+      vi.mocked(sessions.countRunningByHost).mockResolvedValue(new Map([[INPUT.hostId, 2]]));
+
+      await handler.execute(command());
+
+      expect(dispatch.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('answers a retry with its session even when the host has filled up since', async () => {
+      hosts.assertUsable.mockResolvedValue({ probedTools: null, sessionLimit: 1 });
+      vi.mocked(sessions.countRunningByHost).mockResolvedValue(new Map([[INPUT.hostId, 1]]));
+      const existing = { id: 'session-1' } as WorkSessionEntity;
+      vi.mocked(sessions.findOneByIdempotencyKey).mockResolvedValue(Some(existing));
+
+      await expect(handler.execute(command())).resolves.toMatchObject({ sessionId: 'session-1' });
+    });
   });
 
   describe('attached images', () => {

@@ -4,10 +4,11 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import type { HostFactsDto } from '@oppenheimer/shared';
+import { HOST_MAX_SESSIONS_CEILING, type HostFactsDto } from '@oppenheimer/shared';
 import { HostRegisteredDomainEvent } from './events/host-registered.domain-event';
 import { HostRenamedDomainEvent } from './events/host-renamed.domain-event';
 import { HostUnpairedDomainEvent } from './events/host-unpaired.domain-event';
+import { derivedSessionLimit, hostSizeOf } from './host-session-limit.policy';
 
 /** Whatever the runner last reported about the machine, stored as it arrived. */
 export type HostCapabilities = Record<string, unknown>;
@@ -38,6 +39,11 @@ export interface HostProps {
   lastSeenAt: Date | null;
   /** Set when the host is unpaired, from either end. The row is kept. */
   unpairedAt: Date | null;
+  /**
+   * How many sessions may have their agent up here at once, as its owner set
+   * it; `null` is the default derived from the machine (`sessionLimit`).
+   */
+  maxSessions: number | null;
 }
 
 export interface RegisterHostProps {
@@ -106,6 +112,7 @@ export class HostEntity extends AggregateRoot<HostProps> {
         publicKeyFingerprint: props.publicKeyFingerprint,
         lastSeenAt: null,
         unpairedAt: null,
+        maxSessions: null,
       },
     });
 
@@ -169,6 +176,18 @@ export class HostEntity extends AggregateRoot<HostProps> {
     return this.props.unpairedAt;
   }
 
+  get maxSessions(): number | null {
+    return this.props.maxSessions;
+  }
+
+  /**
+   * How many sessions may run here at once: what the owner set, else what the
+   * machine's size gives, else no limit for a host that has not described itself.
+   */
+  get sessionLimit(): number | null {
+    return this.props.maxSessions ?? derivedSessionLimit(hostSizeOf(this.props.capabilities));
+  }
+
   get isUnpaired(): boolean {
     return this.props.unpairedAt !== null;
   }
@@ -192,6 +211,14 @@ export class HostEntity extends AggregateRoot<HostProps> {
         reason: 'A person renamed the host; its timeline records it',
       }),
     );
+  }
+
+  /** `null` goes back to the derived default. */
+  limitSessions(maxSessions: number | null): void {
+    if (this.props.maxSessions === maxSessions) return;
+    this.props.maxSessions = maxSessions;
+    this.setUpdatedAt(new Date());
+    this.validate();
   }
 
   /**
@@ -222,6 +249,12 @@ export class HostEntity extends AggregateRoot<HostProps> {
     }
     if (!this.props.publicKey?.trim()) {
       throw new ArgumentNotProvidedException('A host must have a public key');
+    }
+    const max = this.props.maxSessions;
+    if (max !== null && (!Number.isInteger(max) || max < 1 || max > HOST_MAX_SESSIONS_CEILING)) {
+      throw new ArgumentInvalidException(
+        `A host session limit is a whole number from 1 to ${HOST_MAX_SESSIONS_CEILING}`,
+      );
     }
     if (!FINGERPRINT.test(this.props.publicKeyFingerprint)) {
       throw new ArgumentInvalidException(

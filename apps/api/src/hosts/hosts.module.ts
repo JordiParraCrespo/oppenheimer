@@ -27,6 +27,8 @@ import { RenameHostCommandHandler } from './commands/rename-host/rename-host.com
 import { RenameHostHttpController } from './commands/rename-host/rename-host.http.controller';
 import { RevokePairingTokenCommandHandler } from './commands/revoke-pairing-token/revoke-pairing-token.command-handler';
 import { RevokePairingTokenHttpController } from './commands/revoke-pairing-token/revoke-pairing-token.http.controller';
+import { SetHostSessionLimitCommandHandler } from './commands/set-host-session-limit/set-host-session-limit.command-handler';
+import { SetHostSessionLimitHttpController } from './commands/set-host-session-limit/set-host-session-limit.http.controller';
 import { UninstallHostCommandHandler } from './commands/uninstall-host/uninstall-host.command-handler';
 import { UninstallHostHttpController } from './commands/uninstall-host/uninstall-host.http.controller';
 import { UnpairHostCommandHandler } from './commands/unpair-host/unpair-host.command-handler';
@@ -88,6 +90,7 @@ const httpControllers = [
   FindHostHttpController,
   FindHostTimelineHttpController,
   RenameHostHttpController,
+  SetHostSessionLimitHttpController,
   UnpairHostHttpController,
 ];
 
@@ -96,6 +99,7 @@ const commandHandlers: Provider[] = [
   RevokePairingTokenCommandHandler,
   RegisterHostCommandHandler,
   RenameHostCommandHandler,
+  SetHostSessionLimitCommandHandler,
   UnpairHostCommandHandler,
   UninstallHostCommandHandler,
   CollectSessionImageCommandHandler,

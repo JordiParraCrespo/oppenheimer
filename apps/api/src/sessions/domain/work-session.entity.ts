@@ -254,6 +254,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   }
 
   /**
+   * Its agent is up or on its way: what a host's session limit counts, by the
+   * same rule as `WorkSessionRepositoryPort.countRunningByHost`.
+   */
+  get isRunning(): boolean {
+    const { state, stoppedAt } = this.props;
+    return (state === 'starting' || state === 'open') && !stoppedAt;
+  }
+
+  /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
    * to type into; both are facts about the session, whatever the input is.

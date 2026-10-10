@@ -74,6 +74,7 @@ function existingHost(fingerprint: string, publicKey: string) {
       publicKeyFingerprint: fingerprint,
       lastSeenAt: null,
       unpairedAt: null,
+      maxSessions: null,
     },
   });
 }

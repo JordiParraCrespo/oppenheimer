@@ -25,4 +25,9 @@ export interface UsableHost {
    * launch, so this is also what that runner can start.
    */
   probedTools: readonly string[] | null;
+  /**
+   * How many sessions may run on it at once (`HostEntity.sessionLimit`); null
+   * for a host that has not reported its size and has no limit set.
+   */
+  sessionLimit: number | null;
 }

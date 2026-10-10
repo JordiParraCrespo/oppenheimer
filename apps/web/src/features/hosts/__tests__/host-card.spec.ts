@@ -19,6 +19,8 @@ function host(
     {
       status: 'idle',
       runningSessionCount: 0,
+      maxSessions: null,
+      sessionLimit: null,
       osName: null,
       cpuCount: null,
       memoryTotalBytes: null,

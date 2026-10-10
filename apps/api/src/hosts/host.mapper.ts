@@ -131,6 +131,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     record.publicKeyFingerprint = entity.publicKeyFingerprint;
     record.lastSeenAt = entity.lastSeenAt;
     record.unpairedAt = entity.unpairedAt;
+    record.maxSessions = entity.maxSessions;
     return record;
   }
 
@@ -161,6 +162,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
         publicKeyFingerprint: record.publicKeyFingerprint,
         lastSeenAt: metadata ? (metadata.vitals?.lastSeenAt ?? null) : record.lastSeenAt,
         unpairedAt: record.unpairedAt,
+        maxSessions: record.maxSessions,
       },
     });
   }
@@ -280,6 +282,8 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.online = online;
     dto.status = hostStatusOf({ unpaired: entity.isUnpaired, online, runningSessions });
     dto.runningSessionCount = runningSessions;
+    dto.maxSessions = entity.maxSessions;
+    dto.sessionLimit = entity.sessionLimit;
     dto.lastSeenAt = entity.lastSeenAt;
     dto.machine = view.inventory ? this.toMachineResponse(view.inventory) : null;
     dto.vitals = view.vitals ? this.toVitalsResponse(view.vitals) : null;

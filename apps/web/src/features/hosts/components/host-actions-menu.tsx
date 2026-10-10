@@ -10,17 +10,19 @@ import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The ellipsis on a host card: Rename, then Remove host. The frame's Copy
+ * The ellipsis on a host card: Rename, Session limit, then Remove host. The frame's Copy
  * host ID is left out for now (decided 2026-09-26). Props only — the row
  * owns what each one opens.
  */
 export function HostActionsMenu({
   name,
   onRename,
+  onLimit,
   onRemove,
 }: {
   name: string;
   onRename: () => void;
+  onLimit: () => void;
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
@@ -39,6 +41,9 @@ export function HostActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={6}>
         <DropdownMenuItem onClick={onRename}>{t('hosts.settings.rename')}</DropdownMenuItem>
+        <DropdownMenuItem onClick={onLimit}>
+          {t('hosts.settings.sessionLimit.action')}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={onRemove}>
           {t('hosts.settings.remove')}

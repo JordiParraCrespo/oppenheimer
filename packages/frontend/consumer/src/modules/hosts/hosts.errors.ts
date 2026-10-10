@@ -21,4 +21,8 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_004',
     message: 'Failed to rename the host',
   },
+  SESSION_LIMIT_FAILED: {
+    code: 'HOSTS_CLIENT_005',
+    message: 'Failed to change the host’s session limit',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

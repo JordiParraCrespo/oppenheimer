@@ -142,6 +142,7 @@
     "SESSIONS_017": "This host needs a newer runner before it can take that file. Update the runner, then try again.",
     "SESSIONS_019": "An attached file expired before the session started. Send again to upload it anew.",
     "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
+    "SESSIONS_021": "This host is already running as many sessions as its limit allows. Stop one, or raise the limit in Settings → Hosts.",
     "HOSTS_007": "No file is waiting for that command.",
     "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
     "AUTOMATIONS_002": "Choose a workspace before working with automations.",

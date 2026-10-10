@@ -89,6 +89,24 @@ already on the wire for it.
   Go, so an older runner still registers and an older control plane
   never sees the key. It lives in `capabilities` with the rest of the
   inventory rather than in a column: nothing queries by it.
+- **A host has a session limit** (decided 2026-10-09). How many
+  sessions may have their agent up on it at once, by the same "running"
+  rule as `runningSessionCount`. Its owner sets it from the host's menu
+  (Session limit), 1 to 64, through `PUT /hosts/{id}/session-limit`; a
+  host with none set gets one per CPU and one per 2 GiB of memory,
+  whichever is fewer, never below one, read from the facts the runner
+  reported (`hosts/domain/host-session-limit.policy.ts`). A host that
+  has not reported its size is not limited on a guess. The default is
+  sized for what an agent *runs* (builds, test suites), not for the agent
+  itself, which is a few hundred megabytes idle. Starting a session past
+  it, from a person, a task or an automation, or restarting a stopped
+  one, is refused with `SESSIONS_021`; nothing is queued, and lowering
+  the limit stops nothing. It is a check before the write, not a lock: two
+  starts racing for the last slot can both land, and one extra agent does
+  not defeat the point of the limit, while a lock would cost every create.
+  The limit lives in the control plane, not the runner, because the
+  control plane is what decides a session starts; a host driven from its
+  own command line is not limited.
 
 ## Not taken from the frame
 
@@ -113,7 +131,8 @@ already on the wire for it.
 - **Copy host ID is left out for now.** The frame shows `h_7f3a` beside
   it, but the id is the row's 36-character UUID, and no short form exists
   to show. Decided 2026-09-26: the menu holds Rename and Remove host until
-  there is a reason to hand the id to someone.
+  there is a reason to hand the id to someone. (Session limit joined them
+  on 2026-10-09.)
 
 ## Open questions
 

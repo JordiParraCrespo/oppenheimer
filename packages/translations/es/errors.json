@@ -142,6 +142,7 @@
     "SESSIONS_017": "Este equipo necesita un runner más reciente para recibir ese archivo. Actualízalo y vuelve a intentarlo.",
     "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
     "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
+    "SESSIONS_021": "Este equipo ya ejecuta tantas sesiones como permite su límite. Detén una o sube el límite en Ajustes → Hosts.",
     "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
     "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
     "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",

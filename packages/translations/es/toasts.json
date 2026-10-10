@@ -15,6 +15,7 @@
   "projectSaved": "Se ha guardado «{{name}}».",
   "projectDeleted": "Se ha eliminado «{{name}}».",
   "hostRenamed": "Renombrado a «{{name}}».",
+  "hostSessionLimitChanged": "Se ha guardado el límite de sesiones de «{{name}}».",
   "hostRemoved": "Se ha quitado «{{name}}».",
   "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
   "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",

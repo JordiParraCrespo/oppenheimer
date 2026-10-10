@@ -44,8 +44,7 @@ export class CreateSessionHttpController {
   @Version('1')
   @CheckPolicies({ action: 'create', subject: 'Session' })
   @RequireScopes('sessions:write')
-  // A session is directories, a git checkout and a process on somebody's machine.
-  // The limit is about what a loop can do to a laptop, not about the API.
+  // A session is a process on somebody's machine: this limits what a loop does to a laptop.
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Start a session',
@@ -76,6 +75,7 @@ export class CreateSessionHttpController {
     code: 'SESSIONS_011',
   })
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
+  @ApiProblemResponse({ status: 409, description: 'Host at capacity', code: 'SESSIONS_021' })
   @ApiProblemResponse({
     status: 409,
     description: 'The host’s runner takes no images',

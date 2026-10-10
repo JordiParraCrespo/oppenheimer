@@ -56,7 +56,11 @@ function project() {
 }
 
 describe('RestartSessionCommandHandler', () => {
-  let sessions: { findOneById: ReturnType<typeof vi.fn>; appendEvents: ReturnType<typeof vi.fn> };
+  let sessions: {
+    findOneById: ReturnType<typeof vi.fn>;
+    appendEvents: ReturnType<typeof vi.fn>;
+    countRunningByHost: ReturnType<typeof vi.fn>;
+  };
   let hosts: { assertUsable: ReturnType<typeof vi.fn> };
   let dispatch: { restart: ReturnType<typeof vi.fn> };
   let handler: RestartSessionCommandHandler;
@@ -67,11 +71,12 @@ describe('RestartSessionCommandHandler', () => {
     sessions = {
       findOneById: vi.fn().mockResolvedValue(Some(work)),
       appendEvents: vi.fn().mockResolvedValue(undefined),
+      countRunningByHost: vi.fn().mockResolvedValue(new Map()),
     };
     const projects = {
       findOneById: vi.fn().mockResolvedValue(Some(project())),
     } as unknown as ProjectLookupPort;
-    hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
+    hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null, sessionLimit: null }) };
     dispatch = { restart: vi.fn().mockResolvedValue({ delivered: true, hints: [] }) };
     const launches = { build: vi.fn().mockResolvedValue({}) };
     handler = new RestartSessionCommandHandler(
@@ -105,5 +110,29 @@ describe('RestartSessionCommandHandler', () => {
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_001' });
     expect(sessions.appendEvents).not.toHaveBeenCalled();
     expect(dispatch.restart).not.toHaveBeenCalled();
+  });
+
+  describe('on a host at its session limit', () => {
+    beforeEach(() => {
+      hosts.assertUsable.mockResolvedValue({ probedTools: null, sessionLimit: 2 });
+      sessions.countRunningByHost.mockResolvedValue(new Map([['host-1', 2]]));
+    });
+
+    it('refuses to bring a stopped session back, and records and dispatches nothing', async () => {
+      work.recordEvents([
+        { seq: 1, kind: SESSION_EVENT_KINDS.STARTED, payload: {}, occurredAt: new Date() },
+        { seq: 2, kind: SESSION_EVENT_KINDS.STOPPED, payload: {}, occurredAt: new Date() },
+      ]);
+
+      await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_021' });
+      expect(sessions.appendEvents).not.toHaveBeenCalled();
+      expect(dispatch.restart).not.toHaveBeenCalled();
+    });
+
+    it('restarts a running session, which already holds its own slot', async () => {
+      await handler.execute(command());
+
+      expect(dispatch.restart).toHaveBeenCalledOnce();
+    });
   });
 });

@@ -5827,6 +5827,81 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/session-limit": {
+      "put": {
+        "description": "A number from 1 to 64, or null for the default derived from the machine. Sessions already running are never stopped; past the limit, starting or restarting one answers SESSIONS_021.",
+        "operationId": "setHostSessionLimit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetHostSessionLimitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set how many sessions a host may run at once",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -8554,7 +8629,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_017 — The host’s runner takes no images\n\nSESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
+            "description": "SESSIONS_017 — The host’s runner takes no images\n\nSESSIONS_021 — Host at capacity\n\nSESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9241,7 +9316,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_005 — That session is closed",
+            "description": "SESSIONS_021 — Host at capacity\n\nSESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16492,6 +16567,18 @@
             "minimum": 0,
             "description": "Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s."
           },
+          "maxSessions": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "description": "The session limit the owner set on this host; null when it uses the default derived from the machine."
+          },
+          "sessionLimit": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "description": "How many sessions may run here at once: `maxSessions` when set, else one per CPU and one per 2 GiB of memory, whichever is fewer. Null for a host that has not reported its size, which is not limited."
+          },
           "lastSeenAt": {
             "format": "date-time",
             "type": "string",
@@ -16983,6 +17070,20 @@
           }
         },
         "required": ["name"]
+      },
+      "SetHostSessionLimitRequest": {
+        "type": "object",
+        "properties": {
+          "maxSessions": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 64,
+            "exclusiveMaximum": false,
+            "nullable": true
+          }
+        },
+        "required": ["maxSessions"]
       },
       "AdminUserResponseDto": {
         "type": "object",

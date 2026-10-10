@@ -39,6 +39,9 @@
       "running_one": "En marcha · {{count}} sesión",
       "running_other": "En marcha · {{count}} sesiones",
       "running_many": "En marcha · {{count}} sesiones",
+      "runningOfLimit_one": "En marcha · {{count}} de {{limit}} sesiones",
+      "runningOfLimit_other": "En marcha · {{count}} de {{limit}} sesiones",
+      "runningOfLimit_many": "En marcha · {{count}} de {{limit}} sesiones",
       "idle": "Inactivo",
       "offline": "Desconectado"
     },
@@ -64,6 +67,15 @@
     "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
     "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
     "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
-    "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
+    "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+    "sessionLimit": {
+      "action": "Límite de sesiones",
+      "title": "Límite de sesiones de {{name}}",
+      "description": "Cuántas sesiones pueden ejecutarse a la vez en este equipo. Al alcanzarlo, no se puede iniciar otra hasta que una se detenga; bajarlo no detiene ninguna.",
+      "label": "Sesiones a la vez",
+      "emptyDefault": "Déjalo vacío para usar el valor de esta máquina: {{limit}}, una por CPU y una por cada 2 GB de memoria, lo que sea menor.",
+      "empty": "Déjalo vacío para usar el valor de esta máquina: una por CPU y una por cada 2 GB de memoria, lo que sea menor.",
+      "failed": "No se pudo cambiar el límite de sesiones. Inténtalo de nuevo."
+    }
   }
 }

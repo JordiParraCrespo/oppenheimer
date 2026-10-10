@@ -26,6 +26,7 @@ function host(overrides: Partial<Parameters<typeof HostEntity.create>[0]['props'
       publicKeyFingerprint: current.fingerprint,
       lastSeenAt: null,
       unpairedAt: null,
+      maxSessions: null,
       ...overrides,
     },
   });
@@ -126,5 +127,43 @@ describe('platformLabelOf', () => {
   it('is the platform alone when no release is known', () => {
     expect(platformLabelOf('linux', null)).toBe('linux');
     expect(platformLabelOf('linux', '')).toBe('linux');
+  });
+});
+
+describe('HostEntity.sessionLimit', () => {
+  const GIB = 1024 ** 3;
+
+  it('is what the owner set, whatever the machine reported', () => {
+    const subject = host({ maxSessions: 8, capabilities: { cpus: 2, memoryTotalBytes: 4 * GIB } });
+
+    expect(subject.sessionLimit).toBe(8);
+  });
+
+  it('defaults to one per CPU and one per 2 GiB, whichever is fewer', () => {
+    expect(host({ capabilities: { cpus: 4, memoryTotalBytes: 7.6 * GIB } }).sessionLimit).toBe(3);
+    expect(host({ capabilities: { cpus: 2, memoryTotalBytes: 64 * GIB } }).sessionLimit).toBe(2);
+  });
+
+  it('never defaults below one session, so a small machine can still run something', () => {
+    expect(host({ capabilities: { cpus: 1, memoryTotalBytes: 1 * GIB } }).sessionLimit).toBe(1);
+  });
+
+  it('does not limit a host that has not reported its size', () => {
+    expect(host().sessionLimit).toBeNull();
+  });
+
+  it('goes back to the default when the owner clears the limit', () => {
+    const subject = host({ maxSessions: 8, capabilities: { cpus: 4, memoryTotalBytes: 16 * GIB } });
+
+    subject.limitSessions(null);
+
+    expect(subject.maxSessions).toBeNull();
+    expect(subject.sessionLimit).toBe(4);
+  });
+
+  it('refuses a limit the schema would, so no path stores one', () => {
+    expect(() => host().limitSessions(0)).toThrow();
+    expect(() => host().limitSessions(65)).toThrow();
+    expect(() => host().limitSessions(2.5)).toThrow();
   });
 });

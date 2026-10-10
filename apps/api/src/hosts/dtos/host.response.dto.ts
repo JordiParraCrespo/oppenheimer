@@ -66,6 +66,24 @@ export class HostResponseDto {
   })
   runningSessionCount!: number;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Number,
+    minimum: 1,
+    description:
+      'The session limit the owner set on this host; null when it uses the default derived from the machine.',
+  })
+  maxSessions!: number | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Number,
+    minimum: 1,
+    description:
+      'How many sessions may run here at once: `maxSessions` when set, else one per CPU and one per 2 GiB of memory, whichever is fewer. Null for a host that has not reported its size, which is not limited.',
+  })
+  sessionLimit!: number | null;
+
   @ApiPropertyOptional({ nullable: true, type: Date })
   lastSeenAt!: Date | null;
 

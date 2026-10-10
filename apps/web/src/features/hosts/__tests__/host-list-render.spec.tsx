@@ -60,6 +60,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     return { data, isPending: false, error: null };
   },
   useRenameHost: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+  useSetHostSessionLimit: () => ({ mutate: vi.fn(), isPending: false, error: null }),
 }));
 
 vi.mock('../components/host-actions-menu', () => ({ HostActionsMenu: () => null }));
