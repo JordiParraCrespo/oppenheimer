@@ -344,6 +344,9 @@ pnpm check:structure    # Frontend layout contract: feature names, kinds, route 
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
 pnpm check:unused       # Unused files, exports and dependencies in the frontend (knip)
+# oppenheimer:begin web
+pnpm check:singletons   # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
+# oppenheimer:end web
 pnpm docker:dev         # Start Postgres + Redis
 pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
@@ -401,6 +404,12 @@ pnpm changeset          # Create a changeset for versioning
 - `@oppenheimer/translations` is imported by subpath only: `apps/web`
   imports metadata from `@oppenheimer/translations/locales` and catalogs from
   `@oppenheimer/translations/lazy`; only the default locale is bundled
+<!-- oppenheimer:begin web -->
+- A library that holds module state installs once for `apps/web`: the list
+  is `singletons` in `apps/web/package.json`, and `pnpm check:singletons`
+  fails when the lockfile resolves a listed name to more than one snapshot,
+  or to none
+<!-- oppenheimer:end web -->
 - The web app's critical path is budgeted: `pnpm check:bundle` fails past the
   number in `scripts/check-bundle-size.mjs`. Raise a budget only deliberately,
   in its own diff

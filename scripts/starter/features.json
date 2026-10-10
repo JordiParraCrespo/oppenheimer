@@ -14,9 +14,11 @@
         "scripts/evals/frontend-audit",
         ".agents/skills/frontend-audit",
         ".agents/skills/scaffold-feature/evals",
-        "knip.json"
+        "knip.json",
+        "scripts/check-singletons.mjs",
+        "scripts/check-singletons.test.mjs"
       ],
-      "scripts": ["dev:mvp", "check:unused"],
+      "scripts": ["dev:mvp", "check:unused", "check:singletons"],
       "json": [
         {
           "file": "package.json",
