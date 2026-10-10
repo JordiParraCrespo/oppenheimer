@@ -30,9 +30,13 @@ export interface AutomationRunRepositoryPort {
    * Insert a firing unless its cause already fired this automation, and stage
    * its dispatch when it is pending — together. A duplicate cause inserts
    * nothing and answers with the run that cause already made, so a retried
-   * request reads the same run.
+   * request reads the same run. The staged dispatch carries `correlationId`,
+   * the firing command's.
    */
-  insertFiring(run: AutomationRunEntity): Promise<{ runId: string; inserted: boolean }>;
+  insertFiring(
+    run: AutomationRunEntity,
+    correlationId: string,
+  ): Promise<{ runId: string; inserted: boolean }>;
 
   findOneForSystem(id: string): Promise<Option<AutomationRunEntity>>;
 
@@ -47,8 +51,11 @@ export interface AutomationRunRepositoryPort {
    */
   restageStalled(staleBefore: Date, batch: number): Promise<number>;
 
-  /** Write the outcome; a deferred run re-stages its dispatch for `availableAt`. */
-  save(run: AutomationRunEntity): Promise<void>;
+  /**
+   * Write the outcome; a deferred run re-stages its dispatch for `availableAt`,
+   * carrying `correlationId` (the dispatching command's).
+   */
+  save(run: AutomationRunEntity, correlationId: string): Promise<void>;
 
   /**
    * Fire under the workspace's rate caps: in one transaction, take the
@@ -64,6 +71,7 @@ export interface AutomationRunRepositoryPort {
     automationId: string,
     since: Date,
     decide: (recent: { automation: number; workspace: number }) => AutomationRunEntity,
+    correlationId: string,
   ): Promise<{ run: AutomationRunEntity; runId: string; inserted: boolean }>;
 
   /**

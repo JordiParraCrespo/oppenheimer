@@ -21,6 +21,15 @@ export interface ErrorDefinition {
   readonly type?: string;
 }
 
+/** Codes of the invariant failures the building blocks raise themselves. */
+export const GenericErrorCode = {
+  ARGUMENT_INVALID: 'GENERIC.ARGUMENT_INVALID',
+  ARGUMENT_NOT_PROVIDED: 'GENERIC.ARGUMENT_NOT_PROVIDED',
+  ARGUMENT_OUT_OF_RANGE: 'GENERIC.ARGUMENT_OUT_OF_RANGE',
+  CONFLICT: 'GENERIC.CONFLICT',
+  NOT_FOUND: 'GENERIC.NOT_FOUND',
+} as const;
+
 /**
  * Base domain/application exceptions used by the DDD building blocks.
  *
@@ -39,42 +48,50 @@ export abstract class ExceptionBase extends Error {
   ) {
     super(message);
     Error.captureStackTrace?.(this, this.constructor);
+    this.name = new.target.name;
   }
 
-  toJSON() {
+  /**
+   * The exception for a log line. The cause is reduced to its name and
+   * message: serializing it whole would copy whatever fields it carries
+   * (a driver error's query parameters, a client's headers) into the log.
+   */
+  toJSON(): Record<string, unknown> {
     return {
+      name: this.name,
       message: this.message,
       code: this.code,
+      httpStatus: this.httpStatus,
       stack: this.stack,
-      cause: JSON.stringify(this.cause),
+      cause: this.cause ? { name: this.cause.name, message: this.cause.message } : undefined,
       metadata: this.metadata,
     };
   }
 }
 
 export class ArgumentInvalidException extends ExceptionBase {
-  readonly code = 'GENERIC.ARGUMENT_INVALID';
+  readonly code = GenericErrorCode.ARGUMENT_INVALID;
   readonly httpStatus = 400;
 }
 
 export class ArgumentNotProvidedException extends ExceptionBase {
-  readonly code = 'GENERIC.ARGUMENT_NOT_PROVIDED';
+  readonly code = GenericErrorCode.ARGUMENT_NOT_PROVIDED;
   readonly httpStatus = 400;
 }
 
 export class ArgumentOutOfRangeException extends ExceptionBase {
-  readonly code = 'GENERIC.ARGUMENT_OUT_OF_RANGE';
+  readonly code = GenericErrorCode.ARGUMENT_OUT_OF_RANGE;
   readonly httpStatus = 400;
 }
 
 export class ConflictException extends ExceptionBase {
-  readonly code = 'GENERIC.CONFLICT';
+  readonly code = GenericErrorCode.CONFLICT;
   readonly httpStatus = 409;
 }
 
 export class NotFoundException extends ExceptionBase {
   static readonly message = 'Not found';
-  readonly code = 'GENERIC.NOT_FOUND';
+  readonly code = GenericErrorCode.NOT_FOUND;
   readonly httpStatus = 404;
 
   constructor(message = NotFoundException.message) {

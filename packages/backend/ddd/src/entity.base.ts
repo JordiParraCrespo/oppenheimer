@@ -59,8 +59,12 @@ export abstract class Entity<EntityProps> {
     return this._updatedAt;
   }
 
-  protected setUpdatedAt(date: Date): void {
-    this._updatedAt = date;
+  /**
+   * Records that the entity changed: now, or `at` when the domain method was
+   * handed the time it acts at.
+   */
+  protected setUpdatedAt(at: Date = new Date()): void {
+    this._updatedAt = at;
   }
 
   static isEntity(entity: unknown): entity is Entity<unknown> {
@@ -107,6 +111,9 @@ export abstract class Entity<EntityProps> {
   public abstract validate(): void;
 
   private setId(id: AggregateID): void {
+    if (Guard.isEmpty(id)) {
+      throw new ArgumentNotProvidedException('Entity id should not be empty');
+    }
     this._id = id;
   }
 

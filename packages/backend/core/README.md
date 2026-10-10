@@ -26,6 +26,10 @@ wired into the API.
 | `PaginatedResponseDto(Item, Meta)`                        | Base class for a paginated response DTO's `data` / `meta`               |
 | `likeContains`                                            | An `ILIKE` contains-pattern with the term's `%`, `_` and `\` escaped     |
 | `requestMemo`                                             | One in-flight computation per key per request, shared by every caller   |
+| `MetricsModule.forRoot`, `METRICS_REGISTRY`               | The application's own Prometheus registry (global), with process metrics |
+| `createMetricsProvider`, `InjectMetric`, `ModuleMetrics`  | Declare a module's counters, gauges and histograms; inject them by name |
+| `HttpMetricsModule.register`, `httpMetricRoute`           | `http_requests_total` / `http_request_duration_seconds` by route group  |
+| `MILLISECOND_LATENCY_BUCKETS`, `HTTP_LATENCY_BUCKETS_SECONDS` | Histogram bounds that do not clip a backoff or a slow response      |
 
 ## Usage
 
@@ -43,6 +47,28 @@ const user = requireFound(await repo.findOneById(id), UserErrors.NOT_FOUND, {
 // A list response's meta from the repository's page.
 return { data: page.data.map(toResponse), meta: toPageMeta(page) };
 ```
+
+Metrics are declared next to what they measure and registered on the one
+registry `MetricsModule.forRoot` binds:
+
+```ts
+const QueueMetrics: ModuleMetrics = {
+  queue_jobs: { type: "gauge", help: "Jobs by queue and state", labelNames: ["queue", "state"] },
+};
+
+@Module({ providers: [...createMetricsProvider(QueueMetrics), QueueDepthSampler] })
+export class QueueModule {}
+
+// in the sampler
+constructor(@InjectMetric("queue_jobs") private readonly jobs: Gauge) {}
+```
+
+Labels are closed sets. `HttpMetricsModule` labels a request by the **route
+template** the router matched, mapped to a group by a policy the application
+owns (at most 100 rules and 20 groups, or `register` throws), never by its URL;
+everything unmatched is `other`. Every group and status class is created at
+zero, a guard's refusal is counted, a connection the client dropped is
+`aborted` and not timed, and each response is recorded once.
 
 Responses look like this (see the [error reference](https://oppenheimer.dev/errors)):
 

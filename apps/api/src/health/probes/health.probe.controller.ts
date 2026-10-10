@@ -1,40 +1,46 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  DiskHealthIndicator,
-  HealthCheck,
-  HealthCheckService,
-  MemoryHealthIndicator,
-  TypeOrmHealthIndicator,
-} from '@nestjs/terminus';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { CLIENT_CAPABILITIES, type DeploymentCapability } from '@oppenheimer/shared';
+import type { Response } from 'express';
 import { NoPolicy } from '../../auth/decorators/check-policies.decorator';
 import { AllowAnyScope } from '../../auth/decorators/require-scopes.decorator';
 import { CapabilitiesResponseDto } from '../dtos/capabilities.response.dto';
-import { RedisHealthIndicator } from '../infrastructure/redis-health.adapter';
+import { LivenessResponseDto, ReadinessResponseDto } from '../dtos/readiness.response.dto';
+import { ReadinessIndicator } from './readiness.indicator';
 
+/**
+ * The probes. Public and unauthenticated on purpose: the deploy gate and the
+ * container healthcheck call them before anything could hold a credential,
+ * and nothing they answer describes the deployment beyond "can it serve".
+ */
 @ApiTags('Health')
 @Controller()
 export class HealthProbeController {
   constructor(
-    private health: HealthCheckService,
-    private db: TypeOrmHealthIndicator,
-    private memory: MemoryHealthIndicator,
-    private disk: DiskHealthIndicator,
-    private redis: RedisHealthIndicator,
+    private readinessIndicator: ReadinessIndicator,
     private capabilities: CapabilitiesService<DeploymentCapability>,
     private configService: ConfigService,
   ) {}
 
+  /**
+   * Checks nothing but that the process answers HTTP, which is the one thing
+   * a restart fixes. A dependency here would restart a good process because
+   * PostgreSQL blinked; a heap threshold would restart a busy one at its
+   * peak, mid-request, when V8 itself already ends a process that really
+   * runs out. Both belong to `/ready` and to the metrics.
+   */
   @Get('health')
   @NoPolicy('public liveness probe')
-  @HealthCheck()
-  @ApiOperation({ summary: 'Liveness check' })
-  @ApiResponse({ status: 200, description: 'App is alive' })
-  check() {
-    return this.health.check([() => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024)]);
+  @ApiOperation({
+    summary: 'Liveness check',
+    description:
+      'Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.',
+  })
+  @ApiResponse({ status: 200, type: LivenessResponseDto, description: 'The process answered' })
+  check(): LivenessResponseDto {
+    return { status: 'ok' };
   }
 
   @Get('health/capabilities')
@@ -68,19 +74,20 @@ export class HealthProbeController {
 
   @Get('ready')
   @NoPolicy('public readiness probe')
-  @HealthCheck()
-  @ApiOperation({ summary: 'Readiness check' })
-  @ApiResponse({ status: 200, description: 'App is ready to receive traffic' })
-  readiness() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-      () => this.redis.isHealthy('redis'),
-      () => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
-      () =>
-        this.disk.checkStorage('disk', {
-          path: '/',
-          thresholdPercent: 0.9,
-        }),
-    ]);
+  @ApiOperation({
+    summary: 'Readiness check',
+    description:
+      'Answers 200 only when PostgreSQL and Redis both answer within their configured timeouts, and 503 otherwise. Why a dependency failed is logged, never returned.',
+  })
+  @ApiResponse({ status: 200, type: ReadinessResponseDto, description: 'This replica can serve' })
+  @ApiResponse({
+    status: 503,
+    type: ReadinessResponseDto,
+    description: 'A dependency is unavailable; this replica must not serve. Same body shape.',
+  })
+  async readiness(@Res({ passthrough: true }) response: Response): Promise<ReadinessResponseDto> {
+    const result = await this.readinessIndicator.check();
+    if (result.status !== 'ok') response.status(HttpStatus.SERVICE_UNAVAILABLE);
+    return result;
   }
 }

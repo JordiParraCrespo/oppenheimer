@@ -26,7 +26,15 @@ export interface StageJobParams {
   /** Why this job is owed — recorded on the row so it is self-explaining. */
   reason: string;
   aggregateId?: string;
-  correlationId?: string;
+  /**
+   * The correlation id of what owes the job, passed by the caller the way an
+   * event carries `metadata.correlationId`: a command's
+   * `metadata.correlationId`, or the event's when a handler stages it. `null`
+   * for work nothing traceable caused (a sweep re-staging lost jobs). Never
+   * read from ambient context here, so a job staged outside a request cannot
+   * pick up whatever scope happens to be open.
+   */
+  correlationId: string | null;
   /** Earliest delivery time; defaults to now. */
   availableAt?: Date;
 }
@@ -52,6 +60,14 @@ const DEFAULT_MAX_RETRY_DELAY_MS = 15 * 60_000;
 const DEFAULT_BATCH_SIZE = 20;
 /** Lease a claim holds before another relay may take the row; the relay renews it while it delivers. */
 export const DEFAULT_LEASE_MS = 30_000;
+
+/** What `OutboxService.backlog()` reads, all from one snapshot. */
+export interface OutboxBacklog {
+  pending: number;
+  failed: number;
+  /** When the oldest pending row was staged; `null` when nothing is pending. */
+  oldestPendingAt: Date | null;
+}
 
 /**
  * Transactional outbox: side effects (domain events, queued jobs) are written
@@ -196,7 +212,7 @@ export class OutboxService {
       aggregateId: params.aggregateId ?? null,
       payload: params.payload,
       reason: params.reason,
-      correlationId: params.correlationId ?? null,
+      correlationId: params.correlationId,
       availableAt: params.availableAt,
     });
     // Same `QueryDeepPartialEntity` cast as `stageEvents`.
@@ -269,18 +285,22 @@ export class OutboxService {
   }
 
   /**
-   * Mark delivered rows, releasing their leases. With `owner`, only rows that
-   * owner still leases are marked: a row another relay claimed after this one
-   * lost the lease is that relay's to finish.
+   * Mark delivered rows, releasing their leases, and return the ids it marked.
+   * With `owner`, only rows that owner still leases are marked: a row another
+   * relay claimed after this one lost the lease is that relay's to finish, and
+   * is missing from the result (the same shape as `extendLease`).
    */
-  async markProcessed(ids: readonly string[], owner?: string): Promise<void> {
-    if (ids.length === 0) return;
-    await this.dataSource.query(
+  async markProcessed(ids: readonly string[], owner?: string): Promise<string[]> {
+    if (ids.length === 0) return [];
+    // TypeORM returns `[rows, affectedCount]` for UPDATE on Postgres.
+    const [rows]: [{ id: string }[], number] = await this.dataSource.query(
       `UPDATE "${OUTBOX_TABLE}"
        SET "status" = 'processed', "processedAt" = now(), "lockedBy" = NULL, "lockedUntil" = NULL
-       WHERE "id" = ANY($1) AND ($2::varchar IS NULL OR "lockedBy" = $2::varchar)`,
+       WHERE "id" = ANY($1) AND ($2::varchar IS NULL OR "lockedBy" = $2::varchar)
+       RETURNING "id"`,
       [ids, owner ?? null],
     );
+    return rows.map((row) => row.id);
   }
 
   /**
@@ -302,6 +322,33 @@ export class OutboxService {
       [cutoff, batch],
     );
     return affected ?? 0;
+  }
+
+  /**
+   * The outbox's backlog, read in one statement so its three numbers come
+   * from one snapshot: how many rows are owed (`pending`), how many are
+   * parked for a person (`failed`), and when the oldest pending row was
+   * staged (`null` when none is). For a gauge or a health detail.
+   *
+   * Each part reads a partial index and nothing else:
+   * `IDX_outbox_message_pending` for the pending count and its oldest row,
+   * `IDX_outbox_message_failed` for the parked count, so a sample costs what
+   * the backlog holds, not what the table holds.
+   */
+  async backlog(): Promise<OutboxBacklog> {
+    const rows: { pending: number; failed: number; oldestPendingAt: Date | string | null }[] =
+      await this.dataSource.query(
+        `SELECT
+           (SELECT count(*)::int FROM "${OUTBOX_TABLE}" WHERE "status" = 'pending') AS "pending",
+           (SELECT count(*)::int FROM "${OUTBOX_TABLE}" WHERE "status" = 'failed') AS "failed",
+           (SELECT min("createdAt") FROM "${OUTBOX_TABLE}" WHERE "status" = 'pending') AS "oldestPendingAt"`,
+      );
+    const row = rows[0];
+    return {
+      pending: row?.pending ?? 0,
+      failed: row?.failed ?? 0,
+      oldestPendingAt: row?.oldestPendingAt ? new Date(row.oldestPendingAt) : null,
+    };
   }
 
   /**

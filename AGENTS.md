@@ -139,6 +139,19 @@ When you add a file that mentions an optional app (CI, compose,
   `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
   a new root-level file every package relies on is a pattern in its
   `GLOBAL_PATHS`
+- Agent guardrails live in `.claude/settings.json`: it denies force pushes,
+  `git reset --hard`, deleting branches, `sudo`, piping a download into a
+  shell and reading credential files, asks before `rm -rf` or reading an
+  env file, and runs `.agents/hooks/git-guard.mjs` before every shell call,
+  which refuses a push to `main`/`master`, a force push, deleting a remote
+  branch, `git reset --hard`, `git branch -D`, `git add -A`/`--all`/`.`/`*`
+  and staging an env file other than `.env.example`, however the command is
+  spelled (`git -C <dir>`, `-c k=v`, quotes, `--`, chained commands). The
+  settings' glob denies are the same policy where a prefix can say it; the
+  hook is the precise check, and `pnpm check:hooks` runs its cases. Stage
+  files by path. The
+  same file formats every edit with Biome and runs the architecture check
+  (`.agents/hooks/arch-check.sh`) before a task ends
 
 ### Backend (`apps/api` + `packages/backend/*`)
 
@@ -165,13 +178,17 @@ The rest are backend (scoped to `apps/api`, `packages/backend`, and—for `rbac-
 
 - `nestjs-di.md` — DI import rules, `import type` restrictions, repository-port DI tokens
 - `nestjs-architecture.md` — DDD vertical slices, CQRS handlers, domain layer, ports/adapters, mappers, errors, events
-- `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions
+- `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions,
+  conditional `UPDATE`s for racing transitions
+- `testing-backend.md` — Vitest tiers (domain, handler, adapter,
+  testcontainers integration, seam, meta), where each spec lives, and the
+  assertion discipline; the value bar is `/test-audit`
 - `database-design.md` — the standard a table is held to: keys, types,
   `timestamptz`, foreign keys and their indexes, access-pattern indexes,
   tenancy, lifecycle, scale and lock-safe migrations. `/design-database`
   walks the process
 - `backend-packages.md` — CJS exports, package structure (pluggable vs library), email template setup
-- `api-config.md` — OAuth graceful handling, controllers, Swagger decorators, rate limiting, versioning
+- `api-config.md` — OAuth graceful handling, settings as an input to the domain, controllers, Swagger decorators, rate limiting, versioning
 
 Errors are **RFC 7807 problem documents** (`application/problem+json`) produced by
 the global `AllExceptionsFilter`; the catalog message is the stable problem
@@ -367,7 +384,8 @@ pnpm changeset          # Create a changeset for versioning
 - Shared types/schemas go in `packages/shared`, not duplicated in apps
 - A test names the behavior it protects and the regression that breaks it,
   lives at the owner boundary, and needs no test-only production seam;
-  auditing existing tests is `.agents/skills/test-audit/`
+  auditing existing tests is `.agents/skills/test-audit/`; how a backend
+  test is written is `.agents/rules/testing-backend.md`
 - New env vars go in the root `.env.example` with a note on what they do; never
   add a per-package `.env` (see `.agents/rules/api-config.md`)
 - New API endpoints need Swagger decorators and `@RequireScopes`; without the

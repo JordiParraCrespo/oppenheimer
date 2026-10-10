@@ -21,7 +21,7 @@ The API (`apps/api`) is built with NestJS and consumes 5 reusable backend packag
 - **Cross-cutting**: Structured errors, correlation IDs, input sanitization via [`@oppenheimer/backend-core`](./backend-packages#oppenheimerbackend-core)
 - **Logging**: Pino structured JSON logs
 - **Rate limiting**: @nestjs/throttler
-- **Health checks**: @nestjs/terminus + custom Redis indicator
+- **Health checks**: a dependency-free liveness probe and a readiness probe (PostgreSQL `SELECT 1`, Redis `PING`, each under its own deadline)
 
 See [Backend Packages](./backend-packages) for the shared package details and [API Architecture](./api-architecture) for the full API module breakdown.
 

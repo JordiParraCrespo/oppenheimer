@@ -18,7 +18,7 @@ src/
 ├── command.base.ts             # CQRS command base
 ├── query.base.ts               # CQRS query base
 ├── repository.port.ts          # repository port interface (insert/save/findOneById/delete), Paginated
-├── typeorm-repository.base.ts  # non-tenant TypeORM adapter base: the port's four methods over writeWithEvents
+├── typeorm-repository.base.ts  # non-tenant TypeORM adapter base: the port's four methods over writeWithEvents, saveIf (conditional write)
 ├── mapper.interface.ts         # domain <-> persistence mapper contract
 ├── outbox/
 │   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message), TIMESTAMP_COLUMN_TYPE
@@ -44,12 +44,18 @@ src/
   (or `writeWithEvents` for a single write), which wakes the relay after
   commit when something was staged and never after a rollback;
   `OutboxRelay` (hosted by the app) claims rows with `FOR UPDATE SKIP LOCKED`, so replicas lease disjoint rows
-  and expired leases are reclaimed. While it delivers a batch the relay renews
+  and expired leases are reclaimed. A claimed batch is published concurrently
+  (bounded by `batchSize`, settled with `Promise.allSettled`), so rows carry
+  no delivery order a listener may rely on. While it delivers a batch the relay renews
   the lease (`extendLease`, a heartbeat at a third of the lease), and the marks
   that end a delivery only touch rows the relay still owns. `wake()` is fire-and-forget: it asks the
   relay for a drain and returns without waiting for delivery; at most one
   drain runs, and wakes during it collapse into one more pass. Delivery is at
-  least once. `deleteProcessedBefore` is the retention delete the app
+  least once. `stageJob` takes the correlation id from its caller (a command's
+  or an event's `metadata.correlationId`, `null` for a sweep) and never reads
+  ambient context; `backlog()` reads pending, failed and the oldest pending row
+  in one index-backed statement. `markProcessed` returns the ids it still owned,
+  and only those count as delivered. `deleteProcessedBefore` is the retention delete the app
   schedules. The `outbox_message` table is created by a migration in the
   consuming app, mirroring `OutboxMessageSchema`.
 

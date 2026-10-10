@@ -113,6 +113,40 @@ single-responsibility is enforced (no god-services).
   join the transaction.
 - Inject the port through a DI token (see `nestjs-di.md`), never the concrete class.
 
+### A transition two writers can race is a conditional write
+
+`save` is a blind upsert: whoever writes last wins. That is right for a create
+and for an edit where the last writer may win; it is wrong for a state
+transition two workers, two replicas or a retry can make at once (claim a run,
+resolve a request, stop a session). There, both load the row in the same
+state, both decide, and the second write silently undoes the first.
+
+- **The write is conditional on the state the aggregate was loaded in.** The
+  aggregate remembers it (`statusAtLoad`, or a version), and the repository
+  writes `UPDATE … WHERE id = $1 AND status = $statusAtLoad`.
+- **It won only if it affected exactly one row** (`affected === 1`). Zero means
+  another writer moved the row first.
+- **A loser abandons.** The port method answers `false` (or a named outcome),
+  and the handler stops: it reloads if it still has work, and never retries
+  the same instance, whose decision was made on a state that no longer
+  exists.
+- **Events are staged only on a win**, in the same transaction as the write.
+  An event from the losing write describes a change that never happened.
+- **The winning write marks the aggregate persisted** (`markPersisted()`), so
+  a second conditional write in the same attempt (claim, then record the
+  attempt) is conditioned on the state the first one stored, not the one it
+  was loaded in.
+
+`TypeOrmRepositoryBase.saveIf(entity, condition)` is all of that for a
+non-tenant repository whose aggregate is `PersistenceTracked`: one `UPDATE`
+on the manager of an `OutboxService.transaction`, whatever the aggregate owes,
+staging and clearing the events and calling `markPersisted()` only when it
+won, and answering whether it did. It is `protected`, because the condition
+names columns: the port exposes the transition (`claim(run): Promise<boolean>`)
+and the adapter calls `this.saveIf(run, { status: run.statusAtLoad })`. A
+write that is raw SQL (a claim with `FOR UPDATE SKIP LOCKED`, a tenant
+repository) follows the same rules by hand.
+
 ## Mapper
 
 Use the `Mapper<DomainEntity, OrmEntity, ResponseDto>` interface from
@@ -204,8 +238,7 @@ catalog error instead of returning `false`.
 
 The only sanctioned non-`AppError` throws are the `@oppenheimer/backend-ddd` domain
 exceptions (`ArgumentInvalidException`, `NotFoundException`, …), which carry
-their own `code`/`httpStatus` and are documented as `GENERIC.*`; framework
-contracts a library owns (Terminus's `HealthCheckError`); and plain `Error` on
+their own `code`/`httpStatus` and are documented as `GENERIC.*`; and plain `Error` on
 paths that never reach an HTTP response (the outbox relay, queue processors,
 the standalone `packages/backend/*` services, which have no `@oppenheimer` deps by
 design).

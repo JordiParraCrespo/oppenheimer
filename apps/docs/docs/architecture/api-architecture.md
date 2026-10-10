@@ -182,12 +182,15 @@ generated client:
 
 ## Health checks
 
-| Route         | Type      | Checks                                                  |
-| ------------- | --------- | ------------------------------------------------------- |
-| `GET /health` | Liveness  | Memory heap < 200MB                                     |
-| `GET /ready`  | Readiness | Database ping, Redis ping, memory heap, disk > 10% free |
+| Route         | Type      | Checks                                                       |
+| ------------- | --------- | ------------------------------------------------------------ |
+| `GET /health` | Liveness  | None: the process answers                                    |
+| `GET /ready`  | Readiness | PostgreSQL `SELECT 1` and Redis `PING`, each in its deadline |
 
-`RedisHealthIndicator` is a custom ioredis-based health check (NestJS Terminus doesn't include one by default).
+Both readiness checks run concurrently under `withDeadline`
+(`HEALTH_DATABASE_TIMEOUT_MS`, `HEALTH_REDIS_TIMEOUT_MS`): the database check is
+a `SELECT 1` on the application's own pool, the Redis check a `PING` on the
+shared connection. The body says one word per dependency; the reason is logged.
 
 ## Bootstrap order (`main.ts`)
 

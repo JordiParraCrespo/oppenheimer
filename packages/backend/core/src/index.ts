@@ -1,3 +1,4 @@
+export type { Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
 export { likeContains } from './database/like-contains';
 export {
   ApiAuthProblemResponses,
@@ -42,6 +43,30 @@ export {
   type LoggingOptions,
 } from './logging/pino-http-options';
 export { UserContextInterceptor } from './logging/user-context.interceptor';
+export { HTTP_LATENCY_BUCKETS_SECONDS, MILLISECOND_LATENCY_BUCKETS } from './metrics/buckets';
+export {
+  HTTP_METRICS_MAX_GROUPS,
+  HTTP_METRICS_MAX_RULES,
+  HTTP_REQUEST_DURATION_SECONDS,
+  HTTP_REQUESTS_TOTAL,
+  HTTP_STATUS_CLASSES,
+  HttpMetrics,
+  HttpMetricsMiddleware,
+  HttpMetricsModule,
+  type HttpMetricsOptions,
+  type HttpMetricsRouteRule,
+  httpMetricRoute,
+} from './metrics/http-metrics.module';
+export {
+  createMetricsProvider,
+  InjectMetric,
+  METRICS_REGISTRY,
+  type MetricType,
+  type ModuleMetric,
+  type ModuleMetrics,
+  metricToken,
+} from './metrics/metric';
+export { MetricsModule, type MetricsModuleOptions } from './metrics/metrics.module';
 export { RequestContextMiddleware } from './middleware/request-context.middleware';
 export { SanitizePipe } from './pipes/sanitize.pipe';
 export { requestMemo } from './requests/request-memo';

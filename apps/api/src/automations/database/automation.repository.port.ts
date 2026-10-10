@@ -63,7 +63,7 @@ export interface AutomationRepositoryPort {
    * owes, then write the run it owes and the trigger's next slot — all in one
    * transaction, on its one connection. The counts include the runs this batch
    * queued before, so a batch cannot fire past a cap. Returns the runs that
-   * were queued.
+   * were queued. Their dispatches carry `correlationId`, the tick's command's.
    */
   fireDueSchedules(
     now: Date,
@@ -74,6 +74,7 @@ export interface AutomationRepositoryPort {
       scheduledFor: Date,
       context: FiringContext,
     ) => DueScheduleDecision,
+    correlationId: string,
   ): Promise<AutomationRunEntity[]>;
 
   /** Live automations that run on a host, unscoped: the host's own lifecycle is asking. */

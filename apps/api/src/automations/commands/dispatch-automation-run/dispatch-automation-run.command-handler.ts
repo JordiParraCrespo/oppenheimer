@@ -45,24 +45,25 @@ export class DispatchAutomationRunCommandHandler
     if (foundAutomation.isNone()) return 'settled';
     const automation = foundAutomation.unwrap();
     const now = new Date();
+    const { correlationId } = command.metadata;
 
     const decision = await this.resolver.decide(run, automation, now);
     switch (decision.kind) {
       case 'skip':
         run.skip(decision.reason);
-        await this.runs.save(run);
+        await this.runs.save(run, correlationId);
         if (decision.pause) await this.pause(automation, decision.pause, now);
         return decision.reason;
       case 'expire':
         run.expire();
-        await this.runs.save(run);
+        await this.runs.save(run, correlationId);
         return 'expired';
       case 'defer':
         run.defer(decision.until);
-        await this.runs.save(run);
+        await this.runs.save(run, correlationId);
         return 'deferred';
       case 'launch':
-        return this.launch(run, automation, decision.scope, decision.input, now);
+        return this.launch(run, automation, decision.scope, decision.input, now, correlationId);
     }
   }
 
@@ -72,6 +73,7 @@ export class DispatchAutomationRunCommandHandler
     scope: AccessScope,
     input: CreateSessionCommand['input'],
     now: Date,
+    correlationId: string,
   ): Promise<string> {
     try {
       const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
@@ -84,7 +86,7 @@ export class DispatchAutomationRunCommandHandler
         }),
       );
       run.dispatched(result.sessionId, automation.revision.id, new Date());
-      await this.runs.save(run);
+      await this.runs.save(run, correlationId);
       return 'dispatched';
     } catch (error) {
       const refusal = runRefusalOf(error instanceof AppError ? error.code : undefined);
@@ -95,7 +97,7 @@ export class DispatchAutomationRunCommandHandler
         code: (error as AppError).code,
       });
       run.skip(refusal.reason);
-      await this.runs.save(run);
+      await this.runs.save(run, correlationId);
       if (refusal.pause) await this.pause(automation, refusal.pause, now);
       return refusal.reason;
     }

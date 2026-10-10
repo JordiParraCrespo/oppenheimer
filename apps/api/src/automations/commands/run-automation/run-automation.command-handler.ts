@@ -46,6 +46,6 @@ export class RunAutomationCommandHandler
       },
       new Date(),
     );
-    return (await this.runs.insertFiring(run)).runId;
+    return (await this.runs.insertFiring(run, command.metadata.correlationId)).runId;
   }
 }

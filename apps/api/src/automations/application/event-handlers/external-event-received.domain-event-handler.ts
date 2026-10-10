@@ -25,6 +25,7 @@ export class ExternalEventReceivedDomainEventHandler {
       | 'externalId'
       | 'actorIsOwnApp'
       | 'attributes'
+      | 'metadata'
     >,
   ): Promise<void> {
     await this.commandBus.execute(
@@ -37,6 +38,8 @@ export class ExternalEventReceivedDomainEventHandler {
         externalId: event.externalId,
         actorIsOwnApp: event.actorIsOwnApp,
         attributes: event.attributes ?? {},
+        // The firing stays traceable to the delivery that raised the event.
+        metadata: { correlationId: event.metadata.correlationId },
       }),
     );
   }
