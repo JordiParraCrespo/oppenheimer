@@ -272,24 +272,8 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface);align-self:flex-start;max-width:100%;overflow-x:auto">
 <sc-for list="{{ scopes }}" as="sc" hint-placeholder-count="3"><button type="button" onClick="{{ sc.pick }}" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 16px;border:0;border-radius:980px;background:{{ sc.bg }};color:{{ sc.fg }};font:inherit;font-size:13.5px;font-weight:500;white-space:nowrap;cursor:pointer">{{ sc.name }}<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--fg-subtle)">{{ sc.n }}</span></button></sc-for>
 </div>
-<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ scopeDesc }}</span>
 <sc-if value="{{ wt.show }}">
-<div data-wt="true" style="position:relative;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-<sc-for list="{{ wt.on }}" as="r" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 12px;border-radius:980px;background:var(--card);font-size:12.5px"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px">{{ r.name }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Stop watching" title="Stop watching" onClick="{{ r.toggle }}" style="width:20px;height:20px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="11" hint-size="11px,11px"></x-import></button></span></sc-for>
-<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ wt.toggleOpen }}" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import>Manage repositories</button>
-<sc-if value="{{ wt.open }}">
-<div style="position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:min(380px,calc(100vw - 48px));box-sizing:border-box;padding:8px;display:flex;flex-direction:column;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
-<div style="padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;font-weight:500">Watched repositories</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Repositories you can push to on GitHub. Open pull requests from watched ones show up here.</span></div>
-<sc-for list="{{ wt.all }}" as="r" hint-placeholder-count="5">
-<button type="button" role="switch" aria-checked="{{ r.onS }}" onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
-<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span>
-<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:13px">{{ r.full }}</span><span style="font-size:12px;color:var(--fg-muted)">{{ r.sub }}</span></span>
-<span style="flex:none;width:32px;height:20px;box-sizing:border-box;padding:2px;border-radius:980px;background:{{ r.track }};display:flex;justify-content:{{ r.knob }};transition:background 80ms cubic-bezier(.4,0,.2,1)"><span style="width:16px;height:16px;border-radius:980px;background:#fff"></span></span>
-</button>
-</sc-for>
-</div>
-</sc-if>
-</div>
+<a href="./Settings.dc.html?section=watching" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import>Configure watched repositories</a>
 </sc-if>
 </div>
 <section class="op-rtable">
@@ -567,63 +551,44 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ d.authorIcon }}" size="13" hint-size="13px,13px"></x-import></span><span style="color:var(--fg)">{{ d.author }}</span><span style="color:var(--fg-subtle)">·</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">{{ d.branch }}</span><span style="color:var(--fg-subtle)">→</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">main</span></div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
-<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-<span style="font-size:13px;color:var(--fg-muted)">Size</span>
-<span style="display:flex;align-items:baseline;gap:8px;font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="font-size:24px;font-weight:500;letter-spacing:-0.015em;color:var(--success)">+{{ d.add }}</span><span style="font-size:15px;color:var(--danger)">−{{ d.del }}</span></span>
-<div style="display:flex;gap:3px;height:6px"><div style="width:{{ bv.addPct }};border-radius:980px;background:var(--success)"></div><div style="flex:1;border-radius:980px;background:var(--danger)"></div></div>
-</div>
-<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-<span style="font-size:13px;color:var(--fg-muted)">Files</span>
-<span style="display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:24px;font-weight:500;letter-spacing:-0.015em">{{ d.fileN }}</span><span style="font-size:13px;color:var(--fg-muted);white-space:nowrap">in {{ bv.dirN }}</span></span>
-<div style="display:flex;gap:3px;height:6px"><sc-for list="{{ bv.dirs }}" as="x" hint-placeholder-count="3"><div style="width:{{ x.pct }};min-width:4px;border-radius:980px;background:{{ x.color }}"></div></sc-for></div>
-</div>
-<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-<span style="font-size:13px;color:var(--fg-muted)">Checks</span>
-<span style="display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:24px;font-weight:500;letter-spacing:-0.015em">{{ bv.ckVal }}</span><span style="font-size:13px;color:{{ bv.ckFg }};white-space:nowrap">{{ bv.ckLabel }}</span></span>
-<div style="height:6px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><div style="height:100%;width:{{ bv.ckPct }};border-radius:980px;background:{{ bv.ckColor }};transition:width 400ms cubic-bezier(.16,1,.3,1)"></div></div>
-</div>
-<div style="background:var(--card);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-<span style="font-size:13px;color:var(--fg-muted)">Conflicts</span>
-<span style="display:flex;align-items:center;gap:8px"><span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:980px;background:{{ bv.cfBg }};color:{{ bv.cfColor }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ bv.cfIcon }}" size="15" hint-size="15px,15px"></x-import></span><span style="font-size:16px;font-weight:500">{{ bv.cfLabel }}</span></span>
-<span style="font-size:12.5px;color:var(--fg-muted)">{{ bv.cfSub }}</span>
-</div>
-</div>
-
-<div style="background:var(--card);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
-<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:500">Path to merge</span><span style="flex:1"></span><span style="font-size:12.5px;color:var(--fg-muted)">{{ bv.readyLabel }}</span></div>
-<div style="display:grid;grid-template-columns:repeat({{ bv.stepN }},minmax(0,1fr))">
-<sc-for list="{{ bv.steps }}" as="x" hint-placeholder-count="4">
-<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
-<div style="display:flex;align-items:center"><span style="flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:980px;background:{{ x.bg }};color:{{ x.fg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ x.icon }}" size="13" hint-size="13px,13px"></x-import></span><span style="flex:1;height:2px;margin:0 6px;border-radius:980px;background:{{ x.line }};opacity:{{ x.lineOp }}"></span></div>
-<span style="display:flex;flex-direction:column;gap:2px;padding-right:12px"><span style="font-size:13.5px;font-weight:500">{{ x.label }}</span><span style="font-size:12.5px;line-height:1.4;color:var(--fg-muted);text-wrap:pretty">{{ x.sub }}</span></span>
-</div>
-</sc-for>
-</div>
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border-subtle)">
-<span style="flex:1;min-width:180px;font-size:12.5px;color:var(--fg-muted);text-wrap:pretty">{{ bv.mergeNote }}</span>
-<sc-if value="{{ bv.merged }}"><span style="display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;font-size:13px;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--success)"></span>Merged into main</span></sc-if>
-<sc-if value="{{ bv.notMerged }}">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ bv.review }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="eye" size="15" hint-size="15px,15px"></x-import>Review changes</button>
-<sc-if value="{{ bv.showMerge }}"><button class="op-btn op-btn--secondary op-btn--md" type="button" disabled="{{ bv.mergeDis }}" title="{{ bv.mergeTip }}" onClick="{{ bv.merge }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="15" hint-size="15px,15px"></x-import>Merge</button></sc-if>
-<sc-if value="{{ bv.confirming }}"><div style="display:flex;align-items:center;gap:6px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ bv.cancelMerge }}">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ bv.confirmMerge }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="15" hint-size="15px,15px"></x-import>Confirm merge</button></div></sc-if>
-</sc-if>
-</div>
-</div>
-
 <div style="background:var(--card);border-radius:18px;padding:22px 24px;display:flex;flex-direction:column;gap:16px">
-<span style="font-size:15px;font-weight:500">Brief</span>
 <p style="margin:0;max-width:72ch;font-size:16px;line-height:1.65;text-wrap:pretty">{{ d.brief }}</p>
 <ul style="margin:0;padding:0;list-style:none;max-width:72ch;display:flex;flex-direction:column;gap:8px">
 <sc-for list="{{ d.bp }}" as="x" hint-placeholder-count="4"><li style="display:flex;gap:12px;font-size:15px;line-height:1.55;text-wrap:pretty"><span style="flex:none;width:6px;height:6px;margin-top:9px;border-radius:980px;background:var(--fg-subtle)"></span><span>{{ x }}</span></li></sc-for>
-</ul>
-<ul style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
-<sc-for list="{{ bv.points }}" as="x" hint-placeholder-count="3"><li style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--canvas)"><span style="font-size:12px;color:var(--fg-muted)">{{ x.k }}</span><span style="font-size:13.5px;line-height:1.45;text-wrap:pretty">{{ x.v }}</span></li></sc-for>
 </ul>
 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border-subtle)"><span style="font-size:13px;color:var(--fg-muted)">Lane</span><span style="flex:1"></span>
 <div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ d.laneOpts }}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{ o.pick }}" style="height:24px;padding:0 10px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12px;font-weight:500;cursor:pointer">{{ o.name }}</button></sc-for></div>
 </div>
 <span style="font-size:13px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">{{ d.why }}</span>
+</div>
+
+<div style="background:var(--card);border-radius:18px;padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="display:flex;align-items:center;gap:12px;min-width:0">
+<span style="display:flex;align-items:baseline;gap:2px;font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="font-size:30px;font-weight:500;letter-spacing:-0.02em;line-height:1;color:{{ bv.scoreFg }}">{{ bv.score }}</span><span style="font-size:13px;color:var(--fg-subtle)">/100</span></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;font-weight:500">{{ bv.verdict }}</span><span style="font-size:12.5px;color:var(--fg-muted)">Merge confidence</span></span>
+</div>
+<span style="flex:1"></span>
+<sc-if value="{{ bv.merged }}"><span style="display:inline-flex;align-items:center;gap:6px;height:34px;font-size:13px;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--success)"></span>Merged into main</span></sc-if>
+<sc-if value="{{ bv.notMerged }}">
+<div style="display:flex;align-items:center;gap:8px">
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ ses.go }}" title="{{ ses.goLabel }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="15" hint-size="15px,15px"></x-import>Review session</button>
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ bv.review }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="eye" size="15" hint-size="15px,15px"></x-import>Review changes</button>
+<sc-if value="{{ bv.showMerge }}"><button class="op-btn op-btn--secondary op-btn--md" type="button" disabled="{{ bv.mergeDis }}" title="{{ bv.mergeTip }}" onClick="{{ bv.merge }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="15" hint-size="15px,15px"></x-import>Merge</button></sc-if>
+<sc-if value="{{ bv.confirming }}"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ bv.cancelMerge }}">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ bv.confirmMerge }}" style="gap:8px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="15" hint-size="15px,15px"></x-import>Confirm merge</button></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ bv.hasFactors }}"><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ bv.factors }}" as="f" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg-muted)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ f.pts }}</span>{{ f.label }}</span></sc-for></div></sc-if>
+<div style="display:flex;align-items:center;gap:8px 20px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border-subtle);font-size:12.5px;color:var(--fg-muted)">
+<span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="color:var(--success)">+{{ d.add }}</span><span style="color:var(--danger)">−{{ d.del }}</span></span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ d.fileN }}</span> files in {{ bv.dirN }}</span>
+<span style="flex:1"></span>
+<div style="display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap">
+<sc-for list="{{ bv.steps }}" as="x" hint-placeholder-count="4"><span title="{{ x.sub }}" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:7px;height:7px;border-radius:980px;background:{{ x.fg }}"></span><span style="color:var(--fg)">{{ x.label }}</span><span>{{ x.sub }}</span></span></sc-for>
+</div>
+</div>
+<sc-if value="{{ bv.mergeNoteOn }}"><span style="font-size:12.5px;color:var(--fg-muted)">{{ bv.mergeNote }}</span></sc-if>
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:stretch">
@@ -840,7 +805,7 @@ const CK = { pass: ['Passing', 'var(--success)'], fail: ['Failing', 'var(--dange
 class Component extends DCLogic {
   state = { view: 'all', lane: 'All', repo: null, sel: null, thread: {}, sess: {}, envLoc: {}, chatText: '', typing: null, lanes: {}, open: null, tab: 'changes', mode: 'unified', viewed: {}, collapsed: {}, discarded: {}, comments: {}, draft: null, treeQ: '', treeClosed: {}, w: Math.max(0, window.innerWidth - 324) };
   measure = () => { const el = document.querySelector('[data-prmain]'); const w = Math.round(el ? el.getBoundingClientRect().width : window.innerWidth - 324); if (Math.abs(w - this.state.w) > 4) this.setState({ w }); };
-  watched() { return this.state.watched || { runner: true, docs: true }; }
+  watched() { if (this.state.watched) return this.state.watched; try { const v = JSON.parse(localStorage.getItem('op.watching')); if (v && Array.isArray(v.repos)) return Object.fromEntries(v.repos.map(r => [r, true])); } catch (e) {} return { runner: true, docs: true }; }
   applyTheme(theme) { const dark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light'); }
   accountVals() {
     const s = this.state, find = (l, v) => ((l.find(o => o.value === v) || l[0]).label);
@@ -1189,6 +1154,21 @@ class Component extends DCLogic {
           merge: () => { if (!this.canMerge(p)) return; this.setState({ confirmId: p.id }); clearTimeout(this._cm); this._cm = setTimeout(() => { if (this.state.confirmId === p.id) this.setState({ confirmId: null }); }, 6000); },
           cancelMerge: () => this.setState({ confirmId: null }),
           confirmMerge: () => this.setState(st => ({ confirmId: null, merged: { ...(st.merged || {}), [p.id]: true } })),
+          ...(() => {
+            const fac = [];
+            if (p.ck === 'fail') fac.push([-35, 'checks failing']); else if (p.ck === 'running') fac.push([-15, 'checks still running']);
+            if (p.conflict) fac.push([-25, 'conflicts with main']);
+            if (lane === 'Deep') fac.push([-15, 'Deep lane']); else if (lane === 'Medium') fac.push([-5, 'Medium lane']);
+            if (notes.length) fac.push([-Math.min(15, notes.length * 5), notes.length + ' agent comment' + (notes.length > 1 ? 's' : '')]);
+            if (p.add + p.del > 500) fac.push([-10, (p.add + p.del).toLocaleString('en-US') + ' lines']);
+            if (p.view === 'waiting') fac.push([-10, 'blocked on GitHub']);
+            const sc = Math.max(0, 100 + fac.reduce((x, f) => x + f[0], 0));
+            const blocked = p.ck === 'fail' || p.conflict || p.view === 'waiting';
+            return { score: sc, scoreFg: blocked || sc < 50 ? 'var(--danger)' : sc < 75 ? 'var(--warning)' : 'var(--success)',
+              verdict: p.view === 'auto' || (s.merged || {})[p.id] ? 'Merged' : blocked ? 'Not ready to merge' : sc >= 80 ? 'Safe to merge' : sc >= 60 ? 'Read the changes first' : 'Review closely',
+              factors: fac.map(([n, label]) => ({ pts: '−' + Math.abs(n), label })), hasFactors: fac.length ? 'true' : undefined,
+              mergeNoteOn: s.confirmId === p.id || (s.merged || {})[p.id] ? 'true' : undefined };
+          })(),
           steps, stepN: steps.length, readyLabel: done + ' of ' + steps.length + ' done',
           points: [
             { k: 'What changes', v: dirs.length ? 'Mostly ' + dirs[0].name + (dirs[1] ? ', plus ' + dirs[1].name : '') + ' · ' + files.length + ' file' + (files.length === 1 ? '' : 's') : files.length + ' files' },
@@ -1464,10 +1444,15 @@ class Component extends DCLogic {
       scopes: SCOPES.map(x => { const on = (s.scope || 'mine') === x.id; return { name: x.name, n: PRS.filter(p => p.view !== 'auto' && p.scope === x.id && (x.id !== 'watching' || this.watched()[p.repo]) && !(s.merged || {})[p.id]).length, bg: on ? 'var(--card)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ scope: x.id, lane: 'All', sel: null, pg: 0 }) }; }),
       wt: (() => { const w = this.watched(); const tg = name => () => this.setState(st => ({ watched: { ...this.watched(), [name]: !w[name] } }));
         const openN = name => PRS.filter(p => p.view !== 'auto' && p.repo === name && p.scope === 'watching').length;
+        const wq = (s.wtQ || '').trim().toLowerCase();
+        const wtList = REPOS.concat(s.extraRepos || []).filter(r => !wq || (r.org + '/' + r.name).toLowerCase().includes(wq));
         return { show: (s.scope || 'mine') === 'watching' ? 'true' : undefined, open: s.wtOpen ? 'true' : undefined,
-          toggleOpen: e => { e.stopPropagation(); this.setState(st => ({ wtOpen: !st.wtOpen })); },
-          on: REPOS.filter(r => w[r.name]).map(r => ({ name: r.name, toggle: tg(r.name) })),
-          all: REPOS.map(r => ({ full: r.org + '/' + r.name, sub: r.role + ' · ' + r.commits + ' commits by you' + (openN(r.name) ? ' · ' + openN(r.name) + ' open' : ''), onS: w[r.name] ? 'true' : 'false', track: w[r.name] ? 'var(--primary)' : 'var(--border)', knob: w[r.name] ? 'flex-end' : 'flex-start', toggle: tg(r.name) })) }; })(),
+          openS: s.wtOpen ? 'true' : 'false', label: (() => { const on = REPOS.concat(s.extraRepos || []).filter(r => w[r.name]).map(r => r.name); return on.length ? on.join(', ') : 'No repositories'; })(),
+          toggleOpen: e => { e.stopPropagation(); const willOpen = !s.wtOpen; this.setState({ wtOpen: willOpen, wtQ: '' }); if (willOpen) setTimeout(() => { const el = document.querySelector('[data-wtq]'); if (el) el.focus(); }, 40); },
+          on: REPOS.concat(s.extraRepos || []).filter(r => w[r.name]).map(r => ({ name: r.name, toggle: tg(r.name) })),
+          q: s.wtQ || '', onQ: e => this.setState({ wtQ: e.target.value }), qKey: e => { if (e.key === 'Escape') { e.stopPropagation(); if (s.wtQ) this.setState({ wtQ: '' }); else this.setState({ wtOpen: false }); } },
+          none: wtList.length ? undefined : 'true',
+          all: wtList.map(r => ({ full: r.org + '/' + r.name, sub: r.role + ' · ' + r.commits + ' commits by you' + (openN(r.name) ? ' · ' + openN(r.name) + ' open' : ''), onS: w[r.name] ? 'true' : 'false', track: w[r.name] ? 'var(--primary)' : 'var(--border)', knob: w[r.name] ? 'flex-end' : 'flex-start', toggle: tg(r.name) })) }; })(),
       scopeDesc: SCOPES.find(x => x.id === (s.scope || 'mine')).desc,
       lanes: ['All', 'Deep', 'Medium', 'Quick'].map(n => ({ name: n, on: s.lane === n ? 'true' : 'false', n: base.filter(p => n === 'All' || this.laneOf(p) === n).length, pick: () => this.setState({ pg: 0, lane: n }) })),
       rows: rows.map(p => {
@@ -1498,7 +1483,7 @@ class Component extends DCLogic {
       pgPrevOff: pg === 0, pgNextOff: pg >= pages - 1,
       pgPrev: () => this.setState({ pg: Math.max(0, pg - 1) }), pgNext: () => this.setState({ pg: Math.min(pages - 1, pg + 1) }),
       emptyTitle: s.prQ ? 'No pull requests match "' + s.prQ + '"' : (s.scope || 'mine') === 'watching' && !Object.values(this.watched()).some(Boolean) ? 'You are not watching any repositories' : 'Nothing in this view',
-      emptySub: (s.scope || 'mine') === 'watching' ? 'Pick repositories in Manage repositories. Their open pull requests show up here.' : 'Pull requests opened by your sessions or teammates land here with a lane already picked.',
+      emptySub: (s.scope || 'mine') === 'watching' ? 'Add repositories in Settings → Watched repositories. Their open pull requests show up here.' : 'Pull requests opened by your sessions or teammates land here with a lane already picked.',
       hasSel: undefined,
       ...this.analyticsVals(), ...this.accountVals(), s: sv,
       ...this.detailVals(),
