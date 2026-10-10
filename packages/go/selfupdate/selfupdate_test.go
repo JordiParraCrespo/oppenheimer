@@ -126,6 +126,21 @@ func TestParsePublicKeysSkipsCommentsAndBlanks(t *testing.T) {
 	}
 }
 
+// A release build stamps a key roll as "<current> <next>" on one line, the
+// only shape the linker's -X carries; reading that as one key would make
+// every binary of the roll refuse every update.
+func TestParsePublicKeysReadsSpaceSeparatedKeysOnOneLine(t *testing.T) {
+	a, _, _ := ed25519.GenerateKey(nil)
+	b, _, _ := ed25519.GenerateKey(nil)
+	keys, err := selfupdate.ParsePublicKeys(base64.StdEncoding.EncodeToString(a) + " " + base64.StdEncoding.EncodeToString(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(keys) != 2 || !keys[0].Equal(a) || !keys[1].Equal(b) {
+		t.Fatalf("keys = %v", keys)
+	}
+}
+
 func TestParsePublicKeysRejectsAShortKey(t *testing.T) {
 	if _, err := selfupdate.ParsePublicKeys(base64.StdEncoding.EncodeToString([]byte("short"))); err == nil {
 		t.Fatal("want an error for a key that is not 32 bytes")
