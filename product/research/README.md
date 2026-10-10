@@ -7,9 +7,8 @@ decision is written in the note that owns it (the numbered notes in
 logged in [`../README.md`](../README.md). Paths in backticks inside
 these notes are relative to `product/`.
 
-Four of them were numbered notes in `../` and are still cited by their
-old numbers elsewhere; [`../README.md`](../README.md) keeps those
-numbers in its index.
+Notes 12, 13, 14 and 16 were numbered notes in `../` and are still
+cited by those numbers elsewhere; the Formerly column below maps them.
 
 ## Reads and measurements
 

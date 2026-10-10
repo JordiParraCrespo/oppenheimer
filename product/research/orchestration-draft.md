@@ -3,7 +3,7 @@
 > **Proposal, not adopted.** Research brought over from pull request
 > #43, which was closed on 2026-10-10 without merging. It was drafted as
 > `versions/mvp/17-orchestration.md`; that number is now Plan. Its
-> "Decided" list is a proposal: the control plane today is
+> "What it proposed" list was never adopted: the control plane today is
 > [`versions/mvp/03-control-plane.md`](../versions/mvp/03-control-plane.md)
 > and
 > [`10-api-modules-and-data-model.md`](../versions/mvp/10-api-modules-and-data-model.md),
@@ -15,13 +15,13 @@
 > have. Paths in backticks are relative to `product/`.
 
 How many runners there are, who decides where a session runs, what a
-"queue" is in this system, and what survives what. Decided 2026-09-22
+"queue" is in this system, and what survives what. Proposed 2026-09-22
 on top of what is built: the link and its in-process registry (03
 §The relay), the transactional outbox (`apps/api/src/outbox`), the
 BullMQ queue package, the session log as the truth (10), and the
 microVM runtime (02 §14, `sessions-in-microvms.md`).
 
-## Decided
+## What it proposed
 
 - **One runner per host, many sessions per host, many hosts per
   person.** A runner is the host's agent, installed as that person's

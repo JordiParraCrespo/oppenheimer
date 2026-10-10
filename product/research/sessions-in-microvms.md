@@ -16,7 +16,7 @@
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
-Decision, 2026-09-22: **v0.2 runs a session as a Firecracker microVM on
+What #43 proposed on 2026-09-22: **v0.2 runs a session as a Firecracker microVM on
 a host with KVM, with the lifecycle Claude Code on the web uses.** The
 VM exists only while the session is active; its disk is kept; a wake
 boots a fresh VM on that disk in a couple of seconds; the guest is
@@ -25,13 +25,13 @@ image is prebaked. The host is your own Hetzner box first, and the
 provider port of `ephemeral-cloud-machines.md` rents a KVM-capable host when you have none,
 rather than one cloud VM per session.
 
-Three earlier decisions change with it and are recorded in
-`README.md`: note 08's "libvirt first, Firecracker later"; `ephemeral-cloud-machines.md`'s
+It would have changed three earlier decisions, none of which
+changed: note 08's "libvirt first, Firecracker later"; `ephemeral-cloud-machines.md`'s
 "one provider VM per session, paired as a host"; and note 10's three
 sleep tiers, which collapse to two states for a microVM session. The
-design lands in the MVP notes that own each piece — `versions/mvp/02`
+design was to land in the MVP notes that own each piece — `versions/mvp/02`
 §14 (the runtime), `04` (the image), `03` §Cloud hosts (the port, the
-policy), `10` (the columns), `07` (the findings) — and this note is
+policy), `10` (the columns), `07` (the findings) — and this note was
 the research behind them.
 
 ## 1. What this session is, read off the machine

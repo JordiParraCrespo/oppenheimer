@@ -50,7 +50,7 @@ on 2026-09-26.
   ("Schedule", the GitHub event), when, how long.
 - **Templates**: dependency audit, standup digest, flaky-test tracker.
 
-## Decided
+## What it proposed
 
 ### 1. A run is a session driven by `claude -p`
 

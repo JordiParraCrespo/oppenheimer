@@ -16,7 +16,7 @@
 > have. Paths in backticks are relative to `product/`.
 
 > **Read with `sessions-in-microvms.md`.** This note researched one provider VM per
-> session; the decision that followed (2026-09-22) is that a session is
+> session; the proposal that followed (2026-09-22) was that a session be
 > a Firecracker microVM on a KVM host, and the port below rents the
 > *host*, sized for several sessions, on AWS and Oracle — the two
 > providers with nested virtualisation on ordinary VMs. The provider
