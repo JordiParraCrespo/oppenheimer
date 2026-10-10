@@ -73,6 +73,7 @@
         "apps/runner",
         "packages/go",
         "scripts/runner",
+        "deploy/dev/bin/publish-release.sh",
         "go.work",
         ".golangci.yml",
         ".agents/rules/go.md",

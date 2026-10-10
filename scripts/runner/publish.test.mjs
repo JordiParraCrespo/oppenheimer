@@ -5,12 +5,14 @@
  * against the installer's keys and whose every artifact matches it.
  *
  * A regression these catch: a publish that copies files before checking them,
- * or a check that compares against the wrong file, would put an unsigned or
- * tampered release where every host installs from.
+ * a check that compares against the wrong file, a tar member that lands
+ * outside the release, or a swap that keeps a channel the new installer
+ * refuses, would put an unsigned, tampered or uninstallable release where
+ * every host installs from.
  *
  * Signing needs OpenSSL 3 (macOS ships LibreSSL; Homebrew's openssl@3 works).
- * The full publish — the rename swap and the api.env rewrite — needs the GNU
- * tools the server has (flock, mv -T), so it runs on Linux only.
+ * The full publish — the rename swap, the api.env rewrite and the unwind —
+ * needs the GNU tools the server has (flock, mv -T), so it runs on Linux only.
  */
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -23,6 +25,7 @@ import {
   readFileSync,
   readlinkSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -74,9 +77,13 @@ after(() => rmSync(tmp, { recursive: true, force: true }));
 
 /**
  * A release directory shaped like the one release.sh writes, without the Go
- * build: two tiny "artifacts", the manifest, the stamped installer, install.env.
+ * build: two tiny "artifacts", the manifest and the stamped installer.
+ * `build` stands for a rebuild of the same version: same names, other bytes.
  */
-function release(name, { keys = pubA, signWith = keyA, version = '1.2.3', base } = {}) {
+function release(
+  name,
+  { keys = pubA, signWith = keyA, version = '1.2.3', base, channel = 'stable', build = '' } = {},
+) {
   const dir = join(tmp, name);
   mkdirSync(dir);
   const targets = ['linux/amd64', 'darwin/arm64'];
@@ -84,7 +91,7 @@ function release(name, { keys = pubA, signWith = keyA, version = '1.2.3', base }
   const sums = [];
   for (const target of targets) {
     const file = `runner_${version}_${target.replace('/', '_')}.tar.gz`;
-    writeFileSync(join(dir, file), `binary for ${target} ${version}\n`);
+    writeFileSync(join(dir, file), `binary for ${target} ${version}${build}\n`);
     const digest = sha256(join(dir, file));
     sums.push(`${digest}  ./${file}`);
     artifacts[target] = {
@@ -95,10 +102,10 @@ function release(name, { keys = pubA, signWith = keyA, version = '1.2.3', base }
   }
   writeFileSync(join(dir, 'SHA256SUMS'), `${sums.join('\n')}\n`);
   writeFileSync(
-    join(dir, 'stable.json'),
+    join(dir, `${channel}.json`),
     JSON.stringify({
       schema: 'oppenheimer.release/v1',
-      channel: 'stable',
+      channel,
       version,
       releasedAt: '2026-10-09T00:00:00Z',
       minSupported: '',
@@ -110,11 +117,7 @@ function release(name, { keys = pubA, signWith = keyA, version = '1.2.3', base }
     `RELEASE_PUBLIC_KEYS="${keys}"`,
   );
   writeFileSync(join(dir, 'install.sh'), installer);
-  writeFileSync(
-    join(dir, 'install.env'),
-    `RUNNER_INSTALL_SHA256=${sha256(join(dir, 'install.sh'))}\n`,
-  );
-  if (signWith) execFileSync(SIGN, [join(dir, 'stable.json'), signWith], { env });
+  if (signWith) execFileSync(SIGN, [join(dir, `${channel}.json`), signWith], { env });
   return dir;
 }
 
@@ -134,6 +137,16 @@ function server(name) {
 
 const publish = (root, ...args) =>
   run('bash', [OPPCTL, 'publish-release', ...args], { OPP_ROOT: root });
+
+/** `oppctl publish-release -` with a tar on stdin, the way publish-dev.sh sends one. */
+const publishTar = (root, tar, extra = {}) =>
+  spawnSync('bash', [OPPCTL, 'publish-release', '-'], {
+    encoding: 'utf8',
+    env: { ...env, OPP_ROOT: root, ...extra },
+    input: tar,
+  });
+
+const live = (root) => readlinkSync(join(root, 'public/releases'));
 
 test('release.sh refuses to build without release keys', () => {
   const r = run('bash', [RELEASE, '9.9.9'], {
@@ -236,6 +249,9 @@ test('a publish swaps the set in, sets the installer digest, and then refuses a 
     sha256(join(first, 'stable.json')),
   );
   assert.ok(existsSync(join(root, 'public/releases/stable.json.sig')));
+  // The installer is in the set, so the one rename published it too.
+  assert.equal(readlinkSync(join(root, 'public/install.sh')), 'releases/install.sh');
+  assert.equal(sha256(join(root, 'public/install.sh')), sha256(join(first, 'install.sh')));
   const apiEnv = readFileSync(join(root, 'config/api.env'), 'utf8');
   assert.match(
     apiEnv,
@@ -254,11 +270,135 @@ test('a publish swaps the set in, sets the installer digest, and then refuses a 
   // Rolling in a second key: signed with the trusted one, carrying both,
   // and streamed as a tar the way publish-dev.sh sends it.
   const rolled = release('live-3', { keys: `${pubA} ${pubB}`, version: '1.2.5' });
-  const ok = spawnSync('bash', [OPPCTL, 'publish-release', '-'], {
-    encoding: 'utf8',
-    env: { ...env, OPP_ROOT: root },
-    input: execFileSync('tar', ['-cf', '-', '-C', rolled, '.']),
-  });
+  const ok = publishTar(root, execFileSync('tar', ['-cf', '-', '-C', rolled, '.']));
   assert.equal(ok.status, 0, ok.stderr);
-  assert.match(readlinkSync(join(root, 'public/releases')), /-1\.2\.5$/);
+  assert.match(live(root), /-1\.2\.5$/);
+  assert.equal(sha256(join(root, 'public/install.sh')), sha256(join(rolled, 'install.sh')));
+});
+
+const linux =
+  (!openssl3 && 'no OpenSSL 3') || (!gnu && 'needs the GNU tools of the server (Linux)');
+
+test('a tar member outside the release is refused before anything is extracted', {
+  skip: linux,
+}, () => {
+  const root = server('srv-traversal');
+  const dir = release('traversal');
+  const before = readFileSync(join(root, 'config/api.env'), 'utf8');
+  const tar = execFileSync(
+    'tar',
+    [
+      '-cf',
+      '-',
+      '-C',
+      dir,
+      '--transform',
+      's,^install.sh$,../../config/api.env,',
+      'install.sh',
+      'stable.json',
+      'stable.json.sig',
+    ],
+    { stdio: ['ignore', 'pipe', 'ignore'] },
+  );
+  const r = publishTar(root, tar);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /a member named "\.\.\/\.\.\/config\/api\.env"/);
+  assert.equal(readFileSync(join(root, 'config/api.env'), 'utf8'), before);
+});
+
+test('a tar member that is a link is refused', { skip: linux }, () => {
+  const root = server('srv-link');
+  const dir = release('link');
+  symlinkSync('../../config/api.env', join(dir, 'SHA256SUMS.link'));
+  const r = publishTar(root, execFileSync('tar', ['-cf', '-', '-C', dir, '.']));
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /SHA256SUMS\.link, which is not a regular file/);
+});
+
+test('the installer must still accept the channel a publish carries over', {
+  skip: linux,
+}, () => {
+  // stable is live, signed by A, under an installer that carries A and B.
+  const root = server('srv-carry');
+  assert.equal(publish(root, release('carry-1', { keys: `${pubA} ${pubB}` })).status, 0);
+  const link = live(root);
+  // beta, signed by B, ships an installer that carries B alone: hosts trust
+  // B, but the shared /install.sh would then refuse the live stable manifest.
+  const r = publish(
+    root,
+    release('carry-2', { keys: pubB, signWith: keyB, channel: 'beta', version: '1.3.0' }),
+  );
+  assert.notEqual(r.status, 0);
+  assert.match(
+    r.stderr,
+    /the live stable channel is signed by a key the new install\.sh does not carry/,
+  );
+  assert.equal(live(root), link);
+});
+
+test('two channels naming one file must agree on its bytes', { skip: linux }, () => {
+  const root = server('srv-collide');
+  assert.equal(publish(root, release('collide-1', { channel: 'beta' })).status, 0);
+  // stable 1.2.3, rebuilt: the same file names as the live beta, other bytes.
+  const r = publish(root, release('collide-2', { build: ' rebuilt' }));
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /runner_1\.2\.3_\w+\.tar\.gz does not match beta\.json/);
+  // The same bytes are fine, and keep both channels.
+  assert.equal(publish(root, release('collide-3')).status, 0);
+  assert.ok(existsSync(join(root, 'public/releases/beta.json.sig')));
+  assert.ok(existsSync(join(root, 'public/releases/stable.json.sig')));
+});
+
+test('a publish whose API does not come back puts the previous set and api.env back', {
+  skip: linux,
+}, () => {
+  const root = server('srv-unwind');
+  assert.equal(publish(root, release('unwind-1')).status, 0);
+  const link = live(root);
+  const apiEnv = readFileSync(join(root, 'config/api.env'), 'utf8');
+
+  // Something is deployed, and docker fails every call.
+  mkdirSync(join(root, 'releases/r1'), { recursive: true });
+  symlinkSync(join(root, 'releases/r1'), join(root, 'current'));
+  const bin = join(tmp, 'failing-docker');
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'docker'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+
+  const next = release('unwind-2', { keys: `${pubA} ${pubB}`, version: '1.2.4' });
+  const r = run('bash', [OPPCTL, 'publish-release', next], {
+    OPP_ROOT: root,
+    OPP_HEALTH_TIMEOUT: '1',
+    PATH: `${bin}:${env.PATH}`,
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /nothing changed/);
+  assert.equal(live(root), link);
+  assert.equal(
+    sha256(join(root, 'public/install.sh')),
+    sha256(join(root, 'public/releases/install.sh')),
+  );
+  assert.equal(readFileSync(join(root, 'config/api.env'), 'utf8'), apiEnv);
+});
+
+test('the installer and sign-release.sh --verify agree on what is signed', {
+  skip: !openssl3 && 'no OpenSSL 3',
+}, () => {
+  const dir = release('parity');
+  const manifest = join(dir, 'stable.json');
+  const verifyManifest = readFileSync(join(ROOT, 'scripts/runner/install.sh'), 'utf8').match(
+    /^verify_manifest\(\) \{[\s\S]*?^\}$/m,
+  )[0];
+  const installer = (keys) =>
+    run('sh', ['-c', `${verifyManifest}\nverify_manifest "$SSL" "$1" "$1.sig"`, 'sh', manifest], {
+      SSL: openssl3,
+      WORK: dir,
+      RELEASE_PUBLIC_KEYS: keys,
+    }).status;
+  const signRelease = (keys) =>
+    run(SIGN, ['--verify', manifest, `${manifest}.sig`, keys], { OPENSSL: openssl3 }).status;
+  for (const keys of [pubA, pubB, `${pubB} ${pubA}`]) {
+    assert.equal(signRelease(keys), installer(keys), `keys: ${keys}`);
+  }
+  assert.equal(signRelease(pubA), 0);
+  assert.notEqual(signRelease(pubB), 0);
 });

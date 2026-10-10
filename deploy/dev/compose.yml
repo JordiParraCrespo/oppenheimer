@@ -162,8 +162,9 @@ services:
   # manifest, the binaries and the installer. Built and signed off this server
   # and put into /srv/oppenheimer/public by `oppctl publish-release` (README,
   # "Runner releases"); served read-only, and reached through the tunnel's
-  # /releases/ and /install.sh. public/releases is a symlink into
-  # public/.releases, relative, so it resolves inside this container too.
+  # /releases/ and /install.sh. Both are relative symlinks into one set under
+  # public/.releases, so they resolve inside this container too and one
+  # rename publishes them together.
   releases:
     image: nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
     restart: unless-stopped

@@ -16,7 +16,6 @@
 #   SHA256SUMS                            what a person verifies by hand
 #   <channel>.json                        the manifest, still unsigned
 #   install.sh                            the installer, release keys stamped in
-#   install.env                           RUNNER_INSTALL_SHA256=<installer digest>
 set -euo pipefail
 
 VERSION="${1:?usage: release.sh <version> [channel]}"
@@ -39,13 +38,13 @@ if [ -z "$PUBLIC_KEYS" ]; then
 	echo "       update; print it with: scripts/runner/sign-release.sh --pubkey <key file>" >&2
 	exit 1
 fi
-for key in $PUBLIC_KEYS; do
-	# A raw Ed25519 public key is 32 bytes: 44 base64 characters ending in '='.
-	[[ "$key" =~ ^[A-Za-z0-9+/]{43}=$ ]] || {
-		echo "error: RELEASE_PUBLIC_KEYS holds \"$key\", which is not a base64 Ed25519 public key" >&2
-		exit 1
-	}
-done
+"$(cd "$(dirname "$0")" && pwd)/sign-release.sh" --check-keys "$PUBLIC_KEYS" || {
+	echo "error: RELEASE_PUBLIC_KEYS must hold base64 Ed25519 public keys (sign-release.sh --pubkey)" >&2
+	exit 1
+}
+# Space-separated on one line: the linker's -X carries one quoted value, and
+# the runner's selfupdate.ParsePublicKeys splits the block on any whitespace.
+PUBLIC_KEYS="$(printf '%s' "$PUBLIC_KEYS" | tr -s ' \t\n' ' ' | sed 's/^ //; s/ $//')"
 case "$BASE_URL" in
 https://?*) BASE_URL="${BASE_URL%/}" ;;
 "") echo "error: RELEASE_BASE_URL is empty; set it to where hosts will fetch the release, e.g. https://dev.example.com/releases" >&2; exit 1 ;;
@@ -68,7 +67,7 @@ for target in "${targets[@]}"; do
 	mkdir -p "$stage"
 	echo "==> building $target"
 	( cd "$ROOT/apps/runner" && CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
-		-ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X ${KEYS_VAR}=${PUBLIC_KEYS}" \
+		-ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X '${KEYS_VAR}=${PUBLIC_KEYS}'" \
 		-o "$stage/runner" ./cmd/runner )
 	cp "$ROOT/LICENSE" "$stage/" 2>/dev/null || true
 	tar -czf "$OUT/runner_${VERSION}_${os}_${arch}.tar.gz" -C "$OUT/stage" "runner_${VERSION}_${os}_${arch}"
@@ -109,8 +108,5 @@ if ! grep -q "^RELEASE_PUBLIC_KEYS=\"$PUBLIC_KEYS\"\$" "$OUT/install.sh"; then
 	exit 1
 fi
 install_digest="$(cd "$OUT" && if command -v sha256sum >/dev/null; then sha256sum install.sh; else shasum -a 256 install.sh; fi | cut -d' ' -f1)"
-# The line the control plane's api.env needs, kept for the steps after this
-# one (scripts/runner/publish-dev.sh, `oppctl publish-release`).
-printf 'RUNNER_INSTALL_SHA256=%s\n' "$install_digest" >"$OUT/install.env"
 echo "==> wrote $OUT/install.sh"
-echo "    RUNNER_INSTALL_SHA256=$install_digest  (also in $OUT/install.env)"
+echo "    RUNNER_INSTALL_SHA256=$install_digest"

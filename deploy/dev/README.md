@@ -207,10 +207,13 @@ serves `/srv/oppenheimer/public` read-only, and the tunnel sends
 release is in place the API answers every pairing with HOSTS_004 ("Hosts
 are not configured").
 
-A release is built and signed on your machine. The Ed25519 key that signs it
-never goes to CI or to the server, and a manifest without its signature is
-never published. One command does the whole thing from the machine that holds
-the key:
+A release is built by the `Release runner` workflow on a `runner-v*` tag
+and signed on your machine. The Ed25519 key that signs it never goes to CI or
+to the server, and a manifest without its signature is never published. The
+workflow needs the repository variables `RUNNER_RELEASE_PUBLIC_KEYS` (the
+key's public half) and `RUNNER_RELEASE_BASE_URL`
+(`https://dev.example.com/releases`); it fails without them. Then, from the
+machine that holds the key:
 
 ```bash
 # once: the offline release key; its public half goes into every binary
@@ -220,51 +223,57 @@ DEV_SSH_HOST=oppenheimer-dev DEV_HOSTNAME=dev.example.com \
   scripts/runner/publish-dev.sh 0.1.0 ~/secure/runner-release.key   # [stable|beta]
 ```
 
-`publish-dev.sh` runs three steps:
+`publish-dev.sh` downloads what the workflow attached to the GitHub release
+`runner-v0.1.0` (the artifacts, `SHA256SUMS`, `install.sh` and the unsigned
+manifest), signs the manifest locally, and streams those same files as a tar
+over SSH to `sudo -u deploy oppctl publish-release -`. The bytes published
+are the bytes CI built. `RELEASE_DIR=dist/runner` publishes a local
+`release.sh` build instead.
 
-1. `release.sh`, with the key's public half as `RELEASE_PUBLIC_KEYS` and
-   `https://$DEV_HOSTNAME/releases` as `RELEASE_BASE_URL`. Both are required:
-   a build without a key would make runners that refuse every update. It
-   writes `dist/runner/install.env` with the installer's
-   `RUNNER_INSTALL_SHA256`.
-2. `sign-release.sh`, locally.
-3. Streams `dist/runner` as a tar over SSH to
-   `sudo -u deploy oppctl publish-release -` on the server.
-
-`oppctl publish-release` checks everything again before it touches anything,
-and refuses the release when any check fails:
+`oppctl publish-release` takes only a tar whose members are regular files at
+its top level, under a size ceiling, and refuses the release when any check
+fails:
 
 - the manifest's `.sig` must verify against the keys stamped into the
-  `install.sh` it came with (the same OpenSSL check the installer runs), and
-  against the keys of the `install.sh` already published, so the runners
-  already installed will take the update
+  `install.sh` it came with, and against the keys of the `install.sh` already
+  published, so the runners already installed will take the update. The check
+  is `sign-release.sh --verify`, installed beside `oppctl`, the same OpenSSL
+  check the installer runs
 - every artifact must match the SHA-256 and size the manifest signed, and
   its URL must be under `https://$DEV_HOSTNAME/releases/`
-- the directory may hold nothing the manifest does not name
+- the release may hold nothing the manifest does not name
 
-Then it puts the release in place without a moment where a host could read a
-manifest from one release and its signature from another. The files go into
-a new directory, `public/.releases/<stamp>-<version>`, and `public/releases`
-is a symlink that is renamed onto it; a channel this publish does not carry
-keeps its files. Then `install.sh` is renamed into place. It sets
-`RUNNER_INSTALL_SHA256` in `api.env` (and `RUNNER_RELEASE_BASE_URL` and
-`RUNNER_INSTALL_URL` when they are empty), and recreates the API and then
-`web`, because nginx resolves `api` only when it starts. If they do not come
-back healthy, it restores the previous `api.env`. The three newest release
-directories are kept.
+A publish is one rename. Each release is a set,
+`public/.releases/<stamp>-<version>`, holding `install.sh`, the manifests,
+their signatures and the artifacts. `public/releases` is a symlink to the
+live set and `public/install.sh` a symlink to `releases/install.sh`, so
+renaming `public/releases` onto the next set publishes the installer and the
+release together, and no host reads a manifest from one release and its
+signature, artifacts or installer from another. A channel this publish does
+not carry is copied into the next set as it is live, and the whole set is
+checked before the swap: the new installer must accept every manifest in it,
+and two channels naming the same file must agree on its bytes.
+
+After the swap it sets `RUNNER_INSTALL_SHA256` in `api.env` to the new
+installer's digest (and `RUNNER_RELEASE_BASE_URL` and `RUNNER_INSTALL_URL`
+when they are empty) and, when that changed it, recreates the API and then
+`web`, because the API reads `api.env` when it starts and nginx resolves
+`api` only when it starts. If they do not come back healthy, it renames
+`public/releases` back onto the previous set and restores the previous
+`api.env`, so nothing changed. Only then are older sets pruned; the three
+newest are kept.
 
 `oppctl publish-release --check <dir>` runs only the checks. `PUBLISH_FLAGS=--new-keys`
 accepts a manifest the published runners do not trust. Every installed host
 is then stranded until it is installed again, so use it only for a deliberate
 key reset. To roll in a second key, build with
-`RELEASE_PUBLIC_KEYS="<current> <next>"` and keep signing with the current
-key until every host runs a build that carries both.
+`RUNNER_RELEASE_PUBLIC_KEYS="<current> <next>"` and keep signing with the
+current key until every host runs a build that carries both. Retire the old
+key only once every live channel is signed with the new one: a publish whose
+installer would refuse a channel it keeps is refused.
 
 `publish-release` is new in `oppctl`, so the server needs the copy from this
-commit: re-run `oppctl setup` from a checkout (step 3 above). The `Release
-runner` workflow builds the same artifacts on a `runner-v*` tag and attaches
-them, unsigned, to the GitHub release. Publishing to this server is always
-`publish-dev.sh`, because it is the only place the key is.
+commit: re-run `oppctl setup` from a checkout (step 3 above).
 
 ## Day to day
 
