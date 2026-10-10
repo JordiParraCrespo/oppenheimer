@@ -1,9 +1,8 @@
 # Sessions in microVMs, the way Anthropic runs them
 
 > **Proposal, not adopted.** Research brought over from pull request
-> #43, which was closed on 2026-10-10 without merging. Its "Decision,
-> 2026-09-22" was a proposal for that pull request and never became one:
-> libvirt first, Firecracker later (note 08) and the sleep tiers of note
+> #43, which was closed on 2026-10-10 without merging. Its proposal of
+> 2026-09-22 never became a decision: libvirt first, Firecracker later (note 08) and the sleep tiers of note
 > 10 still stand. What governs today:
 > [`03-machines-and-vm-provisioning.md`](../03-machines-and-vm-provisioning.md),
 > [`08-reuse-gha-runner.md`](../08-reuse-gha-runner.md) and
