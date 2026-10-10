@@ -114,24 +114,28 @@ func ParseManifest(raw []byte, signature string, keys []ed25519.PublicKey) (*Man
 	return &m, nil
 }
 
-// ParsePublicKeys decodes base64 Ed25519 public keys, skipping blank lines and
-// `#` comments so the compiled-in list can be a readable block of text. A key
-// that is not a valid Ed25519 public key is an error, never a silent skip.
+// ParsePublicKeys decodes base64 Ed25519 public keys separated by any
+// whitespace, skipping `#` comment lines so the compiled-in list can be a
+// readable block of text. A release build passes the keys on one line,
+// space-separated, because that is what the linker's -X can carry. A key that
+// is not a valid Ed25519 public key is an error, never a silent skip.
 func ParsePublicKeys(lines string) ([]ed25519.PublicKey, error) {
 	var keys []ed25519.PublicKey
 	for _, line := range strings.Split(lines, "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
+		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		raw, err := base64.StdEncoding.DecodeString(line)
-		if err != nil {
-			return nil, fmt.Errorf("selfupdate: decode public key: %w", err)
+		for _, field := range strings.Fields(line) {
+			raw, err := base64.StdEncoding.DecodeString(field)
+			if err != nil {
+				return nil, fmt.Errorf("selfupdate: decode public key: %w", err)
+			}
+			if len(raw) != ed25519.PublicKeySize {
+				return nil, fmt.Errorf("selfupdate: public key is %d bytes, want %d", len(raw), ed25519.PublicKeySize)
+			}
+			keys = append(keys, ed25519.PublicKey(raw))
 		}
-		if len(raw) != ed25519.PublicKeySize {
-			return nil, fmt.Errorf("selfupdate: public key is %d bytes, want %d", len(raw), ed25519.PublicKeySize)
-		}
-		keys = append(keys, ed25519.PublicKey(raw))
 	}
 	return keys, nil
 }

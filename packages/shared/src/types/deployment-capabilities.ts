@@ -61,6 +61,11 @@ export const CLIENT_CAPABILITIES = [
   'github_app',
   // Plan's calendar offers Connect Google Calendar only when it can work.
   'google_calendar',
+  // Whether this server can pair a machine. An empty host list does not say
+  // so, and the mint is the request that would find out, so a console reads
+  // this before it asks. Public because the probe is: anonymous callers get
+  // it too, and it says no more than whether pairing is configured.
+  'hosts',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

@@ -1,11 +1,11 @@
-# 16 — The developer-tools landscape, September 2026
+# The developer-tools landscape, September 2026 (formerly note 16)
 
 The owner asked on 2026-09-28 for research into other developer
 productivity tools. This note maps five groups against Oppenheimer:
 AI code review, agent consoles, PR workflow and merge, engineering
 analytics, and dev environments. It ends with what to take and where we
 stand. It feeds the Pull requests area
-([`next-steps/0.2-pull-requests.md`](next-steps/0.2-pull-requests.md))
+([`next-steps/0.2-pull-requests.md`](../next-steps/0.2-pull-requests.md))
 and note 15's lanes, auto-merge and review sessions.
 
 Numbers a vendor published about itself are marked (v). Claims found
