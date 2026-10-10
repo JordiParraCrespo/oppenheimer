@@ -27,7 +27,7 @@ const Path = "/api/v1/relay/runner"
 const HeartbeatInterval = 15 * time.Second
 
 // Ladder is the reconnect ladder, with jitter applied on top
-// (`product/12-lessons-from-grok-bot.md`).
+// (`product/research/lessons-from-grok-bot.md`).
 var Ladder = []time.Duration{500 * time.Millisecond, time.Second, 2 * time.Second, 5 * time.Second, 10 * time.Second, 30 * time.Second}
 
 // PingInterval is how often the runner pings the control plane, and

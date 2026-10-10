@@ -301,7 +301,7 @@ grounds can still fetch, verify and install the version that fixes it
   agent, and the update channel.
 - **Hints** may ride a heartbeat reply or the attach socket, and the
   vocabulary is closed: `update_available`, `update_required`,
-  `blocked` with a retry-after (`../../12-lessons-from-grok-bot.md`). The
+  `blocked` with a retry-after (`../../research/lessons-from-grok-bot.md`). The
   attach socket may additionally say `host_offline`, for a session whose
   host has no link right now — said **on the socket**, after the ticket
   is redeemed, and never on the ticket itself: the issuer does not ask a
@@ -342,7 +342,7 @@ grounds can still fetch, verify and install the version that fixes it
 - Reconnect ladder 0.5 s, 1, 2, 5, 10, 30 with jitter, and an epoch
   that the control plane allocates on every accepted link and hands over
   in `welcome`; frames and callbacks from an older epoch are dropped
-  (`../../12-lessons-from-grok-bot.md`). The runner refuses a welcome
+  (`../../research/lessons-from-grok-bot.md`). The runner refuses a welcome
   whose epoch is not newer than its last one, so an epoch must rise
   across control-plane restarts too. Its floor is the control plane's
   clock in milliseconds, so the first epoch after a restart is already
