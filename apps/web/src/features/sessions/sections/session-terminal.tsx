@@ -66,6 +66,7 @@ export function SessionTerminal({
     status,
     away: awaySince !== null,
     reconnected: terminal.reconnected,
+    slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
 
