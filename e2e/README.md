@@ -123,6 +123,21 @@ and a writable git server on the machine itself.
 FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
 ```
 
+## Latency like a real deployment
+
+Locally every leg is loopback, so the console feels instant and lag that
+every real user sees never shows. `stack.mjs up --latency <ms>` moves the API
+to `:3011` (`API_ORIGIN_PORT`) and puts an edge on `:3001`
+(`scripts/stack/edge.mjs`): a TCP proxy that holds every byte for half the
+round trip each way, where Cloudflare and the tunnel stand on dev. URLs do not
+change, so the console, the runners (local or in containers) and the suites all
+pass through it, and a runner's boot assertion still names the URL it dialled.
+
+`--latency 60` is what the dev deployment measured from Spain. A keystroke's
+echo then costs two round trips, browser to relay and relay to runner;
+`tests/fleet/typing.spec.ts` prints it (about 126 ms) beside how long the
+console took to draw the key (a few ms, from `local-echo.ts`).
+
 ## Running it
 
 ```bash
@@ -130,6 +145,9 @@ FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
 #    for the `web` project. `.env` is read, never written; with none, the API
 #    runs on .env.example's values (EMAIL_PROVIDER=console is what the suite reads).
 node scripts/stack/stack.mjs up --web      # `down` stops what it started
+
+#    Add `--latency 60` to put the dev deployment's round trip in front of the
+#    API (see "Latency like a real deployment" below).
 
 # 2. the tests; the API's log, .stack/api.log, is their mailbox
 pnpm test:e2e                              # everything (from the repo root)

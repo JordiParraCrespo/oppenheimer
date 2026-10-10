@@ -2,7 +2,7 @@
 /**
  * The stack the e2e suites run against, stood up in one command:
  *
- *   node scripts/stack/stack.mjs up [--web] [--no-build]
+ *   node scripts/stack/stack.mjs up [--web] [--no-build] [--latency <ms>]
  *   node scripts/stack/stack.mjs status
  *   node scripts/stack/stack.mjs down
  *
@@ -21,6 +21,13 @@
  * - Postgres and Redis already listening are used, not replaced; only a
  *   Compose project this script started (`oppenheimer-stack`) is stopped.
  *
+ * `--latency <ms>` puts an edge in front of the API (`edge.mjs`): the API moves
+ * to `API_ORIGIN_PORT` and a proxy holding every byte for half of `<ms>` each
+ * way takes its port, so the console, the runners and the suites all reach it
+ * the way they reach a real deployment, over the same URL. `--latency 60` is
+ * what the dev deployment measured from Spain; a keystroke's echo then waits
+ * two round trips, browser to relay and relay to runner, as it does there.
+ *
  * Everything it starts is recorded in `.stack/`, with a log per process;
  * `down` stops exactly that.
  */
@@ -34,6 +41,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const STATE = resolve(process.env.STACK_DIR ?? join(ROOT, '.stack'));
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
+/** Where the API listens behind the edge, when `--latency` puts one in front. */
+const API_ORIGIN_PORT = Number(process.env.API_ORIGIN_PORT ?? 3011);
 const COMPOSE = [
   'compose',
   '--project-name',
@@ -282,14 +291,43 @@ async function startStub(name, port) {
 
 const API_HEALTH = `${API_URL}/api/v1/health`;
 
-async function startApi() {
+async function startApi(latency) {
   const env = apiEnv();
   run('pnpm', ['--filter', '@oppenheimer/api', 'migration:run'], {
     env: { ...process.env, ...env },
   });
-  const out = daemon('api', 'node', ['apps/api/dist/main.js'], env);
-  await waitFor('the API', () => httpOk(API_HEALTH), { logFile: out });
-  log(`API on ${API_URL} (log: ${out})`);
+  if (latency === null) {
+    const out = daemon('api', 'node', ['apps/api/dist/main.js'], env);
+    await waitFor('the API', () => httpOk(API_HEALTH), { logFile: out });
+    log(`API on ${API_URL} (log: ${out})`);
+    return;
+  }
+  // Only the port moves: its public URL, the one runners sign their boot
+  // assertions for, is still `API_URL`, which is now the edge.
+  const origin = new URL(API_URL);
+  origin.port = String(API_ORIGIN_PORT);
+  const out = daemon('api', 'node', ['apps/api/dist/main.js'], {
+    ...env,
+    PORT: String(API_ORIGIN_PORT),
+  });
+  await waitFor('the API', () => httpOk(`${origin.origin}/api/v1/health`), { logFile: out });
+  const edgeOut = daemon('edge', 'node', [
+    join(ROOT, 'scripts', 'stack', 'edge.mjs'),
+    new URL(API_URL).port || '80',
+    String(API_ORIGIN_PORT),
+    String(latency),
+  ]);
+  await waitFor('the edge', () => httpOk(API_HEALTH), { logFile: edgeOut });
+  log(`API on ${API_URL} behind a ${latency} ms edge, origin :${API_ORIGIN_PORT} (log: ${out})`);
+}
+
+/** `--latency <ms>`, or null without it. */
+function latencyOf(args) {
+  const at = args.indexOf('--latency');
+  if (at === -1) return null;
+  const ms = Number(args[at + 1]);
+  if (!Number.isFinite(ms) || ms < 0) fail('--latency takes a round trip in milliseconds');
+  return ms;
 }
 
 // oppenheimer:begin web
@@ -302,7 +340,7 @@ async function startWeb() {
 
 // -------------------------------------------------------------------- commands
 
-async function up(flags) {
+async function up(flags, latency) {
   await startInfrastructure();
   await startStub('github-stub', 4319);
   await startStub('namer-stub', 4320);
@@ -318,8 +356,13 @@ async function up(flags) {
   // oppenheimer:end web
   if (filters.length && !flags.has('--no-build'))
     run('pnpm', ['turbo', 'run', 'build', ...filters], { stdio: 'inherit' });
-  if (startsApi) await startApi();
-  else log(`the API is already answering on ${API_URL}; leaving it`);
+  if (startsApi) await startApi(latency);
+  else
+    log(
+      `the API is already answering on ${API_URL}; leaving it${
+        latency === null ? '' : ' (and --latency with it: run `down` first)'
+      }`,
+    );
   // oppenheimer:begin web
   if (startsWeb) await startWeb();
   // oppenheimer:end web
@@ -358,7 +401,7 @@ async function stop(pid) {
 
 async function down() {
   const state = readState();
-  for (const name of ['web', 'api', 'github-stub', 'namer-stub']) {
+  for (const name of ['web', 'edge', 'api', 'github-stub', 'namer-stub']) {
     if (state.pids[name]) await stop(state.pids[name]);
   }
   if (state.compose && succeeds('docker', ['info'])) run('docker', [...COMPOSE, 'down']);
@@ -375,6 +418,7 @@ async function status() {
     ['github-stub', await portOpen(4319)],
     ['namer-stub', await portOpen(4320)],
     ['api', await httpOk(API_HEALTH)],
+    ['edge', await portOpen(API_ORIGIN_PORT)],
     ['web', await httpOk(WEB_URL)],
   ];
   for (const [name, isUp] of rows) console.log(`${isUp ? 'up  ' : 'down'}  ${name}`);
@@ -390,7 +434,7 @@ process.on('uncaughtException', (error) => {
 });
 switch (command) {
   case 'up':
-    await up(flags);
+    await up(flags, latencyOf(rest));
     break;
   case 'status':
     await status();
@@ -399,6 +443,6 @@ switch (command) {
     await down();
     break;
   default:
-    console.error('usage: stack.mjs up [--web] [--no-build] | status | down');
+    console.error('usage: stack.mjs up [--web] [--no-build] [--latency <ms>] | status | down');
     process.exit(2);
 }

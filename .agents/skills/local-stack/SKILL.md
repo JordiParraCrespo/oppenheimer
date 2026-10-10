@@ -11,6 +11,12 @@ description: Verify a change end to end against the real API, a real runner and,
 node scripts/stack/stack.mjs up          # add --web when the console is involved
 ```
 
+When what you are checking depends on the network — typing, reconnects,
+flow control — add `--latency 60`: an edge in front of the API with the dev
+deployment's round trip on every leg (`e2e/README.md`, "Latency like a real
+deployment"). `FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
+tests/fleet/typing.spec.ts` then prints what a keystroke costs.
+
 It is the "Running it" steps of `e2e/README.md` in one command, and it
 leaves the checkout's `.env` and any running Postgres and Redis alone. The
 API's log is `.stack/api.log`, which is where the suites read it by default.
