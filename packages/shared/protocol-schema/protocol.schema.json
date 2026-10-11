@@ -968,6 +968,103 @@
         "sealed",
         "expiresAt"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.direct.offer"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "sdp": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "iceServers": {
+          "default": [],
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "sdp"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.direct.answer"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "sdp": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "sdp"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.direct.refused"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "reason"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.path"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "offset"
+      ]
     }
   ],
   "$defs": {
@@ -1284,7 +1381,8 @@
       "session.image",
       "session.create.images",
       "session.files",
-      "repository.prepare"
+      "repository.prepare",
+      "attachment.direct"
     ],
     "maxEventPayloadBytes": 8192
   }
