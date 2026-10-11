@@ -60,6 +60,16 @@ func (w *flowWindow) credit(n int) {
 	w.mu.Unlock()
 }
 
+// reset forgets every byte in flight. For bytes that will never be credited:
+// those the direct path was carrying when it closed. A late credit for one
+// that did arrive is clamped at zero by credit.
+func (w *flowWindow) reset() {
+	w.mu.Lock()
+	w.inFlight = 0
+	w.cond.Broadcast()
+	w.mu.Unlock()
+}
+
 func (w *flowWindow) close() {
 	w.mu.Lock()
 	w.closed = true

@@ -12,9 +12,11 @@ package cli
 // control plane); channel input waits here until the link has delivered that
 // many. Credit and resize stay on the link either way.
 //
-// A channel that closes takes its attachment with it: the browser reattaches
-// on the relay, and tmux redraws the whole screen for the new client, which
-// is what repairs anything the channel did not deliver.
+// A channel that closes sends the attachment back to the link: output and
+// input both, from that moment, and tmux repaints the client's whole screen,
+// which is what repairs whatever the channel did not deliver. The attachment
+// itself stays open, so the terminal never sees a reconnect; the browser
+// treats output arriving on the relay again as the same fallback.
 
 import (
 	"context"
@@ -59,6 +61,9 @@ type pathState struct {
 	// held is channel input waiting for the link to reach inputOffset.
 	held      [][]byte
 	heldBytes int
+	// fellBack is set once a channel that carried this attachment closed: it
+	// is on the link for good, and late channel input is dropped.
+	fellBack bool
 }
 
 // sendOutput hands one PTY read to whichever path the attachment is on. The
@@ -142,11 +147,25 @@ func (h *linkHandler) directOpened(att *attachment, ch *direct.Channel) {
 	_ = h.client.Send(link.AttachmentPath{Type: link.TypeAttachmentPath, AttachmentID: att.id, Offset: offset})
 }
 
-// directClosed ends an attachment whose channel went away. Its browser
-// reattaches on the relay, and the fresh tmux client redraws everything.
+// directClosed puts the attachment back on the link when its channel goes
+// away. If the channel had been carrying output, some of it may not have
+// arrived: the client is asked to repaint, and the bytes that were in flight,
+// which will never be credited, are forgotten.
 func (h *linkHandler) directClosed(att *attachment) {
-	if h.release(att) {
-		h.closeAttachment(att, "direct path closed")
+	att.path.mu.Lock()
+	wasOpen := att.path.channel != nil
+	att.path.channel, att.path.peer = nil, nil
+	att.path.held, att.path.heldBytes = nil, 0
+	att.path.fellBack = true
+	att.path.mu.Unlock()
+	if !wasOpen || h.attachmentByID(att.id) != att {
+		return
+	}
+	h.logger.Info("direct path closed; attachment back on the link", slog.String("attachment", att.String()))
+	att.flow.reset()
+	if err := att.pty.Redraw(); err != nil {
+		h.logger.Warn("could not ask the terminal to repaint after the direct path closed",
+			slog.String("attachment", att.String()), slog.Any("error", err))
 	}
 }
 
@@ -190,6 +209,9 @@ func (h *linkHandler) directInput(att *attachment, bytes []byte) {
 	frame := append([]byte(nil), bytes...)
 	att.path.mu.Lock()
 	defer att.path.mu.Unlock()
+	if att.path.fellBack {
+		return
+	}
 	if att.path.inputKnown && att.path.inBytes >= att.path.inputOffset && len(att.path.held) == 0 {
 		h.queueInput(att, frame)
 		return

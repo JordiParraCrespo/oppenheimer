@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/creack/pty"
@@ -383,6 +384,18 @@ func (a *attachment) Write(p []byte) (int, error) { return a.file.Write(p) }
 
 func (a *attachment) Resize(size app.Size) error {
 	return pty.Setsize(a.file, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
+}
+
+// Redraw signals the tmux client as a terminal resize would. The client
+// reports its size to the server, which repaints that client in full; the
+// size has not changed, so the window and the program in it see nothing. A
+// PTY resize to the same size would not do it: the kernel only signals a
+// change.
+func (a *attachment) Redraw() error {
+	if a.cmd.Process == nil {
+		return nil
+	}
+	return a.cmd.Process.Signal(syscall.SIGWINCH)
 }
 
 // Close detaches: the PTY goes, the tmux session stays.

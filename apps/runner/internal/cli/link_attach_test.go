@@ -24,6 +24,7 @@ type heldPTY struct {
 
 	mu      sync.Mutex
 	sizes   []sessionsapp.Size
+	redraws int
 	written []byte
 	closed  chan struct{}
 	closing sync.Once
@@ -52,6 +53,19 @@ func (p *heldPTY) Resize(size sessionsapp.Size) error {
 	defer p.mu.Unlock()
 	p.sizes = append(p.sizes, size)
 	return nil
+}
+
+func (p *heldPTY) Redraw() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.redraws++
+	return nil
+}
+
+func (p *heldPTY) redrawn() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.redraws
 }
 
 func (p *heldPTY) Close() error {

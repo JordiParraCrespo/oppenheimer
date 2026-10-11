@@ -154,8 +154,9 @@ func (b *browserPeer) received() string {
 
 // The whole switch over a real data channel: the offer is answered over the
 // link, the channel opens, the host says after which output byte it moved,
-// and output from then on reaches the browser on the channel. The channel
-// closing takes the attachment with it.
+// and output from then on reaches the browser on the channel. When the
+// channel closes the attachment stays open, back on the link, and the client
+// is asked to repaint what the channel may have lost.
 func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 	pty := newHeldPTY(false)
 	h, sent, _ := newAttachHarness(t, pty, nil)
@@ -200,16 +201,36 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
+	if got := sent.framed(); got != "before" {
+		t.Fatalf("the link carried %q, want only what preceded the switch", got)
+	}
+
 	_ = browser.pc.Close()
-	sent.waitFor(t, "attachment.closed", func(m any) bool {
-		c, ok := m.(link.AttachmentClosed)
-		return ok && c.Reason == "direct path closed"
-	})
-	if h.attachmentByID(attachmentUnderTest) != nil {
-		t.Fatal("the attachment outlived its channel")
+	deadline = time.Now().Add(10 * time.Second)
+	for pty.redrawn() == 0 {
+		if time.Now().After(deadline) {
+			t.Fatal("the client was never asked to repaint after the channel closed")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if h.attachmentByID(attachmentUnderTest) != att {
+		t.Fatal("the attachment did not survive its channel")
+	}
+	if err := h.sendOutput(context.Background(), att, []byte(" back")); err != nil {
+		t.Fatal(err)
+	}
+	if got := sent.framed(); got != "before back" {
+		t.Fatalf("after the fallback the link carried %q", got)
 	}
 	if h.direct.Peers() != 0 {
 		t.Fatalf("the closed channel kept its slot: %d", h.direct.Peers())
+	}
+	// Late channel input after the fallback goes nowhere.
+	h.Message(context.Background(), pathMessage(t, 0))
+	h.directInput(att, []byte("late"))
+	time.Sleep(10 * time.Millisecond)
+	if got := writtenTo(pty); got != "" {
+		t.Fatalf("channel input after the fallback reached the PTY: %q", got)
 	}
 }
 
