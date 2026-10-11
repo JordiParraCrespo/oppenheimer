@@ -117,8 +117,9 @@ type attachment struct {
 	// readOnly is a watcher's attachment: its keystrokes are dropped here,
 	// whatever reached the link, as well as by tmux and by the relay.
 	readOnly bool
-	// path is the direct path, when the browser asked for one (link_direct.go).
-	path pathState
+	// path is where its bytes go: the link, or a direct channel
+	// (attachment_path.go).
+	path attachmentPath
 }
 
 // stop ends an attachment's PTY, its reads and its direct path. The caller
@@ -127,7 +128,7 @@ func (att *attachment) stop() {
 	att.flow.close()
 	att.cancel()
 	_ = att.pty.Close()
-	att.closeDirect()
+	att.path.close()
 }
 
 // newRunID mints the id every event key of this process starts with.
@@ -332,7 +333,7 @@ func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte
 		return
 	}
 	// The frame may be a view into the read buffer, which is not ours to keep.
-	h.linkInput(att, append([]byte(nil), bytes...))
+	att.path.linkInput(append([]byte(nil), bytes...), h.inputQueue(att))
 }
 
 // queueInput hands a keystroke frame to the attachment's inputPump, and

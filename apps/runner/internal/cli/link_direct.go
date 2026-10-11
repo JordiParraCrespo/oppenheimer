@@ -1,28 +1,20 @@
 package cli
 
-// The direct path (product/versions/mvp/22): an attachment that starts on the
-// link may move to a WebRTC data channel with its browser. The control plane
-// forwards the browser's offer; this file answers it and moves the bytes.
+// The direct path's handler side (product/versions/mvp/22): the link
+// forwards a browser's offer, this file answers it and tells the attachment's
+// path (attachment_path.go) what happened. Which bytes go where is the
+// path's; this file only translates between the link, the channel and it.
 //
-// Each direction switches at a byte offset, never at a marker. Output: once
-// the channel opens, every PTY byte after the ones already handed to the link
-// goes on the channel, and `attachment.path` tells the browser how many came
-// first — it reads the relay until it has them. Input: the browser counts the
-// keystroke bytes it sent on the relay and says so (`attachment.path` from the
-// control plane); channel input waits here until the link has delivered that
-// many. Credit and resize stay on the link either way.
-//
-// A channel that closes sends the attachment back to the link: output and
-// input both, from that moment, and tmux repaints the client's whole screen,
-// which is what repairs whatever the channel did not deliver. The attachment
-// itself stays open, so the terminal never sees a reconnect; the browser
-// treats output arriving on the relay again as the same fallback.
+// A channel that closes sends the attachment back to the link, and tmux
+// repaints the client's whole screen, which is what repairs whatever the
+// channel did not deliver. The attachment itself stays open, so the terminal
+// never sees a reconnect; the browser treats output arriving on the relay
+// again as the same fallback.
 
 import (
 	"context"
 	"errors"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/direct"
@@ -37,46 +29,9 @@ const directHeld = 64 << 10
 // offerTimeout bounds answering one offer, ICE gathering included.
 const offerTimeout = 10 * time.Second
 
-// pathState is one attachment's direct path: which way its output goes and
-// how far each direction's link stream has run.
-type pathState struct {
-	mu sync.Mutex
-	// offered is set by the first offer; a second for the same attachment is
-	// refused rather than racing the first.
-	offered bool
-	// peer is the negotiated channel, open or not, so closing the attachment
-	// abandons a negotiation too.
-	peer *direct.Channel
-	// channel carries the output once it opens; nil is the link.
-	channel *direct.Channel
-	// outBytes is every PTY byte handed to the link. When the channel opens,
-	// it is the output offset.
-	outBytes uint64
-	// inBytes is every keystroke byte the link delivered.
-	inBytes uint64
-	// inputOffset is where the browser's input moved to the channel; valid
-	// once inputKnown is set.
-	inputOffset uint64
-	inputKnown  bool
-	// held is channel input waiting for the link to reach inputOffset.
-	held      [][]byte
-	heldBytes int
-	// fellBack is set once a channel that carried this attachment closed: it
-	// is on the link for good, and late channel input is dropped.
-	fellBack bool
-}
-
-// sendOutput hands one PTY read to whichever path the attachment is on. The
-// count and the choice are taken together, under the path's lock, so a byte
-// counted into the output offset is a byte that went to the link.
+// sendOutput hands one PTY read to whichever path the attachment is on.
 func (h *linkHandler) sendOutput(ctx context.Context, att *attachment, bytes []byte) error {
-	att.path.mu.Lock()
-	channel := att.path.channel
-	if channel == nil {
-		att.path.outBytes += uint64(len(bytes))
-	}
-	att.path.mu.Unlock()
-	if channel != nil {
+	if channel := att.path.output(bytes); channel != nil {
 		return channel.Send(ctx, bytes)
 	}
 	return h.client.SendFrame(ctx, att.id, bytes)
@@ -97,11 +52,7 @@ func (h *linkHandler) directOffer(m link.AttachmentDirectOffer) {
 		refuse("this host has no direct path")
 		return
 	}
-	att.path.mu.Lock()
-	again := att.path.offered
-	att.path.offered = true
-	att.path.mu.Unlock()
-	if again {
+	if !att.path.offer() {
 		refuse("this attachment already has a direct path")
 		return
 	}
@@ -118,13 +69,11 @@ func (h *linkHandler) directOffer(m link.AttachmentDirectOffer) {
 			reason = err.Error()
 		}
 		h.logger.Info("direct path refused", slog.String("attachment", att.String()), slog.Any("error", err))
+		att.path.closed()
 		refuse(reason)
 		return
 	}
-	att.path.mu.Lock()
-	att.path.peer = peer
-	att.path.mu.Unlock()
-	if h.attachmentByID(att.id) != att {
+	if !att.path.negotiated(peer) || h.attachmentByID(att.id) != att {
 		// Detached while the answer was being gathered.
 		peer.Close()
 		return
@@ -135,14 +84,11 @@ func (h *linkHandler) directOffer(m link.AttachmentDirectOffer) {
 // directOpened moves the attachment's output to ch and tells the browser
 // after which byte.
 func (h *linkHandler) directOpened(att *attachment, ch *direct.Channel) {
-	if h.attachmentByID(att.id) != att {
+	offset, ok := att.path.opened(ch)
+	if !ok || h.attachmentByID(att.id) != att {
 		ch.Close()
 		return
 	}
-	att.path.mu.Lock()
-	att.path.channel = ch
-	offset := att.path.outBytes
-	att.path.mu.Unlock()
 	h.logger.Info("attachment moved to a direct path", slog.String("attachment", att.String()), slog.Uint64("offset", offset))
 	_ = h.client.Send(link.AttachmentPath{Type: link.TypeAttachmentPath, AttachmentID: att.id, Offset: offset})
 }
@@ -152,13 +98,7 @@ func (h *linkHandler) directOpened(att *attachment, ch *direct.Channel) {
 // arrived: the client is asked to repaint, and the bytes that were in flight,
 // which will never be credited, are forgotten.
 func (h *linkHandler) directClosed(att *attachment) {
-	att.path.mu.Lock()
-	wasOpen := att.path.channel != nil
-	att.path.channel, att.path.peer = nil, nil
-	att.path.held, att.path.heldBytes = nil, 0
-	att.path.fellBack = true
-	att.path.mu.Unlock()
-	if !wasOpen || h.attachmentByID(att.id) != att {
+	if !att.path.closed() || h.attachmentByID(att.id) != att {
 		return
 	}
 	h.logger.Info("direct path closed; attachment back on the link", slog.String("attachment", att.String()))
@@ -169,37 +109,7 @@ func (h *linkHandler) directClosed(att *attachment) {
 	}
 }
 
-// linkInput is a keystroke frame from the link. It is queued with the count
-// it advances, under the path's lock, and so is any channel input the count
-// has now caught up to, after it: every queueing of input happens under that
-// lock, which is what keeps the two paths' keystrokes in the order typed.
-func (h *linkHandler) linkInput(att *attachment, frame []byte) {
-	att.path.mu.Lock()
-	defer att.path.mu.Unlock()
-	att.path.inBytes += uint64(len(frame))
-	if !h.queueInput(att, frame) {
-		return
-	}
-	for _, held := range att.path.releaseHeld() {
-		if !h.queueInput(att, held) {
-			return
-		}
-	}
-}
-
-// releaseHeld returns the held channel input once the link has delivered
-// everything the browser sent before switching. Called with mu held.
-func (p *pathState) releaseHeld() [][]byte {
-	if !p.inputKnown || p.inBytes < p.inputOffset || len(p.held) == 0 {
-		return nil
-	}
-	held := p.held
-	p.held, p.heldBytes = nil, 0
-	return held
-}
-
-// directInput is a keystroke frame from the channel. It reaches the PTY only
-// after every byte the browser sent on the relay before it.
+// directInput is a keystroke frame from the channel.
 func (h *linkHandler) directInput(att *attachment, bytes []byte) {
 	if att.readOnly {
 		// A watcher's input is dropped here on this path too, as Frame drops
@@ -207,48 +117,19 @@ func (h *linkHandler) directInput(att *attachment, bytes []byte) {
 		return
 	}
 	frame := append([]byte(nil), bytes...)
-	att.path.mu.Lock()
-	defer att.path.mu.Unlock()
-	if att.path.fellBack {
-		return
+	if !att.path.channelInput(frame, directHeld, h.inputQueue(att)) && h.release(att) {
+		go h.closeAttachment(att, "direct input outran the relay")
 	}
-	if att.path.inputKnown && att.path.inBytes >= att.path.inputOffset && len(att.path.held) == 0 {
-		h.queueInput(att, frame)
-		return
-	}
-	if att.path.heldBytes+len(frame) > directHeld {
-		if h.release(att) {
-			go h.closeAttachment(att, "direct input outran the relay")
-		}
-		return
-	}
-	att.path.held = append(att.path.held, frame)
-	att.path.heldBytes += len(frame)
 }
 
 // directInputOffset records where the browser's input moved to the channel.
 func (h *linkHandler) directInputOffset(m link.AttachmentPath) {
-	att := h.attachmentByID(m.AttachmentID)
-	if att == nil {
-		return
-	}
-	att.path.mu.Lock()
-	defer att.path.mu.Unlock()
-	att.path.inputOffset, att.path.inputKnown = m.Offset, true
-	for _, held := range att.path.releaseHeld() {
-		if !h.queueInput(att, held) {
-			return
-		}
+	if att := h.attachmentByID(m.AttachmentID); att != nil {
+		att.path.inputMoved(m.Offset, h.inputQueue(att))
 	}
 }
 
-// closeDirect ends the attachment's channel, open or still negotiating.
-func (att *attachment) closeDirect() {
-	att.path.mu.Lock()
-	peer := att.path.peer
-	att.path.peer, att.path.channel = nil, nil
-	att.path.mu.Unlock()
-	if peer != nil {
-		peer.Close()
-	}
+// inputQueue is queueInput for one attachment, as the path calls it.
+func (h *linkHandler) inputQueue(att *attachment) pathInput {
+	return func(frame []byte) bool { return h.queueInput(att, frame) }
 }

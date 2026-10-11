@@ -47,6 +47,7 @@ import {
   type SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
+import { type DirectPathOffer, DirectPathSignalling } from './direct-path-signalling.util';
 import { refuseUpgrade } from './upgrade.util';
 
 /** The path the console opens, the one `POST /sessions/{id}/attach-ticket` names. */
@@ -348,11 +349,6 @@ function sameOrigin(a: string, b: string): boolean {
   }
 }
 
-/** What an attachment may offer its browser for a direct path; see `directPathFor`. */
-interface DirectPathOffer {
-  iceServers: string[];
-}
-
 /**
  * One browser's attachment to one window, from the attach to whichever side
  * closes first. It is the `AttachmentSink` the link delivers into, and the
@@ -368,8 +364,8 @@ class BrowserAttachment implements AttachmentSink {
   private finished = false;
   /** A read-only share link's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
-  /** The browser's offer went to the runner; a second is refused, not raced. */
-  private directOffered = false;
+  /** The direct path's signalling, which this attachment only hands messages to. */
+  private readonly directPath: DirectPathSignalling;
 
   constructor(
     private readonly ws: WebSocket,
@@ -382,9 +378,10 @@ class BrowserAttachment implements AttachmentSink {
       logger: Logger;
     },
     /** `null`: this attachment stays on the relay. */
-    private readonly direct: DirectPathOffer | null = null,
+    direct: DirectPathOffer | null = null,
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
+    this.directPath = new DirectPathSignalling(direct, link, (message) => this.tell(message));
   }
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
@@ -452,18 +449,7 @@ class BrowserAttachment implements AttachmentSink {
   }
 
   signal(message: AttachmentSignal): void {
-    if (this.finished) return;
-    switch (message.type) {
-      case 'attachment.direct.answer':
-        this.tell({ type: 'direct.answer', sdp: message.sdp });
-        return;
-      case 'attachment.direct.refused':
-        this.tell({ type: 'direct.unavailable', reason: message.reason });
-        return;
-      case 'attachment.path':
-        this.tell({ type: 'direct.path', offset: message.offset });
-        return;
-    }
+    if (!this.finished) this.directPath.fromRunner(message);
   }
 
   refused(code: string, detail?: string): void {
@@ -512,41 +498,10 @@ class BrowserAttachment implements AttachmentSink {
         }
         return;
       case 'direct.offer':
-        this.offerDirect(message.data.sdp);
-        return;
       case 'direct.path':
-        // Where the browser's keystrokes moved to the channel. Only for an
-        // offer this relay forwarded: anything else is a browser speaking out
-        // of turn, and the runner has no channel to wait on.
-        if (this.directOffered && this.attachmentId !== null) {
-          this.link.send({
-            type: 'attachment.path',
-            attachmentId: this.attachmentId,
-            offset: message.data.offset,
-          });
-        }
+        this.directPath.fromBrowser(message.data, this.attachmentId, this.attached);
         return;
     }
-  }
-
-  /**
-   * Forwards the browser's offer to the runner, once, and only when this
-   * attachment was told it could make one. Any other offer is answered
-   * `direct.unavailable` and the attachment stays on the relay.
-   */
-  private offerDirect(sdp: string): void {
-    if (!this.direct || !this.attached || this.attachmentId === null || this.directOffered) {
-      this.tell({ type: 'direct.unavailable', reason: 'no direct path for this terminal' });
-      return;
-    }
-    this.directOffered = true;
-    const sent = this.link.send({
-      type: 'attachment.direct.offer',
-      attachmentId: this.attachmentId,
-      sdp,
-      iceServers: this.direct.iceServers,
-    });
-    if (!sent) this.tell({ type: 'direct.unavailable', reason: 'the host is not reachable' });
   }
 
   /**
@@ -586,7 +541,7 @@ class BrowserAttachment implements AttachmentSink {
     this.tell({
       type: 'attached',
       window: this.claim.window,
-      ...(this.direct ? { direct: { iceServers: this.direct.iceServers } } : {}),
+      ...this.directPath.invitation(),
     });
   }
 
