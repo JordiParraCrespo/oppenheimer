@@ -13,7 +13,11 @@ import type { SessionTerminalOptions } from '../lib/terminal-runtime';
 
 const mounted: SessionTerminalOptions[] = [];
 vi.mock('../lib/terminal-runtime', () => ({
-  mountSessionTerminal: (_container: HTMLElement, _stream: SessionStream, options = {}) => {
+  mountSessionTerminal: (
+    _container: HTMLElement,
+    _stream: SessionStream,
+    options: SessionTerminalOptions = {},
+  ) => {
     mounted.push(options);
     return () => options.keepSnapshot?.(`picture of ${mounted.length}`);
   },
