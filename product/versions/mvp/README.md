@@ -656,3 +656,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   No trickle ICE, no share-link direct paths yet, and ICE servers come from
   `RELAY_ICE_SERVERS` (empty: host candidates only) until the STUN
   responder exists.
+- 2026-10-11: **the direct path's STUN is Cloudflare's** (22, open question
+  1). The dev deployment sets `RELAY_ICE_SERVERS=stun:stun.cloudflare.com:3478`
+  rather than run a responder of its own, which would need UDP 3478 published
+  and so an exception to the rule that nothing on the server publishes a
+  port. 22 said no third-party STUN by default; Cloudflare already carries
+  every request through the tunnel, so it adds no party, and it is free.

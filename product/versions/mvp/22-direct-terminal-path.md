@@ -99,9 +99,15 @@ predictive echo hides whatever distance is left for what is typed most.
   third-party STUN by default: a reader's address is not sent to a company
   that is not party to the session. *As built:* the list is
   `RELAY_ICE_SERVERS`, empty by default, which is host candidates only
-  (a reader on the host's machine or network). The STUN responder beside
-  the API is not built yet (open question 1); until it is, a deployment
-  that wants readers elsewhere names a STUN server there.
+  (a reader on the host's machine or network). *Changed 2026-10-11:* the
+  dev deployment names **Cloudflare's public STUN**
+  (`stun:stun.cloudflare.com:3478`) instead of running its own (open
+  question 1). The reason against a third party does not hold for this one:
+  every request already reaches Cloudflare through the tunnel, so a reader's
+  address goes to no company it did not already reach. A responder of our
+  own would need UDP 3478 published on the server, which breaks the
+  deployment's rule that nothing publishes a port (`deploy/dev/compose.yml`).
+  It is free, as STUN generally is (TURN is what is billed).
 - **Same-machine and same-LAN readers connect over host candidates.**
   Browsers hide local addresses behind mDNS `.local` names; pion resolves
   them. This is the case that goes from ~100 ms to ~1 ms.
@@ -225,7 +231,7 @@ invite.
    `terminal_direct_path` release flag: the protocol messages, pion in the
    runner, the switch offsets, the browser's channel next to its socket.
    The latency readout says which path a pane is on (`direct` / `relay`).
-   **Built**, except the STUN responder (open question 1).
+   **Built**; STUN is Cloudflare's (open question 1).
 2. **Fallback and recovery**: the channel closing (**built**: back to the
    link, repainted), ICE restarting after a network change (a laptop
    moving from Wi-Fi to a phone's hotspot; not built: today the channel
@@ -261,10 +267,12 @@ would have been.
 
 ## Open questions
 
-1. **Where the STUN responder runs**: in the API process (pion has a STUN
-   server), or as its own small container in `docker/` beside it. Own
-   container recommended: the API scales by replicas and STUN does not
-   need to.
+1. ~~**Where the STUN responder runs**~~. **Decided 2026-10-11: nowhere of
+   ours.** The dev deployment uses Cloudflare's public STUN (above), so the
+   server keeps publishing no port. A responder of our own stays possible
+   (pion has one) if a deployment ever cannot use Cloudflare's; it would be
+   its own small container publishing UDP 3478, and an exception to the
+   deployment's port rule.
 2. ~~**Whether the browser offers or the runner does.**~~ **Decided: the
    browser**, once the relay's `attached` invites it: the browser knows when
    it wants a direct path, and a runner offering to every attachment would
