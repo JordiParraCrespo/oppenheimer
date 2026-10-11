@@ -27,10 +27,13 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import { ABILITY, CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
+import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
+import { FLAG_EVALUATOR } from '../../feature-flags/feature-flags.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../hosts/hosts.di-tokens';
 import type {
   AttachmentClosedReason,
+  AttachmentSignal,
   AttachmentSink,
   LinkRegistryPort,
   RunnerLink,
@@ -128,6 +131,8 @@ export class BrowserAttachGateway {
     private readonly owners: CredentialOwnerPort,
     @Inject(ABILITY)
     private readonly abilities: AbilityPort,
+    @Inject(FLAG_EVALUATOR)
+    private readonly flags: FlagEvaluatorPort,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -200,11 +205,36 @@ export class BrowserAttachGateway {
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
     if (ws.readyState !== ws.OPEN) return;
-    new BrowserAttachment(ws, claim, link, {
-      authorize: () => this.authorize(claim),
-      everyMs: this.reauthorizeIntervalMs,
-      logger: this.logger,
-    }).start([...early]);
+    new BrowserAttachment(
+      ws,
+      claim,
+      link,
+      {
+        authorize: () => this.authorize(claim),
+        everyMs: this.reauthorizeIntervalMs,
+        logger: this.logger,
+      },
+      this.directPathFor(claim, link),
+    ).start([...early]);
+  }
+
+  /**
+   * Whether this attachment may move to a direct path (22), and the ICE
+   * servers it gathers with if so. Only for a runner that can answer, for a
+   * person the `terminal_direct_path` flag is on for, and not through a share
+   * link: its audience may be anyone, and a host's upload is somebody's home
+   * connection (22, "Several browsers"). `null` keeps the attachment on the
+   * relay, and the browser is never told it could have been otherwise.
+   */
+  private directPathFor(claim: AttachTicket, link: RunnerLink): DirectPathOffer | null {
+    if (claim.share) return null;
+    if (!link.capabilities.includes('attachment.direct')) return null;
+    const enabled = this.flags.isEnabled('terminal_direct_path', {
+      userId: claim.userId,
+      organizationId: claim.organizationId,
+    });
+    if (!enabled) return null;
+    return { iceServers: this.configService.get<string[]>('relay.iceServers') ?? [] };
   }
 
   /**
@@ -318,6 +348,11 @@ function sameOrigin(a: string, b: string): boolean {
   }
 }
 
+/** What an attachment may offer its browser for a direct path; see `directPathFor`. */
+interface DirectPathOffer {
+  iceServers: string[];
+}
+
 /**
  * One browser's attachment to one window, from the attach to whichever side
  * closes first. It is the `AttachmentSink` the link delivers into, and the
@@ -333,6 +368,8 @@ class BrowserAttachment implements AttachmentSink {
   private finished = false;
   /** A read-only share link's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
+  /** The browser's offer went to the runner; a second is refused, not raced. */
+  private directOffered = false;
 
   constructor(
     private readonly ws: WebSocket,
@@ -344,6 +381,8 @@ class BrowserAttachment implements AttachmentSink {
       everyMs: number;
       logger: Logger;
     },
+    /** `null`: this attachment stays on the relay. */
+    private readonly direct: DirectPathOffer | null = null,
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
   }
@@ -412,6 +451,21 @@ class BrowserAttachment implements AttachmentSink {
     this.ws.close(ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE, detail ?? 'attachment closed');
   }
 
+  signal(message: AttachmentSignal): void {
+    if (this.finished) return;
+    switch (message.type) {
+      case 'attachment.direct.answer':
+        this.tell({ type: 'direct.answer', sdp: message.sdp });
+        return;
+      case 'attachment.direct.refused':
+        this.tell({ type: 'direct.unavailable', reason: message.reason });
+        return;
+      case 'attachment.path':
+        this.tell({ type: 'direct.path', offset: message.offset });
+        return;
+    }
+  }
+
   refused(code: string, detail?: string): void {
     if (this.finished) return;
     this.finished = true;
@@ -457,7 +511,42 @@ class BrowserAttachment implements AttachmentSink {
           });
         }
         return;
+      case 'direct.offer':
+        this.offerDirect(message.data.sdp);
+        return;
+      case 'direct.path':
+        // Where the browser's keystrokes moved to the channel. Only for an
+        // offer this relay forwarded: anything else is a browser speaking out
+        // of turn, and the runner has no channel to wait on.
+        if (this.directOffered && this.attachmentId !== null) {
+          this.link.send({
+            type: 'attachment.path',
+            attachmentId: this.attachmentId,
+            offset: message.data.offset,
+          });
+        }
+        return;
     }
+  }
+
+  /**
+   * Forwards the browser's offer to the runner, once, and only when this
+   * attachment was told it could make one. Any other offer is answered
+   * `direct.unavailable` and the attachment stays on the relay.
+   */
+  private offerDirect(sdp: string): void {
+    if (!this.direct || !this.attached || this.attachmentId === null || this.directOffered) {
+      this.tell({ type: 'direct.unavailable', reason: 'no direct path for this terminal' });
+      return;
+    }
+    this.directOffered = true;
+    const sent = this.link.send({
+      type: 'attachment.direct.offer',
+      attachmentId: this.attachmentId,
+      sdp,
+      iceServers: this.direct.iceServers,
+    });
+    if (!sent) this.tell({ type: 'direct.unavailable', reason: 'the host is not reachable' });
   }
 
   /**
@@ -494,7 +583,11 @@ class BrowserAttachment implements AttachmentSink {
       this.closed('link_lost');
       return;
     }
-    this.tell({ type: 'attached', window: this.claim.window });
+    this.tell({
+      type: 'attached',
+      window: this.claim.window,
+      ...(this.direct ? { direct: { iceServers: this.direct.iceServers } } : {}),
+    });
   }
 
   private detach(): void {
