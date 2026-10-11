@@ -121,7 +121,7 @@ export function mountSessionTerminal(
         timeoutMs: () => Math.max(1000, 4 * (latency.quantile(0.95) ?? 0)),
       });
   const send = (data: string) => {
-    latency.sent(performance.now());
+    if (!isTerminalReport(data)) latency.sent(performance.now());
     typeahead?.input(data);
     stream.send(data);
   };
@@ -338,6 +338,15 @@ export function mountSessionTerminal(
     ptySize.dispose();
     term.dispose();
   };
+}
+
+/**
+ * What xterm sends on the reader's behalf rather than as a key: focus in and
+ * out (tmux runs `focus-events on`) and mouse reports. The program may answer
+ * none of them, so none of them starts a latency sample.
+ */
+function isTerminalReport(data: string): boolean {
+  return data.length > 2 && data.startsWith('\u001b[') && 'IO<M'.includes(data.charAt(2));
 }
 
 /** The terminal ramp as a predicted cell is drawn in it. */
