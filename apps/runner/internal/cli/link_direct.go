@@ -29,35 +29,66 @@ const directHeld = 64 << 10
 // offerTimeout bounds answering one offer, ICE gathering included.
 const offerTimeout = 10 * time.Second
 
-// sendOutput hands one PTY read to whichever path the attachment is on.
+// attachWait is how often an offer looks again for an attachment tmux is
+// still opening. The relay tells the browser `attached` as it sends the
+// attach, so a quick browser's offer can arrive while the PTY is being made.
+const attachWait = 50 * time.Millisecond
+
+// sendOutput hands one PTY read to whichever path the attachment is on. A
+// channel that closes under the send is the path falling back, never the PTY
+// ending: the read goes to the link instead, and the pump carries on there.
 func (h *linkHandler) sendOutput(ctx context.Context, att *attachment, bytes []byte) error {
 	if channel := att.path.output(bytes); channel != nil {
-		return channel.Send(ctx, bytes)
+		err := channel.Send(ctx, bytes)
+		if err == nil || ctx.Err() != nil {
+			return err
+		}
+		h.directClosed(att)
 	}
 	return h.client.SendFrame(ctx, att.id, bytes)
 }
 
+// awaitAttachment is the attachment id names, waiting for one this link is
+// still opening; nil once ctx ends or the link that allocated the id is gone.
+func (h *linkHandler) awaitAttachment(ctx context.Context, id uint32, epoch uint64) *attachment {
+	ticker := time.NewTicker(attachWait)
+	defer ticker.Stop()
+	for {
+		if att := h.attachmentByID(id); att != nil {
+			return att
+		}
+		if !h.liveEpoch(epoch) {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+	}
+}
+
 // directOffer answers a browser's offer for an attachment this host holds.
 // It runs off the read loop: gathering candidates takes up to seconds.
-func (h *linkHandler) directOffer(m link.AttachmentDirectOffer) {
+func (h *linkHandler) directOffer(m link.AttachmentDirectOffer, epoch uint64) {
 	refuse := func(reason string) {
 		_ = h.client.Send(link.AttachmentDirectRefused{Type: link.TypeAttachmentDirectRefused, AttachmentID: m.AttachmentID, Reason: reason})
 	}
-	att := h.attachmentByID(m.AttachmentID)
-	if att == nil {
-		refuse("no such attachment on this host")
-		return
-	}
 	if h.direct == nil {
 		refuse("this host has no direct path")
+		return
+	}
+	ctx, cancel := context.WithTimeout(h.life, offerTimeout)
+	defer cancel()
+	att := h.awaitAttachment(ctx, m.AttachmentID, epoch)
+	if att == nil {
+		refuse("no such attachment on this host")
 		return
 	}
 	if !att.path.offer() {
 		refuse("this attachment already has a direct path")
 		return
 	}
-	ctx, cancel := context.WithTimeout(h.life, offerTimeout)
-	defer cancel()
 	answer, peer, err := h.direct.Answer(ctx, m.Sdp, m.IceServers, direct.Handlers{
 		Open:    func(ch *direct.Channel) { h.directOpened(att, ch) },
 		Message: func(bytes []byte) { h.directInput(att, bytes) },

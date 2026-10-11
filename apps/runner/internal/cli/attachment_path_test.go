@@ -5,10 +5,14 @@ import (
 	"testing"
 )
 
-type fakeChannel struct{ closed int }
+type fakeChannel struct {
+	closed int
+	// err is what every Send returns: a channel that has closed.
+	err error
+}
 
-func (*fakeChannel) Send(context.Context, []byte) error { return nil }
-func (c *fakeChannel) Close()                           { c.closed++ }
+func (c *fakeChannel) Send(context.Context, []byte) error { return c.err }
+func (c *fakeChannel) Close()                             { c.closed++ }
 
 // queued collects what the path hands the PTY, in order.
 type queued struct{ frames []string }

@@ -437,8 +437,10 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case link.TypeAttachmentDirectOffer:
 		var m link.AttachmentDirectOffer
 		if msg.Decode(&m) == nil {
-			// Gathering candidates takes up to seconds: never on the read loop.
-			go h.directOffer(m)
+			// Gathering candidates takes up to seconds, and the attachment
+			// may still be opening: never on the read loop.
+			epoch := h.currentEpoch()
+			go h.directOffer(m, epoch)
 		}
 	case link.TypeAttachmentPath:
 		var m link.AttachmentPath

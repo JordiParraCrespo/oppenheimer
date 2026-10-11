@@ -235,19 +235,12 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 }
 
 // A second offer for an attachment that already has one is refused rather
-// than raced, and so is an offer for an attachment this host does not hold.
+// than raced, and so is an offer for an attachment that can no longer come:
+// the link that would have opened it is gone.
 func TestOffersThatCannotBeAnsweredAreRefused(t *testing.T) {
 	pty := newHeldPTY(false)
 	h, sent, _ := newAttachHarness(t, pty, nil)
 	h.direct = direct.NewAnswerer(direct.Options{})
-
-	h.Message(context.Background(), message(t, "attachment.direct.offer", map[string]any{
-		"attachmentId": 99, "sdp": "v=0", "iceServers": []string{},
-	}))
-	sent.waitFor(t, "a refusal for an unknown attachment", func(m any) bool {
-		r, ok := m.(link.AttachmentDirectRefused)
-		return ok && r.AttachmentID == 99
-	})
 
 	h.Message(context.Background(), attachMessage(t))
 	waitForAttachment(t, h)
@@ -260,6 +253,15 @@ func TestOffersThatCannotBeAnsweredAreRefused(t *testing.T) {
 	sent.waitFor(t, "a refusal of the second offer", func(m any) bool {
 		r, ok := m.(link.AttachmentDirectRefused)
 		return ok && r.AttachmentID == attachmentUnderTest
+	})
+
+	h.Disconnected(1)
+	h.Message(context.Background(), message(t, "attachment.direct.offer", map[string]any{
+		"attachmentId": 99, "sdp": "v=0", "iceServers": []string{},
+	}))
+	sent.waitFor(t, "a refusal for an attachment no link will open", func(m any) bool {
+		r, ok := m.(link.AttachmentDirectRefused)
+		return ok && r.AttachmentID == 99
 	})
 }
 
@@ -278,5 +280,67 @@ func TestTheHelloNamesTheDirectPathWhenTheHostCanAnswer(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("a host that can answer did not offer the direct path")
+	}
+}
+
+// The channel closing under a send is the path falling back, not the PTY
+// ending: the read goes to the link, the pump would carry on, the client is
+// repainted, and the attachment stays open. Ending it would reach the
+// browser as the session gone.
+func TestAChannelThatClosesUnderASendFallsBackToTheLink(t *testing.T) {
+	pty := newHeldPTY(false)
+	h, sent, _ := newAttachHarness(t, pty, nil)
+	h.Message(context.Background(), attachMessage(t))
+	waitForAttachment(t, h)
+	att := h.attachmentByID(attachmentUnderTest)
+	closing := &fakeChannel{err: direct.ErrClosed}
+	att.path.offer()
+	att.path.negotiated(closing)
+	att.path.opened(closing)
+
+	if err := h.sendOutput(context.Background(), att, []byte("caught")); err != nil {
+		t.Fatalf("a closed channel ended the pump: %v", err)
+	}
+	if got := sent.framed(); got != "caught" {
+		t.Fatalf("the link carried %q, want the read the channel could not", got)
+	}
+	if pty.redrawn() != 1 {
+		t.Fatalf("the client was repainted %d times, want once", pty.redrawn())
+	}
+	if h.attachmentByID(attachmentUnderTest) != att {
+		t.Fatal("the attachment did not survive its channel")
+	}
+	if err := h.sendOutput(context.Background(), att, []byte(" next")); err != nil || sent.framed() != "caught next" {
+		t.Fatalf("the next read did not stay on the link: %v, %q", err, sent.framed())
+	}
+}
+
+// The relay tells the browser `attached` as it sends the attach, so a quick
+// browser's offer can arrive while tmux is still opening the PTY. It waits
+// for the attachment rather than refusing it for good.
+func TestAnOfferWaitsForAnAttachmentStillOpening(t *testing.T) {
+	pty := newHeldPTY(false)
+	gate := make(chan struct{})
+	h, sent, terminals := newAttachHarness(t, pty, gate)
+	h.direct = direct.NewAnswerer(direct.Options{})
+	h.Message(context.Background(), attachMessage(t))
+	<-terminals.entered
+
+	_, offer := offerFromBrowser(t)
+	h.Message(context.Background(), message(t, "attachment.direct.offer", map[string]any{
+		"attachmentId": attachmentUnderTest, "sdp": offer, "iceServers": []string{},
+	}))
+	time.Sleep(100 * time.Millisecond)
+	close(gate)
+
+	got := sent.waitFor(t, "an answer or a refusal", func(m any) bool {
+		switch m.(type) {
+		case link.AttachmentDirectAnswer, link.AttachmentDirectRefused:
+			return true
+		}
+		return false
+	})
+	if refused, ok := got.(link.AttachmentDirectRefused); ok {
+		t.Fatalf("the offer was refused while its attachment opened: %s", refused.Reason)
 	}
 }
