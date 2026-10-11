@@ -49,6 +49,19 @@ function fleetProjects() {
       // A spec here may open the console on a live host (`console.spec.ts`).
       use: { ...chromium, baseURL: API_URL },
     },
+    // The network bench (`tests/netsim`): local hosts and the browser on
+    // simulated links. Opt-in on top of the fleet with `E2E_NETSIM=1`.
+    ...(process.env.E2E_NETSIM
+      ? [
+          {
+            name: 'netsim',
+            testDir: './tests/netsim',
+            testMatch: /\.spec\.ts/,
+            dependencies: ['fleet-setup'],
+            use: { ...chromium, baseURL: API_URL },
+          },
+        ]
+      : []),
   ];
 }
 // oppenheimer:end runner

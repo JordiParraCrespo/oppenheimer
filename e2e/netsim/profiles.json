@@ -1,0 +1,90 @@
+{
+  "note": "Rough, typical figures, not measurements of any one network. Latencies are one-way milliseconds; a round trip is twice the sum along the way. Geography is about half the usual ping between two cities' internet exchanges; access is the last mile of one side.",
+  "sameLocationMs": 2,
+  "geo": [
+    { "a": "barcelona", "b": "falkenstein", "ms": 15 },
+    { "a": "barcelona", "b": "new-york", "ms": 45 },
+    { "a": "barcelona", "b": "sao-paulo", "ms": 95 },
+    { "a": "barcelona", "b": "tokyo", "ms": 120 },
+    { "a": "falkenstein", "b": "new-york", "ms": 43 },
+    { "a": "falkenstein", "b": "sao-paulo", "ms": 100 },
+    { "a": "falkenstein", "b": "tokyo", "ms": 115 },
+    { "a": "new-york", "b": "sao-paulo", "ms": 60 },
+    { "a": "new-york", "b": "tokyo", "ms": 80 },
+    { "a": "sao-paulo", "b": "tokyo", "ms": 130 }
+  ],
+  "access": {
+    "datacenter": {
+      "note": "A server in a data centre: the relay.",
+      "latencyMs": 0.2,
+      "jitterMs": 0,
+      "loss": 0,
+      "downMbps": 1000,
+      "upMbps": 1000
+    },
+    "lan": {
+      "note": "Two machines on one home network, used when both name the same lan.",
+      "latencyMs": 0.3,
+      "jitterMs": 0.2,
+      "loss": 0,
+      "downMbps": 500,
+      "upMbps": 500
+    },
+    "fiber": {
+      "note": "FTTH, symmetric.",
+      "latencyMs": 1.5,
+      "jitterMs": 0.5,
+      "loss": 0,
+      "downMbps": 600,
+      "upMbps": 600
+    },
+    "cable": {
+      "note": "DOCSIS: low latency down, a narrow, jittery upstream.",
+      "latencyMs": 8,
+      "jitterMs": 3,
+      "loss": 0,
+      "downMbps": 250,
+      "upMbps": 20
+    },
+    "adsl": {
+      "note": "ADSL2+ with interleaving: slow, and a 1 Mbit uplink.",
+      "latencyMs": 18,
+      "jitterMs": 3,
+      "loss": 0.001,
+      "downMbps": 12,
+      "upMbps": 1
+    },
+    "4g": {
+      "note": "LTE on a decent signal: scheduler jitter and a little loss.",
+      "latencyMs": 30,
+      "jitterMs": 12,
+      "loss": 0.005,
+      "downMbps": 40,
+      "upMbps": 10
+    },
+    "starlink": {
+      "note": "LEO satellite: low-ish latency that jumps at every satellite handover.",
+      "latencyMs": 28,
+      "jitterMs": 10,
+      "loss": 0.005,
+      "downMbps": 120,
+      "upMbps": 15
+    },
+    "hotel-wifi": {
+      "note": "A shared, contended Wi-Fi: the travelling case.",
+      "latencyMs": 12,
+      "jitterMs": 15,
+      "loss": 0.01,
+      "downMbps": 8,
+      "upMbps": 3
+    },
+    "geo-satellite": {
+      "note": "Geostationary satellite: the worst a host can sit behind.",
+      "latencyMs": 300,
+      "jitterMs": 20,
+      "loss": 0.01,
+      "downMbps": 25,
+      "upMbps": 3
+    }
+  }
+}

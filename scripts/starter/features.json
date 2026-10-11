@@ -84,7 +84,10 @@
         "e2e/fleet",
         "e2e/support/fleet.ts",
         "e2e/tests/fleet",
-        "e2e/support/fleet-local.ts"
+        "e2e/support/fleet-local.ts",
+        "e2e/netsim",
+        "e2e/support/netsim.ts",
+        "e2e/tests/netsim"
       ],
       "scripts": ["dev:mvp", "check:runner-release"]
     },

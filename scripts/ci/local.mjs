@@ -198,7 +198,9 @@ job('lint', [
 // oppenheimer:begin runner
 if (
   packages.some((p) => p.startsWith('@oppenheimer/go-')) ||
-  touches(packages, '@oppenheimer/runner')
+  touches(packages, '@oppenheimer/runner') ||
+  // e2e/netsim, the network simulator, is a Go module inside the e2e package.
+  touches(packages, '@oppenheimer/e2e')
 ) {
   job('go', [
     ['go vet', 'go', ['vet', 'github.com/jordiparracrespo/oppenheimer/...']],
