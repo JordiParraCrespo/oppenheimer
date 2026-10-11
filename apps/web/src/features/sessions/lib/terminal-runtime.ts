@@ -2,18 +2,17 @@ import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
 import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
+import { bindTerminalRenderer } from './terminal-renderer';
 import {
   readTerminalTheme,
   readUserTurnColors,
   TERMINAL_FONT,
-  TERMINAL_FONT_FAMILIES,
   terminalMinimumContrastRatio,
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
@@ -241,34 +240,18 @@ export function mountSessionTerminal(
     });
   };
 
-  // The DOM renderer's cells are not WebGL's, so falling back refits first
-  // and repaints the grid it produced.
-  const fallBackToDom = () => {
-    refit();
-    term.refresh(0, term.rows - 1);
-  };
-  loadWebgl(term, fallBackToDom);
+  // WebGL and the DOM renderer measure cells differently, and a face arriving
+  // changes them too: each refits, and the echo redraws on the new cells.
+  const unbindRenderer = bindTerminalRenderer(term, () => {
+    echo.repaint();
+    nextFrame();
+  });
 
   refit();
   nextFrame();
 
   const resizeObserver = new ResizeObserver(() => nextFrame());
   resizeObserver.observe(container);
-
-  // A terminal face that loads after the first paint — the bundled symbols
-  // face is fetched only when a glyph in its range is first drawn — leaves
-  // the stand-in's glyphs in WebGL's atlas and its metrics in the fit. Only
-  // the terminal's own families count: the console loading any other face is
-  // no reason to redraw a live session.
-  const onFontsLoaded = (event: Event) => {
-    const faces = (event as FontFaceSetLoadEvent).fontfaces ?? [];
-    if (!faces.some((face) => TERMINAL_FONT_FAMILIES.has(unquote(face.family)))) return;
-    term.clearTextureAtlas();
-    term.refresh(0, term.rows - 1);
-    echo.repaint();
-    nextFrame();
-  };
-  document.fonts?.addEventListener('loadingdone', onFontsLoaded);
 
   // `useAppliedTheme` toggles `.dark` / `.light` on <html>. xterm holds
   // resolved colour strings, not the tokens, so the ramp is re-read here.
@@ -335,7 +318,7 @@ export function mountSessionTerminal(
     offStatus();
     input.dispose();
     cursorFrames.dispose();
-    document.fonts?.removeEventListener('loadingdone', onFontsLoaded);
+    unbindRenderer();
     themeObserver.disconnect();
     resizeObserver.disconnect();
     ptySize.dispose();
@@ -360,31 +343,6 @@ export function mountSessionTerminal(
 function copyToClipboard(text: string) {
   if (!text || !navigator.clipboard) return;
   navigator.clipboard.writeText(text).catch(() => {});
-}
-
-/**
- * WebGL is the renderer the product wants — a noisy build should not cost
- * CPU — but its constructor throws on some machines and in headless browsers
- * rather than degrading, and the GPU can take a context back later. Either
- * way this terminal stays on the DOM renderer for the rest of its life; the
- * next terminal tries again.
- */
-function loadWebgl(term: Terminal, fallBack: () => void) {
-  try {
-    const addon = new WebglAddon();
-    addon.onContextLoss(() => {
-      addon.dispose();
-      fallBack();
-    });
-    term.loadAddon(addon);
-  } catch {
-    fallBack();
-  }
-}
-
-/** `FontFace.family` comes back quoted in some browsers and bare in others. */
-function unquote(family: string): string {
-  return family.replace(/^["']|["']$/g, '');
 }
 
 /**
