@@ -69,8 +69,13 @@ type Options struct {
 // otherwise fits a window to *every* attached client, so one left at a
 // detached session's 80x24 pins the agent's layout there however large the
 // reader's pane is. `latest` hands the window to whoever resized last.
+//
+// `set-clipboard on` sends what a mouse drag copies, and what a program sets
+// with OSC 52 (Claude Code's /copy), on to the browser, which writes it to the
+// reader's clipboard.
 const Config = `set -g status off
 set -g mouse on
+set -g set-clipboard on
 set -g history-limit 50000
 set -g escape-time 0
 set -g focus-events on
