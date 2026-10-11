@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 // Options configure the session service.
@@ -768,13 +769,13 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 // on a session that stopped when the host rebooted.
 func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error) {
 	defer s.hold(id)()
-	session, err := s.recorded(id)
+	session, over, err := s.gone(ctx, id)
 	if err != nil {
 		return domain.Session{}, err
 	}
-	if session.State == domain.StateClosed {
+	if over {
 		return domain.Session{}, domain.ErrNotRunning.WithDetail(
-			"session %s is closed; its worktree has been removed", id)
+			"session %s is closed; its worktree is gone from this host", id)
 	}
 	if alive, err := s.terminals.Has(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
@@ -833,38 +834,24 @@ type CloseInput struct {
 
 // Close ends a session: kill the tmux session, push the branch if asked, and
 // remove the worktree. A dirty worktree is not a reason to refuse — it is
-// reported, and the worktree is kept unless Force says otherwise. A worktree
-// someone deleted on the host has nothing left to push or keep, so the
-// session closes: refusing would leave a row nobody can ever delete.
+// reported, and the worktree is kept unless Force says otherwise.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
 	defer s.hold(id)()
 	ctx = domain.WithSession(ctx, id)
-	session, err := s.recorded(id)
-	if err != nil {
-		return domain.Session{}, err
-	}
-	if session.State == domain.StateClosed {
-		// Closed here already (`runner sessions close` on the host, or an answer
-		// the control plane never got): say so again, or its row never resolves.
-		s.mu.Lock()
-		publisher := s.publisher
-		s.mu.Unlock()
-		publisher.SessionChanged(session)
-		return session, nil
+	session, over, err := s.gone(ctx, id)
+	if err != nil || over {
+		return session, err
 	}
 	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
 	}
 
-	present := s.worktrees.Exists(session.Worktree)
-	if present {
-		dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
-		if dirtyErr == nil {
-			session.Dirty = dirty
-		}
+	dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
+	if dirtyErr == nil {
+		session.Dirty = dirty
 	}
 	var pushErr error
-	if in.Push && present {
+	if in.Push {
 		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
 			// Report and keep going: the session is over either way, and
 			// the branch is still in the worktree we are about to name.
@@ -883,6 +870,47 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 		return session, err
 	}
 	return s.decide(session, domain.StateClosed, ""), nil
+}
+
+// gone answers a close or a restart for a session this host can no longer
+// run, and over is true when it did: one it holds no record of (removed by
+// hand, or a state that did not survive a reinstall), one closed here already
+// (`runner sessions close`, or an answer the control plane never got), or one
+// whose worktree someone deleted. Each is closed, and announced as closed
+// even when it already was, because that answer is what resolves the
+// session's row: refusing would leave one nobody can delete or restart.
+// Anything else is handed back for the caller to go on with.
+func (s *Service) gone(ctx context.Context, id string) (session domain.Session, over bool, err error) {
+	session, err = s.recorded(id)
+	switch {
+	case err != nil:
+		if problem.From(err).Code != domain.ErrNotFound.Code {
+			return domain.Session{}, false, err
+		}
+		session = domain.Session{ID: id, State: domain.StateClosed}
+		s.announce(session)
+		return session, true, nil
+	case session.State == domain.StateClosed:
+		s.announce(session)
+		return session, true, nil
+	case session.Worktree != "" && !s.worktrees.Exists(session.Worktree):
+		if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+			return domain.Session{}, false, err
+		}
+		// Only git's record of the worktree is left, and a prune that fails
+		// leaves nothing a person needs: the session is over either way.
+		_ = s.worktrees.Remove(ctx, session.Repo, session.Worktree, true)
+		return s.decide(session, domain.StateClosed, ""), true, nil
+	}
+	return session, false, nil
+}
+
+// announce publishes a session as it stands, whether or not it changed.
+func (s *Service) announce(session domain.Session) {
+	s.mu.Lock()
+	publisher := s.publisher
+	s.mu.Unlock()
+	publisher.SessionChanged(session)
 }
 
 // Adopt reconciles with the tmux server after a restart: sessions whose tmux

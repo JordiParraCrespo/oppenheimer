@@ -391,5 +391,5 @@ earlier note:
   the host confirms the close. On 2026-10-11 the owner asked for delete
   to feel immediate: the row leaves on the click and comes back only if
   the close cannot happen. A session removed on its host (by hand, or by
-  `runner sessions close`) now closes on Delete instead of being refused
-  for ever.
+  `runner sessions close`) now closes on Delete or Restart instead of
+  being stuck for ever.

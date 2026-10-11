@@ -219,8 +219,7 @@
     "deleting": "Eliminando…",
     "failed": "No se pudo eliminar la sesión.",
     "discard": "Descartar también el trabajo sin enviar",
-    "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
-    "hostOffline": "El host está desconectado, así que la sesión no se ha eliminado. Inténtalo de nuevo cuando vuelva."
+    "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar."
   },
   "filters": {
     "label": "Filtrar sesiones",

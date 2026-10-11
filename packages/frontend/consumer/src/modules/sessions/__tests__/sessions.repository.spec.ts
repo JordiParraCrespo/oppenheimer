@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionsRepository } from '../sessions.repository';
 
 vi.mock('@oppenheimer/api-client', () => ({
-  heyApiSdk: { findSessions: vi.fn(), findSessionEvents: vi.fn() },
+  heyApiSdk: { findSessions: vi.fn(), findSessionEvents: vi.fn(), closeSession: vi.fn() },
 }));
 
 /** What the generated SDK resolves to on success. */
@@ -71,6 +71,31 @@ describe('SessionsRepository.findAll', () => {
 
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe('SESSIONS_CLIENT_001');
+  });
+});
+
+/**
+ * The API takes a close for a host that is offline and records it, but never
+ * sends it again: answered as a success, the console would wait on a delete
+ * nothing will carry out.
+ */
+describe('SessionsRepository.close', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a close that never reached its host', async () => {
+    vi.mocked(heyApiSdk.closeSession).mockResolvedValue(
+      ok({ ...session('s1'), hints: ['host_offline'] }),
+    );
+
+    const error = await new SessionsRepository().close('s1').catch((e) => e as AppError);
+
+    expect(error).toBeInstanceOf(AppError);
+    expect((error as AppError).code).toBe('SESSIONS_CLIENT_019');
+  });
+
+  it('answers the row of a close its host was sent', async () => {
+    vi.mocked(heyApiSdk.closeSession).mockResolvedValue(ok(session('s1')));
+    await expect(new SessionsRepository().close('s1')).resolves.toMatchObject({ id: 's1' });
   });
 });
 

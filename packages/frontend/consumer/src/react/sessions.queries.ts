@@ -171,8 +171,9 @@ export function useSession(
     queryFn: id
       ? async () => {
           const session = await app.sessions.findById(id);
-          // The host answered: the terminal is back, so stop watching.
-          if (session.isLive) unwatchRestart(queryClient, id);
+          // The host answered: the terminal is back, or the session is gone
+          // from its host and was closed instead. Either way, stop watching.
+          if (session.isLive || session.isResolved) unwatchRestart(queryClient, id);
           return session;
         }
       : skipToken,
@@ -387,52 +388,34 @@ export function useRestartSession(options?: UseMutationOptions<SessionEntity, Er
 }
 
 /**
- * Delete a session. The row leaves the lists on the click, before the request
- * is sent: the close is the host's to carry out and can take seconds, and a
- * reader who pressed Delete is done with the row. The list keeps it out while
- * it watches for the host to resolve it ({@link closesOf}).
+ * Delete a session. The row leaves the lists on the click: the close is the
+ * host's to carry out and can take seconds, and a reader who pressed Delete
+ * is done with it. The watch ({@link closesOf}) is the one owner of that — the
+ * list leaves a watched row out of every read until its host resolves it.
  *
- * What brings it back: the API refusing the request, a close that never reached
- * its host (`host_offline`, so nothing will resolve it), or a watch that ends
- * with the row still open because the host refused (unpushed work).
+ * Ending the watch is what brings a row back: the close is refused (by the
+ * API, or because its host was offline and never got it), or the watch runs
+ * out with the row still open because the host refused (unpushed work).
  */
 export function useCloseSession(
   options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-  const restore = (id: string) => {
-    unwatchClose(queryClient, id);
-    return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-  };
 
   return useMutation({
-    ...withCacheOnSuccess(options, (session) => {
-      if (session.isHostOffline) {
-        void restore(session.id);
-        return;
-      }
-      // From the answer, so a second ask watches a full window from itself.
-      watchClose(queryClient, session.id);
-      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
+    ...options,
     mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
       app.sessions.close(id, acceptUnpushedWork),
-    onMutate: async ({ id }) => {
-      // Watched first, so any read that lands from here leaves the row out.
+    onMutate: ({ id }) => {
       watchClose(queryClient, id);
-      const drop = () =>
-        queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
-          rows?.filter((row) => row.id !== id),
-        );
-      // Dropped on the click, and again once a read in flight is cancelled:
-      // the cancel reverts that query to the rows it held before the read.
-      drop();
-      await queryClient.cancelQueries({ queryKey: sessionsKeys.lists() });
-      drop();
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.filter((row) => row.id !== id),
+      );
     },
     onError: (error, variables, context, mutation) => {
-      void restore(variables.id);
+      unwatchClose(queryClient, variables.id);
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
       return options?.onError?.(error, variables, context, mutation);
     },
   });

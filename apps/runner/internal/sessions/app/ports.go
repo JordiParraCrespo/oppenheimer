@@ -100,8 +100,9 @@ type Worktrees interface {
 	// Remove deletes a worktree and prunes the record. A worktree already gone
 	// from disk is only pruned.
 	Remove(ctx context.Context, repo, path string, force bool) error
-	// Exists reports whether a worktree is still on disk: someone on the host
-	// may have deleted it by hand.
+	// Exists reports whether a worktree is still on disk. Someone on the host
+	// may have deleted it by hand, and then the session cannot be pushed,
+	// kept or restarted, only closed.
 	Exists(path string) bool
 	// Dirty reports uncommitted changes in a worktree.
 	Dirty(ctx context.Context, path string) (bool, error)

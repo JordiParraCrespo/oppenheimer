@@ -139,6 +139,10 @@ func (a *App) CloseSession(ctx context.Context, out io.Writer, id string, opts C
 		}
 		return err
 	}
+	if session.Worktree == "" {
+		p.printf("session %s is not on this host; there was nothing to close\n", session.ID)
+		return p.err
+	}
 	if opts.NoPush {
 		p.printf("session %s closed; the worktree is removed and %s was not pushed\n", session.ID, session.Branch)
 	} else {

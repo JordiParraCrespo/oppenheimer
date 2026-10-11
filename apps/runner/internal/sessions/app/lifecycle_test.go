@@ -279,6 +279,63 @@ func TestCloseResolvesASessionWhoseWorktreeWasDeletedOnTheHost(t *testing.T) {
 	}
 }
 
+// A session this host holds no record of — removed by hand, or lost with a
+// reinstall — is answered as closed, so its row can still be deleted.
+func TestCloseAnswersClosedForASessionThisHostDoesNotHold(t *testing.T) {
+	h := newFakeHarness(t)
+
+	closed, err := h.svc.Close(context.Background(), "gone-session", app.CloseInput{Push: true})
+	if err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	if closed.ID != "gone-session" || closed.State != domain.StateClosed {
+		t.Fatalf("session = %+v, want gone-session closed", closed)
+	}
+	if !slices.Equal(h.events.states, []domain.State{domain.StateClosed}) {
+		t.Fatalf("published %q, want [closed]", h.events.states)
+	}
+}
+
+// Restarting a session whose worktree was deleted on the host cannot bring
+// anything back: it is closed, and the restart refused, rather than an agent
+// resumed in a directory that is not there.
+func TestRestartClosesASessionWhoseWorktreeWasDeletedOnTheHost(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
+		t.Fatal(err)
+	}
+	delete(h.worktrees.Paths, session.Worktree)
+
+	_, err := h.svc.Restart(context.Background(), session.ID)
+
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != domain.ErrNotRunning.Code {
+		t.Fatalf("err = %v, want %s", err, domain.ErrNotRunning.Code)
+	}
+	if got, _ := h.svc.Get(session.ID); got.State != domain.StateClosed {
+		t.Fatalf("state = %q, want closed", got.State)
+	}
+	if names, _ := h.terminals.List(context.Background()); len(names) != 0 {
+		t.Fatalf("a terminal was started for a session that is gone: %v", names)
+	}
+	if last := h.events.states[len(h.events.states)-1]; last != domain.StateClosed {
+		t.Fatalf("last published %q, want closed", last)
+	}
+}
+
+// Restarting a session this host holds no record of closes it too.
+func TestRestartAnswersClosedForASessionThisHostDoesNotHold(t *testing.T) {
+	h := newFakeHarness(t)
+
+	if _, err := h.svc.Restart(context.Background(), "gone-session"); err == nil {
+		t.Fatal("a restart of a session that is gone must be refused")
+	}
+	if !slices.Equal(h.events.states, []domain.State{domain.StateClosed}) {
+		t.Fatalf("published %q, want [closed]", h.events.states)
+	}
+}
+
 // A session closed on the host already (`runner sessions close`) is closed
 // again when the console asks, and says so: the console's row resolves on
 // that answer and on nothing else.

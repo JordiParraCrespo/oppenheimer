@@ -59,8 +59,9 @@
   row stayed until the host confirmed. The sidebar never lists a
   resolved session (the API keeps it as a tombstone). A session the host
   no longer holds — closed there with `runner sessions close`, its
-  worktree deleted by hand, or its record lost — closes on Delete
-  instead of being refused for ever. The order is the reader's: a project drags by its header among the
+  worktree deleted by hand, or its record lost — closes on Delete or on
+  Restart instead of being refused for ever; after a Restart its pane
+  shows it deleted. The order is the reader's: a project drags by its header among the
   others and a session drags within its project or into another one,
   folded or empty, which moves it as Move to project… does. The order is
   kept on the device, like the rail's; a project or session made since

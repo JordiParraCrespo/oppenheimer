@@ -214,7 +214,8 @@ describe('a deleted session', () => {
     expect(result.current.list.data).toEqual([]);
   }, 15_000);
 
-  it('comes back when the API refuses the close', async () => {
+  it('comes back, and is not watched, when the close is refused', async () => {
+    // An API refusal, or a host that was offline and never got the close.
     const findAll = vi.fn().mockResolvedValue([live]);
     const { wrapper } = setup({ findAll, close: vi.fn().mockRejectedValue(new Error('refused')) });
     const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
@@ -224,20 +225,6 @@ describe('a deleted session', () => {
 
     result.current.close.mutate({ id: 'c-1' });
     await waitFor(() => expect(result.current.close.isError).toBe(true));
-    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
-  });
-
-  it('comes back, and is not watched, when the close never reached its host', async () => {
-    const findAll = vi.fn().mockResolvedValue([live]);
-    const offline = { ...live, isHostOffline: true } as SessionEntity;
-    const { wrapper } = setup({ findAll, close: vi.fn().mockResolvedValue(offline) });
-    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
-      wrapper,
-    });
-    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
-
-    result.current.close.mutate({ id: 'c-1' });
-    await waitFor(() => expect(result.current.close.isSuccess).toBe(true));
     await waitFor(() => expect(result.current.list.data).toHaveLength(1));
     const reads = findAll.mock.calls.length;
     await pause(2_500);

@@ -645,9 +645,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   01's "the browser never reaches the runner directly in the MVP" is
   superseded by 22.
 - 2026-10-11: **Delete is optimistic, and a session gone from its host
-  can be deleted** (05, 02). The sidebar drops the row on the click and
-  puts it back if the close cannot happen; the toast that the host was
-  asked is gone. The runner answers a close for a session it holds no
+  closes** (05, 02). The sidebar drops the row on the click and puts it
+  back if the close cannot happen; the toast that the host was asked is
+  gone. The runner answers a close or a restart for a session it holds no
   record of, one it closed already, or one whose worktree was deleted by
-  hand with `session.closed`, so the row resolves rather than refusing
-  forever.
+  hand with `session.closed` (a restart is still refused), so the row
+  resolves rather than being stuck forever.
