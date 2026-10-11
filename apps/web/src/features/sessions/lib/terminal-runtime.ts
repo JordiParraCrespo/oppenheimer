@@ -66,6 +66,9 @@ export interface SessionTerminalOptions {
 /** How much scrollback a kept picture carries: enough to look like the pane. */
 const SNAPSHOT_SCROLLBACK = 1000;
 
+/** How many non-painting frames the kept picture outlasts before giving way. */
+const HELD_FRAMES = 16;
+
 /**
  * One session terminal: xterm.js in `container`, wired to `stream`, until the
  * returned function disposes it. Everything that talks to xterm lives here;
@@ -285,19 +288,36 @@ export function mountSessionTerminal(
   // it. A chunk counts once it carries a glyph (`hasVisibleText`), since an
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
-  const offData = stream.onData((chunk, consumed) => {
-    if (showingSnapshot) {
-      showingSnapshot = false;
-      term.reset();
-    }
-    echo.received();
-    if (!announcedOutput && hasVisibleText(chunk)) {
-      announcedOutput = true;
-      options.onFirstOutput?.();
-    }
+  // While the kept picture is up, frames that paint nothing (tmux's preamble
+  // may arrive on its own) are held rather than written: resetting for them
+  // would blank the pane before the redraw, and writing them over the picture
+  // would lose the modes they set to the reset that follows. The first frame
+  // that draws resets the grid and writes them all in order.
+  let held: { chunk: Uint8Array | string; consumed: () => void }[] = [];
+  const write = (chunk: Uint8Array | string, consumed: () => void) => {
     // xterm's write callback fires once the parser has drained the chunk:
     // that is the moment the bytes are consumed, and the credit goes with it.
     term.write(cursorFrames.frame(chunk), consumed);
+  };
+  const offData = stream.onData((chunk, consumed) => {
+    echo.received();
+    // Scanned only while something waits on it: the scan is not free per frame.
+    const visible = (!announcedOutput || showingSnapshot) && hasVisibleText(chunk);
+    if (!announcedOutput && visible) {
+      announcedOutput = true;
+      options.onFirstOutput?.();
+    }
+    if (showingSnapshot) {
+      held.push({ chunk, consumed });
+      // A cap so a link that never draws cannot sit on its credit.
+      if (!visible && held.length < HELD_FRAMES) return;
+      showingSnapshot = false;
+      term.reset();
+      for (const frame of held) write(frame.chunk, frame.consumed);
+      held = [];
+      return;
+    }
+    write(chunk, consumed);
   });
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
