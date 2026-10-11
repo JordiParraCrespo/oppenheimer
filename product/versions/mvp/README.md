@@ -662,3 +662,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and so an exception to the rule that nothing on the server publishes a
   port. 22 said no third-party STUN by default; Cloudflare already carries
   every request through the tunnel, so it adds no party, and it is free.
+- 2026-10-11: **Delete is optimistic, and a session gone from its host
+  closes** (05, 02). The sidebar drops the row on the click and puts it
+  back if the close cannot happen; the toast that the host was asked is
+  gone. The runner answers a close or a restart for a session it holds no
+  record of, one it closed already, or one whose worktree was deleted by
+  hand with `session.closed` (a restart is still refused), so the row
+  resolves rather than being stuck forever.

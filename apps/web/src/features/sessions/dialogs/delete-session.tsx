@@ -1,7 +1,7 @@
 import { Checkbox, FieldLabel } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
+import { ConfirmDialog } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,10 +10,13 @@ import { useTranslation } from 'react-i18next';
  * transcript go, and the row stays resolved so its directory name and branch
  * are never reissued, which is why the list drops it rather than the API.
  *
+ * The row leaves the sidebar on the click (`useCloseSession`), so the sidebar
+ * is the confirmation and nothing toasts.
+ *
  * The close refuses unpushed work unless the caller accepts losing it; this
  * dialog's box is where that is accepted, not a hidden flag. A failure stays
- * next to the button, never a toast. An accepted delete toasts that it was
- * asked for, not that it happened: the host may still refuse.
+ * next to the button, never a toast — a host that is offline among them,
+ * since the close never reached it and the row comes back.
  */
 export function DeleteSessionDialog({
   session,
@@ -24,12 +27,7 @@ export function DeleteSessionDialog({
 }) {
   const { t } = useTranslation();
   const [discard, setDiscard] = useState(false);
-  const close = useCloseSession({
-    onSuccess: () => {
-      notifySuccess('sessionDeleteRequested', { name: session.name });
-      onClose();
-    },
-  });
+  const close = useCloseSession({ onSuccess: onClose });
 
   return (
     <ConfirmDialog

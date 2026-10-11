@@ -446,6 +446,14 @@ func (w *Worktrees) Remove(_ context.Context, _, path string, force bool) error 
 	return nil
 }
 
+// Exists implements app.Worktrees.
+func (w *Worktrees) Exists(path string) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	_, ok := w.Paths[path]
+	return ok
+}
+
 // Dirty implements app.Worktrees.
 func (w *Worktrees) Dirty(_ context.Context, path string) (bool, error) {
 	w.mu.Lock()

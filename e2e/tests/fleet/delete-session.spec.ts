@@ -6,14 +6,14 @@ import { connectInstallation, createSession, waitForLifecycle } from '../../supp
 import { signInAs } from '../../support/web';
 
 /**
- * Delete from a sidebar row, on a real runner: the close is a request the host
- * answers, so the row stays until the host resolves the session, then leaves.
+ * Delete from a sidebar row, on a real runner: the row leaves on the click,
+ * and the close is a request the host then answers by resolving the session.
  * Needs the console on `WEB_URL`.
  */
 test.describe.configure({ timeout: 180_000 });
 test.use({ baseURL: WEB_URL });
 
-test('a deleted session leaves the sidebar once its host has closed it', async ({ page }) => {
+test('a deleted session leaves the sidebar at once, and its host closes it', async ({ page }) => {
   const up = await fetch(WEB_URL).then(
     (response) => response.ok,
     () => false,
@@ -38,9 +38,7 @@ test('a deleted session leaves the sidebar once its host has closed it', async (
   await dialog.getByRole('checkbox').check();
   await dialog.getByRole('button', { name: 'Delete session' }).click();
   await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Unassigned 0' })).toBeVisible();
 
-  await expect(page.getByRole('button', { name: 'Unassigned 0' })).toBeVisible({
-    timeout: 30_000,
-  });
-  await waitForLifecycle(api, sessionId, 'resolved', 10_000);
+  await waitForLifecycle(api, sessionId, 'resolved', 30_000);
 });

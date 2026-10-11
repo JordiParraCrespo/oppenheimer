@@ -247,16 +247,11 @@ export class SessionsRepository {
   }
 
   /**
-   * Close: the session stops, its worktree leaves the host, and the row stays
-   * resolved so its directory name and branch are never reissued. Work that is
-   * not pushed refuses the close unless the caller accepts losing it.
-   */
-  @MapApiError(SessionsErrors.CLOSE_FAILED)
-  /**
    * Bring a stopped session's terminal back. The host recreates window 0 in the
    * worktrees the session already has and reopens the agent's own conversation,
    * so what comes back is the session as it was rather than a second one.
    */
+  @MapApiError(SessionsErrors.RESTART_FAILED)
   async restart(id: string): Promise<SessionEntity> {
     const data = await unwrapBody(
       heyApiSdk.restartSession({ path: { id } }),
@@ -265,6 +260,15 @@ export class SessionsRepository {
     return toEntity(data);
   }
 
+  /**
+   * Close: the session stops, its worktree leaves the host, and the row stays
+   * resolved so its directory name and branch are never reissued. Work that is
+   * not pushed refuses the close unless the caller accepts losing it.
+   *
+   * A close the API took but could not hand to an offline host is refused
+   * here: the API does not send it again, so nothing would ever resolve it.
+   */
+  @MapApiError(SessionsErrors.CLOSE_FAILED)
   async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
     const data = await unwrapBody(
       heyApiSdk.closeSession({
@@ -273,7 +277,9 @@ export class SessionsRepository {
       }),
       SessionsErrors.CLOSE_FAILED,
     );
-    return toEntity(data);
+    const session = toEntity(data);
+    if (session.isHostOffline) throw new AppError(SessionsErrors.CLOSE_HOST_OFFLINE);
+    return session;
   }
 
   /**

@@ -10,7 +10,6 @@
   "emailResent": "Email sent again.",
   "sessionRenamed": "Renamed to “{{name}}”.",
   "sessionMoved": "“{{name}}” moved to {{project}}.",
-  "sessionDeleteRequested": "Asked the host to delete “{{name}}”.",
   "projectCreated": "“{{name}}” created.",
   "projectSaved": "“{{name}}” saved.",
   "projectDeleted": "“{{name}}” deleted.",
