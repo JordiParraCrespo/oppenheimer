@@ -5,6 +5,7 @@ import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useEffect, useRef, useState } from 'react';
 import { DIAL_GRACE_MS, RECONNECTED_FOR_MS } from '../lib/host-link-phase';
 import { mountSessionTerminal } from '../lib/terminal-runtime';
+import { keepTerminalSnapshot, readTerminalSnapshot } from '../lib/terminal-snapshots';
 
 /**
  * Mounts a session terminal (`mountSessionTerminal`) in `containerRef` for the
@@ -37,6 +38,10 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  * again; `reconnected`, the link came back from being away a moment ago;
  * `slowDial`, the current dial has outlasted `DIAL_GRACE_MS`;
  * `hostName`, the list's name for it.
+ *
+ * With `snapshotKey`, the pane keeps its last picture under that key when it
+ * unmounts and opens on it next time (`terminal-snapshots.ts`), so switching
+ * back to a session shows its screen at once rather than the waiting state.
  */
 export function useTerminal(
   createStream: () => SessionStream,
@@ -47,6 +52,8 @@ export function useTerminal(
     hostId?: string;
     /** A watcher's pane: no input (`SessionTerminalOptions.readOnly`). */
     readOnly?: boolean;
+    /** Which session window's picture to keep and restore; none without it. */
+    snapshotKey?: string;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +87,7 @@ export function useTerminal(
   });
   const agentWindow = options.agentWindow ?? false;
   const readOnly = options.readOnly ?? false;
+  const snapshotKey = options.snapshotKey;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -88,9 +96,17 @@ export function useTerminal(
 
     const stream = createStream();
     streamRef.current = stream;
+    const snapshot = snapshotKey ? readTerminalSnapshot(snapshotKey) : undefined;
+    // A kept picture is something on screen: the waiting state has nothing
+    // to say over it. The pane may be a new session's, so this is set either way.
+    setHasOutput(snapshot !== undefined);
     const unmount = mountSessionTerminal(container, stream, {
       agentWindow,
       readOnly,
+      snapshot,
+      keepSnapshot: snapshotKey
+        ? (picture) => keepTerminalSnapshot(snapshotKey, picture)
+        : undefined,
       onFiles: (files) => onFilesRef.current?.(files),
       typeahead: () => typeaheadRef.current,
       // A reconnect replays the scrollback, so a session that has already run
@@ -130,7 +146,7 @@ export function useTerminal(
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, generation]);
+  }, [createStream, agentWindow, readOnly, snapshotKey, generation]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,

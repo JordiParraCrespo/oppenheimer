@@ -60,6 +60,7 @@ export function SessionTerminal({
     agentWindow: true,
     onFiles: upload.send,
     hostId,
+    snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
   });
   const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
   const phase = hostLinkPhaseOf({
@@ -84,7 +85,8 @@ export function SessionTerminal({
           <div ref={containerRef} className="size-full" />
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
-            older one replaying its scrollback. Either way the reader cannot
+            older one replaying its scrollback that this tab has no kept
+            picture of (`terminal-snapshots.ts`). Either way the reader cannot
             tell a slow start from a broken session without this. It covers
             the grid rather than replacing it, so the terminal stays mounted
             and keeps its size, and the first glyph takes it away. */}

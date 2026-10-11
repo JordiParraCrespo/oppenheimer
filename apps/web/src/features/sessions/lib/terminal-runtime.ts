@@ -1,9 +1,11 @@
 import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
 import { FitAddon } from '@xterm/addon-fit';
+import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
+import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
@@ -51,7 +53,19 @@ export interface SessionTerminalOptions {
    * measured round trip is above 30 ms (`terminal-echo.ts`).
    */
   typeahead?: () => boolean;
+  /**
+   * The picture this pane showed last time (`terminal-snapshots.ts`), drawn
+   * at once so switching back to a session is not an empty grid while the
+   * link dials. The first frame from the far end that draws replaces it
+   * (`createSnapshotHandover`): tmux's attach redraws the whole screen.
+   */
+  snapshot?: string;
+  /** Hands the pane's picture over as it unmounts, to be the next `snapshot`. */
+  keepSnapshot?: (snapshot: string) => void;
 }
+
+/** How much scrollback a kept picture carries: enough to look like the pane. */
+const SNAPSHOT_SCROLLBACK = 1000;
 
 /**
  * One session terminal: xterm.js in `container`, wired to `stream`, until the
@@ -94,8 +108,12 @@ export function mountSessionTerminal(
   const unicode = new Unicode11Addon();
   term.loadAddon(unicode);
   term.unicode.activeVersion = '11';
+  const serialize = new SerializeAddon();
+  term.loadAddon(serialize);
 
   term.open(container);
+
+  if (options.snapshot) term.write(options.snapshot, () => term.scrollToBottom());
 
   // Every byte the reader sends goes through here: timed, and predicted.
   const echo = bindTerminalEcho(term, (data) => stream.send(data), {
@@ -268,15 +286,24 @@ export function mountSessionTerminal(
   // it. A chunk counts once it carries a glyph (`hasVisibleText`), since an
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
+  const handover = createSnapshotHandover<{ chunk: Uint8Array | string; consumed: () => void }>(
+    Boolean(options.snapshot),
+    {
+      reset: () => term.reset(),
+      // xterm's write callback fires once the parser has drained the chunk:
+      // that is the moment the bytes are consumed, and the credit goes with it.
+      write: ({ chunk, consumed }) => term.write(cursorFrames.frame(chunk), consumed),
+    },
+  );
   const offData = stream.onData((chunk, consumed) => {
     echo.received();
-    if (!announcedOutput && hasVisibleText(chunk)) {
+    // Scanned only while something waits on it: the scan is not free per frame.
+    const visible = (!announcedOutput || handover.holding()) && hasVisibleText(chunk);
+    if (!announcedOutput && visible) {
       announcedOutput = true;
       options.onFirstOutput?.();
     }
-    // xterm's write callback fires once the parser has drained the chunk:
-    // that is the moment the bytes are consumed, and the credit goes with it.
-    term.write(cursorFrames.frame(chunk), consumed);
+    handover.pass({ chunk, consumed }, visible);
   });
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
@@ -312,6 +339,15 @@ export function mountSessionTerminal(
     themeObserver.disconnect();
     resizeObserver.disconnect();
     ptySize.dispose();
+    // A pane that never drew anything has no picture worth keeping. One still
+    // showing the picture it opened on hands that back unchanged: xterm parses
+    // writes asynchronously, so a pane unmounted straight after mounting
+    // (StrictMode does it to every one) would serialize an empty grid over it.
+    if (options.keepSnapshot && options.snapshot && handover.holding()) {
+      options.keepSnapshot(options.snapshot);
+    } else if (options.keepSnapshot && announcedOutput) {
+      options.keepSnapshot(serialize.serialize({ scrollback: SNAPSHOT_SCROLLBACK }));
+    }
     term.dispose();
   };
 }
