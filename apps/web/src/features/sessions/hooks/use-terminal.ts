@@ -1,6 +1,7 @@
 import '@xterm/xterm/css/xterm.css';
 import type { SessionStream, StreamEnd, StreamStatus } from '@oppenheimer/frontend-consumer';
 import { useHostPresence } from '@oppenheimer/frontend-consumer/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useEffect, useRef, useState } from 'react';
 import { RECONNECTED_FOR_MS } from '../lib/host-link-phase';
 import { mountSessionTerminal } from '../lib/terminal-runtime';
@@ -67,9 +68,14 @@ export function useTerminal(
   // Read through a ref so a new callback identity never rebuilds the terminal.
   const onEndRef = useRef(options.onEnd);
   const onFilesRef = useRef(options.onFiles);
+  // Read through a ref too: the flags arrive after the first mount, and a
+  // flag is no reason to rebuild a live terminal.
+  const typeahead = useFeatureFlag('terminal_typeahead');
+  const typeaheadRef = useRef(typeahead);
   useEffect(() => {
     onEndRef.current = options.onEnd;
     onFilesRef.current = options.onFiles;
+    typeaheadRef.current = typeahead;
   });
   const agentWindow = options.agentWindow ?? false;
   const readOnly = options.readOnly ?? false;
@@ -85,6 +91,7 @@ export function useTerminal(
       agentWindow,
       readOnly,
       onFiles: (files) => onFilesRef.current?.(files),
+      typeahead: () => typeaheadRef.current,
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),

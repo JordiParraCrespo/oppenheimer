@@ -14,6 +14,7 @@ import { useTerminal } from '../hooks/use-terminal';
  */
 
 vi.mock('../lib/terminal-runtime', () => ({ mountSessionTerminal: () => () => {} }));
+vi.mock('@oppenheimer/frontend-core/react', () => ({ useFeatureFlag: () => false }));
 
 let presence: { data?: { name: string; online: boolean }; dataUpdatedAt: number };
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({

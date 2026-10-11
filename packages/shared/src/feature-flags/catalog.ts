@@ -60,6 +60,24 @@ export const FEATURE_FLAGS = {
     client: true,
     expiresAt: '2027-01-31',
   },
+  /**
+   * Kill switch for the session terminal's predictive local echo: a key the
+   * console can predict (a character typed at the cursor, Backspace, Left,
+   * Right) is drawn before the host echoes it, over the grid and never in it,
+   * and dropped the moment the host disagrees. Drawn only once the measured
+   * keystroke round trip is above 30 ms. On by default because it is the
+   * terminal's behaviour, not an experiment; switching it off returns every
+   * pane to waiting for the host's echo at its next mount.
+   */
+  terminal_typeahead: {
+    description: "Draw typed characters in the session terminal before the host's echo arrives.",
+    kind: 'ops',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    bucketBy: 'user',
+  },
 } as const satisfies Record<string, FlagDefinition>;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

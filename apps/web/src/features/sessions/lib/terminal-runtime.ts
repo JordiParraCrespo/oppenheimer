@@ -4,6 +4,8 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
+import { EchoLatency } from './echo-latency';
+import { bindLatencyReadout } from './latency-readout';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
 import {
@@ -13,7 +15,15 @@ import {
   TERMINAL_FONT_FAMILIES,
   terminalMinimumContrastRatio,
 } from './terminal-theme';
+import { bindTypeahead } from './typeahead';
 import { bindUserTurns } from './user-turns';
+
+/**
+ * Below this keystroke round trip a prediction is not drawn: the host's own
+ * echo lands within a frame or two, and a guess could only add a flicker.
+ * VS Code's terminal typeahead uses the same threshold.
+ */
+const TYPEAHEAD_MIN_LATENCY_MS = 30;
 
 /** The platform test xterm itself uses to pick its Mac behaviour. */
 const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
@@ -43,6 +53,13 @@ export interface SessionTerminalOptions {
    * keeps the pane from looking as though typing would do something.
    */
   readOnly?: boolean;
+  /**
+   * Whether predictive local echo may draw (`typeahead.ts`): the
+   * `terminal_typeahead` flag, read through a getter so the flag arriving
+   * after mount does not rebuild the terminal. It still draws only once the
+   * measured round trip is above `TYPEAHEAD_MIN_LATENCY_MS`.
+   */
+  typeahead?: () => boolean;
 }
 
 /**
@@ -89,6 +106,27 @@ export function mountSessionTerminal(
 
   term.open(container);
 
+  // Every key the reader sends: the round trip is timed from here, and the
+  // prediction is made before the bytes leave.
+  const latency = new EchoLatency();
+  const typeahead = options.readOnly
+    ? null
+    : bindTypeahead(term, {
+        shouldDraw: () =>
+          (options.typeahead?.() ?? false) &&
+          (latency.quantile(0.5) ?? 0) >= TYPEAHEAD_MIN_LATENCY_MS,
+        readColors: readTypeaheadColors,
+        onConfirm: (ms) => latency.add(ms),
+        // A guess the host has not confirmed in a few round trips was wrong.
+        timeoutMs: () => Math.max(1000, 4 * (latency.quantile(0.95) ?? 0)),
+      });
+  const send = (data: string) => {
+    latency.sent(performance.now());
+    typeahead?.input(data);
+    stream.send(data);
+  };
+  const unbindReadout = term.element ? bindLatencyReadout(term.element, latency) : () => {};
+
   // The console's keys (05), decided before xterm encodes them.
   term.attachCustomKeyEventHandler((event) => {
     const verdict = classifyKey(event, {
@@ -110,7 +148,7 @@ export function mountSessionTerminal(
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();
-      stream.send(verdict.data);
+      send(verdict.data);
     }
     return false;
   });
@@ -150,6 +188,8 @@ export function mountSessionTerminal(
     // would scroll whichever of them sits in the corner.
     const button = notches < 0 ? 64 : 65;
     const report = `\u001b[<${button};${wheelCell.col};${wheelCell.row}M`;
+    // The program repaints for these, so any prediction is void.
+    typeahead?.input(report);
     stream.send(report.repeat(Math.abs(notches)));
   };
 
@@ -241,6 +281,7 @@ export function mountSessionTerminal(
     term.options.theme = readTerminalTheme();
     term.options.minimumContrastRatio = terminalMinimumContrastRatio();
     userTurns?.repaint();
+    typeahead?.repaint();
   });
   themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
@@ -251,6 +292,7 @@ export function mountSessionTerminal(
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
   const offData = stream.onData((chunk, consumed) => {
+    latency.received(performance.now());
     if (!announcedOutput && hasVisibleText(chunk)) {
       announcedOutput = true;
       options.onFirstOutput?.();
@@ -277,12 +319,14 @@ export function mountSessionTerminal(
     stream.resize(term.cols, term.rows);
     term.scrollToBottom();
   });
-  const input = term.onData((data) => stream.send(data));
+  const input = term.onData(send);
 
   return () => {
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();
+    unbindReadout();
+    typeahead?.dispose();
     userTurns?.dispose();
     offData();
     offStatus();
@@ -293,6 +337,17 @@ export function mountSessionTerminal(
     resizeObserver.disconnect();
     ptySize.dispose();
     term.dispose();
+  };
+}
+
+/** The terminal ramp as a predicted cell is drawn in it. */
+function readTypeaheadColors() {
+  const theme = readTerminalTheme();
+  return {
+    background: theme.background ?? 'transparent',
+    foreground: theme.foreground ?? 'currentColor',
+    cursor: theme.cursor ?? theme.foreground ?? 'currentColor',
+    cursorText: theme.cursorAccent ?? theme.background ?? 'transparent',
   };
 }
 
