@@ -338,8 +338,13 @@ export function mountSessionTerminal(
     themeObserver.disconnect();
     resizeObserver.disconnect();
     ptySize.dispose();
-    // A pane that never drew anything has no picture worth keeping.
-    if (options.keepSnapshot && (announcedOutput || options.snapshot)) {
+    // A pane that never drew anything has no picture worth keeping. One still
+    // showing the picture it opened on hands that back unchanged: xterm parses
+    // writes asynchronously, so a pane unmounted straight after mounting
+    // (StrictMode does it to every one) would serialize an empty grid over it.
+    if (options.keepSnapshot && options.snapshot && handover.holding()) {
+      options.keepSnapshot(options.snapshot);
+    } else if (options.keepSnapshot && announcedOutput) {
       options.keepSnapshot(serialize.serialize({ scrollback: SNAPSHOT_SCROLLBACK }));
     }
     term.dispose();

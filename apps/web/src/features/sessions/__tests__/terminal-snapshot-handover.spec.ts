@@ -147,4 +147,16 @@ describe('a pane unmounting', () => {
     unmount();
     expect(kept).toEqual(['SERIALIZED']);
   });
+
+  it('hands back the picture it opened on when nothing live has replaced it', () => {
+    // StrictMode unmounts every pane straight after mounting it, before xterm
+    // has parsed the picture; serializing then would keep an empty grid.
+    const { stream } = streamWithData();
+    const kept: string[] = [];
+    mountSessionTerminal(document.createElement('div'), stream, {
+      snapshot: 'PICTURE',
+      keepSnapshot: (picture) => kept.push(picture),
+    })();
+    expect(kept).toEqual(['PICTURE']);
+  });
 });
