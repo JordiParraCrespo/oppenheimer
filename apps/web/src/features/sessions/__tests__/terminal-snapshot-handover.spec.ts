@@ -56,7 +56,7 @@ vi.mock('@xterm/addon-webgl', () => ({
 vi.mock('@xterm/addon-serialize', () => ({
   SerializeAddon: class {
     serialize() {
-      return '';
+      return 'SERIALIZED';
     }
   },
 }));
@@ -114,5 +114,37 @@ describe('a pane opened on its kept picture', () => {
     ]);
     expect(credited).toEqual(['preamble', 'redraw']);
     unmount();
+  });
+
+  it('gives way to a link that never draws, rather than hold its credit', () => {
+    calls.length = 0;
+    const { stream, deliver } = streamWithData();
+    const unmount = mountSessionTerminal(document.createElement('div'), stream, {
+      snapshot: 'PICTURE',
+    });
+    let credited = 0;
+    for (let frame = 0; frame < 16; frame += 1) deliver('\u001b[?25l', () => (credited += 1));
+    expect(calls).toContain('reset');
+    expect(credited).toBe(16);
+    unmount();
+  });
+});
+
+describe('a pane unmounting', () => {
+  it('keeps a picture only once something was drawn', () => {
+    const blank = streamWithData();
+    const kept: string[] = [];
+    mountSessionTerminal(document.createElement('div'), blank.stream, {
+      keepSnapshot: (picture) => kept.push(picture),
+    })();
+    expect(kept).toEqual([]);
+
+    const drawn = streamWithData();
+    const unmount = mountSessionTerminal(document.createElement('div'), drawn.stream, {
+      keepSnapshot: (picture) => kept.push(picture),
+    });
+    drawn.deliver('❯ ready', () => {});
+    unmount();
+    expect(kept).toEqual(['SERIALIZED']);
   });
 });

@@ -5,6 +5,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
+import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
@@ -55,8 +56,8 @@ export interface SessionTerminalOptions {
   /**
    * The picture this pane showed last time (`terminal-snapshots.ts`), drawn
    * at once so switching back to a session is not an empty grid while the
-   * link dials. The first bytes from the far end reset the grid and replace
-   * it: tmux's attach redraws the whole screen.
+   * link dials. The first frame from the far end that draws replaces it
+   * (`createSnapshotHandover`): tmux's attach redraws the whole screen.
    */
   snapshot?: string;
   /** Hands the pane's picture over as it unmounts, to be the next `snapshot`. */
@@ -65,9 +66,6 @@ export interface SessionTerminalOptions {
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
 const SNAPSHOT_SCROLLBACK = 1000;
-
-/** How many non-painting frames the kept picture outlasts before giving way. */
-const HELD_FRAMES = 16;
 
 /**
  * One session terminal: xterm.js in `container`, wired to `stream`, until the
@@ -115,7 +113,6 @@ export function mountSessionTerminal(
 
   term.open(container);
 
-  let showingSnapshot = Boolean(options.snapshot);
   if (options.snapshot) term.write(options.snapshot, () => term.scrollToBottom());
 
   // Every byte the reader sends goes through here: timed, and predicted.
@@ -288,36 +285,24 @@ export function mountSessionTerminal(
   // it. A chunk counts once it carries a glyph (`hasVisibleText`), since an
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
-  // While the kept picture is up, frames that paint nothing (tmux's preamble
-  // may arrive on its own) are held rather than written: resetting for them
-  // would blank the pane before the redraw, and writing them over the picture
-  // would lose the modes they set to the reset that follows. The first frame
-  // that draws resets the grid and writes them all in order.
-  let held: { chunk: Uint8Array | string; consumed: () => void }[] = [];
-  const write = (chunk: Uint8Array | string, consumed: () => void) => {
-    // xterm's write callback fires once the parser has drained the chunk:
-    // that is the moment the bytes are consumed, and the credit goes with it.
-    term.write(cursorFrames.frame(chunk), consumed);
-  };
+  const handover = createSnapshotHandover<{ chunk: Uint8Array | string; consumed: () => void }>(
+    Boolean(options.snapshot),
+    {
+      reset: () => term.reset(),
+      // xterm's write callback fires once the parser has drained the chunk:
+      // that is the moment the bytes are consumed, and the credit goes with it.
+      write: ({ chunk, consumed }) => term.write(cursorFrames.frame(chunk), consumed),
+    },
+  );
   const offData = stream.onData((chunk, consumed) => {
     echo.received();
     // Scanned only while something waits on it: the scan is not free per frame.
-    const visible = (!announcedOutput || showingSnapshot) && hasVisibleText(chunk);
+    const visible = (!announcedOutput || handover.holding()) && hasVisibleText(chunk);
     if (!announcedOutput && visible) {
       announcedOutput = true;
       options.onFirstOutput?.();
     }
-    if (showingSnapshot) {
-      held.push({ chunk, consumed });
-      // A cap so a link that never draws cannot sit on its credit.
-      if (!visible && held.length < HELD_FRAMES) return;
-      showingSnapshot = false;
-      term.reset();
-      for (const frame of held) write(frame.chunk, frame.consumed);
-      held = [];
-      return;
-    }
-    write(chunk, consumed);
+    handover.pass({ chunk, consumed }, visible);
   });
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
