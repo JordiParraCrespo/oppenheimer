@@ -253,6 +253,16 @@ runner does with it and point back.
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather
   than briefly.
+- `attachment.direct.offer`, `attachment.direct.answer`,
+  `attachment.direct.refused` and `attachment.path` — the direct terminal
+  path's signalling (22, 2026-10-11): the browser's WebRTC offer for one
+  attachment, forwarded by the relay; the runner's answer or refusal; and
+  where each direction moved to the data channel, as a byte offset into
+  that direction's stream (from the runner, its output; from the control
+  plane, the browser's input). An offset, not a marker, because this
+  link's writer sends control frames ahead of queued PTY frames. Sent only
+  to a runner whose `hello` names `attachment.direct`. Credit and resize
+  stay on the link whichever path the bytes take.
 - Every command is idempotent by session id and command id, because a
   reconnect may redeliver. For `session.create` that means the session id
   is the key: a redelivered create either finds the session the first

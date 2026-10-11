@@ -5,8 +5,9 @@ WebRTC, with the relay as the path it starts on and falls back to. Asked
 for on 2026-10-11 ("I want the sessions to be p2p … performance of the
 sessions is a top priority", then "Yes I love WebRTC", and, on moving the
 relay closer: "when I travel I will still have this problem"). This note
-records the direction, the shape, and the order it is built in. Only
-step 0 is built.
+records the direction, the shape, and the order it is built in. Steps 0
+and 1 are built, the fallback of step 2 with them; "As built" below says
+what changed on the way, and every changed point says so where it stands.
 
 ## Why
 
@@ -72,52 +73,77 @@ predictive echo hides whatever distance is left for what is typed most.
   stays the unit of streaming, flow control and resize (01); the direct
   path is another way to carry the same attachment, not a new kind of
   connection. Binary messages are PTY bytes (the attachment is the
-  channel, so no 4-byte header); text messages are the attachment's JSON
-  control (credit, resize). Unordered or unreliable delivery is never
+  channel, so no 4-byte header). Unordered or unreliable delivery is never
   used: a lost or reordered PTY byte cuts an escape sequence (01).
+  *Changed while building (2026-10-11):* this said the channel's text
+  messages carry the attachment's credit and resize. It carries **binary
+  only**; credit and resize stay on the attach socket, which needed no
+  second control vocabulary and loses nothing (neither is on the typing
+  path).
 - **Every attachment opens on the relay and moves to the direct path once
   it is up.** The first frame never waits on ICE, a network that cannot
   connect directly is no slower than today, and the relay *is* the
   fallback. There is no TURN server: one on the Hetzner box would be the
   same detour as the relay, through a second service. This is how Tailscale
   moves from DERP to a direct path.
-- **The control plane is the signalling channel.** The offer, the answer
-  and the ICE candidates ride the browser's attach socket and the runner
-  link, the two channels already authenticated (a single-use ticket and
+- **The control plane is the signalling channel.** The offer and the
+  answer ride the browser's attach socket and the runner link, the two channels already authenticated (a single-use ticket and
   the pinned per-host link). The DTLS fingerprints in them are what bind
-  the data channel to those two ends; no new credential exists.
-- **ICE servers are the control plane's to hand out.** A STUN responder
-  runs beside the API on the deployment's host (UDP 3478), and the list
-  reaches both ends in the signalling messages, so a deployment can point
-  at others without a release. No third-party STUN by default: a reader's
-  address is not sent to a company that is not party to the session.
+  the data channel to those two ends; no new credential exists. *Changed
+  while building:* no trickle ICE. Each side gathers its candidates (up to
+  two seconds in the browser, three on the host) and sends one complete
+  SDP, so there is no candidate message at all.
+- **ICE servers are the control plane's to hand out.** The list reaches
+  both ends in the signalling messages (`attached.direct.iceServers`, the
+  link's offer), so a deployment changes it without a release. No
+  third-party STUN by default: a reader's address is not sent to a company
+  that is not party to the session. *As built:* the list is
+  `RELAY_ICE_SERVERS`, empty by default, which is host candidates only
+  (a reader on the host's machine or network). The STUN responder beside
+  the API is not built yet (open question 1); until it is, a deployment
+  that wants readers elsewhere names a STUN server there.
 - **Same-machine and same-LAN readers connect over host candidates.**
   Browsers hide local addresses behind mDNS `.local` names; pion resolves
   them. This is the case that goes from ~100 ms to ~1 ms.
 
 ### Switching paths loses no byte
 
-- **The runner owns the switch, with a marker on the old path.** When the
-  data channel opens, the runner queues an `attachment.path { path:
-  "direct" }` on the link behind every PTY frame it has already queued
-  there, and sends every later byte on the data channel only. The browser
-  writes relay bytes until it reads that marker, and holds data-channel
-  bytes until then. Input moves the same way the other way: the browser
-  sends its own marker on the attach socket and then types on the channel;
-  the runner holds channel input until the marker arrives on the link. No
-  sequence numbers: each side has one sender per direction, and each
-  marker is ordered behind what came before it on its own path.
+- **Each direction switches at a byte offset, said on the control path.**
+  When the data channel opens, the runner counts the PTY bytes it has
+  handed to the link, sends every later byte on the channel only, and
+  tells the browser the count (`attachment.path`, then `direct.path`). The
+  browser draws relay bytes until it has that many, holding channel bytes
+  until then. Input moves the same way the other way: on the channel's
+  open the browser sends the count of keystroke bytes it typed on the
+  relay and types on the channel from then on; the runner holds channel
+  input until the link has delivered that many.
+  *Changed while building (2026-10-11):* this said a **marker** on the old
+  path, queued behind the bytes before it. The link's writer sends every
+  control frame ahead of queued PTY frames (01, "Flow control"), so a
+  marker sent as a control message could overtake the very bytes it stood
+  behind; a count cannot be overtaken.
 - **Falling back heals the screen instead of resending.** If the data
-  channel closes, the runner goes back to the link and asks tmux to
-  redraw that client (`refresh-client`). Every attachment is its own tmux
-  client (02 §6), so a full repaint costs one screen of bytes and repairs
-  whatever the closed channel did not deliver; the browser sees one
-  redraw, never a cut escape sequence. A runner keeps no replay buffer for
-  this.
+  channel closes, the runner goes back to the link in both directions and
+  asks tmux to redraw that client. Every attachment is its own tmux client
+  (02 §6), so a full repaint costs one screen of bytes and repairs whatever
+  the closed channel did not deliver; the browser sees one redraw. A runner
+  keeps no replay buffer for this. The browser needs no message for it:
+  output arriving on the relay after its switch means the host fell back,
+  and it follows. The attachment stays open throughout: closing it would
+  reach the browser as "session gone", which it takes as final.
+  *Changed while building:* the redraw is a `SIGWINCH` to the
+  attachment's own `tmux attach` process rather than `refresh-client`,
+  which needs the client's name, and the runner never kept one. The client
+  reports its unchanged size and the server repaints it in full; the window
+  and the program in it see nothing. A test against real tmux proves the
+  repaint, and fails without the signal.
 - **The credit window carries over.** Credit (01, "Flow control") keeps
-  its meaning on the direct path and is sent on the channel; the runner
-  also waits on the channel's `bufferedAmount`, so a slow reader stalls
-  its own pane and never the runner's memory.
+  its meaning on the direct path, and the browser still sends it on the
+  attach socket for every chunk it draws, whichever path carried it; the
+  runner also waits on the channel's `bufferedAmount` (1 MiB, until it
+  drains to 256 KiB), so a slow reader stalls its own pane and never the
+  runner's memory. A fallback forgets the bytes that were in flight on the
+  channel, which will never be credited.
 
 ### Authorization does not move
 
@@ -142,7 +168,7 @@ predictive echo hides whatever distance is left for what is typed most.
   the runner's, 02 §9), so nothing is lost by it.
 - **"No inbound ports" still holds.** ICE punches out through the host's NAT
   for one negotiated peer at a time; nothing listens for strangers. The
-  security checklist (07) gains the line: the runner answers ICE only for
+  security checklist (07) gains the line (F29): the runner answers ICE only for
   credentials it received over its link, and drops a data channel whose
   DTLS fingerprint is not the one signalled.
 
@@ -155,7 +181,9 @@ predictive echo hides whatever distance is left for what is typed most.
 - **A host caps its direct peers** (eight to start), and every reader past
   the cap stays on the relay. A share link whose audience is `anyone` (21)
   stays on the relay: it is the audience that could be large, and a host's
-  upload is somebody's home connection.
+  upload is somebody's home connection. *As built (step 1):* no share link
+  is offered a direct path, whatever its audience; step 3 opens it to
+  `people` and `accounts`.
 - **A large audience is the relay's job, later**, by fan-out: one read-only
   attachment from the host, its bytes copied by the relay to every watcher,
   with a `refresh-client` when one joins so it starts from a whole screen.
@@ -163,35 +191,47 @@ predictive echo hides whatever distance is left for what is typed most.
 
 ## The wire (additions to 01)
 
-On the attach socket (browser ↔ relay), JSON text frames:
+As built. *Changed while building:* the table first listed a trickled
+`direct.candidate` and a switch marker; there is neither (above).
+
+On the attach socket (browser ↔ relay), JSON text frames
+(`packages/shared/src/protocol/attach.ts`):
 
 | Message | Direction | Carries |
 |---|---|---|
-| `direct.offer` | browser → relay | the SDP offer, the data channel already created |
-| `direct.answer` | relay → browser | the runner's SDP answer and the ICE servers |
-| `direct.candidate` | both | one trickled ICE candidate |
-| `direct.unavailable` | relay → browser | why there is no direct path (capability, cap, audience, policy); the attachment stays on the relay |
-| `attachment.path` | both | the switch marker, `direct` or `relay` |
+| `attached.direct` | relay → browser | present when a direct path is on offer: the ICE servers to gather with |
+| `direct.offer` | browser → relay | the SDP offer, every candidate in it, the `pty` channel already created |
+| `direct.answer` | relay → browser | the runner's SDP answer |
+| `direct.unavailable` | relay → browser | why there is none (the runner refused, the host's cap, an offer that was not invited); the attachment stays on the relay |
+| `direct.path` | both | a byte offset: from the relay, where the output moved; from the browser, where its input did |
 
-On the runner link, the same four keyed by `attachmentId`:
-`attachment.direct.offer`, `attachment.direct.answer`,
-`attachment.direct.candidate`, `attachment.path`. They are sent only to a
-runner whose `hello` names `attachment.direct`, and a runner that predates
-them is never asked. Schemas go in `packages/shared/src/protocol/` like the
-rest, with the Go twin generated (01, open question 1).
+On the runner link (`packages/shared/src/protocol/messages.ts`, the Go
+generated from it), keyed by `attachmentId`: `attachment.direct.offer`
+(with the ICE servers), `attachment.direct.answer`,
+`attachment.direct.refused`, and `attachment.path` in both directions. They
+are sent only to a runner whose `hello` names `attachment.direct`, and a
+runner that predates them is never asked.
+
+The relay offers a direct path when the runner names the capability, the
+`terminal_direct_path` release flag is on for the person (checked by the
+relay as well as the console), and the attachment did not come through a
+share link. It forwards one offer per attachment and nothing it did not
+invite.
 
 ## Order of work
 
 0. **Measure and predict** (built, above).
 1. **Signalling and the direct path for the reader's own panes**, behind a
-   `terminal_direct_path` release flag: the protocol messages, the STUN
-   responder, pion in the runner, the switch markers, the browser's
-   channel next to its socket. The latency readout says which path a pane
-   is on (`direct` / `relay`).
-2. **Fallback and recovery**: the channel closing, ICE restarting after a
-   network change (a laptop moving from Wi-Fi to a phone's hotspot), the
-   `refresh-client` repaint, and the e2e spec that kills a channel in the
-   middle of output and finds the screen whole.
+   `terminal_direct_path` release flag: the protocol messages, pion in the
+   runner, the switch offsets, the browser's channel next to its socket.
+   The latency readout says which path a pane is on (`direct` / `relay`).
+   **Built**, except the STUN responder (open question 1).
+2. **Fallback and recovery**: the channel closing (**built**: back to the
+   link, repainted), ICE restarting after a network change (a laptop
+   moving from Wi-Fi to a phone's hotspot; not built: today the channel
+   closes and the pane carries on through the relay), and the e2e spec
+   that kills a channel in the middle of output and finds the screen whole
+   (proven by hand, below; not yet a committed suite).
 3. **Share links**: direct for `people` and `accounts` audiences up to the
    host's cap; `anyone` stays relayed.
 4. **Later**: relay fan-out for large read-only audiences.
@@ -200,16 +240,35 @@ Each step's gate is the readout's number: a reader on the same LAN as the
 host under 10 ms median echo, and no reader slower than the relay path
 would have been.
 
+## As built: step 1 (2026-10-11)
+
+- `apps/runner/internal/direct` answers an offer with pion and carries one
+  `pty` channel per attachment; `internal/cli/link_direct.go` moves the
+  bytes, holds early channel input, and falls back. Tests in both run real
+  pion peers in-process, under the race detector.
+- The relay (`browser-attach.gateway.ts`) decides the offer and forwards
+  the signalling; the console's stream (`direct-path.ts` beside
+  `session-stream.ts`) offers, switches at the offsets, follows a
+  fallback, and stops trying for the rest of its life after two failed
+  channels.
+- Proven end to end by hand, not in CI: headless Chromium running the
+  console's own stream code, the real relay, the real runner binary and
+  tmux. The pane moved from the relay to the channel by itself; a typed
+  command and its output crossed the channel with **no byte on the
+  relay**; keystroke-to-echo over the channel was **4.1–4.3 ms** on one
+  machine; closing the browser's peer connection put the pane back on the
+  relay, repainted, and typing went on.
+
 ## Open questions
 
 1. **Where the STUN responder runs**: in the API process (pion has a STUN
    server), or as its own small container in `docker/` beside it. Own
    container recommended: the API scales by replicas and STUN does not
    need to.
-2. **Whether the browser offers or the runner does.** Browser recommended:
-   the browser knows when it wants a direct path (a visible pane), and a
-   runner offering to every attachment would punch for panes nobody looks
-   at.
+2. ~~**Whether the browser offers or the runner does.**~~ **Decided: the
+   browser**, once the relay's `attached` invites it: the browser knows when
+   it wants a direct path, and a runner offering to every attachment would
+   punch for panes nobody looks at.
 3. **Mobile networks.** A phone on a carrier's symmetric NAT will usually
    not connect directly and stays on the relay. Whether that is worth a
    TURN server near the reader (not near the relay) is a question for

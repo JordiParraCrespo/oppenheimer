@@ -12,6 +12,7 @@ import type { CacheService } from '@oppenheimer/backend-cache';
 import { Some } from 'oxide.ts';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
+import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
@@ -215,6 +216,8 @@ async function boot(): Promise<World> {
     { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) } as HostAccessPort,
     owners,
     { forRequest: vi.fn() } as unknown as AbilityPort,
+    // The direct path (22) stays off here: this suite proves the relay's.
+    { isEnabled: () => false } as unknown as FlagEvaluatorPort,
   );
   new RelayUpgradeGateway({} as never, runners, browsers).mount(server);
 
