@@ -94,7 +94,8 @@ export const FEATURE_FLAGS = {
    * choice of path, not a workspace's product.
    */
   terminal_direct_path: {
-    description: 'Move session terminals to a direct WebRTC channel with their host when one connects.',
+    description:
+      'Move session terminals to a direct WebRTC channel with their host when one connects.',
     kind: 'release',
     owner: 'console',
     type: 'boolean',

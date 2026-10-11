@@ -30,7 +30,10 @@ export const attachCreditSchema = z.object({
  */
 export const attachDirectOfferSchema = z.object({
   type: z.literal('direct.offer'),
-  sdp: z.string().min(1).max(16 * 1024),
+  sdp: z
+    .string()
+    .min(1)
+    .max(16 * 1024),
 });
 
 /**
@@ -67,7 +70,10 @@ export const attachAttachedSchema = z.object({
 /** The runner's answer to `direct.offer`. */
 export const attachDirectAnswerSchema = z.object({
   type: z.literal('direct.answer'),
-  sdp: z.string().min(1).max(16 * 1024),
+  sdp: z
+    .string()
+    .min(1)
+    .max(16 * 1024),
 });
 
 /** No direct path for this attachment; it stays on this socket. */

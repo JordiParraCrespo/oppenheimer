@@ -637,7 +637,11 @@ export type AttachmentClosedMessage = z.infer<typeof attachmentClosedSchema>;
  * An SDP blob, offer or answer, with every ICE candidate in it (no trickle).
  * A fresh schema per use: one shared instance becomes an unnamed `$defs` entry.
  */
-const sdp = () => z.string().min(1).max(16 * 1024);
+const sdp = () =>
+  z
+    .string()
+    .min(1)
+    .max(16 * 1024);
 
 /**
  * The control plane hands the runner a browser's offer for one attachment it
