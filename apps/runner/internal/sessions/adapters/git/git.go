@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -432,10 +433,13 @@ func (c *Client) Remove(ctx context.Context, repo, path string, force bool) erro
 	return err
 }
 
-// Exists reports whether the worktree's directory is still on disk.
+// Exists reports whether the worktree's directory is still on disk. Only a
+// path that is not there is gone: a stat that fails for any other reason (a
+// permission, an I/O error) may hide a checkout with work in it, so it counts
+// as present and the close goes through its usual checks.
 func (c *Client) Exists(path string) bool {
 	_, err := os.Stat(path)
-	return err == nil
+	return !errors.Is(err, fs.ErrNotExist)
 }
 
 // Dirty reports uncommitted changes, which is what decides whether closing a
