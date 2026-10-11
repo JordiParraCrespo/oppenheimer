@@ -30,5 +30,6 @@ export type {
   SessionStream,
   SessionStreamOptions,
   StreamEnd,
+  StreamPath,
   StreamStatus,
 } from './stream/session-stream';

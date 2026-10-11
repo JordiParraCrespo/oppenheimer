@@ -19,11 +19,16 @@ function readoutWanted(): boolean {
 
 /**
  * The keystroke round trip, drawn in the pane's top-right corner as
- * `echo p50 / p95 ms · samples`, over `host` (xterm's root, which is
+ * `echo p50 / p95 ms · samples · path`, over `host` (xterm's root, which is
  * positioned), when `LATENCY_READOUT_KEY` asks for it. Returns its
  * disposer; a no-op when the readout is off.
  */
-export function bindLatencyReadout(host: HTMLElement, latency: EchoLatency): () => void {
+export function bindLatencyReadout(
+  host: HTMLElement,
+  latency: EchoLatency,
+  /** The path the bytes take (`relay`, `direct`), when the stream says. */
+  path: () => string | null = () => null,
+): () => void {
   if (!readoutWanted()) return () => {};
   const readout = document.createElement('div');
   readout.setAttribute('aria-hidden', 'true');
@@ -46,10 +51,12 @@ export function bindLatencyReadout(host: HTMLElement, latency: EchoLatency): () 
   const render = () => {
     const p50 = latency.quantile(0.5);
     const p95 = latency.quantile(0.95);
-    readout.textContent =
+    const echo =
       p50 === null || p95 === null
         ? 'echo –'
         : `echo ${Math.round(p50)} / ${Math.round(p95)} ms · ${latency.count}`;
+    const via = path();
+    readout.textContent = via ? `${echo} · ${via}` : echo;
   };
   render();
   const timer = setInterval(render, REFRESH_MS);

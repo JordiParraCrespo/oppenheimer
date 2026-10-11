@@ -4,6 +4,7 @@ import {
   attachServerMessageSchema,
 } from '@oppenheimer/shared/protocol';
 import { CONSUMER_CONFIG } from '../../../config';
+import { DirectPath, directPathSupported, type PeerFactory } from './direct-path';
 
 /**
  * The contract between the console and whatever is feeding a terminal.
@@ -26,6 +27,12 @@ export type StreamStatus = 'connecting' | 'live' | 'offline' | 'closed';
  * session's tmux is gone and its checkouts are kept, so the pane gives way to
  * Restart rather than a reconnect ladder.
  */
+/**
+ * Which way the terminal's bytes travel: through the relay, or on a direct
+ * channel to the host (`product/versions/mvp/22-direct-terminal-path.md`).
+ */
+export type StreamPath = 'relay' | 'direct';
+
 export type StreamEnd =
   | 'stopped'
   | 'resolved'
@@ -46,6 +53,11 @@ export interface SessionStream {
   onEnd(listener: (reason: StreamEnd) => void): () => void;
   /** Connection state, for the status line. The returned function unsubscribes. */
   onStatus(listener: (status: StreamStatus) => void): () => void;
+  /**
+   * Which path the bytes take, for whoever measures them; called with the
+   * current one first. Optional: a stream with one path has nothing to say.
+   */
+  onPath?(listener: (path: StreamPath) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
   resize(cols: number, rows: number): void;
@@ -76,7 +88,21 @@ export interface SessionStreamOptions {
   socketFactory?: (url: string, protocols: string[]) => WebSocket;
   /** Injected in tests; `setTimeout` otherwise. */
   schedule?: (fn: () => void, ms: number) => () => void;
+  /**
+   * Whether to take a direct path when the relay offers one: the
+   * `terminal_direct_path` flag, read when the offer comes. Absent is never.
+   */
+  direct?: () => boolean;
+  /** Injected in tests; `RTCPeerConnection` otherwise. */
+  peerFactory?: PeerFactory;
 }
+
+/**
+ * Direct paths a stream gives up on before it stops trying for the rest of its
+ * life: a network that cannot hold one should not cost a renegotiation on
+ * every reconnect.
+ */
+const MAX_DIRECT_FAILURES = 2;
 
 /**
  * Close codes after which reconnecting cannot help: the answer would be the same.
@@ -150,6 +176,7 @@ export class AttachSessionStream implements SessionStream {
   private readonly dataListeners = new Set<DataListener>();
   private readonly statusListeners = new Set<(status: StreamStatus) => void>();
   private readonly endListeners = new Set<(reason: StreamEnd) => void>();
+  private readonly pathListeners = new Set<(path: StreamPath) => void>();
   private readonly socketFactory: (url: string, protocols: string[]) => WebSocket;
   private readonly schedule: (fn: () => void, ms: number) => () => void;
   private readonly encoder = new TextEncoder();
@@ -166,6 +193,12 @@ export class AttachSessionStream implements SessionStream {
   private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
   private closedReason: StreamEnd | null = null;
+  /** This socket's direct path, from the offer until it ends. */
+  private direct: DirectPath | null = null;
+  /** Keystroke bytes sent on this socket: the input offset a direct path moves at. */
+  private relaySent = 0;
+  private path: StreamPath = 'relay';
+  private directFailures = 0;
 
   constructor(private readonly options: SessionStreamOptions) {
     this.socketFactory =
@@ -192,6 +225,12 @@ export class AttachSessionStream implements SessionStream {
     return () => this.statusListeners.delete(listener);
   }
 
+  onPath(listener: (path: StreamPath) => void): () => void {
+    listener(this.path);
+    this.pathListeners.add(listener);
+    return () => this.pathListeners.delete(listener);
+  }
+
   onEnd(listener: (reason: StreamEnd) => void): () => void {
     this.endListeners.add(listener);
     return () => this.endListeners.delete(listener);
@@ -199,7 +238,13 @@ export class AttachSessionStream implements SessionStream {
 
   send(data: string): void {
     if (!this.attached || this.socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
-    this.socket.send(this.encoder.encode(data));
+    const bytes = this.encoder.encode(data);
+    if (this.direct?.carriesInput) {
+      this.direct.sendInput(bytes);
+      return;
+    }
+    this.socket.send(bytes);
+    this.relaySent += bytes.byteLength;
   }
 
   resize(cols: number, rows: number): void {
@@ -225,6 +270,8 @@ export class AttachSessionStream implements SessionStream {
     this.cancelRetry?.();
     this.dataListeners.clear();
     this.endListeners.clear();
+    this.dropDirect();
+    this.pathListeners.clear();
     const open = this.socket;
     this.socket = null;
     if (open && (open.readyState === WebSocket.OPEN || open.readyState === WebSocket.CONNECTING)) {
@@ -232,6 +279,69 @@ export class AttachSessionStream implements SessionStream {
     }
     this.setStatus('closed');
     this.statusListeners.clear();
+  }
+
+  private setPath(next: StreamPath): void {
+    if (this.path === next) return;
+    this.path = next;
+    for (const listener of this.pathListeners) listener(next);
+  }
+
+  /** Ends this socket's direct path without counting it against the stream. */
+  private dropDirect(): void {
+    const direct = this.direct;
+    this.direct = null;
+    direct?.close();
+    this.setPath('relay');
+  }
+
+  /**
+   * The relay invited a direct path for this attachment. Taken when the
+   * caller wants one, the browser can, and earlier ones have not kept failing.
+   */
+  private startDirect(iceServers: readonly string[], thisEpoch: number): void {
+    if (!this.options.direct?.() || this.directFailures >= MAX_DIRECT_FAILURES) return;
+    if (!this.options.peerFactory && !directPathSupported()) return;
+    const direct = new DirectPath({
+      iceServers,
+      peerFactory: this.options.peerFactory,
+      schedule: this.schedule,
+      hooks: {
+        offer: (sdp) => this.tell({ type: 'direct.offer', sdp }),
+        opened: () => {
+          if (thisEpoch !== this.epoch) return;
+          // Everything typed so far went on the relay; the host types what
+          // the channel carries only after that many bytes.
+          this.tell({ type: 'direct.path', offset: this.relaySent });
+          this.setPath('direct');
+        },
+        deliver: (bytes) => {
+          if (thisEpoch === this.epoch) this.emit(bytes, thisEpoch);
+        },
+        ended: () => {
+          if (this.direct !== direct) return;
+          this.direct = null;
+          // A path that never opened, or one that closed under the terminal:
+          // either way the relay carries on, and the host repaints whatever
+          // the channel lost.
+          this.directFailures += 1;
+          this.setPath('relay');
+        },
+      },
+    });
+    this.direct = direct;
+    void direct.start();
+  }
+
+  /** Hands a chunk to the terminal; the credit goes back on the socket once it drains it. */
+  private emit(bytes: Uint8Array, thisEpoch: number): void {
+    let credited = false;
+    const consumed = () => {
+      if (credited || thisEpoch !== this.epoch || !this.attached) return;
+      credited = true;
+      this.tell({ type: 'credit', bytes: bytes.byteLength });
+    };
+    for (const listener of this.dataListeners) listener(bytes, consumed);
   }
 
   private setStatus(next: StreamStatus): void {
@@ -274,6 +384,8 @@ export class AttachSessionStream implements SessionStream {
     const thisEpoch = ++this.epoch;
     this.attached = false;
     this.closedReason = null;
+    this.dropDirect();
+    this.relaySent = 0;
     let ticket: { ticket: string; url: string };
     try {
       ticket = await this.options.issueTicket();
@@ -304,25 +416,22 @@ export class AttachSessionStream implements SessionStream {
     ws.onmessage = (event: MessageEvent) => {
       if (thisEpoch !== this.epoch) return;
       if (typeof event.data === 'string') {
-        this.onControl(event.data);
+        this.onControl(event.data, thisEpoch);
         return;
       }
       const bytes = new Uint8Array(event.data as ArrayBuffer);
       if (bytes.byteLength === 0) return;
       // The credit is the terminal's to give, once it has drained the chunk;
       // a socket that has since been replaced gives none.
-      let credited = false;
-      const consumed = () => {
-        if (credited || thisEpoch !== this.epoch || !this.attached) return;
-        credited = true;
-        this.tell({ type: 'credit', bytes: bytes.byteLength });
-      };
-      for (const listener of this.dataListeners) listener(bytes, consumed);
+      this.emit(bytes, thisEpoch);
+      // Counted after it is drawn: a direct path's held output follows it.
+      this.direct?.relayDelivered(bytes.byteLength);
     };
     ws.onclose = (event: CloseEvent) => {
       if (thisEpoch !== this.epoch) return;
       this.socket = null;
       this.attached = false;
+      this.dropDirect();
       if (this.disposed) return;
       const final = this.closedReason ?? FINAL_CLOSE_CODES.get(event.code);
       if (final) {
@@ -337,7 +446,7 @@ export class AttachSessionStream implements SessionStream {
     };
   }
 
-  private onControl(raw: string): void {
+  private onControl(raw: string, thisEpoch: number): void {
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -351,6 +460,16 @@ export class AttachSessionStream implements SessionStream {
         this.attached = true;
         this.attempt = 0;
         this.setStatus('live');
+        if (message.data.direct) this.startDirect(message.data.direct.iceServers, thisEpoch);
+        return;
+      case 'direct.answer':
+        void this.direct?.answer(message.data.sdp);
+        return;
+      case 'direct.path':
+        this.direct?.outputMoved(message.data.offset);
+        return;
+      case 'direct.unavailable':
+        this.dropDirect();
         return;
       case 'hint':
         if (message.data.kind === 'host_offline') this.setStatus('offline');
