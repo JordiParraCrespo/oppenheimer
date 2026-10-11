@@ -833,7 +833,9 @@ type CloseInput struct {
 
 // Close ends a session: kill the tmux session, push the branch if asked, and
 // remove the worktree. A dirty worktree is not a reason to refuse — it is
-// reported, and the worktree is kept unless Force says otherwise.
+// reported, and the worktree is kept unless Force says otherwise. A worktree
+// someone deleted on the host has nothing left to push or keep, so the
+// session closes: refusing would leave a row nobody can ever delete.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
 	defer s.hold(id)()
 	ctx = domain.WithSession(ctx, id)
@@ -841,16 +843,28 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	if err != nil {
 		return domain.Session{}, err
 	}
+	if session.State == domain.StateClosed {
+		// Closed here already (`runner sessions close` on the host, or an answer
+		// the control plane never got): say so again, or its row never resolves.
+		s.mu.Lock()
+		publisher := s.publisher
+		s.mu.Unlock()
+		publisher.SessionChanged(session)
+		return session, nil
+	}
 	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
 	}
 
-	dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
-	if dirtyErr == nil {
-		session.Dirty = dirty
+	present := s.worktrees.Exists(session.Worktree)
+	if present {
+		dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
+		if dirtyErr == nil {
+			session.Dirty = dirty
+		}
 	}
 	var pushErr error
-	if in.Push {
+	if in.Push && present {
 		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
 			// Report and keep going: the session is over either way, and
 			// the branch is still in the worktree we are about to name.

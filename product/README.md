@@ -387,3 +387,9 @@ earlier note:
   relay path and falling back to it (not built yet), and the console now
   draws predictable keys before their echo. The relay still admits every
   attachment.
+- `versions/mvp/05-screens.md` said a deleted session's row stays until
+  the host confirms the close. On 2026-10-11 the owner asked for delete
+  to feel immediate: the row leaves on the click and comes back only if
+  the close cannot happen. A session removed on its host (by hand, or by
+  `runner sessions close`) now closes on Delete instead of being refused
+  for ever.

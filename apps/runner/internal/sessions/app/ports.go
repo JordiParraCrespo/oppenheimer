@@ -97,8 +97,12 @@ type Worktrees interface {
 	// and answers it, so a terminal can be started there before the worktree
 	// itself exists. Add makes it too; this is for the pane that comes first.
 	Prepare(ctx context.Context, repo string) (string, error)
-	// Remove deletes a worktree and prunes the record.
+	// Remove deletes a worktree and prunes the record. A worktree already gone
+	// from disk is only pruned.
 	Remove(ctx context.Context, repo, path string, force bool) error
+	// Exists reports whether a worktree is still on disk: someone on the host
+	// may have deleted it by hand.
+	Exists(path string) bool
 	// Dirty reports uncommitted changes in a worktree.
 	Dirty(ctx context.Context, path string) (bool, error)
 	// Push publishes the branch, and reports whether there was anything to

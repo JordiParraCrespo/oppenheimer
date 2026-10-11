@@ -52,9 +52,15 @@
   menu listing every other project — moving is a label change, nothing
   on the host moves (10), so it asks for no confirmation — and Delete, a
   confirm over the close that says whether to discard work that is not
-  pushed. The row stays until the host confirms the close, and the
-  sidebar never lists a resolved session (the API keeps it as a
-  tombstone). The order is the reader's: a project drags by its header among the
+  pushed. The row leaves the sidebar on the click, while the host
+  carries the close out, and comes back if the close cannot happen (the
+  API refuses it, the host is offline, or the host has not resolved it
+  within a minute, e.g. it refused unpushed work); before 2026-10-11 the
+  row stayed until the host confirmed. The sidebar never lists a
+  resolved session (the API keeps it as a tombstone). A session the host
+  no longer holds — closed there with `runner sessions close`, its
+  worktree deleted by hand, or its record lost — closes on Delete
+  instead of being refused for ever. The order is the reader's: a project drags by its header among the
   others and a session drags within its project or into another one,
   folded or empty, which moves it as Move to project… does. The order is
   kept on the device, like the rail's; a project or session made since

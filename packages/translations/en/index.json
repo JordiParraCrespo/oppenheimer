@@ -643,7 +643,8 @@
       "deleting": "Deleting…",
       "failed": "The session could not be deleted.",
       "discard": "Also discard work that is not pushed",
-      "keeps": "Deleting stops if the session has work that is not pushed."
+      "keeps": "Deleting stops if the session has work that is not pushed.",
+      "hostOffline": "The host is offline, so the session was not deleted. Try again once it is back."
     },
     "filters": {
       "label": "Filter sessions",
@@ -2032,7 +2033,6 @@
     "emailResent": "Email sent again.",
     "sessionRenamed": "Renamed to “{{name}}”.",
     "sessionMoved": "“{{name}}” moved to {{project}}.",
-    "sessionDeleteRequested": "Asked the host to delete “{{name}}”.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",
     "projectDeleted": "“{{name}}” deleted.",

@@ -155,8 +155,9 @@ describe('useSessions', () => {
 
 /**
  * Delete is a close the host answers: the request comes back with the row still
- * `open`, and only a later read sees it resolved. The list leaves resolved rows
- * out and keeps reading while a close it asked for is pending.
+ * `open`, and only a later read sees it resolved. The list drops the row on the
+ * click, keeps it out and keeps reading while the close is pending, and puts it
+ * back when the close cannot happen.
  */
 describe('a deleted session', () => {
   const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
@@ -177,9 +178,26 @@ describe('a deleted session', () => {
     await waitFor(() => expect(result.current.data).toEqual([]));
   });
 
+  it('leaves the list on the click, before the API or the host has answered', async () => {
+    const findAll = vi.fn().mockResolvedValue([live]);
+    const { wrapper } = setup({ findAll, close: vi.fn(() => new Promise(() => {})) });
+    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.list.data).toEqual([]));
+    // A read while the host has not resolved it still leaves it out.
+    await pause(2_500);
+    expect(findAll.mock.calls.length).toBeGreaterThan(1);
+    expect(result.current.list.data).toEqual([]);
+  }, 10_000);
+
   it('is read again until its host has resolved it, then the reads stop', async () => {
     const findAll = vi
       .fn()
+      .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
       .mockResolvedValue([resolved]);
@@ -187,10 +205,61 @@ describe('a deleted session', () => {
     await waitFor(() => expect(result.current.list.data).toHaveLength(1));
 
     result.current.close.mutate({ id: 'c-1' });
-    await waitFor(() => expect(result.current.list.data).toEqual([]), { timeout: 8_000 });
+    await waitFor(() => expect(findAll.mock.calls.length).toBeGreaterThanOrEqual(4), {
+      timeout: 8_000,
+    });
     const reads = findAll.mock.calls.length;
     await pause(2_500);
     expect(findAll).toHaveBeenCalledTimes(reads);
+    expect(result.current.list.data).toEqual([]);
+  }, 15_000);
+
+  it('comes back when the API refuses the close', async () => {
+    const findAll = vi.fn().mockResolvedValue([live]);
+    const { wrapper } = setup({ findAll, close: vi.fn().mockRejectedValue(new Error('refused')) });
+    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.close.isError).toBe(true));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+  });
+
+  it('comes back, and is not watched, when the close never reached its host', async () => {
+    const findAll = vi.fn().mockResolvedValue([live]);
+    const offline = { ...live, isHostOffline: true } as SessionEntity;
+    const { wrapper } = setup({ findAll, close: vi.fn().mockResolvedValue(offline) });
+    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.close.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    const reads = findAll.mock.calls.length;
+    await pause(2_500);
+    expect(findAll).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
+  it('comes back when its host has not resolved it by the end of the watch', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      // A host that refused (unpushed work): the row stays open.
+      const findAll = vi.fn().mockResolvedValue([live]);
+      const { result } = closing(findAll);
+      await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+      result.current.close.mutate({ id: 'c-1' });
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(result.current.list.data).toEqual([]);
+      await vi.advanceTimersByTimeAsync(35_000);
+      await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    } finally {
+      vi.useRealTimers();
+    }
   }, 15_000);
 
   it('is watched by a reader that selects less than the rows', async () => {

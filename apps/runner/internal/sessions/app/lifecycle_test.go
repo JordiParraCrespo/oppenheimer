@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -256,6 +257,44 @@ func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	// must not fail.
 	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true}); err != nil {
 		t.Fatalf("second close: %v", err)
+	}
+}
+
+// A worktree someone deleted on the host leaves nothing to push or keep, so
+// the close goes through instead of refusing it as unpushed work for ever.
+func TestCloseResolvesASessionWhoseWorktreeWasDeletedOnTheHost(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	delete(h.worktrees.Paths, session.Worktree)
+
+	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+	if err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	if closed.State != domain.StateClosed {
+		t.Fatalf("state = %q, want closed", closed.State)
+	}
+	if len(h.worktrees.Pushed) != 0 {
+		t.Fatalf("pushed %q from a worktree that is gone", h.worktrees.Pushed)
+	}
+}
+
+// A session closed on the host already (`runner sessions close`) is closed
+// again when the console asks, and says so: the console's row resolves on
+// that answer and on nothing else.
+func TestCloseAnswersAgainForASessionAlreadyClosed(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Force: true}); err != nil {
+		t.Fatal(err)
+	}
+	before := len(h.events.states)
+
+	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true}); err != nil {
+		t.Fatalf("second close: %v", err)
+	}
+	if got := h.events.states[before:]; !slices.Equal(got, []domain.State{domain.StateClosed}) {
+		t.Fatalf("published %q, want [closed]", got)
 	}
 }
 

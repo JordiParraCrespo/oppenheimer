@@ -410,20 +410,32 @@ func (c *Client) Prepare(ctx context.Context, repo string) (string, error) {
 	return dir, nil
 }
 
-// Remove deletes a worktree and prunes git's record of it.
+// Remove deletes a worktree and prunes git's record of it. A worktree someone
+// already deleted by hand is only pruned: `worktree remove` refuses a path
+// that is not there, and what is left to do is forget it.
 func (c *Client) Remove(ctx context.Context, repo, path string, force bool) error {
 	mirror := c.layout.Mirror(repo)
+	quick := command{timeout: quickTimeout, dir: mirror}
+	if !c.Exists(path) {
+		_, err := c.run(ctx, quick, "worktree", "prune")
+		return err
+	}
 	args := []string{"worktree", "remove"}
 	if force {
 		args = append(args, "--force")
 	}
 	args = append(args, path)
-	quick := command{timeout: quickTimeout, dir: mirror}
 	if _, err := c.run(ctx, quick, args...); err != nil {
 		return err
 	}
 	_, err := c.run(ctx, quick, "worktree", "prune")
 	return err
+}
+
+// Exists reports whether the worktree's directory is still on disk.
+func (c *Client) Exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // Dirty reports uncommitted changes, which is what decides whether closing a

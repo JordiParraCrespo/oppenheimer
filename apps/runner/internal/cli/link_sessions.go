@@ -14,6 +14,7 @@ import (
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
@@ -144,6 +145,13 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 	case "session.close":
 		_, err = h.app.Sessions.Close(ctx, m.SessionID, sessionsapp.CloseInput{Push: true, Force: m.AcceptUnpushedWork})
 		h.credentials.Forget(m.SessionID)
+		if pe := problem.From(err); err != nil && pe.Code == sessionsdomain.ErrNotFound.Code {
+			// This host holds nothing for the session — removed here by hand,
+			// or a state that did not survive a reinstall — so there is nothing
+			// left to close, and saying so is what lets its row resolve.
+			h.reporter.Append(m.SessionID, "session.closed", map[string]any{"dirty": false, "gone": true})
+			err = nil
+		}
 	case "session.window.open":
 		_, err = h.app.Sessions.OpenWindow(ctx, m.SessionID)
 	case "session.window.close":
