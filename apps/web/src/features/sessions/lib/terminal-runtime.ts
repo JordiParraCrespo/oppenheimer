@@ -7,6 +7,7 @@ import { CursorFrames } from './cursor-frames';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
+import { terminalFontsReady, terminalWebglAllowed } from './terminal-renderer';
 import {
   readTerminalTheme,
   readUserTurnColors,
@@ -225,10 +226,26 @@ export function mountSessionTerminal(
   // The DOM renderer's cells are not WebGL's, so falling back refits first
   // and repaints the grid it produced.
   const fallBackToDom = () => {
+    webgl = null;
     refit();
     term.refresh(0, term.rows - 1);
   };
-  loadWebgl(term, fallBackToDom);
+
+  // WebGL draws from an atlas it rasterizes once, so it waits for the faces
+  // (`terminal-renderer.ts`); the DOM renderer draws until then. Where WebGL
+  // is not allowed it never comes.
+  let disposed = false;
+  let webgl: WebglAddon | null = null;
+  const attachWebgl = () => {
+    webgl = loadWebgl(term, fallBackToDom);
+    // WebGL floors the cell width the DOM renderer measured.
+    nextFrame();
+  };
+  if (terminalWebglAllowed()) {
+    void terminalFontsReady(TERMINAL_FONT).then(() => {
+      if (!disposed) attachWebgl();
+    });
+  }
 
   refit();
   nextFrame();
@@ -236,15 +253,19 @@ export function mountSessionTerminal(
   const resizeObserver = new ResizeObserver(() => nextFrame());
   resizeObserver.observe(container);
 
-  // A terminal face that loads after the first paint — the bundled symbols
-  // face is fetched only when a glyph in its range is first drawn — leaves
-  // the stand-in's glyphs in WebGL's atlas and its metrics in the fit. Only
-  // the terminal's own families count: the console loading any other face is
-  // no reason to redraw a live session.
+  // A terminal face that loads after WebGL was attached (the wait above timed
+  // out) leaves the stand-in's glyphs in the atlas. The atlas is not wiped in
+  // place: `clearTextureAtlas` while output streams races xterm's page merge
+  // (xterm.js #4480) and draws letters as blocks. The renderer is rebuilt
+  // instead, which rasterizes afresh. Only the terminal's own families
+  // count: the console loading any other face is no reason to redraw.
   const onFontsLoaded = (event: Event) => {
     const faces = (event as FontFaceSetLoadEvent).fontfaces ?? [];
     if (!faces.some((face) => TERMINAL_FONT_FAMILIES.has(unquote(face.family)))) return;
-    term.clearTextureAtlas();
+    if (webgl) {
+      webgl.dispose();
+      attachWebgl();
+    }
     term.refresh(0, term.rows - 1);
     echo.repaint();
     nextFrame();
@@ -298,6 +319,7 @@ export function mountSessionTerminal(
   const input = term.onData(send);
 
   return () => {
+    disposed = true;
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();
@@ -332,7 +354,7 @@ function copyToClipboard(text: string) {
  * way this terminal stays on the DOM renderer for the rest of its life; the
  * next terminal tries again.
  */
-function loadWebgl(term: Terminal, fallBack: () => void) {
+function loadWebgl(term: Terminal, fallBack: () => void): WebglAddon | null {
   try {
     const addon = new WebglAddon();
     addon.onContextLoss(() => {
@@ -340,8 +362,12 @@ function loadWebgl(term: Terminal, fallBack: () => void) {
       fallBack();
     });
     term.loadAddon(addon);
+    // A new canvas starts empty; paint the grid it took over.
+    term.refresh(0, term.rows - 1);
+    return addon;
   } catch {
     fallBack();
+    return null;
   }
 }
 
