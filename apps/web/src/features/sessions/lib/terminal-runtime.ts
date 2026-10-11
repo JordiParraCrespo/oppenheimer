@@ -1,18 +1,16 @@
 import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
-import { terminalFontsReady, terminalWebglAllowed } from './terminal-renderer';
+import { bindTerminalRenderer } from './terminal-renderer';
 import {
   readTerminalTheme,
   readUserTurnColors,
   TERMINAL_FONT,
-  TERMINAL_FONT_FAMILIES,
   terminalMinimumContrastRatio,
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
@@ -223,54 +221,18 @@ export function mountSessionTerminal(
     });
   };
 
-  // The DOM renderer's cells are not WebGL's, so falling back refits first
-  // and repaints the grid it produced.
-  const fallBackToDom = () => {
-    webgl = null;
-    refit();
-    term.refresh(0, term.rows - 1);
-  };
-
-  // WebGL draws from an atlas it rasterizes once, so it waits for the faces
-  // (`terminal-renderer.ts`); the DOM renderer draws until then. Where WebGL
-  // is not allowed it never comes.
-  let disposed = false;
-  let webgl: WebglAddon | null = null;
-  const attachWebgl = () => {
-    webgl = loadWebgl(term, fallBackToDom);
-    // WebGL floors the cell width the DOM renderer measured.
+  // WebGL and the DOM renderer measure cells differently, and a face arriving
+  // changes them too: each refits, and the echo redraws on the new cells.
+  const unbindRenderer = bindTerminalRenderer(term, () => {
+    echo.repaint();
     nextFrame();
-  };
-  if (terminalWebglAllowed()) {
-    void terminalFontsReady(TERMINAL_FONT).then(() => {
-      if (!disposed) attachWebgl();
-    });
-  }
+  });
 
   refit();
   nextFrame();
 
   const resizeObserver = new ResizeObserver(() => nextFrame());
   resizeObserver.observe(container);
-
-  // A terminal face that loads after WebGL was attached (the wait above timed
-  // out) leaves the stand-in's glyphs in the atlas. The atlas is not wiped in
-  // place: `clearTextureAtlas` while output streams races xterm's page merge
-  // (xterm.js #4480) and draws letters as blocks. The renderer is rebuilt
-  // instead, which rasterizes afresh. Only the terminal's own families
-  // count: the console loading any other face is no reason to redraw.
-  const onFontsLoaded = (event: Event) => {
-    const faces = (event as FontFaceSetLoadEvent).fontfaces ?? [];
-    if (!faces.some((face) => TERMINAL_FONT_FAMILIES.has(unquote(face.family)))) return;
-    if (webgl) {
-      webgl.dispose();
-      attachWebgl();
-    }
-    term.refresh(0, term.rows - 1);
-    echo.repaint();
-    nextFrame();
-  };
-  document.fonts?.addEventListener('loadingdone', onFontsLoaded);
 
   // `useAppliedTheme` toggles `.dark` / `.light` on <html>. xterm holds
   // resolved colour strings, not the tokens, so the ramp is re-read here.
@@ -319,7 +281,6 @@ export function mountSessionTerminal(
   const input = term.onData(send);
 
   return () => {
-    disposed = true;
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();
@@ -329,7 +290,7 @@ export function mountSessionTerminal(
     offStatus();
     input.dispose();
     cursorFrames.dispose();
-    document.fonts?.removeEventListener('loadingdone', onFontsLoaded);
+    unbindRenderer();
     themeObserver.disconnect();
     resizeObserver.disconnect();
     ptySize.dispose();
@@ -345,35 +306,6 @@ export function mountSessionTerminal(
 function copyToClipboard(text: string) {
   if (!text || !navigator.clipboard) return;
   navigator.clipboard.writeText(text).catch(() => {});
-}
-
-/**
- * WebGL is the renderer the product wants — a noisy build should not cost
- * CPU — but its constructor throws on some machines and in headless browsers
- * rather than degrading, and the GPU can take a context back later. Either
- * way this terminal stays on the DOM renderer for the rest of its life; the
- * next terminal tries again.
- */
-function loadWebgl(term: Terminal, fallBack: () => void): WebglAddon | null {
-  try {
-    const addon = new WebglAddon();
-    addon.onContextLoss(() => {
-      addon.dispose();
-      fallBack();
-    });
-    term.loadAddon(addon);
-    // A new canvas starts empty; paint the grid it took over.
-    term.refresh(0, term.rows - 1);
-    return addon;
-  } catch {
-    fallBack();
-    return null;
-  }
-}
-
-/** `FontFace.family` comes back quoted in some browsers and bare in others. */
-function unquote(family: string): string {
-  return family.replace(/^["']|["']$/g, '');
 }
 
 /**
