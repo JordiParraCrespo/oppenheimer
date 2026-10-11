@@ -296,8 +296,20 @@ export class TypeaheadModel {
     if (!region || !base) {
       this.region = null;
       this.base = null;
+      this.confirmed = false;
       return false;
     }
+    // A confirmation vouches for the line the host last agreed on, nothing
+    // else. If the program redrew anything there since (a new prompt that
+    // does not echo, appearing without a key), the epoch is tentative again.
+    const previous = this.region;
+    const continues =
+      previous !== null &&
+      this.base !== null &&
+      previous.row === region.row &&
+      previous.start === region.start &&
+      sameState(this.base, base);
+    if (!continues) this.confirmed = false;
     this.region = region;
     this.base = base;
     return true;

@@ -191,6 +191,29 @@ describe('TypeaheadModel', () => {
     expect(confirmed).toEqual([80]);
   });
 
+  it('starts a tentative epoch when the program redraws the line without a key (a prompt that stops echoing)', () => {
+    const { screen, host } = grid('$ ', 2);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['a']);
+    host('$ a', 3);
+    model.reconcile(screen);
+    expect(model.waiting).toBe(false);
+    // The command the reader typed ahead into now asks for a secret.
+    host('Password: ', 10);
+    keys(model, screen, ['s']);
+    expect(model.view()).toBeNull();
+  });
+
+  it('keeps drawing when the line is the one the host last agreed on', () => {
+    const { screen, host } = grid('> ', 2);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['a']);
+    host('> a', 3);
+    model.reconcile(screen);
+    keys(model, screen, ['b']);
+    expect(shown(model, '> a')).toEqual({ text: '> ab', cursor: 4 });
+  });
+
   it('predicts nothing when the cursor cannot be found', () => {
     const { screen } = grid('> ', null);
     const model = new TypeaheadModel(clock().now);
