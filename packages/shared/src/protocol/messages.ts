@@ -45,6 +45,12 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.files',
   'repository.prepare',
+  /**
+   * Answers `attachment.direct.offer`: an attachment may move from the link to
+   * a WebRTC data channel with the browser (`product/versions/mvp/22-direct-terminal-path.md`).
+   * Named only by a runner that drops a read-only attachment's input itself.
+   */
+  'attachment.direct',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -625,6 +631,70 @@ export const attachmentClosedSchema = z.object({
 
 export type AttachmentClosedMessage = z.infer<typeof attachmentClosedSchema>;
 
+/* ------------------------------------------------------------------ the direct path (22) */
+
+/**
+ * An SDP blob, offer or answer, with every ICE candidate in it (no trickle).
+ * A fresh schema per use: one shared instance becomes an unnamed `$defs` entry.
+ */
+const sdp = () =>
+  z
+    .string()
+    .min(1)
+    .max(16 * 1024);
+
+/**
+ * The control plane hands the runner a browser's offer for one attachment it
+ * already holds. The runner answers with `attachment.direct.answer` or refuses
+ * with `attachment.direct.refused`; either way the attachment keeps streaming
+ * on the link until a data channel opens. Sent only to a runner that named the
+ * `attachment.direct` capability.
+ */
+export const attachmentDirectOfferSchema = z.object({
+  type: z.literal('attachment.direct.offer'),
+  attachmentId: attachmentIdSchema,
+  sdp: sdp(),
+  /** STUN/TURN URLs the runner gathers candidates with; empty means host candidates only. */
+  iceServers: z.array(z.string().min(1).max(256)).max(8).default([]),
+});
+
+export type AttachmentDirectOfferMessage = z.infer<typeof attachmentDirectOfferSchema>;
+
+/** The runner's answer, with its candidates gathered. */
+export const attachmentDirectAnswerSchema = z.object({
+  type: z.literal('attachment.direct.answer'),
+  attachmentId: attachmentIdSchema,
+  sdp: sdp(),
+});
+
+export type AttachmentDirectAnswerMessage = z.infer<typeof attachmentDirectAnswerSchema>;
+
+/** The runner will not open a direct path for this attachment; it stays on the link. */
+export const attachmentDirectRefusedSchema = z.object({
+  type: z.literal('attachment.direct.refused'),
+  attachmentId: attachmentIdSchema,
+  reason: z.string().max(200),
+});
+
+export type AttachmentDirectRefusedMessage = z.infer<typeof attachmentDirectRefusedSchema>;
+
+/**
+ * Where one direction of an attachment moves to its data channel, as a byte
+ * offset into that direction's stream. From the runner it is the output: every
+ * PTY byte after `offset` travels on the channel, and the browser reads the
+ * relay until it holds `offset` bytes from it. From the control plane it is
+ * the input, the browser's count of keystroke bytes it sent on the relay. An
+ * offset rather than a marker because the link sends control frames ahead of
+ * queued PTY frames, so a marker could overtake the bytes it stands behind.
+ */
+export const attachmentPathSchema = z.object({
+  type: z.literal('attachment.path'),
+  attachmentId: attachmentIdSchema,
+  offset: z.number().int().min(0),
+});
+
+export type AttachmentPathMessage = z.infer<typeof attachmentPathSchema>;
+
 /* ------------------------------------------------------------------ the union */
 
 /**
@@ -661,6 +731,10 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   credentialsGrantSchema,
   credentialsRevokeSchema,
   repositoryPrepareSchema,
+  attachmentDirectOfferSchema,
+  attachmentDirectAnswerSchema,
+  attachmentDirectRefusedSchema,
+  attachmentPathSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

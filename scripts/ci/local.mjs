@@ -196,10 +196,14 @@ job('lint', [
 ]);
 
 // oppenheimer:begin runner
-if (
+let goTouched =
   packages.some((p) => p.startsWith('@oppenheimer/go-')) ||
-  touches(packages, '@oppenheimer/runner')
-) {
+  touches(packages, '@oppenheimer/runner');
+// oppenheimer:begin e2e
+// e2e/netsim, the network simulator, is a Go module inside the e2e package.
+goTouched ||= touches(packages, '@oppenheimer/e2e');
+// oppenheimer:end e2e
+if (goTouched) {
   job('go', [
     ['go vet', 'go', ['vet', 'github.com/jordiparracrespo/oppenheimer/...']],
     // NUL-delimited, like `packages/go/Makefile`: unquoted, the module

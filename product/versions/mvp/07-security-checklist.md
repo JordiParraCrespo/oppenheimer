@@ -34,6 +34,11 @@ feature lands.
       not at install. The mitigation is the digest on screen, the token's
       one-hour single use, and keeping the script host separate from the
       control plane (03)
+- [ ] F29 the direct terminal path (22) answers ICE only for an offer that
+      arrived over the runner's own link, for an attachment that link opened,
+      and binds the channel to the DTLS fingerprint that offer named; a
+      watcher's input is dropped by the runner on the channel as on the link,
+      and nothing listens for a peer it was not told about
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay

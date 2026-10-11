@@ -4,6 +4,10 @@ import {
   attachServerMessageSchema,
 } from '@oppenheimer/shared/protocol';
 import { CONSUMER_CONFIG } from '../../../config';
+import type { PeerFactory } from './direct-path';
+import { PathSwitch, type StreamPath } from './path-switch';
+
+export type { StreamPath } from './path-switch';
 
 /**
  * The contract between the console and whatever is feeding a terminal.
@@ -46,6 +50,11 @@ export interface SessionStream {
   onEnd(listener: (reason: StreamEnd) => void): () => void;
   /** Connection state, for the status line. The returned function unsubscribes. */
   onStatus(listener: (status: StreamStatus) => void): () => void;
+  /**
+   * Which path the bytes take, for whoever measures them; called with the
+   * current one first. Optional: a stream with one path has nothing to say.
+   */
+  onPath?(listener: (path: StreamPath) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
   resize(cols: number, rows: number): void;
@@ -76,6 +85,13 @@ export interface SessionStreamOptions {
   socketFactory?: (url: string, protocols: string[]) => WebSocket;
   /** Injected in tests; `setTimeout` otherwise. */
   schedule?: (fn: () => void, ms: number) => () => void;
+  /**
+   * Whether to take a direct path when the relay offers one: the
+   * `terminal_direct_path` flag, read when the offer comes. Absent is never.
+   */
+  direct?: () => boolean;
+  /** Injected in tests; `RTCPeerConnection` otherwise. */
+  peerFactory?: PeerFactory;
 }
 
 /**
@@ -166,6 +182,8 @@ export class AttachSessionStream implements SessionStream {
   private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
   private closedReason: StreamEnd | null = null;
+  /** Which way the bytes go: the relay, or a direct channel (22). */
+  private readonly paths: PathSwitch;
 
   constructor(private readonly options: SessionStreamOptions) {
     this.socketFactory =
@@ -176,6 +194,13 @@ export class AttachSessionStream implements SessionStream {
         const timer = setTimeout(fn, ms);
         return () => clearTimeout(timer);
       });
+    this.paths = new PathSwitch({
+      want: options.direct,
+      peerFactory: options.peerFactory,
+      schedule: this.schedule,
+      tell: (message) => this.tell(message),
+      deliver: (bytes) => this.emit(bytes, this.epoch),
+    });
     void this.connect();
   }
 
@@ -192,6 +217,10 @@ export class AttachSessionStream implements SessionStream {
     return () => this.statusListeners.delete(listener);
   }
 
+  onPath(listener: (path: StreamPath) => void): () => void {
+    return this.paths.onPath(listener);
+  }
+
   onEnd(listener: (reason: StreamEnd) => void): () => void {
     this.endListeners.add(listener);
     return () => this.endListeners.delete(listener);
@@ -199,7 +228,8 @@ export class AttachSessionStream implements SessionStream {
 
   send(data: string): void {
     if (!this.attached || this.socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
-    this.socket.send(this.encoder.encode(data));
+    const socket = this.socket;
+    this.paths.send(this.encoder.encode(data), (bytes) => socket.send(bytes));
   }
 
   resize(cols: number, rows: number): void {
@@ -225,6 +255,7 @@ export class AttachSessionStream implements SessionStream {
     this.cancelRetry?.();
     this.dataListeners.clear();
     this.endListeners.clear();
+    this.paths.dispose();
     const open = this.socket;
     this.socket = null;
     if (open && (open.readyState === WebSocket.OPEN || open.readyState === WebSocket.CONNECTING)) {
@@ -232,6 +263,17 @@ export class AttachSessionStream implements SessionStream {
     }
     this.setStatus('closed');
     this.statusListeners.clear();
+  }
+
+  /** Hands a chunk to the terminal; the credit goes back on the socket once it drains it. */
+  private emit(bytes: Uint8Array, thisEpoch: number): void {
+    let credited = false;
+    const consumed = () => {
+      if (credited || thisEpoch !== this.epoch || !this.attached) return;
+      credited = true;
+      this.tell({ type: 'credit', bytes: bytes.byteLength });
+    };
+    for (const listener of this.dataListeners) listener(bytes, consumed);
   }
 
   private setStatus(next: StreamStatus): void {
@@ -274,6 +316,7 @@ export class AttachSessionStream implements SessionStream {
     const thisEpoch = ++this.epoch;
     this.attached = false;
     this.closedReason = null;
+    this.paths.reset();
     let ticket: { ticket: string; url: string };
     try {
       ticket = await this.options.issueTicket();
@@ -311,18 +354,15 @@ export class AttachSessionStream implements SessionStream {
       if (bytes.byteLength === 0) return;
       // The credit is the terminal's to give, once it has drained the chunk;
       // a socket that has since been replaced gives none.
-      let credited = false;
-      const consumed = () => {
-        if (credited || thisEpoch !== this.epoch || !this.attached) return;
-        credited = true;
-        this.tell({ type: 'credit', bytes: bytes.byteLength });
-      };
-      for (const listener of this.dataListeners) listener(bytes, consumed);
+      this.emit(bytes, thisEpoch);
+      // Counted after it is drawn: a direct path's held output follows it.
+      this.paths.relayDelivered(bytes.byteLength);
     };
     ws.onclose = (event: CloseEvent) => {
       if (thisEpoch !== this.epoch) return;
       this.socket = null;
       this.attached = false;
+      this.paths.reset();
       if (this.disposed) return;
       const final = this.closedReason ?? FINAL_CLOSE_CODES.get(event.code);
       if (final) {
@@ -351,6 +391,12 @@ export class AttachSessionStream implements SessionStream {
         this.attached = true;
         this.attempt = 0;
         this.setStatus('live');
+        if (message.data.direct) this.paths.invited(message.data.direct.iceServers);
+        return;
+      case 'direct.answer':
+      case 'direct.path':
+      case 'direct.unavailable':
+        this.paths.control(message.data);
         return;
       case 'hint':
         if (message.data.kind === 'host_offline') this.setStatus('offline');

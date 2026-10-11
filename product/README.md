@@ -383,10 +383,10 @@ earlier note:
 - `versions/mvp/01-protocol.md` said the browser never reaches the runner
   directly, every byte going through the relay. On 2026-10-11 the owner
   made the session's latency the priority: `versions/mvp/22-direct-terminal-path.md`
-  designs a WebRTC data channel from browser to runner, started after the
-  relay path and falling back to it (not built yet), and the console now
-  draws predictable keys before their echo. The relay still admits every
-  attachment.
+  adds a WebRTC data channel from browser to runner, started after the
+  relay path and falling back to it (built the same day, behind the
+  `terminal_direct_path` flag), and the console now draws predictable keys
+  before their echo. The relay still admits every attachment.
 - `versions/mvp/05-screens.md` said a deleted session's row stays until
   the host confirms the close. On 2026-10-11 the owner asked for delete
   to feel immediate: the row leaves on the click and comes back only if

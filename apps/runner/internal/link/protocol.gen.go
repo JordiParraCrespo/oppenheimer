@@ -58,36 +58,41 @@ const (
 	CapabilitySessionCreateImages = "session.create.images"
 	CapabilitySessionFiles        = "session.files"
 	CapabilityRepositoryPrepare   = "repository.prepare"
+	CapabilityAttachmentDirect    = "attachment.direct"
 )
 
 // The `type` of every message on the link.
 const (
-	TypeHello              = "hello"
-	TypeHeartbeat          = "heartbeat"
-	TypeHint               = "hint"
-	TypeWelcome            = "welcome"
-	TypeCommandFailed      = "command.failed"
-	TypeSessionDetach      = "session.detach"
-	TypeAttachmentClosed   = "attachment.closed"
-	TypeEventsAppend       = "events.append"
-	TypeEventsAck          = "events.ack"
-	TypeSessionCreate      = "session.create"
-	TypeSessionAttach      = "session.attach"
-	TypeSessionInput       = "session.input"
-	TypeSessionImage       = "session.image"
-	TypeAttachmentCredit   = "attachment.credit"
-	TypeSessionResize      = "session.resize"
-	TypeSessionWindowOpen  = "session.window.open"
-	TypeSessionWindowClose = "session.window.close"
-	TypeSessionClose       = "session.close"
-	TypeSessionStop        = "session.stop"
-	TypeSessionRestart     = "session.restart"
-	TypeHostPreflight      = "host.preflight"
-	TypeHostUpdate         = "host.update"
-	TypeCredentialsToken   = "credentials.token"
-	TypeCredentialsGrant   = "credentials.grant"
-	TypeCredentialsRevoke  = "credentials.revoke"
-	TypeRepositoryPrepare  = "repository.prepare"
+	TypeHello                   = "hello"
+	TypeHeartbeat               = "heartbeat"
+	TypeHint                    = "hint"
+	TypeWelcome                 = "welcome"
+	TypeCommandFailed           = "command.failed"
+	TypeSessionDetach           = "session.detach"
+	TypeAttachmentClosed        = "attachment.closed"
+	TypeEventsAppend            = "events.append"
+	TypeEventsAck               = "events.ack"
+	TypeSessionCreate           = "session.create"
+	TypeSessionAttach           = "session.attach"
+	TypeSessionInput            = "session.input"
+	TypeSessionImage            = "session.image"
+	TypeAttachmentCredit        = "attachment.credit"
+	TypeSessionResize           = "session.resize"
+	TypeSessionWindowOpen       = "session.window.open"
+	TypeSessionWindowClose      = "session.window.close"
+	TypeSessionClose            = "session.close"
+	TypeSessionStop             = "session.stop"
+	TypeSessionRestart          = "session.restart"
+	TypeHostPreflight           = "host.preflight"
+	TypeHostUpdate              = "host.update"
+	TypeCredentialsToken        = "credentials.token"
+	TypeCredentialsGrant        = "credentials.grant"
+	TypeCredentialsRevoke       = "credentials.revoke"
+	TypeRepositoryPrepare       = "repository.prepare"
+	TypeAttachmentDirectOffer   = "attachment.direct.offer"
+	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
+	TypeAttachmentDirectRefused = "attachment.direct.refused"
+	TypeAttachmentPath          = "attachment.path"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -118,6 +123,10 @@ var MessageTypes = []string{
 	TypeCredentialsGrant,
 	TypeCredentialsRevoke,
 	TypeRepositoryPrepare,
+	TypeAttachmentDirectOffer,
+	TypeAttachmentDirectAnswer,
+	TypeAttachmentDirectRefused,
+	TypeAttachmentPath,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -176,6 +185,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(CredentialsRevoke), true
 	case TypeRepositoryPrepare:
 		return new(RepositoryPrepare), true
+	case TypeAttachmentDirectOffer:
+		return new(AttachmentDirectOffer), true
+	case TypeAttachmentDirectAnswer:
+		return new(AttachmentDirectAnswer), true
+	case TypeAttachmentDirectRefused:
+		return new(AttachmentDirectRefused), true
+	case TypeAttachmentPath:
+		return new(AttachmentPath), true
 	}
 	return nil, false
 }
@@ -458,6 +475,35 @@ type RepositoryPrepare struct {
 	BaseBranch         string    `json:"baseBranch"`
 	Sealed             string    `json:"sealed"`
 	ExpiresAt          time.Time `json:"expiresAt"`
+}
+
+// AttachmentDirectOffer is the `attachment.direct.offer` message.
+type AttachmentDirectOffer struct {
+	Type         string   `json:"type"`
+	AttachmentID uint32   `json:"attachmentId"`
+	Sdp          string   `json:"sdp"`
+	IceServers   []string `json:"iceServers"`
+}
+
+// AttachmentDirectAnswer is the `attachment.direct.answer` message.
+type AttachmentDirectAnswer struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Sdp          string `json:"sdp"`
+}
+
+// AttachmentDirectRefused is the `attachment.direct.refused` message.
+type AttachmentDirectRefused struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Reason       string `json:"reason"`
+}
+
+// AttachmentPath is the `attachment.path` message.
+type AttachmentPath struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Offset       uint64 `json:"offset"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

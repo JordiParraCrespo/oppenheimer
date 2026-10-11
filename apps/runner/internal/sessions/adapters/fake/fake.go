@@ -344,6 +344,7 @@ func (a *attachment) Read(p []byte) (int, error) {
 
 func (a *attachment) Write(p []byte) (int, error) { return len(p), nil }
 func (a *attachment) Resize(app.Size) error       { return nil }
+func (a *attachment) Redraw() error               { return nil }
 
 func (a *attachment) Close() error {
 	if a.closed {

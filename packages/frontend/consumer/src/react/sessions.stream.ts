@@ -1,4 +1,5 @@
-import { useCallback } from 'react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { SessionStream } from '../modules/sessions';
 import { useConsumerApp } from './context';
 
@@ -12,7 +13,17 @@ import { useConsumerApp } from './context';
  */
 export function useSessionStream(sessionId: string, window = 0): () => SessionStream {
   const app = useConsumerApp();
-  return useCallback(() => app.sessions.openStream(sessionId, window), [app, sessionId, window]);
+  // Read through a ref, asked at each offer: the flags arriving after the
+  // terminal mounted must not change the factory, which would rebuild it.
+  const direct = useFeatureFlag('terminal_direct_path');
+  const directRef = useRef(direct);
+  useEffect(() => {
+    directRef.current = direct;
+  });
+  return useCallback(
+    () => app.sessions.openStream(sessionId, window, { direct: () => directRef.current }),
+    [app, sessionId, window],
+  );
 }
 
 /**

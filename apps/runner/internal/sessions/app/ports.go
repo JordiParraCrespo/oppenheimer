@@ -81,6 +81,10 @@ type Attachment interface {
 	// Resize sets the PTY's size; tmux sizes the window to the client that
 	// resized last (`window-size latest`, tmux.Config).
 	Resize(size Size) error
+	// Redraw asks the client behind this PTY to paint its whole screen again,
+	// at the size it already has: what repairs a screen some of whose bytes
+	// were lost on the way (the direct path closing mid-stream).
+	Redraw() error
 }
 
 // Worktrees is git, at the granularity a session needs.

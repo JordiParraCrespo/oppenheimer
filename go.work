@@ -5,6 +5,7 @@ go 1.24.0
 
 use (
 	./apps/runner
+	./e2e/netsim
 	./packages/go/auth
 	./packages/go/config
 	./packages/go/core

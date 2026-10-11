@@ -24,9 +24,33 @@ export const attachCreditSchema = z.object({
   bytes: z.number().int().positive(),
 });
 
+/**
+ * The browser's WebRTC offer for this attachment (22), with every candidate in
+ * it. Sent only after `attached` carried `direct`.
+ */
+export const attachDirectOfferSchema = z.object({
+  type: z.literal('direct.offer'),
+  sdp: z
+    .string()
+    .min(1)
+    .max(16 * 1024),
+});
+
+/**
+ * The browser's input moves to the data channel after `offset` keystroke
+ * bytes sent on this socket (`attachment.path` on the link). In the other
+ * direction, the runner's output moves after `offset` PTY bytes.
+ */
+export const attachDirectPathSchema = z.object({
+  type: z.literal('direct.path'),
+  offset: z.number().int().min(0),
+});
+
 export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachResizeSchema,
   attachCreditSchema,
+  attachDirectOfferSchema,
+  attachDirectPathSchema,
 ]);
 
 export type AttachClientMessage = z.infer<typeof attachClientMessageSchema>;
@@ -35,6 +59,27 @@ export type AttachClientMessage = z.infer<typeof attachClientMessageSchema>;
 export const attachAttachedSchema = z.object({
   type: z.literal('attached'),
   window: z.number().int().min(0),
+  /**
+   * Present when this attachment may move to a direct path (22): the host can
+   * answer, and the relay allows it for this audience. The ICE servers are the
+   * ones the browser's peer connection gathers with.
+   */
+  direct: z.object({ iceServers: z.array(z.string().min(1).max(256)).max(8) }).optional(),
+});
+
+/** The runner's answer to `direct.offer`. */
+export const attachDirectAnswerSchema = z.object({
+  type: z.literal('direct.answer'),
+  sdp: z
+    .string()
+    .min(1)
+    .max(16 * 1024),
+});
+
+/** No direct path for this attachment; it stays on this socket. */
+export const attachDirectUnavailableSchema = z.object({
+  type: z.literal('direct.unavailable'),
+  reason: z.string().max(200),
 });
 
 /** A hint, in the attach ticket's vocabulary — `host_offline` is the one that matters here. */
@@ -66,6 +111,9 @@ export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachHintSchema,
   attachRefusedSchema,
   attachClosedSchema,
+  attachDirectAnswerSchema,
+  attachDirectUnavailableSchema,
+  attachDirectPathSchema,
 ]);
 
 export type AttachServerMessage = z.infer<typeof attachServerMessageSchema>;

@@ -78,6 +78,14 @@ function asHost(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): [st
     : ['env', [...env, ...argv]];
 }
 
+/**
+ * `command` run behind `enter`, a prefix that puts it somewhere else first —
+ * a simulated network (`support/netsim.ts`).
+ */
+function behind(enter: string[], [command, args]: [string, string[]]): [string, string[]] {
+  return enter.length === 0 ? [command, args] : [enter[0], [...enter.slice(1), command, ...args]];
+}
+
 function runAs(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): string {
   const [command, args] = asHost(record, argv);
   return execFileSync(command, args, { encoding: 'utf8' }).trim();
@@ -90,8 +98,12 @@ function runAs(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): stri
  * reaches the limit here, where container hosts each have an address of their
  * own. The same token is good again: a 429 never reaches its redemption.
  */
-function register(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): void {
-  const [command, args] = asHost(record, argv);
+function register(
+  record: Pick<LocalRecord, 'user' | 'home'>,
+  argv: string[],
+  enter: string[],
+): void {
+  const [command, args] = behind(enter, asHost(record, argv));
   for (let attempt = 1; ; attempt += 1) {
     try {
       execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -172,7 +184,19 @@ export function buildLocalFleet(repoRoot: string): void {
   );
 }
 
-export function startLocalHost(name: string, token: string): FleetHost {
+export interface LocalHostOptions {
+  /**
+   * A prefix the runner is started behind: `netsim exec … NODE --` puts the
+   * host on a simulated network, registration included.
+   */
+  enter?: string[];
+}
+
+export function startLocalHost(
+  name: string,
+  token: string,
+  { enter = [] }: LocalHostOptions = {},
+): FleetHost {
   let record: Omit<LocalRecord, 'supervisor'>;
   if (isRoot) {
     // Account names are 32 characters at most; the host's name is the pairing
@@ -215,26 +239,23 @@ export function startLocalHost(name: string, token: string): FleetHost {
   runAs(record, ['git', 'config', '--global', 'user.email', 'fleet@oppenheimer.test']);
   // CI sets CI and GITHUB_ACTIONS, which the runner reads as a temporary
   // machine; a fleet host is one on purpose, for the length of the run.
-  register(record, [
-    'runner',
-    'register',
-    '--token',
-    token,
-    '--url',
-    API_URL,
-    '--name',
-    name,
-    '--allow-container',
-  ]);
+  register(
+    record,
+    ['runner', 'register', '--token', token, '--url', API_URL, '--name', name, '--allow-container'],
+    enter,
+  );
 
   // Kept alive the way the container's entrypoint keeps it, standing in for
   // launchd KeepAlive or systemd Restart=always.
   const log = join(ROOT, `${name}.log`);
-  const [command, args] = asHost(record, [
-    'sh',
-    '-c',
-    'while true; do runner run || echo "fleet-host: runner exited ($?), restarting"; sleep 1; done',
-  ]);
+  const [command, args] = behind(
+    enter,
+    asHost(record, [
+      'sh',
+      '-c',
+      'while true; do runner run || echo "fleet-host: runner exited ($?), restarting"; sleep 1; done',
+    ]),
+  );
   const supervisor = detached(command, args, log);
   remember({ ...record, supervisor });
 
