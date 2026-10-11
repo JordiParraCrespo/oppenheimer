@@ -393,3 +393,9 @@ earlier note:
   the close cannot happen. A session removed on its host (by hand, or by
   `runner sessions close`) now closes on Delete or Restart instead of
   being stuck for ever.
+- `versions/mvp/05-screens.md` said selecting text needs Shift-drag
+  (Option-drag on macOS), because tmux owns plain drags. On 2026-10-11
+  the owner could not copy a plain-drag highlight: tmux copied it to its
+  own buffer and the console dropped the OSC 52 that carried it out. tmux
+  now runs with `set-clipboard on` and the console writes OSC 52 to the
+  clipboard (writes only, never reads), so a plain drag copies on release.

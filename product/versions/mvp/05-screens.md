@@ -309,8 +309,11 @@
   and end of the line, **⌘⌫** deletes to its start, **⌘⌦** (fn+⌘⌫) to
   its end, and **⌘A** selects all. A copy with nothing selected, or one
   the browser refuses, does nothing. Chords the browser keeps for itself (Ctrl+W, Ctrl+T, Ctrl+N
-  off the Mac) never reach the page. Selecting text needs Shift-drag
-  (Option-drag on macOS), because tmux owns plain drags.
+  off the Mac) never reach the page. A plain drag is tmux's selection,
+  and releasing it copies to the reader's clipboard (tmux's OSC 52,
+  which the console writes and never answers a read of). Shift-drag
+  (Option-drag on macOS) is the console's own selection, copied with the
+  chords above.
 - The session cursor is a **steady block**. It is the default, not a
   fence: a program that asks for a blinking cursor (DECSET 12, DECSCUSR)
   gets one, and tmux sets it back to steady each time it shows the cursor

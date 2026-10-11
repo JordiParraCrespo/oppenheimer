@@ -1,4 +1,5 @@
 import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
+import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -109,6 +110,10 @@ export function mountSessionTerminal(
   term.unicode.activeVersion = '11';
   const serialize = new SerializeAddon();
   term.loadAddon(serialize);
+  // A plain drag is tmux's selection, and tmux hands what it copies to the
+  // terminal as OSC 52; without this the highlight copies nothing. A
+  // watcher's pane leaves it out: the owner's copies are not theirs.
+  if (!options.readOnly) term.loadAddon(new ClipboardAddon(undefined, OSC52_CLIPBOARD));
 
   term.open(container);
 
@@ -344,6 +349,22 @@ function copyToClipboard(text: string) {
   if (!text || !navigator.clipboard) return;
   navigator.clipboard.writeText(text).catch(() => {});
 }
+
+/**
+ * OSC 52 as the console answers it: a program on the host may write the
+ * system clipboard, never read it, since a read would send whatever the
+ * reader copied elsewhere back to the host. tmux names no selection, which
+ * is the system clipboard too; X11's primary has no browser counterpart.
+ * Both answer synchronously: xterm's parser waits on a promise, and a write
+ * the browser refuses must not stall the stream.
+ */
+const OSC52_CLIPBOARD: IClipboardProvider = {
+  readText: () => '',
+  writeText: (selection, text) => {
+    const target: string = selection;
+    if (target === '' || target.includes('c')) copyToClipboard(text);
+  },
+};
 
 /**
  * A wheel event in rows.
