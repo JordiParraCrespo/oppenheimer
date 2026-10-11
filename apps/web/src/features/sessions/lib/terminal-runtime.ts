@@ -4,6 +4,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
+import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
 import {
@@ -43,6 +44,13 @@ export interface SessionTerminalOptions {
    * keeps the pane from looking as though typing would do something.
    */
   readOnly?: boolean;
+  /**
+   * Whether predictive local echo may draw (`typeahead.ts`): the
+   * `terminal_typeahead` flag, read through a getter so the flag arriving
+   * after mount does not rebuild the terminal. It still draws only once the
+   * measured round trip is above 30 ms (`terminal-echo.ts`).
+   */
+  typeahead?: () => boolean;
 }
 
 /**
@@ -89,6 +97,13 @@ export function mountSessionTerminal(
 
   term.open(container);
 
+  // Every byte the reader sends goes through here: timed, and predicted.
+  const echo = bindTerminalEcho(term, (data) => stream.send(data), {
+    readOnly: options.readOnly ?? false,
+    typeahead: options.typeahead ?? (() => false),
+  });
+  const send = echo.send;
+
   // The console's keys (05), decided before xterm encodes them.
   term.attachCustomKeyEventHandler((event) => {
     const verdict = classifyKey(event, {
@@ -110,7 +125,7 @@ export function mountSessionTerminal(
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();
-      stream.send(verdict.data);
+      send(verdict.data);
     }
     return false;
   });
@@ -150,7 +165,7 @@ export function mountSessionTerminal(
     // would scroll whichever of them sits in the corner.
     const button = notches < 0 ? 64 : 65;
     const report = `\u001b[<${button};${wheelCell.col};${wheelCell.row}M`;
-    stream.send(report.repeat(Math.abs(notches)));
+    send(report.repeat(Math.abs(notches)));
   };
 
   /** The pointer's cell, 1-based, clamped to the grid. */
@@ -231,6 +246,7 @@ export function mountSessionTerminal(
     if (!faces.some((face) => TERMINAL_FONT_FAMILIES.has(unquote(face.family)))) return;
     term.clearTextureAtlas();
     term.refresh(0, term.rows - 1);
+    echo.repaint();
     nextFrame();
   };
   document.fonts?.addEventListener('loadingdone', onFontsLoaded);
@@ -241,6 +257,7 @@ export function mountSessionTerminal(
     term.options.theme = readTerminalTheme();
     term.options.minimumContrastRatio = terminalMinimumContrastRatio();
     userTurns?.repaint();
+    echo.repaint();
   });
   themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
@@ -251,6 +268,7 @@ export function mountSessionTerminal(
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
   const offData = stream.onData((chunk, consumed) => {
+    echo.received();
     if (!announcedOutput && hasVisibleText(chunk)) {
       announcedOutput = true;
       options.onFirstOutput?.();
@@ -277,12 +295,13 @@ export function mountSessionTerminal(
     stream.resize(term.cols, term.rows);
     term.scrollToBottom();
   });
-  const input = term.onData((data) => stream.send(data));
+  const input = term.onData(send);
 
   return () => {
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();
+    echo.dispose();
     userTurns?.dispose();
     offData();
     offStatus();

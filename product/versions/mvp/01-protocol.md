@@ -10,7 +10,10 @@ runner does with it and point back.
 
 - Three parties: browser, control plane, runner. The runner dials out;
   the browser never reaches the runner directly in the MVP (the direct
-  tailnet path is later).
+  tailnet path is later). **Superseded 2026-10-11 by 22**: an attachment
+  may move to a WebRTC data channel from browser to runner once it is up,
+  signalled over the two sockets below, and falls back to them; the relay
+  still admits every attachment.
 - **Two sockets, two shapes**, and that is deliberate rather than a
   temporary inconsistency:
   - **the runner link**, one per host, multiplexed, because a host with

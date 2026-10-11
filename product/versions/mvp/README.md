@@ -33,6 +33,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
 | 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
 | 21 | [Session share links](21-session-share-links.md) | A link that opens a session's terminal outside the workspace: watch or type, for anyone, any account or named people; acts as its creator; read-only held by the relay and tmux |
+| 22 | [The direct terminal path](22-direct-terminal-path.md) | Keystroke latency measured in the browser and predictive local echo (built); a WebRTC data channel from browser to runner with the relay as the path it starts on and falls back to; authorization stays the relay's (proposed, in steps) |
 
 ## Decision log
 
@@ -630,3 +631,16 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-10-08: **A link that lets anyone type expires within seven days**
   (21). The API, the aggregate and a `CHECK` refuse a longer one, or one
   with no expiry; every other link may still live until revoked.
+- 2026-10-11: **the terminal gets a direct path, and predicts what is
+  typed** (22, 01, 06). Every keystroke crossed the relay twice, so a
+  reader beside their own host paid two round trips to the control plane.
+  Built: the round trip is measured in the browser, and a character typed
+  at the cursor, Backspace, Left and Right are drawn before the echo in an
+  overlay, dropped the moment the host disagrees, behind the
+  `terminal_typeahead` ops flag. Decided, not built: a WebRTC data channel
+  per attachment from browser to runner, signalled over the attach socket
+  and the link, opened after the relay path and falling back to it with a
+  tmux repaint rather than a replay; the relay still admits every
+  attachment, and on the direct path read-only is the runner's to hold.
+  01's "the browser never reaches the runner directly in the MVP" is
+  superseded by 22.
