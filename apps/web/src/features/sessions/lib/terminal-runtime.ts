@@ -361,10 +361,14 @@ function copyToClipboard(text: string) {
 const OSC52_CLIPBOARD: IClipboardProvider = {
   readText: () => '',
   writeText: (selection, text) => {
-    const target: string = selection;
-    if (target === '' || target.includes('c')) copyToClipboard(text);
+    if (namesSystemClipboard(selection)) copyToClipboard(text);
   },
 };
+
+/** OSC 52's selection names: empty (tmux's) and `c` are the system clipboard. */
+function namesSystemClipboard(selection: string): boolean {
+  return selection === '' || selection.includes('c');
+}
 
 /**
  * A wheel event in rows.

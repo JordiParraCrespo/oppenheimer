@@ -72,7 +72,9 @@ type Options struct {
 //
 // `set-clipboard on` sends what a mouse drag copies, and what a program sets
 // with OSC 52 (Claude Code's /copy), on to the browser, which writes it to the
-// reader's clipboard.
+// reader's clipboard. Like every line here, it takes effect when the tmux
+// server starts (`-f`); a server already running keeps its old options until
+// it restarts.
 const Config = `set -g status off
 set -g mouse on
 set -g set-clipboard on
