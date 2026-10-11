@@ -1,5 +1,6 @@
 import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
 import { FitAddon } from '@xterm/addon-fit';
+import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
@@ -51,7 +52,19 @@ export interface SessionTerminalOptions {
    * measured round trip is above 30 ms (`terminal-echo.ts`).
    */
   typeahead?: () => boolean;
+  /**
+   * The picture this pane showed last time (`terminal-snapshots.ts`), drawn
+   * at once so switching back to a session is not an empty grid while the
+   * link dials. The first bytes from the far end reset the grid and replace
+   * it: tmux's attach redraws the whole screen.
+   */
+  snapshot?: string;
+  /** Hands the pane's picture over as it unmounts, to be the next `snapshot`. */
+  keepSnapshot?: (snapshot: string) => void;
 }
+
+/** How much scrollback a kept picture carries: enough to look like the pane. */
+const SNAPSHOT_SCROLLBACK = 1000;
 
 /**
  * One session terminal: xterm.js in `container`, wired to `stream`, until the
@@ -94,8 +107,13 @@ export function mountSessionTerminal(
   const unicode = new Unicode11Addon();
   term.loadAddon(unicode);
   term.unicode.activeVersion = '11';
+  const serialize = new SerializeAddon();
+  term.loadAddon(serialize);
 
   term.open(container);
+
+  let showingSnapshot = Boolean(options.snapshot);
+  if (options.snapshot) term.write(options.snapshot, () => term.scrollToBottom());
 
   // Every byte the reader sends goes through here: timed, and predicted.
   const echo = bindTerminalEcho(term, (data) => stream.send(data), {
@@ -268,6 +286,10 @@ export function mountSessionTerminal(
   // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
   const offData = stream.onData((chunk, consumed) => {
+    if (showingSnapshot) {
+      showingSnapshot = false;
+      term.reset();
+    }
     echo.received();
     if (!announcedOutput && hasVisibleText(chunk)) {
       announcedOutput = true;
@@ -311,6 +333,10 @@ export function mountSessionTerminal(
     themeObserver.disconnect();
     resizeObserver.disconnect();
     ptySize.dispose();
+    // A pane that never drew anything has no picture worth keeping.
+    if (options.keepSnapshot && (announcedOutput || options.snapshot)) {
+      options.keepSnapshot(serialize.serialize({ scrollback: SNAPSHOT_SCROLLBACK }));
+    }
     term.dispose();
   };
 }
