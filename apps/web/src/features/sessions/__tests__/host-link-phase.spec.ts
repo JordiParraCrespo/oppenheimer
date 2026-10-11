@@ -8,7 +8,7 @@ import { hostLinkPhaseOf } from '../lib/host-link-phase';
  * the readings that would draw the wrong band if they slipped.
  */
 const at = (over: Partial<Parameters<typeof hostLinkPhaseOf>[0]>) =>
-  hostLinkPhaseOf({ status: 'live', away: false, reconnected: false, ...over });
+  hostLinkPhaseOf({ status: 'live', away: false, reconnected: false, slow: false, ...over });
 
 describe('hostLinkPhaseOf', () => {
   it('reads host_offline as offline until the stream is attached again', () => {
@@ -17,9 +17,14 @@ describe('hostLinkPhaseOf', () => {
     expect(at({ status: 'offline', away: true })).toBe('offline');
   });
 
-  it('reads a dial as a blip, unless the host was away', () => {
-    expect(at({ status: 'connecting' })).toBe('reconnecting');
+  it('reads a slow dial as a blip, unless the host was away', () => {
+    expect(at({ status: 'connecting', slow: true })).toBe('reconnecting');
     expect(at({ status: 'connecting', away: true })).toBe('catching-up');
+  });
+
+  it('stays live for a dial inside its grace', () => {
+    // Switching sessions dials; "Connecting… Retry now" flashed on every switch.
+    expect(at({ status: 'connecting' })).toBe('live');
   });
 
   it('says reconnected for a moment after coming back, then live', () => {

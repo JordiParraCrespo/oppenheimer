@@ -2,7 +2,7 @@ import '@xterm/xterm/css/xterm.css';
 import type { SessionStream, StreamEnd, StreamStatus } from '@oppenheimer/frontend-consumer';
 import { useHostPresence } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useRef, useState } from 'react';
-import { RECONNECTED_FOR_MS } from '../lib/host-link-phase';
+import { DIAL_GRACE_MS, RECONNECTED_FOR_MS } from '../lib/host-link-phase';
 import { mountSessionTerminal } from '../lib/terminal-runtime';
 
 /**
@@ -34,6 +34,7 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  * What the pane draws of all this (`hostLinkPhaseOf`) is read off the rest of
  * the return: `awaySince`, when the link went offline and until it is live
  * again; `reconnected`, the link came back from being away a moment ago;
+ * `slowDial`, the current dial has outlasted `DIAL_GRACE_MS`;
  * `hostName`, the list's name for it.
  */
 export function useTerminal(
@@ -146,6 +147,19 @@ export function useTerminal(
     return () => clearTimeout(timer);
   }, [reconnected]);
 
+  // A dial says so only once it is slow; the one a pane opens with lands first.
+  // The clock lives here because something has to re-render when the grace
+  // runs out; what the grace means is `hostLinkPhaseOf`'s.
+  const [slowDial, setSlowDial] = useState(false);
+  useEffect(() => {
+    if (status !== 'connecting') {
+      setSlowDial(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowDial(true), DIAL_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [status]);
+
   const retryNow = () => {
     if (ended) {
       setEnded(null);
@@ -165,5 +179,6 @@ export function useTerminal(
     hostName: presence.data?.name,
     awaySince,
     reconnected,
+    slowDial,
   };
 }
