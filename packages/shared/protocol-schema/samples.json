@@ -210,6 +210,29 @@
     "attachmentId": 7,
     "bytes": 262144
   },
+  "attachment.direct.offer": {
+    "type": "attachment.direct.offer",
+    "attachmentId": 7,
+    "sdp": "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n",
+    "iceServers": [
+      "stun:stun.example.com:3478"
+    ]
+  },
+  "attachment.direct.answer": {
+    "type": "attachment.direct.answer",
+    "attachmentId": 7,
+    "sdp": "v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n"
+  },
+  "attachment.direct.refused": {
+    "type": "attachment.direct.refused",
+    "attachmentId": 7,
+    "reason": "too many direct peers on this host"
+  },
+  "attachment.path": {
+    "type": "attachment.path",
+    "attachmentId": 7,
+    "offset": 1048576
+  },
   "session.create": {
     "type": "session.create",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

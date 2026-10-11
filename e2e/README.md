@@ -123,6 +123,22 @@ and a writable git server on the machine itself.
 FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
 ```
 
+### Hosts on simulated networks
+
+`e2e/netsim` puts the browser and each local host on a network of its own:
+somewhere in the world, behind fibre, cable, ADSL, 4G, Starlink or a hotel's
+Wi-Fi, with the relay in a data centre in Falkenstein. Every packet between
+them is delayed, throttled and dropped the way the two last miles and the
+distance would (`netsim/README.md`). `tests/netsim/typing.spec.ts` is the bench
+built on it: how long a keystroke takes to echo, on the relay and on the
+direct path, for every place and connection, written to
+`test-results/netsim-typing.md`. Linux and root, with the stack up `--web`:
+
+```bash
+PLAYWRIGHT_CHROMIUM_PATH=… pnpm --filter @oppenheimer/e2e e2e:netsim
+# narrower: NETSIM_BROWSERS=same-city,tokyo NETSIM_HOSTS=adsl,4g NETSIM_KEYS=10
+```
+
 ## Running it
 
 ```bash
@@ -222,12 +238,15 @@ e2e/
 │   ├── fleet.ts    # real runners as hosts: pairing, attach, containers
 │   ├── fleet-local.ts # the same hosts on this machine (FLEET_HOSTS=local)
 │   ├── mail.ts     # reads the console-provider "mailbox" out of the API log
+│   ├── netsim.ts   # the browser and hosts on simulated networks (e2e/netsim)
 │   └── sessions.ts # installations, pairing tokens, sessions through the API
 ├── fleet/          # the host image, its entrypoint, the git server, the claude shim
+├── netsim/         # the network simulator (Go): namespaces, TUN devices, a router
 └── tests/
     ├── api/        # sign-up, sign-in, password reset, verification, protected
     │               # routes, authorization, API tokens, session security, OAuth
     ├── fleet/      # real runners: machines, link loss, adoption, one link per
     │               # host, flow control, the console on a live session
+    ├── netsim/     # the typing bench: relay vs direct over simulated links
     └── web/        # the same journeys through apps/web in Chromium
 ```

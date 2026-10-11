@@ -101,6 +101,7 @@ export function mountSessionTerminal(
   const echo = bindTerminalEcho(term, (data) => stream.send(data), {
     readOnly: options.readOnly ?? false,
     typeahead: options.typeahead ?? (() => false),
+    onPath: stream.onPath?.bind(stream),
   });
   const send = echo.send;
 

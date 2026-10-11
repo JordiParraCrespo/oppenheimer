@@ -33,7 +33,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
 | 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
 | 21 | [Session share links](21-session-share-links.md) | A link that opens a session's terminal outside the workspace: watch or type, for anyone, any account or named people; acts as its creator; read-only held by the relay and tmux |
-| 22 | [The direct terminal path](22-direct-terminal-path.md) | Keystroke latency measured in the browser and predictive local echo (built); a WebRTC data channel from browser to runner with the relay as the path it starts on and falls back to; authorization stays the relay's (proposed, in steps) |
+| 22 | [The direct terminal path](22-direct-terminal-path.md) | Keystroke latency measured in the browser and predictive local echo; a WebRTC data channel from browser to runner with the relay as the path it starts on and falls back to, behind `terminal_direct_path`; authorization stays the relay's |
 
 ## Decision log
 
@@ -644,3 +644,21 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   attachment, and on the direct path read-only is the runner's to hold.
   01's "the browser never reaches the runner directly in the MVP" is
   superseded by 22.
+- 2026-10-11: **the direct terminal path is built, behind
+  `terminal_direct_path`** (22 "As built", 01). Three points changed while
+  building it, each marked in 22: a path switch is a **byte offset** said
+  on the control path, not a marker on the old one, because the link sends
+  control frames ahead of queued PTY frames; the data channel is **binary
+  only**, credit and resize staying on the attach socket; and a channel
+  that closes sends the attachment **back to the link** with the tmux
+  client repainted by `SIGWINCH`, not `refresh-client`, and without closing
+  the attachment, which the browser would take as the session ending.
+  No trickle ICE, no share-link direct paths yet, and ICE servers come from
+  `RELAY_ICE_SERVERS` (empty: host candidates only) until the STUN
+  responder exists.
+- 2026-10-11: **the direct path's STUN is Cloudflare's** (22, open question
+  1). The dev deployment sets `RELAY_ICE_SERVERS=stun:stun.cloudflare.com:3478`
+  rather than run a responder of its own, which would need UDP 3478 published
+  and so an exception to the rule that nothing on the server publishes a
+  port. 22 said no third-party STUN by default; Cloudflare already carries
+  every request through the tunnel, so it adds no party, and it is free.

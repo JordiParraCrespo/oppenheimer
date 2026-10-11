@@ -47,9 +47,7 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 		_ = pty.Resize(sessionsapp.Size{Cols: clampSize(early.Cols), Rows: clampSize(early.Rows)})
 	}
 	if previous != nil {
-		previous.flow.close()
-		previous.cancel()
-		_ = previous.pty.Close()
+		previous.stop()
 	}
 	go h.pump(readCtx, att)
 	go h.inputPump(readCtx, att)
@@ -86,7 +84,7 @@ func (h *linkHandler) pump(ctx context.Context, att *attachment) {
 			// would run, and a credit that finds nothing in flight is lost.
 			// A frame that never left gives its reservation back.
 			att.flow.sent(n)
-			if sendErr := h.client.SendFrame(ctx, att.id, buf[:n]); sendErr != nil {
+			if sendErr := h.sendOutput(ctx, att, buf[:n]); sendErr != nil {
 				att.flow.credit(n)
 				if ctx.Err() != nil {
 					return
@@ -112,9 +110,7 @@ func (h *linkHandler) pump(ctx context.Context, att *attachment) {
 	}
 	h.mu.Unlock()
 	// Its context ends with it, or inputPump, waiting on it, never returns.
-	att.flow.close()
-	att.cancel()
-	_ = att.pty.Close()
+	att.stop()
 	_ = h.client.Send(link.AttachmentClosed{Type: "attachment.closed", AttachmentID: att.id, Reason: "pty closed"})
 }
 
@@ -174,9 +170,7 @@ func (h *linkHandler) release(att *attachment) bool {
 // closeAttachment ends an attachment the host gave up on and tells the
 // control plane, which frees the id.
 func (h *linkHandler) closeAttachment(att *attachment, reason string) {
-	att.flow.close()
-	att.cancel()
-	_ = att.pty.Close()
+	att.stop()
 	_ = h.client.Send(link.AttachmentClosed{Type: "attachment.closed", AttachmentID: att.id, Reason: reason})
 }
 
@@ -186,9 +180,7 @@ func (h *linkHandler) detach(id uint32) {
 	delete(h.attachments, id)
 	h.mu.Unlock()
 	if att != nil {
-		att.flow.close()
-		att.cancel()
-		_ = att.pty.Close()
+		att.stop()
 	}
 }
 

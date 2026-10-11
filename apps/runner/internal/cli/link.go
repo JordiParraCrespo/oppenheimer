@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/direct"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -61,6 +62,9 @@ type linkHandler struct {
 	reporter *link.Reporter
 
 	credentials *credentialBroker
+	// direct answers browsers' offers for a direct path (link_direct.go);
+	// nil is a host that offers none, and its hello does not name the capability.
+	direct *direct.Answerer
 	// httpClient pulls parked files; nil is a default client (link_files.go).
 	httpClient *http.Client
 	// bootToken mints the assertion a file pull carries.
@@ -113,6 +117,18 @@ type attachment struct {
 	// readOnly is a watcher's attachment: its keystrokes are dropped here,
 	// whatever reached the link, as well as by tmux and by the relay.
 	readOnly bool
+	// path is where its bytes go: the link, or a direct channel
+	// (attachment_path.go).
+	path attachmentPath
+}
+
+// stop ends an attachment's PTY, its reads and its direct path. The caller
+// has already taken it out of the table (or is replacing the table).
+func (att *attachment) stop() {
+	att.flow.close()
+	att.cancel()
+	_ = att.pty.Close()
+	att.path.close()
 }
 
 // newRunID mints the id every event key of this process starts with.
@@ -137,6 +153,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, earlyResize: map[uint32]link.SessionResize{},
 		decided:   map[string]bool{},
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
+		direct: direct.NewAnswerer(direct.Options{Logger: logger}),
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -236,11 +253,20 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		RunID:         h.reporter.RunID(),
 		Host:          facts,
 		Sessions:      h.snapshots(),
-		Capabilities: []string{
-			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
-			link.CapabilityRepositoryPrepare,
-		},
+		Capabilities:  h.capabilities(),
 	}, nil
+}
+
+// capabilities is what this host's hello offers.
+func (h *linkHandler) capabilities() []string {
+	named := []string{
+		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
+		link.CapabilityRepositoryPrepare,
+	}
+	if h.direct != nil {
+		named = append(named, link.CapabilityAttachmentDirect)
+	}
+	return named
 }
 
 func (h *linkHandler) Heartbeat(ctx context.Context) (link.Heartbeat, error) {
@@ -294,9 +320,7 @@ func (h *linkHandler) Disconnected(uint64) {
 	h.linkUp = false
 	h.mu.Unlock()
 	for _, att := range open {
-		att.flow.close()
-		att.cancel()
-		_ = att.pty.Close()
+		att.stop()
 	}
 }
 
@@ -309,9 +333,16 @@ func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte
 		return
 	}
 	// The frame may be a view into the read buffer, which is not ours to keep.
-	frame := append([]byte(nil), bytes...)
+	att.path.linkInput(append([]byte(nil), bytes...), h.inputQueue(att))
+}
+
+// queueInput hands a keystroke frame to the attachment's inputPump, and
+// reports whether it took it. It never blocks: the read loop and the direct
+// channel both call it.
+func (h *linkHandler) queueInput(att *attachment, frame []byte) bool {
 	select {
 	case att.input <- frame:
+		return true
 	default:
 		// The PTY has not drained a full queue: the client behind it is
 		// wedged. Close this attachment rather than stall every other one on
@@ -321,6 +352,7 @@ func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte
 				slog.String("attachment", att.String()), slog.Uint64("epoch", att.epoch))
 			go h.closeAttachment(att, "input stalled")
 		}
+		return false
 	}
 }
 
@@ -401,6 +433,19 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
 		if m, ok := decodeLifecycle(msg); ok {
 			h.lanes.run(m.SessionID, func() { h.lifecycle(h.life, m) })
+		}
+	case link.TypeAttachmentDirectOffer:
+		var m link.AttachmentDirectOffer
+		if msg.Decode(&m) == nil {
+			// Gathering candidates takes up to seconds, and the attachment
+			// may still be opening: never on the read loop.
+			epoch := h.currentEpoch()
+			go h.directOffer(m, epoch)
+		}
+	case link.TypeAttachmentPath:
+		var m link.AttachmentPath
+		if msg.Decode(&m) == nil {
+			h.directInputOffset(m)
 		}
 	case "attachment.credit":
 		var m link.AttachmentCredit

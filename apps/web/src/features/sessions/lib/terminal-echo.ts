@@ -16,6 +16,8 @@ export interface TerminalEchoOptions {
   readOnly: boolean;
   /** Whether predictions may draw: the `terminal_typeahead` flag. */
   typeahead: () => boolean;
+  /** Which path the stream's bytes take, for the readout (`SessionStream.onPath`). */
+  onPath?: (listener: (path: string) => void) => () => void;
 }
 
 /**
@@ -46,7 +48,13 @@ export function bindTerminalEcho(
         // A guess the host has not confirmed in a few round trips was wrong.
         timeoutMs: () => Math.max(1000, 4 * (latency.quantile(0.95) ?? 0)),
       });
-  const unbindReadout = term.element ? bindLatencyReadout(term.element, latency) : () => {};
+  let path: string | null = null;
+  const offPath = options.onPath?.((next) => {
+    path = next;
+  });
+  const unbindReadout = term.element
+    ? bindLatencyReadout(term.element, latency, () => path)
+    : () => {};
 
   return {
     send(data) {
@@ -63,6 +71,7 @@ export function bindTerminalEcho(
       typeahead?.repaint();
     },
     dispose() {
+      offPath?.();
       unbindReadout();
       typeahead?.dispose();
     },

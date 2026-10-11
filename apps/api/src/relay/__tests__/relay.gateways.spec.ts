@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
@@ -103,6 +104,7 @@ interface Harness {
   hostAccess: HostAccessPort;
   owners: CredentialOwnerPort;
   abilities: AbilityPort;
+  flags: FlagEvaluatorPort;
   registry: InProcessLinkRegistry;
   browsers: BrowserAttachGateway;
   close(): Promise<void>;
@@ -161,6 +163,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
         'hosts.signingKeyFingerprint':
           options.fingerprint === undefined ? FINGERPRINT : options.fingerprint,
         'app.frontendUrl': 'http://localhost:3000',
+        'relay.iceServers': ['stun:stun.example.com:3478'],
       })[key],
   } as unknown as ConfigService;
 
@@ -192,6 +195,8 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
       ]),
     ),
   };
+  // `terminal_direct_path` off unless a test turns it on.
+  const flags = { isEnabled: vi.fn().mockReturnValue(false) } as unknown as FlagEvaluatorPort;
   const processor = new RelayEventsProcessor(events, presence, reconciliation);
   const credentials = new CredentialsProcessor(
     lookup,
@@ -210,6 +215,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     hostAccess,
     owners,
     abilities,
+    flags,
   );
   const server = createServer((_request, response) => response.writeHead(404).end());
   const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers);
@@ -229,6 +235,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     hostAccess,
     owners,
     abilities,
+    flags,
     registry,
     browsers,
     close: () => new Promise((resolve) => server.close(() => resolve())),
@@ -1314,6 +1321,124 @@ describe('browser attach socket', () => {
     });
   });
 
+  describe('the direct path', () => {
+    const OFFER = 'v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n';
+
+    async function attached(capabilities: string[], ticket = issueTicket(h)) {
+      const runner = await runnerUp(h, { capabilities });
+      sockets.push(runner);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
+      sockets.push(browser);
+      await opened(browser);
+      const attach = nextMessage(runner);
+      const told = nextMessage(browser);
+      browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+      await attach;
+      return { runner, browser, attached: (await told).text };
+    }
+
+    it('offers it to a person the flag is on for, on a runner that can answer, with the ICE servers', async () => {
+      vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+      const { attached: told } = await attached(['attachment.direct']);
+      expect(told).toEqual({
+        type: 'attached',
+        window: 0,
+        direct: { iceServers: ['stun:stun.example.com:3478'] },
+      });
+      expect(h.flags.isEnabled).toHaveBeenCalledWith('terminal_direct_path', {
+        userId: USER,
+        organizationId: ORG,
+      });
+    });
+
+    it('does not offer it on a runner that cannot answer, or while the flag is off', async () => {
+      vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+      expect((await attached([])).attached).toEqual({ type: 'attached', window: 0 });
+      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      expect((await attached(['attachment.direct'])).attached).toEqual({
+        type: 'attached',
+        window: 0,
+      });
+    });
+
+    it('relays the offer, the answer and both offsets between browser and runner', async () => {
+      vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+      const { runner, browser } = await attached(['attachment.direct']);
+
+      const offer = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
+      expect((await offer).text).toEqual({
+        type: 'attachment.direct.offer',
+        attachmentId: 1,
+        sdp: OFFER,
+        iceServers: ['stun:stun.example.com:3478'],
+      });
+
+      const answer = nextMessage(browser);
+      runner.send(
+        JSON.stringify({ type: 'attachment.direct.answer', attachmentId: 1, sdp: 'answer' }),
+      );
+      expect((await answer).text).toEqual({ type: 'direct.answer', sdp: 'answer' });
+
+      // The runner's output offset reaches the browser; the browser's input
+      // offset reaches the runner.
+      const output = nextMessage(browser);
+      runner.send(JSON.stringify({ type: 'attachment.path', attachmentId: 1, offset: 4096 }));
+      expect((await output).text).toEqual({ type: 'direct.path', offset: 4096 });
+      const input = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'direct.path', offset: 12 }));
+      expect((await input).text).toEqual({ type: 'attachment.path', attachmentId: 1, offset: 12 });
+    });
+
+    it('tells the browser when the runner refuses, and the attachment stays on the relay', async () => {
+      vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+      const { runner, browser } = await attached(['attachment.direct']);
+      const offer = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
+      await offer;
+      const refusal = nextMessage(browser);
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.direct.refused',
+          attachmentId: 1,
+          reason: 'too many direct peers on this host',
+        }),
+      );
+      expect((await refusal).text).toEqual({
+        type: 'direct.unavailable',
+        reason: 'too many direct peers on this host',
+      });
+      const output = nextMessage(browser);
+      runner.send(Buffer.concat([Buffer.from([0, 0, 0, 1]), Buffer.from('still here')]), {
+        binary: true,
+      });
+      expect((await output).bytes?.toString()).toBe('still here');
+    });
+
+    it('never forwards an offer it did not invite, or a second one', async () => {
+      // The flag is off: the browser was not told it could offer.
+      const { runner, browser } = await attached(['attachment.direct']);
+      const refusal = nextMessage(browser);
+      browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
+      expect((await refusal).text).toMatchObject({ type: 'direct.unavailable' });
+      // Nor its offset: the runner has no channel to wait on. The resize sent
+      // after it is the next thing the runner hears.
+      const next = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'direct.path', offset: 3 }));
+      browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
+      expect((await next).text).toMatchObject({ type: 'session.resize' });
+
+      vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+      const invited = await attached(['attachment.direct']);
+      const first = nextMessage(invited.runner);
+      invited.browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
+      expect((await first).text).toMatchObject({ type: 'attachment.direct.offer' });
+      const second = nextMessage(invited.browser);
+      invited.browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
+      expect((await second).text).toMatchObject({ type: 'direct.unavailable' });
+    });
+  });
+
   describe('through a share link', () => {
     const LINK = 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b';
     const VIEWER = 'f0e1d2c3-b4a5-4697-8a9b-cadbecfd0e1f';
@@ -1348,6 +1473,19 @@ describe('browser attach socket', () => {
       expect((await attached).text).toEqual({ type: 'attached', window: 0 });
       return { runner, browser, attach: message };
     }
+
+    it('never offers a direct path through a share link, whatever the flag says', async () => {
+      linkIs(true);
+      vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+      const runner = await runnerUp(h, { capabilities: ['attachment.direct'] });
+      sockets.push(runner);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(false)]);
+      sockets.push(browser);
+      await opened(browser);
+      const attached = nextMessage(browser);
+      browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+      expect((await attached).text).toEqual({ type: 'attached', window: 0 });
+    });
 
     it('attaches a read link read-only and never forwards its keystrokes', async () => {
       linkIs(true);

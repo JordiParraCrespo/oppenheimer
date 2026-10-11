@@ -104,6 +104,23 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     accepted: ['run-7f3a:1', 'run-7f3a:2'],
   },
   'attachment.credit': { type: 'attachment.credit', attachmentId: 7, bytes: 262_144 },
+  'attachment.direct.offer': {
+    type: 'attachment.direct.offer',
+    attachmentId: 7,
+    sdp: 'v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+    iceServers: ['stun:stun.example.com:3478'],
+  },
+  'attachment.direct.answer': {
+    type: 'attachment.direct.answer',
+    attachmentId: 7,
+    sdp: 'v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+  },
+  'attachment.direct.refused': {
+    type: 'attachment.direct.refused',
+    attachmentId: 7,
+    reason: 'too many direct peers on this host',
+  },
+  'attachment.path': { type: 'attachment.path', attachmentId: 7, offset: 1_048_576 },
   'session.create': {
     type: 'session.create',
     commandId,

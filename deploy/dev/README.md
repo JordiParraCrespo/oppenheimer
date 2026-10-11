@@ -310,6 +310,13 @@ resolves `api` once, when it starts; then `cloudflared`, whose origins are
 `web` and `api`. Postgres and Redis are not touched. It ends with the checks
 a deploy ends with.
 
+A variable added to `config/api.env.example` later reaches an existing
+server only when it is copied into `api.env` by hand: `setup` writes the file
+once and never again. The direct terminal path's STUN server is one such line,
+`RELAY_ICE_SERVERS=stun:stun.cloudflare.com:3478`
+(`product/versions/mvp/22-direct-terminal-path.md`): without it, a terminal
+goes direct only for a browser on the host's own network.
+
 `api.env` is not part of a release, so `oppctl rollback` does not bring the
 previous one back. A reload that ends healthy keeps a copy as
 `config/api.env.last-good`; one that does not stops before the next service

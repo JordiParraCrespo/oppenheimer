@@ -27,10 +27,13 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import { ABILITY, CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
+import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
+import { FLAG_EVALUATOR } from '../../feature-flags/feature-flags.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../hosts/hosts.di-tokens';
 import type {
   AttachmentClosedReason,
+  AttachmentSignal,
   AttachmentSink,
   LinkRegistryPort,
   RunnerLink,
@@ -44,6 +47,7 @@ import {
   type SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
+import { type DirectPathOffer, DirectPathSignalling } from './direct-path-signalling.util';
 import { refuseUpgrade } from './upgrade.util';
 
 /** The path the console opens, the one `POST /sessions/{id}/attach-ticket` names. */
@@ -128,6 +132,8 @@ export class BrowserAttachGateway {
     private readonly owners: CredentialOwnerPort,
     @Inject(ABILITY)
     private readonly abilities: AbilityPort,
+    @Inject(FLAG_EVALUATOR)
+    private readonly flags: FlagEvaluatorPort,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -200,11 +206,36 @@ export class BrowserAttachGateway {
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
     if (ws.readyState !== ws.OPEN) return;
-    new BrowserAttachment(ws, claim, link, {
-      authorize: () => this.authorize(claim),
-      everyMs: this.reauthorizeIntervalMs,
-      logger: this.logger,
-    }).start([...early]);
+    new BrowserAttachment(
+      ws,
+      claim,
+      link,
+      {
+        authorize: () => this.authorize(claim),
+        everyMs: this.reauthorizeIntervalMs,
+        logger: this.logger,
+      },
+      this.directPathFor(claim, link),
+    ).start([...early]);
+  }
+
+  /**
+   * Whether this attachment may move to a direct path (22), and the ICE
+   * servers it gathers with if so. Only for a runner that can answer, for a
+   * person the `terminal_direct_path` flag is on for, and not through a share
+   * link: its audience may be anyone, and a host's upload is somebody's home
+   * connection (22, "Several browsers"). `null` keeps the attachment on the
+   * relay, and the browser is never told it could have been otherwise.
+   */
+  private directPathFor(claim: AttachTicket, link: RunnerLink): DirectPathOffer | null {
+    if (claim.share) return null;
+    if (!link.capabilities.includes('attachment.direct')) return null;
+    const enabled = this.flags.isEnabled('terminal_direct_path', {
+      userId: claim.userId,
+      organizationId: claim.organizationId,
+    });
+    if (!enabled) return null;
+    return { iceServers: this.configService.get<string[]>('relay.iceServers') ?? [] };
   }
 
   /**
@@ -333,6 +364,8 @@ class BrowserAttachment implements AttachmentSink {
   private finished = false;
   /** A read-only share link's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
+  /** The direct path's signalling, which this attachment only hands messages to. */
+  private readonly directPath: DirectPathSignalling;
 
   constructor(
     private readonly ws: WebSocket,
@@ -344,8 +377,11 @@ class BrowserAttachment implements AttachmentSink {
       everyMs: number;
       logger: Logger;
     },
+    /** `null`: this attachment stays on the relay. */
+    direct: DirectPathOffer | null = null,
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
+    this.directPath = new DirectPathSignalling(direct, link, (message) => this.tell(message));
   }
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
@@ -412,6 +448,10 @@ class BrowserAttachment implements AttachmentSink {
     this.ws.close(ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE, detail ?? 'attachment closed');
   }
 
+  signal(message: AttachmentSignal): void {
+    if (!this.finished) this.directPath.fromRunner(message);
+  }
+
   refused(code: string, detail?: string): void {
     if (this.finished) return;
     this.finished = true;
@@ -457,6 +497,10 @@ class BrowserAttachment implements AttachmentSink {
           });
         }
         return;
+      case 'direct.offer':
+      case 'direct.path':
+        this.directPath.fromBrowser(message.data, this.attachmentId, this.attached);
+        return;
     }
   }
 
@@ -494,7 +538,11 @@ class BrowserAttachment implements AttachmentSink {
       this.closed('link_lost');
       return;
     }
-    this.tell({ type: 'attached', window: this.claim.window });
+    this.tell({
+      type: 'attached',
+      window: this.claim.window,
+      ...this.directPath.invitation(),
+    });
   }
 
   private detach(): void {

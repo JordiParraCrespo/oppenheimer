@@ -1,4 +1,10 @@
-import type { ProtocolMessage, RunnerCapability } from '@oppenheimer/shared/protocol';
+import type {
+  AttachmentDirectAnswerMessage,
+  AttachmentDirectRefusedMessage,
+  AttachmentPathMessage,
+  ProtocolMessage,
+  RunnerCapability,
+} from '@oppenheimer/shared/protocol';
 
 export interface AttachmentSink {
   /** One PTY read, bare bytes. */
@@ -7,7 +13,19 @@ export interface AttachmentSink {
   closed(reason: AttachmentClosedReason, detail?: string): void;
   /** The runner refused the command that opened this attachment. */
   refused(code: string, detail?: string): void;
+  /**
+   * The runner's side of this attachment's direct path
+   * (`product/versions/mvp/22-direct-terminal-path.md`): its answer to the
+   * browser's offer, its refusal, or the output offset the path moved at.
+   */
+  signal(message: AttachmentSignal): void;
 }
+
+/** What the runner says about an attachment's direct path. */
+export type AttachmentSignal =
+  | AttachmentDirectAnswerMessage
+  | AttachmentDirectRefusedMessage
+  | AttachmentPathMessage;
 
 export type AttachmentClosedReason = 'link_lost' | 'runner_closed';
 

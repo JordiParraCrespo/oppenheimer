@@ -66,6 +66,7 @@ const INTEGER_TYPES = {
   'welcome.protocol': 'int',
   'welcome.epoch': 'uint64',
   'attachment.credit.bytes': 'int',
+  'attachment.path.offset': 'uint64',
   'session.attach.cols': 'int',
   'session.attach.rows': 'int',
   'session.resize.cols': 'int',

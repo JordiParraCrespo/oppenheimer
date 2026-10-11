@@ -5,6 +5,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -187,6 +188,69 @@ func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 	}
 	if has, err := s.Has(ctx, "opp-attach"); err != nil || !has {
 		t.Fatal("detaching must leave the session running — that is the whole product")
+	}
+}
+
+// Redraw is what repairs a screen whose bytes were lost on the way (the
+// direct path closing mid-stream): the client paints everything again, and
+// what was already on the screen comes through the PTY a second time — and
+// only because it was asked, once the screen had gone quiet.
+func TestRedrawPaintsTheWholeScreenAgain(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-redraw", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	attachment, err := s.Attach(ctx, "opp-redraw:0", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	t.Cleanup(func() { _ = attachment.Close() })
+
+	var mu sync.Mutex
+	var seen strings.Builder
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := attachment.Read(buf)
+			mu.Lock()
+			seen.Write(buf[:n])
+			mu.Unlock()
+			if err != nil {
+				return
+			}
+		}
+	}()
+	// How many times the marker has come through, once nothing new arrives.
+	settled := func() int {
+		last, quietSince := -1, time.Now()
+		for time.Since(quietSince) < 500*time.Millisecond {
+			mu.Lock()
+			now := seen.Len()
+			mu.Unlock()
+			if now != last {
+				last, quietSince = now, time.Now()
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		return strings.Count(seen.String(), "on-the-screen")
+	}
+
+	// The marker appears only in the command's output, never in what was typed.
+	if _, err := io.WriteString(attachment, "printf 'on-%s-screen\\n' the\n"); err != nil {
+		t.Fatal(err)
+	}
+	before := settled()
+	if before == 0 {
+		t.Fatal("the command's output never came through the PTY")
+	}
+	if err := attachment.Redraw(); err != nil {
+		t.Fatalf("redraw: %v", err)
+	}
+	if after := settled(); after <= before {
+		t.Fatalf("a redraw did not paint the screen again (marker seen %d times, then %d)", before, after)
 	}
 }
 

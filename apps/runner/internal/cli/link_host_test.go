@@ -21,6 +21,8 @@ import (
 type capturedLink struct {
 	mu   sync.Mutex
 	sent []any
+	// frames is every PTY byte sent as a binary frame, in order.
+	frames []byte
 }
 
 func (c *capturedLink) Send(message any) error {
@@ -30,7 +32,18 @@ func (c *capturedLink) Send(message any) error {
 	return nil
 }
 
-func (*capturedLink) SendFrame(context.Context, uint32, []byte) error { return nil }
+func (c *capturedLink) SendFrame(_ context.Context, _ uint32, bytes []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.frames = append(c.frames, bytes...)
+	return nil
+}
+
+func (c *capturedLink) framed() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return string(c.frames)
+}
 
 // waitFor polls until one sent frame matches, and returns it.
 func (c *capturedLink) waitFor(t *testing.T, what string, match func(any) bool) any {

@@ -109,12 +109,14 @@ export class SessionsService {
    * One window's terminal, live: the attach socket, its reconnect ladder, a
    * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is
    * opened until this is called, and `dispose()` closes it; the platform only
-   * renders what it delivers.
+   * renders what it delivers. `direct` says whether to take a direct path when
+   * the relay offers one (22); it is asked at each offer.
    */
-  openStream(id: string, window = 0): SessionStream {
+  openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
     return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
       issueTicket: () => this.issueAttachTicket(id, window),
+      direct: options.direct,
     });
   }
 }
