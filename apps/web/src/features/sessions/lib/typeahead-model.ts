@@ -35,8 +35,12 @@ export type TypeaheadKey =
 /** The grid as the model reads it: viewport rows and columns, 0-based. */
 export interface TypeaheadScreen {
   readonly cols: number;
-  /** Where the program's cursor is, or `null` when it cannot be told. */
-  cursor(): { row: number; col: number } | null;
+  /**
+   * Where the program's cursor is, or `null` when it cannot be told. `row`
+   * says where it is expected, when the model already knows the line, so a
+   * reader that has to search for it searches that row only.
+   */
+  cursor(row?: number): { row: number; col: number } | null;
   /** One cell: its glyph (a space when empty) and whether it is not one column wide. */
   cell(row: number, col: number): { char: string; wide: boolean };
 }
@@ -179,7 +183,7 @@ function regionAt(screen: TypeaheadScreen, row: number, col: number): Region | n
 }
 
 function readState(screen: TypeaheadScreen, region: Region): LineState | null {
-  const cursor = screen.cursor();
+  const cursor = screen.cursor(region.row);
   if (!cursor || cursor.row !== region.row) return null;
   if (cursor.col < region.start || cursor.col >= region.end) return null;
   const cells: string[] = [];

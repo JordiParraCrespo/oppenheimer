@@ -41,7 +41,8 @@ const DEFAULT_TIMEOUT_MS = 1000;
  * like every Ink program, hides it and paints its own as one inverse cell, so
  * while the cursor is hidden (DECTCEM, tracked off the parser) the cursor is
  * the one inverse cell on the lowest row that has any. Anything else (no such
- * cell, two of them) predicts nothing.
+ * cell, two of them) predicts nothing. The grid is searched once, when a line
+ * is first predicted on; after that only that line's row is read.
  */
 export function bindTypeahead(
   term: Terminal,
@@ -54,6 +55,23 @@ export function bindTypeahead(
   screenElement?.appendChild(overlay);
 
   let colors = options.readColors();
+
+  // xterm centres a glyph's own height in the taller cell (lineHeight 1.3);
+  // CSS line-height centres differently, two pixels higher at 13px. So the
+  // glyph box is measured here, when the overlay is bound, and again on
+  // `repaint` (a theme change, a terminal face finishing its load), never
+  // while drawing, and padded down the way xterm does.
+  const fontOf = () => `${term.options.fontSize ?? 13}px ${term.options.fontFamily ?? 'monospace'}`;
+  const measureGlyph = (): number => {
+    const probe = document.createElement('span');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:pre;line-height:normal;font:${fontOf()}`;
+    probe.textContent = 'W';
+    overlay.appendChild(probe);
+    const height = probe.getBoundingClientRect().height;
+    probe.remove();
+    return height;
+  };
+  let glyphHeight = measureGlyph();
   let cursorVisible = true;
   const trackCursor = (visible: boolean) => (params: (number | number[])[]) => {
     if (params.some((param) => param === 25)) cursorVisible = visible;
@@ -73,11 +91,15 @@ export function bindTypeahead(
     get cols() {
       return term.cols;
     },
-    cursor() {
+    cursor(row) {
       const buffer = term.buffer.active;
       // A reader scrolled back is reading, not typing at the prompt.
       if (buffer.viewportY !== buffer.baseY) return null;
       if (cursorVisible) return { row: buffer.cursorY, col: buffer.cursorX };
+      if (row !== undefined) {
+        const col = inverseCellOn(row);
+        return col === null || col === 'many' ? null : { row, col };
+      }
       return inverseCursor();
     },
     cell(row, col) {
@@ -86,18 +108,22 @@ export function bindTypeahead(
     },
   };
 
+  /** The column of the row's one inverse cell, `null` for none, `'many'` for more. */
+  const inverseCellOn = (row: number): number | null | 'many' => {
+    let found: number | null = null;
+    for (let col = 0; col < term.cols; col += 1) {
+      if (!cellAt(row, col)?.isInverse()) continue;
+      if (found !== null) return 'many';
+      found = col;
+    }
+    return found;
+  };
+
   const inverseCursor = (): { row: number; col: number } | null => {
     for (let row = term.rows - 1; row >= 0; row -= 1) {
-      let found: number | null = null;
-      let count = 0;
-      for (let col = 0; col < term.cols; col += 1) {
-        if (cellAt(row, col)?.isInverse()) {
-          count += 1;
-          found = col;
-        }
-      }
-      if (count === 1 && found !== null) return { row, col: found };
-      if (count > 1) return null;
+      const col = inverseCellOn(row);
+      if (col === 'many') return null;
+      if (col !== null) return { row, col };
     }
     return null;
   };
@@ -115,9 +141,8 @@ export function bindTypeahead(
     const cellWidth = (screenElement?.clientWidth ?? 0) / term.cols;
     const cellHeight = (screenElement?.clientHeight ?? 0) / term.rows;
     if (cellWidth === 0 || cellHeight === 0) return;
-    const font = `${term.options.fontSize ?? 13}px ${term.options.fontFamily ?? 'monospace'}`;
-    const glyph = Math.min(glyphHeight(font), cellHeight);
-    const padTop = Math.floor((cellHeight - glyph) / 2);
+    const font = fontOf();
+    const padTop = Math.max(0, Math.floor((cellHeight - glyphHeight) / 2));
     // The cursor looks like the one it stands in for: the terminal's caret, or
     // the inverse cell an Ink program paints.
     const cursorBackground = cursorVisible ? colors.cursor : colors.foreground;
@@ -145,22 +170,6 @@ export function bindTypeahead(
         `color:${cell.cursor ? cursorText : colors.foreground}`,
       ].join(';');
     });
-  };
-
-  // xterm centres a glyph's own height in the taller cell (lineHeight 1.3);
-  // CSS line-height centres differently, two pixels higher at 13px. So the
-  // glyph box is measured once per font and padded down the way xterm does.
-  let measured: { font: string; height: number } | null = null;
-  const glyphHeight = (font: string): number => {
-    if (measured?.font === font) return measured.height;
-    const probe = document.createElement('span');
-    probe.style.cssText = `position:absolute;visibility:hidden;white-space:pre;line-height:normal;font:${font}`;
-    probe.textContent = 'W';
-    overlay.appendChild(probe);
-    const height = probe.getBoundingClientRect().height;
-    probe.remove();
-    measured = { font, height };
-    return height;
   };
 
   const redraw = () => draw(options.shouldDraw() ? model.view() : null);
@@ -203,6 +212,7 @@ export function bindTypeahead(
     },
     repaint() {
       colors = options.readColors();
+      glyphHeight = measureGlyph();
       redraw();
     },
     dispose() {

@@ -65,9 +65,15 @@ export const FEATURE_FLAGS = {
    * console can predict (a character typed at the cursor, Backspace, Left,
    * Right) is drawn before the host echoes it, over the grid and never in it,
    * and dropped the moment the host disagrees. Drawn only once the measured
-   * keystroke round trip is above 30 ms. On by default because it is the
-   * terminal's behaviour, not an experiment; switching it off returns every
-   * pane to waiting for the host's echo at its next mount.
+   * keystroke round trip is above 30 ms.
+   *
+   * Default `true`, the exception to "new feature: `false`": it is the
+   * terminal's intended behaviour rather than an experiment, the console has
+   * no flags screen to switch it on from, and a wrong guess costs one frame of
+   * overlay. Switching it off returns panes to the host's echo at their next
+   * mount. The latency readout (`localStorage['oppenheimer.terminal.latency']`)
+   * is a measuring tool for whoever tunes this, not a second switch: it shows
+   * the round trip and changes nothing.
    */
   terminal_typeahead: {
     description: "Draw typed characters in the session terminal before the host's echo arrives.",
