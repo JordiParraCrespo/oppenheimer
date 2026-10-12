@@ -46,7 +46,9 @@ for arg in "$@"; do
   esac
 done
 
-NODE_MAJOR=22
+# The Node floor is package.json's `engines`, read rather than copied.
+NODE_MIN="$(sed -n 's/.*"node": *">=\([0-9.]*\)".*/\1/p' "$ROOT/package.json" | head -n1)"
+NODE_MIN="${NODE_MIN:-22}"
 GO_MINOR=24 # go 1.24 or newer
 GOLANGCI_MAJOR=2
 
@@ -86,11 +88,23 @@ minor() {
   echo "${rest%%.*}"
 }
 
+# version_ge <a> <b> — whether dotted version a is at least b, field by field.
+version_ge() {
+  local IFS=.
+  # shellcheck disable=SC2206
+  local a=($1) b=($2) i
+  for i in 0 1 2; do
+    [ "${a[i]:-0}" -gt "${b[i]:-0}" ] && return 0
+    [ "${a[i]:-0}" -lt "${b[i]:-0}" ] && return 1
+  done
+  return 0
+}
+
 node_ok() {
   have node || return 1
   local v
   v="$(version_of node --version)"
-  [ -n "$v" ] && [ "$(major "$v")" -ge "$NODE_MAJOR" ]
+  [ -n "$v" ] && version_ge "$v" "$NODE_MIN"
 }
 go_ok() {
   have go || return 1
@@ -105,6 +119,24 @@ golangci_ok() {
   [ -n "$v" ] && [ "$(major "$v")" -ge "$GOLANGCI_MAJOR" ]
 }
 pnpm_ok() { have pnpm && [ -n "$(version_of pnpm --version)" ]; }
+
+# Where Playwright keeps its browsers: its own variable, else its per-OS cache.
+browsers_dir() {
+  if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]; then
+    echo "$PLAYWRIGHT_BROWSERS_PATH"
+  elif [ "$PLATFORM" = macos ]; then
+    echo "$HOME/Library/Caches/ms-playwright"
+  else
+    echo "${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright"
+  fi
+}
+# Whether chromium and ffmpeg are both there, so --check passes a machine
+# that already has them.
+browsers_installed() {
+  local dir
+  dir="$(browsers_dir)"
+  compgen -G "$dir/chromium-*" >/dev/null && compgen -G "$dir/ffmpeg-*" >/dev/null
+}
 
 # Fetch a vendor installer whole, then run it: a download cut short fails
 # here instead of running half a script.
@@ -216,6 +248,8 @@ if [ "$BROWSERS" = 0 ]; then
   ok "skipped (--no-browsers)"
 elif [ -n "${PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD:-}" ] && [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]; then
   ok "browsers provided by the environment ($PLAYWRIGHT_BROWSERS_PATH)"
+elif browsers_installed; then
+  ok "Playwright chromium and ffmpeg in $(browsers_dir)"
 elif [ "$CHECK" = 1 ] || [ ! -d "$ROOT/node_modules" ]; then
   todo "pnpm --filter @oppenheimer/e2e exec playwright install chromium ffmpeg"
 else
