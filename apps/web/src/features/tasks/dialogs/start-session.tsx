@@ -17,7 +17,7 @@ import {
   useTasks,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
+import { combineQueries, notifySuccess, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,11 +39,19 @@ export function StartSessionDialog() {
   const { start } = board.useSearch();
   const navigate = board.useNavigate();
   const close = () => navigate({ search: (previous) => ({ ...previous, start: undefined }) });
-  const { data: task } = useTasks({ select: (rows) => rows.find((row) => row.id === start) });
-  const { data: project } = useProjects({
-    select: (rows) => rows.find((row) => row.id === task?.projectId),
+  const tasks = useTasks({ select: (rows) => rows.find((row) => row.id === start) ?? null });
+  const task = tasks.data ?? undefined;
+  const projects = useProjects({
+    select: (rows) => rows.find((row) => row.id === task?.projectId) ?? null,
   });
   const hosts = useHostPresence();
+  const picked = combineQueries(
+    combineQueries(tasks, projects, (task, project) =>
+      task && project ? { task, project } : null,
+    ),
+    hosts,
+    (found, hosts) => (found ? { ...found, hosts } : null),
+  );
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const launch = useStartTaskSession({
     onSuccess: (started) => {
@@ -66,58 +74,67 @@ export function StartSessionDialog() {
         </DialogHeader>
         <DialogBody>
           <div className="pb-6">
-            {!task || !project || hosts.isPending ? (
-              task === undefined ? (
-                <Skeleton className="h-40 w-full" />
-              ) : (
-                <FieldDescription>{t('tasks.dialog.gone')}</FieldDescription>
-              )
-            ) : (
-              <StartSessionForm
-                values={startDefaults(task, project, hosts.data ?? [])}
-                repositories={project.repositories.map((row) => ({
-                  value: row.id,
-                  label: shortName(row.fullName),
-                  description: `${row.fullName} · ${row.baseBranch}`,
-                  mono: true,
-                }))}
-                hosts={(hosts.data ?? []).map((host) => ({
-                  value: host.id,
-                  label: host.name,
-                  description: host.online ? host.summary : t('tasks.start.offlineShort'),
-                }))}
-                offline={(hostId) => {
-                  const host = hosts.data?.find((row) => row.id === hostId);
-                  if (!host || host.online) return null;
-                  return (
-                    <Callout tone="warning">
-                      {host.lastSeenAt ? (
-                        <RelativeTime date={host.lastSeenAt}>
-                          {(when) =>
-                            t('tasks.start.offlineSince', { host: host.name, when: when ?? '' })
-                          }
-                        </RelativeTime>
-                      ) : (
-                        t('tasks.start.offline', { host: host.name })
-                      )}
-                    </Callout>
-                  );
-                }}
-                pending={launch.isPending}
-                error={launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null}
-                onCancel={close}
-                onSubmit={(values) => {
-                  const session = toStartSession(values, project);
-                  if (session)
-                    launch.mutate({
-                      id: task.id,
-                      session,
-                      seenStatus: task.status,
-                      idempotencyKey,
-                    });
-                }}
-              />
-            )}
+            <QueryState
+              query={picked}
+              stale="keep"
+              pending={<Skeleton className="h-40 w-full" />}
+              errorFallback={t('tasks.dialog.loadFailed')}
+              empty={{
+                when: (found) => found === null,
+                show: <FieldDescription>{t('tasks.dialog.gone')}</FieldDescription>,
+              }}
+            >
+              {(found) =>
+                found ? (
+                  <StartSessionForm
+                    values={startDefaults(found.task, found.project, found.hosts)}
+                    repositories={found.project.repositories.map((row) => ({
+                      value: row.id,
+                      label: shortName(row.fullName),
+                      description: `${row.fullName} · ${row.baseBranch}`,
+                      mono: true,
+                    }))}
+                    hosts={found.hosts.map((host) => ({
+                      value: host.id,
+                      label: host.name,
+                      description: host.online ? host.summary : t('tasks.start.offlineShort'),
+                    }))}
+                    offline={(hostId) => {
+                      const host = found.hosts.find((row) => row.id === hostId);
+                      if (!host || host.online) return null;
+                      return (
+                        <Callout tone="warning">
+                          {host.lastSeenAt ? (
+                            <RelativeTime date={host.lastSeenAt}>
+                              {(when) =>
+                                t('tasks.start.offlineSince', { host: host.name, when: when ?? '' })
+                              }
+                            </RelativeTime>
+                          ) : (
+                            t('tasks.start.offline', { host: host.name })
+                          )}
+                        </Callout>
+                      );
+                    }}
+                    pending={launch.isPending}
+                    error={
+                      launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null
+                    }
+                    onCancel={close}
+                    onSubmit={(values) => {
+                      const session = toStartSession(values, found.project);
+                      if (session)
+                        launch.mutate({
+                          id: found.task.id,
+                          session,
+                          seenStatus: found.task.status,
+                          idempotencyKey,
+                        });
+                    }}
+                  />
+                ) : null
+              }
+            </QueryState>
           </div>
         </DialogBody>
       </DialogContent>

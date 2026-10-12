@@ -933,7 +933,8 @@
       "failed": "Fallidas",
       "runs_one": "{{count}} ejecución",
       "runs_other": "{{count}} ejecuciones",
-      "runs_many": "{{count}} ejecuciones"
+      "runs_many": "{{count}} ejecuciones",
+      "loadFailed": "No se ha podido cargar el historial de ejecuciones."
     },
     "runs": {
       "all": "Todas",

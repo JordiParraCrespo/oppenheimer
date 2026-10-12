@@ -37,7 +37,7 @@ export function ShareSessionDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-130">
+      <DialogContent size="form" closeLabel={t('common.close')}>
         <DialogHeader>
           <DialogTitle>{t('sessions.share.title', { name: session.name })}</DialogTitle>
           <DialogDescription>{t('sessions.share.description')}</DialogDescription>

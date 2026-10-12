@@ -170,7 +170,8 @@
     "succeeded": "Succeeded",
     "failed": "Failed",
     "runs_one": "{{count}} run",
-    "runs_other": "{{count}} runs"
+    "runs_other": "{{count}} runs",
+    "loadFailed": "Could not load the run history."
   },
   "runs": {
     "all": "All",
