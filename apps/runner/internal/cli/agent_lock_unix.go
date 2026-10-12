@@ -86,3 +86,21 @@ func (g agentGate) Hold(ctx context.Context, command string) func() {
 	}
 	return release
 }
+
+// lockedInstaller runs an install under the same exclusive lock, so an
+// install never races an update round or a second install of the same CLI.
+type lockedInstaller struct {
+	paths Paths
+	next  hostapp.Installer
+}
+
+var _ hostapp.Installer = lockedInstaller{}
+
+func (i lockedInstaller) Install(ctx context.Context, tool, script string) error {
+	release, err := lockAgent(ctx, i.paths.AgentLock(tool), syscall.LOCK_EX)
+	if err != nil {
+		return err
+	}
+	defer release()
+	return i.next.Install(ctx, tool, script)
+}

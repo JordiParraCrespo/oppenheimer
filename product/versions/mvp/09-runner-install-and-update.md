@@ -95,7 +95,8 @@ failure every `curl | sh` has unless it is written this way.
      CI) it installs nothing. Either way, a tool that is still missing
      stops the install **before the token is spent**, so the same command
      works once the tool is there. `claude` missing is a hint, not a
-     failure (02 §10).
+     failure (02 §10); since 2026-10-12 the hint is a command the runner
+     runs itself, `runner agents install claude`, with no sudo.
 5. **Fetch the signed release manifest** for the host's channel and, where
    OpenSSL 3 is available, **check its Ed25519 signature** against the
    release keys `scripts/runner/release.sh` stamps into the copy of the

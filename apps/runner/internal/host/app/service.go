@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
@@ -18,19 +19,25 @@ type Options struct {
 	Version string
 	// Updater runs the agents' own updaters. Nil disables UpdateAgents.
 	Updater Updater
+	// Installer runs the catalogs' install scripts. Nil disables Install.
+	Installer Installer
 }
 
 // Service collects the host inventory.
 type Service struct {
 	prober    Prober
 	updater   Updater
+	installer Installer
 	workspace string
 	version   string
 }
 
 // New builds the service.
 func New(opts Options) *Service {
-	return &Service{prober: opts.Prober, updater: opts.Updater, workspace: opts.WorkspaceRoot, version: opts.Version}
+	return &Service{
+		prober: opts.Prober, updater: opts.Updater, installer: opts.Installer,
+		workspace: opts.WorkspaceRoot, version: opts.Version,
+	}
 }
 
 // Collect inspects the machine. It answers with whatever it could learn even
@@ -121,12 +128,17 @@ func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
 	}
 	var round []ran
 	for _, name := range domain.ProbedTools {
-		args, ok := domain.AgentUpdateArgs(name)
-		if !ok {
+		if _, ok := domain.AgentUpdateArgs(name); !ok {
 			continue
 		}
 		before := s.prober.Tool(ctx, name)
 		if !before.Found() {
+			continue
+		}
+		// An updater that needs the install method runs only when the path
+		// names one; otherwise it would stop to ask, so it is skipped.
+		args, ok := domain.ResolveUpdateArgs(name, before.Resolved)
+		if !ok {
 			continue
 		}
 		err := s.updater.Update(ctx, name, before.Path, args)
@@ -160,6 +172,60 @@ func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
 	return results
 }
 
+// Install puts one catalog tool on this host, user-level and unattended: an
+// agent CLI (`runner agents install claude`) or a host tool (`runner tools
+// install gh`). It is the person's choice, so it runs only when asked, and it
+// is idempotent: a tool already on PATH is reported, not reinstalled.
+//
+// git and tmux are refused with the package manager's exact command, because
+// installing them needs root and the runner never takes it.
+func (s *Service) Install(ctx context.Context, name string) (domain.InstallResult, error) {
+	platform, _, err := s.prober.Platform(ctx)
+	if err != nil {
+		return domain.InstallResult{}, domain.ErrProbe.WithDetail("read the platform: %v", err).WithCause(err)
+	}
+	script, kind, err := domain.InstallScript(name, platform)
+	switch {
+	case errors.Is(err, domain.ErrInstallByPackageManager):
+		command := domain.PackageInstallCommand(platform, []string{name})
+		if command == "" {
+			command = "your package manager"
+		}
+		return domain.InstallResult{}, domain.ErrInstallUnsupported.WithDetail(
+			"%s comes from the package manager and needs root; run: %s", name, command).WithCause(err)
+	case errors.Is(err, domain.ErrInstallPlatform):
+		return domain.InstallResult{}, domain.ErrInstallUnsupported.WithDetail(
+			"there is no installer for %s on %s", name, platform).WithCause(err)
+	case err != nil:
+		return domain.InstallResult{}, domain.ErrInstallUnsupported.WithDetail(
+			"%q is not one of %s", name, strings.Join(append(domain.Installable(domain.InstallAgent),
+				domain.Installable(domain.InstallTool)...), ", ")).WithCause(err)
+	}
+	result := domain.InstallResult{Tool: name, Kind: kind}
+
+	s.prober.Invalidate()
+	if before := s.prober.Tool(ctx, name); before.Found() {
+		result.Outcome, result.Path, result.Version = domain.InstallPresent, before.Path, before.Version
+		return result, nil
+	}
+	if s.installer == nil {
+		return result, domain.ErrInstallFailed.WithDetail("this runner was built without an installer")
+	}
+	if err := s.installer.Install(ctx, name, script); err != nil {
+		return result, domain.ErrInstallFailed.WithDetail("%s: %v", name, err).WithCause(err)
+	}
+	s.prober.Invalidate()
+	after := s.prober.Tool(ctx, name)
+	if !after.Found() {
+		// The script succeeded and left nothing the runner can find: the
+		// vendor moved its destination, or the PATH lacks the catalog bin.
+		return result, domain.ErrInstallFailed.WithDetail(
+			"the installer for %s finished, but %s is still not on PATH", name, name)
+	}
+	result.Outcome, result.Path, result.Version = domain.InstallInstalled, after.Path, after.Version
+	return result, nil
+}
+
 func required(name string) bool {
 	for _, r := range domain.RequiredTools {
 		if r == name {
@@ -171,25 +237,8 @@ func required(name string) bool {
 
 // installHint names the command that fixes a missing tool on this platform.
 func installHint(facts domain.Facts) string {
-	missing := facts.MissingRequired()
-	switch facts.Platform {
-	case domain.PlatformMacOS:
-		return "brew install " + join(missing)
-	case domain.PlatformDebian, domain.PlatformUbuntu:
-		return "sudo apt-get install -y " + join(missing)
-	case domain.PlatformLinuxOther, domain.PlatformUnsupported:
-		return "your package manager"
+	if command := domain.PackageInstallCommand(facts.Platform, facts.MissingRequired()); command != "" {
+		return command
 	}
 	return "your package manager"
-}
-
-func join(names []string) string {
-	out := ""
-	for i, n := range names {
-		if i > 0 {
-			out += " "
-		}
-		out += n
-	}
-	return out
 }
