@@ -314,3 +314,30 @@ the default branch. In this mode:
 5. Add a comment only when something changed: new findings, resolved ones, a
    check that changed state, or a fix pull request opened or updated. List
    them by fingerprint and link the pull request. No comment on a quiet day.
+6. Answer the open fix pull request, on every run, after steps 3 to 5. When
+   a `frontend-audit/fix-*` pull request is open (the one this run pushed to,
+   or one an earlier run opened), read its review threads, its reviews and
+   its conversation comments on the current head. Review bots post minutes
+   after a push, so a run usually answers the comments the previous run's
+   push drew. For each thread whose last comment is not the routine's:
+   - A fix that Step 3's constraints allow (a file the pull request already
+     changes, a local change, a failure path you can trace from a real
+     caller): make it on the pull request's branch, run the Step 3 checks and
+     `pnpm ci:local` again, push, then reply naming the commit and resolve
+     the thread.
+   - Anything else: reply once with why it stays (deliberate, a guard the
+     types need, outside Step 3's scope) and resolve the thread. When the
+     reason is a change a person has to make, add it to the issue: a
+     finding, or a line under **Rules to revisit**. A security finding's
+     thread stays open for a person to decide.
+   - A question: answer it from the diff.
+
+   Skip a comment that echoes the routine's own reply. Bring the default
+   branch in when the pull request has a merge conflict. When `ci:local`
+   fails in code the pull request does not touch, re-run it once; a second
+   failure is real, and the reply says what is failing. Then update the pull
+   request body: a "Review round <n>" section with one line per thread and
+   what happened to it, and the new `ci:local` report. A person's
+   changes-requested review is answered the same way and left for that
+   person to dismiss. The routine never approves or merges its own pull
+   request.
