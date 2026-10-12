@@ -11,14 +11,7 @@ import { terminalWebglAllowed } from './terminal-webgl-policy';
  * that atlas while output streams (`clearTextureAtlas`) races xterm's page
  * merge (xterm.js #4480) and draws letters as blocks; Orca allows the wipe
  * only on a real wake for that reason
- * (`components/terminal-pane/terminal-visibility-resume.ts`).
- *
- * The atlas has a second way to draw blocks, which the patch on
- * `@xterm/addon-webgl` (`patches/`) removes: the addon built mipmaps on
- * each page upload and sampled them, and glyphs added to the page later
- * (bold runs, a cell redrawn under the hover background) never reached
- * those levels, so Mesa drivers drew them as blocks. The patch samples the
- * atlas with `LINEAR` and builds no mipmaps, as Orca's does (#1743). So:
+ * (`components/terminal-pane/terminal-visibility-resume.ts`). So:
  *
  * - The DOM renderer draws until the terminal's faces have loaded, or
  *   `FONT_WAIT_MS` has passed; WebGL attaches after, if the policy allows it.
@@ -26,6 +19,10 @@ import { terminalWebglAllowed } from './terminal-webgl-policy';
  *   rasterizes afresh. The atlas is never cleared in place.
  * - A constructor that throws, or a context the GPU takes back, leaves the
  *   terminal on the DOM renderer for the rest of its life.
+ *
+ * Atlas mipmaps are a second cause of block letters, removed by the patch
+ * on `@xterm/addon-webgl` (`patches/`, guarded by
+ * `terminal-webgl-atlas-patch.spec.ts`).
  */
 
 /** What the renderer needs from the page, swapped out by the spec. */
