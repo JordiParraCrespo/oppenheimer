@@ -13,10 +13,8 @@ import (
 // two was typed, so `runner tools install claude` is told where claude lives.
 // An agent may be named by its catalog id (`claude-code`) or its executable.
 func (a *App) InstallTool(ctx context.Context, out io.Writer, kind hostdomain.InstallKind, name string) error {
-	if command, ok := agentCommands[name]; ok {
-		name = command
-	}
-	if _, got, err := hostdomain.InstallScript(name, hostdomain.PlatformUbuntu); err == nil && got != kind {
+	name = hostdomain.InstallName(name)
+	if got, ok := hostdomain.InstallKindOf(name); ok && got != kind {
 		return hostdomain.ErrInstallUnsupported.WithDetail("%s is an %s; run: runner %ss install %s", name, got, got, name)
 	}
 	p := newPrinter(out)
@@ -32,12 +30,6 @@ func (a *App) InstallTool(ctx context.Context, out io.Writer, kind hostdomain.In
 		p.printf("%s installed: %s (%s)\n", result.Tool, result.Version, result.Path)
 	}
 	return p.err
-}
-
-// agentCommands maps the catalog's agent ids onto the executables the
-// install table is keyed by, for the names the console and the docs use.
-var agentCommands = map[string]string{
-	"claude-code": hostdomain.ToolClaude,
 }
 
 // Tools prints every probed tool, its version, and how a missing one gets
@@ -65,9 +57,10 @@ func (a *App) Tools(ctx context.Context, out io.Writer) error {
 
 // installHintFor is the one line that gets a missing tool onto this host.
 func installHintFor(platform hostdomain.Platform, name string) string {
-	_, kind, err := hostdomain.InstallScript(name, platform)
-	if err == nil {
-		return "runner " + string(kind) + "s install " + name
+	if kind, ok := hostdomain.InstallKindOf(name); ok {
+		if _, err := hostdomain.InstallScript(name, platform); err == nil {
+			return "runner " + string(kind) + "s install " + name
+		}
 	}
 	if command := hostdomain.PackageInstallCommand(platform, []string{name}); command != "" {
 		return command

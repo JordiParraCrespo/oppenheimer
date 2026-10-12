@@ -63,12 +63,19 @@ type lockedUpdater struct {
 var _ hostapp.Updater = lockedUpdater{}
 
 func (u lockedUpdater) Update(ctx context.Context, tool, path string, args []string) error {
-	release, err := lockAgent(ctx, u.paths.AgentLock(tool), syscall.LOCK_EX)
+	return withAgentLock(ctx, u.paths, tool, func() error { return u.next.Update(ctx, tool, path, args) })
+}
+
+// withAgentLock runs fn holding tool's exclusive lock: whatever changes an
+// agent CLI's files, an update or an install, runs alone and never under a
+// session starting it.
+func withAgentLock(ctx context.Context, paths Paths, tool string, fn func() error) error {
+	release, err := lockAgent(ctx, paths.AgentLock(tool), syscall.LOCK_EX)
 	if err != nil {
 		return err
 	}
 	defer release()
-	return u.next.Update(ctx, tool, path, args)
+	return fn()
 }
 
 // agentGate is the sessions' LaunchGate on the same locks.
@@ -97,10 +104,5 @@ type lockedInstaller struct {
 var _ hostapp.Installer = lockedInstaller{}
 
 func (i lockedInstaller) Install(ctx context.Context, tool, script string) error {
-	release, err := lockAgent(ctx, i.paths.AgentLock(tool), syscall.LOCK_EX)
-	if err != nil {
-		return err
-	}
-	defer release()
-	return i.next.Install(ctx, tool, script)
+	return withAgentLock(ctx, i.paths, tool, func() error { return i.next.Install(ctx, tool, script) })
 }

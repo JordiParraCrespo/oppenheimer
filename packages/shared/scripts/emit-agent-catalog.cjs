@@ -265,6 +265,19 @@ function renderHostTools() {
   }
   lines.push('}', '');
 
+  // The catalog ids an install may be asked for by, where they are not the
+  // executable itself (`claude-code` is `claude`), so the console's names and
+  // the CLI's resolve to the one key the table above uses.
+  lines.push(
+    '// installAliases maps an agent catalog id to the executable the install',
+    '// table is keyed by, where the two differ.',
+    'var installAliases = map[string]string{',
+  );
+  const aliases = CODING_AGENT_IDS.filter(
+    (id) => CODING_AGENTS[id].install && CODING_AGENTS[id].command !== id,
+  ).map((id) => [JSON.stringify(id), JSON.stringify(CODING_AGENTS[id].command)]);
+  lines.push(...aligned(aliases, '\t'), '}', '');
+
   lines.push(
     "// updateMethods is each agent's `updateMethods` entry, keyed by its",
     '// executable: what `<method>` in its updater is, by where the executable',

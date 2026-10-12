@@ -248,51 +248,48 @@ choose_workspaces() {
 KNOWN_AGENTS="claude codex opencode grok gh"
 DEFAULT_AGENTS="claude gh"
 
-# choose_agents — which CLIs the runner installs after pairing. Asked on a
-# terminal when --agents is not given, defaulting to the defaults this machine
-# lacks; Enter accepts. Without a terminal only --agents installs anything.
-# Each install is the vendor's own installer into the user's home, so unlike
-# git and tmux it needs no sudo and is safe to offer by default.
-choose_agents() {
-	if [ -z "$AGENTS" ]; then
-		if ! has_tty; then
-			AGENTS="none"
-		else
-			missing=""
-			for a in $KNOWN_AGENTS; do
-				command -v "$a" >/dev/null 2>&1 || missing="$missing $a"
-			done
-			offer=""
-			for a in $DEFAULT_AGENTS; do
-				case " $missing " in *" $a "*) offer="$offer $a" ;; esac
-			done
-			if [ -z "$missing" ]; then
-				AGENTS="none"
-			else
-				say "    not on this machine yet:$missing"
-				AGENTS="$(ask 'Which should the runner install for you (as you, no sudo)? Names separated by spaces, or none' "${offer# }")"
-				[ -n "$AGENTS" ] || AGENTS="none"
-			fi
-		fi
-	fi
-	AGENTS="$(printf '%s' "$AGENTS" | tr ',' ' ')"
-	chosen=""
-	for a in $AGENTS; do
+# missing_of <names…> — the ones not on PATH, space-separated.
+missing_of() {
+	for a in "$@"; do
+		command -v "$a" >/dev/null 2>&1 || printf '%s ' "$a"
+	done
+}
+
+# known_agents <answer> — the answer as the names the runner installs: commas
+# read as spaces, `claude-code` as `claude`, `none` as nothing. A name it does
+# not know stops the install, before anything is downloaded.
+known_agents() {
+	for a in $(printf '%s' "$1" | tr ',' ' '); do
 		case "$a" in
 		none) ;;
-		claude-code) chosen="$chosen claude" ;;
+		claude-code) printf 'claude ' ;;
 		*)
 			case " $KNOWN_AGENTS " in
-			*" $a "*) chosen="$chosen $a" ;;
+			*" $a "*) printf '%s ' "$a" ;;
 			*) die "--agents: $a is not one of: $KNOWN_AGENTS (or none)" ;;
 			esac
 			;;
 		esac
 	done
-	AGENTS="${chosen# }"
-	if [ -n "$AGENTS" ]; then
-		say "    after pairing, the runner will install: $AGENTS"
+}
+
+# choose_agents — which CLIs the runner installs after pairing. --agents
+# decides when given. Otherwise a terminal is asked, with the defaults this
+# machine lacks as the answer Enter gives; with no terminal, none. Each install
+# is the vendor's own installer into the user's home, so unlike git and tmux
+# it needs no sudo and is safe to offer by default.
+choose_agents() {
+	if [ -z "$AGENTS" ] && has_tty; then
+		missing="$(missing_of $KNOWN_AGENTS)"
+		if [ -n "$missing" ]; then
+			say "    not on this machine yet: ${missing% }"
+			offer="$(missing_of $DEFAULT_AGENTS)"
+			AGENTS="$(ask 'Which should the runner install for you (as you, no sudo)? Names separated by spaces, or none' "${offer% }")"
+		fi
 	fi
+	AGENTS="$(known_agents "${AGENTS:-none}")"
+	AGENTS="${AGENTS% }"
+	[ -z "$AGENTS" ] || say "    after pairing, the runner will install: $AGENTS"
 }
 
 # install_agents — step 9. A failed install does not undo the pairing: the

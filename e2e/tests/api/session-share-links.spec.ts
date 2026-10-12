@@ -34,6 +34,10 @@ let installationId: string;
 test.describe.configure({ mode: 'default' });
 
 test.beforeAll(async () => {
+  // Minting and redeeming each wait out the pairing throttle when the suite
+  // has spent it (`withoutTripping`), up to 65 s apiece: past the default
+  // hook timeout, as for automations.spec.ts's shared host.
+  test.setTimeout(180_000);
   owner = await signedUpContext('sharer');
   hostId = await pairHost(owner.api, 'Shared box');
   installationId = await connectInstallation(owner.api);

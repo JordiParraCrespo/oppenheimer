@@ -20,22 +20,32 @@ export const HOST_TOOL_IDS = ['git', 'tmux', 'gh'] as const;
 
 export type HostToolId = (typeof HOST_TOOL_IDS)[number];
 
-export interface HostToolDefinition {
+interface HostToolBase {
   readonly id: HostToolId;
   readonly label: string;
   /** The executable probed on PATH. */
   readonly command: string;
   /** Whether a host without it can open sessions at all. */
   readonly required: boolean;
-  /**
-   * The package that provides it, per package manager, for a tool the
-   * person installs: the runner reports `brew install <brew>` or
-   * `sudo apt-get install -y <apt>` and runs neither.
-   */
-  readonly packages?: Readonly<{ brew: string; apt: string }>;
-  /** How the runner installs it itself, as an agent CLI's `install` is. */
-  readonly install?: HostInstall;
 }
+
+/**
+ * A tool the person installs with the package manager: the runner reports
+ * `brew install <brew>` or `sudo apt-get install -y <apt>` and runs neither.
+ */
+interface PackagedHostTool extends HostToolBase {
+  readonly packages: Readonly<{ brew: string; apt: string }>;
+  readonly install?: never;
+}
+
+/** A tool the runner installs itself, as an agent CLI's `install` is. */
+interface InstalledHostTool extends HostToolBase {
+  readonly install: HostInstall;
+  readonly packages?: never;
+}
+
+/** Exactly one of the two ways onto a host, so nothing chooses at runtime. */
+export type HostToolDefinition = PackagedHostTool | InstalledHostTool;
 
 /**
  * GitHub's CLI from its own release, into `~/.local/bin`: the apt

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
-	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
@@ -184,7 +183,9 @@ func (s *Service) Install(ctx context.Context, name string) (domain.InstallResul
 	if err != nil {
 		return domain.InstallResult{}, domain.ErrProbe.WithDetail("read the platform: %v", err).WithCause(err)
 	}
-	script, kind, err := domain.InstallScript(name, platform)
+	name = domain.InstallName(name)
+	kind, _ := domain.InstallKindOf(name)
+	script, err := domain.InstallScript(name, platform)
 	switch {
 	case errors.Is(err, domain.ErrInstallByPackageManager):
 		command := domain.PackageInstallCommand(platform, []string{name})
@@ -198,8 +199,7 @@ func (s *Service) Install(ctx context.Context, name string) (domain.InstallResul
 			"there is no installer for %s on %s", name, platform).WithCause(err)
 	case err != nil:
 		return domain.InstallResult{}, domain.ErrInstallUnsupported.WithDetail(
-			"%q is not one of %s", name, strings.Join(append(domain.Installable(domain.InstallAgent),
-				domain.Installable(domain.InstallTool)...), ", ")).WithCause(err)
+			"%q is not a tool the runner installs; it installs: %s", name, domain.InstallUsage()).WithCause(err)
 	}
 	result := domain.InstallResult{Tool: name, Kind: kind}
 

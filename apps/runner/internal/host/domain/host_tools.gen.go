@@ -40,6 +40,12 @@ var toolInstalls = map[string]toolInstall{
 	},
 }
 
+// installAliases maps an agent catalog id to the executable the install
+// table is keyed by, where the two differ.
+var installAliases = map[string]string{
+	"claude-code": "claude",
+}
+
 // updateMethods is each agent's `updateMethods` entry, keyed by its
 // executable: what `<method>` in its updater is, by where the executable
 // really lives. The first entry whose fragment the resolved path contains wins.

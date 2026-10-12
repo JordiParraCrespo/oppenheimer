@@ -42,8 +42,8 @@ func TestOpenCodeUpdatesOnlyWithAKnownMethod(t *testing.T) {
 func TestInstallScriptsByKindAndPlatform(t *testing.T) {
 	for _, agent := range []string{domain.ToolClaude, domain.ToolCodex, domain.ToolOpenCode, domain.ToolGrok} {
 		for _, platform := range []domain.Platform{domain.PlatformMacOS, domain.PlatformUbuntu, domain.PlatformDebian} {
-			script, kind, err := domain.InstallScript(agent, platform)
-			if err != nil || kind != domain.InstallAgent || script == "" {
+			script, err := domain.InstallScript(agent, platform)
+			if kind, ok := domain.InstallKindOf(agent); err != nil || !ok || kind != domain.InstallAgent || script == "" {
 				t.Errorf("%s on %s: kind %q err %v", agent, platform, kind, err)
 			}
 			if strings.Contains(script, "sudo") {
@@ -51,18 +51,23 @@ func TestInstallScriptsByKindAndPlatform(t *testing.T) {
 			}
 		}
 	}
-	if _, kind, err := domain.InstallScript(domain.ToolGH, domain.PlatformUbuntu); err != nil || kind != domain.InstallTool {
-		t.Errorf("gh: kind %q err %v", kind, err)
+	if kind, ok := domain.InstallKindOf(domain.ToolGH); !ok || kind != domain.InstallTool {
+		t.Errorf("gh: kind %q", kind)
+	}
+	for _, tool := range []string{domain.ToolGit, domain.ToolTmux, "rm"} {
+		if _, ok := domain.InstallKindOf(tool); ok {
+			t.Errorf("%s has an install kind, but the runner does not install it", tool)
+		}
 	}
 	for _, tool := range []string{domain.ToolGit, domain.ToolTmux} {
-		if _, _, err := domain.InstallScript(tool, domain.PlatformUbuntu); !errors.Is(err, domain.ErrInstallByPackageManager) {
+		if _, err := domain.InstallScript(tool, domain.PlatformUbuntu); !errors.Is(err, domain.ErrInstallByPackageManager) {
 			t.Errorf("%s: %v, want ErrInstallByPackageManager", tool, err)
 		}
 	}
-	if _, _, err := domain.InstallScript("rm", domain.PlatformUbuntu); !errors.Is(err, domain.ErrInstallUnknown) {
+	if _, err := domain.InstallScript("rm", domain.PlatformUbuntu); !errors.Is(err, domain.ErrInstallUnknown) {
 		t.Errorf("rm: %v, want ErrInstallUnknown", err)
 	}
-	if _, _, err := domain.InstallScript(domain.ToolClaude, domain.PlatformLinuxOther); !errors.Is(err, domain.ErrInstallPlatform) {
+	if _, err := domain.InstallScript(domain.ToolClaude, domain.PlatformLinuxOther); !errors.Is(err, domain.ErrInstallPlatform) {
 		t.Errorf("claude on other linux: %v, want ErrInstallPlatform", err)
 	}
 }
@@ -89,5 +94,18 @@ func TestPackageInstallCommand(t *testing.T) {
 	}
 	if got := domain.PackageInstallCommand(domain.PlatformLinuxOther, tools); got != "" {
 		t.Errorf("other linux: %q", got)
+	}
+}
+
+// The console and the docs name Claude Code by its catalog id; the install
+// table is keyed by the executable. Both reach the same entry.
+func TestInstallNameResolvesCatalogIDs(t *testing.T) {
+	if got := domain.InstallName("claude-code"); got != domain.ToolClaude {
+		t.Errorf("claude-code resolves to %q", got)
+	}
+	for _, name := range []string{domain.ToolClaude, domain.ToolCodex, domain.ToolGH, "unknown"} {
+		if got := domain.InstallName(name); got != name {
+			t.Errorf("%s resolves to %q", name, got)
+		}
 	}
 }

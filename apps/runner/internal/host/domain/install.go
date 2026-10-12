@@ -55,17 +55,34 @@ var (
 	ErrInstallPlatform = errors.New("no installer for this platform")
 )
 
-// InstallScript is the script that installs tool on platform, and what kind
-// of tool it is. A tool the package manager owns answers
-// ErrInstallByPackageManager, so the caller can show PackageInstallCommand
-// instead of a refusal with nothing to do.
-func InstallScript(tool string, platform Platform) (string, InstallKind, error) {
+// InstallName is the executable an install is keyed by, for a name the
+// person or the console may use: a catalog id (`claude-code`) or the
+// executable itself (`claude`). An unknown name comes back as it was.
+func InstallName(name string) string {
+	if executable, ok := installAliases[name]; ok {
+		return executable
+	}
+	return name
+}
+
+// InstallKindOf is what kind of tool the runner installs under name — an
+// agent CLI or a host tool — whatever the platform. ok is false for a name
+// the runner does not install, git and tmux included.
+func InstallKindOf(name string) (InstallKind, bool) {
+	entry, ok := toolInstalls[name]
+	return InstallKind(entry.kind), ok
+}
+
+// InstallScript is the script that installs tool on platform. A tool the
+// package manager owns answers ErrInstallByPackageManager, so the caller can
+// show PackageInstallCommand instead of a refusal with nothing to do.
+func InstallScript(tool string, platform Platform) (string, error) {
 	entry, ok := toolInstalls[tool]
 	if !ok {
 		if _, packaged := packageInstalls[tool]; packaged {
-			return "", "", ErrInstallByPackageManager
+			return "", ErrInstallByPackageManager
 		}
-		return "", "", ErrInstallUnknown
+		return "", ErrInstallUnknown
 	}
 	var script string
 	switch platform {
@@ -76,13 +93,13 @@ func InstallScript(tool string, platform Platform) (string, InstallKind, error) 
 	case PlatformLinuxOther, PlatformUnsupported:
 	}
 	if script == "" {
-		return "", InstallKind(entry.kind), ErrInstallPlatform
+		return "", ErrInstallPlatform
 	}
-	return script, InstallKind(entry.kind), nil
+	return script, nil
 }
 
-// Installable lists the names InstallScript knows, agents and host tools of
-// the given kind, in a stable order for a usage line.
+// Installable lists the names InstallScript knows of the given kind, in a
+// stable order for a usage line.
 func Installable(kind InstallKind) []string {
 	var names []string
 	for name, entry := range toolInstalls {
@@ -94,9 +111,20 @@ func Installable(kind InstallKind) []string {
 	return names
 }
 
+// InstallUsage is the one line that says what can be installed and with
+// which command, for a refusal or a usage message.
+func InstallUsage() string {
+	return "runner agents install " + strings.Join(Installable(InstallAgent), "|") +
+		", or runner tools install " + strings.Join(Installable(InstallTool), "|")
+}
+
 // InstallBins is every directory, relative to the home, a catalog installer
 // leaves an executable in. The runner puts them on its own PATH so a tool it
 // installed is found without a shell profile the service never reads.
+//
+// Every entry is home-relative: the catalog writes them `~/…` and the
+// generator refuses anything else, so a caller joins them to the home and
+// never has to tell a relative path from an absolute one.
 func InstallBins() []string {
 	var bins []string
 	for _, entry := range toolInstalls {
