@@ -1,4 +1,5 @@
 import type { IBufferCell, IDisposable, Terminal } from '@xterm/xterm';
+import { bindHostCursor } from './host-cursor';
 import {
   classifyTypeaheadKey,
   TypeaheadModel,
@@ -25,13 +26,6 @@ export interface TypeaheadOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 1000;
-
-/**
- * A private mode number no terminal assigns, sent beside 25 (the cursor) on
- * the hide and show this file writes itself: xterm ignores it and applies 25,
- * and the handlers here know the sequence is ours, not the program's.
- */
-const OWN_CURSOR_MODE = 7725;
 
 /**
  * Predictive local echo on `term` (the model is `typeahead-model.ts`): every
@@ -79,37 +73,11 @@ export function bindTypeahead(
     return height;
   };
   let glyphHeight = measureGlyph();
-  // Whether the program shows the terminal's cursor. While a prediction is
-  // drawn the terminal's own cursor is hidden here (`hidCursor`), whatever the
-  // program asked: it marks where the host has got to, a few keys behind, and
-  // drawn under the predicted one it read as a second cursor trailing the
-  // first, which is the lag the prediction is there to hide. Our own hide and
-  // show carry `OWN_CURSOR_MODE`, so they are told apart from the program's.
-  let cursorVisible = true;
-  let hidCursor = false;
-  const onShow = term.parser.registerCsiHandler({ prefix: '?', final: 'h' }, (params) => {
-    if (!params.includes(25) || params.includes(OWN_CURSOR_MODE)) return false;
-    cursorVisible = true;
-    // tmux shows the cursor again at the end of every redraw; while hidden
-    // here, that show is swallowed rather than painted for a frame. Only a
-    // sequence with nothing else in it but blink is: anything more is let
-    // through whole, and costs that frame.
-    return hidCursor && params.every((param) => param === 25 || param === 12);
-  });
-  const onHide = term.parser.registerCsiHandler({ prefix: '?', final: 'l' }, (params) => {
-    if (params.includes(25) && !params.includes(OWN_CURSOR_MODE)) cursorVisible = false;
-    // Seen, not handled: xterm still applies the mode.
-    return false;
-  });
-  const hideCursorWhile = (drawing: boolean) => {
-    if (drawing && cursorVisible && !hidCursor) {
-      hidCursor = true;
-      term.write(`\u001b[?25;${OWN_CURSOR_MODE}l`);
-    } else if (!drawing && hidCursor) {
-      hidCursor = false;
-      if (cursorVisible) term.write(`\u001b[?25;${OWN_CURSOR_MODE}h`);
-    }
-  };
+  // While a prediction is drawn the terminal's own cursor is kept off screen:
+  // it marks where the host has got to, a few keys behind, and drawn under the
+  // predicted one it read as a second cursor trailing the first, which is the
+  // lag the prediction is there to hide.
+  const hostCursor = bindHostCursor(term);
 
   const nullCell = term.buffer.active.getNullCell();
   const cellAt = (row: number, col: number): IBufferCell | undefined => {
@@ -125,7 +93,7 @@ export function bindTypeahead(
       const buffer = term.buffer.active;
       // A reader scrolled back is reading, not typing at the prompt.
       if (buffer.viewportY !== buffer.baseY) return null;
-      if (cursorVisible) return { row: buffer.cursorY, col: buffer.cursorX };
+      if (hostCursor.visible()) return { row: buffer.cursorY, col: buffer.cursorX };
       if (row !== undefined) {
         const col = inverseCellOn(row);
         return col === null || col === 'many' ? null : { row, col };
@@ -179,6 +147,7 @@ export function bindTypeahead(
     const padTop = Math.max(0, Math.floor((cellHeight - glyphHeight) / 2));
     // The cursor looks like the one it stands in for: the terminal's caret, or
     // the inverse cell an Ink program paints.
+    const cursorVisible = hostCursor.visible();
     const cursorBackground = cursorVisible ? colors.cursor : colors.foreground;
     const cursorText = cursorVisible ? colors.cursorText : colors.background;
     while (overlay.childElementCount > view.cells.length) overlay.lastElementChild?.remove();
@@ -208,7 +177,7 @@ export function bindTypeahead(
 
   const redraw = () => {
     const view = options.shouldDraw() ? model.view() : null;
-    hideCursorWhile(Boolean(view && view.cells.length > 0));
+    hostCursor.suppress(Boolean(view && view.cells.length > 0));
     draw(view);
   };
 
@@ -256,9 +225,7 @@ export function bindTypeahead(
     dispose() {
       if (frame !== null) cancelAnimationFrame(frame);
       if (expiry !== null) clearTimeout(expiry);
-      hideCursorWhile(false);
-      onShow.dispose();
-      onHide.dispose();
+      hostCursor.dispose();
       onParsed.dispose();
       onResize.dispose();
       overlay.remove();
