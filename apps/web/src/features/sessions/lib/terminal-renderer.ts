@@ -19,6 +19,10 @@ import { terminalWebglAllowed } from './terminal-webgl-policy';
  *   rasterizes afresh. The atlas is never cleared in place.
  * - A constructor that throws, or a context the GPU takes back, leaves the
  *   terminal on the DOM renderer for the rest of its life.
+ *
+ * Atlas mipmaps are a second cause of block letters, removed by the patch
+ * on `@xterm/addon-webgl` (`patches/`, guarded by
+ * `terminal-webgl-atlas-patch.spec.ts`).
  */
 
 /** What the renderer needs from the page, swapped out by the spec. */
