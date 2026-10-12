@@ -405,5 +405,8 @@ earlier note:
   person asks (`runner agents install`, `runner tools install gh`), user-level
   and without sudo, from install entries in the catalog; and OpenCode joins
   the hourly updates, told its install method so it does not ask. `git` and
-  `tmux` stay with the package manager. Developing on a new host is one
-  command, `scripts/dev/bootstrap.sh`, with `mise.toml` pinning the toolchain.
+  `tmux` stay with the package manager. The host installer now asks which
+  agent CLIs to install, defaulting to Claude Code and gh, so the Add host
+  command leaves a host ready to run a session (`versions/mvp/09` §2).
+  Developing Oppenheimer itself on a new machine is one command,
+  `scripts/dev/bootstrap.sh`, with `mise.toml` pinning the toolchain.

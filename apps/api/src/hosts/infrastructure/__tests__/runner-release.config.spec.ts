@@ -59,6 +59,9 @@ describe('RunnerReleaseConfig.agentPromptFor', () => {
     expect(prompt.indexOf('Before you run anything')).toBeLessThan(prompt.indexOf('Then run'));
     expect(prompt).toContain('is the one I mean');
     expect(prompt).toContain('--workspaces');
+    // No terminal under an agent, so the installer installs only what
+    // --agents names: the prompt has the person choose.
+    expect(prompt.indexOf('--agents')).toBeLessThan(prompt.indexOf('Then run'));
   });
 
   it('carries the secret once, inside the install command', () => {

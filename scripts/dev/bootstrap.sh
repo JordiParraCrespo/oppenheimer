@@ -209,6 +209,7 @@ if [ "$PLATFORM" != macos ] && have docker && [ "$(id -u)" != 0 ]; then
   fi
 fi
 
+# oppenheimer:begin e2e
 echo
 echo "Playwright (e2e)"
 if [ "$BROWSERS" = 0 ]; then
@@ -229,6 +230,8 @@ else
     fi
   fi
 fi
+
+# oppenheimer:end e2e
 
 echo
 echo "GitHub"
