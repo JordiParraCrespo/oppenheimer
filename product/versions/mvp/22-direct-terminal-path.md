@@ -57,7 +57,10 @@ predictive echo hides whatever distance is left for what is typed most.
   host confirms its first guess**, so a prompt that does not echo (a
   password) is never drawn. The cursor is the terminal's where the program
   shows it (a shell, Codex) and the one inverse cell where it is hidden
-  (Claude Code, like every Ink program). It draws only above 30 ms of
+  (Claude Code, like every Ink program). While a guess is drawn the
+  terminal's own cursor is hidden, so the reader sees one cursor, the
+  predicted one, and not the host's trailing a few keys behind it
+  (2026-10-12). It draws only above 30 ms of
   measured round trip, and the `terminal_typeahead` ops flag (on by
   default) switches it off without a deploy.
 

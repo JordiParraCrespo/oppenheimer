@@ -27,6 +27,13 @@ export interface TypeaheadOptions {
 const DEFAULT_TIMEOUT_MS = 1000;
 
 /**
+ * A private mode number no terminal assigns, sent beside 25 (the cursor) on
+ * the hide and show this file writes itself: xterm ignores it and applies 25,
+ * and the handlers here know the sequence is ours, not the program's.
+ */
+const OWN_CURSOR_MODE = 7725;
+
+/**
  * Predictive local echo on `term` (the model is `typeahead-model.ts`): every
  * key the reader sends goes through `input` first, and a key the model can
  * predict is drawn at once in an overlay over the grid, until the host's
@@ -72,14 +79,37 @@ export function bindTypeahead(
     return height;
   };
   let glyphHeight = measureGlyph();
+  // Whether the program shows the terminal's cursor. While a prediction is
+  // drawn the terminal's own cursor is hidden here (`hidCursor`), whatever the
+  // program asked: it marks where the host has got to, a few keys behind, and
+  // drawn under the predicted one it read as a second cursor trailing the
+  // first, which is the lag the prediction is there to hide. Our own hide and
+  // show carry `OWN_CURSOR_MODE`, so they are told apart from the program's.
   let cursorVisible = true;
-  const trackCursor = (visible: boolean) => (params: (number | number[])[]) => {
-    if (params.some((param) => param === 25)) cursorVisible = visible;
+  let hidCursor = false;
+  const onShow = term.parser.registerCsiHandler({ prefix: '?', final: 'h' }, (params) => {
+    if (!params.includes(25) || params.includes(OWN_CURSOR_MODE)) return false;
+    cursorVisible = true;
+    // tmux shows the cursor again at the end of every redraw; while hidden
+    // here, that show is swallowed rather than painted for a frame. Only a
+    // sequence with nothing else in it but blink is: anything more is let
+    // through whole, and costs that frame.
+    return hidCursor && params.every((param) => param === 25 || param === 12);
+  });
+  const onHide = term.parser.registerCsiHandler({ prefix: '?', final: 'l' }, (params) => {
+    if (params.includes(25) && !params.includes(OWN_CURSOR_MODE)) cursorVisible = false;
     // Seen, not handled: xterm still applies the mode.
     return false;
+  });
+  const hideCursorWhile = (drawing: boolean) => {
+    if (drawing && cursorVisible && !hidCursor) {
+      hidCursor = true;
+      term.write(`\u001b[?25;${OWN_CURSOR_MODE}l`);
+    } else if (!drawing && hidCursor) {
+      hidCursor = false;
+      if (cursorVisible) term.write(`\u001b[?25;${OWN_CURSOR_MODE}h`);
+    }
   };
-  const onShow = term.parser.registerCsiHandler({ prefix: '?', final: 'h' }, trackCursor(true));
-  const onHide = term.parser.registerCsiHandler({ prefix: '?', final: 'l' }, trackCursor(false));
 
   const nullCell = term.buffer.active.getNullCell();
   const cellAt = (row: number, col: number): IBufferCell | undefined => {
@@ -138,8 +168,12 @@ export function bindTypeahead(
       overlay.replaceChildren();
       return;
     }
-    const cellWidth = (screenElement?.clientWidth ?? 0) / term.cols;
-    const cellHeight = (screenElement?.clientHeight ?? 0) / term.rows;
+    // The screen's own box, which xterm sizes to the fractional cell it draws
+    // in: `clientWidth` rounds it, and the guess drifted off the host's
+    // columns the further right it was typed.
+    const box = screenElement?.getBoundingClientRect();
+    const cellWidth = (box?.width ?? 0) / term.cols;
+    const cellHeight = (box?.height ?? 0) / term.rows;
     if (cellWidth === 0 || cellHeight === 0) return;
     const font = fontOf();
     const padTop = Math.max(0, Math.floor((cellHeight - glyphHeight) / 2));
@@ -172,7 +206,11 @@ export function bindTypeahead(
     });
   };
 
-  const redraw = () => draw(options.shouldDraw() ? model.view() : null);
+  const redraw = () => {
+    const view = options.shouldDraw() ? model.view() : null;
+    hideCursorWhile(Boolean(view && view.cells.length > 0));
+    draw(view);
+  };
 
   let expiry: ReturnType<typeof setTimeout> | null = null;
   const scheduleExpiry = () => {
@@ -218,6 +256,7 @@ export function bindTypeahead(
     dispose() {
       if (frame !== null) cancelAnimationFrame(frame);
       if (expiry !== null) clearTimeout(expiry);
+      hideCursorWhile(false);
       onShow.dispose();
       onHide.dispose();
       onParsed.dispose();
