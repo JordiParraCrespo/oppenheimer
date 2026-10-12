@@ -14,6 +14,9 @@ overrides:
   '@types/node': 22.20.1
 
 patchedDependencies:
+  '@xterm/addon-webgl@0.19.0':
+    hash: sw67htlzvl3hgmib3dx2gxxzzq
+    path: patches/@xterm__addon-webgl@0.19.0.patch
   nestjs-zod@4.3.1:
     hash: xgo3ef66rpndy7zgzt3cxmfcle
     path: patches/nestjs-zod@4.3.1.patch
@@ -350,7 +353,7 @@ importers:
         version: 0.9.0
       '@xterm/addon-webgl':
         specifier: ^0.19.0
-        version: 0.19.0
+        version: 0.19.0(patch_hash=sw67htlzvl3hgmib3dx2gxxzzq)
       '@xterm/xterm':
         specifier: ^6.0.0
         version: 6.0.0
@@ -18746,7 +18749,7 @@ snapshots:
 
   '@xterm/addon-unicode11@0.9.0': {}
 
-  '@xterm/addon-webgl@0.19.0': {}
+  '@xterm/addon-webgl@0.19.0(patch_hash=sw67htlzvl3hgmib3dx2gxxzzq)': {}
 
   '@xterm/xterm@6.0.0': {}
 
