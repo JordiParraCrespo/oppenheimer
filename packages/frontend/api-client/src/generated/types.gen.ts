@@ -2115,6 +2115,15 @@ export type TaskResponseDto = {
     dueTime?: string | null;
     completedAt?: string | null;
     /**
+     * Why the task waits on a person; null when it does not. Done clears it.
+     */
+    blockedReason?: string | null;
+    blockedAt?: string | null;
+    /**
+     * Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.
+     */
+    version: number;
+    /**
      * Oldest first.
      */
     sessions: Array<TaskSessionLinkResponseDto>;
@@ -2139,11 +2148,14 @@ export type UpdateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    blockedReason?: string | null;
+    expectedVersion?: number;
 };
 
 export type MoveTaskRequest = {
     status: 'later' | 'todo' | 'doing' | 'done';
     afterTaskId: string | null;
+    expectedVersion?: number;
 };
 
 export type StartTaskSessionRequest = {
@@ -2197,6 +2209,10 @@ export type MilestoneResponseDto = {
      * All its tasks.
      */
     totalCount: number;
+    /**
+     * Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.
+     */
+    version: number;
     createdAt: string;
 };
 
@@ -2210,6 +2226,93 @@ export type UpdateMilestoneRequest = {
     name?: string;
     projectId?: string;
     targetDate?: string | null;
+    expectedVersion?: number;
+};
+
+export type PlanStatsModelTokensDto = {
+    /**
+     * The model the turns ran on; null when the agent did not say.
+     */
+    model?: string | null;
+    /**
+     * Input plus output tokens over the period.
+     */
+    total: number;
+    /**
+     * Per week, in the order of `weeks`.
+     */
+    byWeek: Array<number>;
+};
+
+export type PlanStatsPeriodDto = {
+    tasksCompleted: number;
+    tasksCreated: number;
+    /**
+     * Input plus output tokens of the turns that reported usage; null when none did.
+     */
+    tokens?: number | null;
+    /**
+     * What the agents reported the turns cost, in US dollars; null when none did.
+     */
+    costUsd?: number | null;
+    /**
+     * Pull requests merged; null while pull requests are not counted on Plan.
+     */
+    pullRequestsMerged?: number | null;
+    completedByWeek: Array<number>;
+    createdByWeek: Array<number>;
+    tokensByModel?: Array<PlanStatsModelTokensDto> | null;
+    costByWeek?: Array<number> | null;
+};
+
+export type PlanStatsTotalsDto = {
+    tasksCompleted: number;
+    tasksCreated: number;
+    /**
+     * Input plus output tokens of the turns that reported usage; null when none did.
+     */
+    tokens?: number | null;
+    /**
+     * What the agents reported the turns cost, in US dollars; null when none did.
+     */
+    costUsd?: number | null;
+    /**
+     * Pull requests merged; null while pull requests are not counted on Plan.
+     */
+    pullRequestsMerged?: number | null;
+};
+
+export type PlanStatsProjectDto = {
+    projectId: string;
+    tasksCompleted: number;
+    tokens?: number | null;
+    costUsd?: number | null;
+    pullRequestsMerged?: number | null;
+};
+
+export type PlanStatsResponseDto = {
+    from: string;
+    to: string;
+    timeZone: string;
+    /**
+     * The Mondays of the weeks the period touches, oldest first; every series follows them.
+     */
+    weeks: Array<string>;
+    current: PlanStatsPeriodDto;
+    /**
+     * The period of the same length just before `from`; null without `compare`.
+     */
+    previous?: PlanStatsTotalsDto | null;
+    previousFrom?: string | null;
+    previousTo?: string | null;
+    /**
+     * Projects with any activity in the period.
+     */
+    projects: Array<PlanStatsProjectDto>;
+    /**
+     * `headless`: tokens and cost count the turns that report usage (headless ones); interactive turns in a terminal report none yet.
+     */
+    tokensMeasured: 'headless' | 'none';
 };
 
 export type CalendarEventResponseDto = {
@@ -8244,6 +8347,12 @@ export type FindTasksResponse = FindTasksResponses[keyof FindTasksResponses];
 
 export type CreateTaskData = {
     body: CreateTaskRequest;
+    headers?: {
+        /**
+         * Up to 128 characters. A retried request with the same key answers the row the first one made.
+         */
+        'Idempotency-Key'?: string;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/tasks';
@@ -8280,6 +8389,12 @@ export type CreateTaskResponse = CreateTaskResponses[keyof CreateTaskResponses];
 
 export type DeleteTaskData = {
     body?: never;
+    headers?: {
+        /**
+         * The version you read; the delete is refused (`TASKS_008`) when it is no longer current.
+         */
+        'If-Match'?: string;
+    };
     path: {
         id: string;
     };
@@ -8300,6 +8415,10 @@ export type DeleteTaskErrors = {
      * TASKS_001 — Task not found
      */
     404: ProblemDetailsDto;
+    /**
+     * TASKS_008 — Changed since it was read
+     */
+    409: ProblemDetailsDto;
 };
 
 export type DeleteTaskError = DeleteTaskErrors[keyof DeleteTaskErrors];
@@ -8367,6 +8486,8 @@ export type UpdateTaskErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * TASKS_008 — Changed since it was read
+     *
      * TASKS_007 — Milestone of another project
      *
      * TASKS_004 — Project archived or missing
@@ -8405,6 +8526,8 @@ export type MoveTaskErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * TASKS_008 — Changed since it was read
+     *
      * TASKS_006 — Stale position
      */
     409: ProblemDetailsDto;
@@ -8567,6 +8690,12 @@ export type FindMilestonesResponse = FindMilestonesResponses[keyof FindMilestone
 
 export type CreateMilestoneData = {
     body: CreateMilestoneRequest;
+    headers?: {
+        /**
+         * Up to 128 characters. A retried request with the same key answers the row the first one made.
+         */
+        'Idempotency-Key'?: string;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/milestones';
@@ -8597,6 +8726,12 @@ export type CreateMilestoneResponse = CreateMilestoneResponses[keyof CreateMiles
 
 export type DeleteMilestoneData = {
     body?: never;
+    headers?: {
+        /**
+         * The version you read; the delete is refused (`TASKS_008`) when it is no longer current.
+         */
+        'If-Match'?: string;
+    };
     path: {
         id: string;
     };
@@ -8617,6 +8752,10 @@ export type DeleteMilestoneErrors = {
      * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
+    /**
+     * TASKS_008 — Changed since it was read
+     */
+    409: ProblemDetailsDto;
 };
 
 export type DeleteMilestoneError = DeleteMilestoneErrors[keyof DeleteMilestoneErrors];
@@ -8650,6 +8789,8 @@ export type UpdateMilestoneErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * TASKS_008 — Changed since it was read
+     *
      * TASKS_004 — Project archived or missing
      */
     409: ProblemDetailsDto;
@@ -8662,6 +8803,36 @@ export type UpdateMilestoneResponses = {
 };
 
 export type UpdateMilestoneResponse = UpdateMilestoneResponses[keyof UpdateMilestoneResponses];
+
+export type FindPlanStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/plan/stats';
+};
+
+export type FindPlanStatsErrors = {
+    /**
+     * TASKS_003 — No active organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindPlanStatsError = FindPlanStatsErrors[keyof FindPlanStatsErrors];
+
+export type FindPlanStatsResponses = {
+    200: PlanStatsResponseDto;
+};
+
+export type FindPlanStatsResponse = FindPlanStatsResponses[keyof FindPlanStatsResponses];
 
 export type FindCalendarEventsData = {
     body?: never;

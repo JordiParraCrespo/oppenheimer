@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { ProjectsModule } from '../projects/projects.module';
+import { SessionsModule } from '../sessions/sessions.module';
 import { TaskFilingResolver } from './application/task-filing.resolver';
 import { CreateMilestoneCommandHandler } from './commands/create-milestone/create-milestone.command-handler';
 import { CreateMilestoneHttpController } from './commands/create-milestone/create-milestone.http.controller';
@@ -104,6 +105,8 @@ const queryHandlers: Provider[] = [
     AuthzKernelModule.forFeature([TaskResource]),
     // Whether a project can take a task, and the workspace's Unassigned project.
     ProjectsModule,
+    // Stats' tokens and cost: the turns' usage, read through the sessions module's port.
+    SessionsModule,
   ],
   controllers: [...httpControllers],
   providers: [

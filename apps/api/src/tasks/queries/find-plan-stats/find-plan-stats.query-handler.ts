@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { planStatsWeeks, previousPlanStatsPeriod } from '@oppenheimer/shared';
+import type { SessionUsageReader } from '../../../sessions/database/session-usage.repository.port';
+import { SESSION_USAGE_READER } from '../../../sessions/sessions.di-tokens';
 import type {
   PlanEventRangeInput,
   PlanEventRepositoryPort,
@@ -25,6 +27,8 @@ export class FindPlanStatsQueryHandler
   constructor(
     @Inject(PLAN_EVENT_REPOSITORY)
     private readonly events: PlanEventRepositoryPort,
+    @Inject(SESSION_USAGE_READER)
+    private readonly sessionUsage: SessionUsageReader,
     private readonly mapper: PlanStatsMapper,
   ) {}
 
@@ -55,7 +59,9 @@ export class FindPlanStatsQueryHandler
     });
   }
 
-  private async usage(_range: PlanEventRangeInput): Promise<PlanUsageWeek[] | null> {
-    return null;
+  /** Tokens and cost reported by the turns that ended in the range (headless ones report them). */
+  private async usage(range: PlanEventRangeInput): Promise<PlanUsageWeek[]> {
+    const weeks = await this.sessionUsage.weeklyUsage(range);
+    return weeks.filter((week) => week.inputTokens + week.outputTokens > 0 || week.costUsd > 0);
   }
 }

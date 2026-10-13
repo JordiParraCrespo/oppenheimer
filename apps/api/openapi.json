@@ -11282,7 +11282,25 @@
       "post": {
         "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project.",
         "operationId": "createTask",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Up to 128 characters. A retried request with the same key answers the row the first one made.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -11482,7 +11500,7 @@
             }
           },
           "409": {
-            "description": "TASKS_007 — Milestone of another project\n\nTASKS_004 — Project archived or missing",
+            "description": "TASKS_008 — Changed since it was read\n\nTASKS_007 — Milestone of another project\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11508,6 +11526,23 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "if-match",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "The version you read; the delete is refused (`TASKS_008`) when it is no longer current.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -11539,6 +11574,16 @@
           },
           "404": {
             "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_008 — Changed since it was read",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11623,7 +11668,7 @@
             }
           },
           "409": {
-            "description": "TASKS_006 — Stale position",
+            "description": "TASKS_008 — Changed since it was read\n\nTASKS_006 — Stale position",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11969,7 +12014,25 @@
       },
       "post": {
         "operationId": "createMilestone",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Up to 128 characters. A retried request with the same key answers the row the first one made.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -12097,7 +12160,7 @@
             }
           },
           "409": {
-            "description": "TASKS_004 — Project archived or missing",
+            "description": "TASKS_008 — Changed since it was read\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12123,6 +12186,23 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "if-match",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "The version you read; the delete is refused (`TASKS_008`) when it is no longer current.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -12161,6 +12241,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "TASKS_008 — Changed since it was read",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -12169,6 +12259,62 @@
           }
         ],
         "summary": "Delete a milestone",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/plan/stats": {
+      "get": {
+        "description": "Tasks created and completed, tokens per model and agent cost, per week from `from` to `to` (included, at most 371 days) in `timeZone`, for the workspace or one project, and the period of the same length before it unless `compare=false`.",
+        "operationId": "findPlanStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanStatsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TASKS_003 — No active organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Plan’s Stats for a period",
         "tags": ["Tasks"]
       }
     },
@@ -20314,6 +20460,22 @@
             "nullable": true,
             "format": "date-time"
           },
+          "blockedReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the task waits on a person; null when it does not. Done clears it.",
+            "example": "Waiting on the keystore fix for Pixel 6"
+          },
+          "blockedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "version": {
+            "type": "number",
+            "description": "Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.",
+            "example": 3
+          },
           "sessions": {
             "description": "Oldest first.",
             "type": "array",
@@ -20337,6 +20499,7 @@
           "rank",
           "title",
           "notes",
+          "version",
           "sessions",
           "createdAt",
           "updatedAt"
@@ -20411,6 +20574,17 @@
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "nullable": true
+          },
+          "blockedReason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
           }
         }
       },
@@ -20425,6 +20599,11 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
           }
         },
         "required": ["status", "afterTaskId"]
@@ -20582,12 +20761,17 @@
             "type": "number",
             "description": "All its tasks."
           },
+          "version": {
+            "type": "number",
+            "description": "Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.",
+            "example": 3
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "required": ["id", "projectId", "name", "doneCount", "totalCount", "createdAt"]
+        "required": ["id", "projectId", "name", "doneCount", "totalCount", "version", "createdAt"]
       },
       "CreateMilestoneRequest": {
         "type": "object",
@@ -20625,8 +20809,201 @@
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
           }
         }
+      },
+      "PlanStatsModelTokensDto": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "The model the turns ran on; null when the agent did not say.",
+            "example": "claude-sonnet-4-5"
+          },
+          "total": {
+            "type": "number",
+            "description": "Input plus output tokens over the period."
+          },
+          "byWeek": {
+            "description": "Per week, in the order of `weeks`.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["total", "byWeek"]
+      },
+      "PlanStatsPeriodDto": {
+        "type": "object",
+        "properties": {
+          "tasksCompleted": {
+            "type": "number"
+          },
+          "tasksCreated": {
+            "type": "number"
+          },
+          "tokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Input plus output tokens of the turns that reported usage; null when none did."
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true,
+            "description": "What the agents reported the turns cost, in US dollars; null when none did."
+          },
+          "pullRequestsMerged": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pull requests merged; null while pull requests are not counted on Plan."
+          },
+          "completedByWeek": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "createdByWeek": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "tokensByModel": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanStatsModelTokensDto"
+            }
+          },
+          "costByWeek": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["tasksCompleted", "tasksCreated", "completedByWeek", "createdByWeek"]
+      },
+      "PlanStatsTotalsDto": {
+        "type": "object",
+        "properties": {
+          "tasksCompleted": {
+            "type": "number"
+          },
+          "tasksCreated": {
+            "type": "number"
+          },
+          "tokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Input plus output tokens of the turns that reported usage; null when none did."
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true,
+            "description": "What the agents reported the turns cost, in US dollars; null when none did."
+          },
+          "pullRequestsMerged": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pull requests merged; null while pull requests are not counted on Plan."
+          }
+        },
+        "required": ["tasksCompleted", "tasksCreated"]
+      },
+      "PlanStatsProjectDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tasksCompleted": {
+            "type": "number"
+          },
+          "tokens": {
+            "type": "number",
+            "nullable": true
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true
+          },
+          "pullRequestsMerged": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["projectId", "tasksCompleted"]
+      },
+      "PlanStatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Madrid"
+          },
+          "weeks": {
+            "description": "The Mondays of the weeks the period touches, oldest first; every series follows them.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "current": {
+            "$ref": "#/components/schemas/PlanStatsPeriodDto"
+          },
+          "previous": {
+            "nullable": true,
+            "description": "The period of the same length just before `from`; null without `compare`.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanStatsTotalsDto"
+              }
+            ]
+          },
+          "previousFrom": {
+            "type": "string",
+            "nullable": true,
+            "format": "date"
+          },
+          "previousTo": {
+            "type": "string",
+            "nullable": true,
+            "format": "date"
+          },
+          "projects": {
+            "description": "Projects with any activity in the period.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanStatsProjectDto"
+            }
+          },
+          "tokensMeasured": {
+            "type": "string",
+            "enum": ["headless", "none"],
+            "description": "`headless`: tokens and cost count the turns that report usage (headless ones); interactive turns in a terminal report none yet."
+          }
+        },
+        "required": ["from", "to", "timeZone", "weeks", "current", "projects", "tokensMeasured"]
       },
       "CalendarEventResponseDto": {
         "type": "object",

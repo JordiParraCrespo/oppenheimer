@@ -318,11 +318,16 @@ describe('tasks: the board (integration)', () => {
     await tasks.move(await reload(a.id), { status: 'done', after: { kind: 'first' } });
 
     const events = await eventsOf(a.id);
-    expect(events.map((e) => e.kind)).toEqual([
+    // One write logs its changes together; the writes come in the order they were made.
+    expect(
+      events
+        .map((e) => e.kind)
+        .slice(1, 4)
+        .sort(),
+    ).toEqual(['blocked', 'reassigned', 'rescheduled']);
+    expect(events.map((e) => e.kind)).toHaveLength(6);
+    expect([events[0].kind, events[4].kind, events[5].kind]).toEqual([
       'created',
-      'blocked',
-      'reassigned',
-      'rescheduled',
       'status_changed',
       'completed',
     ]);
@@ -341,12 +346,9 @@ describe('tasks: the board (integration)', () => {
     const a = await add('a', 'done');
     await tasks.move(await reload(a.id), { status: 'todo', after: { kind: 'first' } });
     expect(await tasks.delete(await reload(a.id))).toBe('saved');
-    expect((await eventsOf(a.id)).map((e) => e.kind)).toEqual([
-      'completed',
-      'created',
-      'reopened',
-      'deleted',
-    ]);
+    const kinds = (await eventsOf(a.id)).map((e) => e.kind);
+    expect(kinds.slice(0, 2).sort()).toEqual(['completed', 'created']);
+    expect(kinds.slice(2)).toEqual(['reopened', 'deleted']);
   });
 
   it('refuses a write that names a version someone else has since moved on, and changes nothing', async () => {
