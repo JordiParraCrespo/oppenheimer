@@ -49,6 +49,11 @@ test.describe('Pull requests', () => {
     await expect(page).toHaveURL(/lane=deep/);
     await expect(rowButton(page, 'Store wallet tokens in the Keychain')).toBeVisible();
     await expect(rowButton(page, 'Write down the release checklist')).toHaveCount(0);
+    // Back from a pull request returns to the queue as it was left.
+    await rowButton(page, 'Store wallet tokens in the Keychain').click();
+    await page.getByRole('link', { name: 'Back to the queue' }).click();
+    await expect(page).toHaveURL(/lane=deep/);
+    await expect(rowButton(page, 'Write down the release checklist')).toHaveCount(0);
     await page.getByRole('button', { name: /^Difficulty/ }).click();
     await page.getByRole('menuitemradio', { name: /^All/ }).click();
     await expect(rowButton(page, 'Write down the release checklist')).toBeVisible();

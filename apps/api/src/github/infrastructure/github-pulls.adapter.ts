@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
 import type {
@@ -17,6 +18,27 @@ import type {
 
 /** A pull request's files, reviews and comments: GitHub stops listing files at 3,000 anyway. */
 const MAX_PAGES = 30;
+
+/**
+ * What GraphQL's `errors` list (it answers `200` either way) says about
+ * turning on auto-merge. `UNPROCESSABLE` is the two refusals the caller
+ * expects, a repository that does not allow auto-merge and a pull request
+ * clean enough to merge now: the approval stands and it waits, so false. A
+ * rate limit is `GITHUB_015` like any other (the headers have already paused
+ * the bucket), and anything else is GitHub failing the request.
+ */
+function autoMergeEnabled(errors: readonly { type?: string; message?: string }[]): boolean {
+  if (!errors.length) return true;
+  const detail = errors.map((error) => error.message ?? error.type ?? 'unknown').join('; ');
+  if (errors.some((error) => error.type === 'RATE_LIMITED')) {
+    throw new AppError(GithubErrors.RATE_LIMITED, { detail });
+  }
+  if (errors.every((error) => error.type === 'UNPROCESSABLE')) return false;
+  throw new AppError(GithubErrors.UPSTREAM_FAILED, {
+    detail: `GitHub did not turn on auto-merge: ${detail}`,
+    extensions: { upstreamStatus: 200 },
+  });
+}
 
 const ENABLE_AUTO_MERGE = `mutation($id: ID!, $method: PullRequestMergeMethod!, $sha: GitObjectID!) {
   enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $method, expectedHeadOid: $sha }) {
@@ -103,8 +125,6 @@ interface RawCombinedStatus {
  */
 @Injectable()
 export class GithubPullsAdapter implements GithubPullsPort {
-  private readonly logger = new Logger(GithubPullsAdapter.name);
-
   constructor(private readonly http: GithubHttp) {}
 
   async listPullRequests(
@@ -339,11 +359,6 @@ export class GithubPullsAdapter implements GithubPullsPort {
     sha: string,
   ): Promise<boolean> {
     if (!nodeId) return false;
-    // GraphQL answers a refusal with `200` and an `errors` list: a repository
-    // without auto-merge, or a pull request already clean enough to merge now.
-    // Either way the approval stands and the pull request waits, so the
-    // answer is false; what GitHub said is logged, since a refusal for any
-    // other reason (a permission, a moved head) reads the same to the caller.
     const { body } = await this.request<{
       errors?: { type?: string; message?: string }[];
     }>(`${this.http.api}/graphql`, {
@@ -354,13 +369,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
         variables: { id: nodeId, method: method.toUpperCase(), sha },
       },
     });
-    if (!body.errors?.length) return true;
-    this.logger.warn({
-      message: 'GitHub did not turn on auto-merge',
-      pullRequest: nodeId,
-      errors: body.errors.map((error) => ({ type: error.type, message: error.message })),
-    });
-    return false;
+    return autoMergeEnabled(body.errors ?? []);
   }
 
   private repo(fullName: string): string {

@@ -9,8 +9,8 @@ import {
 } from '@oppenheimer/design-system-web';
 import { ArrowRight } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useOpenPullRequest } from '../hooks/use-open-pull-request';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReviewNextShortcut } from '../hooks/use-review-next-shortcut';
 import { filterQueue } from '../lib/queue-filter';
@@ -24,23 +24,13 @@ import { formatWait } from '../lib/view';
  */
 export function QueueHeader() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openPull = useOpenPullRequest();
   const { scope, filters } = useQueueSearch();
   const { data: queue } = usePullRequestQueue(scope);
   const rows = filterQueue(queue?.items ?? [], { repo: filters.repo });
   const next = filterQueue(rows, filters)[0];
   const oldest = rows.reduce((max, row) => Math.max(max, row.waitingSeconds), 0);
-  const reviewNext = next
-    ? () =>
-        navigate({
-          to: '/pulls/$installationId/$githubRepoId/$number',
-          params: {
-            installationId: next.installationId,
-            githubRepoId: String(next.githubRepoId),
-            number: String(next.number),
-          },
-        })
-    : undefined;
+  const reviewNext = next ? () => openPull(next.address, 'description') : undefined;
   useReviewNextShortcut(reviewNext);
 
   return (

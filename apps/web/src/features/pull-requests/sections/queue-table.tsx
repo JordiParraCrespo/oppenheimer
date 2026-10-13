@@ -13,14 +13,14 @@ import type { PullRequestLane } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_LANES } from '@oppenheimer/shared/schemas/pull-request';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueueSearchField } from '../components/queue-search-field';
+import { useOpenPullRequest } from '../hooks/use-open-pull-request';
 import { useQueueKeys } from '../hooks/use-queue-keys';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReadNotices } from '../hooks/use-read-notices';
-import { pullRequestLink } from '../lib/pull-request-search';
 import { facetCounts, filterQueue, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
 import { QUEUE_CHECKS, QUEUE_WAITS, type QueueChecks, type QueueWait } from '../lib/queue-search';
 import { QueueRow } from './queue-row';
@@ -35,7 +35,7 @@ import { QueueRow } from './queue-row';
  */
 export function QueueTable() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openPull = useOpenPullRequest();
   const { scope, filters, setRepo, setLane, setChecks, setWait } = useQueueSearch();
   const queue = usePullRequestQueue(scope);
   useReadNotices(queue.data?.unreadable);
@@ -60,7 +60,7 @@ export function QueueTable() {
       ),
     onOpen: () => {
       const pull = picked === null ? undefined : shown[picked];
-      if (pull) navigate(pullRequestLink(pull.address, 'description'));
+      if (pull) openPull(pull.address, 'description');
     },
     onSearch: () => search.current?.focus(),
     onRelease: () => setPicked(null),

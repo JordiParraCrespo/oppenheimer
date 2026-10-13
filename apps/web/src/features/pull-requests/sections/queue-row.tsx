@@ -4,11 +4,11 @@ import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import { useMergePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
-import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LaneBadge } from '../components/lane-badge';
-import { type PullRequestView, pullRequestLink } from '../lib/pull-request-search';
+import { useOpenPullRequest } from '../hooks/use-open-pull-request';
+import type { PullRequestView } from '../lib/pull-request-search';
 import { CHECK_STATE, formatWait, LATE_SECONDS } from '../lib/view';
 
 /**
@@ -19,7 +19,6 @@ import { CHECK_STATE, formatWait, LATE_SECONDS } from '../lib/view';
  */
 export function QueueRow({ pull, selected }: { pull: PullRequestEntity; selected: boolean }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const resolveError = useErrorMessage();
   const merge = useMergePullRequest({
@@ -27,7 +26,8 @@ export function QueueRow({ pull, selected }: { pull: PullRequestEntity; selected
     onError: (error) =>
       toast.error(resolveError(error, t('pullRequests.queue.mergeFailed')).message),
   });
-  const open = (view: PullRequestView) => navigate(pullRequestLink(pull.address, view));
+  const openPull = useOpenPullRequest();
+  const open = (view: PullRequestView) => openPull(pull.address, view);
   const blocked = pull.blocker ? t(`pullRequests.blocker.${pull.blocker}`) : undefined;
 
   return (

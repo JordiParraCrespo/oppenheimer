@@ -71,7 +71,11 @@ vi.mock('../hooks/use-queue-search', () => ({
   }),
 }));
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), Link: () => null }));
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
+  Link: () => null,
+}));
 
 function pull(title: string, number: number): PullRequestEntity {
   return {

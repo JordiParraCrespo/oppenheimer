@@ -9,7 +9,7 @@ import {
 import { ChevronLeft, SquareArrowOutUpRight } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -42,6 +42,7 @@ export function PullRequestToolbar({
 }) {
   const { t } = useTranslation();
   const { data: pull } = usePullRequest(address);
+  const queue = useLocation({ select: (location) => location.state.pullsQueue });
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
@@ -69,7 +70,7 @@ export function PullRequestToolbar({
           <IconButton
             size="sm"
             aria-label={t('pullRequests.detail.back')}
-            render={<Link to="/pulls" />}
+            render={<Link to="/pulls" search={queue ?? {}} />}
           >
             <ChevronLeft />
           </IconButton>

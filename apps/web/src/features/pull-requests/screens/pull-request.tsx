@@ -29,7 +29,10 @@ export function PullRequestScreen({
   const navigate = useNavigate();
   const [pending, setPending] = useState<LineCommentInput[]>([]);
   const [layout, setLayout] = useState<DiffLayout>('unified');
-  const setView = (next: PullRequestView) => navigate({ to: '.', search: pullRequestSearch(next) });
+  // A view is the same page read another way: it keeps the queue the pull
+  // request was opened from, so Back still returns to it.
+  const setView = (next: PullRequestView) =>
+    navigate({ to: '.', search: pullRequestSearch(next), state: (previous) => previous });
 
   return (
     <>
