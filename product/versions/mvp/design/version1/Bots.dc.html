@@ -20,6 +20,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 textarea::placeholder{color:var(--fg-subtle)}
 </style>
 <script src="./rail-order.js"></script>
+<script src="./catalog.js"></script>
 </helmet>
 <div data-theme="{{ theme }}" onClick="{{ closeMenus }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
 
@@ -42,10 +43,11 @@ textarea::placeholder{color:var(--fg-subtle)}
 <label style="display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border-radius:10px;background:var(--hover-surface);color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input value="{{ botQuery }}" onChange="{{ onBotQuery }}" placeholder="Search bots" aria-label="Search bots" style="flex:1;min-width:0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:14px"></label>
 </div>
 <div class="op-sidebar__scroll">
+<sc-if value="{{ noOwnBots }}"><div style="margin:8px 6px 0;padding:14px;border-radius:14px;background:var(--hover-surface);display:flex;flex-direction:column;gap:8px"><span style="font-size:13.5px;font-weight:500">No bots yet</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Bots you create appear here. Start from a template, or describe the job and the bot writes its own instructions.</span><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ newThread }}" style="align-self:flex-start;margin-top:2px">New bot</button></div></sc-if>
 <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
 <div onDragOver="{{ g.over }}" onDragLeave="{{ g.leave }}" onDrop="{{ g.drop }}" style="display:flex;flex-direction:column;margin:8px 6px 0;padding-bottom:2px;border-radius:14px;background:{{ g.dropBg }};transition:background 80ms cubic-bezier(.4,0,.2,1)">
 <div style="position:relative;display:flex;align-items:center;gap:2px;height:30px;padding:0 4px 0 2px" onClick="{{ stop }}">
-<sc-if value="{{ g.notRenaming }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ g.toggle }}" onDoubleClick="{{ g.startRename }}" aria-expanded="{{ g.open }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:4px;height:26px;padding:0 6px;border:0;border-radius:8px;background:none;color:var(--fg-subtle);font:inherit;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;text-align:left;cursor:pointer" style-hover="color:var(--fg)"><span style="display:flex;transform:{{ g.chev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="12" hint-size="12px,12px"></x-import></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:0;opacity:.8">{{ g.count }}</span></button></sc-if>
+<sc-if value="{{ g.notRenaming }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ g.toggle }}" onDoubleClick="{{ g.startRename }}" aria-expanded="{{ g.open }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:4px;height:26px;padding:0 6px;border:0;border-radius:8px;background:none;color:var(--fg-subtle);font:inherit;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;text-align:left;cursor:pointer" style-hover="color:var(--fg)"><span style="display:flex;transform:{{ g.chev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="12" hint-size="12px,12px"></x-import></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:0;opacity:.8">{{ g.count }}</span><sc-if value="{{ g.readOnly }}"><span title="Built-in agents. Settings open from each one." style="display:flex;margin-left:auto;padding-right:4px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="11" hint-size="11px,11px"></x-import></span></sc-if></button></sc-if>
 <sc-if value="{{ g.renaming }}"><input ref="{{ gRef }}" value="{{ gDraft }}" onChange="{{ onGDraft }}" onKeyDown="{{ gKey }}" onBlur="{{ commitG }}" aria-label="Group name" style="flex:1;min-width:0;height:26px;margin-left:4px;padding:0 8px;box-sizing:border-box;border:1px solid var(--primary);border-radius:8px;outline:0;box-shadow:0 0 0 3px var(--ring);background:var(--card);color:var(--fg);font:inherit;font-size:13px"></sc-if>
 <sc-if value="{{ g.canEdit }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Group options" onClick="{{ g.menuToggle }}" style="width:24px;height:24px;background:{{ g.menuBg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="14" hint-size="14px,14px"></x-import></button></sc-if>
 <sc-if value="{{ g.menuOpen }}">
@@ -58,12 +60,12 @@ textarea::placeholder{color:var(--fg-subtle)}
 <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;flex-direction:column;gap:2px">
 <sc-for list="{{ g.bots }}" as="b" hint-placeholder-count="2">
-<button type="button" draggable="true" onDragStart="{{ b.drag }}" onDragEnd="{{ b.dragEnd }}" onClick="{{ b.open }}" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border:0;border-radius:14px;background:{{ b.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<button type="button" draggable="{{ b.draggable }}" onDragStart="{{ b.drag }}" onDragEnd="{{ b.dragEnd }}" onClick="{{ b.open }}" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border:0;border-radius:14px;background:{{ b.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
 <span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span title="{{ b.sciName }}" style="position:relative;flex:none;width:36px;height:36px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">{{ b.ini }}<img src="{{ b.img }}" alt="" onError="{{ b.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><sc-if value="{{ b.live }}"><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span>
-<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:{{ b.weight }};letter-spacing:-0.009em">{{ b.title }}</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ b.age }}</span></span><span style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:{{ b.prevColor }}">{{ b.preview }}</span><sc-if value="{{ b.unread }}"><span aria-label="Unread" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--primary)"></span></sc-if></span></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:{{ b.weight }};letter-spacing:-0.009em">{{ b.title }}</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ b.age }}</span></span><span style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:{{ b.prevColor }}">{{ b.preview }}</span><sc-if value="{{ b.unread }}"><span aria-label="Unread" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--primary)"></span></sc-if><sc-if value="{{ b.needs }}"><span aria-label="Needs input" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--warning)"></span></sc-if></span></span>
 </button>
 </sc-for>
-<sc-if value="{{ g.empty }}"><div style="margin:2px 4px 4px;padding:10px 12px;border:1px dashed var(--border-subtle);border-radius:10px;font-size:12.5px;color:var(--fg-subtle)">Drag employees here</div></sc-if>
+<sc-if value="{{ g.empty }}"><div style="margin:2px 4px 4px;padding:10px 12px;border:1px dashed var(--border-subtle);border-radius:10px;font-size:12.5px;color:var(--fg-subtle)">No bots yet. Drag one here.</div></sc-if>
 </div>
 </sc-if>
 </div>
@@ -139,7 +141,20 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div data-chatscroll="true" ref="{{ scrollRef }}" style="flex:{{ scrollFlex }};min-height:0;overflow-y:auto;overflow-x:hidden">
 <sc-if value="{{ isEmpty }}">
 <div style="height:100%;box-sizing:border-box;padding:0 20px 24px;display:flex;align-items:flex-end;justify-content:center">
-<h1 style="margin:0;max-width:{{ colWidth }};text-align:center;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1;text-wrap:balance">{{ greeting }}</h1>
+<div style="width:100%;max-width:{{ colWidth }};display:flex;flex-direction:column;gap:24px">
+<h1 style="margin:0;text-align:center;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1;text-wrap:balance">{{ greeting }}</h1>
+<sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Start from a template</span>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+<sc-for list="{{ templates }}" as="tp" hint-placeholder-count="4">
+<button type="button" onClick="{{ tp.pick }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border:0;border-radius:18px;background:var(--card);color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--control-hover)"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ tp.icon }}" size="16" hint-size="16px,16px"></x-import></span><span style="font-size:14px;font-weight:500">{{ tp.name }}</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ tp.desc }}</span></button>
+</sc-for>
+</div>
+<span style="font-size:12.5px;color:var(--fg-subtle)">Or type below. A new bot starts blank and proposes its own instructions.</span>
+</div>
+</sc-if>
+</div>
 </div>
 </sc-if>
 <sc-if value="{{ hasThread }}" hint-placeholder-val="{{ true }}">
@@ -201,6 +216,40 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </sc-if>
 
+<sc-if value="{{ m.isB2b }}">
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;font-size:13.5px">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px">
+<span style="display:flex;padding-top:3px;color:var(--fg-muted);transform:{{ m.rot }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;color:var(--fg-muted)">{{ m.dirLabel }} <span style="color:var(--fg);font-weight:500">{{ m.bot }}</span></span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.time }}</span></span><span style="line-height:1.5;text-wrap:pretty">{{ m.text }}</span></span>
+</div>
+<sc-if value="{{ m.hasReply }}">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-top:1px solid var(--border-subtle);background:var(--hover-surface)">
+<span style="display:flex;padding-top:3px;color:var(--fg-muted);transform:{{ m.replyRot }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="color:var(--fg-muted)">{{ m.replyLabel }}</span><span style="line-height:1.5;text-wrap:pretty">{{ m.reply }}</span></span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ m.isDecision }}">
+<div style="display:flex;align-items:center;gap:8px;min-height:24px;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="13" hint-size="13px,13px"></x-import></span><span style="flex:none">{{ m.label }}</span><code style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg)">{{ m.detail }}</code><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.time }}</span></div>
+</sc-if>
+
+<sc-if value="{{ m.isProposal }}">
+<div style="display:flex;flex-direction:column;border-radius:18px;background:var(--card);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:10px 10px 10px 16px;flex-wrap:wrap">
+<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="14" hint-size="14px,14px"></x-import></span>
+<span style="font-family:var(--font-mono);font-size:12.5px">INSTRUCTIONS.md</span>
+<span style="height:20px;padding:0 8px;display:inline-flex;align-items:center;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg-muted)">Proposed by {{ m.by }}</span>
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--success)">{{ m.adds }}</span>
+<span style="flex:1"></span>
+<sc-if value="{{ m.pending }}"><a href="{{ m.reviewHref }}" style="height:28px;display:inline-flex;align-items:center;padding:0 10px;border-radius:980px;color:var(--fg-muted);font-size:13px;text-decoration:none" style-hover="background:var(--hover-surface);color:var(--fg)">Review in settings</a><button type="button" onClick="{{ m.reject }}" style="height:28px;padding:0 12px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">Reject</button><button type="button" onClick="{{ m.accept }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:0;border-radius:980px;background:var(--hover-surface);color:var(--fg);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--control-hover)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import>Accept</button></sc-if>
+<sc-if value="{{ m.decided }}"><span style="padding-right:6px;font-size:12.5px;color:var(--fg-muted)">{{ m.statusLabel }}</span></sc-if>
+</div>
+<pre style="margin:0;padding:10px 16px 14px;border-top:1px solid var(--border-subtle);font-family:var(--font-mono);font-size:12.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;opacity:{{ m.op }}"><sc-for list="{{ m.lines }}" as="l"><span style="display:block;color:{{ l.color }}">{{ l.t }}</span></sc-for></pre>
+</div>
+</sc-if>
+
 </div>
 </sc-for>
 
@@ -233,7 +282,19 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </sc-if>
 
-<div style="border-radius:18px;background:var(--card);border:1px solid {{ composerBorder }};transition:border-color 140ms cubic-bezier(.4,0,.2,1)">
+<sc-if value="{{ hasPending }}">
+<div role="group" aria-label="Approval needed" style="padding:12px 14px 10px;border:1px solid {{ composerBorder }};border-bottom:0;border-radius:18px 18px 0 0;background:var(--card);display:flex;flex-direction:column;gap:10px;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span>Needs input<span style="flex:1"></span><span>{{ pend.why }}</span></div>
+<span style="font-size:15px;font-weight:500;line-height:1.35">{{ pend.prompt }} <span style="margin-left:4px;font-size:13px;font-weight:400;color:var(--fg-subtle)">{{ pend.tool }}</span></span>
+<pre style="margin:0;padding:8px 10px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word">{{ pend.detail }}</pre>
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ pendActions }}" as="a" hint-placeholder-count="3">
+<button type="button" onClick="{{ a.pick }}" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="flex:none;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:980px;border:1px solid var(--border);color:var(--fg-muted);font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums">{{ a.n }}</span><span style="flex:1;min-width:0;font-size:14px;line-height:1.35"><span style="font-weight:500">{{ a.label }}</span><span style="margin-left:6px;font-size:13px;color:var(--fg-subtle)">{{ a.desc }}</span></span></button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="border-radius:{{ composerRadius }};background:var(--card);border:1px solid {{ composerBorder }};border-top-color:{{ composerTop }};transition:border-color 140ms cubic-bezier(.4,0,.2,1)">
 <textarea ref="{{ taRef }}" value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKey }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" rows="{{ rows }}" placeholder="{{ placeholder }}" style="display:block;width:100%;box-sizing:border-box;padding:12px 14px 6px;border:0;outline:0;resize:none;background:none;color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.55;letter-spacing:-0.011em"></textarea>
 <div style="display:flex;align-items:center;gap:4px;padding:0 8px 8px 6px">
 <button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Attach"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
@@ -310,7 +371,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;columnWidth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Standard&quot;,&quot;Wide&quot;],&quot;default&quot;:&quot;Standard&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;expandTrace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showSidebar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;columnWidth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Standard&quot;,&quot;Wide&quot;],&quot;default&quot;:&quot;Standard&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;expandTrace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showSidebar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;emptyWorkspace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
 const parseInline = (s) => {
   const out = []; const re = /(`[^`]+`|\*\*[^*]+\*\*)/g; let last = 0, m;
   while ((m = re.exec(s))) {
@@ -360,7 +421,8 @@ const T1 = [
     { icon: 'file-text', verb: 'Edited', target: 'gateway/cancel.ts', add: '+17', del: '−3' },
     { icon: 'terminal', verb: 'Ran', target: 'pnpm test runner', meta: '38 passed' },
   ] },
-  { role: 'assistant', meta: 'Claude Sonnet 4.5 · 3.1k tokens', md:
+  { role: 'b2b', dir: 'out', bot: 'Plan Bot', time: '09:13', text: 'Which task is the cancel-path fix linked to?', reply: '“Stop cancels in-flight tool calls” in XRP Mobile, milestone Public beta. Owner: XRP Mobile agent.' },
+  { role: 'assistant', meta: 'Claude Sonnet 4.6 · 3.1k tokens', md:
 `The stop path now reaches the tool layer. Previously \`stopRun()\` only flipped the run state, so steps already inside a tool call never heard about it.
 
 - **One signal per step.** Each step gets its own \`AbortController\`, created in \`runner/step.ts\` and registered on the run so the gateway can find it.
@@ -373,12 +435,19 @@ run.registerStep(step.id, ctrl);
 await tool.call(input, { signal: ctrl.signal });
 \`\`\`
 
-Tests pass, including two new cases for a tool that ignores the signal. Want me to surface "Cancelling…" in the console while the 5s grace period runs?` },
+Tests pass, including two new cases for a tool that ignores the signal. Plan Bot linked this to **Stop cancels in-flight tool calls** in XRP Mobile, so I'll push \`synara/cancel-path\` and open the pull request against it.` },
 ];
 const T2 = [
   { role: 'user', time: 'Yesterday', text: 'Draft a quota warning for workspaces above 90% of their monthly minutes.' },
-  { role: 'assistant', meta: 'GPT-5 Codex · 1.2k tokens', md: 'Added a banner to the workspace header that appears at 90% and names the figure: `9,140 / 10,000 minutes used`. It links to billing and dismisses for 24h.' },
+  { role: 'assistant', meta: 'GPT-5.2 Codex · 1.2k tokens', md: 'Added a banner to the workspace header that appears at 90% and names the figure: `9,140 / 10,000 minutes used`. It links to billing and dismisses for 24h.' },
 ];
+const T1_PENDING = { prompt: 'Push synara/cancel-path to origin?', tool: 'Bash', detail: 'git push -u origin synara/cancel-path', why: 'Ask for approval is on' };
+const PUSH_REPLY = 'Pushed. Opened **PR #668** from `synara/cancel-path` into `main` and linked it to the task. 2 checks are running; I will tell you when they finish.';
+const DENY_REPLY = 'Stopped before pushing. The branch stays local on `jordis-mac-studio`. Tell me what to change and I will pick it up from here.';
+const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const LIVE_VERB = { Read: 'Reading', Searched: 'Searching', Edited: 'Editing', Ran: 'Running', Opened: 'Opening', Wrote: 'Writing' };
+const proposalLines = (job) => ['# Instructions', '', '+ ## Job', '+ ' + job, '+', '+ ## Rules', '+ - Work only in the projects and repositories I have access to.', '+ - Ask before merging, deleting, pushing or deploying.', '+ - When a task ends, report what changed, with numbers.'];
+const T3_JOB = 'Watch the nightly builds on build-01 and tell me which tests turned flaky.';
 const REPLIES = [
   `Yes — I'll add it. The console will show **Cancelling** on the run row while steps settle, then switch to **Stopped** once the gateway confirms.
 
@@ -393,13 +462,20 @@ class Component extends DCLogic {
   state = {
     active: 't1', sidebar: true, groups: [{ id: 'g1', name: 'Engineering', open: true }, { id: 'g2', name: 'Research', open: true }], gMenu: null, gRen: null, gDraft: '', dropG: undefined,
     threads: {
-      t1: { title: 'Release Bot', role: 'Ships changes and watches runs', icon: 'zap', age: '2m', group: 'g1', msgs: T1.map((m, i) => ({ ...m, id: 'a' + i, open: false })) },
+      t1: { title: 'Release Bot', role: 'Ships changes and watches runs', icon: 'zap', age: '2m', group: 'g1', pending: T1_PENDING, msgs: T1.map((m, i) => ({ ...m, id: 'a' + i, open: false })) },
       t2: { title: 'Quota Bot', role: 'Billing, limits and usage', icon: 'database', age: '1d', group: 'g1', msgs: T2.map((m, i) => ({ ...m, id: 'b' + i })) },
-      t3: { title: 'New Bot', role: 'No instructions yet', icon: 'bot', age: '3h', unread: true, msgs: [{ id: 'c0', role: 'assistant', md: 'What would you most like help with? Tell me the job and I will write my own instructions from it.', meta: 'Claude Sonnet 4.5' }] },
-      t4: { title: 'Research Bot', role: 'Reads the web and cites sources', icon: 'globe', age: '4d', group: 'g2', msgs: [{ id: 'd0', role: 'user', text: 'Compare the cancellation semantics of the three agent SDKs we use.', time: 'Oct 7' }, { id: 'd1', role: 'assistant', md: 'Only one of the three propagates an abort into in-flight tool calls; the other two stop at the next step boundary.', meta: 'Gemini 2.5 Pro' }] },
+      t3: { title: 'New Bot', role: 'No instructions yet', icon: 'bot', age: '3h', unread: true, msgs: [
+        { id: 'c0', role: 'assistant', md: 'What would you most like help with? Tell me the job and I will write my own instructions from it.', meta: 'Claude Sonnet 4.6' },
+        { id: 'c1', role: 'user', text: T3_JOB, time: '06:40' },
+        { id: 'c2', role: 'work', label: 'Worked for 9s', open: false, steps: [{ icon: 'file-text', verb: 'Read', target: '.github/workflows/nightly.yml' }, { icon: 'search', verb: 'Searched', target: 'retry: flaky', meta: '3 results' }] },
+        { id: 'c3', role: 'assistant', md: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time in settings.', meta: 'Claude Sonnet 4.6 · 0.6k tokens' },
+        { id: 'c4', role: 'proposal', status: 'pending', job: T3_JOB, lines: proposalLines(T3_JOB) }] },
+      t4: { title: 'Research Bot', role: 'Reads the web and cites sources', icon: 'globe', age: '4d', group: 'g2', msgs: [{ id: 'd0', role: 'user', text: 'Compare the cancellation semantics of the three agent SDKs we use.', time: 'Oct 7' }, { id: 'd1', role: 'assistant', md: 'Only one of the three propagates an abort into in-flight tool calls; the other two stop at the next step boundary.', meta: 'Claude Opus 4.6' }, { id: 'd2', role: 'b2b', dir: 'in', bot: 'Release Bot', time: 'Oct 7', text: 'Find the SDK changelog entry for AbortSignal support.', reply: 'Sent 3 changelog links, newest first.' }] },
+      pm: { title: 'Project manager', role: 'Runs the project agents on Plan', builtin: true, ini: 'PM', age: '1h', msgs: [{ id: 'p0', role: 'user', text: 'What is blocked across projects?', time: '08:02' }, { id: 'p1', role: 'work', label: 'Checked 3 projects', open: false, steps: [{ icon: 'check-circle', verb: 'Read', target: 'XRP Mobile · 14 tasks' }, { icon: 'check-circle', verb: 'Read', target: 'Atlas · 9 tasks' }, { icon: 'check-circle', verb: 'Read', target: 'Client sites · 4 tasks' }] }, { id: 'p2', role: 'assistant', md: 'Two tasks are blocked, both in XRP Mobile and both waiting on review. One task has no project; I can file it under Atlas.', meta: 'Claude Opus 4.6' }] },
+      mm: { title: 'Merge manager', role: 'Lands pull requests through project agents', builtin: true, ini: 'MM', age: '3h', msgs: [{ id: 'q0', role: 'assistant', md: '4 pull requests are ready. I will ask each project agent to rebase its pull requests first and stop on any red check.', meta: 'Claude Opus 4.6' }] },
     },
     draft: '', focused: false, slashIdx: 0,
-    approval: 'ask', approvalOpen: false, model: 'sonnet', effort: 'high', effortShown: 'high', effortOpen: false, modelOpen: false,
+    approval: 'ask', approvalOpen: false, model: (window.OP_CATALOG || {}).defaultModel || 'sonnet', effort: 'high', effortShown: 'high', effortOpen: false, modelOpen: false,
     headerMenu: false, renaming: false, renameVal: '', confirmDelete: false, toast: null, branchCopied: false,
     botQuery: '', botTo: '', toOpen: false, toIdx: 0,
     trayOpen: null, project: 'synara', env: 'worktree', base: 'main',
@@ -407,7 +483,7 @@ class Component extends DCLogic {
   };
   scrollRef = React.createRef(); taRef = React.createRef();
 
-  componentWillUnmount() { window.removeEventListener('resize', this._measure); if (this._ro) this._ro.disconnect(); clearInterval(this.tick); clearTimeout(this.to); this._effortEnd(); }
+  componentWillUnmount() { document.removeEventListener('keydown', this._numKey); clearInterval(this._catWait); window.removeEventListener('resize', this._measure); if (this._ro) this._ro.disconnect(); clearInterval(this.tick); clearTimeout(this.to); this._effortEnd(); }
   _effortTrack = React.createRef(); _effortKnob = React.createRef(); _effortFill = React.createRef();
   effortIndex() { return Math.max(0, EFFORTS.findIndex(o => o.value === this.state.effort)); }
   syncEffort() {
@@ -454,7 +530,27 @@ class Component extends DCLogic {
     }
   }
   _measure = () => { const el = this.taRef.current; if (!el) return; const w = el.parentElement.clientWidth; const narrow = w < 620; if (narrow !== this.state.narrow) this.setState({ narrow }); };
+  _numKey = e => { const t = this.cur(); if (!t || !t.pending) return; const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'textarea') return; const k = { '1': 'approve', '2': 'always', '3': 'deny' }[e.key]; if (k) { e.preventDefault(); this.decide(k); } };
+  catalog() { return window.OP_CATALOG || { models: [], approvals: [], templates: [] }; }
+  decide(kind) {
+    const id = this.state.active, t = this.cur(); if (!t || !t.pending) return;
+    const p = t.pending, d = new Date(), time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const label = { approve: 'You approved', always: 'You always allowed', deny: 'You denied' }[kind];
+    this.setThread(id, x => ({ ...x, pending: null, msgs: [...x.msgs, { id: 'k' + Date.now(), role: 'decision', label, detail: p.detail, time }] }));
+    if (kind === 'deny') { this.setThread(id, x => ({ ...x, msgs: [...x.msgs, { id: 'n' + Date.now(), role: 'assistant', md: DENY_REPLY, meta: this.modelLabel() }] })); return; }
+    if (kind === 'always') this.flash('Pushes always allowed. Change it in Approvals.');
+    this.setState({ running: true, runStart: Date.now(), now: Date.now(), revealed: 0, liveStep: 0, streamId: null });
+    this.startRun(id, { reply: PUSH_REPLY, steps: [{ icon: 'terminal', verb: 'Ran', target: p.detail }, { icon: 'git-pull-request', verb: 'Opened', target: 'PR #668 → main' }] });
+  }
+  fromTemplate(tp) {
+    const id = 't' + Date.now(), names = Object.values(this.state.threads).map(b => b.title);
+    let name = tp.botName, n = 2; while (names.includes(name)) name = tp.botName + ' ' + n++;
+    this.setState(s => ({ active: id, draft: '', threads: { [id]: { title: name, role: tp.role, template: tp.name, mine: true, age: 'now', msgs: [{ id: id + 'h', role: 'assistant', md: tp.hello, meta: this.modelLabel() }] }, ...s.threads } }));
+    this.flash('Created ' + name + ' from ' + tp.name);
+  }
   componentDidMount() {
+    document.addEventListener('keydown', this._numKey);
+    if (!window.OP_CATALOG) this._catWait = setInterval(() => { if (window.OP_CATALOG) { clearInterval(this._catWait); this.forceUpdate(); } }, 50);
     this._measure(); window.addEventListener('resize', this._measure);
     if (window.ResizeObserver && this.taRef.current) { this._ro = new ResizeObserver(this._measure); this._ro.observe(this.taRef.current.parentElement); } const el = this.scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }
 
@@ -462,7 +558,7 @@ class Component extends DCLogic {
   commitG() { const s = this.state; if (!s.gRen) return; const v = s.gDraft.trim(); this.setState(x => ({ gRen: null, groups: v ? x.groups.map(g => g.id === x.gRen ? { ...g, name: v } : g) : x.groups })); }
   toMatches() { const q = this.state.botTo.trim().toLowerCase(); return Object.entries(this.state.threads).filter(([, b]) => !q || b.title.toLowerCase().includes(q) || (b.role || '').toLowerCase().includes(q)).slice(0, 6); }
   openBot(id) { this.setThread(id, b => ({ ...b, unread: false })); this.setState({ active: id, draft: '', botTo: '', toOpen: false }); }
-  createBot(name) { const id = 't' + Date.now(); this.setState(s => ({ active: id, botTo: '', toOpen: false, threads: { [id]: { title: name, role: 'No instructions yet', icon: 'bot', age: 'now', msgs: [] }, ...s.threads } })); this.flash('Created ' + name); }
+  createBot(name) { const id = 't' + Date.now(); this.setState(s => ({ active: id, botTo: '', toOpen: false, threads: { [id]: { title: name, role: 'No instructions yet', icon: 'bot', age: 'now', mine: true, msgs: [] }, ...s.threads } })); this.flash('Created ' + name); }
   flash(msg) { clearTimeout(this._toast); this.setState({ toast: msg }); this._toast = setTimeout(() => this.setState({ toast: null }), 1800); }
   startRename = () => { const t = this.cur(); if (!t) return; this.setState({ renaming: true, renameVal: t.title, headerMenu: false }); setTimeout(() => { const el = this.renameRef.current; if (el) { el.focus(); el.select(); } }, 0); };
   commitRename = () => { if (!this.state.renaming) return; const v = this.state.renameVal.trim(); if (v) this.setThread(this.state.active, t => ({ ...t, title: v })); this.setState({ renaming: false }); };
@@ -471,7 +567,7 @@ class Component extends DCLogic {
     this.setState(s => { const th = { ...s.threads }; delete th[id]; return { threads: th, active: null, headerMenu: false, confirmDelete: false }; });
     this.flash(msg);
   }
-  cur() { return this.state.active ? this.state.threads[this.state.active] : null; }
+  cur() { const t = this.state.active ? this.state.threads[this.state.active] : null; if (t && this.props.emptyWorkspace && !t.builtin && !t.mine) return null; return t; }
   setThread(id, fn) { this.setState(s => ({ threads: { ...s.threads, [id]: fn(s.threads[id]) } })); }
 
   commands() {
@@ -494,28 +590,38 @@ class Component extends DCLogic {
   send = () => {
     const text = this.state.draft.trim(); if (!text || this.state.running) return;
     let id = this.state.active;
+    const pt = this.cur();
+    if (pt && pt.pending) { const d = new Date(), tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); const det = pt.pending.detail; this.setThread(id, x => ({ ...x, pending: null, msgs: [...x.msgs, { id: 'k' + Date.now(), role: 'decision', label: 'You denied', detail: det, time: tm }] })); }
     if (!id) {
       id = 't' + Date.now();
       const title = 'New Bot';
       const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').split('-').slice(0, 3).join('-') || 'thread';
-      this.setState(s => ({ active: id, trayOpen: null, threads: { [id]: { title, role: 'No instructions yet', icon: 'bot', age: 'now', msgs: [] }, ...s.threads } }));
+      this.setState(s => ({ active: id, trayOpen: null, threads: { [id]: { title, role: 'No instructions yet', icon: 'bot', age: 'now', mine: true, msgs: [] }, ...s.threads } }));
     }
     const now = new Date(); const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     setTimeout(() => {
       this.setThread(id, t => ({ ...t, age: 'now', msgs: [...t.msgs, { id: 'u' + Date.now(), role: 'user', text, time }] }));
       this.setState({ draft: '', running: true, runStart: Date.now(), now: Date.now(), revealed: 0, liveStep: 0, streamId: null });
-      this.startRun(id);
+      const th = this.state.threads[id];
+      const wantsProposal = th && th.role === 'No instructions yet' && !th.msgs.some(m => m.role === 'proposal' && m.status !== 'rejected');
+      this.startRun(id, wantsProposal ? {
+        steps: [{ icon: 'search', verb: 'Searched', target: 'workspace access', meta: '3 projects' }, { icon: 'file-text', verb: 'Wrote', target: 'INSTRUCTIONS.md (proposal)' }],
+        reply: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time in settings.',
+        after: () => this.setThread(id, x => ({ ...x, msgs: [...x.msgs, { id: 'pr' + Date.now(), role: 'proposal', status: 'pending', job: text, lines: proposalLines(text) }] })),
+      } : null);
     }, 0);
   };
-  startRun(id) {
+  startRun(id, opts) {
     clearInterval(this.tick); clearTimeout(this.to);
-    const reply = REPLIES[this.state.replyN % REPLIES.length];
+    const reply = (opts && opts.reply) || REPLIES[this.state.replyN % REPLIES.length];
+    this._after = opts && opts.after;
     this.tick = setInterval(() => this.setState({ now: Date.now() }), 250);
-    const stepsPlan = [
+    const stepsPlan = (opts && opts.steps) || [
       { icon: 'file-text', verb: 'Read', target: 'console/RunRow.tsx' },
       { icon: 'search', verb: 'Searched', target: 'run.status', meta: '6 results' },
       { icon: 'file-text', verb: 'Edited', target: 'console/RunRow.tsx', add: '+21', del: '−4' },
     ];
+    this._plan = stepsPlan;
     let k = 0;
     const stepTick = () => {
       if (!this.state.running) return;
@@ -540,13 +646,14 @@ class Component extends DCLogic {
     clearInterval(this.tick); clearTimeout(this.to);
     this.setThread(id, t => ({ ...t, msgs: t.msgs.map(m => m.id === sid ? { ...m, streaming: false, md: stopped ? m.md.slice(0, this.state.revealed) : m.md, meta: stopped ? 'Stopped · completed work kept' : m.meta } : m) }));
     this.setState(s => ({ running: false, streamId: null, replyN: s.replyN + 1 }));
+    const after = this._after; this._after = null; if (after && !stopped) after();
   }
   stopRun = () => {
     const id = this.state.active;
     if (this.state.streamId) this.finish(id, this.state.streamId, true);
     else { clearInterval(this.tick); clearTimeout(this.to); this.setThread(id, t => ({ ...t, msgs: [...t.msgs, { id: 'x' + Date.now(), role: 'assistant', md: 'Run stopped before any edits were made.', meta: 'Stopped' }] })); this.setState({ running: false }); }
   };
-  modelLabel() { return { sonnet: 'Claude Sonnet 4.5', opus: 'Claude Opus 4.1', codex: 'GPT-5 Codex', gemini: 'Gemini 2.5 Pro' }[this.state.model]; }
+  modelLabel() { const m = this.catalog().models.find(x => x.k === this.state.model); return m ? m.name : ''; }
 
   onKey = (e) => {
     const list = this.slashMatches();
@@ -570,35 +677,50 @@ class Component extends DCLogic {
     const row = (id, th) => ({
       ...th, open: () => this.openBot(id),
       bg: s.active === id ? 'var(--selected-surface)' : 'transparent',
-      ...avOf(id, th),
-      live: s.running && s.active === id, unread: !!th.unread, weight: th.unread ? 600 : 500,
-      prevColor: th.unread ? 'var(--fg)' : 'var(--fg-muted)',
-      preview: (() => { const m = th.msgs[th.msgs.length - 1]; if (!m) return th.role || 'No messages yet'; const raw = m.text || m.md || (m.label || ''); const txt = raw.replace(/[\x60*#>-]/g, '').replace(/\s+/g, ' ').trim(); return (m.role === 'user' ? 'You: ' : '') + txt; })(),
+      ...avOf(id, th), ...(th.builtin ? { img: PIXEL, ini: th.ini, sciName: th.title } : {}),
+      draggable: th.builtin ? 'false' : 'true',
+      live: s.running && s.active === id, unread: !!th.unread && !th.pending, needs: !!th.pending, weight: th.unread || th.pending ? 600 : 500,
+      prevColor: th.unread || th.pending ? 'var(--fg)' : 'var(--fg-muted)',
+      preview: (() => { if (th.pending) return 'Needs input · ' + th.pending.prompt; const pr = th.msgs.find(m => m.role === 'proposal' && m.status === 'pending'); if (pr) return 'Proposed INSTRUCTIONS.md'; const m = [...th.msgs].reverse().find(x => x.role === 'user' || x.role === 'assistant'); if (!m) return th.role || 'No messages yet'; const raw = m.text || m.md || (m.label || ''); const txt = raw.replace(/[\x60*#>-]/g, '').replace(/\s+/g, ' ').trim(); return (m.role === 'user' ? 'You: ' : '') + txt; })(),
       dot: s.running && s.active === id ? 'var(--success)' : (th.msgs.length ? 'var(--fg-subtle)' : 'var(--border)'),
       anim: s.running && s.active === id ? 'op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite' : 'none',
     });
     const bq = s.botQuery.trim().toLowerCase();
-    const entries = Object.entries(s.threads).filter(([, b]) => !bq || b.title.toLowerCase().includes(bq) || (b.role || '').toLowerCase().includes(bq));
-    const gIds = s.groups.map(g => g.id);
+    const emptyWs = !!this.props.emptyWorkspace;
+    const visible = Object.entries(s.threads).filter(([, b]) => b.builtin || b.mine || !emptyWs);
+    const entries = visible.filter(([, b]) => !bq || b.title.toLowerCase().includes(bq) || (b.role || '').toLowerCase().includes(bq));
+    const userGroups = s.groups.filter(g => !emptyWs || g.mine);
+    const gIds = userGroups.map(g => g.id);
     const rowD = (id, th) => ({ ...row(id, th), drag: e => { this._drag = id; try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch (er) {} }, dragEnd: () => { this._drag = null; this.setState({ dropG: undefined }); } });
-    const groupsV = s.groups.concat([{ id: null, name: 'Ungrouped', open: s.ungOpen !== false }]).map(g => {
-      const bots = entries.filter(([, th]) => (gIds.includes(th.group) ? th.group : null) === g.id).map(([id, th]) => rowD(id, th));
-      const editable = g.id !== null, ren = editable && s.gRen === g.id;
-      return { ...g, bots, count: bots.length, empty: bots.length === 0 && editable, canEdit: editable, renaming: ren, notRenaming: !ren,
+    const groupsV = userGroups.concat([{ id: null, name: 'Ungrouped', open: s.ungOpen !== false }, { id: 'builtin', name: 'Built-in', open: s.biOpen !== false, readOnly: true }]).map(g => {
+      const bots = entries.filter(([, th]) => (th.builtin ? 'builtin' : (gIds.includes(th.group) ? th.group : null)) === g.id).map(([id, th]) => rowD(id, th));
+      const editable = g.id !== null && !g.readOnly, ren = editable && s.gRen === g.id;
+      return { ...g, readOnly: !!g.readOnly, bots, count: bots.length, empty: bots.length === 0 && editable, canEdit: editable, renaming: ren, notRenaming: !ren,
         open: g.open, chev: g.open ? 'rotate(90deg)' : 'none', hide: !editable && bots.length === 0 && s.dropG === undefined,
         menuOpen: s.gMenu === g.id && editable, menuBg: s.gMenu === g.id ? 'var(--hover-surface)' : 'transparent',
         dropBg: s.dropG === g.id ? 'var(--selected-surface)' : 'transparent',
-        toggle: () => g.id === null ? this.setState(x => ({ ungOpen: x.ungOpen === false })) : this.setState(x => ({ groups: x.groups.map(y => y.id === g.id ? { ...y, open: !y.open } : y) })),
+        toggle: () => g.id === 'builtin' ? this.setState(x => ({ biOpen: x.biOpen === false })) : g.id === null ? this.setState(x => ({ ungOpen: x.ungOpen === false })) : this.setState(x => ({ groups: x.groups.map(y => y.id === g.id ? { ...y, open: !y.open } : y) })),
         menuToggle: e => { e.stopPropagation(); this.setState(x => ({ gMenu: x.gMenu === g.id ? null : g.id })); },
         startRename: () => { if (!editable) return; this.setState({ gMenu: null, gRen: g.id, gDraft: g.name }); setTimeout(() => { const el = this.gRef.current; if (el) { el.focus(); el.select(); } }, 20); },
         remove: () => { this.setState(x => ({ gMenu: null, groups: x.groups.filter(y => y.id !== g.id), threads: Object.fromEntries(Object.entries(x.threads).map(([k, v]) => [k, v.group === g.id ? { ...v, group: null } : v])) })); this.flash('Group deleted'); },
-        over: e => { if (!this._drag) return; e.preventDefault(); if (this.state.dropG !== g.id) this.setState({ dropG: g.id }); },
+        over: e => { if (!this._drag || g.readOnly) return; e.preventDefault(); if (this.state.dropG !== g.id) this.setState({ dropG: g.id }); },
         leave: e => { if (!e.currentTarget.contains(e.relatedTarget) && this.state.dropG === g.id) this.setState({ dropG: null }); },
-        drop: e => { e.preventDefault(); const id = this._drag; this._drag = null; this.setState({ dropG: undefined }); if (id) { this.setThread(id, x => ({ ...x, group: g.id })); this.flash(g.id ? 'Moved to ' + g.name : 'Removed from group'); } } };
+        drop: e => { if (g.readOnly) return; e.preventDefault(); const id = this._drag; this._drag = null; this.setState({ dropG: undefined }); if (id) { this.setThread(id, x => ({ ...x, group: g.id })); this.flash(g.id ? 'Moved to ' + g.name : 'Removed from group'); } } };
     }).filter(g => !g.hide);
 
     const msgs = (t ? t.msgs : []).map(m => {
       if (m.role === 'user') return { isUser: true, text: m.text, time: m.time };
+      if (m.role === 'b2b') { const out = m.dir === 'out'; return { isB2b: true, bot: m.bot, text: m.text, time: m.time, dirLabel: out ? 'Sent to' : 'From', rot: out ? 'none' : 'rotate(180deg)', replyRot: out ? 'rotate(180deg)' : 'none', hasReply: !!m.reply, reply: m.reply, replyLabel: out ? m.bot + ' replied' : 'Replied' }; }
+      if (m.role === 'decision') return { isDecision: true, label: m.label, detail: m.detail, time: m.time };
+      if (m.role === 'proposal') {
+        const setP = st => this.setThread(s.active, th => ({ ...th, role: st === 'accepted' ? (m.job.length > 48 ? m.job.slice(0, 46).trim() + '…' : m.job) : th.role, msgs: th.msgs.map(x => x.id === m.id ? { ...x, status: st } : x) }));
+        const pending = m.status === 'pending';
+        return { isProposal: true, by: t.title, adds: '+' + m.lines.filter(l => l[0] === '+').length, pending, decided: !pending,
+          statusLabel: m.status === 'accepted' ? 'Accepted · revision 1' : 'Rejected', op: m.status === 'rejected' ? 0.5 : 1,
+          reviewHref: './BotSettings.dc.html?bot=' + encodeURIComponent(s.active) + '&tab=instr',
+          lines: m.lines.map(l => ({ t: l, color: l[0] === '+' ? 'var(--success)' : 'var(--fg-muted)' })),
+          accept: () => { setP('accepted'); this.flash('Saved as INSTRUCTIONS.md revision 1'); }, reject: () => { setP('rejected'); this.flash('Proposal rejected'); } };
+      }
       if (m.role === 'work') {
         const open = m.open ?? autoTrace;
         return { isWork: true, label: m.label, open, chevRot: open ? 'rotate(90deg)' : 'none',
@@ -622,24 +744,17 @@ class Component extends DCLogic {
       { icon: 'file-text', label: 'Editing console/RunRow.tsx' },
     ];
     const secs = Math.max(0, Math.floor((s.now - s.runStart) / 1000));
-    const liveLabel = s.streamId ? 'Writing' : live[s.liveStep].label;
-    const liveIcon = s.streamId ? 'activity' : live[s.liveStep].icon;
+    const plan = this._plan, ps = plan && plan[s.liveStep];
+    const liveLabel = s.streamId ? 'Writing' : ps ? (LIVE_VERB[ps.verb] || ps.verb) + ' ' + ps.target : live[s.liveStep % 3].label;
+    const liveIcon = s.streamId ? 'activity' : ps ? ps.icon : live[s.liveStep % 3].icon;
 
     const sm = this.slashMatches();
     const slashIdx = sm ? Math.min(s.slashIdx, Math.max(0, sm.length - 1)) : 0;
 
-    const approvals = [
-      { k: 'ask', icon: 'shield', label: 'Ask for approval', desc: 'Pause before every edit and command.' },
-      { k: 'edit', icon: 'file-text', label: 'Auto-edit', desc: 'Edit files freely; ask before running commands.' },
-      { k: 'full', icon: 'alert-triangle', label: 'Full access', desc: 'Edits and commands run without asking.' },
-    ];
-    const ap = approvals.find(a => a.k === s.approval);
-    const models = [
-      { k: 'sonnet', name: 'Claude Sonnet 4.5', vendor: 'Anthropic' },
-      { k: 'opus', name: 'Claude Opus 4.1', vendor: 'Anthropic' },
-      { k: 'codex', name: 'GPT-5 Codex', vendor: 'OpenAI' },
-      { k: 'gemini', name: 'Gemini 2.5 Pro', vendor: 'Google' },
-    ];
+    const cat = this.catalog();
+    const approvals = cat.approvals;
+    const ap = approvals.find(a => a.k === s.approval) || { label: 'Ask for approval', icon: 'shield' };
+    const models = cat.models;
     const lines = s.draft.split('\n').length;
     const used = t ? Math.min(92, Math.max(6, 6 + (t.msgs.reduce((a, m) => a + ((m.md || m.text || '').length), 0) - (t.ctxOff || 0)) / 60)) : 0;
 
@@ -648,17 +763,25 @@ class Component extends DCLogic {
       toggleSidebar: () => this.setState(x => ({ sidebar: !x.sidebar })),
       newThread: () => this.setState({ active: null, draft: '' }),
       isNew: !t, groups: groupsV, noBots: entries.length === 0 && !!bq,
+      noOwnBots: !bq && !visible.some(([, b]) => !b.builtin),
+      templates: cat.templates.map(tp => ({ ...tp, pick: () => this.fromTemplate(tp) })),
+      hasPending: !!(t && t.pending), noPending: !(t && t.pending), pend: (t && t.pending) || {},
+      pendActions: [
+        { n: '1', label: 'Approve', desc: 'Run it this once', pick: () => this.decide('approve') },
+        { n: '2', label: 'Always allow', desc: 'Pushes to synara/* branches, for this bot', pick: () => this.decide('always') },
+        { n: '3', label: 'Deny', desc: 'Stop, keep the branch local', pick: () => this.decide('deny') },
+      ],
       gRef: this.gRef, gDraft: s.gDraft, onGDraft: e => this.setState({ gDraft: e.target.value }),
       commitG: () => this.commitG(), gKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.commitG(); } if (e.key === 'Escape') this.setState({ gRen: null }); },
-      newGroup: () => { const id = 'g' + Date.now(); this.setState(x => ({ groups: x.groups.concat({ id, name: 'New group', open: true }), gRen: id, gDraft: 'New group' })); setTimeout(() => { const el = this.gRef.current; if (el) { el.focus(); el.select(); } }, 20); },
+      newGroup: () => { const id = 'g' + Date.now(); this.setState(x => ({ groups: x.groups.concat({ id, name: 'New group', open: true, mine: true }), gRen: id, gDraft: 'New group' })); setTimeout(() => { const el = this.gRef.current; if (el) { el.focus(); el.select(); } }, 20); },
       newBg: !t ? 'var(--hover-surface)' : '',
       botQuery: s.botQuery, onBotQuery: (e) => this.setState({ botQuery: e.target.value }),
       hasBot: !!t, showTitle: !!t && !s.renaming, never: false,
       botIcon: t ? t.icon : 'bot', botRole: t ? t.role : '',
-      ...(() => { if (!t) return { hb: {}, avColors: [], avSci: [], avOpen: false }; const a = avOf(s.active, t);
+      ...(() => { if (!t) return { hb: {}, avColors: [], avSci: [], avOpen: false }; const a = { ...avOf(s.active, t), ...(t.builtin ? { img: PIXEL, ini: t.ini, sciName: t.title } : {}) };
         const upd = patch => this.setState(x => ({ threads: { ...x.threads, [x.active]: { ...x.threads[x.active], ...patch } } }));
         return { hb: a, avOpen: !!s.avOpen, avBtnBg: s.avOpen ? 'var(--hover-surface)' : 'transparent',
-          avToggle: e => { e.stopPropagation(); this.setState(x => ({ avOpen: !x.avOpen })); },
+          avToggle: e => { e.stopPropagation(); if (t.builtin) { this.flash('Built-in agents keep their identity'); return; } this.setState(x => ({ avOpen: !x.avOpen })); },
           avColors: AV_COLORS.map(([name, v], i) => ({ name, v, on: a.c === i, ring: a.c === i ? '0 0 0 2px var(--card), 0 0 0 4px var(--fg)' : 'inset 0 0 0 1px var(--border-subtle)', pick: () => upd({ av: i }) })),
           avSci: AV_SCI.map(([k, name, file]) => ({ name, img: sciImg(file), ini: sciIni(name), onErr: hideImg, sciName: name, short: '', on: a.k === k, bg: a.k === k ? 'var(--selected-surface)' : 'transparent', fg: a.k === k ? 'var(--fg)' : 'var(--fg-muted)', pick: () => upd({ sci: k }) })),
           avShuffle: () => upd({ sci: AV_SCI[Math.floor(Math.random() * AV_SCI.length)][0] }) }; })(),
@@ -677,7 +800,7 @@ class Component extends DCLogic {
       createBg: s.toIdx === this.toMatches().length ? 'var(--hover-surface)' : 'transparent',
       createFromTo: () => this.createBot(s.botTo.trim()),
       stageJustify: 'flex-start', stagePad: '0', scrollFlex: '1 1 0',
-      greeting: t ? t.title + ' is ready. ' + (t.role === 'No instructions yet' ? 'Tell it what job to do.' : t.role + '.') : 'Pick a bot, or just start typing.',
+      greeting: t ? t.title + ' is ready. ' + (t.role === 'No instructions yet' ? 'Tell it what job to do.' : t.role + '.') : (visible.some(([, b]) => !b.builtin) ? 'Pick a bot, or just start typing.' : 'Make your first bot.'),
       titleColor: t ? 'var(--fg)' : 'var(--fg-muted)', titleHint: t ? 'Bot settings' : '',
       editBot: () => { if (s.active) location.href = './BotSettings.dc.html?bot=' + encodeURIComponent(s.active); },
       ctxTitle: 'Context used · click to compact now',
@@ -691,10 +814,13 @@ class Component extends DCLogic {
       copyBranch: () => { try { navigator.clipboard.writeText(t.branch); } catch (e) {} this.setState({ branchCopied: true }); clearTimeout(this._bc); this._bc = setTimeout(() => this.setState({ branchCopied: false }), 1400); },
       headerMenu: s.headerMenu, headerMenuBg: s.headerMenu ? 'var(--hover-surface)' : '',
       toggleHeaderMenu: (e) => { e.stopPropagation(); this.setState(x => ({ headerMenu: !x.headerMenu, approvalOpen: false, modelOpen: false, effortOpen: false, trayOpen: null })); },
-      headerItems: t ? [
+      headerItems: t && t.builtin ? [
+        { icon: 'settings', label: 'Settings', kbd: '', run: () => { location.href = './BotSettings.dc.html?bot=' + encodeURIComponent(s.active); } },
+        { icon: 'copy', label: 'Copy link', kbd: '', run: () => { try { navigator.clipboard.writeText(location.href.split('#')[0] + '#' + s.active); } catch (e) {} this.setState({ headerMenu: false }); this.flash('Link copied'); } },
+      ].map(h => ({ sep: false, ...h, color: 'var(--fg)', iconColor: 'var(--fg-muted)' })) : t ? [
         { icon: 'settings', label: 'Edit bot', kbd: '', run: () => { location.href = './BotSettings.dc.html?bot=' + encodeURIComponent(s.active); } },
         { icon: 'file-text', label: 'Rename', kbd: '', run: this.startRename },
-        ...s.groups.filter(g => g.id !== t.group).map(g => ({ icon: 'folder', label: 'Move to ' + g.name, kbd: '', run: () => { this.setThread(s.active, x => ({ ...x, group: g.id })); this.setState({ headerMenu: false }); this.flash('Moved to ' + g.name); } })),
+        ...userGroups.filter(g => g.id !== t.group).map(g => ({ icon: 'folder', label: 'Move to ' + g.name, kbd: '', run: () => { this.setThread(s.active, x => ({ ...x, group: g.id })); this.setState({ headerMenu: false }); this.flash('Moved to ' + g.name); } })),
         ...(gIds.includes(t.group) ? [{ icon: 'x', label: 'Remove from group', kbd: '', run: () => { this.setThread(s.active, x => ({ ...x, group: null })); this.setState({ headerMenu: false }); this.flash('Removed from group'); } }] : []),
         { icon: 'copy', label: 'Duplicate bot', kbd: '', run: () => { const id = 't' + Date.now(); this.setState(x => ({ headerMenu: false, active: id, threads: { [id]: { ...t, title: t.title + ' copy', pinned: false, age: 'now', msgs: t.msgs.map(m => ({ ...m })) }, ...x.threads } })); this.flash('Bot duplicated'); } },
         { icon: 'copy', label: 'Copy link', kbd: '', run: () => { try { navigator.clipboard.writeText(location.href.split('#')[0] + '#' + s.active); } catch (e) {} this.setState({ headerMenu: false }); this.flash('Link copied'); } },
@@ -720,10 +846,12 @@ class Component extends DCLogic {
       msgs, running: s.running, idle: !s.running, liveLabel, liveIcon, elapsed: secs + 's',
       scrollRef: this.scrollRef, taRef: this.taRef,
       draft: s.draft, rows: Math.min(8, Math.max(2, lines)),
-      placeholder: t ? 'Message ' + t.title : 'Message a new bot',
+      placeholder: t ? (t.pending ? 'Or tell ' + t.title + ' what to do instead' : 'Message ' + t.title) : 'Message a new bot',
       onDraft: (e) => this.setState({ draft: e.target.value, slashIdx: 0 }),
       onKey: this.onKey, onFocus: () => this.setState({ focused: true }), onBlur: () => this.setState({ focused: false }),
       composerBorder: s.focused ? 'var(--border)' : 'var(--border-subtle)',
+      composerRadius: t && t.pending ? '0 0 18px 18px' : '18px',
+      composerTop: t && t.pending ? 'var(--border-subtle)' : (s.focused ? 'var(--border)' : 'var(--border-subtle)'),
       send: this.send, stopRun: this.stopRun, cantSend: !s.draft.trim(), sendOpacity: s.draft.trim() ? 1 : 0.4,
       slashOpen: !!sm, slashEmpty: !!sm && sm.length === 0,
       slashItems: (sm || []).map((c, i) => ({ ...c, bg: i === slashIdx ? 'var(--hover-surface)' : 'transparent', pick: () => this.pickCmd(c), hover: () => this.setState({ slashIdx: i }) })),

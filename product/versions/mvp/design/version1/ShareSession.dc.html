@@ -12,46 +12,16 @@
 <style>html,body{margin:0;height:100%}a{color:var(--link,#0066cc);text-decoration:none}a:hover{text-decoration:underline}</style>
 </helmet>
 <div style="display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
-
-<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}">
-<div style="flex:none;position:relative;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px 0 20px;min-width:0">
-<span class="op-wordmark" style="font-size:17px">Oppenheimer</span>
-<span style="color:var(--fg-subtle)">/</span>
-<span style="font-size:14px;color:var(--fg-muted)">Sessions</span>
-<span style="color:var(--fg-subtle)">/</span>
-<span style="font-size:14px;color:var(--fg-muted)">acme-web</span>
-<span style="flex:1"></span>
-<div style="display:flex;align-items:center">
-<sc-for list="{{ presence }}" as="p" hint-placeholder-count="0">
-<span class="op-avatar op-avatar--sm" title="{{ p.title }}" style="margin-left:-6px;box-shadow:0 0 0 2px var(--background);background:{{ p.bg }};color:{{ p.fg }}">{{ p.initials }}</span>
-</sc-for>
-</div>
-<sc-if value="{{ presenceAny }}"><span style="font-size:12.5px;color:var(--fg-muted);white-space:nowrap">{{ presenceLabel }}</span></sc-if>
-</div>
-</sc-if>
-
-<div role="tablist" aria-label="Prototype screens" style="flex:none;align-self:center;order:-1;margin-top:10px;display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface);max-width:calc(100% - 32px);overflow-x:auto">
-<sc-for list="{{ screens }}" as="s" hint-placeholder-count="3">
-<button type="button" role="tab" aria-selected="{{ s.on }}" onClick="{{ s.pick }}" style="display:flex;align-items:center;gap:7px;height:28px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer;transition:background 80ms,color 80ms;background:{{ s.bg }};color:{{ s.fg }}"><span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ s.n }}</span>{{ s.label }}</button>
-</sc-for>
-</div>
-
+<div style="flex:none;display:flex;align-items:center;height:56px;padding:0 20px"><span class="op-wordmark" style="font-size:17px">Oppenheimer</span></div>
 <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:{{ framePad }}">
 <div style="flex:1;min-height:0;width:100%;max-width:1040px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card)">
-
 <div style="flex:none;display:flex;align-items:center;gap:10px;min-width:0;height:46px;padding:0 12px 0 14px;border-bottom:1px solid var(--border-subtle)">
-<sc-if value="{{ isExternal }}"><span class="op-wordmark" style="flex:none;font-size:14px">Oppenheimer</span><span style="flex:none;color:var(--fg-subtle)">/</span></sc-if>
 <span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ stateDot }}"></span>
 <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:13px">fix-auth-redirect</span>
 <span style="flex:none;font-size:12.5px;color:var(--fg-muted)">{{ stateLabel }}</span>
 <span style="flex:none;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);white-space:nowrap">Claude Code · mbp-jordi</span>
 <span style="flex:1"></span>
-<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}">
-<sc-if value="{{ isShared }}">
-<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ openShare }}" style="gap:7px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ sharedIcon }}" size="13" hint-size="13px,13px"></x-import>{{ sharedSummary }}</button>
-</sc-if>
-<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ openShare }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="users" size="13" hint-size="13px,13px"></x-import>Share</button>
-</sc-if>
+<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}"><span class="op-badge op-badge--neutral" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="12" hint-size="12px,12px"></x-import>Can edit</span></sc-if>
 <sc-if value="{{ isExternal }}">
 <div style="display:flex;align-items:center;padding-left:6px"><sc-for list="{{ presence }}" as="p" hint-placeholder-count="2"><span class="op-avatar op-avatar--sm" title="{{ p.title }}" style="width:22px;height:22px;font-size:9.5px;margin-left:2px;background:{{ p.bg }};color:{{ p.fg }}">{{ p.initials }}</span></sc-for></div>
 <span class="op-badge op-badge--neutral" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ accessIcon }}" size="12" hint-size="12px,12px"></x-import>{{ accessBadge }}</span>
@@ -65,8 +35,7 @@
 <div class="op-term__scroll" ref="{{ scrollRef }}">
 <sc-for list="{{ feed }}" as="f" hint-placeholder-count="4">
 <sc-if value="{{ f.you }}">
-<div class="op-term__you" style="flex-direction:column;gap:4px">
-<span style="display:flex;align-items:center;gap:8px;font-family:var(--font-sans);font-size:11.5px;color:var(--fg-muted)"><span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:980px;font-size:8.5px;font-weight:600;background:{{ f.bg }};color:{{ f.fg }}">{{ f.initials }}</span>{{ f.author }}<sc-if value="{{ f.meta }}"><span style="color:var(--fg-subtle)">· {{ f.meta }}</span></sc-if></span>
+<div class="op-term__you">
 <span style="display:flex;gap:10px"><span class="op-term__youchev">❯</span><span class="op-term__youtext">{{ f.text }}</span></span>
 </div>
 </sc-if>
@@ -80,11 +49,6 @@
 <div class="op-term__prompt"><span class="op-term__chev">❯</span><input class="op-term__input" placeholder="{{ promptPh }}" value="{{ draft }}" onChange="{{ setDraft }}" onKeyDown="{{ draftKey }}" disabled="{{ promptLocked }}"></div>
 <div class="op-term__status">
 <span class="op-term__statusitem op-link"><span class="op-link__dot"></span><span class="op-link__label">Connected</span></span>
-<span class="op-term__statusitem">6% used · 4h 2m</span>
-<span class="op-term__statusitem">51% used · 4d 3h</span>
-<span class="op-term__statusitem">763.4 MB</span>
-<span class="op-term__statusitem">bypass permissions on</span>
-<span class="op-term__statusitem">1 host</span>
 <sc-if value="{{ isShared }}"><span class="op-term__statusitem">{{ sharedStatus }}</span></sc-if>
 </div>
 </div>
@@ -341,7 +305,8 @@ class Component extends DCLogic {
     const d = DUR[s.dur];
     const durHint = !d.end ? 'Does not expire. Access stays until you stop sharing.' : isWrite ? `Ends ${d.end}. Write access lasts 24 hours at most.` : `Ends ${d.end}. You can stop sharing any time.`;
     const writeWho = s.people.length === 1 ? s.people[0].name : s.people.length ? s.people.length + ' people' : 'They';
-    const submitBlocked = (s.mode === 'people' && !s.people.length) || (isWrite && !s.ack);
+    const typedPick = ql ? (MEMBERS.find(m => !added.has(m.id) && (m.name.toLowerCase().includes(ql) || m.email.includes(ql))) || (isEmail(ql) ? { id: ql, name: ql, email: ql, initials: ql.slice(0, 2).toUpperCase(), external: true } : null)) : null;
+    const submitBlocked = (s.mode === 'people' && !s.people.length && !typedPick) || (isWrite && !s.ack);
     const submitLabel = s.mode === 'link' ? 'Create link' : isWrite ? 'Give write access' : 'Share';
 
     let accessRows = [{ initials: 'JP', name: 'Jordi Parra', sub: 'jordiparra99@gmail.com · you', role: 'Owner', ends: '', bg: 'var(--primary)', fg: '#fff', fixed: true }];
@@ -370,7 +335,7 @@ class Component extends DCLogic {
       stateLabel: isViewer && s.vIdx >= STREAM.length ? 'Idle' : 'Running',
       isShared: !!sh, sharedSummary, sharedStatus, sharedIcon: shWrite ? 'terminal' : 'eye',
       openShare: () => this.setState({ dlg: true, view: sh ? 'manage' : 'compose', request: false }),
-      accessIcon: isWriter ? 'terminal' : 'eye', accessBadge: isWriter ? 'Can write' : 'View only', extEnds: isWriter ? '59m' : '23h 41m',
+      accessIcon: isWriter ? 'terminal' : 'eye', accessBadge: isWriter ? 'Can edit' : 'View only', extEnds: isWriter ? '59m' : '23h 41m',
       leave: go('owner'),
       showEnded: isViewer && s.ended, showTerm: !(isViewer && s.ended),
       unend: () => this.setState({ ended: false }), simulateEnd: e => { e.preventDefault(); this.setState({ ended: true }); },
@@ -406,7 +371,7 @@ class Component extends DCLogic {
       approveDesc: s.approve ? 'Their prompts wait in your session until you run them.' : 'Their prompts run the moment they press enter.',
       ack: s.ack, toggleAck: () => this.setState(st => ({ ack: !st.ack })),
       durPills, durHint,
-      submitBlocked, submitLabel, submitVariant: isWrite ? 'op-btn--danger' : 'op-btn--primary', submit: () => this.submit(),
+      submitBlocked, submitLabel, submitVariant: isWrite ? 'op-btn--danger' : 'op-btn--primary', submit: () => { if (s.mode === 'people' && typedPick && !added.has(typedPick.id)) { this.setState(st => ({ people: [...st.people, typedPick], q: '' }), () => this.submit()); } else this.submit(); },
       copyLabel: s.copied ? 'Copied' : 'Copy link', copyIcon: s.copied ? 'check' : 'copy',
       copyLink: () => { this.setState({ copied: true }); this.later(() => this.setState({ copied: false }), 1600); },
       linkHint: sh && sh.mode === 'link' ? 'Anyone who signs in can watch. Never shows write controls.' : 'Only the people below can open it. Others see “You don’t have access”.',
