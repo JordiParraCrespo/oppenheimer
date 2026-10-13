@@ -3,6 +3,8 @@ import {
   Card,
   CardContent,
   CardFooter,
+  DiffStat,
+  MergePath,
   PullRequestHeader,
   Skeleton,
 } from '@oppenheimer/design-system-web';
@@ -11,15 +13,22 @@ import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { LaneBadge } from '../components/lane-badge';
 import { MarkdownBody } from '../components/markdown-body';
-import { PullRequestRail } from '../components/pull-request-rail';
-import { pullState } from '../lib/briefing';
-import { PullRequestActivity } from './pull-request-activity';
-import { PullRequestCommentsSummary } from './pull-request-comments-summary';
+import { mergeSteps, pullState } from '../lib/merge-path';
+import { MergeActions } from './merge-actions';
 
-/** The description on its card with its activity under it, and the rail beside them. */
-export function PullRequestDescription({ address }: { address: PullRequestAddress }) {
+/**
+ * The Description view: the header, the status strip (the size, the files,
+ * Checks, Conflicts and Merge, with Review changes and Merge), then the
+ * author's own description, as GitHub has it.
+ */
+export function PullRequestDescription({
+  address,
+  onReviewChanges,
+}: {
+  address: PullRequestAddress;
+  onReviewChanges: () => void;
+}) {
   const { t } = useTranslation();
   const detail = usePullRequest(address);
   return (
@@ -31,48 +40,55 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
       {(pull) => {
         const state = pullState(pull);
         return (
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-14">
-            <div className="flex min-w-0 flex-1 flex-col gap-6">
-              <PullRequestHeader
-                state={state.state}
-                stateLabel={t(`pullRequests.detail.state.${state.key}`)}
-                lane={<LaneBadge lane={pull.lane} />}
-                reference={pull.reference}
-                title={pull.title}
-                author={pull.author}
-                authorKind={pull.authorKind}
-                head={pull.headRef}
-                base={pull.baseRef}
-                labels={{ into: t('pullRequests.detail.into') }}
-              />
-              <Card>
-                <CardContent>
-                  {pull.body.trim() ? (
-                    <MarkdownBody source={pull.body} base={pull.htmlUrl} />
-                  ) : (
-                    <p className="m-0 text-body text-fg-muted">
-                      {t('pullRequests.detail.noDescription')}
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter className="justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    nativeButton={false}
-                    render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
-                  >
-                    <PencilIcon />
-                    {t('pullRequests.detail.editOnGithub')}
-                  </Button>
-                </CardFooter>
-              </Card>
-              <PullRequestActivity address={address} base={pull.htmlUrl} />
-            </div>
-            <PullRequestRail
-              pull={pull}
-              comments={<PullRequestCommentsSummary address={address} />}
+          <div className="flex flex-col gap-4">
+            <PullRequestHeader
+              state={state.state}
+              stateLabel={t(`pullRequests.detail.state.${state.key}`)}
+              reference={pull.reference}
+              title={pull.title}
+              author={pull.author}
+              authorKind={pull.authorKind}
+              head={pull.headRef}
+              base={pull.baseRef}
+              labels={{ into: t('pullRequests.detail.into') }}
             />
+            <MergePath
+              leading={
+                <>
+                  <DiffStat additions={pull.additions} deletions={pull.deletions} />
+                  <span>
+                    {t('pullRequests.detail.filesIn', {
+                      count: pull.changedFiles,
+                      folders: t('pullRequests.detail.inFolders', { count: pull.folders.length }),
+                    })}
+                  </span>
+                </>
+              }
+              steps={mergeSteps(pull, t)}
+              actions={<MergeActions pull={pull} onReviewChanges={onReviewChanges} />}
+            />
+            <Card>
+              <CardContent>
+                {pull.body.trim() ? (
+                  <MarkdownBody source={pull.body} base={pull.htmlUrl} />
+                ) : (
+                  <p className="m-0 text-body text-fg-muted">
+                    {t('pullRequests.detail.noDescription')}
+                  </p>
+                )}
+              </CardContent>
+              <CardFooter className="justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  nativeButton={false}
+                  render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
+                >
+                  <PencilIcon />
+                  {t('pullRequests.detail.editOnGithub')}
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
         );
       }}

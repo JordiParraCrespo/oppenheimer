@@ -11,7 +11,6 @@ import {
   type LaneReason,
   type LineCommentInput,
   type MergeMethod,
-  type PullRequestActivityItem,
   type PullRequestAddress,
   type PullRequestAnalytics,
   type PullRequestAnalyticsRange,
@@ -22,6 +21,7 @@ import {
   type PullRequestQueue,
   type PullRequestScope,
   type ReviewInput,
+  type ReviewOutcome,
   type WatchedRepository,
 } from './pull-request.entity';
 import { PullRequestsErrors } from './pull-requests.errors';
@@ -185,39 +185,13 @@ export class PullRequestsRepository {
     }));
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_ACTIVITY_FAILED)
-  async activity(address: PullRequestAddress): Promise<PullRequestActivityItem[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequestActivity({ path: address }),
-      PullRequestsErrors.FETCH_ACTIVITY_FAILED,
-    );
-    return data.flatMap((item): PullRequestActivityItem[] => {
-      const base = { id: item.id, author: item.author, at: new Date(item.at) };
-      switch (item.kind) {
-        case 'comment':
-          return [{ ...base, kind: 'comment', body: item.body ?? '' }];
-        case 'commit':
-          return [{ ...base, kind: 'commit', sha: item.sha ?? '', message: item.body ?? '' }];
-        case 'review':
-          return item.state
-            ? [{ ...base, kind: 'review', state: item.state, body: item.body ?? '' }]
-            : [];
-        case 'event':
-          return item.event
-            ? [{ ...base, kind: 'event', event: item.event, subject: item.subject ?? null }]
-            : [];
-        default:
-          return [];
-      }
-    });
-  }
-
-  /** Answers whether approving also merged it; GitHub may hold the merge, and then it waits. */
+  /**
+   * Answers what happened to the merge: approve and merge merges now when
+   * GitHub allows it, and otherwise GitHub's auto-merge takes it once the
+   * required checks pass (`autoMerge`), or it waits.
+   */
   @MapApiError(PullRequestsErrors.REVIEW_FAILED)
-  async submitReview(
-    address: PullRequestAddress,
-    review: ReviewInput,
-  ): Promise<{ merged: boolean }> {
+  async submitReview(address: PullRequestAddress, review: ReviewInput): Promise<ReviewOutcome> {
     return unwrapBody(
       heyApiSdk.submitPullRequestReview({
         path: address,

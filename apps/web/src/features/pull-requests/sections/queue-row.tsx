@@ -1,11 +1,5 @@
-import {
-  Button,
-  IconButton,
-  MergeButton,
-  PullRequestRow,
-  toast,
-} from '@oppenheimer/design-system-web';
-import { FileText } from '@oppenheimer/design-system-web/icons';
+import { Button, MergeButton, PullRequestRow, toast } from '@oppenheimer/design-system-web';
+import { Eye } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import { useMergePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
@@ -14,14 +8,16 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LaneBadge } from '../components/lane-badge';
+import { type PullRequestView, pullRequestLink } from '../lib/pull-request-search';
 import { CHECK_STATE, formatWait, LATE_SECONDS } from '../lib/view';
 
 /**
- * One row of the queue, with what it does in place: open the briefing or the
- * changes, and merge after one confirm, as the caller. The confirm is this
- * row's own state, so arming one row redraws only it.
+ * One row of the queue, with what it does in place: the title opens the
+ * description, Review the changes, and Merge merges after one confirm, as the
+ * caller. The confirm is this row's own state, so arming one row redraws only
+ * it.
  */
-export function QueueRow({ pull }: { pull: PullRequestEntity }) {
+export function QueueRow({ pull, selected }: { pull: PullRequestEntity; selected: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -31,17 +27,7 @@ export function QueueRow({ pull }: { pull: PullRequestEntity }) {
     onError: (error) =>
       toast.error(resolveError(error, t('pullRequests.queue.mergeFailed')).message),
   });
-  const params = {
-    installationId: pull.installationId,
-    githubRepoId: String(pull.githubRepoId),
-    number: String(pull.number),
-  };
-  const open = (view?: 'changes') =>
-    navigate({
-      to: '/pulls/$installationId/$githubRepoId/$number',
-      params,
-      search: view ? { view } : {},
-    });
+  const open = (view: PullRequestView) => navigate(pullRequestLink(pull.address, view));
   const blocked = pull.blocker ? t(`pullRequests.blocker.${pull.blocker}`) : undefined;
 
   return (
@@ -71,17 +57,12 @@ export function QueueRow({ pull }: { pull: PullRequestEntity }) {
       )}
       waiting={formatWait(pull.waitingSeconds)}
       waitingTone={pull.waitingSeconds >= LATE_SECONDS ? 'late' : undefined}
-      onOpen={() => open()}
+      selected={selected}
+      onOpen={() => open('description')}
       actions={
         <>
-          <IconButton
-            size="sm"
-            aria-label={t('pullRequests.queue.openChanges')}
-            onClick={() => open('changes')}
-          >
-            <FileText />
-          </IconButton>
-          <Button variant="secondary" size="sm" onClick={() => open()}>
+          <Button variant="secondary" size="sm" onClick={() => open('changes')}>
+            <Eye />
             {t('pullRequests.queue.review')}
           </Button>
           <MergeButton
@@ -100,6 +81,7 @@ export function QueueRow({ pull }: { pull: PullRequestEntity }) {
               confirm: t('pullRequests.queue.mergeButton.confirm'),
               cancel: t('pullRequests.queue.mergeButton.cancel'),
               merged: t('pullRequests.queue.merged'),
+              confirmTitle: t('pullRequests.queue.mergeButton.confirmTitle'),
             }}
           />
         </>

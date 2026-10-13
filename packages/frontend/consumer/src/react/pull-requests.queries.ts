@@ -12,7 +12,6 @@ import {
 import type {
   LineCommentInput,
   MergeMethod,
-  PullRequestActivityItem,
   PullRequestAddress,
   PullRequestAnalytics,
   PullRequestAnalyticsRange,
@@ -22,6 +21,7 @@ import type {
   PullRequestQueue,
   PullRequestScope,
   ReviewInput,
+  ReviewOutcome,
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
@@ -35,7 +35,7 @@ import { usePollWhile } from './live-poll';
  * ```
  * ['pullRequests', 'queue', scope]
  * ['pullRequests', 'detail', installationId, githubRepoId, number]
- * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity']
+ * ['pullRequests', 'detail', …, 'files' | 'comments']
  * ['pullRequests', 'repositories']
  * ['pullRequests', 'analytics', range]
  * ```
@@ -56,8 +56,6 @@ export const pullRequestsKeys = {
     [...pullRequestsKeys.detail(address), 'files'] as const,
   comments: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'comments'] as const,
-  activity: (address: PullRequestAddress | undefined) =>
-    [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
   analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
   analyticsRange: (range: PullRequestAnalyticsRange) =>
@@ -112,15 +110,6 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
   return useQuery<PullRequestComment[], Error>({
     queryKey: pullRequestsKeys.comments(address),
     queryFn: address ? () => app.pullRequests.comments(address) : skipToken,
-  });
-}
-
-/** Its conversation: comments, commits, reviews and events, drawn under the description. */
-export function usePullRequestActivity(address: PullRequestAddress | undefined) {
-  const app = useConsumerApp();
-  return useQuery<PullRequestActivityItem[], Error>({
-    queryKey: pullRequestsKeys.activity(address),
-    queryFn: address ? () => app.pullRequests.activity(address) : skipToken,
   });
 }
 
@@ -183,9 +172,9 @@ export interface SubmitReviewVariables {
   review: ReviewInput;
 }
 
-/** A review in the caller's name; approving also merges when GitHub allows it. */
+/** A review in the caller's name; approve and merge also merges, now or once checks pass. */
 export function useSubmitPullRequestReview(
-  options?: UseMutationOptions<{ merged: boolean }, Error, SubmitReviewVariables>,
+  options?: UseMutationOptions<ReviewOutcome, Error, SubmitReviewVariables>,
 ) {
   const app = useConsumerApp();
   const invalidate = useInvalidatePullRequests();

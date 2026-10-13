@@ -7,7 +7,7 @@ import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** The path to merge's two actions: read the changes, or merge as the caller after one confirm. */
+/** The status strip's two actions: read the changes, or merge as the caller after one confirm. */
 export function MergeActions({
   pull,
   onReviewChanges,
@@ -44,6 +44,7 @@ export function MergeActions({
           confirm: t('pullRequests.queue.mergeButton.confirm'),
           cancel: t('pullRequests.queue.mergeButton.cancel'),
           merged: t('pullRequests.queue.merged'),
+          confirmTitle: t('pullRequests.queue.mergeButton.confirmTitle'),
         }}
       />
     </>

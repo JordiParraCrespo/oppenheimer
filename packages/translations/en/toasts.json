@@ -33,5 +33,7 @@
   "reviewSubmitted": "Review submitted.",
   "reviewApprovedMerged": "Approved and merged.",
   "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
-  "reviewCommentPosted": "Comment posted."
+  "reviewCommentPosted": "Comment posted.",
+  "reviewApproved": "Approved.",
+  "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass."
 }

@@ -13,21 +13,22 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReviewNextShortcut } from '../hooks/use-review-next-shortcut';
-import { filterQueue, inRepository } from '../lib/queue-filter';
+import { filterQueue } from '../lib/queue-filter';
 import { formatWait } from '../lib/view';
 
 /**
  * The queue's display header: what can merge, what conflicts and the oldest
  * wait in the scope on screen, and its one action, Review next (`N`), which
- * opens the longest-waiting pull request the filters leave.
+ * opens the first pull request the filters leave: the deepest lane, the
+ * longest wait.
  */
 export function QueueHeader() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { scope, lane, repo } = useQueueSearch();
+  const { scope, filters } = useQueueSearch();
   const { data: queue } = usePullRequestQueue(scope);
-  const rows = inRepository(queue?.items ?? [], repo);
-  const next = filterQueue(rows, lane, '')[0];
+  const rows = filterQueue(queue?.items ?? [], { repo: filters.repo });
+  const next = filterQueue(rows, filters)[0];
   const oldest = rows.reduce((max, row) => Math.max(max, row.waitingSeconds), 0);
   const reviewNext = next
     ? () =>

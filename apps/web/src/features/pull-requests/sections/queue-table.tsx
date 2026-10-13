@@ -1,37 +1,70 @@
 import {
+  Button,
+  ChipSelect,
   EmptyState,
-  PillTab,
-  PillTabs,
+  FacetSelect,
   PullRequestTable,
   PullRequestTableHead,
   RunsListFoot,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { GitPullRequest } from '@oppenheimer/design-system-web/icons';
+import { GitBranch, GitPullRequest, Settings } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestLane } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_LANES } from '@oppenheimer/shared/schemas/pull-request';
-import { useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueueSearchField } from '../components/queue-search-field';
+import { useQueueKeys } from '../hooks/use-queue-keys';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReadNotices } from '../hooks/use-read-notices';
-import { filterQueue, inRepository, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
+import { pullRequestLink } from '../lib/pull-request-search';
+import { facetCounts, filterQueue, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
+import { QUEUE_CHECKS, QUEUE_WAITS, type QueueChecks, type QueueWait } from '../lib/queue-search';
 import { QueueRow } from './queue-row';
 
 /**
- * The queue's table: the search and the lane pills over the rows of the scope,
- * longest wait first, a page at a time. The settled search is this section's;
- * the half-typed one is the field's.
+ * The queue's table: the search, the repository and the Difficulty, Checks
+ * and Waiting facets over the rows of the scope, in the API's order (the
+ * deepest lane first, then the longest wait), a page at a time. Each facet
+ * counts what picking an option would leave. The settled search is this
+ * section's; the half-typed one is the field's. `j` / `k` pick a row, Enter
+ * opens it, `/` goes to the search.
  */
 export function QueueTable() {
   const { t } = useTranslation();
-  const { scope, lane, repo, setLane } = useQueueSearch();
+  const navigate = useNavigate();
+  const { scope, filters, setRepo, setLane, setChecks, setWait } = useQueueSearch();
   const queue = usePullRequestQueue(scope);
   useReadNotices(queue.data?.unreadable);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+  const search = useRef<HTMLInputElement>(null);
+  const narrowed = { ...filters, query };
+  const rows = filterQueue(queue.data?.items ?? [], narrowed);
+  const pages = Math.max(1, Math.ceil(rows.length / QUEUE_PAGE_SIZE));
+  const current = Math.min(page, pages - 1);
+  const shown = rows.slice(current * QUEUE_PAGE_SIZE, (current + 1) * QUEUE_PAGE_SIZE);
+  const narrow = (apply: () => void) => {
+    apply();
+    setPage(0);
+    setPicked(null);
+  };
+  useQueueKeys({
+    onMove: (step) =>
+      setPicked((at) =>
+        shown.length ? Math.min(Math.max((at ?? -1) + step, 0), shown.length - 1) : null,
+      ),
+    onOpen: () => {
+      const pull = picked === null ? undefined : shown[picked];
+      if (pull) navigate(pullRequestLink(pull.address, 'description'));
+    },
+    onSearch: () => search.current?.focus(),
+    onRelease: () => setPicked(null),
+  });
 
   return (
     <QueryState
@@ -40,107 +73,163 @@ export function QueueTable() {
       errorFallback={t('pullRequests.queue.loadFailed')}
     >
       {(data) => {
-        const scoped = inRepository(data.items, repo);
-        const count = (value: PullRequestLane) => scoped.filter((row) => row.lane === value).length;
-        const rows = filterQueue(scoped, lane, query);
-        const pages = Math.max(1, Math.ceil(rows.length / QUEUE_PAGE_SIZE));
-        const current = Math.min(page, pages - 1);
-        const shown = rows.slice(current * QUEUE_PAGE_SIZE, (current + 1) * QUEUE_PAGE_SIZE);
         if (!data.items.length) {
           const watching = scope === 'watching';
           return (
-            <div className="flex flex-col gap-3">
-              <div className="rounded-xl bg-card py-6">
-                <EmptyState>
-                  <EmptyState.Header>
-                    <EmptyState.Media variant="icon">
-                      <GitPullRequest />
-                    </EmptyState.Media>
-                    <EmptyState.Title>
-                      {t(
-                        watching
-                          ? 'pullRequests.queue.emptyWatchingTitle'
-                          : 'pullRequests.queue.emptyTitle',
-                      )}
-                    </EmptyState.Title>
-                    <EmptyState.Description>
-                      {t(
-                        watching
-                          ? 'pullRequests.queue.emptyWatchingHint'
-                          : 'pullRequests.queue.emptyHint',
-                      )}
-                    </EmptyState.Description>
-                  </EmptyState.Header>
-                </EmptyState>
-              </div>
+            <div className="rounded-xl bg-card py-6">
+              <EmptyState>
+                <EmptyState.Header>
+                  <EmptyState.Media variant="icon">
+                    <GitPullRequest />
+                  </EmptyState.Media>
+                  <EmptyState.Title>
+                    {t(
+                      watching
+                        ? 'pullRequests.queue.emptyWatchingTitle'
+                        : 'pullRequests.queue.emptyTitle',
+                    )}
+                  </EmptyState.Title>
+                  <EmptyState.Description>
+                    {t(
+                      watching
+                        ? 'pullRequests.queue.emptyWatchingHint'
+                        : 'pullRequests.queue.emptyHint',
+                    )}
+                  </EmptyState.Description>
+                </EmptyState.Header>
+                {watching ? (
+                  <EmptyState.Content>
+                    <Button
+                      variant="secondary"
+                      nativeButton={false}
+                      render={<Link to="/settings/repositories" />}
+                    >
+                      <Settings />
+                      {t('pullRequests.queue.configureWatched')}
+                    </Button>
+                  </EmptyState.Content>
+                ) : null}
+              </EmptyState>
             </div>
           );
         }
+        const repos = facetCounts(data.items, narrowed, 'repo');
+        const lanes = facetCounts(data.items, narrowed, 'lane');
+        const checks = facetCounts(data.items, narrowed, 'checks');
+        const waits = facetCounts(data.items, narrowed, 'wait');
+        const names = [...new Set(data.items.map((row) => row.repository))].sort();
         return (
-          <div className="flex flex-col gap-3">
-            <PullRequestTable>
-              <div className="flex flex-wrap items-center gap-2 px-1.5 pt-1.5 pb-2">
-                <QueueSearchField
-                  label={t('pullRequests.queue.search')}
-                  onChange={(next) => {
-                    setQuery(next);
-                    setPage(0);
-                  }}
-                />
-                <span className="flex-1" />
-                <PillTabs
-                  size="sm"
-                  value={lane ?? 'all'}
-                  onValueChange={(next) => {
-                    setLane(next === 'all' ? undefined : (next as PullRequestLane));
-                    setPage(0);
-                  }}
-                  aria-label={t('pullRequests.queue.laneLabel')}
-                >
-                  <PillTab value="all" count={scoped.length}>
-                    {t('pullRequests.queue.all')}
-                  </PillTab>
-                  {PULL_REQUEST_LANES.map((value) => (
-                    <PillTab key={value} value={value} count={count(value)}>
-                      {t(`pullRequests.lanes.${value}`)}
-                    </PillTab>
-                  ))}
-                </PillTabs>
-              </div>
-              <PullRequestTableHead
-                labels={{
-                  lane: t('pullRequests.queue.columns.lane'),
-                  title: t('pullRequests.queue.columns.title'),
-                  size: t('pullRequests.queue.columns.size'),
-                  checks: t('pullRequests.queue.columns.checks'),
-                  conflicts: t('pullRequests.queue.columns.conflicts'),
-                  waiting: t('pullRequests.queue.columns.waiting'),
-                }}
+          <PullRequestTable>
+            <div className="flex flex-wrap items-center gap-2 px-1.5 pt-1.5 pb-2">
+              <QueueSearchField
+                label={t('pullRequests.queue.search')}
+                inputRef={search}
+                onChange={(next) => narrow(() => setQuery(next))}
               />
-              {shown.map((pull) => (
-                <QueueRow
-                  key={`${pull.installationId}:${pull.githubRepoId}:${pull.number}`}
-                  pull={pull}
-                />
-              ))}
-              {rows.length === 0 ? (
-                <p className="m-0 px-3 py-3.5 text-sm text-fg-muted">
-                  {t('pullRequests.queue.noMatch', { query: query.trim() })}
-                </p>
-              ) : null}
-              <RunsListFoot
-                range={t('pullRequests.queue.range', {
-                  first: rows.length ? current * QUEUE_PAGE_SIZE + 1 : 0,
-                  last: Math.min(rows.length, (current + 1) * QUEUE_PAGE_SIZE),
-                  total: rows.length,
-                })}
-                onPrevious={current > 0 ? () => setPage(current - 1) : undefined}
-                onNext={current < pages - 1 ? () => setPage(current + 1) : undefined}
-                previousLabel={t('pullRequests.queue.previousPage')}
-                nextLabel={t('pullRequests.queue.nextPage')}
+              <ChipSelect
+                aria-label={t('pullRequests.queue.repository')}
+                icon={<GitBranch />}
+                value={filters.repo ?? 'all'}
+                onValueChange={(next) => narrow(() => setRepo(next === 'all' ? undefined : next))}
+                options={[
+                  {
+                    value: 'all',
+                    label: t('pullRequests.queue.allRepositories'),
+                    count: repos.all ?? 0,
+                  },
+                  ...names.map((name) => ({
+                    value: name,
+                    label: name,
+                    mono: true,
+                    count: repos[name] ?? 0,
+                  })),
+                ]}
+                searchPlaceholder={t('pullRequests.watch.search')}
+                emptyText={t('pullRequests.queue.noRepository')}
               />
-            </PullRequestTable>
-          </div>
+              <span className="flex-1" />
+              <FacetSelect
+                label={t('pullRequests.queue.difficulty')}
+                value={filters.lane ?? 'all'}
+                onValueChange={(next) =>
+                  narrow(() => setLane(next === 'all' ? undefined : (next as PullRequestLane)))
+                }
+                options={[
+                  { value: 'all', label: t('pullRequests.queue.all'), count: lanes.all ?? 0 },
+                  ...PULL_REQUEST_LANES.map((value) => ({
+                    value,
+                    label: t(`pullRequests.lanes.${value}`),
+                    count: lanes[value] ?? 0,
+                  })),
+                ]}
+              />
+              <FacetSelect
+                label={t('pullRequests.queue.columns.checks')}
+                value={filters.checks ?? 'all'}
+                onValueChange={(next) =>
+                  narrow(() => setChecks(next === 'all' ? undefined : (next as QueueChecks)))
+                }
+                options={[
+                  { value: 'all', label: t('pullRequests.queue.any'), count: checks.all ?? 0 },
+                  ...QUEUE_CHECKS.map((value) => ({
+                    value,
+                    label: t(`pullRequests.checks.${value}`),
+                    count: checks[value] ?? 0,
+                  })),
+                ]}
+              />
+              <FacetSelect
+                label={t('pullRequests.queue.columns.waiting')}
+                value={filters.wait ?? 'all'}
+                onValueChange={(next) =>
+                  narrow(() => setWait(next === 'all' ? undefined : (next as QueueWait)))
+                }
+                options={[
+                  { value: 'all', label: t('pullRequests.queue.anyTime'), count: waits.all ?? 0 },
+                  ...QUEUE_WAITS.map((value) => ({
+                    value,
+                    label: t(`pullRequests.queue.waits.${value}`),
+                    count: waits[value] ?? 0,
+                  })),
+                ]}
+              />
+            </div>
+            <PullRequestTableHead
+              labels={{
+                lane: t('pullRequests.queue.columns.lane'),
+                title: t('pullRequests.queue.columns.title'),
+                size: t('pullRequests.queue.columns.size'),
+                checks: t('pullRequests.queue.columns.checks'),
+                conflicts: t('pullRequests.queue.columns.conflicts'),
+                waiting: t('pullRequests.queue.columns.waiting'),
+              }}
+            />
+            {shown.map((pull, index) => (
+              <QueueRow
+                key={`${pull.installationId}:${pull.githubRepoId}:${pull.number}`}
+                pull={pull}
+                selected={index === picked}
+              />
+            ))}
+            {rows.length === 0 ? (
+              <p className="m-0 px-3 py-3.5 text-sm text-fg-muted">
+                {query.trim()
+                  ? t('pullRequests.queue.noMatch', { query: query.trim() })
+                  : t('pullRequests.queue.noFilterMatch')}
+              </p>
+            ) : null}
+            <RunsListFoot
+              range={t('pullRequests.queue.range', {
+                first: rows.length ? current * QUEUE_PAGE_SIZE + 1 : 0,
+                last: Math.min(rows.length, (current + 1) * QUEUE_PAGE_SIZE),
+                total: rows.length,
+              })}
+              onPrevious={current > 0 ? () => setPage(current - 1) : undefined}
+              onNext={current < pages - 1 ? () => setPage(current + 1) : undefined}
+              previousLabel={t('pullRequests.queue.previousPage')}
+              nextLabel={t('pullRequests.queue.nextPage')}
+            />
+          </PullRequestTable>
         );
       }}
     </QueryState>

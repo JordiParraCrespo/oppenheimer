@@ -20,7 +20,7 @@ import {
 
 /**
  * The bar over a pull request, its one header: back to the queue and its
- * three views, GitHub, and Submit review. On Changes the views give way to
+ * two views, GitHub, and Submit review. On Changes the views give way to
  * Back and the diff's layout. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.
  */
