@@ -44,8 +44,6 @@ export class CreateOrganizationCommandHandler
   async execute({ headers, input, creatorId }: CreateOrganizationCommand): Promise<AggregateID> {
     const slug = input.slug ?? OrganizationSlug.derive(input.name).value;
     const create = () => this.organizations.create(headers, { ...input, slug });
-    // No authenticated caller: Better Auth's membership stands, no roles move.
-    if (!creatorId) return (await create()).id;
 
     const { organizationId } = await this.membershipAccess.admit(
       async () => ({ userId: creatorId, organizationId: (await create()).id, role: 'owner' }),

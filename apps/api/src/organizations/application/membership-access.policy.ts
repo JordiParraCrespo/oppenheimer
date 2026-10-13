@@ -45,7 +45,7 @@ export class MembershipAccessPolicy {
    * organization cannot be granted after it (the system role is missing, the
    * store failed), `undo` reverts the roster and the original error is raised.
    * Every Better Auth door into an organization goes through here: creating it,
-   * adding a member, changing their role, accepting an invitation.
+   * adding a member, accepting an invitation. A role change is {@link reassign}.
    */
   async admit<Entry extends RosterEntry>(
     write: () => Promise<Entry>,
@@ -75,6 +75,40 @@ export class MembershipAccessPolicy {
   }
 
   /**
+   * Change a member's organization role and the application role that stands
+   * for it, or neither, in the opposite order to {@link admit}. The new
+   * application role is granted first and Better Auth's write follows; if that
+   * write is refused, the application roles the member held in this
+   * organization before are put back. Undoing Better Auth's write instead
+   * would need the caller's permission to change roles, which a caller
+   * demoting themselves has just given up; putting back rows in the app's own
+   * store needs none.
+   */
+  async reassign<T>(entry: RosterEntry, write: () => Promise<T>): Promise<T> {
+    const before = await this.scopedRoleIds(entry.userId, entry.organizationId);
+    await this.grant(entry);
+    try {
+      return await write();
+    } catch (error) {
+      try {
+        await this.userRoles.setRolesForUser(entry.userId, before, entry.organizationId);
+      } catch (restoreError) {
+        // The caller must see why the change was refused, not an error about
+        // the cleanup; the half-changed membership is what this log is for.
+        this.logger.error(
+          {
+            message: 'Could not restore the application roles of a refused role change',
+            userId: entry.userId,
+            organizationId: entry.organizationId,
+          },
+          restoreError instanceof Error ? restoreError.stack : String(restoreError),
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Everything the organization gave `userId` — their roles, access grants
    * and a session still acting in it — taken in one transaction after Better
    * Auth removes the membership, then Better Auth's cached copies of those
@@ -96,5 +130,18 @@ export class MembershipAccessPolicy {
     const found = await this.roles.findOneByName(roleName, null);
     if (found.isNone()) throw missingSystemRole(roleName);
     await this.userRoles.replaceMembershipRole(userId, organizationId, found.unwrap().id);
+  }
+
+  /**
+   * The roles assigned to `userId` in `organizationId` itself. The port answers
+   * a scoped read with the global assignments included; those are not this
+   * scope's to rewrite.
+   */
+  private async scopedRoleIds(userId: string, organizationId: string): Promise<string[]> {
+    const [inScope, global] = await Promise.all([
+      this.userRoles.findRoleIdsForUser(userId, organizationId),
+      this.userRoles.findRoleIdsForUser(userId, null),
+    ]);
+    return inScope.filter((id) => !global.includes(id));
   }
 }

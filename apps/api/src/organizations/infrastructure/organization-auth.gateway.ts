@@ -1,10 +1,9 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Injectable } from '@nestjs/common';
-import { AppError } from '@oppenheimer/backend-core';
 import type { AddMemberDto, UpdateOrganizationDto } from '@oppenheimer/shared';
+import { APIError } from 'better-auth/api';
 import { auth } from '../../auth/infrastructure/better-auth.config';
-import { betterAuthHeaders, unwrap } from '../../auth/infrastructure/better-auth.util';
-import { OrganizationErrors } from '../domain/organization.errors';
+import { asRecord, betterAuthHeaders, unwrap } from '../../auth/infrastructure/better-auth.util';
 import type {
   FullOrganizationResponseDto,
   MemberResponseDto,
@@ -13,6 +12,13 @@ import type {
 import { OrganizationMapper } from '../organization.mapper';
 import type { NewOrganization, OrganizationAuthPort } from './organization-auth.port';
 import { invokeOrganizationApi } from './organization-error.util';
+
+/** Better Auth's code for a slug some organization already has. */
+const SLUG_TAKEN_CODE = 'ORGANIZATION_SLUG_ALREADY_TAKEN';
+
+function upstreamCodeOf(error: APIError): unknown {
+  return asRecord(asRecord(error).body).code;
+}
 
 /**
  * The organization port, over the Better Auth organization plugin's server API
@@ -95,25 +101,25 @@ export class OrganizationAuthGateway implements OrganizationAuthPort {
   }
 
   /**
-   * Better Auth answers a taken slug with an error; that one error is the
-   * answer "no". Any other failure — not signed in, the plugin refusing the
-   * request — stays the problem document the invoker makes of it.
+   * Better Auth answers a taken slug with `ORGANIZATION_SLUG_ALREADY_TAKEN`,
+   * and that one code is the answer "no". It is read off Better Auth's own
+   * error before the invoker folds it: the catalog entry it maps to also
+   * covers other upstream codes. Any other failure stays the problem document
+   * the invoker makes of it.
    */
   async isSlugAvailable(headers: IncomingHttpHeaders, slug: string): Promise<boolean> {
-    try {
-      await invokeOrganizationApi(() =>
-        auth.api.checkOrganizationSlug({
+    return invokeOrganizationApi(async () => {
+      try {
+        await auth.api.checkOrganizationSlug({
           body: { slug },
           headers: betterAuthHeaders(headers),
-        }),
-      );
-      return true;
-    } catch (error) {
-      if (error instanceof AppError && error.code === OrganizationErrors.SLUG_TAKEN.code) {
-        return false;
+        });
+        return true;
+      } catch (error) {
+        if (error instanceof APIError && upstreamCodeOf(error) === SLUG_TAKEN_CODE) return false;
+        throw error;
       }
-      throw error;
-    }
+    });
   }
 
   async addMember(
