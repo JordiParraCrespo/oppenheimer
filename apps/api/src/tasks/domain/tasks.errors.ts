@@ -49,4 +49,13 @@ export const TaskErrors = {
     message: 'That milestone belongs to another project',
     httpStatus: 409,
   },
+  /**
+   * The writer named the version it read, and someone wrote the task or the
+   * milestone since. Nothing changed; read it again and decide again.
+   */
+  VERSION_CONFLICT: {
+    code: 'TASKS_008',
+    message: 'It changed since you read it',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

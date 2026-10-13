@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireFound } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { MilestoneRepositoryPort } from '../../database/milestone.repository.port';
 import { TaskErrors } from '../../domain/tasks.errors';
@@ -17,7 +17,12 @@ export class DeleteMilestoneCommandHandler
     private readonly milestones: MilestoneRepositoryPort,
   ) {}
 
-  async execute({ scope, milestoneId }: DeleteMilestoneCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    actor,
+    expectedVersion,
+    milestoneId,
+  }: DeleteMilestoneCommand): Promise<AggregateID> {
     const milestone = requireFound(
       await this.milestones.findOneById(scope, milestoneId),
       TaskErrors.MILESTONE_NOT_FOUND,
@@ -25,7 +30,13 @@ export class DeleteMilestoneCommandHandler
         detail: `No milestone with id ${milestoneId}`,
       },
     );
-    await this.milestones.delete(milestone);
+    milestone.actingAs(actor).expectVersion(expectedVersion);
+    const outcome = await this.milestones.delete(milestone);
+    if (outcome === 'version-conflict') {
+      throw new AppError(TaskErrors.VERSION_CONFLICT, {
+        detail: `Milestone ${milestone.id} is no longer at version ${milestone.expectedVersion}`,
+      });
+    }
     return milestone.id;
   }
 }

@@ -159,6 +159,7 @@
     "TASKS_005": "Esa sesión no existe o está en otro espacio de trabajo.",
     "TASKS_006": "El tablero cambió mientras movías esa tarea. Se ha recargado; inténtalo de nuevo.",
     "TASKS_007": "Ese hito pertenece a otro proyecto.",
+    "TASKS_008": "Alguien lo ha cambiado desde que lo abriste. Recarga y vuelve a intentarlo.",
     "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
     "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
     "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",

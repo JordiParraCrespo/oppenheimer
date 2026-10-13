@@ -18,7 +18,13 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
     private readonly filing: TaskFilingResolver,
   ) {}
 
-  async execute({ scope, userId, input }: CreateTaskCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    userId,
+    actor,
+    idempotencyKey,
+    input,
+  }: CreateTaskCommand): Promise<AggregateID> {
     if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
     const filed = await this.filing.resolve(scope, {
       projectId: input.projectId,
@@ -33,9 +39,14 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
       dueDate: input.dueDate,
       dueTime: input.dueTime,
       createdByUserId: userId,
+      actor,
+      idempotencyKey,
     });
     // `last` names no other task, so the placement cannot be stale.
-    await this.tasks.insert(task, { status: input.status, after: { kind: 'last' } });
-    return task.id;
+    const outcome = await this.tasks.insert(task, {
+      status: input.status,
+      after: { kind: 'last' },
+    });
+    return typeof outcome === 'object' ? outcome.existingId : task.id;
   }
 }

@@ -19,6 +19,13 @@ export class MilestoneResponseDto {
   @ApiProperty({ description: 'All its tasks.' })
   totalCount!: number;
 
+  @ApiProperty({
+    description:
+      'Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.',
+    example: 3,
+  })
+  version!: number;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;
 }

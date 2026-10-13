@@ -8,12 +8,14 @@ import type { ScopeContext } from '../../auth/domain/scope-context.types';
 /** What reading each kind of change takes: the subject a role reads it by, the scope a credential does. */
 const READ_BY: Record<
   WorkspaceEventType,
-  { subject: 'Session' | 'Host' | 'Automation'; scope: Scope }
+  { subject: 'Session' | 'Host' | 'Automation' | 'Task'; scope: Scope }
 > = {
   'session.changed': { subject: 'Session', scope: 'sessions:read' },
   'host.changed': { subject: 'Host', scope: 'hosts:read' },
   'pairing.spent': { subject: 'Host', scope: 'hosts:read' },
   'automationRun.changed': { subject: 'Automation', scope: 'automations:read' },
+  'task.changed': { subject: 'Task', scope: 'tasks:read' },
+  'milestone.changed': { subject: 'Task', scope: 'tasks:read' },
 };
 
 /** The kinds of change this caller may read: its role's ability, and a credential's scopes on top. */

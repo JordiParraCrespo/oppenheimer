@@ -26,6 +26,18 @@ export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['later', 'todo'
 export const TASK_TITLE_MAX = 500;
 export const TASK_NOTES_MAX = 10_000;
 export const MILESTONE_NAME_MAX = 200;
+/** Why a task is blocked, in a sentence. */
+export const TASK_BLOCKED_REASON_MAX = 500;
+/** A client's `Idempotency-Key` on a create, so a retried request makes one row. */
+export const IDEMPOTENCY_KEY_MAX = 128;
+
+/**
+ * The version a writer read. With it a write is refused (`TASKS_008`) when
+ * someone else wrote first; without it the write lands, and still bumps the
+ * version, so a writer that did send one sees it changed
+ * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §7).
+ */
+export const expectedVersionSchema = z.number().int().min(1);
 
 /** A calendar day, `YYYY-MM-DD`, that is a real date. */
 export const calendarDateSchema = z
@@ -47,6 +59,7 @@ export const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const taskTitleSchema = z.string().trim().min(1).max(TASK_TITLE_MAX);
 const taskNotesSchema = z.string().max(TASK_NOTES_MAX);
 const milestoneNameSchema = z.string().trim().min(1).max(MILESTONE_NAME_MAX);
+const blockedReasonSchema = z.string().trim().min(1).max(TASK_BLOCKED_REASON_MAX);
 
 /** A due time needs a due date; the console picks today when a time comes first. */
 function dueTimeHasDate(value: { dueDate?: string | null; dueTime?: string | null }): boolean {
@@ -87,6 +100,9 @@ export const updateTaskSchema = z
     milestoneId: z.string().uuid().nullable().optional(),
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
+    /** Marks the task blocked and says why; `null` unblocks it. Done unblocks it too. */
+    blockedReason: blockedReasonSchema.nullable().optional(),
+    expectedVersion: expectedVersionSchema.optional(),
   })
   .refine(dueTimeHasDate, { path: ['dueTime'] });
 
@@ -101,6 +117,7 @@ export type UpdateTaskDto = z.infer<typeof updateTaskSchema>;
 export const moveTaskSchema = z.object({
   status: taskStatusSchema,
   afterTaskId: z.string().uuid().nullable(),
+  expectedVersion: expectedVersionSchema.optional(),
 });
 
 export type MoveTaskDto = z.infer<typeof moveTaskSchema>;
@@ -155,6 +172,7 @@ export const updateMilestoneSchema = z.object({
   name: milestoneNameSchema.optional(),
   projectId: z.string().uuid().optional(),
   targetDate: calendarDateSchema.nullable().optional(),
+  expectedVersion: expectedVersionSchema.optional(),
 });
 
 export type UpdateMilestoneDto = z.infer<typeof updateMilestoneSchema>;
@@ -165,3 +183,32 @@ export const listMilestonesQuerySchema = z.object({
 });
 
 export type ListMilestonesQueryDto = z.infer<typeof listMilestonesQuerySchema>;
+
+/**
+ * What Plan's event log records, and nothing else
+ * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §4). A reorder
+ * within a column and edits to a title, notes or a milestone's description
+ * write nothing; a new kind needs a reader first.
+ */
+export const PLAN_TASK_EVENT_KINDS = [
+  'created',
+  'deleted',
+  'completed',
+  'reopened',
+  'status_changed',
+  'rescheduled',
+  'reassigned',
+  'blocked',
+  'unblocked',
+  'session_linked',
+] as const;
+export const PLAN_MILESTONE_EVENT_KINDS = [
+  'milestone_created',
+  'milestone_deleted',
+  'milestone_renamed',
+  'milestone_retargeted',
+  'milestone_moved',
+] as const;
+export type PlanTaskEventKind = (typeof PLAN_TASK_EVENT_KINDS)[number];
+export type PlanMilestoneEventKind = (typeof PLAN_MILESTONE_EVENT_KINDS)[number];
+export type PlanEventKind = PlanTaskEventKind | PlanMilestoneEventKind;

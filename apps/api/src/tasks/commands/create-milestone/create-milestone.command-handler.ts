@@ -20,7 +20,13 @@ export class CreateMilestoneCommandHandler
     private readonly filing: TaskFilingResolver,
   ) {}
 
-  async execute({ scope, userId, input }: CreateMilestoneCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    userId,
+    actor,
+    idempotencyKey,
+    input,
+  }: CreateMilestoneCommand): Promise<AggregateID> {
     if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
     const milestone = MilestoneEntity.createNew({
       organizationId: scope.organizationId,
@@ -28,8 +34,10 @@ export class CreateMilestoneCommandHandler
       name: input.name,
       targetDate: input.targetDate ?? null,
       createdByUserId: userId,
+      actor,
+      idempotencyKey,
     });
-    await this.milestones.insert(milestone);
-    return milestone.id;
+    const outcome = await this.milestones.insert(milestone);
+    return typeof outcome === 'object' ? outcome.existingId : milestone.id;
   }
 }

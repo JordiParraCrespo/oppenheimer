@@ -7,27 +7,35 @@ import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, Repository } from 'typeorm';
 import type { TaskEntity, TaskSessionLink } from '../domain/task.entity';
 import { rankBetween } from '../domain/task-rank.policy';
+import { PlanEventMapper } from '../plan-event.mapper';
 import { TaskMapper } from '../task.mapper';
 import { TaskResource } from '../tasks.resource';
+import { PlanEventOrmEntity } from './plan-event.orm-entity';
 import { TaskOrmEntity } from './task.orm-entity';
 import type {
   TaskAttachOutcome,
+  TaskInsertOutcome,
   TaskListFilter,
+  TaskMoveOutcome,
   TaskPlacement,
-  TaskPlaceOutcome,
   TaskRepositoryPort,
+  TaskWriteOutcome,
 } from './task.repository.port';
 import { TaskSessionOrmEntity } from './task-session.orm-entity';
 
 const UNIQUE_VIOLATION = '23505';
 const FOREIGN_KEY_VIOLATION = '23503';
 const RANK_CONSTRAINT = 'UQ_task_rank';
+const IDEMPOTENCY_CONSTRAINT = 'UQ_task_idempotency_key';
 const SESSION_KEY = 'FK_task_session_session';
 /** Two writers into one gap is rare; three in a row is a bug, and is reported. */
 const RANK_ATTEMPTS = 3;
 
 /** The position was not in the column; thrown inside a transaction to roll it back. */
 class StalePosition extends Error {}
+
+/** The row no longer holds the version the writer named; thrown to roll the write back. */
+class VersionConflict extends Error {}
 
 @Injectable()
 export class TaskRepository
@@ -41,6 +49,7 @@ export class TaskRepository
     @InjectRepository(TaskOrmEntity)
     protected readonly repository: Repository<TaskOrmEntity>,
     private readonly mapper: TaskMapper,
+    private readonly events: PlanEventMapper,
     private readonly outbox: OutboxService,
   ) {
     super();
@@ -72,36 +81,66 @@ export class TaskRepository
     return Some(this.mapper.toDomain(record, links.get(record.id)));
   }
 
-  insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskPlaceOutcome> {
-    return this.placing(async (manager) => {
-      task.place(placement.status, await this.rankFor(manager, task, placement), new Date());
-      await manager.getRepository(TaskOrmEntity).insert(this.mapper.toPersistence(task));
-    });
+  async insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskInsertOutcome> {
+    try {
+      const outcome = await this.placing(task, async (manager) => {
+        task.place(placement.status, await this.rankFor(manager, task, placement), new Date());
+        await manager.getRepository(TaskOrmEntity).insert(this.mapper.toPersistence(task));
+      });
+      return outcome === 'version-conflict' ? 'placed' : outcome;
+    } catch (error) {
+      if (!task.idempotencyKey || !violated(error, UNIQUE_VIOLATION, IDEMPOTENCY_CONSTRAINT)) {
+        throw error;
+      }
+      // A retry of a create that already landed: answer the task it made.
+      const existing = await this.repository.findOne({
+        select: { id: true },
+        where: { organizationId: task.organizationId, idempotencyKey: task.idempotencyKey },
+      });
+      if (!existing) throw error;
+      return { existingId: existing.id };
+    }
   }
 
-  async saveFields(task: TaskEntity): Promise<void> {
-    await this.repository.update(
-      { id: task.id, organizationId: task.organizationId },
-      {
+  async saveFields(task: TaskEntity): Promise<TaskWriteOutcome> {
+    return this.writing(task, (manager) =>
+      this.writeRow(manager, task, {
         title: task.title,
         notes: task.notes,
         dueDate: task.dueDate,
         dueTime: task.dueTime,
         projectId: task.projectId,
         milestoneId: task.milestoneId,
-      },
+        blockedReason: task.blockedReason,
+        blockedAt: task.blockedAt,
+      }),
     );
   }
 
-  move(task: TaskEntity, placement: TaskPlacement): Promise<TaskPlaceOutcome> {
-    return this.placing(async (manager) => {
+  move(task: TaskEntity, placement: TaskPlacement): Promise<TaskMoveOutcome> {
+    return this.placing(task, async (manager) => {
       task.place(placement.status, await this.rankFor(manager, task, placement), new Date());
       await this.writePlace(manager, task);
     });
   }
 
-  async delete(task: TaskEntity): Promise<void> {
-    await this.repository.delete({ id: task.id, organizationId: task.organizationId });
+  async delete(task: TaskEntity): Promise<TaskWriteOutcome> {
+    task.remove();
+    return this.writing(task, async (manager) => {
+      const query = manager
+        .createQueryBuilder()
+        .delete()
+        .from(TaskOrmEntity)
+        .where('id = :id AND "organizationId" = :organizationId', {
+          id: task.id,
+          organizationId: task.organizationId,
+        });
+      if (task.expectedVersion !== null) {
+        query.andWhere('version = :expected', { expected: task.expectedVersion });
+      }
+      const result = await query.execute();
+      if (result.affected !== 1) throw new VersionConflict();
+    });
   }
 
   async attach(
@@ -118,7 +157,7 @@ export class TaskRepository
             [task.id, task.organizationId],
           );
           if (!locked) return;
-          task.place(locked.status, locked.rank, task.updatedAt);
+          task.syncPlace(locked.status, locked.rank, task.updatedAt);
           await manager
             .createQueryBuilder()
             .insert()
@@ -130,37 +169,110 @@ export class TaskRepository
             const placement: TaskPlacement = { status: 'doing', after: { kind: 'first' } };
             task.place('doing', await this.rankFor(manager, task, placement), new Date());
             await this.writePlace(manager, task);
+          } else {
+            await this.writeRow(manager, task, {});
           }
           task.attach(link);
-          await this.outbox.stageEvents(manager, task.domainEvents);
+          await this.logAndStage(manager, task);
         }),
       );
       task.clearEvents();
+      task.clearChanges();
       return 'attached';
     } catch (error) {
       task.clearEvents();
+      task.clearChanges();
       if (violated(error, FOREIGN_KEY_VIOLATION, SESSION_KEY)) return 'session-not-found';
       throw error;
     }
   }
 
   async detach(task: TaskEntity, sessionId: string): Promise<void> {
-    await this.repository.manager
-      .getRepository(TaskSessionOrmEntity)
-      .delete({ organizationId: task.organizationId, taskId: task.id, sessionId });
+    task.detach();
+    await this.writing(task, async (manager) => {
+      await manager
+        .getRepository(TaskSessionOrmEntity)
+        .delete({ organizationId: task.organizationId, taskId: task.id, sessionId });
+      await this.writeRow(manager, task, {});
+    });
+  }
+
+  /**
+   * One write in a transaction with the changes it logs and the events it owes.
+   * `version-conflict` when the writer named a version the row no longer holds.
+   */
+  private async writing(
+    task: TaskEntity,
+    work: (manager: EntityManager) => Promise<void>,
+  ): Promise<TaskWriteOutcome> {
+    try {
+      await this.outbox.transaction(async (manager) => {
+        await work(manager);
+        await this.logAndStage(manager, task);
+      });
+      return 'saved';
+    } catch (error) {
+      if (error instanceof VersionConflict) return 'version-conflict';
+      throw error;
+    } finally {
+      task.clearEvents();
+      task.clearChanges();
+    }
   }
 
   /** Run a placement in a transaction, again when another writer took the same key. */
   private async placing(
+    task: TaskEntity,
     work: (manager: EntityManager) => Promise<void>,
-  ): Promise<TaskPlaceOutcome> {
+  ): Promise<'placed' | 'stale-position' | 'version-conflict'> {
     try {
-      await this.withRankRetry(() => this.repository.manager.transaction(work));
+      await this.withRankRetry(() =>
+        this.outbox.transaction(async (manager) => {
+          await work(manager);
+          await this.logAndStage(manager, task);
+        }),
+      );
       return 'placed';
     } catch (error) {
       if (error instanceof StalePosition) return 'stale-position';
+      if (error instanceof VersionConflict) return 'version-conflict';
       throw error;
+    } finally {
+      task.clearEvents();
+      task.clearChanges();
     }
+  }
+
+  /**
+   * Update the task's row and bump its version, only while it holds the version
+   * the writer named when it named one.
+   */
+  private async writeRow(
+    manager: EntityManager,
+    task: TaskEntity,
+    set: Partial<Omit<TaskOrmEntity, 'version'>>,
+  ): Promise<void> {
+    const query = manager
+      .createQueryBuilder()
+      .update(TaskOrmEntity)
+      .set({ ...set, version: () => 'version + 1' })
+      .where('id = :id AND "organizationId" = :organizationId', {
+        id: task.id,
+        organizationId: task.organizationId,
+      });
+    if (task.expectedVersion !== null) {
+      query.andWhere('version = :expected', { expected: task.expectedVersion });
+    }
+    const result = await query.execute();
+    if (result.affected !== 1) throw new VersionConflict();
+  }
+
+  /** The task's changes to `plan_event`, and its events to the outbox, on the write's manager. */
+  private async logAndStage(manager: EntityManager, task: TaskEntity): Promise<void> {
+    const subject = { organizationId: task.organizationId, type: 'task' as const, id: task.id };
+    const records = task.changesToLog.map((change) => this.events.toRecord(subject, change));
+    if (records.length > 0) await manager.getRepository(PlanEventOrmEntity).save(records);
+    await this.outbox.stageEvents(manager, task.domainEvents);
   }
 
   private async withRankRetry(attempt: () => Promise<void>): Promise<void> {
@@ -207,12 +319,13 @@ export class TaskRepository
   }
 
   private async writePlace(manager: EntityManager, task: TaskEntity): Promise<void> {
-    await manager
-      .getRepository(TaskOrmEntity)
-      .update(
-        { id: task.id, organizationId: task.organizationId },
-        { status: task.status, rank: task.rank, completedAt: task.completedAt },
-      );
+    await this.writeRow(manager, task, {
+      status: task.status,
+      rank: task.rank,
+      completedAt: task.completedAt,
+      blockedReason: task.blockedReason,
+      blockedAt: task.blockedAt,
+    });
   }
 
   /**

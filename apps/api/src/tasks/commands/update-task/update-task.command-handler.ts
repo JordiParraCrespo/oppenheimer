@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireFound } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { TaskFilingResolver } from '../../application/task-filing.resolver';
 import type { TaskRepositoryPort } from '../../database/task.repository.port';
@@ -21,10 +21,11 @@ export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskComma
     private readonly filing: TaskFilingResolver,
   ) {}
 
-  async execute({ scope, taskId, changes }: UpdateTaskCommand): Promise<AggregateID> {
+  async execute({ scope, actor, taskId, changes }: UpdateTaskCommand): Promise<AggregateID> {
     const task = requireFound(await this.tasks.findOneById(scope, taskId), TaskErrors.NOT_FOUND, {
       detail: `No task with id ${taskId}`,
     });
+    task.actingAs(actor).expectVersion(changes.expectedVersion);
     task.edit({
       title: changes.title,
       notes: changes.notes,
@@ -39,7 +40,13 @@ export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskComma
       );
       task.file(filed.projectId, filed.milestoneId);
     }
-    await this.tasks.saveFields(task);
+    if (changes.blockedReason !== undefined) task.block(changes.blockedReason);
+    const outcome = await this.tasks.saveFields(task);
+    if (outcome === 'version-conflict') {
+      throw new AppError(TaskErrors.VERSION_CONFLICT, {
+        detail: `Task ${task.id} is no longer at version ${task.expectedVersion}`,
+      });
+    }
     return task.id;
   }
 }

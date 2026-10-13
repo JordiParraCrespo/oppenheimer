@@ -13,11 +13,13 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { userActor } from '../../domain/plan-change.types';
 import type { TaskEntity } from '../../domain/task.entity';
 import { TaskResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -60,12 +62,16 @@ export class UpdateTaskHttpController {
     description: 'Milestone of another project',
     code: 'TASKS_007',
   })
+  @ApiProblemResponse({ status: 409, description: 'Changed since it was read', code: 'TASKS_008' })
   async update(
     @CurrentAccessScope() scope: AccessScope,
+    @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateTaskRequest,
   ): Promise<TaskResponseDto> {
-    await this.commandBus.execute(new UpdateTaskCommand({ scope, taskId: id, changes: body }));
+    await this.commandBus.execute(
+      new UpdateTaskCommand({ scope, actor: userActor(userId), taskId: id, changes: body }),
+    );
     const task = await this.queryBus.execute<FindTaskQuery, TaskEntity>(
       new FindTaskQuery({ scope, taskId: id }),
     );

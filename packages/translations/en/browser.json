@@ -225,6 +225,7 @@
       "TASKS_005": "That session doesn't exist, or it is in another workspace.",
       "TASKS_006": "The board changed while you were moving that task. It has been reloaded; try again.",
       "TASKS_007": "That milestone belongs to another project.",
+      "TASKS_008": "Someone changed this since you opened it. Reload and try again.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",

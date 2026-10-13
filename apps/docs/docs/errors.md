@@ -587,12 +587,13 @@ links. See `product/versions/mvp/17-plan.md`.
 | Code                                 | Title                                    | HTTP |
 | ------------------------------------ | ---------------------------------------- | ---- |
 | `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
-| `TASKS_002` <a id="tasks_002" />     | Milestone not found                           | 404  |
+| `TASKS_002` <a id="tasks_002" />     | Milestone not found                      | 404  |
 | `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
 | `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
 | `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
 | `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
-| `TASKS_007` <a id="tasks_007" />     | That milestone belongs to another project     | 409  |
+| `TASKS_007` <a id="tasks_007" />     | That milestone belongs to another project | 409 |
+| `TASKS_008` <a id="tasks_008" />     | It changed since you read it             | 409  |
 
 `TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, milestone or
 session in another workspace.
@@ -605,6 +606,11 @@ column, or is the task being moved. The board was stale; reload it.
 
 `TASKS_007` is a request whose milestone and project disagree. A milestone brings its own
 project, so leave `projectId` out when choosing one.
+
+`TASKS_008` is a write that named the version it read (`expectedVersion`, or
+`If-Match` on a delete) after someone else had written the task or milestone.
+Nothing changed; read it again and decide again. A write that names no version
+always lands, and still moves the version on.
 
 ## Calendar
 

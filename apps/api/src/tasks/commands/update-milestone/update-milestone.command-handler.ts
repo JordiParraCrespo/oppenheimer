@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireFound } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { TaskFilingResolver } from '../../application/task-filing.resolver';
 import type { MilestoneRepositoryPort } from '../../database/milestone.repository.port';
@@ -19,7 +19,12 @@ export class UpdateMilestoneCommandHandler
     private readonly filing: TaskFilingResolver,
   ) {}
 
-  async execute({ scope, milestoneId, changes }: UpdateMilestoneCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    actor,
+    milestoneId,
+    changes,
+  }: UpdateMilestoneCommand): Promise<AggregateID> {
     const milestone = requireFound(
       await this.milestones.findOneById(scope, milestoneId),
       TaskErrors.MILESTONE_NOT_FOUND,
@@ -31,8 +36,14 @@ export class UpdateMilestoneCommandHandler
       changes.projectId !== undefined && changes.projectId !== milestone.projectId
         ? await this.filing.activeProject(scope, changes.projectId)
         : undefined;
+    milestone.actingAs(actor).expectVersion(changes.expectedVersion);
     milestone.edit({ name: changes.name, targetDate: changes.targetDate, projectId });
-    await this.milestones.save(milestone);
+    const outcome = await this.milestones.save(milestone);
+    if (outcome === 'version-conflict') {
+      throw new AppError(TaskErrors.VERSION_CONFLICT, {
+        detail: `Milestone ${milestone.id} is no longer at version ${milestone.expectedVersion}`,
+      });
+    }
     return milestone.id;
   }
 }

@@ -36,6 +36,12 @@ import {
 @Check('CHK_task_status', `"status" IN ('later', 'todo', 'doing', 'done')`)
 @Check('CHK_task_due_time', `"dueTime" ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`)
 @Check('CHK_task_due_time_has_date', `"dueTime" IS NULL OR "dueDate" IS NOT NULL`)
+@Check('CHK_task_version', `"version" >= 1`)
+@Check('CHK_task_blocked', `("blockedReason" IS NULL) = ("blockedAt" IS NULL)`)
+@Index('UQ_task_idempotency_key', ['organizationId', 'idempotencyKey'], {
+  unique: true,
+  where: '"idempotencyKey" IS NOT NULL',
+})
 export class TaskOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -71,6 +77,21 @@ export class TaskOrmEntity {
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   completedAt!: Date | null;
+
+  /** Goes up on every write; a writer that read it may write only while it holds. */
+  @Column({ type: 'integer', default: 1 })
+  version!: number;
+
+  /** Why the task waits on a person; set with {@link blockedAt}. */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  blockedReason!: string | null;
+
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  blockedAt!: Date | null;
+
+  /** The client's `Idempotency-Key` on the create that made it. */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  idempotencyKey!: string | null;
 
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;

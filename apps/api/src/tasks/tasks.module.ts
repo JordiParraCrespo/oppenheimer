@@ -26,19 +26,26 @@ import { UpdateTaskCommandHandler } from './commands/update-task/update-task.com
 import { UpdateTaskHttpController } from './commands/update-task/update-task.http.controller';
 import { MilestoneOrmEntity } from './database/milestone.orm-entity';
 import { MilestoneRepository } from './database/milestone.repository';
+import { PlanEventOrmEntity } from './database/plan-event.orm-entity';
+import { PlanEventRepository } from './database/plan-event.repository';
 import { TaskOrmEntity } from './database/task.orm-entity';
 import { TaskRepository } from './database/task.repository';
 import { TaskSessionOrmEntity } from './database/task-session.orm-entity';
 import { MilestoneMapper } from './milestone.mapper';
+import { PlanEventMapper } from './plan-event.mapper';
+import { PlanStatsMapper } from './plan-stats.mapper';
 import { FindMilestoneQueryHandler } from './queries/find-milestone/find-milestone.query-handler';
 import { FindMilestonesHttpController } from './queries/find-milestones/find-milestones.http.controller';
 import { FindMilestonesQueryHandler } from './queries/find-milestones/find-milestones.query-handler';
+import { FindPlanStatsHttpController } from './queries/find-plan-stats/find-plan-stats.http.controller';
+import { FindPlanStatsQueryHandler } from './queries/find-plan-stats/find-plan-stats.query-handler';
+import { FindPlanSummaryQueryHandler } from './queries/find-plan-summary/find-plan-summary.query-handler';
 import { FindTaskHttpController } from './queries/find-task/find-task.http.controller';
 import { FindTaskQueryHandler } from './queries/find-task/find-task.query-handler';
 import { FindTasksHttpController } from './queries/find-tasks/find-tasks.http.controller';
 import { FindTasksQueryHandler } from './queries/find-tasks/find-tasks.query-handler';
 import { TaskMapper } from './task.mapper';
-import { MILESTONE_REPOSITORY, TASK_REPOSITORY } from './tasks.di-tokens';
+import { MILESTONE_REPOSITORY, PLAN_EVENT_REPOSITORY, TASK_REPOSITORY } from './tasks.di-tokens';
 import { TaskResource } from './tasks.resource';
 
 const httpControllers = [
@@ -55,6 +62,7 @@ const httpControllers = [
   CreateMilestoneHttpController,
   UpdateMilestoneHttpController,
   DeleteMilestoneHttpController,
+  FindPlanStatsHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -74,6 +82,8 @@ const queryHandlers: Provider[] = [
   FindTaskQueryHandler,
   FindMilestonesQueryHandler,
   FindMilestoneQueryHandler,
+  FindPlanSummaryQueryHandler,
+  FindPlanStatsQueryHandler,
 ];
 
 /**
@@ -85,7 +95,12 @@ const queryHandlers: Provider[] = [
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([TaskOrmEntity, MilestoneOrmEntity, TaskSessionOrmEntity]),
+    TypeOrmModule.forFeature([
+      TaskOrmEntity,
+      MilestoneOrmEntity,
+      TaskSessionOrmEntity,
+      PlanEventOrmEntity,
+    ]),
     AuthzKernelModule.forFeature([TaskResource]),
     // Whether a project can take a task, and the workspace's Unassigned project.
     ProjectsModule,
@@ -96,9 +111,12 @@ const queryHandlers: Provider[] = [
     ...queryHandlers,
     TaskMapper,
     MilestoneMapper,
+    PlanEventMapper,
+    PlanStatsMapper,
     TaskFilingResolver,
     { provide: TASK_REPOSITORY, useClass: TaskRepository },
     { provide: MILESTONE_REPOSITORY, useClass: MilestoneRepository },
+    { provide: PLAN_EVENT_REPOSITORY, useClass: PlanEventRepository },
   ],
 })
 export class TasksModule {}

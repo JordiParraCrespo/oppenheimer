@@ -1,5 +1,6 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -18,6 +19,11 @@ import {
 @Unique('UQ_milestone_organization_id_project', ['organizationId', 'id', 'projectId'])
 @Index('IDX_milestone_project', ['organizationId', 'projectId'])
 @Index('IDX_milestone_created_by', ['createdByUserId'], { where: '"createdByUserId" IS NOT NULL' })
+@Index('UQ_milestone_idempotency_key', ['organizationId', 'idempotencyKey'], {
+  unique: true,
+  where: '"idempotencyKey" IS NOT NULL',
+})
+@Check('CHK_milestone_version', `"version" >= 1`)
 export class MilestoneOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -36,6 +42,13 @@ export class MilestoneOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
+
+  /** Goes up on every write, as a task's does. */
+  @Column({ type: 'integer', default: 1 })
+  version!: number;
+
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  idempotencyKey!: string | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
