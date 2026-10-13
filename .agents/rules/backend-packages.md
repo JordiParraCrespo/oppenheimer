@@ -45,6 +45,55 @@ still follow the CJS export and shared-config rules below. `@oppenheimer/backend
 holds the DDD/hexagon primitives; `@oppenheimer/backend-core` holds cross-cutting
 NestJS infrastructure.
 
+## A driver's lifecycle
+
+A driver — any class a pluggable module builds behind its abstract service —
+goes through the same steps, and each step does only its own work:
+
+1. **Construct: no I/O.** The constructor reads config and stores it. It opens
+   no connection, makes no network call and writes nothing to disk.
+   `pnpm generate:api-client` boots the whole app with no database or Redis,
+   so a constructor that connects hangs or fails it. A client library that
+   connects when built is told not to (`lazyConnect: true` for ioredis), and
+   a directory a write needs is made by that write.
+2. **Validate at boot.** A bad setting fails the boot, not the first request:
+   the app's config schema (`apps/api/src/config/`) checks the value, and the
+   module's factory refuses a driver name nothing answers to.
+3. **Connect late.** On the first call, or in `onModuleInit` /
+   `onApplicationBootstrap` when the app should not start without it.
+   `NestFactory.create` alone (what `generate:openapi` runs) calls neither.
+4. **Tear down.** Whatever step 3 opened is closed in `onModuleDestroy` /
+   `beforeApplicationShutdown`, without opening it first if it never was. A
+   client the app hands in and owns (the cache's Redis client) is the app's to
+   close, not the driver's.
+
+The compiler holds the shape: a driver `extends` its abstract service, so a
+missing method fails the build. A lifecycle hook is declared with
+`implements OnModuleDestroy` (or the hook it uses), so a misspelled method is
+an error rather than a hook Nest never calls.
+
+## No driver library in the public API
+
+What a package exports — `index.ts` and every signature it reaches — names
+no type from the library a driver runs on (nodemailer, `@aws-sdk/*`, an LLM
+provider SDK, bullmq). A caller written against a library's type is written
+against that library, and the driver can no longer change without it. A driver
+keeps its client in a `private` field; the abstract service speaks in plain
+types.
+
+A package may name the framework (`@nestjs/common`, `@nestjs/core`,
+`@nestjs/config`, `rxjs`), the workspace (`@oppenheimer/*`), Node, and the
+libraries that are the point of that package: `typeorm` for `ddd` and
+`authz`, `oxide.ts` for `ddd`, the pino and Swagger pieces for `core`. Two
+entries are conscious exceptions: the cache takes the app's `ioredis` client
+(the app owns the connection), and `core` re-exports prometheus's instrument
+types. `pnpm check:public-api` (`scripts/check-backend-public-api.mjs`) reads
+the declarations `tsc` would emit and fails on anything else; it needs the
+backend packages built (`turbo run build --filter='./packages/backend/*'`),
+and it fails closed on a package that does not compile. Its `ALLOWED` holds
+the list and the reason for each entry. Adding to it is a decision for review,
+in its own diff.
+
 ## Email package specifics
 
 - `tsconfig.json` must have `"jsx": "react-jsx"` for React Email templates
