@@ -345,13 +345,42 @@ Answered by the owner on 2026-10-13.
    account named on the event, and a toggle per account (§5). The cap
    stays five.
 
-## Still open
+## Settled since
 
-1. **Who builds the Stats screen?** The frame draws Stats as a tab of
-   the Projects section, next to the agents' chat, and Projects is the
-   other agent's work. The question is only about who draws the screen.
-   Proposed: this plan builds `GET /plan/stats` and the charts (cards,
-   series, the date-range picker, the per-project table) as a section
-   in the console's tasks feature; the agents' Projects screen mounts
-   that section in its Stats tab. The alternative is that the agents'
-   plan builds the charts too, over the same endpoint.
+1. **Stats is Plan's own view.** On 2026-10-13 the owner asked for the
+   whole Plan screen built without the agents. Stats is a fourth item in
+   Plan's sidebar (`/plan/stats`), narrowed by the same project list as
+   the board, and one project's overview (§3) heads it when a project is
+   picked. The agents' Projects section can mount the same sections
+   when it lands.
+
+## As built (2026-10-13)
+
+Where the build differs from the sections above:
+
+- **The event table is `plan_event`** with a task or milestone subject,
+  the closed kinds of §4 plus the milestone kinds, and an organization key
+  `ON DELETE CASCADE`. A move that loses a rank race and retries logs its
+  status change once.
+- **Versions** bump on every write, the attach rule and an unlink included;
+  a write that names one is a conditional `UPDATE` and answers
+  `TASKS_008`. Deletes take the version as `If-Match`.
+- **Live updates**: `task.changed` and `milestone.changed` on the workspace
+  stream; the board's poll stands down while the stream is live, and Stats
+  refetches with the board.
+- **Tokens and cost** read `SESSION_USAGE_READER` from the sessions module.
+  The columns, the fold and the runner's parser are built, but the runner
+  has no headless drive yet, so nothing reports usage and Stats says
+  "Not measured yet" until that slice lands (`01-protocol.md`, `turn.ended`).
+- **Pull requests** are not on Stats yet (decided 4); the response carries
+  `pullRequestsMerged: null`.
+- **Milestones in the console**: the board's milestone strip is gone; the
+  board filters with a milestone facet, and Milestones is its own view: the
+  timeline over the milestone cards.
+- **Blocked** is set from the task dialog's Blocked row, which saves on its
+  own; the card shows the reason in the warning hue.
+- **Google accounts**: as §5, with the differences note 20's "As built
+  since" lists (the callback route keeps its name, a quota refusal is
+  `CALENDAR_010` only when every account was refused, and toggles per
+  account show from two accounts up). A Google event opens a read-only
+  dialog that names its account.

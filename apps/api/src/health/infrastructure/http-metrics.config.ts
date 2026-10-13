@@ -30,6 +30,7 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/automation-settings', group: 'automations' },
     { templatePrefix: '/v1/tasks', group: 'tasks' },
     { templatePrefix: '/v1/milestones', group: 'tasks' },
+    { templatePrefix: '/v1/plan', group: 'tasks' },
     { templatePrefix: '/v1/calendar', group: 'calendar' },
     { templatePrefix: '/v1/pulls', group: 'github' },
     { templatePrefix: '/v1/installations', group: 'github' },

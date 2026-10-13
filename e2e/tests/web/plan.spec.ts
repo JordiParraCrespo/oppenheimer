@@ -26,8 +26,9 @@ async function drag(page: Page, from: Locator, to: Locator) {
  * Plan, in a browser, against the real control plane
  * (`product/versions/mvp/17-plan.md`): the rail's third list, a task's life on
  * the board — added from the dialog and inline, dragged across columns,
- * ticked done, filed under a milestone, deleted — and a session started from a
- * card, which moves it to In progress and links back from the session.
+ * ticked done, filed under a milestone (made on the Milestones view), marked
+ * blocked, counted on Stats, deleted — and a session started from a card,
+ * which moves it to In progress and links back from the session.
  * Only GitHub is faked; the host has no runner, so the session is queued.
  */
 test('a task from the dialog to deletion, across the board', async ({ page }) => {
@@ -41,7 +42,6 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   for (const name of ['Later', 'To do', 'In progress', 'Done'] as const) {
     await expect(column(page, name)).toBeVisible();
   }
-  await expect(page.getByText('No milestones yet')).toBeVisible();
 
   // New task: the dialog, with a due date.
   await page.getByRole('button', { name: 'New task', exact: true }).click();
@@ -78,25 +78,48 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
     .click();
   await expect(column(page, 'To do').getByText('Ship the wallet list')).toBeVisible();
 
-  // A milestone, and a task filed under it; the milestone filters the board.
+  // A milestone, made on the Milestones view, and a task filed under it; the
+  // board's milestone facet filters to it.
+  await page.getByRole('link', { name: 'Milestones', exact: false }).first().click();
+  await expect(page).toHaveURL(/\/plan\/milestones/);
+  await expect(page.getByText('No milestones yet')).toBeVisible();
   await page.getByRole('button', { name: 'New milestone', exact: true }).click();
   const milestone = page.getByRole('dialog', { name: 'New milestone' });
   await milestone.getByLabel('Milestone').fill('Wallet 2.0');
   await milestone.getByRole('button', { name: 'Add milestone' }).click();
   await expect(milestone).toBeHidden();
+  await page.getByRole('link', { name: 'Tasks', exact: false }).first().click();
   await card(page, 'Ship the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });
   await edit.getByRole('button', { name: 'Wallet 2.0' }).click();
   await edit.getByRole('button', { name: 'Save' }).click();
   await expect(edit).toBeHidden();
-  await expect(page.getByText('0 / 1 tasks')).toBeVisible();
-  await page
-    .getByRole('button', { name: /^Wallet 2\.0/ })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Milestone' }).click();
+  await page.getByRole('menuitemradio', { name: /Wallet 2\.0/ }).click();
   await expect(page).toHaveURL(/milestone=/);
   await expect(card(page, 'Write the release notes')).toHaveCount(0);
   await expect(card(page, 'Ship the wallet list')).toBeVisible();
+
+  // Blocked, with a reason the card shows.
+  await card(page, 'Ship the wallet list').click();
+  const blocking = page.getByRole('dialog', { name: 'Edit task' });
+  await blocking.getByRole('button', { name: 'Mark as blocked' }).click();
+  await blocking.getByLabel('Why it is blocked').fill('Waiting on the design review');
+  await blocking.getByRole('button', { name: 'Block', exact: true }).click();
+  await expect(blocking.getByText('Waiting on the design review')).toBeVisible();
+  await blocking.getByRole('button', { name: 'Cancel' }).click();
+  await expect(
+    card(page, 'Ship the wallet list').getByText('Blocked · Waiting on the design review'),
+  ).toBeVisible();
+
+  // The Milestones view counts it; Stats counts what was made this week.
+  await page.getByRole('link', { name: 'Milestones', exact: false }).first().click();
+  await expect(page.getByText('0 / 1 tasks')).toBeVisible();
+  await page.getByRole('link', { name: 'Stats', exact: true }).click();
+  await expect(page).toHaveURL(/\/plan\/stats/);
+  await expect(page.getByText('Tasks created')).toBeVisible();
+  await expect(page.getByText('Tasks per week')).toBeVisible();
+  await page.getByRole('link', { name: 'Tasks', exact: false }).first().click();
 
   // Delete, behind a confirmation.
   await card(page, 'Ship the wallet list').click();
