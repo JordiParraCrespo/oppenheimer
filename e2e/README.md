@@ -29,7 +29,9 @@ unconfirmed guess would have expired. All three must be the same picture:
 nothing may move or spring back, neither the letters nor the caret. It runs
 both renderers, four pixel ratios, several installed faces served under a name
 the terminal's font stack asks for, and both ways an agent shows its cursor (a
-visible caret, or Ink's inverse cell). The one thing it cannot see is the WebGL
+visible caret, or Ink's inverse cell). One more case counts the cursors in
+every painted frame while twenty keys are typed: exactly one, always, so the
+cursor never blinks out as each echo hands it back to the terminal. The one thing it cannot see is the WebGL
 renderer above 1x, which headless Chromium draws blank;
 `apps/web/src/features/sessions/__tests__/typeahead-webgl-baseline.spec.ts`
 holds the rule there. Run it after any change to the session terminal, the
