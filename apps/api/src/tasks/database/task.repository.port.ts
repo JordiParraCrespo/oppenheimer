@@ -15,7 +15,7 @@ export interface TaskPlacement {
 
 export interface TaskListFilter {
   projectId?: string;
-  goalId?: string;
+  milestoneId?: string;
   /** The tasks a session is on: the session header's "Back to task". */
   sessionId?: string;
   dueFrom?: string;
@@ -25,6 +25,16 @@ export interface TaskListFilter {
 /** `stale-position` when the task to land after is not in that column any more. */
 export type TaskPlaceOutcome = 'placed' | 'stale-position';
 
+/**
+ * A create that answers the task an earlier request with the same idempotency
+ * key made, instead of making a second one.
+ */
+export type TaskInsertOutcome = TaskPlaceOutcome | { existingId: string };
+
+/** `version-conflict` when the writer named a version the row no longer holds; nothing changed. */
+export type TaskWriteOutcome = 'saved' | 'version-conflict';
+export type TaskMoveOutcome = TaskPlaceOutcome | 'version-conflict';
+
 /** `session-not-found` when the session is missing or in another workspace. */
 export type TaskAttachOutcome = 'attached' | 'session-not-found';
 
@@ -32,7 +42,9 @@ export type TaskAttachOutcome = 'attached' | 'session-not-found';
  * Reads take an {@link AccessScope}; writes take a task the caller already read
  * through one. A task's place in its column is the repository's to choose, in the
  * same transaction as the write, because it depends on its neighbours
- * (`product/versions/mvp/19-plan-tasks-and-goals.md` §2).
+ * (`product/versions/mvp/19-plan-tasks-and-goals.md` §2). Every write bumps the
+ * task's version, logs the changes the task recorded to `plan_event` and stages
+ * its events, in one transaction.
  */
 export interface TaskRepositoryPort {
   /** Every task matching the filter, in board order (status, then rank), with its links. */
@@ -40,12 +52,12 @@ export interface TaskRepositoryPort {
   /** `None` for a missing task and one outside the caller's scope alike. */
   findOneById(scope: AccessScope, id: string): Promise<Option<TaskEntity>>;
   /** Insert a new task at `placement`, setting its rank. */
-  insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskPlaceOutcome>;
-  /** Write the fields a person edits: title, notes, due date and time, project and goal. */
-  saveFields(task: TaskEntity): Promise<void>;
+  insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskInsertOutcome>;
+  /** Write the fields a person edits: title, notes, due date and time, project, milestone, blocked. */
+  saveFields(task: TaskEntity): Promise<TaskWriteOutcome>;
   /** Move the task to `placement`, setting its status and rank. */
-  move(task: TaskEntity, placement: TaskPlacement): Promise<TaskPlaceOutcome>;
-  delete(task: TaskEntity): Promise<void>;
+  move(task: TaskEntity, placement: TaskPlacement): Promise<TaskMoveOutcome>;
+  delete(task: TaskEntity): Promise<TaskWriteOutcome>;
   /**
    * Record a session on the task and apply the attach rule, in one transaction
    * under a lock on the task's row: the status is read there, so a drag that

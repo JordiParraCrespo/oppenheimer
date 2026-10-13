@@ -34,6 +34,10 @@ let installationId: string;
 test.describe.configure({ mode: 'default' });
 
 test.beforeAll(async () => {
+  // Pairing waits out the shared registration limit for up to a minute when
+  // other files spent it first, past the default timeout; automations.spec.ts
+  // gives its own pairing the same room.
+  test.setTimeout(180_000);
   owner = await signedUpContext('sharer');
   hostId = await pairHost(owner.api, 'Shared box');
   installationId = await connectInstallation(owner.api);

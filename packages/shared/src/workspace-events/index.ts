@@ -20,6 +20,10 @@ export const WORKSPACE_EVENT_TYPES = [
   'pairing.spent',
   /** An automation run was queued, started or finished. */
   'automationRun.changed',
+  /** A task on Plan's board was created, changed or deleted, by a person or an agent. */
+  'task.changed',
+  /** A milestone was created, changed or deleted. */
+  'milestone.changed',
 ] as const;
 
 export type WorkspaceEventType = (typeof WORKSPACE_EVENT_TYPES)[number];
@@ -28,7 +32,9 @@ export type WorkspaceEvent =
   | { type: 'session.changed'; id: string }
   | { type: 'host.changed'; id: string }
   | { type: 'pairing.spent'; id: string; hostId: string }
-  | { type: 'automationRun.changed'; id: string; automationId: string };
+  | { type: 'automationRun.changed'; id: string; automationId: string }
+  | { type: 'task.changed'; id: string }
+  | { type: 'milestone.changed'; id: string };
 
 /**
  * The SSE `event:` name of the frame the API sends once a stream is
@@ -47,6 +53,8 @@ export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
   switch (event.type) {
     case 'session.changed':
     case 'host.changed':
+    case 'task.changed':
+    case 'milestone.changed':
       return true;
     case 'pairing.spent':
       return typeof event.hostId === 'string';

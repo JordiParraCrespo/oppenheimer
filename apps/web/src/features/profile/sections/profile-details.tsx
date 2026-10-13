@@ -17,10 +17,8 @@ export function ProfileDetailsSection() {
   const profile = useMyProfile();
 
   return (
-    <QueryState
-      query={profile}
-      errorFallback={t('settings.profile.failed')}
-      pending={
+    <QueryState query={profile}>
+      <QueryState.Pending>
         <SettingsGroup aria-busy>
           {[0, 1, 2, 3].map((row) => (
             <SettingsRow key={row} label={<Skeleton className="h-4 w-28" />}>
@@ -28,14 +26,16 @@ export function ProfileDetailsSection() {
             </SettingsRow>
           ))}
         </SettingsGroup>
-      }
-    >
-      {(data) => (
-        <ProfileNameSection profile={data}>
-          <ProfilePictureSection profile={data} />
-          <ProfileEmailSection profile={data} />
-        </ProfileNameSection>
-      )}
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('settings.profile.failed')} />
+      <QueryState.Data of={profile}>
+        {(data) => (
+          <ProfileNameSection profile={data}>
+            <ProfilePictureSection profile={data} />
+            <ProfileEmailSection profile={data} />
+          </ProfileNameSection>
+        )}
+      </QueryState.Data>
     </QueryState>
   );
 }

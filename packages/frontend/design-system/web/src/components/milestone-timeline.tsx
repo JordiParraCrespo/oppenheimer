@@ -27,6 +27,16 @@ type TimelineMilestone = {
   total: number;
 };
 
+/** What a page's Today, Earlier and Later buttons do to the timeline. */
+type MilestoneTimelineControls = {
+  /** Scroll today back to a quarter in from the left. */
+  today: () => void;
+  /** Four weeks back. */
+  earlier: () => void;
+  /** Four weeks on. */
+  later: () => void;
+};
+
 type TimelineRow = {
   id: string;
   name: string;
@@ -213,8 +223,10 @@ function MilestoneTimeline({
   onOpenRow,
   onOpenMilestone,
   labels,
+  controls,
   className,
-}: {
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
   rows: TimelineRow[];
   today: IsoDate;
   locale?: string;
@@ -225,7 +237,8 @@ function MilestoneTimeline({
     tasks?: (total: number) => string;
     edit?: string;
   };
-  className?: string;
+  /** A handle for the page's Today, Earlier and Later buttons. */
+  controls?: React.Ref<MilestoneTimelineControls>;
 }) {
   const [hover, setHover] = React.useState<string | null>(null);
   const tasksLabel = labels?.tasks ?? ((total: number) => `of ${total} tasks`);
@@ -234,17 +247,34 @@ function MilestoneTimeline({
   const todayLabel = dateFormat(locale, { day: 'numeric', month: 'short' }).format(now);
   const dueFormat = dateFormat(locale, { month: 'short', day: 'numeric' });
 
-  // Open on today, a third in from the left, once: the reader scrolls from there.
+  // Open on today, a quarter in from the left (past a 32px gutter when the
+  // page bleeds it), once: the reader scrolls from there, and Today comes back.
   const opened = React.useRef(false);
+  const element = React.useRef<HTMLDivElement | null>(null);
+  const onToday = (el: HTMLDivElement) => Math.max(0, todayX + 32 - el.clientWidth * 0.25);
   const scroller = (el: HTMLDivElement | null) => {
+    element.current = el;
     if (el && !opened.current) {
       opened.current = true;
-      el.scrollLeft = Math.max(0, todayX - el.clientWidth / 3);
+      el.scrollLeft = onToday(el);
     }
   };
+  React.useImperativeHandle(
+    controls,
+    () => ({
+      today: () => {
+        const el = element.current;
+        el?.scrollTo({ left: el ? onToday(el) : 0, behavior: 'smooth' });
+      },
+      earlier: () => element.current?.scrollBy({ left: -28 * PX, behavior: 'smooth' }),
+      later: () => element.current?.scrollBy({ left: 28 * PX, behavior: 'smooth' }),
+    }),
+    [todayX],
+  );
 
   return (
     <div
+      {...props}
       ref={scroller}
       data-slot="milestone-timeline"
       className={cn('overflow-x-auto overflow-y-hidden overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden', className)}
@@ -320,4 +350,4 @@ function MilestoneTimeline({
 }
 
 export { MilestoneGlyph, MilestoneTimeline };
-export type { TimelineMilestone, TimelineRow };
+export type { MilestoneTimelineControls, TimelineMilestone, TimelineRow };

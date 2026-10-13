@@ -14,17 +14,17 @@ import { useTranslation } from 'react-i18next';
 import { ChoiceRow } from '../components/choice-row';
 import type { TaskFormInput, TaskFormOutput, TaskFormValues } from '../lib/task-form';
 import { TaskDueRow } from './task-due-row';
-import { TaskGoalRow } from './task-goal-row';
+import { TaskMilestoneRow } from './task-milestone-row';
 
 /**
  * The task dialog's form (`Tasks.dc.html`): the title and notes as the design
- * system's labelled fields, then the rows — Status, Project, Goal, the sessions (the dialog's,
+ * system's labelled fields, then the rows — Status, Project, Milestone, the sessions (the dialog's,
  * passed in), Due — and the footer. Enter in the title saves.
  */
 export function TaskForm({
   values,
   projects,
-  goals,
+  milestones,
   today,
   sessions,
   pending,
@@ -36,7 +36,7 @@ export function TaskForm({
 }: {
   values: TaskFormValues;
   projects: readonly { id: string; name: string }[];
-  goals: readonly { id: string; name: string; projectId: string }[];
+  milestones: readonly { id: string; name: string; projectId: string }[];
   today: string;
   /** The Sessions row, for a task that exists. */
   sessions: ReactNode;
@@ -106,19 +106,21 @@ export function TaskForm({
               onChange={(value) => {
                 if (!value) return;
                 field.onChange(value);
-                // A goal of another project goes with the change (18 §3).
-                const goalId = getValues('goalId');
+                // A milestone of another project goes with the change (18 §3).
+                const milestoneId = getValues('milestoneId');
                 if (
-                  goalId &&
-                  !goals.some((goal) => goal.id === goalId && goal.projectId === value)
+                  milestoneId &&
+                  !milestones.some(
+                    (milestone) => milestone.id === milestoneId && milestone.projectId === value,
+                  )
                 ) {
-                  setValue('goalId', null);
+                  setValue('milestoneId', null);
                 }
               }}
             />
           )}
         />
-        <TaskGoalRow control={control} goals={goals} />
+        <TaskMilestoneRow control={control} milestones={milestones} />
         {sessions}
         <TaskDueRow control={control} today={today} />
       </div>

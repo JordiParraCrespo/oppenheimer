@@ -9,7 +9,7 @@ import { TaskErrors } from '../../domain/tasks.errors';
 import { TASK_REPOSITORY } from '../../tasks.di-tokens';
 import { CreateTaskCommand } from './create-task.command';
 
-/** A new task, filed by the request's project and goal, at the end of its column. */
+/** A new task, filed by the request's project and milestone, at the end of its column. */
 @CommandHandler(CreateTaskCommand)
 export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskCommand, AggregateID> {
   constructor(
@@ -18,11 +18,17 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
     private readonly filing: TaskFilingResolver,
   ) {}
 
-  async execute({ scope, userId, input }: CreateTaskCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    userId,
+    actor,
+    idempotencyKey,
+    input,
+  }: CreateTaskCommand): Promise<AggregateID> {
     if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
     const filed = await this.filing.resolve(scope, {
       projectId: input.projectId,
-      goalId: input.goalId,
+      milestoneId: input.milestoneId,
     });
     const task = TaskEntity.createNew({
       organizationId: scope.organizationId,
@@ -33,9 +39,14 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
       dueDate: input.dueDate,
       dueTime: input.dueTime,
       createdByUserId: userId,
+      actor,
+      idempotencyKey,
     });
     // `last` names no other task, so the placement cannot be stale.
-    await this.tasks.insert(task, { status: input.status, after: { kind: 'last' } });
-    return task.id;
+    const outcome = await this.tasks.insert(task, {
+      status: input.status,
+      after: { kind: 'last' },
+    });
+    return typeof outcome === 'object' ? outcome.existingId : task.id;
   }
 }

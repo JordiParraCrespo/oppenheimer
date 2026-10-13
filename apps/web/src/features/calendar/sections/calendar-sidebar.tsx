@@ -1,5 +1,5 @@
 import { CalendarLayerItem, SidebarListHead } from '@oppenheimer/design-system-web';
-import { CalendarDays, CircleCheck, CircleDot, Zap } from '@oppenheimer/design-system-web/icons';
+import { CalendarDays, CircleCheck, User, Zap } from '@oppenheimer/design-system-web/icons';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,28 +9,28 @@ import {
   hiddenLayers,
   toggleLayer,
 } from '../lib/calendar-search';
-import { GoogleCalendarCard } from './google-calendar-card';
+import { GoogleAccountsCard } from './google-accounts-card';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 
 /** Each layer's glyph: the month draws its entries with the same. */
 const ICON: Record<CalendarLayer, ReactNode> = {
-  events: <CircleDot />,
+  events: <User />,
   google: <CalendarDays />,
   tasks: <CircleCheck />,
   automations: <Zap />,
 };
 
 /**
- * The calendar's sidebar list (`20-plan-calendar.md` §1): a toggle per layer,
- * kept in the address so a link shows the same month, and the Google
- * Calendar card.
+ * The calendar's sidebar list (the 2026-10-13 `Tasks` frame): Calendars, a
+ * toggle per layer kept in the address so a link shows the same month, and
+ * the Google accounts.
  */
 export function CalendarSidebar() {
   const { t } = useTranslation();
   // `useMatch`, not `useSearch`: the shell mounts this sidebar and outlives
   // the calendar, so a navigation away renders it once more with the
-  // calendar's match already gone — see `tasks-sidebar.tsx`.
+  // calendar's match already gone.
   const off = calendar.useMatch({ shouldThrow: false, select: (match) => match.search.off });
   const navigate = calendar.useNavigate();
   const hidden = hiddenLayers(off);
@@ -55,7 +55,7 @@ export function CalendarSidebar() {
           </CalendarLayerItem>
         ))}
       </div>
-      <GoogleCalendarCard />
+      <GoogleAccountsCard />
     </div>
   );
 }

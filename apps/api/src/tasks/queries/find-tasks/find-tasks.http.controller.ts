@@ -34,7 +34,7 @@ export class FindTasksHttpController {
   @ApiOperation({
     summary: 'List the board’s tasks',
     description:
-      'In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).',
+      'In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).',
   })
   @ApiQuery({
     name: 'projectId',
@@ -44,11 +44,11 @@ export class FindTasksHttpController {
     description: 'Only this project’s tasks.',
   })
   @ApiQuery({
-    name: 'goalId',
+    name: 'milestoneId',
     required: false,
     type: String,
     format: 'uuid',
-    description: 'Only this goal’s tasks.',
+    description: 'Only this milestone’s tasks.',
   })
   @ApiQuery({
     name: 'sessionId',

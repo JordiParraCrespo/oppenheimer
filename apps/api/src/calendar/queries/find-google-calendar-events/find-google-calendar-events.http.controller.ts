@@ -10,9 +10,9 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { CalendarEventMapper } from '../../calendar-event.mapper';
-import { CalendarEventResponseDto } from '../../dtos/calendar-event.response.dto';
-import type { ProviderCalendarEvent } from '../../infrastructure/calendar-provider.port';
+import { GoogleCalendarEventsResponseDto } from '../../dtos/google-calendar-events.response.dto';
 import { FindGoogleCalendarEventsQuery } from './find-google-calendar-events.query';
+import type { GoogleCalendarEventsRead } from './find-google-calendar-events.query-handler';
 import { FindGoogleCalendarEventsRequest } from './find-google-calendar-events.request.dto';
 
 @ApiTags('Calendar')
@@ -32,9 +32,9 @@ export class FindGoogleCalendarEventsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Calendar' })
   @RequireScopes('calendar:read')
   @ApiOperation({
-    summary: 'The caller’s Google Calendar between two days',
+    summary: 'The caller’s Google Calendars between two days',
     description:
-      'Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.',
+      'Every connected account, read through to Google in parallel and not stored; times in `timeZone`. A meeting invited to two of the accounts comes back once. One account failing marks only itself in `accounts`. Read-only: these events cannot be changed here.',
   })
   @ApiQuery({
     name: 'from',
@@ -56,24 +56,22 @@ export class FindGoogleCalendarEventsHttpController {
     type: String,
     description: 'The IANA zone to read Google’s times in.',
   })
-  @ApiResponse({ status: 200, type: [CalendarEventResponseDto] })
+  @ApiResponse({ status: 200, type: GoogleCalendarEventsResponseDto })
   @ApiProblemResponse({
     status: 429,
-    description: "Google Calendar's rate limit was reached; try again after Retry-After",
+    description: "Google Calendar's rate limit stopped every account; try again after Retry-After",
     code: 'CALENDAR_010',
   })
   @ApiProblemResponse({ status: 400, description: 'Range too wide', code: 'CALENDAR_003' })
-  @ApiProblemResponse({ status: 409, description: 'Not connected', code: 'CALENDAR_007' })
-  @ApiProblemResponse({ status: 502, description: 'Google did not answer', code: 'CALENDAR_008' })
   @ApiProblemResponse({ status: 503, description: 'Not configured', code: 'CALENDAR_004' })
   async list(
     @CurrentAccessScope() scope: AccessScope,
     @Query() query: FindGoogleCalendarEventsRequest,
-  ): Promise<CalendarEventResponseDto[]> {
-    const events = await this.queryBus.execute<
+  ): Promise<GoogleCalendarEventsResponseDto> {
+    const read = await this.queryBus.execute<
       FindGoogleCalendarEventsQuery,
-      ProviderCalendarEvent[]
+      GoogleCalendarEventsRead
     >(new FindGoogleCalendarEventsQuery({ scope, range: query }));
-    return events.map((event) => this.mapper.fromProvider(event));
+    return this.mapper.toGoogleResponse(read);
   }
 }

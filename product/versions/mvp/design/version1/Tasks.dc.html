@@ -94,7 +94,8 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div style="height:100%;display:flex;flex-direction:column;background:var(--background)">
 <header style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--border-subtle)">
 <span style="flex:none;width:26px;height:26px;border-radius:980px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ agHeadIcon }}" size="14" hint-size="14px,14px"></x-import></span>
-<span style="font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap">{{ agHeadTitle }}</span>
+<sc-if value="{{ agIsPm }}"><a href="./BotSettings.dc.html?bot=pm" title="Project manager settings" style="display:inline-flex;align-items:center;gap:6px;height:28px;margin-left:-6px;padding:0 6px;border-radius:10px;color:var(--fg);font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none">{{ agHeadTitle }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import></span></a></sc-if>
+<sc-if value="{{ agIsProject }}"><span style="font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap">{{ agHeadTitle }}</span></sc-if>
 <span style="flex:1"></span>
 <sc-if value="{{ agRunning }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span>Running</span></sc-if>
 <div role="tablist" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">

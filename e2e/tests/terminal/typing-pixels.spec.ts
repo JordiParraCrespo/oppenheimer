@@ -96,12 +96,43 @@ for (const c of CASES.filter((c) => c.dpr === 1 && c.face === '')) {
   });
 }
 
-/**
- * Opens the terminal for `c`, types three keys the host echoes, then holds
- * the host, does `keys`, and photographs the screen with the guess drawn and
- * again once the echo has landed: the two must be the same picture.
- */
-async function typeAhead(browser: Browser, c: Case, keys: (page: Page) => Promise<void>) {
+// A guess hands the cursor back to the terminal when its echo lands. Done
+// out of step, every echo left a frame with no cursor at all, and typing at
+// an ordinary pace made the cursor blink. Every painted frame is sampled
+// while twenty keys are typed: exactly one cursor, always. Once on a quiet
+// host, and once on a busy one whose output lands while the cursor is being
+// handed back. The DOM renderer only, where the terminal's own cursor is an
+// element the page can see.
+for (const busy of [false, true]) {
+  test(`the cursor never blinks out while typing ahead of the host (dom, caret${busy ? ', busy host' : ''})`, async ({
+    browser,
+  }) => {
+    await countCursors(browser, busy);
+  });
+}
+
+async function countCursors(browser: Browser, busy: boolean) {
+  const c: Case = { renderer: 'dom', dpr: 1, mode: 'caret', face: '' };
+  const { context, page } = await open(browser, c, busy);
+  for (const key of 'abc') {
+    await page.keyboard.type(key);
+    await page.waitForTimeout(250);
+  }
+  await page.evaluate(() => window.harness.watchCursors());
+  for (const key of 'the quick brown fox ') {
+    await page.keyboard.type(key);
+    await page.waitForTimeout(90);
+  }
+  await page.waitForTimeout(300);
+  const frames = await page.evaluate(() => window.harness.stopWatching());
+  expect(frames.length, 'frames sampled').toBeGreaterThan(60);
+  expect(frames.filter((n) => n === 0).length, 'frames with no cursor').toBe(0);
+  expect(frames.filter((n) => n > 1).length, 'frames with two cursors').toBe(0);
+  await context.close();
+}
+
+/** A page with the terminal for `c`, on the case's renderer, focused. */
+async function open(browser: Browser, c: Case, busy = false) {
   const context = await browser.newContext({
     deviceScaleFactor: c.dpr,
     viewport: { width: 700, height: 160 },
@@ -124,11 +155,21 @@ async function typeAhead(browser: Browser, c: Case, keys: (page: Page) => Promis
     });
   }
   const page = await context.newPage();
-  const query = new URLSearchParams({ mode: c.mode, face: c.face });
+  const query = new URLSearchParams({ mode: c.mode, face: c.face, spin: busy ? '1' : '' });
   await page.goto(`${origin}/?${query}`);
   await page.waitForFunction(() => 'harness' in window);
   await expect.poll(() => page.evaluate(() => window.harness.renderer())).toBe(c.renderer);
   await page.locator('#terminal').click();
+  return { context, page };
+}
+
+/**
+ * Opens the terminal for `c`, types three keys the host echoes, then holds
+ * the host, does `keys`, and photographs the screen with the guess drawn and
+ * again once the echo has landed: the two must be the same picture.
+ */
+async function typeAhead(browser: Browser, c: Case, keys: (page: Page) => Promise<void>) {
+  const { context, page } = await open(browser, c);
 
   // Keys the host echoes after 60 ms each, far apart: round trips for the
   // latency the typeahead waits on, and an echo that confirms the line.
@@ -170,6 +211,8 @@ declare global {
     harness: {
       host: { hold(): void; release(): void; echoes: number };
       renderer(): 'dom' | 'webgl';
+      watchCursors(): void;
+      stopWatching(): number[];
       screen(): { x: number; y: number; width: number; height: number };
     };
   }

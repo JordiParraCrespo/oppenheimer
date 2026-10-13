@@ -17,7 +17,8 @@ type SessionStream = Parameters<typeof mountSessionTerminal>[1];
  */
 type Mode = 'caret' | 'inverse';
 
-const PROMPT = '❯ ';
+// Claude Code's own: the mark and a no-break space, not a space.
+const PROMPT = '❯\u00a0';
 
 class FakeHost implements SessionStream {
   private readonly listeners = new Set<
@@ -35,6 +36,20 @@ class FakeHost implements SessionStream {
 
   start(): void {
     this.write(this.mode === 'inverse' ? `\u001b[?25l${this.line()}` : PROMPT);
+  }
+
+  /**
+   * Output that is not the line: a spinner two rows down, redrawn every 25 ms
+   * as a busy agent's status is, in tmux's hide-and-show frame, the cursor
+   * saved and put back around it.
+   */
+  spin(): void {
+    const glyphs = '|/-\\';
+    let at = 0;
+    setInterval(() => {
+      at = (at + 1) % glyphs.length;
+      this.write(`\u001b[?25l\u001b7\u001b[3;1H${glyphs[at]}\u001b8\u001b[?25h`);
+    }, 25);
   }
 
   hold(): void {
@@ -118,12 +133,55 @@ const host = new FakeHost(mode);
 const container = document.getElementById('terminal') as HTMLElement;
 mountSessionTerminal(container, host, { typeahead: () => true });
 host.start();
+if (params.get('spin')) host.spin();
+
+let watching = false;
+let frames: number[] = [];
 
 /** Everything the spec reads or does, on `window.harness`. */
 const harness = {
   host,
   /** Which renderer draws: the WebGL addon leaves no DOM rows behind. */
   renderer: () => (container.querySelector('.xterm-rows') ? 'dom' : 'webgl'),
+  /**
+   * Starts counting the cursors on screen in every painted frame: the
+   * terminal's own (the DOM renderer's cursor element, unless a typeahead
+   * cell covers it) and the typeahead's (the cell its painter marks
+   * `data-cursor`). `stopWatching` hands the counts
+   * back.
+   */
+  watchCursors(): void {
+    watching = true;
+    frames = [];
+    const sample = () => {
+      // After the frame's callbacks, so what is counted is what was painted.
+      setTimeout(() => {
+        const cells = Array.from(container.querySelectorAll('[data-typeahead] > *'));
+        // The terminal's cursor counts where it can be seen: a typeahead
+        // cell painted over it hides it.
+        const covered = (cursor: Element) => {
+          const box = cursor.getBoundingClientRect();
+          const x = box.left + box.width / 2;
+          const y = box.top + box.height / 2;
+          return cells.some((cell) => {
+            const over = cell.getBoundingClientRect();
+            return x >= over.left && x <= over.right && y >= over.top && y <= over.bottom;
+          });
+        };
+        const own = Array.from(container.querySelectorAll('.xterm-rows .xterm-cursor')).filter(
+          (cursor) => !covered(cursor),
+        ).length;
+        const guessed = container.querySelectorAll('[data-typeahead] > [data-cursor]').length;
+        frames.push(own + guessed);
+      });
+      if (watching) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  },
+  stopWatching(): number[] {
+    watching = false;
+    return frames;
+  },
   /**
    * The terminal's screen in page CSS pixels. Only the prompt line changes
    * between a prediction and its echo, so the whole screen is compared.

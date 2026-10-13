@@ -163,7 +163,8 @@ describe('TypeaheadModel', () => {
   });
 
   it('never deletes the prompt: Backspace and Left stop where the text begins', () => {
-    for (const prompt of ['\u276f ', '> ', '$ ', '\u2502 > ']) {
+    // Claude Code draws `❯` and a no-break space (2.1), not a space.
+    for (const prompt of ['\u276f\u00a0', '\u276f ', '> ', '$ ', '\u2502 > ']) {
       const { screen, host } = grid(`${prompt}a`, prompt.length + 1);
       const model = new TypeaheadModel(clock().now);
       keys(model, screen, ['b']);

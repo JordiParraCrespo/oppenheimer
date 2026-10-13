@@ -35,7 +35,6 @@ export {
   CalendarAccountList,
   CalendarAccountRow,
   CalendarLayerItem,
-  CalendarSourceCard,
 } from './components/calendar-source';
 export type { CalloutTone } from './components/callout';
 export { Callout } from './components/callout';
@@ -267,7 +266,6 @@ export {
 export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export { FileIcon } from './components/file-icon';
-export { GoalCard, GoalEmpty, GoalGrid } from './components/goal-card';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
 export { HostCard } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
@@ -290,9 +288,18 @@ export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
-export type { TimelineMilestone, TimelineRow } from './components/milestone-timeline';
+export { MilestoneCard, MilestoneEmpty, MilestoneGrid } from './components/milestone-card';
+export type {
+  MilestoneTimelineControls,
+  TimelineMilestone,
+  TimelineRow,
+} from './components/milestone-timeline';
 export { MilestoneGlyph, MilestoneTimeline } from './components/milestone-timeline';
-export type { CalendarEntryData, CalendarEntryKind } from './components/month-calendar';
+export type {
+  CalendarAccent,
+  CalendarEntryData,
+  CalendarEntryKind,
+} from './components/month-calendar';
 export { CalendarEntry, MonthCalendar } from './components/month-calendar';
 export { NumberStepper } from './components/number-stepper';
 export {

@@ -3,14 +3,11 @@
   "nav": {
     "label": "Plan",
     "tasks": "Tasks",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "milestones": "Milestones"
   },
   "sidebar": {
-    "projects": "Projects",
-    "all": "All projects",
-    "unassigned": "Unassigned",
-    "newProject": "New project",
-    "loadFailed": "Couldn’t load your projects."
+    "unassigned": "Unassigned"
   },
   "board": {
     "title": "Tasks",
@@ -60,29 +57,35 @@
     "endOfMonth": "End of month",
     "inThreeMonths": "In 3 months"
   },
-  "goals": {
-    "label": "Goals",
-    "title": "Goals",
-    "new": "New goal",
-    "empty": "Goals group tasks and track how many are done.",
+  "milestones": {
+    "label": "Milestones",
+    "title": "Milestones",
+    "new": "New milestone",
+    "empty": "Milestones split a project into stages with a target date. Progress is the share of their tasks that are done.",
     "noTarget": "No target",
     "progress": "{{done}} / {{total}} tasks",
     "edit": "Edit {{name}}",
-    "loadFailed": "Couldn’t load your goals.",
-    "emptyTitle": "No goals yet"
+    "loadFailed": "Couldn’t load your milestones.",
+    "emptyTitle": "No milestones for this project",
+    "ofTasks_one": "of {{count}} task",
+    "ofTasks_other": "of {{count}} tasks",
+    "today": "Today",
+    "earlier": "Earlier",
+    "later": "Later",
+    "clickToEdit": "Click to edit"
   },
-  "goal": {
-    "newTitle": "New goal",
-    "editTitle": "Edit goal",
-    "name": "Goal",
+  "milestone": {
+    "newTitle": "New milestone",
+    "editTitle": "Edit milestone",
+    "name": "Milestone",
     "namePlaceholder": "What are you aiming for?",
     "target": "Target",
-    "add": "Add goal",
-    "delete": "Delete goal",
-    "deleteTitle": "Delete this goal?",
-    "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a goal.",
-    "saveFailed": "Couldn’t save the goal.",
-    "deleteFailed": "Couldn’t delete the goal."
+    "add": "Add milestone",
+    "delete": "Delete milestone",
+    "deleteTitle": "Delete this milestone?",
+    "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+    "saveFailed": "Couldn’t save the milestone.",
+    "deleteFailed": "Couldn’t delete the milestone."
   },
   "dialog": {
     "newTitle": "New task",
@@ -93,7 +96,7 @@
     "notesPlaceholder": "Add notes",
     "status": "Status",
     "project": "Project",
-    "goal": "Goal",
+    "milestone": "Milestone",
     "none": "None",
     "due": "Due",
     "sessions": "Sessions",
@@ -139,6 +142,16 @@
     "offlineSince": "{{host}} has been offline since {{when}}. The session waits as Queued and starts when its runner reconnects.",
     "start": "Start session",
     "queue": "Queue session",
-    "failed": "Couldn’t start the session."
+    "failed": "Couldn’t start the session.",
+    "loadFailed": "Couldn’t load the task, its project or the hosts."
+  },
+  "filters": {
+    "milestone": "Milestone",
+    "anyMilestone": "Any milestone",
+    "project": "Project",
+    "allProjects": "All projects",
+    "noProject": "No project",
+    "allMilestones": "All milestones",
+    "clear": "Clear"
   }
 }

@@ -8,6 +8,7 @@ import { automationsKeys } from './automations.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
 import { sessionsKeys } from './sessions.queries';
+import { tasksKeys } from './tasks.queries';
 import { setWorkspaceStream } from './workspace-stream-status';
 
 /**
@@ -30,6 +31,12 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
         automationsKeys.runs(),
         automationsKeys.detail(event.automationId),
       ];
+    case 'task.changed':
+      // A task's change moves its milestone's progress too.
+      return [tasksKeys.lists(), tasksKeys.milestones()];
+    case 'milestone.changed':
+      // Moving a milestone to another project moves its tasks with it.
+      return [tasksKeys.milestones(), tasksKeys.lists()];
   }
 }
 
@@ -46,6 +53,8 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
  *   stream does not carry.
  * - Automations catch up but keep the run poll: a run's status follows its
  *   session, and `session.changed` does not name automation reads.
+ * - Plan's tasks and milestones: every write raises `task.changed` or
+ *   `milestone.changed`, an agent's included, so the board's poll stands down.
  */
 const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
   { key: sessionsKeys.all, pollStandsDown: true },
@@ -54,6 +63,7 @@ const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
   { key: automationsKeys.lists(), pollStandsDown: false },
   { key: automationsKeys.details(), pollStandsDown: false },
   { key: automationsKeys.runs(), pollStandsDown: false },
+  { key: tasksKeys.all, pollStandsDown: true },
 ];
 
 const CATCH_UP = COVERAGE.map((entry) => entry.key);

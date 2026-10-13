@@ -10,6 +10,7 @@ import { GoogleCalendarGateway } from '../infrastructure/google-calendar.gateway
  */
 
 const CONFIG: Record<string, string> = {
+  'calendar.googleAuthUrl': 'https://accounts.example.test/o/oauth2/v2/auth',
   'calendar.googleOauthBaseUrl': 'https://oauth2.example.test',
   'calendar.googleApiBaseUrl': 'https://calendar.example.test',
   'oauth.google.clientId': 'client',
@@ -23,6 +24,8 @@ const config = {
 } as unknown as ConfigService;
 
 const RANGE = { from: '2026-10-01', to: '2026-10-31', timeZone: 'Europe/Madrid' };
+const ANA = { connectionId: 'c-ana', refreshToken: '1//ana' };
+const BEN = { connectionId: 'c-ben', refreshToken: '1//ben' };
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status });
@@ -35,7 +38,7 @@ const refusal = (reason: string) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe('GoogleCalendarGateway and Google’s quota', () => {
-  it('pauses a person Google refused for their own quota, and only that person', async () => {
+  it('pauses an account Google refused for its own quota, and only that account', async () => {
     const fetch = vi
       .fn()
       .mockResolvedValueOnce(TOKEN())
@@ -45,13 +48,13 @@ describe('GoogleCalendarGateway and Google’s quota', () => {
     vi.stubGlobal('fetch', fetch);
     const gateway = new GoogleCalendarGateway(config);
 
-    await expect(gateway.listEvents('1//ana', RANGE)).rejects.toMatchObject({
+    await expect(gateway.listEvents(ANA, RANGE)).rejects.toMatchObject({
       code: 'CALENDAR_010',
     });
-    await expect(gateway.listEvents('1//ana', RANGE)).rejects.toMatchObject({
+    await expect(gateway.listEvents(ANA, RANGE)).rejects.toMatchObject({
       code: 'CALENDAR_010',
     });
-    await expect(gateway.listEvents('1//ben', RANGE)).resolves.toEqual([]);
+    await expect(gateway.listEvents(BEN, RANGE)).resolves.toEqual({ events: [], account: null });
     expect(fetch).toHaveBeenCalledTimes(4);
   });
 
@@ -63,11 +66,11 @@ describe('GoogleCalendarGateway and Google’s quota', () => {
     vi.stubGlobal('fetch', fetch);
     const gateway = new GoogleCalendarGateway(config);
 
-    await expect(gateway.listEvents('1//ana', RANGE)).rejects.toMatchObject({
+    await expect(gateway.listEvents(ANA, RANGE)).rejects.toMatchObject({
       code: 'CALENDAR_010',
     });
     // Ben's token refresh draws on the same project quota: not sent either.
-    await expect(gateway.listEvents('1//ben', RANGE)).rejects.toMatchObject({
+    await expect(gateway.listEvents(BEN, RANGE)).rejects.toMatchObject({
       code: 'CALENDAR_010',
     });
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -78,10 +81,10 @@ describe('GoogleCalendarGateway and Google’s quota', () => {
     vi.stubGlobal('fetch', fetch);
     const gateway = new GoogleCalendarGateway(config);
 
-    await expect(gateway.listEvents('1//ana', RANGE)).rejects.toMatchObject({
+    await expect(gateway.listEvents(ANA, RANGE)).rejects.toMatchObject({
       code: 'CALENDAR_010',
     });
-    await expect(gateway.listEvents('1//ana', RANGE)).rejects.toMatchObject({
+    await expect(gateway.listEvents(ANA, RANGE)).rejects.toMatchObject({
       code: 'CALENDAR_010',
     });
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -93,8 +96,38 @@ describe('GoogleCalendarGateway and Google’s quota', () => {
       vi.fn().mockResolvedValueOnce(TOKEN()).mockResolvedValueOnce(refusal('forbidden')),
     );
 
-    await expect(new GoogleCalendarGateway(config).listEvents('1//ana', RANGE)).rejects.toThrow(
+    await expect(new GoogleCalendarGateway(config).listEvents(ANA, RANGE)).rejects.toThrow(
       'Google answered 403',
     );
+  });
+
+  it('gives each of one person’s accounts its own bucket: a paused account leaves the next', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(refusal('userRateLimitExceeded'))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { items: [] }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GoogleCalendarGateway(config);
+    const work = { connectionId: 'c-ana-work', refreshToken: '1//ana-work' };
+
+    await expect(gateway.listEvents(ANA, RANGE)).rejects.toMatchObject({ code: 'CALENDAR_010' });
+    await expect(gateway.listEvents(work, RANGE)).resolves.toEqual({ events: [], account: null });
+  });
+});
+
+describe('GoogleCalendarGateway and the account chooser', () => {
+  it('always offers the chooser, and opens it on the account a reconnect names', () => {
+    const gateway = new GoogleCalendarGateway(config);
+    const added = new URL(gateway.authorizationUrl('state-1'));
+    const reconnect = new URL(gateway.authorizationUrl('state-2', 'ana@example.com'));
+
+    expect(added.searchParams.get('prompt')).toBe('consent select_account');
+    expect(added.searchParams.get('scope')?.split(' ')).toEqual(
+      expect.arrayContaining(['openid', 'email']),
+    );
+    expect(added.searchParams.has('login_hint')).toBe(false);
+    expect(reconnect.searchParams.get('login_hint')).toBe('ana@example.com');
   });
 });

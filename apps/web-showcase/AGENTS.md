@@ -18,7 +18,7 @@ src/components/
 ├── demos.tsx         # interactive demos (menus, the Add host dialog, scope chips, slug field, composer, sidebar, terminal, carousel)
 ├── host-link-demos.tsx # a terminal stepping through its host-link phases (banner and notice forms), and the drop zones
 ├── drag-demos.tsx    # the drag layer on its own: a sortable pair of groups, tokens and bins with accepts
-├── task-board-demos.tsx # Plan's board, goals and display header
+├── task-board-demos.tsx # Plan's board, milestones and display header
 ├── calendar-demos.tsx # the month in the page's DragProvider, its sidebar, the date picker
 ├── plan-dialog-demos.tsx # the task and Start session dialogs (visual states only) and the session pane header
 ├── plan-fixtures.ts  # what the Plan demos share: the fixed today and the columns

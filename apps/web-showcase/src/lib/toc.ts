@@ -187,7 +187,7 @@ export const TOC: TocGroup[] = [
     group: 'Plan',
     items: [
       { id: 'drag', label: 'Drag layer', icon: MoveIcon, components: ['drag'] },
-      { id: 'taskboard', label: 'TaskBoard · GoalCard', icon: KanbanIcon, components: ['task-board', 'goal-card'] },
+      { id: 'taskboard', label: 'TaskBoard · MilestoneCard', icon: KanbanIcon, components: ['task-board', 'milestone-card'] },
       { id: 'calendar', label: 'MonthCalendar', icon: CalendarDaysIcon, components: ['month-calendar', 'calendar-source'] },
       { id: 'calendaraccounts', label: 'CalendarAccountList', icon: CalendarDaysIcon, components: [] },
       { id: 'milestones', label: 'MilestoneTimeline', icon: MilestoneIcon, components: ['milestone-timeline'] },

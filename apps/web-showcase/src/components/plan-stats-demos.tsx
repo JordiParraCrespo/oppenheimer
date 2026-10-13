@@ -210,6 +210,7 @@ export function CalendarAccountsDemo() {
             key={account}
             mark={<BrandGlyph name="google" />}
             account={account}
+            accent={i === 1 ? 'chart-2' : 'chart-1'}
             status={i === 1 ? 'Sync failed · 3h ago' : 'Synced 2 min ago'}
             failed={i === 1}
             onReconnect={() => {}}
