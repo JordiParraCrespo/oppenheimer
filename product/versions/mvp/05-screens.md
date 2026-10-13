@@ -15,10 +15,13 @@
   repos, skippable; a member who can only request an organization's
   install is told an owner has to approve it (`setup_action=request`),
   then connects it by choosing the organization again; until it is done the
-  repo chip lists nothing and its foot row is the way out (below). (4) Add a host: Copy install command and
-  Copy agent prompt, the one-hour token's line under them, the
-  instruction itself behind an Inspect fold, and the status line
-  flipping to the registered host when the runner registers. Then Ready: a success ring, "You're all set", a
+  repo chip lists nothing and its foot row is the way out (below). (4) Add a host, agent first (2026-10-13 export):
+  the agent prompt in a card with Copy prompt, the prompt text behind its
+  Show fold, the one-hour token's line under it with "Install manually
+  instead" across from it (the install command on one line with its
+  Copy), and a Connection list — Runner installed with its version, then
+  Host connected with the machine's name and OS — with Continue, Skip for
+  now and its note on one row. Then Ready: a success ring, "You're all set", a
   summary card of workspace address, code and host, and one button into
   the console, where New session has its chips prefilled (the host just
   added, the first repo of the installation, its default branch, Claude
@@ -206,18 +209,20 @@
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's
-  foot action opens the **Add a host dialog**: one sentence — run one
-  command on the machine — then **Copy
-  install command** and **Copy agent prompt**, each reading Copied for a
-  moment, because the way in is copying the instruction rather than
-  reading it; the token line under them — whose New token replaces the
-  token on screen, retiring it in the same write, so a command pasted
-  into the wrong window stops working at once; the instruction itself
-  behind an **Inspect command and prompt** fold, as one panel with
-  Command / Agent prompt tabs (the command form carries the installer's
-  SHA-256 under it when the deployment published one); and a status box
-  that resolves in place from "Waiting for the host to connect…" to the
-  registered host, with Use this host enabled then, which closes the
+  foot action opens the **Add a host dialog**, the same column as
+  onboarding's step at the dialog's sizes: one sentence — paste this
+  prompt into the coding agent on the machine — then the agent prompt's
+  card with **Copy prompt**, reading Copied for a moment, because the way
+  in is copying the instruction rather than reading it (the prompt itself
+  is behind the card's Show fold); the token line under it — whose New
+  token replaces the token on screen, retiring it in the same write, so a
+  command pasted into the wrong window stops working at once — with
+  **Install manually instead** across from it, which opens the install
+  command on one line with its Copy (and the installer's SHA-256 under it
+  when the deployment published one); and a **Connection** list that turns
+  green in place: "Waiting for the agent to run the install" becomes
+  Runner installed when the runner registers, then Host connected when it
+  dials in. Use this host is enabled on the first, which closes the
   dialog with the machine picked in the chip. Settings → Hosts pairs on
   its own page instead (`/settings/hosts/new`, below), with the panel
   shown outright. **Registered, not online**, and that is the difference
@@ -227,9 +232,9 @@
   the host of a session, and a session may be started on a machine
   whose runner is still coming up — the control plane records it and
   owes it to that host the moment it connects, which is what the
-  chip's offline rows mean too (01, 03). The status row says what the
-  API says — the runner is connected, or it is still coming up. The
-  capability line the artboard draws (✓ git, ✓ tmux) arrives with the
+  chip's offline rows mean too (01, 03). The Connection rows say what the
+  API says — the runner registered, the runner is connected. The
+  export's third row, Tools on PATH (git · tmux · claude), arrives with the
   capabilities themselves; nothing on the wire carries a host's tools
   to the console yet. The model list is the harness's own (a blank
   terminal has no model): the catalog seeds it, one row per model the

@@ -1632,12 +1632,19 @@
       "online": "Runner connected",
       "mintFailed": "We could not create a registration token.",
       "installerDigest": "Installer SHA-256: {{digest}}",
-      "copyCommand": "Copy install command",
-      "copyPrompt": "Copy agent prompt",
-      "inspect": "Inspect command and prompt",
+      "copyPrompt": "Copy prompt",
       "format": "Install format",
       "command": "Command",
-      "agentPrompt": "Agent prompt"
+      "agentPrompt": "Agent prompt",
+      "show": "Show",
+      "hide": "Hide",
+      "manualShow": "Install manually instead",
+      "manualHide": "Hide manual install",
+      "manualLead": "Run this on the machine yourself instead:",
+      "connection": "Connection",
+      "installWaiting": "Waiting for the agent to run the install",
+      "installed": "Runner installed",
+      "connected": "Host connected"
     },
     "add": {
       "title": "Add a host",
@@ -1656,7 +1663,7 @@
       },
       "crumbHosts": "Hosts",
       "done": "Done",
-      "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet."
+      "description": "Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet."
     },
     "settings": {
       "state": {
@@ -1875,10 +1882,10 @@
       },
       "host": {
         "title": "Add your first host",
-        "description": "Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.",
+        "description": "Paste this prompt into the coding agent on the machine you want sessions on — a cloud VM, a build box, or your workstation. It installs the runner and connects it. Nothing is exposed to the internet.",
         "defaultName": "My first host",
         "skip": "Skip for now",
-        "skipNote": "You can pair a machine later. Sessions need one before they can run."
+        "skipNote": "You can add a host later from any new session."
       },
       "ready": {
         "title": "You're all set",

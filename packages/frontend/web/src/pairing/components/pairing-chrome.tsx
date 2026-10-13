@@ -1,36 +1,36 @@
-import { cn, Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
+import { cn, Separator, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
-import { type PairingCommands, PairingCopyButtons, PairingInstruction } from './pairing-install';
+import { PairingConnection, PairingManualInstall, PairingPrompt } from './pairing-agent';
+import type { PairingCommands } from './pairing-install';
 import { TokenCountdown } from './token-countdown';
 
 /**
  * A machine as the pairing chrome names it. Structural rather than
  * `HostEntity`: the kit imports no product package (`kit-knows-no-product`),
- * and these three fields are all a status row reads.
+ * and these fields are all the status rows read.
  */
 export interface PairedMachine {
   name: string;
   /** Whether the runner is dialled in right now, as the API reports it. */
   online: boolean;
   os: string | null;
+  /** The runner's version, as it reported it on registering. */
+  runnerVersion: string | null;
 }
 
 /**
- * The pairing column: the copy buttons, the token's clock and the way to
- * replace it, the instruction behind its fold, a rule, and the status line
- * that resolves in place when a runner spends the token.
+ * The pairing column, agent first (`design/version1/AddHost.dc.html`, the
+ * 2026-10-13 export): the agent prompt to paste into the coding agent on the
+ * machine, the token's clock and the way to replace it with "Install manually
+ * instead" across from them, a rule, and the Connection list that turns green
+ * as the runner installs and dials in.
  *
  * The onboarding step and the console's Add a host dialog draw it. `layout`
- * is the export's two sizes: the step's large buttons and 12px line
- * (`design/version1/AddHost.dc.html`), the dialog's medium buttons and 11.5px
- * line (`SessionsConsole.dc.html`). Settings shows the instruction outright,
- * so it composes `PairingToken`, `PairingInstruction` and `PairingStatus`.
- *
- * The status word says only what the API reports: a host row exists once the
- * runner registers, and `online` is all the control plane says about it. The
- * artboard's capability card (✓ git, ✓ tmux) waits for the wire to carry the
- * host's tools.
+ * is the export's two sizes: the step's 12px prompt and 14px rows, the
+ * dialog's 11.5px prompt and 13px rows (`SessionsConsole.dc.html`). Settings
+ * shows the instruction outright, so it composes `PairingToken`,
+ * `PairingInstruction` and `PairingStatus`.
  */
 export function PairingChrome({
   pairing,
@@ -61,12 +61,11 @@ export function PairingChrome({
   layout?: 'step' | 'dialog';
 }) {
   const { t } = useTranslation();
-  const step = layout === 'step';
   return (
     <>
       <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} />
-      <div className="flex flex-col gap-2.5">
-        <PairingCopyButtons pairing={pairing} size={step ? 'lg' : 'md'} />
+      <PairingPrompt pairing={pairing} layout={layout} />
+      <PairingManualInstall pairing={pairing} layout={layout}>
         <PairingToken
           expiresAt={expiresAt}
           expired={expired}
@@ -74,10 +73,9 @@ export function PairingChrome({
           busy={busy}
           layout={layout}
         />
-      </div>
-      <PairingInstruction pairing={pairing} layout="fold" />
+      </PairingManualInstall>
       <Separator />
-      <PairingStatus host={host} layout={layout} />
+      <PairingConnection host={host} layout={layout} />
     </>
   );
 }
@@ -126,62 +124,28 @@ export function PairingToken({
   );
 }
 
-export function PairingStatus({
-  host,
-  layout = 'dialog',
-}: {
-  host: PairedMachine | null;
-  layout?: 'step' | 'dialog';
-}) {
+/**
+ * Settings' Connect row, drawn as the frames draw it
+ * (`design/version1/Settings.dc.html`): a 7px dot, 13px words, inside a 44px
+ * card the page provides. The status word says only what the API reports: a
+ * host row exists once the runner registers, and `online` is all the control
+ * plane says about it.
+ */
+export function PairingStatus({ host }: { host: PairedMachine | null }) {
   const { t } = useTranslation();
-  const step = layout === 'step';
-
-  if (!step) {
-    // Add a host's Connect row, drawn as the frames draw it
-    // (`design/version1/SessionsConsole.dc.html`, `Settings.dc.html`): a 7px
-    // dot, 13px words, inside a 44px card the page provides.
-    return (
-      <div data-slot="host-pairing-status" className="flex min-h-10.5 flex-col justify-center">
-        {host ? (
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span
-              aria-hidden
-              className={cn(
-                'size-1.75 shrink-0 rounded-pill',
-                host.online ? 'bg-success' : 'bg-fg-subtle',
-              )}
-            />
-            <span className="font-mono text-[13px] text-fg">{host.name}</span>
-            {host.os ? <span className="text-xs text-fg-muted">{host.os}</span> : null}
-            <span className="flex-1" />
-            <span className="text-xs text-fg-muted">
-              {host.online ? t('hosts.pairing.online') : t('hosts.pairing.registered')}
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2.5 text-[13px] text-fg-muted">
-            <span
-              aria-hidden
-              className="size-1.75 shrink-0 animate-pulse-dot rounded-pill bg-fg-subtle"
-            />
-            {t('hosts.pairing.waiting')}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   return (
-    <div className="flex min-h-13 flex-col justify-center">
+    <div data-slot="host-pairing-status" className="flex min-h-10.5 flex-col justify-center">
       {host ? (
-        <div className="flex w-full flex-wrap items-center gap-2.5">
-          {/* Registered is not the same as dialled in: the installer can
-                finish, and the service still be starting. The dot follows what
-                the API reports rather than the fact a row appeared, or a host
-                whose runner never came up would read as running. */}
-          <StatusDot state={host.online ? 'running' : 'idle'} className="items-center">
-            <span className="figures text-[13px]">{host.name}</span>
-          </StatusDot>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span
+            aria-hidden
+            className={cn(
+              'size-1.75 shrink-0 rounded-pill',
+              host.online ? 'bg-success' : 'bg-fg-subtle',
+            )}
+          />
+          <span className="font-mono text-[13px] text-fg">{host.name}</span>
           {host.os ? <span className="text-xs text-fg-muted">{host.os}</span> : null}
           <span className="flex-1" />
           <span className="text-xs text-fg-muted">
@@ -189,9 +153,13 @@ export function PairingStatus({
           </span>
         </div>
       ) : (
-        <StatusDot state="pending" pulse>
+        <div className="flex items-center gap-2.5 text-[13px] text-fg-muted">
+          <span
+            aria-hidden
+            className="size-1.75 shrink-0 animate-pulse-dot rounded-pill bg-fg-subtle"
+          />
           {t('hosts.pairing.waiting')}
-        </StatusDot>
+        </div>
       )}
     </div>
   );
