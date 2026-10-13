@@ -25,8 +25,9 @@ names the concern and what to reach for first.
 - **auth** — `AuthLayout`, the split screen around sign-in and onboarding.
 - **layout** — `QueryState`, a read's failed, loading, empty and loaded
   states as composed slots (`QueryState.Pending`, `.Error`, `.Empty`,
-  `.Data of={query}`, which types the data from the query); `ConfirmDialog` for the
-  destructive confirm.
+  `.Data of={query}`, which types the data from the query); `QueryErrorBoundary`,
+  where a Suspense read's first failure lands with Try again; `ConfirmDialog`
+  for the destructive confirm.
 - **forms** — `ErrorAlert` for an inline failure and `notifySuccess(key)` for
   a success toast (a `toasts.*` key, so its copy lives in one place; when to
   toast is `.agents/rules/frontend-ui.md`). `useErrorMessage` itself comes
