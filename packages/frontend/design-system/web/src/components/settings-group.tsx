@@ -162,7 +162,7 @@ function SettingsAddRow({
   value,
   onValueChange,
   onAdd,
-  canAdd = value.trim() !== '',
+  canAdd: canAddProp,
   placeholder,
   mono = false,
   addLabel = 'Add',
@@ -179,6 +179,7 @@ function SettingsAddRow({
   'aria-label': string;
   className?: string;
 }) {
+  const canAdd = canAddProp ?? value.trim() !== '';
   return (
     <div
       data-slot="settings-add-row"

@@ -51,6 +51,44 @@ function daysBetween(a: Date, b: Date) {
 }
 
 /**
+ * Where everything sits: each project's span (three weeks before its first
+ * milestone or today, to ten days past its last), the timeline's start on a
+ * Monday two weeks before the earliest span, its end six weeks past today
+ * at least, and the week and month marks between.
+ */
+function layout(rows: TimelineRow[], today: IsoDate, locale: string) {
+  const now = dateOf(today);
+  const spans = rows
+    .filter((r) => r.milestones.length > 0)
+    .map((r) => {
+      const dues = r.milestones.map((m) => +dateOf(m.due));
+      return {
+        row: r,
+        from: new Date(Math.min(Math.min(...dues), +now) - 21 * DAY),
+        to: new Date(Math.max(...dues) + 10 * DAY),
+      };
+    });
+  const earliest = new Date(Math.min(+now, ...spans.map((s) => +s.from)) - 14 * DAY);
+  const start = new Date(earliest.getFullYear(), earliest.getMonth(), earliest.getDate() - ((earliest.getDay() + 6) % 7));
+  const end = new Date(Math.max(+now + 42 * DAY, ...spans.map((s) => +s.to)) + 14 * DAY);
+  const xOf = (d: Date) => daysBetween(start, d) * PX;
+
+  const weeks: { x: number; label: number }[] = [];
+  for (let d = start; d <= end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)) {
+    weeks.push({ x: xOf(d), label: d.getDate() });
+  }
+  const months: { x: number; label: string }[] = [];
+  const short = dateFormat(locale, { month: 'short' });
+  const withYear = dateFormat(locale, { month: 'short', year: 'numeric' });
+  let first = true;
+  for (let d = new Date(start.getFullYear(), start.getMonth() + 1, 1); d <= end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+    months.push({ x: xOf(d), label: (first || d.getMonth() === 0 ? withYear : short).format(d) });
+    first = false;
+  }
+  return { spans, weeks, months, todayX: xOf(now), width: xOf(end) + 40, xOf };
+}
+
+/**
  * MilestoneTimeline — Plan's milestones laid out on time, one row per
  * project. It scrolls sideways with no bar and opens on today.
  *
@@ -94,35 +132,8 @@ function MilestoneTimeline({
 }) {
   const [hover, setHover] = React.useState<string | null>(null);
   const tasksLabel = labels?.tasks ?? ((total: number) => `of ${total} tasks`);
+  const { spans, weeks, months, todayX, width, xOf } = layout(rows, today, locale);
   const now = dateOf(today);
-
-  const spans = rows
-    .filter((r) => r.milestones.length > 0)
-    .map((r) => {
-      const dues = r.milestones.map((m) => +dateOf(m.due));
-      return {
-        row: r,
-        from: new Date(Math.min(Math.min(...dues), +now) - 21 * DAY),
-        to: new Date(Math.max(...dues) + 10 * DAY),
-      };
-    });
-
-  let start = new Date(Math.min(+now, ...spans.map((s) => +s.from)) - 14 * DAY);
-  start = new Date(start.getFullYear(), start.getMonth(), start.getDate() - ((start.getDay() + 6) % 7));
-  const end = new Date(Math.max(+now + 42 * DAY, ...spans.map((s) => +s.to)) + 14 * DAY);
-  const xOf = (d: Date) => daysBetween(start, d) * PX;
-
-  const weeks: { x: number; label: number }[] = [];
-  for (let d = start; d <= end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)) {
-    weeks.push({ x: xOf(d), label: d.getDate() });
-  }
-  const months: { x: number; label: string }[] = [];
-  const short = dateFormat(locale, { month: 'short' });
-  const withYear = dateFormat(locale, { month: 'short', year: 'numeric' });
-  for (let d = new Date(start.getFullYear(), start.getMonth() + 1, 1), k = 0; d <= end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1), k++) {
-    months.push({ x: xOf(d), label: (k === 0 || d.getMonth() === 0 ? withYear : short).format(d) });
-  }
-  const todayX = xOf(now);
   const todayLabel = dateFormat(locale, { day: 'numeric', month: 'short' }).format(now);
   const dueFormat = dateFormat(locale, { month: 'short', day: 'numeric' });
 
@@ -141,7 +152,7 @@ function MilestoneTimeline({
       data-slot="milestone-timeline"
       className={cn('overflow-x-auto overflow-y-hidden overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden', className)}
     >
-      <div className="relative min-w-full" style={{ width: xOf(end) + 40 }}>
+      <div className="relative min-w-full" style={{ width }}>
         <div className="relative h-14 border-b border-border-subtle">
           {months.map((m) => (
             <React.Fragment key={m.x}>
