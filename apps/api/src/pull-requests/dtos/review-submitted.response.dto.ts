@@ -4,7 +4,13 @@ import { ApiProperty } from '@nestjs/swagger';
 export class ReviewSubmittedResponseDto {
   @ApiProperty({
     description:
-      'Merged now; false for a comment, a change request, or an approval GitHub would not merge yet.',
+      'Merged now; false for a comment, a change request, an approval alone, or an approve-and-merge GitHub would not merge yet.',
   })
   merged!: boolean;
+
+  @ApiProperty({
+    description:
+      'Approve and merge only: GitHub will merge it once its required checks pass. False when the repository does not allow auto-merge, so it waits.',
+  })
+  autoMerge!: boolean;
 }

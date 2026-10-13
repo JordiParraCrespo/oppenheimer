@@ -40,12 +40,12 @@ export function mergeBlocker(facts: MergeFacts): MergeBlocker | null {
 
 export type GateState = 'done' | 'failed' | 'pending';
 
-/** The path to merge: checks, conflicts, review, merge, each met, failed or still to come. */
-export function mergeGates(
-  facts: MergeFacts,
-): Record<'checks' | 'conflicts' | 'review' | 'merge', GateState> {
-  const approved =
-    facts.verdicts.includes('APPROVED') && !facts.verdicts.includes('CHANGES_REQUESTED');
+/**
+ * The path to merge: checks, conflicts, merge, each met, failed or still to
+ * come. Review is not a gate of its own: what a review holds is the merge's
+ * blocker (`changes_requested`, `approval_required`).
+ */
+export function mergeGates(facts: MergeFacts): Record<'checks' | 'conflicts' | 'merge', GateState> {
   return {
     checks:
       facts.checks === 'failing'
@@ -59,7 +59,6 @@ export function mergeGates(
         : facts.mergeable === null
           ? 'pending'
           : 'done',
-    review: facts.verdicts.includes('CHANGES_REQUESTED') ? 'failed' : approved ? 'done' : 'pending',
     merge: facts.merged ? 'done' : 'pending',
   };
 }

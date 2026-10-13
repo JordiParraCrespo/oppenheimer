@@ -18,6 +18,12 @@ import type {
 /** A pull request's files, reviews and comments: GitHub stops listing files at 3,000 anyway. */
 const MAX_PAGES = 30;
 
+const ENABLE_AUTO_MERGE = `mutation($id: ID!, $method: PullRequestMergeMethod!, $sha: GitObjectID!) {
+  enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $method, expectedHeadOid: $sha }) {
+    clientMutationId
+  }
+}`;
+
 /** A conversation's timeline, a hundred entries a page: a thousand covers the longest-lived. */
 const TIMELINE_PAGES = 10;
 
@@ -27,6 +33,7 @@ interface RawUser {
 }
 
 interface RawPull {
+  node_id?: string;
   number: number;
   title: string;
   html_url: string;
@@ -123,6 +130,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
     });
     return {
       ...toSummary(body),
+      nodeId: body.node_id ?? '',
       body: body.body ?? '',
       additions: body.additions ?? 0,
       deletions: body.deletions ?? 0,
@@ -320,6 +328,26 @@ export class GithubPullsAdapter implements GithubPullsPort {
         422: GithubErrors.MERGE_REFUSED,
       },
     });
+  }
+
+  async enableAutoMerge(
+    credential: GithubCredential,
+    nodeId: string,
+    method: 'squash' | 'merge' | 'rebase',
+    sha: string,
+  ): Promise<boolean> {
+    if (!nodeId) return false;
+    // GraphQL answers a refusal with `200` and an `errors` list: a repository
+    // without auto-merge, or a pull request already clean enough to merge now.
+    const { body } = await this.request<{ errors?: unknown[] }>(`${this.http.api}/graphql`, {
+      credential,
+      method: 'POST',
+      body: {
+        query: ENABLE_AUTO_MERGE,
+        variables: { id: nodeId, method: method.toUpperCase(), sha },
+      },
+    });
+    return !body.errors?.length;
   }
 
   private repo(fullName: string): string {

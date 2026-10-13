@@ -2503,7 +2503,7 @@ export type PullRequestChecksDto = {
 };
 
 export type PullRequestGateDto = {
-    id: 'checks' | 'conflicts' | 'review' | 'merge';
+    id: 'checks' | 'conflicts' | 'merge';
     state: 'done' | 'failed' | 'pending';
 };
 
@@ -2619,7 +2619,7 @@ export type PullRequestActivityItemDto = {
 };
 
 export type SubmitPullRequestReviewRequest = {
-    verdict: 'comment' | 'approve' | 'request_changes';
+    verdict: 'comment' | 'approve' | 'approve_and_merge' | 'request_changes';
     body?: string;
     comments?: Array<{
         path: string;
@@ -2631,9 +2631,13 @@ export type SubmitPullRequestReviewRequest = {
 
 export type ReviewSubmittedResponseDto = {
     /**
-     * Merged now; false for a comment, a change request, or an approval GitHub would not merge yet.
+     * Merged now; false for a comment, a change request, an approval alone, or an approve-and-merge GitHub would not merge yet.
      */
     merged: boolean;
+    /**
+     * Approve and merge only: GitHub will merge it once its required checks pass. False when the repository does not allow auto-merge, so it waits.
+     */
+    autoMerge: boolean;
 };
 
 export type AddPullRequestCommentRequest = {

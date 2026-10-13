@@ -373,8 +373,10 @@ stores a fresh one.
 
 `GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
 protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
-request waits. Approving answers `200` with `merged: false` instead of this
-code, because the approval itself landed.
+request waits. Approve and merge answers `200` with `merged: false` instead of
+this code, because the approval itself landed; it then asks GitHub to merge it
+once the required checks pass (`autoMerge: true`), or leaves it waiting when
+the repository does not allow auto-merge (`autoMerge: false`).
 
 `GITHUB_015` is GitHub's rate limit: the primary hourly budget of an
 installation, a user token or the App, or a secondary limit. GitHub refuses
