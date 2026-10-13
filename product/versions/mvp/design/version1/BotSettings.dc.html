@@ -35,7 +35,7 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <a href="./Bots.dc.html" class="op-iconbtn op-iconbtn--sm" aria-label="Back to employees" title="Back to employees" style="color:inherit;text-decoration:none"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="16" hint-size="16px,16px"></x-import></a>
 <span title="{{ av.sciName }}" style="position:relative;flex:none;width:30px;height:30px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:-0.01em">{{ av.ini }}<img src="{{ av.img }}" alt="" onError="{{ av.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span>
 <span style="font-size:15px;font-weight:500;letter-spacing:-0.011em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ name }}</span>
-<sc-if value="{{ builtIn }}"><span style="flex:none;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg-muted)">Built-in</span></sc-if>
+<sc-if value="{{ badge }}"><span title="{{ badgeTitle }}" style="flex:none;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg-muted)">{{ badge }}</span></sc-if>
 <span style="flex:1"></span>
 <sc-if value="{{ savedFlash }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import>{{ savedFlash }}</span></sc-if>
 <a class="op-btn op-btn--secondary op-btn--sm" href="./Bots.dc.html" style="text-decoration:none">Open chat</a>
@@ -68,9 +68,10 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 
 <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;flex-direction:column;gap:28px">
-<div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
-<div style="display:flex;flex-direction:column;gap:8px;padding:16px 20px;background:var(--card)"><span style="font-size:13px;color:var(--fg-muted)">Name</span><div class="op-input op-input--md"><input class="op-input__el" type="text" ref="{{ nameRef }}" value="{{ name }}" onChange="{{ onName }}" aria-label="Name"></div></div>
-<div style="display:flex;flex-direction:column;gap:8px;padding:16px 20px;background:var(--card)"><span style="font-size:13px;color:var(--fg-muted)">Description</span><textarea value="{{ desc }}" onChange="{{ onDesc }}" rows="2" placeholder="What this bot is for, in one sentence" aria-label="Description" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--field-border,var(--border));border-radius:10px;outline:0;resize:vertical;background:var(--field,var(--card));color:var(--fg);font:inherit;font-size:14px;line-height:1.5"></textarea></div>
+<div style="position:relative;z-index:2;display:flex;flex-direction:column;gap:1px;border-radius:18px;background:var(--border-subtle)">
+<div style="display:flex;flex-direction:column;gap:8px;padding:16px 20px;border-radius:18px 18px 0 0;background:var(--card)"><span style="font-size:13px;color:var(--fg-muted)">Name</span><div class="op-input op-input--md"><input class="op-input__el" type="text" ref="{{ nameRef }}" value="{{ name }}" onChange="{{ onName }}" aria-label="Name" disabled="{{ builtIn }}"></div><sc-if value="{{ builtIn }}"><span style="font-size:12.5px;color:var(--fg-subtle)">Built-in agents keep their name so every screen that mentions them matches.</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:16px 20px;background:var(--card)"><span style="font-size:13px;color:var(--fg-muted)">Description</span><textarea value="{{ desc }}" onChange="{{ onDesc }}" disabled="{{ builtIn }}" rows="2" placeholder="What this bot is for, in one sentence" aria-label="Description" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--field-border,var(--border));border-radius:10px;outline:0;resize:vertical;background:var(--field,var(--card));color:var(--fg);font:inherit;font-size:14px;line-height:1.5"></textarea></div>
+<sc-if value="{{ notBuiltIn }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;align-items:center;gap:20px;padding:16px 20px;background:var(--card);flex-wrap:wrap">
 <span style="display:flex;flex-direction:column;align-items:center;gap:8px;width:112px;text-align:center"><span title="{{ av.sciName }}" style="position:relative;flex:none;width:72px;height:72px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;letter-spacing:-0.01em">{{ av.ini }}<img src="{{ av.img }}" alt="" onError="{{ av.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:13px">{{ av.sciName }}</span><span style="font-size:12px;color:var(--fg-muted)">{{ av.field }}</span></span></span>
 <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px">
@@ -78,7 +79,20 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:4px"><sc-for list="{{ avSci }}" as="x" hint-placeholder-count="12"><button type="button" aria-label="{{ x.name }}" title="{{ x.name }}" aria-pressed="{{ x.on }}" onClick="{{ x.pick }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px 6px;border:0;border-radius:10px;background:{{ x.bg }};color:var(--fg);font:inherit;cursor:pointer;min-width:0" style-hover="background:var(--hover-surface)"><span title="{{ x.sciName }}" style="position:relative;flex:none;width:40px;height:40px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;letter-spacing:-0.01em">{{ x.ini }}<img src="{{ x.img }}" alt="" onError="{{ x.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><span style="max-width:100%;font-size:11.5px;color:{{ x.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ x.short }}</span></button></sc-for></div>
 </div>
 </div>
-<div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;font-size:14px">Sidebar group</span><div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ groupSeg }}" as="g" hint-placeholder-count="2"><button type="button" onClick="{{ g.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ g.bg }};color:{{ g.fg }};font:inherit;font-size:12.5px;cursor:pointer">{{ g.label }}</button></sc-for></div></div>
+</sc-if>
+<div style="display:flex;align-items:center;gap:16px;padding:14px 20px;border-radius:0 0 18px 18px;background:var(--card);flex-wrap:wrap"><span style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Sidebar group</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ groupNote }}</span></span>
+<sc-if value="{{ builtIn }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="12" hint-size="12px,12px"></x-import>Built-in</span></sc-if>
+<sc-if value="{{ notBuiltIn }}" hint-placeholder-val="{{ true }}"><div style="position:relative" onClick="{{ stop }}">
+<button type="button" onClick="{{ toggleGroupMenu }}" aria-haspopup="listbox" aria-expanded="{{ groupMenu }}" style="display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:190px;height:34px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:var(--field,var(--card));color:var(--fg);font:inherit;font-size:14px;cursor:pointer">{{ groupLabel }}<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ groupMenu }}">
+<div role="listbox" aria-label="Sidebar group" style="position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:230px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ groupOpts }}" as="g" hint-placeholder-count="3"><button type="button" role="option" aria-selected="{{ g.on }}" onClick="{{ g.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="flex:1">{{ g.label }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ g.count }}</span><span style="display:flex;width:14px;color:var(--primary)"><sc-if value="{{ g.isOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></sc-if></span></button></sc-for>
+<div style="height:1px;margin:4px 6px;background:var(--border-subtle)"></div>
+<a href="./Bots.dc.html" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:10px;color:var(--fg-muted);font-size:13px;text-decoration:none" style-hover="background:var(--hover-surface);color:var(--fg)">New group in the sidebar</a>
+</div>
+</sc-if>
+</div></sc-if>
+</div>
 </div>
 <div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;font-size:14px;color:var(--fg-muted)">Template</span><span style="font-size:14px">{{ templateLabel }}</span></div>
@@ -93,11 +107,24 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 
 <sc-if value="{{ isInstr }}">
 <div style="display:flex;flex-direction:column;gap:28px">
+<sc-if value="{{ hasProposal }}">
+<div style="display:flex;flex-direction:column;border-radius:18px;background:var(--card);overflow:hidden;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:10px;padding:14px 14px 12px 20px;flex-wrap:wrap">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--warning)"></span>
+<span style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">{{ prop.by }} proposed a change to {{ prop.fileName }}</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ prop.note }} · <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ prop.when }}</span> · <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="color:var(--success)">{{ prop.adds }}</span> <span style="color:var(--danger)">{{ prop.dels }}</span></span></span></span>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ rejectProp }}">Reject</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ acceptProp }}">Accept</button>
+</div>
+<div style="border-top:1px solid var(--border-subtle);padding:8px 0;font-family:var(--font-mono);font-size:12.5px;line-height:1.65">
+<sc-for list="{{ prop.diff }}" as="l" hint-placeholder-count="6"><div style="display:flex;gap:12px;padding:0 20px;background:{{ l.bg }}"><span style="flex:none;width:10px;color:{{ l.signFg }}">{{ l.sign }}</span><span style="flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;color:{{ l.fg }}">{{ l.t }}</span></div></sc-for>
+</div>
+</div>
+</sc-if>
 <div style="display:flex;flex-direction:column;gap:10px">
 <div style="display:flex;align-items:center;gap:10px">
 <div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ fileSeg }}" as="f" hint-placeholder-count="2"><button type="button" onClick="{{ f.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ f.bg }};color:{{ f.fg }};font-family:var(--font-mono);font-size:12px;cursor:pointer">{{ f.label }}</button></sc-for></div>
 <span style="flex:1;font-size:12.5px;color:var(--fg-subtle)">{{ fileHint }}</span>
-<sc-if value="{{ docDirty }}"><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ discardDoc }}">Discard</button><button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ saveDoc }}">Save revision</button></sc-if>
+<sc-if value="{{ docDirty }}"><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ discardDoc }}">Discard</button><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ saveDoc }}">Save revision</button></sc-if>
 </div>
 <textarea value="{{ docText }}" onChange="{{ onDoc }}" spellcheck="false" aria-label="{{ fileName }}" style="width:100%;min-height:320px;box-sizing:border-box;padding:16px 18px;border:1px solid var(--border-subtle);border-radius:18px;outline:0;resize:vertical;background:var(--card);color:var(--fg);font-family:var(--font-mono);font-size:13px;line-height:1.65" style-focus="border-color:var(--border)"></textarea>
 </div>
@@ -109,7 +136,7 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <span style="flex:none;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg-muted)">{{ r.who }}</span>
 <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.note }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ r.file }} · {{ r.when }}</span></span>
 <sc-if value="{{ r.isCurrent }}"><span style="font-size:12.5px;color:var(--fg-subtle)">Current</span></sc-if>
-<sc-if value="{{ r.canRevert }}"><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ r.revert }}">Revert</button></sc-if>
+<sc-if value="{{ r.canRevert }}"><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ r.revert }}" title="Restore {{ r.file }} as it was after this revision">Revert</button></sc-if>
 </div>
 </sc-for>
 </div>
@@ -121,8 +148,8 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <div style="display:flex;flex-direction:column;gap:28px">
 <div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Learn automatically</span><span style="font-size:12.5px;color:var(--fg-muted)">Save facts it picks up in chat without asking</span></span><button type="button" role="switch" aria-checked="{{ learn.on }}" onClick="{{ learn.flip }}" style="flex:none;position:relative;width:34px;height:20px;padding:0;border:0;border-radius:980px;background:{{ learn.track }};cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)"><span style="position:absolute;top:2px;left:{{ learn.knob }};width:16px;height:16px;border-radius:980px;background:#fff;transition:left 140ms cubic-bezier(.4,0,.2,1)"></span></button></div>
-<div style="display:flex;flex-direction:column;gap:10px;padding:14px 20px;background:var(--card)"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Share memory with</span><span style="font-size:12.5px;color:var(--fg-muted)">Bots in these projects can read what this bot learns</span></span>
-<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ shareChips }}" as="c" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ c.on }}" onClick="{{ c.flip }}">{{ c.label }}</button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px 20px;background:var(--card)"><span style="display:flex;align-items:flex-start;gap:12px"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Reads project memory from</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Project memory belongs to each project’s agent. This bot reads it for the projects in its Access.</span></span><button type="button" onClick="{{ goAccess }}" style="flex:none;padding:0;border:0;background:none;color:var(--link);font:inherit;font-size:13px;cursor:pointer">Change access</button></span>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ readProjects }}" as="p" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:980px;background:var(--hover-surface);font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="12" hint-size="12px,12px"></x-import>{{ p.label }}<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ p.facts }}</span></span></sc-for><sc-if value="{{ noReadProjects }}"><span style="font-size:13px;color:var(--fg-subtle)">No projects. It only has its own memory.</span></sc-if></div></div>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Facts · {{ factCount }}</span><button type="button" onClick="{{ clearFacts }}" disabled="{{ noFacts }}" style="padding:0;border:0;background:none;color:var(--danger);font:inherit;font-size:13px;cursor:pointer;opacity:{{ clearOp }}">Clear all</button></div>
@@ -130,8 +157,9 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
 <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 12px 12px 20px;background:var(--card)">
 <sc-if value="{{ f.view }}">
-<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;line-height:1.45;text-wrap:pretty">{{ f.text }}</span><span style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-subtle)"><span style="height:18px;padding:0 6px;display:inline-flex;align-items:center;border-radius:6px;background:var(--hover-surface);color:var(--fg-muted)">{{ f.kind }}</span>{{ f.src }}</span></span>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Edit fact" onClick="{{ f.edit }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="14" hint-size="14px,14px"></x-import></button>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;line-height:1.45;text-wrap:pretty">{{ f.text }}</span><span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--fg-subtle)"><span style="position:relative" onClick="{{ stop }}"><button type="button" onClick="{{ f.toggleScope }}" aria-haspopup="listbox" aria-expanded="{{ f.scopeOpen }}" title="Who can read this fact" style="display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 6px 0 8px;border:1px solid var(--border);border-radius:980px;background:none;color:var(--fg);font:inherit;font-size:12px;cursor:pointer" style-hover="background:var(--hover-surface)">{{ f.scopeLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="11" hint-size="11px,11px"></x-import></button>
+<sc-if value="{{ f.scopeOpen }}"><div role="listbox" style="position:absolute;left:0;top:calc(100% + 6px);z-index:40;width:220px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><div style="padding:6px 10px 4px;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Readable by</div><sc-for list="{{ f.scopes }}" as="o" hint-placeholder-count="4"><button type="button" role="option" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:6px 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-size:13.5px">{{ o.label }}</span><span style="font-size:11.5px;color:var(--fg-muted)">{{ o.desc }}</span></span><span style="display:flex;width:14px;color:var(--primary)"><sc-if value="{{ o.on }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></sc-if></span></button></sc-for></div></sc-if></span><span style="height:18px;padding:0 6px;display:inline-flex;align-items:center;border-radius:6px;background:var(--hover-surface);color:var(--fg-muted)">{{ f.kind }}</span>{{ f.src }}</span></span>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ f.edit }}">Edit</button>
 <button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Delete fact" onClick="{{ f.del }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
 </sc-if>
 <sc-if value="{{ f.editing }}">
@@ -150,7 +178,7 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <div style="display:flex;flex-direction:column;gap:4px;padding:12px 20px;background:var(--card)"><span style="font-size:14px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ f.text }}</span><span style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-subtle)"><span style="height:18px;padding:0 6px;display:inline-flex;align-items:center;border-radius:6px;background:var(--hover-surface)">{{ f.kind }}</span>{{ f.src }}</span></div>
 </sc-for>
 </div>
-<span style="font-size:12.5px;color:var(--fg-subtle)">Edit these in the bot that wrote them.</span>
+<span style="font-size:12.5px;color:var(--fg-subtle)">Shared by other bots. Edit these in the bot that wrote them.</span>
 </div>
 </div>
 </sc-if>
@@ -160,9 +188,17 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <div style="display:flex;flex-direction:column;gap:10px">
 <span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Projects and repositories</span>
 <div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
-<div style="display:flex;flex-direction:column;gap:10px;padding:14px 20px;background:var(--card)"><span style="font-size:13px;color:var(--fg-muted)">Projects</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ projChips }}" as="c" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ c.on }}" onClick="{{ c.flip }}">{{ c.label }}</button></sc-for></div></div>
-<div style="display:flex;flex-direction:column;gap:10px;padding:14px 20px;background:var(--card)"><span style="font-size:13px;color:var(--fg-muted)">Repositories</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ repoChips }}" as="c" hint-placeholder-count="4"><button class="op-pill" type="button" data-on="{{ c.on }}" onClick="{{ c.flip }}" style="font-family:var(--font-mono);font-size:12px">{{ c.label }}</button></sc-for></div></div>
+<sc-for list="{{ projRows }}" as="p" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:12px;padding:14px 20px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<button type="button" role="checkbox" aria-checked="{{ p.on }}" onClick="{{ p.flip }}" style="flex:1;min-width:180px;display:flex;align-items:center;gap:12px;padding:0;border:0;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer"><span style="width:18px;height:18px;flex:none;box-sizing:border-box;border-radius:6px;border:{{ p.boxBorder }};background:{{ p.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center"><sc-if value="{{ p.isOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></sc-if></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">{{ p.label }}</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ p.summary }}</span></span></button>
+<sc-if value="{{ p.isOn }}"><div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface);flex-wrap:wrap"><sc-for list="{{ p.modeSeg }}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{ o.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12.5px;cursor:pointer">{{ o.label }}</button></sc-for></div></sc-if>
 </div>
+<sc-if value="{{ p.showRepos }}"><div style="display:flex;flex-wrap:wrap;gap:6px;padding-left:30px"><sc-for list="{{ p.repos }}" as="r" hint-placeholder-count="2"><button class="op-pill" type="button" data-on="{{ r.on }}" aria-pressed="{{ r.on }}" onClick="{{ r.flip }}" style="gap:6px;font-family:var(--font-mono);font-size:12px"><sc-if value="{{ r.isOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></sc-if>{{ r.label }}</button></sc-for></div></sc-if>
+</div>
+</sc-for>
+</div>
+<span style="font-size:12.5px;line-height:1.45;color:var(--fg-subtle);text-wrap:pretty">Repositories follow from projects. To grant a repository that sits in no project, add it to a project first.</span>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Tools</span>
@@ -203,7 +239,7 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Always ask before</span>
-<div style="display:flex;flex-wrap:wrap;gap:6px;padding:16px 20px;border-radius:18px;background:var(--card)"><sc-for list="{{ always }}" as="c" hint-placeholder-count="6"><button class="op-pill" type="button" data-on="{{ c.on }}" onClick="{{ c.flip }}">{{ c.label }}</button></sc-for></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;padding:16px 20px;border-radius:18px;background:var(--card)"><sc-for list="{{ always }}" as="c" hint-placeholder-count="6"><button class="op-pill" type="button" data-on="{{ c.on }}" aria-pressed="{{ c.on }}" onClick="{{ c.flip }}" style="gap:6px"><sc-if value="{{ c.isOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></sc-if>{{ c.label }}</button></sc-for></div>
 <span style="font-size:12.5px;color:var(--fg-subtle)">These pause for you even in Full access.</span>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
@@ -233,7 +269,15 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card);flex-wrap:wrap"><span style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">When the host is offline</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ offlineNote }}</span></span><div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ offlineSeg }}" as="o" hint-placeholder-count="2"><button type="button" onClick="{{ o.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12.5px;cursor:pointer">{{ o.label }}</button></sc-for></div></div>
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Parallel sessions</span><span style="font-size:12.5px;color:var(--fg-muted)">Most it runs at the same time</span></span><div style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Fewer" onClick="{{ parDown }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="minus" size="13" hint-size="13px,13px"></x-import></button><span style="width:28px;text-align:center;font-family:var(--font-mono);font-size:13.5px;font-variant-numeric:tabular-nums">{{ par }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="More" onClick="{{ parUp }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="13" hint-size="13px,13px"></x-import></button></div></div>
-<div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;font-size:14px;color:var(--fg-muted)">Queued messages</span><span style="font-family:var(--font-mono);font-size:13.5px;font-variant-numeric:tabular-nums">{{ queued }}</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Queued · {{ queued }}</span><a href="./Bots.dc.html" style="font-size:13px">Open in chat</a></div>
+<div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
+<sc-for list="{{ queuedItems }}" as="q" hint-placeholder-count="2">
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);color:var(--fg);text-decoration:none" style-hover="background:var(--control-hover);text-decoration:none"><span style="flex:none;font-size:12.5px;color:var(--fg-muted);white-space:nowrap">{{ q.from }}</span><span style="flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ q.text }}</span><span style="font-size:12px;color:var(--fg-subtle)">{{ q.why }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ q.age }}</span></a>
+</sc-for>
+<sc-if value="{{ noQueued }}"><div style="padding:14px 20px;background:var(--card);font-size:13.5px;color:var(--fg-muted)">Nothing waiting.</div></sc-if>
+</div>
 </div>
 </div>
 </sc-if>
@@ -243,9 +287,10 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 <div style="display:flex;flex-direction:column;gap:1px;border-radius:18px;overflow:hidden;background:var(--border-subtle)">
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Message other bots</span><span style="font-size:12.5px;color:var(--fg-muted)">Ask another bot for help mid-task</span></span><button type="button" role="switch" aria-checked="{{ canMsg.on }}" onClick="{{ canMsg.flip }}" style="flex:none;position:relative;width:34px;height:20px;padding:0;border:0;border-radius:980px;background:{{ canMsg.track }};cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)"><span style="position:absolute;top:2px;left:{{ canMsg.knob }};width:16px;height:16px;border-radius:980px;background:#fff;transition:left 140ms cubic-bezier(.4,0,.2,1)"></span></button></div>
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card);flex-wrap:wrap"><span style="flex:1;min-width:180px;font-size:14px">Who may message it</span><div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ whoSeg }}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{ o.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12.5px;cursor:pointer">{{ o.label }}</button></sc-for></div></div>
-<sc-if value="{{ whoSelected }}"><div style="display:flex;flex-wrap:wrap;gap:6px;padding:14px 20px;background:var(--card)"><sc-for list="{{ allowedBots }}" as="b" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ b.on }}" onClick="{{ b.flip }}"><span title="{{ b.sciName }}" style="position:relative;flex:none;width:18px;height:18px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;letter-spacing:-0.01em">{{ b.ini }}<img src="{{ b.img }}" alt="" onError="{{ b.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span>{{ b.name }}</button></sc-for></div></sc-if>
+<sc-if value="{{ whoSelected }}"><div style="display:flex;flex-wrap:wrap;gap:6px;padding:14px 20px;background:var(--card)"><sc-for list="{{ allowedBots }}" as="b" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ b.on }}" aria-pressed="{{ b.on }}" onClick="{{ b.flip }}" style="gap:6px"><sc-if value="{{ b.isOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></sc-if><span title="{{ b.sciName }}" style="position:relative;flex:none;width:18px;height:18px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;letter-spacing:-0.01em">{{ b.ini }}<img src="{{ b.img }}" alt="" onError="{{ b.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span>{{ b.name }}</button></sc-for></div></sc-if>
 <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card)"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Hop limit</span><span style="font-size:12.5px;color:var(--fg-muted)">How many bots a request may pass through</span></span><div style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Fewer hops" onClick="{{ hopDown }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="minus" size="13" hint-size="13px,13px"></x-import></button><span style="width:28px;text-align:center;font-family:var(--font-mono);font-size:13.5px;font-variant-numeric:tabular-nums">{{ hops }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="More hops" onClick="{{ hopUp }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="13" hint-size="13px,13px"></x-import></button></div></div>
-<div style="display:flex;flex-direction:column;gap:10px;padding:14px 20px;background:var(--card)"><span style="font-size:14px">Groups</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ groupChips }}" as="c" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ c.on }}" onClick="{{ c.flip }}">{{ c.label }}</button></sc-for></div></div>
+<div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--card);flex-wrap:wrap"><span style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">When a bot messages mid-task</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ interruptNote }}</span></span><div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface);flex-wrap:wrap"><sc-for list="{{ interruptSeg }}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{ o.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:12.5px;cursor:pointer">{{ o.label }}</button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px 20px;background:var(--card)"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Group chats</span><span style="font-size:12.5px;color:var(--fg-muted)">Shared threads with several bots. Not the same as sidebar groups.</span></span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ groupChips }}" as="c" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ c.on }}" aria-pressed="{{ c.on }}" onClick="{{ c.flip }}" style="gap:6px"><sc-if value="{{ c.isOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></sc-if>{{ c.label }}</button></sc-for></div></div>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Recent bot-to-bot threads</span>
@@ -305,7 +350,7 @@ textarea::placeholder,input::placeholder{color:var(--fg-subtle)}
 </sc-for>
 <div style="display:flex;flex-direction:column;gap:10px">
 <span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Quiet hours</span>
-<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:18px;background:var(--card);flex-wrap:wrap"><button type="button" role="switch" aria-checked="{{ quiet.on }}" aria-label="Quiet hours" onClick="{{ quiet.flip }}" style="flex:none;position:relative;width:34px;height:20px;padding:0;border:0;border-radius:980px;background:{{ quiet.track }};cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)"><span style="position:absolute;top:2px;left:{{ quiet.knob }};width:16px;height:16px;border-radius:980px;background:#fff;transition:left 140ms cubic-bezier(.4,0,.2,1)"></span></button><span style="flex:1;min-width:120px;font-size:14px">Hold notifications from</span><div class="op-input op-input--sm" style="width:92px"><input class="op-input__el" type="time" value="{{ qFrom }}" onChange="{{ onQFrom }}" aria-label="From" style="font-family:var(--font-mono)"></div><span style="font-size:13px;color:var(--fg-muted)">to</span><div class="op-input op-input--sm" style="width:92px"><input class="op-input__el" type="time" value="{{ qTo }}" onChange="{{ onQTo }}" aria-label="To" style="font-family:var(--font-mono)"></div></div>
+<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:18px;background:var(--card);flex-wrap:wrap"><button type="button" role="switch" aria-checked="{{ quiet.on }}" aria-label="Quiet hours" onClick="{{ quiet.flip }}" style="flex:none;position:relative;width:34px;height:20px;padding:0;border:0;border-radius:980px;background:{{ quiet.track }};cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)"><span style="position:absolute;top:2px;left:{{ quiet.knob }};width:16px;height:16px;border-radius:980px;background:#fff;transition:left 140ms cubic-bezier(.4,0,.2,1)"></span></button><span style="flex:1;min-width:120px;font-size:14px">Hold notifications from</span><div class="op-input op-input--sm" style="width:76px"><input class="op-input__el" type="text" inputmode="numeric" maxlength="5" placeholder="22:00" value="{{ qFrom }}" onChange="{{ onQFrom }}" onBlur="{{ fixQ }}" aria-label="From, 24-hour" style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:center"></div><span style="font-size:13px;color:var(--fg-muted)">to</span><div class="op-input op-input--sm" style="width:76px"><input class="op-input__el" type="text" inputmode="numeric" maxlength="5" placeholder="08:00" value="{{ qTo }}" onChange="{{ onQTo }}" onBlur="{{ fixQ }}" aria-label="To, 24-hour" style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:center"></div><span style="flex-basis:100%;padding-left:46px;font-size:12.5px;color:var(--fg-subtle)">{{ quietNote }}</span></div>
 </div>
 </div>
 </div>
@@ -333,15 +378,26 @@ const sciImg = (f) => f;
 const sciIni = n => n.replace(/^J\. /, '').split(' ').map(w => w[0]).join('').slice(0, 2);
 const hideImg = e => { e.currentTarget.style.display = 'none'; };
 const BOTS = {
-  t1: { name: 'Release Bot', desc: 'Ships changes and watches runs', av: 0, sci: 'e7', group: 'Board', template: 'GitHub Bot', builtIn: true, core: 'prs', created: 'Sep 14, 2026', msgs: 9 },
-  t2: { name: 'Quota Bot', desc: 'Billing, limits and usage', av: 2, sci: 'e5', group: 'Board', template: 'Plan Bot', builtIn: true, core: 'tasks', created: 'Sep 14, 2026', msgs: 4 },
-  t3: { name: 'New Bot', desc: '', av: 1, sci: 'e6', group: 'Unassigned', template: 'Blank', builtIn: false, created: 'Oct 12, 2026', msgs: 1 },
-  t4: { name: 'Research Bot', desc: 'Reads the web and cites sources', av: 3, sci: 'e8', group: 'Unassigned', template: 'Blank', builtIn: false, created: 'Oct 8, 2026', msgs: 2 },
+  t1: { name: 'Release Bot', desc: 'Ships changes and watches runs', av: 0, sci: 'e7', group: 'g1', template: 'GitHub Bot', builtIn: false, core: 'prs', created: 'Sep 14, 2026', msgs: 9 },
+  t2: { name: 'Quota Bot', desc: 'Billing, limits and usage', av: 2, sci: 'e5', group: 'g1', template: 'Plan Bot', builtIn: false, core: 'tasks', created: 'Sep 14, 2026', msgs: 4 },
+  t3: { name: 'New Bot', desc: '', av: 1, sci: 'e6', group: null, template: 'Blank', builtIn: false, created: 'Oct 12, 2026', msgs: 5 },
+  t4: { name: 'Research Bot', desc: 'Reads the web and cites sources', av: 3, sci: 'e8', group: 'g2', template: 'Blank', builtIn: false, created: 'Oct 8, 2026', msgs: 3 },
+  pm: { name: 'Project manager', desc: 'Runs the project agents on Plan', ini: 'PM', group: 'builtin', template: 'Project manager', builtIn: true, core: 'tasks', created: 'Sep 1, 2026', msgs: 3 },
+  mm: { name: 'Merge manager', desc: 'Lands pull requests through project agents', ini: 'MM', group: 'builtin', template: 'Merge manager', builtIn: true, core: 'prs', created: 'Sep 1, 2026', msgs: 1 },
 };
+// Same groups the Employees sidebar shows.
+const GROUPS = [['g1', 'Engineering'], ['g2', 'Research'], [null, 'Ungrouped']];
+const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const PROJ = [['mobile', 'XRP Mobile'], ['atlas', 'Atlas'], ['web', 'Client sites']];
+const PROJ_REPOS = { mobile: ['jordi/xrp-mobile', 'jordi/xrp-mobile-api'], atlas: ['jordi/atlas', 'jordi/atlas-docs'], web: ['jordi/client-sites'] };
+const T3_JOB = 'Watch the nightly builds on build-01 and tell me which tests turned flaky.';
+const lineDiff = (a, b) => { const A = a ? a.split('\n') : [], B = b.split('\n'); const out = []; let i = 0, j = 0;
+  while (i < A.length || j < B.length) { if (i < A.length && j < B.length && A[i] === B[j]) { out.push([' ', A[i]]); i++; j++; } else if (j < B.length && !A.slice(i).includes(B[j])) { out.push(['+', B[j]]); j++; } else if (i < A.length) { out.push(['-', A[i]]); i++; } else { out.push(['+', B[j]]); j++; } }
+  return out; };
 const TABS = [
   ['profile', 'Profile', 'bot', 'Who the bot is and where it sits in the sidebar.'],
   ['instr', 'Instructions', 'file-text', 'The two files the bot reads before every message.'],
-  ['memory', 'Memory', 'database', 'What the bot remembers between chats, and who it shares that with.'],
+  ['memory', 'Memory', 'database', 'What the bot remembers between chats, and which project memory it reads.'],
   ['access', 'Access', 'lock', 'Where the bot may act and which tools it can use.'],
   ['approvals', 'Approvals', 'shield', 'When the bot stops and asks you, and how much it may spend in a day.'],
   ['runs', 'Runs on', 'terminal', 'The machine the bot works on and what happens when it is away.'],
@@ -366,34 +422,52 @@ const HOSTS = [
 ];
 const KINDS = [['schedule', 'Schedule', 'clock', 'e.g. Weekdays at 09:00'], ['github', 'GitHub', 'git-pull-request', 'e.g. When a PR is opened in atlas'], ['plan', 'Plan', 'check-circle', 'e.g. When a task moves to Done'], ['session', 'Session finished', 'terminal', 'e.g. When any session on build-01 ends']];
 
-const defaults = (id, b) => ({
+const defaults = (id, b) => {
+  const blank = id === 't3', soul = TEMPLATE_DOCS.soul.replace('{name}', b.name);
+  const instr = blank ? '' : TEMPLATE_DOCS.instr;
+  const proposal = blank
+    ? { by: b.name, when: 'Oct 13, 06:41', note: 'Written from your first message', file: 'instr', next: '# Instructions\n\n## Job\n' + T3_JOB + '\n\n## Rules\n- Work only in the projects and repositories I have access to.\n- Ask before merging, deleting, pushing or deploying.\n- When a task ends, report what changed, with numbers.' }
+    : id === 't1' ? { by: b.name, when: 'Today, 09:20', note: 'Learned from the cancel-path thread', file: 'instr', next: TEMPLATE_DOCS.instr.replace('the last 20 lines of output.', 'the last 40 lines of output.') + '\n- Ask Plan Bot which task a branch belongs to before opening a pull request.' }
+    : null;
+  return {
   name: b.name, desc: b.desc, av: b.av, sci: b.sci, group: b.group, msgs: b.msgs,
-  docs: { soul: TEMPLATE_DOCS.soul.replace('{name}', b.name), instr: TEMPLATE_DOCS.instr },
-  revs: [
-    { id: 'r3', file: 'instr', who: b.name, when: 'Oct 10, 14:02', note: 'Report the last 20 lines of output on failure', text: null },
-    { id: 'r2', file: 'soul', who: 'You', when: 'Oct 2, 09:15', note: 'Tone: numbers over adjectives', text: null },
-    { id: 'r1', file: 'instr', who: 'Template', when: b.created, note: 'Created from ' + b.template, text: TEMPLATE_DOCS.instr.split('\n').slice(0, 4).join('\n') },
+  docs: { soul, instr }, proposal,
+  revs: blank ? [
+    { id: 'r2', file: 'soul', who: 'Template', when: b.created, note: 'Created from Blank', text: soul },
+    { id: 'r1', file: 'instr', who: 'Template', when: b.created, note: 'Created from Blank · empty', text: '' },
+  ] : [
+    { id: 'r4', file: 'instr', who: b.name, when: 'Oct 10, 14:02', note: 'Report the last 20 lines of output on failure', text: TEMPLATE_DOCS.instr },
+    { id: 'r3', file: 'soul', who: 'You', when: 'Oct 2, 09:15', note: 'Tone: numbers over adjectives', text: soul },
+    { id: 'r2', file: 'soul', who: 'Template', when: b.created, note: (b.builtIn ? 'Built in' : 'Based on ' + b.template), text: soul.split('\n\n').slice(0, 1).concat(['You never pretend a step finished when it did not.']).join('\n\n') },
+    { id: 'r1', file: 'instr', who: 'Template', when: b.created, note: (b.builtIn ? 'Built in' : 'Based on ' + b.template), text: TEMPLATE_DOCS.instr.split('\n').slice(0, 4).join('\n') },
   ],
-  learn: true, share: { mobile: true, atlas: !!b.builtIn, web: false },
+  learn: true,
   facts: [
-    { id: 'f1', text: 'Jordi prefers squash merges with the PR title as the commit message.', kind: 'Profile', src: 'Learned from chat on Oct 12' },
-    { id: 'f2', text: 'atlas deploys on Tuesdays and Thursdays only.', kind: 'Note', src: 'Learned from chat on Oct 9' },
-    { id: 'f3', text: 'Stopped run gw-quota-07 because it exceeded its step quota.', kind: 'Log', src: 'Written by the bot on Oct 8' },
+    { id: 'f1', text: 'Jordi prefers squash merges with the PR title as the commit message.', kind: 'Profile', src: 'Learned from chat on Oct 12', scope: 'all' },
+    { id: 'f2', text: 'atlas deploys on Tuesdays and Thursdays only.', kind: 'Note', src: 'Learned from chat on Oct 9', scope: 'atlas' },
+    { id: 'f3', text: 'Stopped run gw-quota-07 because it exceeded its step quota.', kind: 'Log', src: 'Written by the bot on Oct 8', scope: 'bot' },
   ],
-  projects: { mobile: true, atlas: true, web: false }, repos: { 'jordi/atlas': true, 'jordi/xrp-mobile': true, 'jordi/client-sites': false, 'jordi/oppenheimer': false },
+  projects: { mobile: true, atlas: true, web: false }, repoMode: { mobile: 'all', atlas: 'only', web: 'all' },
+  repos: { 'jordi/xrp-mobile': true, 'jordi/xrp-mobile-api': true, 'jordi/atlas': true, 'jordi/atlas-docs': false, 'jordi/client-sites': true },
+  interrupt: 'urgent',
+  queuedItems: [{ from: 'You', text: 'Also bump the changelog for 2.4', why: 'Waiting for the current run', age: '12m' }, { from: 'Quota Bot', text: 'gw-quota-07 hit its step quota; stopping it.', why: 'Waiting for jordis-mac-studio', age: '40m' }],
   tools: { sessions: true, tasks: true, prs: true, hosts: false }, startSessions: true, createBots: false,
   mcps: [{ id: 'm1', name: 'Linear', url: 'https://mcp.linear.app/sse', on: true }],
   mode: 'ask', always: { merge: true, del: true, push: true, force: true, close: false, deploy: true },
   capTok: '2', capSess: '20', usedTok: 0.84, usedSess: 7,
-  host: 'jordis-mac-studio', offline: 'queue', par: 3, queued: 2,
+  host: 'jordis-mac-studio', offline: 'queue', par: 3,
   canMsg: true, who: 'selected', allowed: { t1: true, t2: true, t3: false, t4: false }, hops: 3, groups: { Release: !!b.builtIn, Ops: true, Research: false },
   routines: [
     { id: 'o1', name: 'Morning PR digest', kind: 'schedule', when: 'Weekdays at 09:00', prompt: 'List open pull requests that wait on me, oldest first, with their check status.', on: true, last: 'Today 09:00', next: 'Tomorrow 09:00' },
     { id: 'o2', name: 'Review new PRs', kind: 'github', when: 'When a PR is opened in atlas', prompt: 'Review the diff, run the tests and leave one summary comment.', on: true, last: 'Today 11:42', next: 'On trigger' },
-    { id: 'o3', name: 'Close finished tasks', kind: 'session', when: 'When a session linked to a task ends', prompt: 'If the session merged its PR, move the task to Done.', on: false, last: 'Oct 9 16:20', next: 'Paused' },
+    id === 'pm'
+      ? { id: 'o3', name: 'Close finished tasks', kind: 'session', when: 'When a session linked to a task ends', prompt: 'If the session merged its PR, move the task to Done.', on: true, last: 'Oct 9 16:20', next: 'On trigger' }
+      : { id: 'o3', name: 'Tag the release', kind: 'github', when: 'When checks pass on main in xrp-mobile', prompt: 'Tag the next version and write release notes from the pull requests merged since the last tag.', on: false, last: 'Oct 9 16:20', next: 'Paused' },
   ],
   notifOn: true, ch: { app: true, email: false }, trig: { approval: true, done: false, failed: true, mention: true, digest: true }, quiet: true, qFrom: '22:00', qTo: '08:00',
-});
+  };
+};
+const fixTime = v => { const m = String(v).replace(/[^0-9]/g, '').padStart(3, '0').slice(-4).padStart(4, '0'); const hh = Math.min(23, +m.slice(0, 2)), mm = Math.min(59, +m.slice(2)); return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); };
 const set = (o, path, v) => { const [k, ...r] = path.split('.'); return { ...o, [k]: r.length ? set(o[k] || {}, r.join('.'), v) : v }; };
 
 class Component extends DCLogic {
@@ -402,7 +476,7 @@ class Component extends DCLogic {
     const q = new URLSearchParams(location.search);
     const id = BOTS[q.get('bot')] ? q.get('bot') : 't1';
     const tab = TABS.some(t => t[0] === q.get('tab')) ? q.get('tab') : 'profile';
-    this.state = { id, tab, c: defaults(id, BOTS[id]), docFile: 'instr', docDraft: null, editFact: null, factDraft: '', newFact: '', newMcp: '', openTool: null, editRt: null, rtDraft: null, menu: false, confirm: null, flash: null };
+    this.state = { groupMenu: false, scopeMenu: null, id, tab, c: defaults(id, BOTS[id]), docFile: 'instr', docDraft: null, editFact: null, factDraft: '', newFact: '', newMcp: '', openTool: null, editRt: null, rtDraft: null, menu: false, confirm: null, flash: null };
   }
   nameRef = React.createRef();
   componentWillUnmount() { clearTimeout(this._f); }
@@ -411,14 +485,17 @@ class Component extends DCLogic {
   flip(path) { const v = path.split('.').reduce((o, k) => o[k], this.state.c); this.up(path, !v); }
   sw(on, flip, locked) { return { on: !!on, flip, locked: !!locked, track: on ? 'var(--primary)' : 'var(--control)', knob: on ? '16px' : '2px', cur: locked ? 'not-allowed' : 'pointer', op: locked ? 0.5 : 1 }; }
   seg(opts, cur, pick) { return opts.map(([k, label]) => ({ label, bg: cur === k ? 'var(--card)' : 'transparent', fg: cur === k ? 'var(--fg)' : 'var(--fg-muted)', pick: () => pick(k) })); }
-  chips(map, labels, path) { return labels.map(([k, label]) => ({ label, on: map[k] ? 'true' : 'false', flip: () => this.flip(path + '.' + k) })); }
+  chips(map, labels, path) { return labels.map(([k, label]) => ({ label, on: map[k] ? 'true' : 'false', isOn: !!map[k], flip: () => this.flip(path + '.' + k) })); }
 
   renderVals() {
     const s = this.state, c = s.c, b = BOTS[s.id], tab = TABS.find(t => t[0] === s.tab);
-    const PROJ = [['mobile', 'XRP Mobile'], ['atlas', 'Atlas'], ['web', 'Client sites']];
     const docText = s.docDraft ?? c.docs[s.docFile];
     const fn = f => f === 'soul' ? 'SOUL.md' : 'INSTRUCTIONS.md';
-    const toolLock = k => b.builtIn && b.core === k;
+    const toolLock = k => b.core === k;
+    const accessProj = PROJ.filter(([k]) => c.projects[k]);
+    const scopeOpts = [['bot', 'This bot', 'Only ' + c.name + ' reads it']].concat(accessProj.map(([k, l]) => [k, l, 'Its project agent and bots with access'])).concat([['all', 'Everyone', 'Every bot in the workspace']]);
+    const scopeName = k => (scopeOpts.find(o => o[0] === k) || PROJ.find(o => o[0] === k) || ['', 'This bot'])[1];
+    const pr = c.proposal, prevDoc = pr ? c.docs[pr.file] : '', diff = pr ? lineDiff(prevDoc, pr.next) : [];
     const capVals = [
       { label: 'Tokens per day', key: 'capTok', unit: 'million', used: c.usedTok.toFixed(2) + 'M of ' + c.capTok + 'M today', ratio: c.usedTok / (parseFloat(c.capTok) || 1) },
       { label: 'Sessions per day', key: 'capSess', unit: 'sessions', used: c.usedSess + ' of ' + c.capSess + ' today', ratio: c.usedSess / (parseFloat(c.capSess) || 1) },
@@ -431,19 +508,20 @@ class Component extends DCLogic {
       { icon: 'copy', label: 'Duplicate', run: () => { this.setState({ menu: false }); this.saved(c.name + ' copy created'); } },
       { icon: 'copy', label: 'Copy link', run: () => { try { navigator.clipboard.writeText(location.href); } catch (e) {} this.setState({ menu: false }); this.saved('Link copied'); } },
       { icon: 'download', label: 'Export as JSON', run: () => { const blob = new Blob([JSON.stringify({ id: s.id, template: b.template, ...c }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.json'; a.click(); this.setState({ menu: false }); } },
-      { icon: 'folder', label: c.group === 'Board' ? 'Move to unassigned' : 'Move to board', run: () => { this.setState({ menu: false }); this.up('group', c.group === 'Board' ? 'Unassigned' : 'Board', 'Moved'); } },
-      { sep: true, icon: 'folder', label: 'Archive', run: () => this.setState({ menu: false, confirm: { title: 'Archive ' + c.name + '?', body: 'It leaves the sidebar and stops its routines. You can restore it from archived bots at any time.', cta: 'Archive', run: () => { this.setState({ confirm: null }); this.saved('Archived'); } } }) },
+      b.builtIn ? { sep: true, icon: 'folder', label: 'Archive', note: 'Built-in agents stay available', off: true, run: () => {} } : { sep: true, icon: 'folder', label: 'Archive', run: () => this.setState({ menu: false, confirm: { title: 'Archive ' + c.name + '?', body: 'It leaves the sidebar and stops its routines. You can restore it from archived bots at any time.', cta: 'Archive', run: () => { this.setState({ confirm: null }); this.saved('Archived'); } } }) },
       b.builtIn
-        ? { icon: 'x', label: 'Delete', note: 'Built-in bots can be archived, not deleted', off: true, run: () => {} }
+        ? { icon: 'x', label: 'Delete', note: 'Built-in agents can’t be deleted', off: true, run: () => {} }
         : { icon: 'x', label: 'Delete', danger: true, run: () => this.setState({ menu: false, confirm: { title: 'Delete ' + c.name + '?', body: 'Its instructions, memory, routines and chat history are removed for good. Pull requests and sessions it started are kept.', cta: 'Delete bot', run: () => { location.href = './Bots.dc.html'; } } }) },
     ].map(m => ({ sep: false, note: '', off: false, ...m, color: m.danger ? 'var(--danger)' : 'var(--fg)', iconColor: m.danger ? 'var(--danger)' : 'var(--fg-muted)', cursor: m.off ? 'not-allowed' : 'pointer', op: m.off ? 0.5 : 1 }));
 
     const tf = k => s.tab === k;
     return {
       theme: this.props.theme ?? 'dark', stop: e => e.stopPropagation(),
-      closeMenus: () => { if (s.menu) this.setState({ menu: false }); },
-      name: c.name, desc: c.desc, builtIn: b.builtIn, savedFlash: s.flash,
-      av: (() => { const x = AV_SCI.find(y => y[0] === c.sci) || AV_SCI[0]; return { sciName: x[1], field: x[3], img: sciImg(x[2]), ini: sciIni(x[1]), onErr: hideImg }; })(),
+      closeMenus: () => { if (s.menu || s.groupMenu || s.scopeMenu) this.setState({ menu: false, groupMenu: false, scopeMenu: null }); },
+      name: c.name, desc: c.desc, builtIn: b.builtIn, notBuiltIn: !b.builtIn, savedFlash: s.flash,
+      badge: b.builtIn ? 'Built-in' : b.template !== 'Blank' ? 'Based on ' + b.template : '',
+      badgeTitle: b.builtIn ? 'Ships with every workspace. Keeps its name and role.' : 'Started from the ' + b.template + ' template. Renaming it is fine.',
+      av: b.builtIn ? { sciName: c.name, field: '', img: PIXEL, ini: b.ini, onErr: hideImg } : (() => { const x = AV_SCI.find(y => y[0] === c.sci) || AV_SCI[0]; return { sciName: x[1], field: x[3], img: sciImg(x[2]), ini: sciIni(x[1]), onErr: hideImg }; })(),
       menuOpen: s.menu, menuBg: s.menu ? 'var(--hover-surface)' : 'transparent', toggleMenu: e => { e.stopPropagation(); this.setState(x => ({ menu: !x.menu })); }, menuItems,
       tabs: TABS.map(([k, label, icon]) => ({ label, icon, cur: s.tab === k ? 'page' : 'false', bg: s.tab === k ? 'var(--selected-surface)' : 'transparent', fg: s.tab === k ? 'var(--fg)' : 'var(--fg-muted)', iconFg: s.tab === k ? 'var(--fg)' : 'var(--fg-subtle)', pick: () => this.setState({ tab: k }) })),
       tabTitle: tab[1], tabDesc: tab[3],
@@ -452,8 +530,11 @@ class Component extends DCLogic {
       nameRef: this.nameRef, onName: e => this.up('name', e.target.value), onDesc: e => this.up('desc', e.target.value),
       avColors: AV_COLORS.map(([n, v], i) => ({ name: n, v, on: c.av === i, ring: c.av === i ? '0 0 0 2px var(--card), 0 0 0 4px var(--fg)' : 'inset 0 0 0 1px var(--border-subtle)', pick: () => this.up('av', i) })),
       avSci: AV_SCI.map(([k, name, file]) => ({ name, img: sciImg(file), ini: sciIni(name), onErr: hideImg, sciName: name, short: '', on: c.sci === k, bg: c.sci === k ? 'var(--selected-surface)' : 'transparent', fg: c.sci === k ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.up('sci', k) })),
-      groupSeg: this.seg([['Board', 'Board'], ['Unassigned', 'Unassigned']], c.group, k => this.up('group', k)),
-      templateLabel: 'System: ' + b.template, created: b.created,
+      groupMenu: s.groupMenu, toggleGroupMenu: e => { e.stopPropagation(); this.setState(x => ({ groupMenu: !x.groupMenu })); },
+      groupLabel: (GROUPS.find(g => g[0] === c.group) || GROUPS[2])[1],
+      groupNote: b.builtIn ? 'Built-in agents always sit in the read-only Built-in group' : 'Where it appears in the Employees sidebar',
+      groupOpts: GROUPS.map(([k, label]) => ({ label, isOn: c.group === k, on: c.group === k ? 'true' : 'false', count: String(Object.values(BOTS).filter(x => x.group === k).length), pick: () => { this.setState({ groupMenu: false }); this.up('group', k, 'Moved to ' + label); } })),
+      templateLabel: b.builtIn ? 'Built-in agent' : b.template === 'Blank' ? 'Blank' : 'Based on ' + b.template, created: b.created,
       historyNote: c.msgs ? c.msgs + ' messages. You can export or clear the history; messages can’t be edited.' : 'No messages yet.',
       chatEmpty: !c.msgs, exportChat: () => this.saved('Exported ' + c.msgs + ' messages'),
       clearChat: () => this.setState({ confirm: { title: 'Clear chat history?', body: 'All ' + c.msgs + ' messages with ' + c.name + ' are removed. Memory and instructions are kept.', cta: 'Clear history', run: () => { this.setState({ confirm: null }); this.up('msgs', 0, 'History cleared'); } } }),
@@ -464,25 +545,41 @@ class Component extends DCLogic {
       discardDoc: () => this.setState({ docDraft: null }),
       saveDoc: () => { const f = s.docFile, prev = c.docs[f], next = s.docDraft; this.setState(x => ({ docDraft: null, c: { ...x.c, docs: { ...x.c.docs, [f]: next }, revs: [{ id: 'r' + Date.now(), file: f, who: 'You', when: 'Just now', note: 'Edited ' + fn(f), text: prev }].concat(x.c.revs) } })); this.saved('Revision saved'); },
       resetDoc: () => this.setState({ confirm: { title: 'Reset ' + fn(s.docFile) + ' to the template?', body: 'The current text is kept as a revision, so you can revert this.', cta: 'Reset', run: () => { const f = s.docFile, prev = c.docs[f]; this.setState(x => ({ confirm: null, docDraft: null, c: { ...x.c, docs: { ...x.c.docs, [f]: f === 'soul' ? TEMPLATE_DOCS.soul.replace('{name}', x.c.name) : TEMPLATE_DOCS.instr }, revs: [{ id: 'r' + Date.now(), file: f, who: 'You', when: 'Just now', note: 'Reset to ' + b.template + ' template', text: prev }].concat(x.c.revs) } })); this.saved('Reset to template'); } } }),
-      revs: c.revs.map((r, i) => ({ who: r.who, note: r.note, when: r.when, file: fn(r.file), isCurrent: i === 0, canRevert: i > 0 && !!r.text,
-        revert: () => { const prev = c.docs[r.file]; this.setState(x => ({ docDraft: null, docFile: r.file, c: { ...x.c, docs: { ...x.c.docs, [r.file]: r.text }, revs: [{ id: 'r' + Date.now(), file: r.file, who: 'You', when: 'Just now', note: 'Reverted to ' + r.when, text: prev }].concat(x.c.revs) } })); this.saved('Reverted'); } })),
+      revs: c.revs.map((r, i) => { const cur = c.revs.findIndex(x => x.file === r.file) === i;
+        return { who: r.who, note: r.note, when: r.when, file: fn(r.file), isCurrent: cur, canRevert: !cur && r.text != null,
+        revert: () => { this.setState(x => ({ docDraft: null, docFile: r.file, c: { ...x.c, docs: { ...x.c.docs, [r.file]: r.text }, revs: [{ id: 'r' + Date.now(), file: r.file, who: 'You', when: 'Just now', note: 'Reverted to ' + r.when, text: r.text }].concat(x.c.revs) } })); this.saved('Reverted'); } }; }),
+      hasProposal: !!pr,
+      prop: pr ? { by: pr.by, note: pr.note, when: pr.when, fileName: fn(pr.file), adds: '+' + diff.filter(d => d[0] === '+').length, dels: '−' + diff.filter(d => d[0] === '-').length,
+        diff: diff.map(([k, t]) => ({ t: t || ' ', sign: k === ' ' ? '' : k === '-' ? '−' : '+', signFg: k === '+' ? 'var(--success)' : 'var(--danger)', fg: k === ' ' ? 'var(--fg-muted)' : 'var(--fg)', bg: k === '+' ? 'color-mix(in oklch, var(--success) 10%, transparent)' : k === '-' ? 'color-mix(in oklch, var(--danger) 10%, transparent)' : 'transparent' })) } : {},
+      acceptProp: () => { const f = pr.file; this.setState(x => ({ docDraft: null, docFile: f, c: { ...x.c, proposal: null, desc: x.c.desc || (s.id === 't3' ? 'Watches nightly builds for flaky tests' : x.c.desc), docs: { ...x.c.docs, [f]: pr.next }, revs: [{ id: 'r' + Date.now(), file: f, who: pr.by, when: 'Just now', note: pr.note + ' · accepted by you', text: pr.next }].concat(x.c.revs) } })); this.saved('Proposal accepted'); },
+      rejectProp: () => { this.setState(x => ({ c: { ...x.c, proposal: null } })); this.saved('Proposal rejected'); },
       // memory
-      learn: this.sw(c.learn, () => this.flip('learn')), shareChips: this.chips(c.share, PROJ, 'share'),
+      learn: this.sw(c.learn, () => this.flip('learn')),
+      readProjects: accessProj.map(([k, label]) => ({ label, facts: { mobile: '12', atlas: '8', web: '3' }[k] })), noReadProjects: accessProj.length === 0,
+      goAccess: () => this.setState({ tab: 'access' }),
       factCount: c.facts.length, noFacts: c.facts.length === 0, clearOp: c.facts.length ? 1 : 0.4,
       clearFacts: () => this.setState({ confirm: { title: 'Clear all ' + c.facts.length + ' facts?', body: c.name + ' forgets everything it learned. Facts shared by other bots stay.', cta: 'Clear all', run: () => { this.setState({ confirm: null }); this.up('facts', [], 'Memory cleared'); } } }),
       facts: c.facts.map(f => { const ed = s.editFact === f.id; const save = () => { const v = s.factDraft.trim(); if (v) this.up('facts', c.facts.map(x => x.id === f.id ? { ...x, text: v, src: 'Edited by you just now' } : x)); this.setState({ editFact: null }); };
-        return { ...f, view: !ed, editing: ed, draft: s.factDraft, onDraft: e => this.setState({ factDraft: e.target.value }), key: e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') this.setState({ editFact: null }); },
+        const so = s.scopeMenu === f.id;
+        return { ...f, view: !ed, editing: ed, scopeLabel: scopeName(f.scope), scopeOpen: so,
+          toggleScope: e => { e.stopPropagation(); this.setState({ scopeMenu: so ? null : f.id }); },
+          scopes: scopeOpts.map(([k, label, desc]) => ({ label, desc, on: f.scope === k, pick: () => { this.setState({ scopeMenu: null }); this.up('facts', c.facts.map(x => x.id === f.id ? { ...x, scope: k } : x), 'Readable by ' + label); } })), draft: s.factDraft, onDraft: e => this.setState({ factDraft: e.target.value }), key: e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') this.setState({ editFact: null }); },
           edit: () => this.setState({ editFact: f.id, factDraft: f.text }), cancel: () => this.setState({ editFact: null }), save, del: () => this.up('facts', c.facts.filter(x => x.id !== f.id), 'Fact deleted') }; }),
       newFact: s.newFact, onNewFact: e => this.setState({ newFact: e.target.value }), cantAddFact: !s.newFact.trim(),
-      addFact: () => { const v = s.newFact.trim(); if (!v) return; this.setState({ newFact: '' }); this.up('facts', c.facts.concat({ id: 'f' + Date.now(), text: v, kind: 'Note', src: 'Added by you just now' }), 'Fact added'); },
-      newFactKey: e => { if (e.key === 'Enter' && s.newFact.trim()) { const v = s.newFact.trim(); this.setState({ newFact: '' }); this.up('facts', c.facts.concat({ id: 'f' + Date.now(), text: v, kind: 'Note', src: 'Added by you just now' }), 'Fact added'); } },
+      addFact: () => { const v = s.newFact.trim(); if (!v) return; this.setState({ newFact: '' }); this.up('facts', c.facts.concat({ id: 'f' + Date.now(), text: v, kind: 'Note', src: 'Added by you just now', scope: 'bot' }), 'Fact added'); },
+      newFactKey: e => { if (e.key === 'Enter' && s.newFact.trim()) { const v = s.newFact.trim(); this.setState({ newFact: '' }); this.up('facts', c.facts.concat({ id: 'f' + Date.now(), text: v, kind: 'Note', src: 'Added by you just now', scope: 'bot' }), 'Fact added'); } },
       sharedFacts: [{ text: 'Atlas milestone "Public beta" is due Nov 15.', kind: 'Note', src: 'via Plan Bot · Oct 11' }, { text: 'build-01 is the only host with a GPU.', kind: 'Profile', src: 'via Sessions Bot · Oct 3' }],
       // access
-      projChips: this.chips(c.projects, PROJ, 'projects'),
-      repoChips: Object.keys(c.repos).map(k => ({ label: k, on: c.repos[k] ? 'true' : 'false', flip: () => this.flip('repos.' + k) })),
+      projRows: PROJ.map(([k, label]) => { const on = !!c.projects[k], mode = c.repoMode[k] || 'all', list = PROJ_REPOS[k], picked = list.filter(r => c.repos[r]);
+        return { label, on: on ? 'true' : 'false', isOn: on, flip: () => this.flip('projects.' + k),
+          boxBorder: on ? '0' : '1.5px solid var(--border)', boxBg: on ? 'var(--primary)' : 'transparent',
+          summary: !on ? list.length + (list.length === 1 ? ' repository' : ' repositories') + ' · no access' : mode === 'all' ? 'All ' + list.length + (list.length === 1 ? ' repository' : ' repositories') : picked.length + ' of ' + list.length + ' repositories',
+          modeSeg: this.seg([['all', 'All repos'], ['only', 'Only these repos']], mode, m => this.up('repoMode.' + k, m)),
+          showRepos: on && mode === 'only',
+          repos: list.map(r => ({ label: r, on: c.repos[r] ? 'true' : 'false', isOn: !!c.repos[r], flip: () => this.flip('repos.' + r) })) }; }),
       tools: TOOLS.map(([k, label, icon, desc, scopes]) => { const lock = toolLock(k), open = s.openTool === k;
         return { label, icon, desc, scopes, open, chev: open ? 'rotate(90deg)' : 'none', toggleDetails: () => this.setState({ openTool: open ? null : k }),
-          lockNote: lock ? 'Always on for a ' + b.template + '. Narrow its projects instead.' : '', sw: this.sw(lock || c.tools[k], () => { if (!lock) this.flip('tools.' + k); }, lock) }; }),
+          lockNote: lock ? 'Always on for ' + (b.builtIn ? 'the ' + c.name : 'a ' + b.template) + '. Narrow its projects instead.' : '', sw: this.sw(lock || c.tools[k], () => { if (!lock) this.flip('tools.' + k); }, lock) }; }),
       abilities: [{ label: 'Start sessions', desc: 'Launch an agent on a host by itself', sw: this.sw(c.startSessions, () => this.flip('startSessions')) }, { label: 'Create bots', desc: 'Make new bots to hand work to', sw: this.sw(c.createBots, () => this.flip('createBots')) }],
       mcps: c.mcps.map(m => ({ ...m, sw: this.sw(m.on, () => this.up('mcps', c.mcps.map(x => x.id === m.id ? { ...x, on: !x.on } : x))), del: () => this.up('mcps', c.mcps.filter(x => x.id !== m.id), 'Connector removed') })),
       newMcp: s.newMcp, onNewMcp: e => this.setState({ newMcp: e.target.value }), cantAddMcp: !/^https?:\/\/\S+/.test(s.newMcp.trim()),
@@ -495,13 +592,15 @@ class Component extends DCLogic {
       hosts: HOSTS.map(h => ({ ...h, on: c.host === h.name ? 'true' : 'false', dot: h.status === 'online' ? 'var(--success)' : 'var(--fg-subtle)', state: h.status === 'online' ? 'Online' : 'Offline', ring: c.host === h.name ? '5px solid var(--primary)' : '1.5px solid var(--border)', pick: () => this.up('host', h.name) })),
       offlineSeg: this.seg([['queue', 'Queue messages'], ['fallback', 'Fall back to any host']], c.offline, k => this.up('offline', k)),
       offlineNote: c.offline === 'queue' ? 'Messages wait until ' + c.host + ' is back' : 'Runs on the next online host with access',
-      par: c.par, parDown: () => this.up('par', Math.max(1, c.par - 1)), parUp: () => this.up('par', Math.min(8, c.par + 1)), queued: String(c.queued),
+      par: c.par, parDown: () => this.up('par', Math.max(1, c.par - 1)), parUp: () => this.up('par', Math.min(8, c.par + 1)), queued: String(c.queuedItems.length), queuedItems: c.queuedItems, noQueued: c.queuedItems.length === 0,
       // team
       canMsg: this.sw(c.canMsg, () => this.flip('canMsg')),
       whoSeg: this.seg([['any', 'Any bot'], ['selected', 'Selected'], ['none', 'No bots']], c.who, k => this.up('who', k)), whoSelected: c.who === 'selected',
-      allowedBots: otherBots.map(k => ({ name: BOTS[k].name, ...(x => ({ sciName: x[1], img: sciImg(x[2]), ini: sciIni(x[1]), onErr: hideImg }))(AV_SCI.find(y => y[0] === BOTS[k].sci) || AV_SCI[0]), on: c.allowed[k] ? 'true' : 'false', flip: () => this.flip('allowed.' + k) })),
+      allowedBots: otherBots.map(k => ({ name: BOTS[k].name, ...(BOTS[k].builtIn ? { sciName: BOTS[k].name, img: PIXEL, ini: BOTS[k].ini, onErr: hideImg } : (x => ({ sciName: x[1], img: sciImg(x[2]), ini: sciIni(x[1]), onErr: hideImg }))(AV_SCI.find(y => y[0] === BOTS[k].sci) || AV_SCI[0])), on: c.allowed[k] ? 'true' : 'false', isOn: !!c.allowed[k], flip: () => this.flip('allowed.' + k) })),
+      interruptSeg: this.seg([['queue', 'Queue it'], ['urgent', 'Interrupt if urgent'], ['any', 'Interrupt']], c.interrupt, k => this.up('interrupt', k)),
+      interruptNote: { queue: 'Messages wait until the current task ends', urgent: 'Only messages marked urgent pause the current task', any: 'Any allowed bot can pause the current task' }[c.interrupt],
       hops: c.hops, hopDown: () => this.up('hops', Math.max(1, c.hops - 1)), hopUp: () => this.up('hops', Math.min(6, c.hops + 1)),
-      groupChips: Object.keys(c.groups).map(k => ({ label: k, on: c.groups[k] ? 'true' : 'false', flip: () => this.flip('groups.' + k) })),
+      groupChips: Object.keys(c.groups).map(k => ({ label: k, on: c.groups[k] ? 'true' : 'false', isOn: !!c.groups[k], flip: () => this.flip('groups.' + k) })),
       b2b: [{ dir: 'Asked', with: 'Plan Bot', text: 'Which task is PR #412 linked to?', age: '18m' }, { dir: 'From', with: 'Quota Bot', text: 'gw-quota-07 hit its step quota; stopping it.', age: '2h' }, { dir: 'Asked', with: 'Research Bot', text: 'Find the SDK changelog entry for AbortSignal support', age: '1d' }],
       // routines
       routines: c.routines.map(r => { const ed = s.editRt === r.id, d = ed ? s.rtDraft : r, k = KINDS.find(x => x[0] === d.kind);
@@ -520,7 +619,10 @@ class Component extends DCLogic {
         { title: 'Channels', rows: [['app', 'In the app'], ['email', 'Email']].map(([k, label]) => ({ label, sw: this.sw(c.ch[k], () => this.flip('ch.' + k)) })) },
         { title: 'Notify me when', rows: [['approval', 'It needs my approval'], ['failed', 'A run fails'], ['done', 'A run finishes'], ['mention', 'Another bot mentions me'], ['digest', 'Daily summary at 18:00']].map(([k, label]) => ({ label, sw: this.sw(c.trig[k], () => this.flip('trig.' + k)) })) },
       ],
-      quiet: this.sw(c.quiet, () => this.flip('quiet')), qFrom: c.qFrom, qTo: c.qTo, onQFrom: e => this.up('qFrom', e.target.value), onQTo: e => this.up('qTo', e.target.value),
+      quiet: this.sw(c.quiet, () => this.flip('quiet')), qFrom: c.qFrom, qTo: c.qTo,
+      onQFrom: e => this.setState({ c: set(c, 'qFrom', e.target.value.replace(/[^0-9:]/g, '')) }), onQTo: e => this.setState({ c: set(c, 'qTo', e.target.value.replace(/[^0-9:]/g, '')) }),
+      fixQ: () => { this.setState(x => ({ c: { ...x.c, qFrom: fixTime(x.c.qFrom), qTo: fixTime(x.c.qTo) } })); this.saved(); },
+      quietNote: (() => { const a = fixTime(c.qFrom), z = fixTime(c.qTo); const mins = t => +t.slice(0, 2) * 60 + +t.slice(3); let d = mins(z) - mins(a); if (d <= 0) d += 1440; return '24-hour clock. ' + (mins(z) <= mins(a) ? 'Overnight, ' : '') + Math.floor(d / 60) + 'h' + (d % 60 ? ' ' + (d % 60) + 'm' : '') + ' of quiet; approvals still come through.'; })(),
       confirm: s.confirm, cancelConfirm: () => this.setState({ confirm: null }),
     };
   }
