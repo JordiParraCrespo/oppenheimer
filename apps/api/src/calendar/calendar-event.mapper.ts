@@ -3,7 +3,18 @@ import type { Mapper } from '@oppenheimer/backend-ddd';
 import { CalendarEventOrmEntity } from './database/calendar-event.orm-entity';
 import { CalendarEventEntity } from './domain/calendar-event.entity';
 import { CalendarEventResponseDto } from './dtos/calendar-event.response.dto';
+import {
+  type GoogleCalendarAccountReadResponseDto,
+  GoogleCalendarEventResponseDto,
+  GoogleCalendarEventsResponseDto,
+} from './dtos/google-calendar-events.response.dto';
 import type { ProviderCalendarEvent } from './infrastructure/calendar-provider.port';
+
+/** A provider's event, and the connection it was read from. */
+export interface ConnectionCalendarEvent {
+  connectionId: string;
+  event: ProviderCalendarEvent;
+}
 
 @Injectable()
 export class CalendarEventMapper
@@ -58,9 +69,26 @@ export class CalendarEventMapper
     return dto;
   }
 
-  /** A provider's event in the same shape, read-only. */
-  fromProvider(event: ProviderCalendarEvent): CalendarEventResponseDto {
-    const dto = new CalendarEventResponseDto();
+  /** Every account's read: the events, deduplicated already, and how each account went. */
+  toGoogleResponse(read: {
+    events: readonly ConnectionCalendarEvent[];
+    accounts: readonly GoogleCalendarAccountReadResponseDto[];
+  }): GoogleCalendarEventsResponseDto {
+    const dto = new GoogleCalendarEventsResponseDto();
+    dto.events = read.events.map(({ connectionId, event }) =>
+      this.fromProvider(event, connectionId),
+    );
+    dto.accounts = read.accounts.map(({ id, status }) => ({ id, status }));
+    return dto;
+  }
+
+  /** A provider's event in the same shape, read-only, tagged with its account. */
+  private fromProvider(
+    event: ProviderCalendarEvent,
+    connectionId: string,
+  ): GoogleCalendarEventResponseDto {
+    const dto = new GoogleCalendarEventResponseDto();
+    dto.connectionId = connectionId;
     dto.id = event.id;
     dto.source = 'google';
     dto.title = event.title;

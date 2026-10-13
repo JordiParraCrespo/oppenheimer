@@ -1,12 +1,14 @@
-import type { CalendarEntryData } from '@oppenheimer/design-system-web';
+import type { CalendarAccent, CalendarEntryData } from '@oppenheimer/design-system-web';
 import type {
   AutomationEntity,
   CalendarEventEntity,
+  GoogleCalendarConnectionEntity,
   TaskEntity,
 } from '@oppenheimer/frontend-consumer';
 import { todayIn } from '@oppenheimer/frontend-web';
 import { nextScheduleOccurrence } from '@oppenheimer/shared/automations';
 import type { CalendarLayer } from './calendar-search';
+import { accentOf } from './google-accounts';
 
 /**
  * One thing on one day of the month: a personal event, a Google event, a task
@@ -29,6 +31,9 @@ export interface CalendarItem {
   busy?: boolean;
   /** "10:00–11:00", for an event's tooltip. */
   span?: string;
+  /** A Google event's account: its colour on the month, and its address in the tooltip. */
+  accent?: CalendarAccent;
+  account?: string;
 }
 
 /** The most runs one automation puts on a month: an hourly rule would bury the grid. */
@@ -50,6 +55,28 @@ export function eventItems(
     busy: event.busy,
     span: event.startTime && event.endTime ? `${event.startTime}–${event.endTime}` : undefined,
   }));
+}
+
+/**
+ * Google's events, each in its account's colour, leaving out the accounts
+ * this viewer switched off (and any account no longer listed).
+ */
+export function googleItems(
+  events: readonly CalendarEventEntity[],
+  connections: readonly GoogleCalendarConnectionEntity[],
+  hidden: readonly string[],
+): CalendarItem[] {
+  const byId = new Map(connections.map((connection) => [connection.id, connection]));
+  const shown = events.filter((event) => {
+    const id = event.connectionId;
+    return id !== null && byId.has(id) && !hidden.includes(id);
+  });
+  return eventItems(shown, 'google').map((item, index) => {
+    const connection = byId.get(shown[index].connectionId ?? '');
+    return connection
+      ? { ...item, accent: accentOf(connection.colorIndex), account: connection.accountEmail }
+      : item;
+  });
 }
 
 export function taskItems(tasks: readonly TaskEntity[], from: string, to: string): CalendarItem[] {
@@ -132,7 +159,8 @@ export function toEntry(item: CalendarItem): CalendarEntryData {
     busy: item.busy,
     done: item.done,
     draggable: item.layer === 'events' || item.layer === 'tasks',
-    tip: item.span ? `${item.title} · ${item.span}` : undefined,
+    tip: [item.title, item.span, item.account].filter(Boolean).join(' · ') || undefined,
+    accent: item.accent,
   };
 }
 

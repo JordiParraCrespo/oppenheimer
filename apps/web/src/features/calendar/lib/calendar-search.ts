@@ -8,8 +8,8 @@ export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 /**
  * The calendar's address: the month (`YYYY-MM`, this month when absent), the
  * layers switched off (comma-separated, so the default — all on — is a bare
- * URL), the event whose dialog is open (`new` for New event) and the day a
- * New event starts on.
+ * URL), the event whose dialog is open (`new` for New event), the day a
+ * New event starts on, and the Google event whose read-only view is open.
  */
 export const calendarSearchSchema = z.object({
   month: z
@@ -19,6 +19,7 @@ export const calendarSearchSchema = z.object({
     .catch(undefined),
   off: searchText,
   event: searchText,
+  google: searchText,
   day: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)

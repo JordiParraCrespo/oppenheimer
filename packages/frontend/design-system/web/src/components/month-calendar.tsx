@@ -4,6 +4,7 @@ import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { CircleCheckIcon, XIcon, ZapIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { TONE_BG } from '../internal/data-tone';
 import { dateFormat, dateOf, type IsoDate, type MonthDay } from '../internal/month';
 import { DayNumber, MonthGrid } from '../internal/month-grid';
 import { cn } from '../lib/utils';
@@ -30,6 +31,20 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 type CalendarEntryKind = 'event' | 'task' | 'automation';
 
+/**
+ * Which calendar an event came from, when there are several to tell apart (a
+ * person's Google accounts): the categorical chart order, five at most.
+ */
+type CalendarAccent = 'chart-1' | 'chart-2' | 'chart-3' | 'chart-4' | 'chart-5';
+
+const ACCENT_BORDER: Record<CalendarAccent, string> = {
+  'chart-1': 'border-chart-1',
+  'chart-2': 'border-chart-2',
+  'chart-3': 'border-chart-3',
+  'chart-4': 'border-chart-4',
+  'chart-5': 'border-chart-5',
+};
+
 interface CalendarEntryData {
   id: string;
   date: IsoDate;
@@ -45,6 +60,8 @@ interface CalendarEntryData {
   draggable?: boolean;
   /** The native tooltip ("Design review · 15:00–16:00"). */
   tip?: string;
+  /** The calendar an event came from: its ring, or a dot on an all-day bar, wears it. */
+  accent?: CalendarAccent;
 }
 
 /** Events first by time, all-day ones above; then a task's due date; then by time. */
@@ -96,9 +113,12 @@ function CalendarEntry({
           aria-hidden
           className={cn(
             'size-2 shrink-0 rounded-pill border-[1.5px]',
-            entry.busy ? 'border-fg-muted' : 'border-fg-subtle',
+            entry.accent ? ACCENT_BORDER[entry.accent] : entry.busy ? 'border-fg-muted' : 'border-fg-subtle',
           )}
         />
+      ) : null}
+      {entry.kind === 'event' && entry.allDay && entry.accent ? (
+        <span aria-hidden className={cn('size-1.5 shrink-0 rounded-pill', TONE_BG[entry.accent])} />
       ) : null}
       {entry.kind === 'task' ? (
         <CircleCheckIcon
@@ -295,4 +315,4 @@ function MonthCalendar({
 }
 
 export { CalendarEntry, MonthCalendar };
-export type { CalendarEntryData, CalendarEntryKind };
+export type { CalendarAccent, CalendarEntryData, CalendarEntryKind };

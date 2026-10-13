@@ -8,16 +8,17 @@ import {
 import type { CalendarConnectionRepositoryPort } from '../../database/calendar-connection.repository.port';
 import type { CalendarProviderPort } from '../../infrastructure/calendar-provider.port';
 import type { TokenSealerPort } from '../../infrastructure/token-sealer.port';
-import { DisconnectGoogleCalendarCommand } from './disconnect-google-calendar.command';
+import { RemoveGoogleCalendarConnectionCommand } from './remove-google-calendar-connection.command';
 
 /**
- * Revokes the grant at Google, best effort, and forgets it. Disconnecting with no
- * connection does nothing; a token sealed under a key since replaced is forgotten
- * without the revoke it can no longer make.
+ * Removes one of the caller's Google accounts: revokes its grant at Google,
+ * best effort, and forgets it, which frees its colour for the next account.
+ * An id that is not one of the caller's does nothing; a token sealed under a
+ * key since replaced is forgotten without the revoke it can no longer make.
  */
-@CommandHandler(DisconnectGoogleCalendarCommand)
-export class DisconnectGoogleCalendarCommandHandler
-  implements ICommandHandler<DisconnectGoogleCalendarCommand, void>
+@CommandHandler(RemoveGoogleCalendarConnectionCommand)
+export class RemoveGoogleCalendarConnectionCommandHandler
+  implements ICommandHandler<RemoveGoogleCalendarConnectionCommand, void>
 {
   constructor(
     @Inject(CALENDAR_PROVIDER)
@@ -28,13 +29,16 @@ export class DisconnectGoogleCalendarCommandHandler
     private readonly connections: CalendarConnectionRepositoryPort,
   ) {}
 
-  async execute({ scope }: DisconnectGoogleCalendarCommand): Promise<void> {
-    const found = await this.connections.findOwn(scope);
+  async execute({ scope, connectionId }: RemoveGoogleCalendarConnectionCommand): Promise<void> {
+    const found = await this.connections.findOwnById(scope, connectionId);
     if (found.isNone()) return;
     const connection = found.unwrap();
     if (this.sealer.isConfigured()) {
       try {
-        await this.provider.revoke(this.sealer.open(connection.refreshTokenSealed));
+        await this.provider.revoke({
+          connectionId: connection.id,
+          refreshToken: this.sealer.open(connection.refreshTokenSealed),
+        });
       } catch {
         // Unsealable or unreachable: the row goes either way.
       }
