@@ -1,16 +1,27 @@
 import type { Terminal } from '@xterm/xterm';
+import type { TerminalRendererKind } from './terminal-renderer';
 import type { TypeaheadView } from './typeahead-model';
 
-/** The colours one paint uses, as CSS colours. */
-export interface TypeaheadPaintColors {
+/** The colours a predicted cell is drawn in, as CSS colours. */
+export interface TypeaheadColors {
+  background: string;
+  foreground: string;
+  cursor: string;
+  cursorText: string;
+}
+
+/** How one paint draws its cells, the cursor's look resolved. */
+interface PaintColors {
   background: string;
   foreground: string;
   cursorBackground: string;
   cursorText: string;
+  /** The caret is a bar this many CSS pixels wide, in `cursorBackground`; `null` for a block. */
+  bar: number | null;
 }
 
 interface Painter {
-  paint(view: TypeaheadView, colors: TypeaheadPaintColors, box: DOMRect): void;
+  paint(view: TypeaheadView, colors: PaintColors, box: DOMRect): void;
   clear(): void;
   dispose(): void;
 }
@@ -24,28 +35,28 @@ interface Painter {
  * WebGL rasterizes each glyph on a canvas with its own baseline rule. Drawn
  * any third way, a guess sat a pixel or two above the echo that replaced it,
  * and the letter visibly dropped into place. So each renderer gets a painter
- * that draws the way it does, chosen again on `repaint` (the renderer
- * switching, a face finishing its load).
+ * that draws the way it does, chosen again on `repaint` from `renderer` (the
+ * renderer switching, a face finishing its load).
  */
 export function createTypeaheadPainter(
   term: Terminal,
   screen: HTMLElement | null | undefined,
+  renderer: () => TerminalRendererKind,
 ): {
-  paint(view: TypeaheadView | null, colors: TypeaheadPaintColors): void;
+  /** `caret`: the program shows the terminal's cursor, rather than painting an inverse cell. */
+  paint(view: TypeaheadView | null, colors: TypeaheadColors, caret: boolean): void;
   repaint(): void;
   dispose(): void;
 } {
   const choose = (): Painter | null => {
     if (!screen) return null;
-    return screen.querySelector('.xterm-rows')
-      ? domPainter(term, screen)
-      : canvasPainter(term, screen);
+    return renderer() === 'webgl' ? canvasPainter(term, screen) : domPainter(term, screen);
   };
   let painter = choose();
   let drawn = false;
 
   return {
-    paint(view, colors) {
+    paint(view, colors, caret) {
       if (!view || view.cells.length === 0) {
         if (drawn) painter?.clear();
         drawn = false;
@@ -56,7 +67,23 @@ export function createTypeaheadPainter(
       // columns the further right it was typed.
       const box = screen?.getBoundingClientRect();
       if (!painter || !box || box.width === 0 || box.height === 0) return;
-      painter.paint(view, colors, box);
+      // The cursor looks like the one it stands in for: the terminal's caret,
+      // a bar as the terminal draws it, or the inverse cell an Ink program
+      // paints. The caret's shape is the terminal's option, not a shape a
+      // program asked for: the host's cursor is hidden while a guess shows.
+      const bar =
+        caret && term.options.cursorStyle === 'bar' ? (term.options.cursorWidth ?? 1) : null;
+      painter.paint(
+        view,
+        {
+          background: colors.background,
+          foreground: colors.foreground,
+          cursorBackground: caret ? colors.cursor : colors.foreground,
+          cursorText: caret ? colors.cursorText : colors.background,
+          bar,
+        },
+        box,
+      );
       drawn = true;
     },
     repaint() {
@@ -68,6 +95,16 @@ export function createTypeaheadPainter(
       painter?.dispose();
     },
   };
+}
+
+/** A DOM cell's colours: a block cursor inverts it, a bar is an inset edge. */
+function cellStyle(cursor: boolean, colors: PaintColors): string[] {
+  if (cursor && colors.bar === null) {
+    return [`background:${colors.cursorBackground}`, `color:${colors.cursorText}`];
+  }
+  const style = [`background:${colors.background}`, `color:${colors.foreground}`];
+  if (cursor) style.push(`box-shadow:inset ${colors.bar}px 0 0 ${colors.cursorBackground}`);
+  return style;
 }
 
 function cssFont(term: Terminal, size: number): string {
@@ -103,8 +140,7 @@ function domPainter(term: Terminal, screen: HTMLElement): Painter {
           // After `font`, whose shorthand resets the line height.
           `font:${font}`,
           `line-height:${cellHeight}px`,
-          `background:${cell.cursor ? colors.cursorBackground : colors.background}`,
-          `color:${cell.cursor ? colors.cursorText : colors.foreground}`,
+          ...cellStyle(cell.cursor, colors),
         ].join(';');
       });
     },
@@ -169,10 +205,15 @@ function canvasPainter(term: Terminal, screen: HTMLElement): Painter {
       for (const cell of view.cells) {
         const left = Math.floor(cell.col * cellWidth);
         const right = Math.ceil((cell.col + 1) * cellWidth);
-        context.fillStyle = cell.cursor ? colors.cursorBackground : colors.background;
+        const block = cell.cursor && colors.bar === null;
+        context.fillStyle = block ? colors.cursorBackground : colors.background;
         context.fillRect(left, top, right - left, cellHeight);
-        context.fillStyle = cell.cursor ? colors.cursorText : colors.foreground;
+        context.fillStyle = block ? colors.cursorText : colors.foreground;
         context.fillText(cell.char, cell.col * cellWidth, top + charTop + deviceChar);
+        if (cell.cursor && colors.bar !== null) {
+          context.fillStyle = colors.cursorBackground;
+          context.fillRect(left, top, Math.max(1, Math.round(colors.bar * dpr)), cellHeight);
+        }
       }
     },
     clear() {

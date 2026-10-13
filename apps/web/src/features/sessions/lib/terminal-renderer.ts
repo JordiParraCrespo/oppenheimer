@@ -33,14 +33,18 @@ export interface RendererEnvironment {
   fonts: Pick<FontFaceSet, 'addEventListener' | 'removeEventListener'> | undefined;
 }
 
+/** Which renderer draws the grid. */
+export type TerminalRendererKind = 'webgl' | 'dom';
+
 /**
  * Binds the renderer to `term`; `onCellsChanged` runs whenever the cells may
- * have changed size or look (the renderer switched, a face arrived), for the
- * caller to refit and repaint what it draws on top.
+ * have changed size or look (the renderer switched, a face arrived), with the
+ * renderer now drawing, for the caller to refit and repaint what it draws on
+ * top.
  */
 export function bindTerminalRenderer(
   term: Terminal,
-  onCellsChanged: () => void,
+  onCellsChanged: (renderer: TerminalRendererKind) => void,
   env: RendererEnvironment = browserEnvironment(),
 ): () => void {
   let disposed = false;
@@ -48,7 +52,7 @@ export function bindTerminalRenderer(
 
   const repaint = () => {
     term.refresh(0, term.rows - 1);
-    onCellsChanged();
+    onCellsChanged(webgl ? 'webgl' : 'dom');
   };
 
   const attach = () => {

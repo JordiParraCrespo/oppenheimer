@@ -1,25 +1,20 @@
 import type { IBufferCell, IDisposable, Terminal } from '@xterm/xterm';
 import { bindHostCursor } from './host-cursor';
+import type { TerminalRendererKind } from './terminal-renderer';
 import {
   classifyTypeaheadKey,
   TypeaheadModel,
   type TypeaheadScreen,
   type TypeaheadView,
 } from './typeahead-model';
-import { createTypeaheadPainter } from './typeahead-paint';
-
-/** The colours a predicted cell is drawn in, as CSS colours. */
-export interface TypeaheadColors {
-  background: string;
-  foreground: string;
-  cursor: string;
-  cursorText: string;
-}
+import { createTypeaheadPainter, type TypeaheadColors } from './typeahead-paint';
 
 export interface TypeaheadOptions {
   /** Whether predictions are drawn right now (the flag, and a host slow enough to need them). */
   shouldDraw: () => boolean;
   readColors: () => TypeaheadColors;
+  /** Which renderer draws the grid: a guess is drawn the way it draws. */
+  renderer: () => TerminalRendererKind;
   /** Each guess the host confirmed, with its round trip. */
   onConfirm?: (latencyMs: number) => void;
   /** How long a guess may wait for the host before it is dropped. */
@@ -51,7 +46,7 @@ export function bindTypeahead(
   options: TypeaheadOptions,
 ): IDisposable & { input(data: string): void; repaint(): void } {
   const screenElement = term.element?.querySelector<HTMLElement>('.xterm-screen');
-  const painter = createTypeaheadPainter(term, screenElement);
+  const painter = createTypeaheadPainter(term, screenElement, options.renderer);
 
   let colors = options.readColors();
 
@@ -113,17 +108,7 @@ export function bindTypeahead(
     (latency) => options.onConfirm?.(latency),
   );
 
-  const draw = (view: TypeaheadView | null) => {
-    // The cursor looks like the one it stands in for: the terminal's caret, or
-    // the inverse cell an Ink program paints.
-    const caret = hostCursor.visible();
-    painter.paint(view, {
-      background: colors.background,
-      foreground: colors.foreground,
-      cursorBackground: caret ? colors.cursor : colors.foreground,
-      cursorText: caret ? colors.cursorText : colors.background,
-    });
-  };
+  const draw = (view: TypeaheadView | null) => painter.paint(view, colors, hostCursor.visible());
 
   const redraw = () => {
     const view = options.shouldDraw() ? model.view() : null;
