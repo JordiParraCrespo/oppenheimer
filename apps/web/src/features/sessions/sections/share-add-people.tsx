@@ -11,7 +11,8 @@ import { useSetSessionSharePeople } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SharePeopleInput } from '../components/share-people-input';
+import { SharePeoplePicker } from '../components/share-people-picker';
+import { namedPeople } from '../lib/share-session';
 
 /**
  * Add people to a share for specific people: only the new addresses, sent
@@ -30,6 +31,10 @@ export function ShareAddPeople({
   const { t } = useTranslation();
   const add = useSetSessionSharePeople();
   const [added, setAdded] = useState<string[]>([]);
+  const [typed, setTyped] = useState('');
+  const adding = namedPeople({ people: added, typed }).filter(
+    (email) => !share.people.includes(email),
+  );
 
   return (
     <form
@@ -37,7 +42,7 @@ export function ShareAddPeople({
       className="flex min-h-0 flex-col"
       onSubmit={(event) => {
         event.preventDefault();
-        add.mutate({ sessionId, people: [...share.people, ...added] }, { onSuccess: onBack });
+        add.mutate({ sessionId, people: [...share.people, ...adding] }, { onSuccess: onBack });
       }}
     >
       <DialogBody>
@@ -45,12 +50,11 @@ export function ShareAddPeople({
           <ErrorAlert error={add.error} fallback={t('sessions.share.updateFailed')} />
           <Field>
             <FieldLabel>{t('sessions.share.who')}</FieldLabel>
-            <SharePeopleInput
+            <SharePeoplePicker
               value={added}
               exclude={share.people}
               onChange={setAdded}
-              invalid={false}
-              disabled={add.isPending}
+              onTyped={setTyped}
             />
             <FieldDescription>
               {t('sessions.share.addHint', { role: t(`sessions.share.roles.${share.access}`) })}
@@ -64,7 +68,7 @@ export function ShareAddPeople({
         </Button>
         <Button
           type="submit"
-          disabled={added.length === 0}
+          disabled={adding.length === 0}
           pending={add.isPending}
           pendingLabel={t('sessions.share.submitting')}
         >

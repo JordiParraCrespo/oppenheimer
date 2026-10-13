@@ -762,7 +762,7 @@
     },
     "shared": {
       "viewOnly": "Solo ver",
-      "canWrite": "Puede escribir",
+      "canWrite": "Puede editar",
       "endsIn": "Termina en {{time}}",
       "leave": "Salir",
       "sharedBy": "Compartida por {{name}}",

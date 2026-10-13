@@ -8,10 +8,10 @@ import {
 } from '@oppenheimer/design-system-web';
 import { GlobeIcon, UsersIcon } from '@oppenheimer/design-system-web/icons';
 import { SESSION_SHARE_AUDIENCES } from '@oppenheimer/shared/schemas/session-share';
-import { type Control, Controller, useWatch } from 'react-hook-form';
+import { type Control, Controller, type UseFormSetValue, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { ShareSessionValues } from '../lib/share-session';
-import { SharePeopleInput } from './share-people-input';
+import { SharePeoplePicker } from './share-people-picker';
 
 const AUDIENCE_ICONS = { people: UsersIcon, link: GlobeIcon } as const;
 
@@ -23,10 +23,12 @@ const AUDIENCE_ICONS = { people: UsersIcon, link: GlobeIcon } as const;
  */
 export function ShareAudienceField({
   control,
+  setValue,
   error,
   disabled,
 }: {
   control: Control<ShareSessionValues>;
+  setValue: UseFormSetValue<ShareSessionValues>;
   error: { message?: string } | undefined;
   disabled: boolean;
 }) {
@@ -65,11 +67,10 @@ export function ShareAudienceField({
             control={control}
             name="people"
             render={({ field }) => (
-              <SharePeopleInput
+              <SharePeoplePicker
                 value={field.value}
                 onChange={field.onChange}
-                invalid={Boolean(error)}
-                disabled={disabled}
+                onTyped={(text) => setValue('typed', text)}
               />
             )}
           />

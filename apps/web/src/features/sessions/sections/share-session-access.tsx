@@ -1,4 +1,7 @@
 import {
+  AccessList,
+  AccessRow,
+  Avatar,
   Button,
   DialogBody,
   DialogFooter,
@@ -15,7 +18,6 @@ import {
 import { useProfile } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, formatTimeAway, useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ShareAccessRow } from '../components/share-access-row';
 import { ShareLinkCopy } from '../components/share-link-copy';
 import { initialsOf, shareUrl } from '../lib/share-session';
 
@@ -80,46 +82,48 @@ export function ShareSessionAccess({
           </Field>
           <Field>
             <FieldLabel>{t('sessions.share.whoHasAccess')}</FieldLabel>
-            <ul className="m-0 flex list-none flex-col rounded-lg border border-border-subtle p-0">
+            <AccessList>
               {share.sharedBy ? (
-                <ShareAccessRow
-                  accent
-                  initials={initialsOf(share.sharedBy.name)}
+                <AccessRow
+                  avatar={
+                    <Avatar size="sm" variant="accent">
+                      {initialsOf(share.sharedBy.name)}
+                    </Avatar>
+                  }
                   name={share.sharedBy.name}
-                  detail={
+                  sub={
                     share.sharedBy.id === me
                       ? t('sessions.share.you', { email: share.sharedBy.email })
                       : share.sharedBy.email
                   }
                   role={t('sessions.share.roles.owner')}
-                  ends=""
                 />
               ) : null}
               {share.audience === 'link' ? (
-                <ShareAccessRow
-                  initials="··"
+                <AccessRow
+                  avatar={<Avatar size="sm">··</Avatar>}
                   name={t('sessions.share.anyoneRow')}
-                  detail={t('sessions.share.anyoneRowHint')}
+                  sub={t('sessions.share.anyoneRowHint')}
                   role={role}
                   ends={ends}
-                  removing={busy}
-                  onRemove={() => stop.mutate({ sessionId })}
+                  removeLabel={t('sessions.share.removeAccess')}
+                  onRemove={busy ? undefined : () => stop.mutate({ sessionId })}
                 />
               ) : (
                 share.people.map((email) => (
-                  <ShareAccessRow
+                  <AccessRow
                     key={email}
-                    initials={initialsOf(email)}
+                    avatar={<Avatar size="sm">{initialsOf(email)}</Avatar>}
                     name={email}
-                    detail={t('sessions.share.outside')}
+                    sub={t('sessions.share.outside')}
                     role={role}
                     ends={ends}
-                    removing={busy}
-                    onRemove={() => remove(email)}
+                    removeLabel={t('sessions.share.removeAccess')}
+                    onRemove={busy ? undefined : () => remove(email)}
                   />
                 ))
               )}
-            </ul>
+            </AccessList>
           </Field>
         </div>
       </DialogBody>

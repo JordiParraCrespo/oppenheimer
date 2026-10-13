@@ -4,7 +4,6 @@ import {
   EmptyState,
   SessionPaneHeader,
   Skeleton,
-  Wordmark,
 } from '@oppenheimer/design-system-web';
 import { EyeIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
 import { useSharedSession } from '@oppenheimer/frontend-consumer/react';
@@ -19,9 +18,9 @@ import { SharedSessionTerminal } from '../sections/shared-session-terminal';
 
 /**
  * A session as a guest opens it (`ShareSession.dc.html`, kept to its
- * simplest): one bar — the wordmark, the session and its state, what the
- * share lets them do, until when, and Leave for someone who can write — and
- * the terminal under it. Every refusal is its own answer: sign in, not
+ * simplest): under the wordmark, one card — a bar with the session and its
+ * state, what the share lets them do, until when, and Leave for someone who
+ * can edit — and the terminal under it. Every refusal is its own answer: sign in, not
  * shared with you, or not shared at all. When the relay closes the
  * terminal (the owner narrowed, stopped or changed the share), the page asks
  * again, so the bar and the terminal's input follow the share as it now is.
@@ -60,7 +59,6 @@ export function SharedSessionScreen({ slug }: { slug: string }) {
   return (
     <SharedFrame>
       <SessionPaneHeader
-        back={<Wordmark size={14} />}
         name={session.name}
         state={session.state === 'stopped' ? 'paused' : 'running'}
         stateLabel={t(`sessions.shared.state.${session.state}`)}

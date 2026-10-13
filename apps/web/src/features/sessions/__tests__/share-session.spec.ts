@@ -16,6 +16,14 @@ describe('the Share dialog’s submission', () => {
     ).toEqual({ audience: 'link', access: 'read', lifetime: '7d' });
   });
 
+  it('shares with an address still typed in the field, as the design does', () => {
+    const typed = { ...SHARE_DEFAULTS, people: ['ada@example.com'], typed: ' Bob@Example.com ' };
+    expect(schema.safeParse({ ...SHARE_DEFAULTS, typed: 'bob@example.com' }).success).toBe(true);
+    expect(shareInput(typed)).toMatchObject({ people: ['ada@example.com', 'bob@example.com'] });
+    // Half an address is not anyone.
+    expect(shareInput({ ...typed, typed: 'bob@' })).toMatchObject({ people: ['ada@example.com'] });
+  });
+
   it('asks for someone to share with', () => {
     const parsed = schema.safeParse(SHARE_DEFAULTS);
     expect(parsed.error?.issues.map((issue) => issue.path[0])).toEqual(['people']);

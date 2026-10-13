@@ -760,7 +760,7 @@
     },
     "shared": {
       "viewOnly": "View only",
-      "canWrite": "Can write",
+      "canWrite": "Can edit",
       "endsIn": "Ends in {{time}}",
       "leave": "Leave",
       "sharedBy": "Shared by {{name}}",

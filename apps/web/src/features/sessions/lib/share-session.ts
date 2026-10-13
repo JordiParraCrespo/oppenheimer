@@ -28,6 +28,8 @@ export interface ShareSessionValues {
   lifetime: ShareLifetimeChoice;
   /** "I understand they act as me on this host", asked before write access. */
   ack: boolean;
+  /** What is still typed in the people field: a whole address there is shared with too. */
+  typed: string;
 }
 
 /** A link only watches, whatever the form last held for access. */
@@ -48,13 +50,21 @@ export function lifetimeMs(choice: ShareLifetimeChoice): number | null {
   return choice === 'never' ? null : SESSION_SHARE_LIFETIME_MS[choice];
 }
 
+/** The people named, with a whole address still typed in the field. */
+export function namedPeople(values: Pick<ShareSessionValues, 'people' | 'typed'>): string[] {
+  const typed = values.typed.trim().toLowerCase();
+  return isEmail(typed) && !values.people.includes(typed)
+    ? [...values.people, typed]
+    : values.people;
+}
+
 /** The dialog's values as the API takes them. */
 export function shareInput(values: ShareSessionValues): PutSessionShareDto {
   const access = effectiveAccess(values.audience, values.access);
   return {
     audience: values.audience,
     access,
-    ...(values.audience === 'people' ? { people: values.people } : {}),
+    ...(values.audience === 'people' ? { people: namedPeople(values) } : {}),
     lifetime: values.lifetime === 'never' ? null : values.lifetime,
   };
 }
@@ -66,6 +76,7 @@ export const SHARE_DEFAULTS: ShareSessionValues = {
   access: 'read',
   lifetime: '24h',
   ack: false,
+  typed: '',
 };
 
 /**
@@ -85,6 +96,7 @@ export function shareSessionFormSchema(messages: {
       access: z.enum(['read', 'write']),
       lifetime: z.enum(['1h', '8h', '24h', '7d', 'never']),
       ack: z.boolean(),
+      typed: z.string(),
     })
     .superRefine((values, ctx) => {
       const parsed = putSessionShareSchema.safeParse(shareInput(values));
@@ -98,7 +110,7 @@ export function shareSessionFormSchema(messages: {
 }
 
 /** Whether what someone typed is a whole email address. */
-export function isEmail(text: string): boolean {
+function isEmail(text: string): boolean {
   return z.string().email().safeParse(text.trim()).success;
 }
 

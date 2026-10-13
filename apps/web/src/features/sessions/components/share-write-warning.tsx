@@ -2,7 +2,7 @@ import { Checkbox, FieldError } from '@oppenheimer/design-system-web';
 import { TriangleAlertIcon } from '@oppenheimer/design-system-web/icons';
 import { type Control, Controller, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { effectiveAccess, type ShareSessionValues } from '../lib/share-session';
+import { effectiveAccess, namedPeople, type ShareSessionValues } from '../lib/share-session';
 
 /**
  * Write access is a shell on the host as the person sharing it. While it is
@@ -19,7 +19,11 @@ export function ShareWriteWarning({
   error: { message?: string } | undefined;
 }) {
   const { t } = useTranslation();
-  const [audience, access, people] = useWatch({ control, name: ['audience', 'access', 'people'] });
+  const [audience, access, listed, typed] = useWatch({
+    control,
+    name: ['audience', 'access', 'people', 'typed'],
+  });
+  const people = namedPeople({ people: listed, typed });
   if (effectiveAccess(audience, access) !== 'write') return null;
   const who =
     people.length === 1

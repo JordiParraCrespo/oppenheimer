@@ -74,6 +74,7 @@ export function ShareSessionForm({
           <ErrorAlert error={error} fallback={t('sessions.share.failed')} />
           <ShareAudienceField
             control={control}
+            setValue={setValue}
             error={formState.errors.people}
             disabled={pending}
           />

@@ -78,7 +78,7 @@ test('a named account types through a write share; a view-only link only watches
   const typistScreen = screenOf(typist);
   await signInAs(typist, guest.user);
   await typist.goto(`/s/${slug}`);
-  await expect(typist.getByText('Can write')).toBeVisible();
+  await expect(typist.getByText('Can edit')).toBeVisible();
   await expect
     .poll(() => typistScreen().includes('CLAUDE-SHIM argv='), { timeout: 120_000 })
     .toBe(true);

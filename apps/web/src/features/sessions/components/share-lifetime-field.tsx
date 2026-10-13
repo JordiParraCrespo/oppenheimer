@@ -1,4 +1,11 @@
-import { Chip, Field, FieldDescription, FieldLabel, useNow } from '@oppenheimer/design-system-web';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  PillGroup,
+  PillGroupItem,
+  useNow,
+} from '@oppenheimer/design-system-web';
 import { formatDateTime, useLocale } from '@oppenheimer/frontend-web';
 import { type Control, Controller, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -48,22 +55,22 @@ export function ShareLifetimeField({
         control={control}
         name="lifetime"
         render={({ field }) => (
-          <fieldset
-            className="m-0 flex flex-wrap gap-1.5 border-0 p-0"
+          <PillGroup
             aria-label={t('sessions.share.duration')}
+            value={field.value}
+            onValueChange={(next) => field.onChange(next)}
+            disabled={disabled}
           >
             {SHARE_LIFETIME_CHOICES.map((choice) => (
-              <Chip
+              <PillGroupItem
                 key={choice}
-                variant="solid"
-                selected={field.value === choice}
-                disabled={disabled || !lifetimeAllowed(writing ? 'write' : 'read', choice)}
-                onClick={() => field.onChange(choice)}
+                value={choice}
+                disabled={!lifetimeAllowed(writing ? 'write' : 'read', choice)}
               >
                 {t(`sessions.share.lifetimes.${choice}`)}
-              </Chip>
+              </PillGroupItem>
             ))}
-          </fieldset>
+          </PillGroup>
         )}
       />
       <FieldDescription>{hint}</FieldDescription>
