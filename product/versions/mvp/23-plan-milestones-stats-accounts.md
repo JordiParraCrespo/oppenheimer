@@ -97,7 +97,7 @@ module that owns the rows:
 
 | Series | Source | What has to be built first |
 |--------|--------|----------------------------|
-| Tasks completed, created | `task_event` (below) | The event log |
+| Tasks completed, created | `plan_event` (below) | The event log |
 | Tokens per model, agent cost | `session_turn`, through a sessions query port `SessionUsageReader` | Usage on a turn |
 | PRs opened, merged, closed | The pull-requests module's analytics, through `PullRequestStatsReader` | A project → repositories attribution |
 
@@ -106,15 +106,16 @@ when a task is reopened and gone when it is deleted, so last month's
 "completed" would shrink every time someone reopens or deletes. A new
 append-only table, written in the same transaction as the change:
 
-**`task_event`**
+**`plan_event`**
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid PK | |
-| `organizationId` | uuid | |
-| `taskId` | uuid | no FK: the row outlives the task |
-| `projectId` | uuid | the task's project at the time |
-| `milestoneId` | uuid null | likewise |
+| `organizationId` | uuid | FK → organization `ON DELETE CASCADE` |
+| `subjectType` | varchar(16) | `task` · `milestone` |
+| `subjectId` | uuid | the task or the milestone; no FK: the row outlives it |
+| `projectId` | uuid | the subject's project at the time |
+| `milestoneId` | uuid null | a task's milestone at the time; the milestone itself for a milestone row |
 | `kind` | varchar(24) | a closed set, a `CHECK` (below) |
 | `actorType` | varchar(8) | `user` · `agent` |
 | `actorUserId` | uuid | the person, or the person the agent acts for |
@@ -124,6 +125,14 @@ append-only table, written in the same transaction as the change:
 
 Indexes `(organizationId, occurredAt)` and `(organizationId, projectId,
 occurredAt)`.
+
+**Erasure.** The rows have no foreign key to their subject, by design,
+so deleting a task or a project does not take them with it. The
+organization foreign key does: erasing an account deletes its personal
+workspace, and the workspace's events cascade with it, payloads and
+actor ids included. This is the one table in the module with a foreign
+key of its own to `organization` (the others reach it through their
+project).
 
 **The kinds are closed**, so the table stays a log of what matters and
 not a copy of every write:
@@ -137,6 +146,11 @@ not a copy of every write:
 | `reassigned` | the project or the milestone changes | the agents' log |
 | `blocked`, `unblocked` | `blockedReason` is set or cleared | the agents' log |
 | `session_linked` | a session is started from the task or linked to it | the agents' log |
+| `milestone_created`, `milestone_deleted` | a milestone is created or deleted | the agents' log (`ms.edit`) |
+| `milestone_renamed`, `milestone_retargeted`, `milestone_moved` | its name, target date or project changes | the agents' log (`ms.edit`) |
+
+A `CHECK` ties the kinds to `subjectType`: the `milestone_*` kinds to
+`milestone`, the rest to `task`.
 
 A reorder within a column (rank only) and edits to the title or notes
 write nothing. That is what "every change logged" means for the agents
@@ -201,8 +215,11 @@ provider)`. The frame lists several accounts per person.
   routes go.
 - **Events**: `GET /calendar/google/events?from&to` reads every active
   connection in parallel, one `UpstreamLimiter` bucket per connection,
-  tags each event with its `connectionId`, and drops duplicates by
-  `iCalUID` (the same meeting invited to two of your addresses). It
+  tags each event with its `connectionId`, and drops duplicates (the
+  same meeting invited to two of your addresses) by `iCalUID` **and the
+  occurrence**: `originalStartTime` for an instance of a recurring
+  event, else its `start`. Every instance of a recurring meeting shares
+  one `iCalUID`, so the UID alone would keep only the first. It
   answers with `{ events, accounts: [{ id, status: 'ok' | 'revoked' |
   'error' }] }`, so one failing account marks only itself and the rest
   still draw. `invalid_grant` marks that row `revoked` as today.
@@ -217,8 +234,11 @@ Agents will change tasks while a person watches the board, so polling
 every few seconds is no longer enough. The `workspace-events` module
 already streams session, run and host changes to the console
 (`GET /v1/events`). Proposed: the tasks module raises `TaskChanged` and
-`MilestoneChanged` domain events through the outbox (id and kind only),
-a handler in `workspace-events` publishes them, and the console
+`MilestoneChanged` domain events through the outbox, each carrying its
+`organizationId`, the subject's id and the kind of change (deletes
+included: the row is gone by the time the handler runs, so the event
+must carry its audience). A handler in `workspace-events` publishes
+them to the workspace's channel, and the console
 invalidates `GET /tasks` and `GET /milestones` on them. The calendar
 does not need it.
 
@@ -228,7 +248,7 @@ The agents' tools call the tasks module in-process, the same commands
 the controllers send. What this module guarantees them:
 
 - **An actor on every command.** `actor: { type: 'user' | 'agent',
-  userId, agentId? }`, written to `task_event`. Controllers fill it from
+  userId, agentId? }`, written to `plan_event` with each logged change (§4). Controllers fill it from
   the request; the agents fill it with the agent and the person it acts
   for. Authorization stays the person's: an agent can do no more than
   its person may, intersected with the permissions its settings grant.
@@ -267,15 +287,15 @@ Each ships on its own, in this order, with the integration tests named.
    sidebar item and timeline in the console. Tests: the migration up and
    down on a seeded database; every former goal behaviour in
    `tasks.integration.spec.ts` under its new name.
-2. **The event log and the agent contract.** `task_event` with its
+2. **The event log and the agent contract.** `plan_event` with its
    backfill, `actor`, `version` and `expectedVersion`, idempotent
    creates, `TaskChanged` / `MilestoneChanged` on the workspace feed.
-   Tests: each logged change writes exactly one event of its kind with
-   its actor, and a rank-only move or a notes edit writes none; a console
+   Tests: each logged change, task or milestone, writes exactly one
+   event of its kind with its actor, and a rank-only move or a notes edit writes none; a console
    write without `expectedVersion` still bumps the version, so an agent's
    write with the version it read before is refused and changes nothing; a create retried
    with one key makes one task; reopening a task leaves its `completed`
-   event.
+   event; erasing the workspace deletes its events.
 3. **Needs input.** `blockedReason`, `summarizePlan` in
    `packages/shared` with its unit tests, `FindPlanSummaryQuery`. This is
    what the agents' overview and the project manager read, so it lands
@@ -286,7 +306,8 @@ Each ships on its own, in this order, with the integration tests named.
    a DST change in `tz`; the comparison period; a deleted task still
    counts in the week it was completed.
 5. **Several Google accounts** (§5). Tests: two accounts list, read and
-   deduplicate; one revoked account leaves the other's events; the cap; a
+   deduplicate; one revoked account leaves the other's events; two accounts
+   invited to one recurring meeting draw every occurrence once; the cap; a
    second unkeyed row for the same person is refused by the index.
 6. **Stats: tokens and cost.** Usage on `session_turn`, the runner and
    protocol change, `SessionUsageReader`.
