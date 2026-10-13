@@ -17,7 +17,8 @@ type SessionStream = Parameters<typeof mountSessionTerminal>[1];
  */
 type Mode = 'caret' | 'inverse';
 
-const PROMPT = '❯ ';
+// Claude Code's own: the mark and a no-break space, not a space.
+const PROMPT = '❯\u00a0';
 
 class FakeHost implements SessionStream {
   private readonly listeners = new Set<

@@ -113,7 +113,8 @@ function isNarrowPrintable(char: string): boolean {
   return !(code >= 0x300 && code < 0x370);
 }
 
-const isBlank = (char: string) => char === ' ' || char === '';
+/** An empty cell or one horizontal space of any kind (a space, a no-break space). */
+const isBlank = (char: string) => char === '' || /^\p{Zs}$/u.test(char);
 
 /**
  * One glyph that is neither a letter, a digit nor blank: how a prompt ends.
