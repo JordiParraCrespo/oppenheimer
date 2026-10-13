@@ -115,6 +115,10 @@ function isNarrowPrintable(char: string): boolean {
 
 const isBlank = (char: string) => char === ' ' || char === '';
 
+/** One glyph that is neither a letter, a digit nor blank: how a prompt ends. */
+const isPromptMark = (char: string) =>
+  [...char].length === 1 && !isBlank(char) && !/[\p{L}\p{N}]/u.test(char);
+
 /** The line after `key`, or `null` when the key's effect cannot be known. */
 function apply(state: LineState, key: TypeaheadKey): LineState | null {
   const cells = state.cells;
@@ -129,12 +133,16 @@ function apply(state: LineState, key: TypeaheadKey): LineState | null {
       return { cells: next, cursor: state.cursor + 1 };
     }
     case 'backspace': {
-      if (state.cursor === 0) return null;
+      // At the start of the text a line editor does nothing, and that is the
+      // guess: not knowing would drop the guesses before it, and the letters
+      // they had deleted came back until the echo. A program that does
+      // something there contradicts it, which drops it like any wrong guess.
+      if (state.cursor === 0) return state;
       const next = [...cells.slice(0, state.cursor - 1), ...cells.slice(state.cursor), ' '];
       return { cells: next, cursor: state.cursor - 1 };
     }
     case 'left':
-      return state.cursor === 0 ? null : { cells, cursor: state.cursor - 1 };
+      return state.cursor === 0 ? state : { cells, cursor: state.cursor - 1 };
     case 'right':
       // At the end of the text, Right is the program's (Claude Code takes a
       // suggestion with it), so only a move within the text is predicted.
@@ -171,6 +179,12 @@ function regionAt(screen: TypeaheadScreen, row: number, col: number): Region | n
   const blank = (x: number) => x < 0 || x >= screen.cols || isBlank(screen.cell(row, x).char);
   let start = col;
   while (start > 0 && !(blank(start - 1) && blank(start - 2))) start -= 1;
+  // A prompt's mark and the blank after it (`❯ `, `> `, `$ `, a box's `│ `)
+  // are the program's, not the reader's text: a Backspace guessed into them
+  // deleted the prompt until the host refused and the line sprang back.
+  while (start + 2 <= col && isPromptMark(screen.cell(row, start).char) && blank(start + 1)) {
+    start += 2;
+  }
   let textEnd = col;
   while (textEnd < screen.cols && !(blank(textEnd) && blank(textEnd + 1))) textEnd += 1;
   let end = textEnd;

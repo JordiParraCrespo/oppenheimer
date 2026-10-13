@@ -162,6 +162,24 @@ describe('TypeaheadModel', () => {
     expect(model.waiting).toBe(false);
   });
 
+  it('never deletes the prompt: Backspace and Left stop where the text begins', () => {
+    for (const prompt of ['\u276f ', '> ', '$ ', '\u2502 > ']) {
+      const { screen, host } = grid(`${prompt}a`, prompt.length + 1);
+      const model = new TypeaheadModel(clock().now);
+      keys(model, screen, ['b']);
+      host(`${prompt}ab`, prompt.length + 2);
+      model.reconcile(screen);
+      // Two take back what was typed; a third, and Left, do nothing at the
+      // start of the text. A guess that ate the prompt sprang back once the
+      // host refused it, and one that gave up dropped the deletions before it.
+      keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x1b[D']);
+      expect(shown(model, `${prompt}ab`)).toEqual({
+        text: prompt.trimEnd(),
+        cursor: prompt.length,
+      });
+    }
+  });
+
   it('expires guesses the host has not confirmed in time', () => {
     const time = clock();
     const { screen, host } = grid('> ', 2);
