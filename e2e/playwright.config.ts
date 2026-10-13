@@ -102,6 +102,13 @@ export default defineConfig({
     ...(FLEET ? fleetProjects() : []),
     // oppenheimer:end runner
     // oppenheimer:begin web
+    // The session terminal alone, on a fake host (`tests/terminal`): Chromium
+    // and nothing else, no API.
+    {
+      name: 'terminal',
+      testDir: './tests/terminal',
+      use: { ...chromium },
+    },
     {
       name: 'web',
       testDir: './tests/web',

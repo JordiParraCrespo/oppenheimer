@@ -234,5 +234,20 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   (portraits no frame references), `github.md` and `assets/prod/` (the
   canvas's import log and two screenshots of Synara's README), and again
   `screens/`, `screenshots/` and the pasted screenshot in `version1/`.
+- The 2026-10-13 export's new components are in the design system
+  (2026-10-13 port): the settings controls (`Switch`, `PillGroup`,
+  `NumberStepper`), Share (`PeoplePicker`, `AccessList`), Plan
+  (`MilestoneTimeline`, `FacetSelect`, `DateRangePicker`, `AreaChart`,
+  `CalendarAccountList`), Employees (`BotItem`, `AvatarPicker`,
+  `RoutineCard`, `SettingsListRow`, `SettingsAddRow`, `SettingsTopBar`) and
+  every family of `Chat Components`, in the showcase's Plan, Share,
+  Employees and Chat groups. They run ahead of the notes the same way the
+  frames do (Employees and the chat are 0.6 and 0.7); the console does not
+  use them yet. `version1/assets/employees/` is not used: the portraits are
+  of real people, so the showcase draws initials and the product will ship
+  photos of its own. The changes to existing components the frames also
+  ask for (a chat density for `Composer`, a card layout for `RadioGroup`,
+  `HostCard`'s disk meter, the agent-first Add a host, `MergePath` inline,
+  the 560px `form` dialog) are not in that port.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

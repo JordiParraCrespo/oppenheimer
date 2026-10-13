@@ -186,6 +186,45 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
   routine row adds `lastRun`, a dot before the meta for how the last run
   ended, from the same table as `RoutineRun`'s.
+- **A setting that applies when it flips is a `Switch`; one that waits for
+  Save is a `Checkbox`.** A setting a template holds stays drawn, disabled,
+  with its reason as the title.
+- **A short set of values in a form is a `PillGroup`** (`.op-pill`): one
+  value (For how long) or, with `multiple`, a set (a bot's projects). It
+  holds a value; `PillTabs` switches what a page shows and
+  `SegmentedControl` how one pane reads, so neither is a form field. A
+  bounded count a person nudges (Parallel sessions) is a `NumberStepper`.
+- **Sharing names people, then says who holds what.** `PeoplePicker` is a
+  combobox over the workspace's members whose typed outside address becomes
+  an invite; `AccessList` is who can open the thing, with the role and the
+  time left in mono, the owner first and fixed, a link a row of its own.
+- **A list page's facet is a `FacetSelect`**, unset on its first option and
+  lit on the selected wash once narrowed: `pill` on Plan's board, `labelled`
+  in the pull-request queue. Several facets of one menu stay
+  `DropdownMenuSub`s.
+- **Time on Plan.** Milestones lie on a `MilestoneTimeline` (diamonds on a
+  track per project, today a line through every row), marked elsewhere by
+  `MilestoneGlyph`; Stats reports over a `DateRangePicker` period, and
+  volume over time is an `AreaChart` (monotone, so it never overshoots),
+  rates without volume a `LineChart`. Several Google accounts are a
+  `CalendarAccountList`.
+- **An employee reads like a conversation.** `BotItem` is a photo, the
+  name, the age and the last message, unread in full ink with the blue
+  dot; its photo is picked with `AvatarPicker`. The photos are the
+  product's own: the export's portraits are of real people and never ship.
+  A bot's routine is a `RoutineCard`, read and edited in place
+  (`RoutineItem` is the workspace's, in the sidebar); records in a settings
+  card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`
+  says whose settings these are.
+- **The chat is a 46rem column on the pane's recessed ground.** The
+  person's turns are cards on the right, the agent's are unboxed prose
+  opened by a `TurnHeader` on its hairline; what the agent did (tool calls,
+  reasoning) is in muted ink so it never reads as the answer. Work in
+  flight breathes (`animate-shimmer`) and a streaming reply has its caret
+  (`animate-caret`), both behind `motion-safe:`. Panels on the composer
+  fuse onto its top (`ComposerStack`, `ComposerNotice`); a blocking
+  request takes the composer's place (`ApprovalPanel`, `QuestionPanel`),
+  and its number keys pick only while focus is inside it.
 
 ## Conventions
 
