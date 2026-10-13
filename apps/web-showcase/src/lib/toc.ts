@@ -223,6 +223,16 @@ export const TOC: TocGroup[] = [
     ],
   },
   {
+    group: 'Employees',
+    items: [
+      { id: 'botitem', label: 'BotItem', icon: BotIcon, components: ['bot-item'] },
+      { id: 'avatarpicker', label: 'AvatarPicker', icon: CircleUserRoundIcon, components: ['avatar-picker'] },
+      { id: 'routinecard', label: 'RoutineCard', icon: ZapIcon, components: ['routine-card'] },
+      { id: 'settingslist', label: 'SettingsListRow · SettingsAddRow', icon: RowsIcon, components: [] },
+      { id: 'settingstopbar', label: 'SettingsTopBar', icon: PanelTopIcon, components: [] },
+    ],
+  },
+  {
     group: 'Share',
     items: [
       { id: 'peoplepicker', label: 'PeoplePicker · PersonChip', icon: UsersIcon, components: ['people-picker'] },

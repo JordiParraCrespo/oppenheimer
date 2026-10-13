@@ -11,6 +11,8 @@ export {
   AlertTitle,
 } from './components/alert';
 export type { AvatarGradient } from './components/avatar';
+export type { AvatarOption } from './components/avatar-picker';
+export { AvatarPicker, BotAvatar } from './components/avatar-picker';
 export {
   AVATAR_GRADIENTS,
   Avatar,
@@ -21,6 +23,7 @@ export {
   AvatarImage,
 } from './components/avatar';
 export { Badge, badgeVariants } from './components/badge';
+export { BotItem, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system (product/versions/mvp/design) ───────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
@@ -303,15 +306,19 @@ export {
   RunsListFoot,
   RunsListHead,
 } from './components/runs-list';
+export type { RoutineCardLabels } from './components/routine-card';
+export { RoutineCard } from './components/routine-card';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList, SortableSessionItem } from './components/session-item';
 export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
+  SettingsAddRow,
   SettingsForm,
   SettingsGroup,
   SettingsHeading,
+  SettingsListRow,
   SettingsRow,
   SettingsSaveRow,
 } from './components/settings-group';
@@ -326,6 +333,7 @@ export {
   SettingsMain,
   SettingsShell,
   SettingsTitle,
+  SettingsTopBar,
 } from './components/settings-shell';
 export {
   Sidebar,
