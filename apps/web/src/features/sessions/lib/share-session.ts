@@ -1,4 +1,5 @@
 import { AppError } from '@oppenheimer/frontend-core';
+import { formatTimeAway } from '@oppenheimer/frontend-web';
 import {
   type PutSessionShareDto,
   putSessionShareSchema,
@@ -9,6 +10,7 @@ import {
   type SessionShareLifetime,
   sessionShareLifetimeAllowed,
 } from '@oppenheimer/shared/schemas/session-share';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 
 /** A lifetime as the dialog offers it: the API's, and "never" for no expiry. */
@@ -142,4 +144,17 @@ export type ShareRefusal = (typeof SHARE_REFUSALS)[keyof typeof SHARE_REFUSALS];
 export function shareRefusalOf(error: unknown): ShareRefusal | null {
   if (!(error instanceof AppError)) return null;
   return SHARE_REFUSALS[error.code as keyof typeof SHARE_REFUSALS] ?? null;
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+
+/**
+ * How long a share has left, as its rows and the guest's bar write it: whole
+ * minutes under an hour ("59m"), two units past it ("23h 41m", "6d 23h"). The
+ * clocks that draw it move once a minute, so it never shows seconds.
+ */
+export function shareTimeLeft(ms: number, locale: string, t: TFunction): string {
+  if (ms < HOUR_MS)
+    return t('common.relative.minute', { count: Math.max(1, Math.floor(ms / 60_000)) });
+  return formatTimeAway(ms, locale);
 }

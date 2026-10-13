@@ -16,10 +16,10 @@ import {
   useStopSessionShare,
 } from '@oppenheimer/frontend-consumer/react';
 import { useProfile } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, formatTimeAway, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ShareLinkCopy } from '../components/share-link-copy';
-import { initialsOf, shareUrl } from '../lib/share-session';
+import { initialsOf, shareTimeLeft, shareUrl } from '../lib/share-session';
 
 /** The time left on each row moves with the clock, to the minute. */
 const CLOCK_MS = 60_000;
@@ -55,7 +55,7 @@ export function ShareSessionAccess({
       ? t('sessions.share.never')
       : share.expiresAt.getTime() <= now
         ? t('sessions.share.expired')
-        : formatTimeAway(share.expiresAt.getTime() - now, locale);
+        : shareTimeLeft(share.expiresAt.getTime() - now, locale, t);
 
   function remove(email: string) {
     const people = share.people.filter((person) => person !== email);
