@@ -227,7 +227,7 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Milestones and Stats in `Tasks` run ahead of
   `../19-plan-tasks-and-goals.md`, which still says goals and has no
   statistics; `../23-plan-milestones-stats-accounts.md` plans the
-  backend for them and for several Google accounts, not yet decided. The agent-first Add a host and its
+  backend for them and for several Google accounts. The agent-first Add a host and its
   Skip run ahead of `../05-screens.md`, which has the command and prompt
   side by side behind the Inspect fold.
 - Left out of the 2026-10-13 export: `version1/assets/scientists/`

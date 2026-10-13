@@ -332,6 +332,9 @@ earlier note:
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
   (`versions/mvp/17-plan.md`, "As built").
+- 17 to 19 named Plan's grouping of tasks **goals**. The 2026-10-13
+  export renamed them milestones, and the owner had the rename go all the
+  way down, tables and routes included (`versions/mvp/23-plan-milestones-stats-accounts.md`).
 - Note 15's first version proposed protecting the reviewer and the
   evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
   owner rejected it the same day (2026-09-27): the product is for people

@@ -8,8 +8,9 @@ it and plans the backend and the architecture for what changed in
 permission modes and threads) are planned elsewhere, by another agent;
 this note only fixes the contract they build on (§7).
 
-Nothing here is decided until the owner answers the questions at the
-end. Where a section says "proposed", it is the recommendation.
+The owner answered the open questions on 2026-10-13; what they settled
+is under "Decided" at the end, and the sections below are written to
+match. One question is still open.
 
 ## 1. What the frame changes
 
@@ -223,8 +224,14 @@ provider)`. The frame lists several accounts per person.
   answers with `{ events, accounts: [{ id, status: 'ok' | 'revoked' |
   'error' }] }`, so one failing account marks only itself and the rest
   still draw. `invalid_grant` marks that row `revoked` as today.
-- The Google layer stays one toggle; per-account toggles are a console
-  question for later.
+- **Each account is identifiable on the calendar** (decided 5). A
+  connection gets a `colorIndex smallint`, the lowest index no other
+  connection of that person holds, picked when it is created and never
+  reassigned, so an account keeps its colour when another is removed.
+  The list returns it; every event carries its `connectionId`, and the
+  console colours it by its account and names the account in the event's
+  read-only view. The Google layer becomes a group with one toggle per
+  account; the toggles are the console's (`localStorage`), not stored.
 
 Personal events and task due dates do not change.
 
@@ -308,7 +315,8 @@ Each ships on its own, in this order, with the integration tests named.
 5. **Several Google accounts** (§5). Tests: two accounts list, read and
    deduplicate; one revoked account leaves the other's events; two accounts
    invited to one recurring meeting draw every occurrence once; the cap; a
-   second unkeyed row for the same person is refused by the index.
+   second unkeyed row for the same person is refused by the index; a removed account frees its colour and
+   the others keep theirs.
 6. **Stats: tokens and cost.** Usage on `session_turn`, the runner and
    protocol change, `SessionUsageReader`.
 7. **Stats: pull requests.** `PullRequestStatsReader` with its limiter
@@ -317,18 +325,33 @@ Each ships on its own, in this order, with the integration tests named.
 Slices 1 to 3 are the agents' prerequisites. 4 and 5 are independent of
 each other; 6 and 7 wait on their owners' modules.
 
-## Open questions for the owner
+## Decided
 
-1. **Rename all the way down** (§2), or keep `goal` in the code and say
-   milestone only in the copy?
-2. **Blocked as a field** (§3), or keep "needs input" as overdue only
-   until a person asks for it?
-3. **Who builds Stats?** It sits in the Projects section beside the
-   agents' chat. Proposed: this plan owns the endpoint and the charts'
-   data; the agents' plan owns the Projects screen that hosts them.
-4. **Tokens and cost on headless turns only** at first, with the
-   interactive gap labelled, or wait for 0.7?
-5. **PRs in Stats** pull 0.2's GitHub reads into Plan. Ship Stats
-   without them first (slice 4), or hold Stats until they are in?
-6. Google: is five accounts per person the right cap, and should each
-   account become its own layer toggle?
+Answered by the owner on 2026-10-13.
+
+1. **Milestones everywhere.** The rename goes all the way down: tables,
+   columns, routes, schemas, error codes and the console (§2).
+2. **Blocked is a field** (§3). The owner left it to this plan. The
+   agents need to mark a task blocked and say why, and matching
+   "block" in the notes is not a rule anyone can rely on, so the field
+   goes in with slice 3.
+3. **Tokens and cost: build them now**, on headless turns, with the
+   interactive gap labelled, rather than wait for 0.7 (§4, slice 6).
+4. **Stats ships without pull requests first.** The owner left it to
+   this plan. Slice 4 ships tasks (and tokens when slice 6 lands); the
+   PR series follows in slice 7, so Plan does not wait on GitHub reads
+   and their rate limits.
+5. **Google accounts are told apart** by a colour per account, the
+   account named on the event, and a toggle per account (§5). The cap
+   stays five.
+
+## Still open
+
+1. **Who builds the Stats screen?** The frame draws Stats as a tab of
+   the Projects section, next to the agents' chat, and Projects is the
+   other agent's work. The question is only about who draws the screen.
+   Proposed: this plan builds `GET /plan/stats` and the charts (cards,
+   series, the date-range picker, the per-project table) as a section
+   in the console's tasks feature; the agents' Projects screen mounts
+   that section in its Stats tab. The alternative is that the agents'
+   plan builds the charts too, over the same endpoint.

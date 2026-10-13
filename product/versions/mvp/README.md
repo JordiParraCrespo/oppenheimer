@@ -670,3 +670,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   record of, one it closed already, or one whose worktree was deleted by
   hand with `session.closed` (a restart is still refused), so the row
   resolves rather than being stuck forever.
+- 2026-10-13: 23 plans Plan's second cut from the 2026-10-13 frame. The
+  owner decided: goals are renamed milestones all the way down; blocked
+  is a field on a task; token and cost stats are built now on headless
+  turns; Stats ships without pull requests first; each Google account
+  gets a colour and a toggle of its own, five at most. Who draws the
+  Stats screen, this plan or the agents', is open.
