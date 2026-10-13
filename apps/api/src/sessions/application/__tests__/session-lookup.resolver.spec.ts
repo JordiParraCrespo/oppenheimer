@@ -34,7 +34,7 @@ describe('SessionLookupResolver.shareAdmits', () => {
   it('admits a typing ticket while the share still lets its guest type', async () => {
     const share = writing();
     await expect(
-      resolverOver(share).shareAdmits(share.id, 'session-1', GUEST, false),
+      resolverOver(share).shareAdmits(share.id, 'session-1', 'u-owner', GUEST, false),
     ).resolves.toBe(true);
   });
 
@@ -47,25 +47,46 @@ describe('SessionLookupResolver.shareAdmits', () => {
       lifetime: '24h',
     });
     const resolver = resolverOver(share);
-    await expect(resolver.shareAdmits(share.id, 'session-1', GUEST, false)).resolves.toBe(false);
-    await expect(resolver.shareAdmits(share.id, 'session-1', GUEST, true)).resolves.toBe(true);
+    await expect(
+      resolver.shareAdmits(share.id, 'session-1', 'u-owner', GUEST, false),
+    ).resolves.toBe(false);
+    await expect(resolver.shareAdmits(share.id, 'session-1', 'u-owner', GUEST, true)).resolves.toBe(
+      true,
+    );
   });
 
   it('ends it once the guest is taken off the list, or the share is stopped', async () => {
     const share = writing();
     share.setPeople(['someone@else.dev']);
-    await expect(resolverOver(share).shareAdmits(share.id, 'session-1', GUEST, true)).resolves.toBe(
-      false,
-    );
-    await expect(resolverOver(null).shareAdmits(share.id, 'session-1', GUEST, true)).resolves.toBe(
-      false,
-    );
+    await expect(
+      resolverOver(share).shareAdmits(share.id, 'session-1', 'u-owner', GUEST, true),
+    ).resolves.toBe(false);
+    await expect(
+      resolverOver(null).shareAdmits(share.id, 'session-1', 'u-owner', GUEST, true),
+    ).resolves.toBe(false);
+  });
+
+  it('ends a terminal opened as one member once another member shares it again', async () => {
+    const share = writing();
+    share.reshare('u-other', {
+      audience: 'people',
+      access: 'write',
+      people: [GUEST.email],
+      lifetime: '1h',
+    });
+    const resolver = resolverOver(share);
+    await expect(
+      resolver.shareAdmits(share.id, 'session-1', 'u-owner', GUEST, false),
+    ).resolves.toBe(false);
+    await expect(
+      resolver.shareAdmits(share.id, 'session-1', 'u-other', GUEST, false),
+    ).resolves.toBe(true);
   });
 
   it('never admits a share of another session', async () => {
     const share = writing();
-    await expect(resolverOver(share).shareAdmits(share.id, 'session-2', GUEST, true)).resolves.toBe(
-      false,
-    );
+    await expect(
+      resolverOver(share).shareAdmits(share.id, 'session-2', 'u-owner', GUEST, true),
+    ).resolves.toBe(false);
   });
 });

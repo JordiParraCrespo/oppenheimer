@@ -718,6 +718,9 @@
       "endsRead": "Termina el {{date}}. Puedes dejar de compartir cuando quieras.",
       "endsWrite": "Termina el {{date}}. El acceso de escritura dura 24 horas como máximo.",
       "neverHint": "No caduca. El acceso sigue hasta que dejes de compartir.",
+      "lifetimeRequired": "Elige cuánto dura.",
+      "keptUntil": "Termina el {{date}}, como ahora. Elige una duración para cambiarlo.",
+      "keptNever": "No caduca, como ahora. Elige una duración para cambiarlo.",
       "submit": {
         "people": "Compartir",
         "link": "Crear enlace",

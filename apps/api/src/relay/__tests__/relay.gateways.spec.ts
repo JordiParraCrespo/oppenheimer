@@ -1521,7 +1521,13 @@ describe('browser attach socket', () => {
 
       expect((await why).text).toEqual({ type: 'closed', reason: 'unauthorized' });
       await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
-      expect(h.lookup.shareAdmits).toHaveBeenCalledWith(SHARE, SESSION, expect.any(Object), false);
+      expect(h.lookup.shareAdmits).toHaveBeenCalledWith(
+        SHARE,
+        SESSION,
+        USER,
+        expect.any(Object),
+        false,
+      );
     });
 
     it('closes a terminal open through a share once a re-check finds it stopped', async () => {
@@ -1569,6 +1575,7 @@ describe('browser attach socket', () => {
       expect(h.lookup.shareAdmits).toHaveBeenCalledWith(
         SHARE,
         SESSION,
+        USER,
         { userId: VIEWER, email: 'ada@example.com', emailVerified: true },
         true,
       );

@@ -256,6 +256,7 @@ export class BrowserAttachGateway {
       const admitted = await this.sessions.shareAdmits(
         claim.share.shareId,
         claim.sessionId,
+        claim.userId,
         { userId: viewer.id, email: viewer.email, emailVerified: viewer.emailVerified },
         claim.share.readOnly,
       );

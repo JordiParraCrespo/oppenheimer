@@ -22,7 +22,9 @@ import { SharedSessionTerminal } from '../sections/shared-session-terminal';
  * simplest): one bar — the wordmark, the session and its state, what the
  * share lets them do, until when, and Leave for someone who can write — and
  * the terminal under it. Every refusal is its own answer: sign in, not
- * shared with you, or not shared at all.
+ * shared with you, or not shared at all. When the relay closes the
+ * terminal (the owner narrowed, stopped or changed the share), the page asks
+ * again, so the bar and the terminal's input follow the share as it now is.
  */
 export function SharedSessionScreen({ slug }: { slug: string }) {
   const { t } = useTranslation();
@@ -87,7 +89,12 @@ export function SharedSessionScreen({ slug }: { slug: string }) {
           </EmptyState>
         </div>
       ) : (
-        <SharedSessionTerminal slug={slug} readOnly={!writing} sharedBy={session.sharedBy} />
+        <SharedSessionTerminal
+          slug={slug}
+          readOnly={!writing}
+          sharedBy={session.sharedBy}
+          onEnd={() => shared.refetch()}
+        />
       )}
     </SharedFrame>
   );

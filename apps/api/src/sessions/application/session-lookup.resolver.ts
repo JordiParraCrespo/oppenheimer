@@ -21,13 +21,15 @@ export class SessionLookupResolver implements SessionLookupPort {
   async shareAdmits(
     shareId: string,
     sessionId: string,
+    sharedByUserId: string,
     viewer: SessionShareViewer,
     readOnly: boolean,
   ): Promise<boolean> {
     const found = await this.shares.findOneById(shareId);
     if (found.isNone()) return false;
     const share = found.unwrap();
-    if (share.sessionId !== sessionId || share.refusalFor(viewer) !== null) return false;
+    if (share.sessionId !== sessionId || share.sharedByUserId !== sharedByUserId) return false;
+    if (share.refusalFor(viewer) !== null) return false;
     return readOnly || !share.readOnly;
   }
 

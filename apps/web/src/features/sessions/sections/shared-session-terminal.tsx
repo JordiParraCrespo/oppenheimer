@@ -15,22 +15,26 @@ import { useTerminal } from '../hooks/use-terminal';
  * member's, with each ticket minted through the share. A `read` share's grid
  * takes no input. No host banner and no files: the host is not the guest's,
  * and nothing they drop would be theirs to send. The status line says the
- * link's state and who shared it, and nothing else.
+ * link's state and who shared it, and nothing else. `onEnd` is told when
+ * the relay closes the terminal, so the page can ask what the share is now.
  */
 export function SharedSessionTerminal({
   slug,
   readOnly,
   sharedBy,
+  onEnd,
 }: {
   slug: string;
   readOnly: boolean;
   sharedBy: string | null;
+  onEnd: () => void;
 }) {
   const { t } = useTranslation();
   const createStream = useSharedSessionStream(slug);
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     agentWindow: true,
     readOnly,
+    onEnd,
   });
 
   return (

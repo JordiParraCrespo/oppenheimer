@@ -69,12 +69,15 @@ export interface SessionLookupPort {
    * Whether a share still opens this session for this guest, with the access
    * the ticket was minted with: the same judgment
    * (`SessionShareEntity.refusalFor`) its ticket passed at mint, asked again,
-   * and a share since narrowed to `read` no longer admits a typing ticket.
-   * Unscoped: the ticket named the share.
+   * and a share since narrowed to `read` no longer admits a typing ticket,
+   * nor one minted as somebody other than whoever shared it last: a share
+   * set again by another member acts as them, and a terminal opened under
+   * the first one closes. Unscoped: the ticket named the share.
    */
   shareAdmits(
     shareId: string,
     sessionId: string,
+    sharedByUserId: string,
     viewer: SessionShareViewer,
     readOnly: boolean,
   ): Promise<boolean>;

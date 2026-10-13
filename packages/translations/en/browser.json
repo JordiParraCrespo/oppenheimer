@@ -716,6 +716,9 @@
       "endsRead": "Ends {{date}}. You can stop sharing any time.",
       "endsWrite": "Ends {{date}}. Write access lasts 24 hours at most.",
       "neverHint": "Does not expire. Access stays until you stop sharing.",
+      "lifetimeRequired": "Choose how long it lasts.",
+      "keptUntil": "Ends {{date}}, as it does now. Pick a length to change it.",
+      "keptNever": "Does not expire, as now. Pick a length to change it.",
       "submit": {
         "people": "Share",
         "link": "Create link",
