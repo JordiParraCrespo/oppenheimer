@@ -68,7 +68,7 @@ export function useHostPresence<TData = HostEntity[]>({
   watching?: boolean;
   select?: (hosts: HostEntity[]) => TData;
 } = {}) {
-  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), enabled && watching);
+  const poll = useHostPresencePoll(enabled && watching);
   return useHostList<TData>({ enabled, ...(select ? { select } : {}) }, poll);
 }
 
@@ -81,13 +81,24 @@ export function useHostPresence<TData = HostEntity[]>({
  * console reads `useHostPresence` through `QueryState`.
  */
 export function useSuspenseHostPresence() {
+  const list = useHostListQuery();
+  const poll = useHostPresencePoll(true);
+  return useSuspenseQuery<HostEntity[], Error>({ ...list, ...poll });
+}
+
+/**
+ * What `GET /v1/hosts` is, for every read of it: the key and the fetch, once.
+ * {@link useHostList} and {@link useSuspenseHostPresence} both spread it, so
+ * the Suspense read cannot drift from the one `QueryState` sections use.
+ */
+function useHostListQuery() {
   const app = useConsumerApp();
-  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), true);
-  return useSuspenseQuery<HostEntity[], Error>({
-    queryKey: hostsKeys.list(),
-    queryFn: () => app.hosts.findAll(),
-    ...poll,
-  });
+  return { queryKey: hostsKeys.list(), queryFn: () => app.hosts.findAll() };
+}
+
+/** The presence poll over the hosts list, while `active` holds. */
+function useHostPresencePoll(active: boolean) {
+  return usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), active);
 }
 
 type HostListOptions<TData> = Omit<
@@ -104,14 +115,8 @@ export function useHostList<TData = HostEntity[]>(
   options?: HostListOptions<TData>,
   poll?: Poll<HostEntity[]>,
 ) {
-  const app = useConsumerApp();
-
-  return useQuery<HostEntity[], Error, TData>({
-    queryKey: hostsKeys.list(),
-    queryFn: () => app.hosts.findAll(),
-    ...options,
-    ...poll,
-  });
+  const list = useHostListQuery();
+  return useQuery<HostEntity[], Error, TData>({ ...list, ...options, ...poll });
 }
 
 /**

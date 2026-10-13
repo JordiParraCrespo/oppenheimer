@@ -546,6 +546,25 @@ for (const file of polling) {
   }
 }
 
+// A Suspense read throws only its first failure, to the boundary above it; a
+// refetch that fails over data already drawn is `error` on the read, and
+// nothing shows it unless the section does. So an app file that reads through
+// a product package's `useSuspense…` hook draws an `ErrorAlert` too. A
+// tripwire on the file, not a proof that the alert is handed that `error`.
+const SUSPENSE_READ = /\buseSuspense[A-Z]\w*\(/;
+for (const { app } of APPS) {
+  const src = join(root, app, 'src');
+  if (!existsSync(src)) continue;
+  for (const file of sources(src)) {
+    const source = code(readFileSync(file, 'utf8'));
+    if (SUSPENSE_READ.test(source) && !/<ErrorAlert\b/.test(source)) {
+      fail(
+        `${relative(root, file)}: reads through ${SUSPENSE_READ.exec(source)[0].slice(0, -1)} and draws no ErrorAlert — a refetch that fails over drawn data does not throw; show the read's \`error\` beside the data`,
+      );
+    }
+  }
+}
+
 // A read's states are `QueryState`'s slots, and a slot left out draws
 // nothing; `query-state-slots.mjs` holds each use to the slots it needs.
 // The kit's own spec composes the slots conditionally, so specs are not read.
