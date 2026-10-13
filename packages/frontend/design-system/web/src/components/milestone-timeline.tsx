@@ -9,6 +9,14 @@ import { cn } from '../lib/utils';
 /** Pixels per day: a week is 112px, enough for a week number and a label. */
 const PX = 16;
 const DAY = 864e5;
+/** A project's track starts three weeks before its first milestone (or today)… */
+const LEAD_DAYS = 21;
+/** …and runs ten days past its last. */
+const TAIL_DAYS = 10;
+/** The timeline keeps two weeks of room past the earliest and the latest track… */
+const MARGIN_DAYS = 14;
+/** …and always shows six weeks ahead of today. */
+const AHEAD_DAYS = 42;
 
 type TimelineMilestone = {
   id: string;
@@ -64,13 +72,13 @@ function layout(rows: TimelineRow[], today: IsoDate, locale: string) {
       const dues = r.milestones.map((m) => +dateOf(m.due));
       return {
         row: r,
-        from: new Date(Math.min(Math.min(...dues), +now) - 21 * DAY),
-        to: new Date(Math.max(...dues) + 10 * DAY),
+        from: new Date(Math.min(Math.min(...dues), +now) - LEAD_DAYS * DAY),
+        to: new Date(Math.max(...dues) + TAIL_DAYS * DAY),
       };
     });
-  const earliest = new Date(Math.min(+now, ...spans.map((s) => +s.from)) - 14 * DAY);
+  const earliest = new Date(Math.min(+now, ...spans.map((s) => +s.from)) - MARGIN_DAYS * DAY);
   const start = new Date(earliest.getFullYear(), earliest.getMonth(), earliest.getDate() - ((earliest.getDay() + 6) % 7));
-  const end = new Date(Math.max(+now + 42 * DAY, ...spans.map((s) => +s.to)) + 14 * DAY);
+  const end = new Date(Math.max(+now + AHEAD_DAYS * DAY, ...spans.map((s) => +s.to)) + MARGIN_DAYS * DAY);
   const xOf = (d: Date) => daysBetween(start, d) * PX;
 
   const weeks: { x: number; label: number }[] = [];
@@ -86,6 +94,95 @@ function layout(rows: TimelineRow[], today: IsoDate, locale: string) {
     first = false;
   }
   return { spans, weeks, months, todayX: xOf(now), width: xOf(end) + 40, xOf };
+}
+
+/**
+ * One milestone on its track: the diamond at its due day (open on the card,
+ * done filled muted, lit in ink and grown under the pointer or focus), its
+ * name under it, and while lit the card with its share, task count and due
+ * day. The pointer and focus both light it, on either of its two buttons.
+ */
+function MilestoneMarker({
+  milestone: m,
+  x,
+  lit,
+  due,
+  tasksLabel,
+  editLabel,
+  onOpen,
+  onHover,
+}: {
+  milestone: TimelineMilestone;
+  x: number;
+  lit: boolean;
+  due: string;
+  tasksLabel: (total: number) => string;
+  /** The hover card's last line when a click opens the milestone. */
+  editLabel?: string;
+  onOpen: () => void;
+  onHover: (on: boolean) => void;
+}) {
+  const complete = m.total > 0 && m.done === m.total;
+  const pct = m.total > 0 ? Math.round((m.done / m.total) * 100) : 0;
+  const handlers = {
+    onClick: onOpen,
+    onMouseEnter: () => onHover(true),
+    onMouseLeave: () => onHover(false),
+    onFocus: () => onHover(true),
+    onBlur: () => onHover(false),
+  };
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={m.name}
+        className="absolute top-13.25 flex size-5 -translate-x-1/2 items-center justify-center outline-none"
+        style={{ left: x }}
+        {...handlers}
+      >
+        <span
+          className={cn(
+            'size-2.5 rotate-45 border-[1.5px] transition-transform duration-instant ease-standard',
+            lit ? 'scale-120 border-fg bg-fg' : complete ? 'border-fg-muted bg-fg-muted' : 'border-fg-muted bg-card',
+          )}
+        />
+      </button>
+      <button
+        type="button"
+        tabIndex={-1}
+        className={cn(
+          'absolute top-21 -translate-x-1/2 text-[12.5px] whitespace-nowrap outline-none',
+          lit ? 'text-fg' : 'text-fg-muted',
+        )}
+        style={{ left: x }}
+        {...handlers}
+      >
+        {m.name}
+      </button>
+      {lit ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute top-0 z-5 flex animate-in flex-col gap-2 rounded-md border border-border-subtle bg-card px-3.5 py-3 whitespace-nowrap shadow-popover fade-in-0 slide-in-from-bottom-1"
+          style={{ left: x + 18 }}
+        >
+          <span className="flex items-center gap-2.5 text-[14px] font-medium">
+            <span className={cn('size-2.25 rotate-45 border-[1.5px] border-fg', complete ? 'bg-fg-muted' : 'bg-fg')} />
+            {m.name}
+          </span>
+          <span className="flex items-center gap-2 text-[12.5px] text-fg-muted">
+            <span className="h-1 w-10 overflow-hidden rounded-pill bg-hover-surface">
+              <span className="block h-full bg-fg" style={{ width: `${pct}%` }} />
+            </span>
+            <span className="figures font-mono text-fg">{pct}%</span>
+            {tasksLabel(m.total)}
+            <span className="text-fg-subtle">·</span>
+            <span className="figures font-mono">{due}</span>
+          </span>
+          {editLabel ? <span className="text-[12px] text-fg-subtle">{editLabel}</span> : null}
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 /**
@@ -202,75 +299,19 @@ function MilestoneTimeline({
               className="absolute top-12 h-7.5 rounded-sm border border-border-subtle bg-card"
               style={{ left: xOf(from), width: xOf(to) - xOf(from) }}
             />
-            {row.milestones.map((m) => {
-              const x = xOf(dateOf(m.due));
-              const lit = hover === m.id;
-              const complete = m.total > 0 && m.done === m.total;
-              const pct = m.total > 0 ? Math.round((m.done / m.total) * 100) : 0;
-              const handlers = {
-                onClick: () => onOpenMilestone?.(m.id),
-                onMouseEnter: () => setHover(m.id),
-                onMouseLeave: () => setHover((h) => (h === m.id ? null : h)),
-                onFocus: () => setHover(m.id),
-                onBlur: () => setHover((h) => (h === m.id ? null : h)),
-              };
-              return (
-                <React.Fragment key={m.id}>
-                  <button
-                    type="button"
-                    aria-label={m.name}
-                    className="absolute top-13.25 flex size-5 -translate-x-1/2 items-center justify-center outline-none"
-                    style={{ left: x }}
-                    {...handlers}
-                  >
-                    <span
-                      className={cn(
-                        'size-2.5 rotate-45 border-[1.5px] transition-transform duration-instant ease-standard',
-                        lit ? 'scale-120 border-fg bg-fg' : complete ? 'border-fg-muted bg-fg-muted' : 'border-fg-muted bg-card',
-                      )}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    className={cn(
-                      'absolute top-21 -translate-x-1/2 text-[12.5px] whitespace-nowrap outline-none',
-                      lit ? 'text-fg' : 'text-fg-muted',
-                    )}
-                    style={{ left: x }}
-                    {...handlers}
-                  >
-                    {m.name}
-                  </button>
-                  {lit ? (
-                    <div
-                      role="tooltip"
-                      className="pointer-events-none absolute top-0 z-5 flex animate-in flex-col gap-2 rounded-md border border-border-subtle bg-card px-3.5 py-3 whitespace-nowrap shadow-popover fade-in-0 slide-in-from-bottom-1"
-                      style={{ left: x + 18 }}
-                    >
-                      <span className="flex items-center gap-2.5 text-[14px] font-medium">
-                        <span
-                          className={cn('size-2.25 rotate-45 border-[1.5px] border-fg', complete ? 'bg-fg-muted' : 'bg-fg')}
-                        />
-                        {m.name}
-                      </span>
-                      <span className="flex items-center gap-2 text-[12.5px] text-fg-muted">
-                        <span className="h-1 w-10 overflow-hidden rounded-pill bg-hover-surface">
-                          <span className="block h-full bg-fg" style={{ width: `${pct}%` }} />
-                        </span>
-                        <span className="figures font-mono text-fg">{pct}%</span>
-                        {tasksLabel(m.total)}
-                        <span className="text-fg-subtle">·</span>
-                        <span className="figures font-mono">{dueFormat.format(dateOf(m.due))}</span>
-                      </span>
-                      {onOpenMilestone ? (
-                        <span className="text-[12px] text-fg-subtle">{labels?.edit ?? 'Click to edit'}</span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </React.Fragment>
-              );
-            })}
+            {row.milestones.map((m) => (
+              <MilestoneMarker
+                key={m.id}
+                milestone={m}
+                x={xOf(dateOf(m.due))}
+                lit={hover === m.id}
+                due={dueFormat.format(dateOf(m.due))}
+                tasksLabel={tasksLabel}
+                editLabel={onOpenMilestone ? (labels?.edit ?? 'Click to edit') : undefined}
+                onOpen={() => onOpenMilestone?.(m.id)}
+                onHover={(on) => setHover((h) => (on ? m.id : h === m.id ? null : h))}
+              />
+            ))}
           </div>
         ))}
       </div>

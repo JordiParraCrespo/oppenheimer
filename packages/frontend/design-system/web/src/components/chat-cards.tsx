@@ -1,8 +1,9 @@
 'use client';
 
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ExternalLinkIcon, FileTextIcon, HelpCircleIcon, LoaderIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, ExternalLinkIcon, FileTextIcon, HelpCircleIcon, LoaderIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
 import { Badge } from './badge';
 import { Button } from './button';
@@ -226,23 +227,11 @@ function SubagentRunCard({
   className?: string;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div data-slot="subagent-run-card" className={cn('flex flex-col text-[13.5px]', className)}>
+    <Fold data-slot="subagent-run-card" defaultOpen={defaultOpen} className={cn('flex flex-col text-[13.5px]', className)}>
       <div className="flex min-h-7 items-center gap-2">
         {live ? <LoaderIcon aria-hidden className="size-3.5 text-success motion-safe:animate-spin" /> : null}
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-1.5 rounded-xs text-left text-fg-muted outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {summary}
-          <ChevronRightIcon
-            aria-hidden
-            className={cn('size-3.25 text-fg-subtle transition-transform duration-fast ease-standard', open && 'rotate-90')}
-          />
-        </button>
+        <FoldTrigger className="flex items-center gap-1.5 text-fg-muted">{summary}</FoldTrigger>
         <span className="flex-1" />
         {live && onStopAll ? (
           <button
@@ -255,8 +244,8 @@ function SubagentRunCard({
           </button>
         ) : null}
       </div>
-      {open ? <div className="ml-5 flex flex-col">{children}</div> : null}
-    </div>
+      <FoldPanel className="ml-5 flex flex-col">{children}</FoldPanel>
+    </Fold>
   );
 }
 

@@ -57,23 +57,8 @@ import {
 } from '../components/host-link-demos';
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
-import {
-  ChatCardsDemo,
-  ChatChromeDemo,
-  ChatComposerExtrasDemo,
-  ChatDecisionsDemo,
-  ChatStackDemo,
-  ChatStatusDemo,
-  ChatTranscriptDemo,
-  ChatWorkDemo,
-} from '../components/chat-demos';
-import {
-  AvatarPickerDemo,
-  BotItemsDemo,
-  RoutineCardsDemo,
-  SettingsListDemo,
-  SettingsTopBarDemo,
-} from '../components/employee-demos';
+import { ChatSection } from '../components/chat-demos';
+import { EmployeesSection } from '../components/employee-demos';
 import {
   AreaChartDemo,
   CalendarAccountsDemo,
@@ -81,7 +66,7 @@ import {
   FacetSelectDemo,
   MilestoneTimelineDemo,
 } from '../components/plan-stats-demos';
-import { AccessListDemo, PeoplePickerDemo } from '../components/share-demos';
+import { ShareSection } from '../components/share-demos';
 import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/control-demos';
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
@@ -1481,161 +1466,11 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         <HostCardsDemo />
       </Spec>
 
-      <GroupHead>Chat</GroupHead>
+      <ChatSection />
 
-      <Spec
-        id="chattranscript"
-        title="Transcript"
-        meta="chat-transcript.tsx"
-        desc="The chat's column: the person's turns are cards on the right at 82%, attachments above and the time and copy and edit under, the actions on hover; an @file is a ChatMention. Each agent turn opens on a TurnHeader, a 13px line on a hairline to the edge: working (breathing), worked with its model and time (folding the turn's work), stopped, interrupted, resumed. The answer is ChatReply, unboxed at 15px; MessageTrail carries copy, fork and retry with the tokens in mono. StreamingCaret is the write head."
-        code={`<ChatTranscript><ChatUserMessage time="09:12" actions={…}>…</ChatUserMessage><TurnHeader state="done" elapsed="1m 13s" model="Claude Sonnet 4.5" onToggle={fold} /><ChatReply>{markdown}</ChatReply><MessageTrail actions={…} meta="3.1k tokens" /></ChatTranscript>`}
-      >
-        <ChatTranscriptDemo />
-      </Spec>
+      <EmployeesSection />
 
-      <Spec
-        id="chatwork"
-        title="Work and tools"
-        meta="chat-work.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s."
-        code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
-      >
-        <ChatWorkDemo />
-      </Spec>
-
-      <Spec
-        id="chatcards"
-        title="Cards"
-        meta="chat-cards.tsx"
-        desc="What a turn leaves in the transcript. ChangedFilesCard closes a turn that edited files, a row per file that opens its diff. ProposedPlanCard is plan mode's answer on the 28px card, folding past ten lines, with Refine and the split Implement. SubagentRunCard lists the subagents a turn launched, live or finished, with Stop all. QuestionsPill folds questions asked without stopping; AnsweredQuestions keeps the record. ContextCard is an object made or given, one row that opens it."
-        code={`<ChangedFilesCard title="3 files changed" additions={80} deletions={12} actions={…}><ChangedFileRow path="runner/step.ts" additions={42} deletions={8} /></ChangedFilesCard>`}
-      >
-        <ChatCardsDemo />
-      </Spec>
-
-      <Spec
-        id="chatstatus"
-        title="Dividers and status"
-        meta="chat-status.tsx"
-        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes. ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
-        code={`<ChatErrorBanner title="Turn failed" actions={<ChatErrorAction variant="danger">Continue task</ChatErrorAction>} onDismiss={…}>{error}</ChatErrorBanner>`}
-      >
-        <ChatStatusDemo />
-      </Spec>
-
-      <Spec
-        id="chatstack"
-        title="Above the composer"
-        meta="chat-composer-stack.tsx"
-        desc="Panels fuse onto the top of the composer: rounded on top, open at the bottom, on the hover wash, hairlines between. Top to bottom: the goal, the tasks with their count, the live changes, the queue (paused, steerable), then the input. ComposerNotice is one fact with at most one action in the same fused shape: a tip, a branch mismatch, a snooze, a reconnect."
-        code={`<ComposerStack><ComposerStackRow icon={<FileTextIcon />} actions={<ComposerStackAction>Review</ComposerStackAction>}>3 files changed</ComposerStackRow></ComposerStack>`}
-      >
-        <ChatStackDemo />
-      </Spec>
-
-      <Spec
-        id="chatdecisions"
-        title="Decisions"
-        meta="chat-decisions.tsx"
-        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. The number keys pick a row, only while focus is inside the card."
-        code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
-      >
-        <ChatDecisionsDemo />
-      </Spec>
-
-      <Spec
-        id="chatcomposer"
-        title="Composer extras"
-        meta="chat-composer-extras.tsx"
-        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
-        code={`<ComposerMenu><ComposerMenuGroup label="Built-in"><ComposerMenuItem icon={<LayersIcon />} description="Think first" hint="/plan" highlighted>Plan</ComposerMenuItem></ComposerMenuGroup></ComposerMenu>`}
-      >
-        <ChatComposerExtrasDemo />
-      </Spec>
-
-      <Spec
-        id="chatchrome"
-        title="Header, find, empty"
-        meta="chat-header.tsx"
-        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open threads sit over it as ChatTabs, the current one on the canvas with its close. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use."
-        code={`<ChatHeader title="Wire run cancel" meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>} status={<StatusDot state="running" pulse density="compact">Running</StatusDot>} actions={…} />`}
-      >
-        <ChatChromeDemo />
-      </Spec>
-
-      <GroupHead>Employees</GroupHead>
-
-      <Spec
-        id="botitem"
-        title="BotItem"
-        meta="bot-item.tsx"
-        desc="An employee in the sidebar, read like a conversation: a 36px photo (initials in ink until it loads) with a green dot on its corner while the bot works, the name and the age in mono, then the last message in muted ink. Unread sets the name at 600, the preview in full ink and a blue dot at the end; the open chat rests on the selected wash. 14px radius, rows 2px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
-        code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} age="2m" live active /></BotList>`}
-      >
-        <BotItemsDemo />
-      </Spec>
-
-      <Spec
-        id="avatarpicker"
-        title="AvatarPicker"
-        meta="avatar-picker.tsx"
-        desc="A bot's photo picked from a set: the current one beside the bot's name, then a grid of round photos over optional captions, the picked one on the selected wash; arrow keys move through it. compact is the 300px popover off the chat header (four columns, 36px photos, Surprise me under the grid); wide is BotSettings' Profile (76px columns, 40px photos, a 72px preview). BotAvatar is the photo alone, initials in ink until the image loads."
-        code={`<AvatarPicker options={photos} value={photo} onValueChange={setPhoto} name="Release Bot" onShuffle={shuffle} />`}
-      >
-        <AvatarPickerDemo />
-      </Spec>
-
-      <Spec
-        id="routinecard"
-        title="RoutineCard"
-        meta="routine-card.tsx"
-        desc="Something a bot does on its own, read in full on its settings: the name, the Switch (Pause / Resume) and the edit and delete buttons; the trigger as a glyph and a line; the prompt in muted ink; the last and next run in mono. A paused card fades to 60%. Editing, the caller's form replaces the read view inside the same card. The sidebar's workspace automations stay RoutineItem."
-        code={`<RoutineCard name="Morning digest" icon={<ClockIcon />} trigger="Schedule · Weekdays at 09:00" prompt="…" last="Today 09:00" next="Tomorrow 09:00" active={on} onActiveChange={setOn} onEdit={edit} onDelete={remove} />`}
-      >
-        <RoutineCardsDemo />
-      </Spec>
-
-      <Spec
-        id="settingslist"
-        title="SettingsListRow · SettingsAddRow"
-        meta="settings-group.tsx"
-        desc="Records in a settings card rather than settings: a revision with who made it as a pill and Revert, a learned fact with its kind as an 18px tag and its source, a connector with its URL in mono and a Switch. A fact shared from another bot is muted. SettingsAddRow is the card's last row, a borderless field and Add, off until there is something to add; Enter adds too."
-        code={`<SettingsGroup><SettingsListRow kind="Preference" meta="Learned in chat · Oct 2" actions={…}>Prefers squash merges</SettingsListRow><SettingsAddRow value={draft} onValueChange={setDraft} onAdd={add} aria-label="New fact" /></SettingsGroup>`}
-      >
-        <SettingsListDemo />
-      </Spec>
-
-      <Spec
-        id="settingstopbar"
-        title="SettingsTopBar"
-        meta="settings-shell.tsx"
-        desc="The bar over one thing's own settings, where Settings' nav would not say whose they are: back, the 30px photo and the name, a badge (Built-in), then a Saved flash after a change and the actions (Open chat, the ellipsis)."
-        code={`<SettingsTopBar back={…} avatar={<BotAvatar option={bot} size={30} />} title="Release Bot" badge={<Badge variant="soft">Built-in</Badge>} saved={saved && 'Saved'} actions={…} />`}
-      >
-        <SettingsTopBarDemo />
-      </Spec>
-
-      <GroupHead>Share</GroupHead>
-
-      <Spec
-        id="peoplepicker"
-        title="PeoplePicker · PersonChip"
-        meta="people-picker.tsx"
-        desc="Who a session is shared with, by name or email. Typing opens a list of members not yet picked; a full address nobody in the workspace has becomes one Invite row, marked outside the workspace. Picked people sit under the field as PersonChips. Enter picks the first match, Backspace in an empty field drops the last chip. A server-searched roster passes onQueryChange."
-        code={`<PeoplePicker people={members} value={picked} onValueChange={setPicked} />`}
-      >
-        <PeoplePickerDemo />
-      </Spec>
-
-      <Spec
-        id="accesslist"
-        title="AccessList"
-        meta="access-list.tsx"
-        desc="Who can open a shared session, and until when. A hairline card, one row per holder: the avatar, the name over a subtle line, the role as a neutral Badge, the time left in mono in a 72px column so the ends line up. The owner cannot be removed and keeps the button's room; a link is a row of its own, so stopping it reads like removing a person."
-        code={`<AccessList><AccessRow avatar={…} name="Lea Brandt" sub="lea@acme.dev" role="Can view" ends="23h left" onRemove={…} /></AccessList>`}
-      >
-        <AccessListDemo />
-      </Spec>
+      <ShareSection />
 
       <GroupHead>Media</GroupHead>
 

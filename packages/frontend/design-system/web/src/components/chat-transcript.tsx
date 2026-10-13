@@ -1,8 +1,9 @@
 'use client';
 
-import { AlertCircleIcon, CheckIcon, ChevronRightIcon, LayersIcon } from 'lucide-react';
+import { AlertCircleIcon, CheckIcon, LayersIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { FoldChevron } from '../internal/fold';
 import { cn } from '../lib/utils';
 
 /**
@@ -218,12 +219,7 @@ function TurnHeader({
       </>
     ) : (
       <>
-        {onToggle ? (
-          <ChevronRightIcon
-            aria-hidden
-            className={cn('size-3.25 text-fg-subtle transition-transform duration-fast ease-standard', open && 'rotate-90')}
-          />
-        ) : null}
+        {onToggle ? <FoldChevron open={open} /> : null}
         <span>
           {label.worked} {elapsed ? mono(elapsed) : null}
         </span>

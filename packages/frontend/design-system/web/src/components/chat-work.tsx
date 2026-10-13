@@ -1,8 +1,9 @@
 'use client';
 
-import { ChevronDownIcon, ChevronRightIcon, CpuIcon, LoaderIcon, SlidersHorizontalIcon } from 'lucide-react';
-import * as React from 'react';
+import { CpuIcon, LoaderIcon, SlidersHorizontalIcon } from 'lucide-react';
+import type * as React from 'react';
 
+import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
 
 /**
@@ -39,15 +40,13 @@ function ToolCallGroup({
   /** The `ToolCallRow`s. */
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div data-slot="tool-call-group" className={cn('flex flex-col text-[13.5px] text-fg-muted', className)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.75 self-start rounded-xs py-0.5 text-left outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
-      >
+    <Fold
+      data-slot="tool-call-group"
+      defaultOpen={defaultOpen}
+      className={cn('flex flex-col text-[13.5px] text-fg-muted', className)}
+    >
+      <FoldTrigger className="inline-flex items-center gap-1.75 self-start py-0.5">
         <span aria-hidden className="flex w-4 justify-center [&_svg]:size-3.5">
           {icon ?? <SlidersHorizontalIcon />}
         </span>
@@ -60,15 +59,9 @@ function ToolCallGroup({
             </>
           ) : null}
         </span>
-        <ChevronRightIcon
-          aria-hidden
-          className={cn('size-3.25 text-fg-subtle transition-transform duration-fast ease-standard', open && 'rotate-90')}
-        />
-      </button>
-      {open ? (
-        <div className="ml-1.75 flex flex-col border-l border-border-subtle pt-1 pb-0.5 pl-1.75">{children}</div>
-      ) : null}
-    </div>
+      </FoldTrigger>
+      <FoldPanel className="ml-1.75 flex flex-col border-l border-border-subtle pt-1 pb-0.5 pl-1.75">{children}</FoldPanel>
+    </Fold>
   );
 }
 
@@ -91,7 +84,6 @@ function ToolCallRow({
   output?: React.ReactNode;
   className?: string;
 }) {
-  const [open, setOpen] = React.useState(false);
   const line = (
     <>
       <span aria-hidden className="flex text-fg-subtle [&_svg]:size-3.5">
@@ -114,25 +106,15 @@ function ToolCallRow({
     );
   }
   return (
-    <div data-slot="tool-call-row" className={cn('flex flex-col pl-2', className)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className="flex min-h-7 items-center gap-2.25 rounded-xs text-left outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
+    <Fold data-slot="tool-call-row" className={cn('flex flex-col pl-2', className)}>
+      <FoldTrigger className="flex min-h-7 items-center gap-2.25">{line}</FoldTrigger>
+      <FoldPanel
+        render={<pre />}
+        className="mt-0.5 mb-2 ml-5.5 overflow-x-auto rounded-sm bg-term-bg px-3 py-2.5 font-mono text-[12px] leading-[1.55] text-term-fg"
       >
-        {line}
-        <ChevronRightIcon
-          aria-hidden
-          className={cn('size-3.25 shrink-0 text-fg-subtle transition-transform duration-fast ease-standard', open && 'rotate-90')}
-        />
-      </button>
-      {open ? (
-        <pre className="mt-0.5 mb-2 ml-5.5 overflow-x-auto rounded-sm bg-term-bg px-3 py-2.5 font-mono text-[12px] leading-[1.55] text-term-fg">
-          {output}
-        </pre>
-      ) : null}
-    </div>
+        {output}
+      </FoldPanel>
+    </Fold>
   );
 }
 
@@ -177,28 +159,22 @@ function ReasoningRow({
   /** The thinking, as text. */
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div data-slot="reasoning-row" className={cn('flex flex-col gap-2 text-[13.5px] text-fg-muted', className)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.75 self-start rounded-xs text-left outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
-      >
+    <Fold
+      data-slot="reasoning-row"
+      defaultOpen={defaultOpen}
+      className={cn('flex flex-col gap-2 text-[13.5px] text-fg-muted', className)}
+    >
+      <FoldTrigger className="inline-flex items-center gap-1.75 self-start">
         <span aria-hidden className="flex w-4 justify-center">
           <CpuIcon className="size-3.5" />
         </span>
         {label}
-        <ChevronDownIcon
-          aria-hidden
-          className={cn('size-3.25 transition-transform duration-fast ease-standard', !open && '-rotate-90')}
-        />
-      </button>
-      {open ? (
-        <p className="m-0 ml-5.75 border-l border-border-subtle pl-3 leading-[1.55] text-pretty">{children}</p>
-      ) : null}
-    </div>
+      </FoldTrigger>
+      <FoldPanel render={<p />} className="m-0 ml-5.75 border-l border-border-subtle pl-3 leading-[1.55] text-pretty">
+        {children}
+      </FoldPanel>
+    </Fold>
   );
 }
 

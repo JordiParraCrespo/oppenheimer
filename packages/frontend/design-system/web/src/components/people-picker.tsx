@@ -151,7 +151,9 @@ function PeoplePicker({
                 {label.empty}
               </ComboboxPrimitive.Empty>
               <ComboboxPrimitive.List>
-                {(person: Person) => (
+                {(person: Person) => {
+                  const inviting = invite !== null && person.id === invite.id;
+                  return (
                   <ComboboxPrimitive.Item
                     key={person.id}
                     value={person}
@@ -159,13 +161,14 @@ function PeoplePicker({
                   >
                     <PersonAvatar person={person} size="sm" />
                     <span className="flex min-w-0 flex-col">
-                      <span className="truncate">{person === invite ? label.invite(person.email) : person.name}</span>
+                      <span className="truncate">{inviting ? label.invite(person.email) : person.name}</span>
                       <span className="truncate text-[11.5px] text-fg-muted">
-                        {person === invite ? label.inviteDescription : person.email}
+                        {inviting ? label.inviteDescription : person.email}
                       </span>
                     </span>
                   </ComboboxPrimitive.Item>
-                )}
+                  );
+                }}
               </ComboboxPrimitive.List>
             </ComboboxPrimitive.Popup>
           </ComboboxPrimitive.Positioner>

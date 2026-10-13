@@ -271,124 +271,6 @@ interface LinePoint {
   values: Record<string, number>;
 }
 
-function LineChart({
-  series,
-  points,
-  ticks,
-  height = 160,
-  format = plain,
-  from,
-  to,
-  className,
-  'aria-label': ariaLabel,
-}: {
-  series: readonly ChartSeries[];
-  points: readonly LinePoint[];
-  /** Y values to rule and label, ascending; the last is the top. */
-  ticks: readonly number[];
-  height?: number;
-  format?: (value: number) => string;
-  /** The x axis's two ends ("Sep 5", "Oct 4"). */
-  from?: React.ReactNode;
-  to?: React.ReactNode;
-  className?: string;
-  'aria-label': string;
-}) {
-  const [hover, setHover] = React.useState<number | null>(null);
-  const top = ticks[ticks.length - 1] ?? Math.max(1, ...points.flatMap((p) => Object.values(p.values)));
-  const x = (i: number) => (points.length < 2 ? 50 : (i / (points.length - 1)) * 100);
-  const y = (v: number) => 100 - (Math.min(v, top) / top) * 100;
-  const path = (key: string) => points.map((p, i) => `${i ? 'L' : 'M'}${x(i)} ${y(p.values[key] ?? 0)}`).join(' ');
-  const hovered = hover === null ? null : points[hover];
-  return (
-    <figure data-slot="line-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
-      <ChartReadout series={series} label={hovered?.label} values={hovered?.values} format={format} />
-      <div className="grid grid-cols-[minmax(0,1fr)_34px] gap-x-2.5">
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: the hover readout repeats the figure's data, which the list below carries for assistive technology. */}
-        <div
-          className="relative"
-          // biome-ignore lint/style/noInlineStyles: the plot's height is the caller's.
-          style={{ height }}
-          onMouseLeave={() => setHover(null)}
-        >
-          {ticks.map((t) => (
-            <span
-              key={t}
-              aria-hidden
-              className="absolute inset-x-0 h-px bg-border-subtle"
-              // biome-ignore lint/style/noInlineStyles: the rule sits at its value.
-              style={{ bottom: `${(t / top) * 100}%` }}
-            />
-          ))}
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full overflow-visible">
-            {series.map((s) => (
-              <path
-                key={s.key}
-                d={path(s.key)}
-                fill="none"
-                stroke={TONE_STROKE[s.tone]}
-                strokeWidth={2}
-                vectorEffect="non-scaling-stroke"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            ))}
-          </svg>
-          {hovered && hover !== null ? (
-            <>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-px bg-border"
-                // biome-ignore lint/style/noInlineStyles: the crosshair follows the pointer.
-                style={{ left: `${x(hover)}%` }}
-              />
-              {series.map((s) => (
-                <span
-                  key={s.key}
-                  aria-hidden
-                  className={cn('pointer-events-none absolute -mb-[4.5px] -ml-[4.5px] size-[9px] rounded-pill shadow-[0_0_0_2px_var(--card)]', TONE_BG[s.tone])}
-                  // biome-ignore lint/style/noInlineStyles: the dot sits on the value.
-                  style={{ left: `${x(hover)}%`, bottom: `${100 - y(hovered.values[s.key] ?? 0)}%` }}
-                />
-              ))}
-            </>
-          ) : null}
-          <div className="absolute inset-0 flex">
-            {points.map((p, i) => (
-              <span key={p.label} aria-hidden className="h-full flex-1" onMouseEnter={() => setHover(i)} />
-            ))}
-          </div>
-        </div>
-        <div aria-hidden className="relative" style={{ height }}>
-          {ticks.map((t) => (
-            <span
-              key={t}
-              className="figures absolute left-0 translate-y-1/2 text-[11px] text-fg-subtle"
-              // biome-ignore lint/style/noInlineStyles: the label sits at its value.
-              style={{ bottom: `${(t / top) * 100}%` }}
-            >
-              {format(t)}
-            </span>
-          ))}
-        </div>
-      </div>
-      {from || to ? (
-        <div aria-hidden className="flex justify-between pr-11 text-[11px] text-fg-subtle">
-          <span>{from}</span>
-          <span>{to}</span>
-        </div>
-      ) : null}
-      <ul className="sr-only">
-        {points.map((p) => (
-          <li key={p.label}>
-            {p.label}: {series.map((s) => `${s.label} ${format(p.values[s.key] ?? 0)}`).join(', ')}
-          </li>
-        ))}
-      </ul>
-    </figure>
-  );
-}
-
 /**
  * A monotone cubic through the points (Fritsch–Carlson): smooth, and it never
  * overshoots a value, so a curve never dips under zero or above a peak.
@@ -438,6 +320,198 @@ function monotonePath(points: readonly (readonly [number, number])[]) {
 }
 
 /**
+ * The frame `LineChart` and `AreaChart` share: the readout over the plot,
+ * the rules at the ticks, the ticks on one side, the crosshair and a dot per
+ * series on the hovered point, and the points listed for assistive
+ * technology. The two charts differ only in how a series is drawn (`draw`),
+ * which side the ticks sit on, and the x axis under the plot.
+ */
+function TimeSeries({
+  slot,
+  series,
+  points,
+  ticks,
+  height,
+  format,
+  tickSide,
+  draw,
+  xAxis,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  slot: string;
+  series: readonly ChartSeries[];
+  points: readonly LinePoint[];
+  ticks: readonly number[];
+  height: number;
+  format: (value: number) => string;
+  tickSide: 'left' | 'right';
+  /** One series' marks inside the 100×100 plot, given its points there. */
+  draw: (s: ChartSeries, at: readonly (readonly [number, number])[]) => React.ReactNode;
+  /** What sits under the plot, given the hovered index and the x of a point (0–100). */
+  xAxis: (hover: number | null, x: (i: number) => number) => React.ReactNode;
+  className?: string;
+  'aria-label': string;
+}) {
+  const [hover, setHover] = React.useState<number | null>(null);
+  // An empty period (`ticks={[0]}`, every value 0) still draws its zero line.
+  const top = Math.max(1, ticks[ticks.length - 1] ?? Math.max(...points.flatMap((p) => Object.values(p.values))));
+  const x = (i: number) => (points.length < 2 ? 50 : (i / (points.length - 1)) * 100);
+  const y = (v: number) => 100 - (Math.min(v, top) / top) * 100;
+  const hovered = hover === null ? null : points[hover];
+  const tickColumn = (
+    <div aria-hidden className="relative" style={{ height }}>
+      {ticks.map((t) => (
+        <span
+          key={t}
+          className={cn(
+            'figures absolute translate-y-1/2 text-[11px] text-fg-subtle',
+            tickSide === 'left' ? 'right-0' : 'left-0',
+          )}
+          // biome-ignore lint/style/noInlineStyles: the label sits at its value.
+          style={{ bottom: `${(t / top) * 100}%` }}
+        >
+          {format(t)}
+        </span>
+      ))}
+    </div>
+  );
+  return (
+    <figure data-slot={slot} className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
+      <ChartReadout series={series} label={hovered?.label} values={hovered?.values} format={format} />
+      <div
+        className={cn(
+          'grid gap-x-2.5',
+          tickSide === 'left' ? 'grid-cols-[34px_minmax(0,1fr)] gap-x-2' : 'grid-cols-[minmax(0,1fr)_34px]',
+        )}
+      >
+        {tickSide === 'left' ? tickColumn : null}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: the hover readout repeats the figure's data, which the list below carries for assistive technology. */}
+        <div
+          className="relative"
+          // biome-ignore lint/style/noInlineStyles: the plot's height is the caller's.
+          style={{ height }}
+          onMouseLeave={() => setHover(null)}
+        >
+          {ticks.map((t) => (
+            <span
+              key={t}
+              aria-hidden
+              className="absolute inset-x-0 h-px bg-border-subtle"
+              // biome-ignore lint/style/noInlineStyles: the rule sits at its value.
+              style={{ bottom: `${(t / top) * 100}%` }}
+            />
+          ))}
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full overflow-visible">
+            {series.map((s) => (
+              <g key={s.key}>{draw(s, points.map((p, i) => [x(i), y(p.values[s.key] ?? 0)] as const))}</g>
+            ))}
+          </svg>
+          {hovered && hover !== null ? (
+            <>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 w-px bg-border"
+                // biome-ignore lint/style/noInlineStyles: the crosshair follows the pointer.
+                style={{ left: `${x(hover)}%` }}
+              />
+              {series.map((s) => (
+                <span
+                  key={s.key}
+                  aria-hidden
+                  className={cn('pointer-events-none absolute -mb-[4.5px] -ml-[4.5px] size-[9px] rounded-pill shadow-[0_0_0_2px_var(--card)]', TONE_BG[s.tone])}
+                  // biome-ignore lint/style/noInlineStyles: the dot sits on the value.
+                  style={{ left: `${x(hover)}%`, bottom: `${100 - y(hovered.values[s.key] ?? 0)}%` }}
+                />
+              ))}
+            </>
+          ) : null}
+          <div className="absolute inset-0 flex">
+            {points.map((p, i) => (
+              <span key={p.label} aria-hidden className="h-full flex-1" onMouseEnter={() => setHover(i)} />
+            ))}
+          </div>
+        </div>
+        {tickSide === 'right' ? tickColumn : null}
+      </div>
+      {xAxis(hover, x)}
+      <ul className="sr-only">
+        {points.map((p) => (
+          <li key={p.label}>
+            {p.label}: {series.map((s) => `${s.label} ${format(p.values[s.key] ?? 0)}`).join(', ')}
+          </li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
+function linePath(at: readonly (readonly [number, number])[]) {
+  return at.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join(' ');
+}
+
+function SeriesLine({ d, tone }: { d: string; tone: DataTone }) {
+  return (
+    <path
+      d={d}
+      fill="none"
+      stroke={TONE_STROKE[tone]}
+      strokeWidth={2}
+      vectorEffect="non-scaling-stroke"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    />
+  );
+}
+
+function LineChart({
+  series,
+  points,
+  ticks,
+  height = 160,
+  format = plain,
+  from,
+  to,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  series: readonly ChartSeries[];
+  points: readonly LinePoint[];
+  /** Y values to rule and label, ascending; the last is the top. */
+  ticks: readonly number[];
+  height?: number;
+  format?: (value: number) => string;
+  /** The x axis's two ends ("Sep 5", "Oct 4"). */
+  from?: React.ReactNode;
+  to?: React.ReactNode;
+  className?: string;
+  'aria-label': string;
+}) {
+  return (
+    <TimeSeries
+      slot="line-chart"
+      series={series}
+      points={points}
+      ticks={ticks}
+      height={height}
+      format={format}
+      tickSide="right"
+      draw={(s, at) => <SeriesLine d={linePath(at)} tone={s.tone} />}
+      xAxis={() =>
+        from || to ? (
+          <div aria-hidden className="flex justify-between pr-11 text-[11px] text-fg-subtle">
+            <span>{from}</span>
+            <span>{to}</span>
+          </div>
+        ) : null
+      }
+      className={className}
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+/**
  * AreaChart — a quantity over time where the volume is the point (Plan's
  * Stats: tokens and cost per week, tasks done). A monotone curve per series
  * over a wash of its tone (12% alone, 8% when series overlap), the ticks on
@@ -466,93 +540,31 @@ function AreaChart({
   className?: string;
   'aria-label': string;
 }) {
-  const [hover, setHover] = React.useState<number | null>(null);
-  // An empty period (`ticks={[0]}`, every value 0) still draws its zero line.
-  const top = Math.max(1, ticks[ticks.length - 1] ?? Math.max(...points.flatMap((p) => Object.values(p.values))));
-  const x = (i: number) => (points.length < 2 ? 50 : (i / (points.length - 1)) * 100);
-  const y = (v: number) => 100 - (Math.min(v, top) / top) * 100;
-  const hovered = hover === null ? null : points[hover];
   const wash = series.length > 1 ? 0.08 : 0.12;
   return (
-    <figure data-slot="area-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
-      <ChartReadout series={series} label={hovered?.label} values={hovered?.values} format={format} />
-      <div className="grid grid-cols-[34px_minmax(0,1fr)] gap-x-2">
-        <div aria-hidden className="relative" style={{ height }}>
-          {ticks.map((t) => (
-            <span
-              key={t}
-              className="figures absolute right-0 translate-y-1/2 text-[11px] text-fg-subtle"
-              // biome-ignore lint/style/noInlineStyles: the label sits at its value.
-              style={{ bottom: `${(t / top) * 100}%` }}
-            >
-              {format(t)}
-            </span>
-          ))}
-        </div>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: the hover readout repeats the figure's data, which the list below carries for assistive technology. */}
-        <div
-          className="relative"
-          // biome-ignore lint/style/noInlineStyles: the plot's height is the caller's.
-          style={{ height }}
-          onMouseLeave={() => setHover(null)}
-        >
-          {ticks.map((t) => (
-            <span
-              key={t}
-              aria-hidden
-              className="absolute inset-x-0 h-px bg-border-subtle"
-              // biome-ignore lint/style/noInlineStyles: the rule sits at its value.
-              style={{ bottom: `${(t / top) * 100}%` }}
-            />
-          ))}
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full overflow-visible">
-            {series.map((s) => {
-              const line = monotonePath(points.map((p, i) => [x(i), y(p.values[s.key] ?? 0)] as const));
-              return (
-                <g key={s.key}>
-                  {area && points.length > 1 ? (
-                    <path d={`${line} L${x(points.length - 1)} 100 L${x(0)} 100 Z`} fill={TONE_STROKE[s.tone]} opacity={wash} />
-                  ) : null}
-                  <path
-                    d={line}
-                    fill="none"
-                    stroke={TONE_STROKE[s.tone]}
-                    strokeWidth={2}
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                </g>
-              );
-            })}
-          </svg>
-          {hovered && hover !== null ? (
-            <>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-px bg-border"
-                // biome-ignore lint/style/noInlineStyles: the crosshair follows the pointer.
-                style={{ left: `${x(hover)}%` }}
-              />
-              {series.map((s) => (
-                <span
-                  key={s.key}
-                  aria-hidden
-                  className={cn('pointer-events-none absolute -mb-[4.5px] -ml-[4.5px] size-[9px] rounded-pill shadow-[0_0_0_2px_var(--card)]', TONE_BG[s.tone])}
-                  // biome-ignore lint/style/noInlineStyles: the dot sits on the value.
-                  style={{ left: `${x(hover)}%`, bottom: `${100 - y(hovered.values[s.key] ?? 0)}%` }}
-                />
-              ))}
-            </>
-          ) : null}
-          <div className="absolute inset-0 flex">
-            {points.map((p, i) => (
-              <span key={p.label} aria-hidden className="h-full flex-1" onMouseEnter={() => setHover(i)} />
-            ))}
-          </div>
-        </div>
-        <span aria-hidden />
-        <div aria-hidden className="relative mt-1.5 h-4">
+    <TimeSeries
+      slot="area-chart"
+      series={series}
+      points={points}
+      ticks={ticks}
+      height={height}
+      format={format}
+      tickSide="left"
+      draw={(s, at) => {
+        const line = monotonePath(at);
+        const first = at[0];
+        const last = at[at.length - 1];
+        return (
+          <>
+            {area && first && last && at.length > 1 ? (
+              <path d={`${line} L${last[0]} 100 L${first[0]} 100 Z`} fill={TONE_STROKE[s.tone]} opacity={wash} />
+            ) : null}
+            <SeriesLine d={line} tone={s.tone} />
+          </>
+        );
+      }}
+      xAxis={(hover, x) => (
+        <div aria-hidden className="relative ml-10.5 h-4">
           {points.map((p, i) => (
             <span
               key={p.label}
@@ -567,15 +579,10 @@ function AreaChart({
             </span>
           ))}
         </div>
-      </div>
-      <ul className="sr-only">
-        {points.map((p) => (
-          <li key={p.label}>
-            {p.label}: {series.map((s) => `${s.label} ${format(p.values[s.key] ?? 0)}`).join(', ')}
-          </li>
-        ))}
-      </ul>
-    </figure>
+      )}
+      className={className}
+      aria-label={ariaLabel}
+    />
   );
 }
 

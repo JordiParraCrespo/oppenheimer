@@ -20,6 +20,8 @@ import { SettingsTopBar } from '@oppenheimer/design-system-web/settings-shell';
 import { Switch } from '@oppenheimer/design-system-web/switch';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
+import { GroupHead, Spec } from './page-shell';
+
 /* ── BotItem ─────────────────────────────────────────────────────────────── */
 
 export function BotItemsDemo() {
@@ -243,5 +245,64 @@ export function SettingsTopBarDemo() {
       />
       <div className="h-16" />
     </div>
+  );
+}
+
+/** The Employees group: the bot row, its photo, its routines and its settings rows. */
+export function EmployeesSection() {
+  return (
+    <>
+      <GroupHead>Employees</GroupHead>
+
+      <Spec
+        id="botitem"
+        title="BotItem"
+        meta="bot-item.tsx"
+        desc="An employee in the sidebar, read like a conversation: a 36px photo (initials in ink until it loads) with a green dot on its corner while the bot works, the name and the age in mono, then the last message in muted ink. Unread sets the name at 600, the preview in full ink and a blue dot at the end; the open chat rests on the selected wash. 14px radius, rows 2px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
+        code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} age="2m" live active /></BotList>`}
+      >
+        <BotItemsDemo />
+      </Spec>
+
+      <Spec
+        id="avatarpicker"
+        title="AvatarPicker"
+        meta="avatar-picker.tsx"
+        desc="A bot's photo picked from a set: the current one beside the bot's name, then a grid of round photos over optional captions, the picked one on the selected wash; arrow keys move through it. compact is the 300px popover off the chat header (four columns, 36px photos, Surprise me under the grid); wide is BotSettings' Profile (76px columns, 40px photos, a 72px preview). BotAvatar is the photo alone, initials in ink until the image loads."
+        code={`<AvatarPicker options={photos} value={photo} onValueChange={setPhoto} name="Release Bot" onShuffle={shuffle} />`}
+      >
+        <AvatarPickerDemo />
+      </Spec>
+
+      <Spec
+        id="routinecard"
+        title="RoutineCard"
+        meta="routine-card.tsx"
+        desc="Something a bot does on its own, read in full on its settings: the name, the Switch (Pause / Resume) and the edit and delete buttons; the trigger as a glyph and a line; the prompt in muted ink; the last and next run in mono. A paused card fades to 60%. Editing, the caller's form replaces the read view inside the same card. The sidebar's workspace automations stay RoutineItem."
+        code={`<RoutineCard name="Morning digest" icon={<ClockIcon />} trigger="Schedule · Weekdays at 09:00" prompt="…" last="Today 09:00" next="Tomorrow 09:00" active={on} onActiveChange={setOn} onEdit={edit} onDelete={remove} />`}
+      >
+        <RoutineCardsDemo />
+      </Spec>
+
+      <Spec
+        id="settingslist"
+        title="SettingsListRow · SettingsAddRow"
+        meta="settings-group.tsx"
+        desc="Records in a settings card rather than settings: a revision with who made it as a pill and Revert, a learned fact with its kind as an 18px tag and its source, a connector with its URL in mono and a Switch. A fact shared from another bot is muted. SettingsAddRow is the card's last row, a borderless field and Add, off until there is something to add; Enter adds too."
+        code={`<SettingsGroup><SettingsListRow kind="Preference" meta="Learned in chat · Oct 2" actions={…}>Prefers squash merges</SettingsListRow><SettingsAddRow value={draft} onValueChange={setDraft} onAdd={add} aria-label="New fact" /></SettingsGroup>`}
+      >
+        <SettingsListDemo />
+      </Spec>
+
+      <Spec
+        id="settingstopbar"
+        title="SettingsTopBar"
+        meta="settings-shell.tsx"
+        desc="The bar over one thing's own settings, where Settings' nav would not say whose they are: back, the 30px photo and the name, a badge (Built-in), then a Saved flash after a change and the actions (Open chat, the ellipsis)."
+        code={`<SettingsTopBar back={…} avatar={<BotAvatar option={bot} size={30} />} title="Release Bot" badge={<Badge variant="soft">Built-in</Badge>} saved={saved && 'Saved'} actions={…} />`}
+      >
+        <SettingsTopBarDemo />
+      </Spec>
+    </>
   );
 }
