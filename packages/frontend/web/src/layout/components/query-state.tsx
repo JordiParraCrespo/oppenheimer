@@ -45,6 +45,25 @@ interface Rung {
   data: unknown;
 }
 
+/**
+ * The ladder, in its one order. A failure wins over everything unless it is a
+ * stale one (data already arrived) that the caller asked to `keep`; then the
+ * data still draws, and `failure` draws beside it. Until data arrives, the
+ * read is pending; `isPending` is not read, so the ladder hangs on the one
+ * field every rung below it needs.
+ */
+export function rungOf<T>(
+  { error, data }: QueryStateSource<T>,
+  isEmpty: ((data: T) => boolean) | undefined,
+  stale: 'replace' | 'keep',
+): Rung {
+  const failure = error !== null && error !== undefined ? { error } : null;
+  const keepsData = stale === 'keep' && data !== undefined;
+  if (failure && !keepsData) return { rung: 'failed', failure, data };
+  if (data === undefined) return { rung: 'pending', failure, data };
+  return { rung: isEmpty?.(data) ? 'empty' : 'data', failure, data };
+}
+
 const RungContext = createContext<Rung | null>(null);
 
 function useRung(slot: string): Rung {
@@ -93,17 +112,7 @@ function QueryStateRoot<T>({
   stale?: 'replace' | 'keep';
   children: ReactNode;
 }) {
-  const { error, data } = query;
-  const failure = error !== null && error !== undefined ? { error } : null;
-  const rung: Rung['rung'] =
-    failure && (stale === 'replace' || data === undefined)
-      ? 'failed'
-      : data === undefined
-        ? 'pending'
-        : isEmpty?.(data)
-          ? 'empty'
-          : 'data';
-  return <RungContext value={{ rung, failure, data }}>{children}</RungContext>;
+  return <RungContext value={rungOf(query, isEmpty, stale)}>{children}</RungContext>;
 }
 
 /** What holds the place until the first answer: skeletons, usually. */

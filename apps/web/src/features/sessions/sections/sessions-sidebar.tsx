@@ -67,7 +67,8 @@ const DeleteSessionDialog = lazy(() =>
 export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: sessions, isPending, error } = useSessions();
+  const sessionsQuery = useSessions();
+  const sessions = sessionsQuery.data;
   const projects = useProjects();
   // Selected down to plain pairs, which the query keeps by reference across a
   // refetch that changes no name.
@@ -114,7 +115,7 @@ export function SessionsSidebar() {
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
-  const ready = combineQueries({ isPending, error, data: sessions }, projects, () => groups);
+  const ready = combineQueries(sessionsQuery, projects, () => groups);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

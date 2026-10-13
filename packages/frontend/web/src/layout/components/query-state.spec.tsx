@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { combineQueries, QueryState, type QueryStateSource } from './query-state';
+import { combineQueries, QueryState, type QueryStateSource, rungOf } from './query-state';
 
 // Partial: the forms concern's index also loads the i18n instance, which
 // needs the real `initReactI18next`.
@@ -13,6 +13,8 @@ vi.mock('react-i18next', async (importOriginal) => ({
 }));
 
 afterEach(cleanup);
+
+const boom = new Error('boom');
 
 function show(
   query: QueryStateSource<string[]>,
@@ -31,8 +33,6 @@ function show(
     </QueryState>,
   );
 }
-
-const boom = new Error('boom');
 
 describe('QueryState', () => {
   it('holds the place until the first answer', () => {
@@ -93,6 +93,49 @@ describe('QueryState', () => {
   it('hands the data to its children', () => {
     const { container } = show({ isPending: false, error: null, data: ['optimus', 'build-03'] });
     expect(container.textContent).toBe('optimus, build-03');
+  });
+});
+
+describe('rungOf', () => {
+  const empty = (rows: string[]) => rows.length === 0;
+  const cases: [string, QueryStateSource<string[]>, 'replace' | 'keep', string, boolean][] = [
+    [
+      'no answer yet',
+      { isPending: true, error: null, data: undefined },
+      'replace',
+      'pending',
+      false,
+    ],
+    ['a first failure', { isPending: false, error: boom, data: undefined }, 'keep', 'failed', true],
+    [
+      'a later failure, replaced',
+      { isPending: false, error: boom, data: ['a'] },
+      'replace',
+      'failed',
+      true,
+    ],
+    ['a later failure, kept', { isPending: false, error: boom, data: ['a'] }, 'keep', 'data', true],
+    [
+      'a later failure on empty data, kept',
+      { isPending: false, error: boom, data: [] },
+      'keep',
+      'empty',
+      true,
+    ],
+    ['an empty answer', { isPending: false, error: null, data: [] }, 'replace', 'empty', false],
+    ['an answer', { isPending: false, error: null, data: ['a'] }, 'replace', 'data', false],
+  ];
+
+  it.each(cases)('puts %s on its rung', (_, query, stale, rung, failed) => {
+    const decided = rungOf(query, empty, stale);
+    expect(decided.rung).toBe(rung);
+    expect(decided.failure !== null).toBe(failed);
+  });
+
+  it('never calls an answer empty without isEmpty', () => {
+    expect(rungOf({ isPending: false, error: null, data: [] }, undefined, 'replace').rung).toBe(
+      'data',
+    );
   });
 });
 
