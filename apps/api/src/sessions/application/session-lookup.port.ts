@@ -1,4 +1,4 @@
-import type { ShareLinkViewer } from '../domain/session-share-link.entity';
+import type { SessionShareViewer } from '../domain/session-share.entity';
 
 /** The Redis namespace of attach tickets, `attach:<random>`. */
 export const ATTACH_TICKET_PREFIX = 'attach:';
@@ -14,20 +14,20 @@ export interface AttachTicket {
   organizationId: string;
   window: number;
   /**
-   * The person the attach is judged as. Through a share link, the link's
-   * creator: the link opens what they could open, and no more.
+   * The person the attach is judged as. Through a share, whoever shared the
+   * session: a share opens what they could open, and no more.
    */
   userId: string;
-  /** Present when the attach came through a share link. */
+  /** Present when the attach came through a share. */
   share?: AttachTicketShare;
 }
 
 export interface AttachTicketShare {
-  linkId: string;
-  /** A `read` link: the relay drops the attachment's input, the host attaches read-only. */
+  shareId: string;
+  /** `read` access: the relay drops the attachment's input, the host attaches read-only. */
   readOnly: boolean;
-  /** The signed-in holder, judged again on each re-check; `null` for nobody signed in. */
-  viewerUserId: string | null;
+  /** The signed-in guest, judged again on each re-check. */
+  viewerUserId: string;
 }
 
 export interface SessionAttachTarget {
@@ -66,14 +66,17 @@ export interface SessionLookupPort {
   /** Unscoped: the ticket already proved who asked, and the caller re-checks membership. */
   findAttachTarget(sessionId: string): Promise<SessionAttachTarget | null>;
   /**
-   * Whether a share link still opens this session for this holder: the same
-   * judgment (`SessionShareLinkEntity.refusalFor`) its ticket passed at mint,
-   * asked again. Unscoped: the ticket named the link.
+   * Whether a share still opens this session for this guest, with the access
+   * the ticket was minted with: the same judgment
+   * (`SessionShareEntity.refusalFor`) its ticket passed at mint, asked again,
+   * and a share since narrowed to `read` no longer admits a typing ticket.
+   * Unscoped: the ticket named the share.
    */
-  shareLinkAdmits(
-    linkId: string,
+  shareAdmits(
+    shareId: string,
     sessionId: string,
-    viewer: ShareLinkViewer | null,
+    viewer: SessionShareViewer,
+    readOnly: boolean,
   ): Promise<boolean>;
   /** Unscoped: the runner proved which host it is, and the caller checks it matches. */
   findCredentialTarget(

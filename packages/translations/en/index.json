@@ -250,9 +250,9 @@
       "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
       "GIT_005": "A git command on the host took too long and was stopped.",
       "CONSENT_CLIENT_002": "The server did not say where to send you next.",
-      "SESSIONS_021": "That share link doesn’t open anything. It may have expired or been revoked.",
-      "SESSIONS_022": "Sign in to open this share link.",
-      "SESSIONS_023": "This share link isn’t shared with you.",
+      "SESSIONS_021": "That session isn’t shared, or not anymore. Ask whoever shared it to share it again.",
+      "SESSIONS_022": "Sign in to open this shared session.",
+      "SESSIONS_023": "This session isn’t shared with you.",
       "SESSIONS_024": "This session has as many share links as it can hold. Revoke one, then try again."
     },
     "notFound": {
@@ -668,63 +668,102 @@
       "name": "Name"
     },
     "share": {
-      "title": "Share “{{name}}”",
-      "description": "A link that opens this session’s terminal for someone outside your workspace, for as long as you can open it yourself, until it expires or you revoke it. They see everything the terminal shows, secrets and paths included, and revoking doesn’t take back what they have already seen.",
-      "access": "They can",
-      "read": "Watch",
-      "readHint": "See the terminal live. Nothing they type reaches it.",
-      "write": "Type",
-      "writeHint": "Type into the terminal: a shell on your host, as you.",
-      "readBadge": "Watch only",
-      "writeBadge": "Can type",
-      "audience": "Who can open it",
-      "people": "Only people I name",
-      "peopleHint": "They sign in with one of these verified emails.",
-      "accounts": "Anyone signed in",
-      "accountsHint": "Anyone with the link and an Oppenheimer account.",
-      "anyone": "Anyone with the link",
-      "anyoneHint": "No sign-in needed. Whoever has the link has the terminal.",
-      "emails": "Emails",
-      "emailsPlaceholder": "ada@example.com, grace@example.com",
-      "emailsHint": "Separate them with commas, spaces or new lines.",
-      "peopleInvalid": "Enter at least one email, and only emails.",
-      "lifetime": "Expires",
-      "lifetimes": {
-        "1h": "In 1 hour",
-        "1d": "In 1 day",
-        "7d": "In 7 days",
-        "30d": "In 30 days",
-        "never": "Never"
-      },
-      "lifetimeSearch": "Find an expiry",
-      "lifetimeNone": "No such expiry",
-      "lifetimeCapped": "Links that let anyone type expire within 7 days.",
-      "lifetimeTooLong": "A link that lets anyone type must expire within 7 days.",
-      "writeWarning": "Anyone who opens this link can run commands on your host as you. Prefer naming the people, and a short expiry.",
-      "writeNote": "The people you name can run commands on your host as you.",
-      "create": "Create link",
-      "creating": "Creating…",
-      "failed": "The link could not be created.",
-      "linkTitle": "Share link",
-      "onceOnly": "Copy it now: it is shown only once. If it is lost, revoke it and make another.",
-      "another": "Another link",
-      "live": "Active links",
-      "none": "No active links.",
-      "listFailed": "The links could not be loaded.",
-      "revoke": "Revoke",
-      "revoking": "Revoking…",
-      "revokeFailed": "The link could not be revoked.",
-      "until": "Until {{date}}",
-      "noExpiry": "No expiry",
+      "title": "Share session",
+      "managing": "Sharing",
+      "on": "on {{host}}",
+      "thisHost": "this host",
+      "loadFailed": "Could not load how this session is shared.",
+      "who": "Who",
       "audiences": {
-        "anyone": "Anyone with the link",
-        "accounts": "Anyone signed in"
-      }
+        "people": "Specific people",
+        "link": "Anyone with the link"
+      },
+      "peoplePlaceholder": "Name or email",
+      "peopleLabel": "People to share with",
+      "invite": "Invite {{email}}",
+      "inviteHint": "Outside this workspace · they sign in to open it",
+      "inviteEmpty": "Type a full email address to invite someone outside the workspace.",
+      "outside": "outside workspace",
+      "removePerson": "Remove {{name}}",
+      "peopleRequired": "Add at least one person.",
+      "linkHint": "Anyone who opens the link and signs in can watch. Link access is always view only.",
+      "permission": "Permission",
+      "access": {
+        "read": {
+          "label": "Can view",
+          "hint": "Watch the terminal live. Can’t type or stop the session."
+        },
+        "write": {
+          "label": "Can write",
+          "hint": "Send prompts and commands. They run as you."
+        }
+      },
+      "writeLocked": "Write access needs named people. Switch to “Specific people” to grant it.",
+      "writeWarningTitle": "{{who}} will act as you on {{host}}",
+      "writeWarningCount_one": "{{count}} person",
+      "writeWarningCount_other": "{{count}} people",
+      "writeWarningBody": "Everything they send runs with your credentials and your GitHub token. They can push, delete files and spend your quota.",
+      "writeAck": "I understand they act as me on this host",
+      "ackRequired": "Confirm you understand before giving write access.",
+      "duration": "For how long",
+      "lifetimes": {
+        "1h": "1 hour",
+        "8h": "8 hours",
+        "24h": "24 hours",
+        "7d": "7 days",
+        "never": "Never expires"
+      },
+      "endsRead": "Ends {{date}}. You can stop sharing any time.",
+      "endsWrite": "Ends {{date}}. Write access lasts 24 hours at most.",
+      "neverHint": "Does not expire. Access stays until you stop sharing.",
+      "submit": {
+        "people": "Share",
+        "link": "Create link",
+        "write": "Give write access"
+      },
+      "submitting": "Sharing…",
+      "failed": "The session could not be shared.",
+      "link": "Link",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "linkHintLink": "Anyone who signs in can watch. Never shows write controls.",
+      "linkHintPeople": "Only the people below can open it. Others see “You don’t have access”.",
+      "whoHasAccess": "Who has access",
+      "you": "{{email}} · you",
+      "roles": {
+        "owner": "Owner",
+        "read": "Can view",
+        "write": "Can write"
+      },
+      "anyoneRow": "Anyone with the link",
+      "anyoneRowHint": "Must sign in to open",
+      "removeAccess": "Remove access",
+      "expired": "ended",
+      "never": "never",
+      "stop": "Stop sharing",
+      "stopping": "Stopping…",
+      "addPeople": "Add people",
+      "done": "Done",
+      "updateFailed": "That change did not land. Try again.",
+      "status": {
+        "share": "Share",
+        "read": "Shared · view only",
+        "write": "Shared · can write",
+        "link": "link"
+      },
+      "statusTitle": "Share this session"
     },
     "shared": {
-      "watching": "Watching",
-      "typing": "You can type",
+      "viewOnly": "View only",
+      "canWrite": "Can write",
+      "endsIn": "Ends in {{time}}",
+      "leave": "Leave",
       "sharedBy": "Shared by {{name}}",
+      "viewOnlyBy": "View only · shared by {{name}}",
+      "state": {
+        "live": "Running",
+        "stopped": "Stopped"
+      },
       "status": {
         "connecting": "Connecting…",
         "live": "Live",
@@ -735,26 +774,26 @@
         "stopped": "The session was stopped.",
         "resolved": "The session was closed.",
         "missing": "The session is gone.",
-        "unauthorized": "This link no longer opens the session.",
-        "forbidden": "This link no longer opens the session.",
+        "unauthorized": "This session is no longer shared with you.",
+        "forbidden": "This session is no longer shared with you.",
         "refused": "The host refused the terminal."
       },
       "gone": {
-        "title": "This link doesn’t open anything",
-        "body": "It may have expired or been revoked, or the session was closed. Ask whoever shared it for a new one."
+        "title": "This session isn’t shared",
+        "body": "It may have expired, or whoever shared it stopped sharing, or the session was closed. Ask them to share it again."
       },
       "signIn": {
         "title": "Sign in to open this session",
-        "body": "This link is shared with Oppenheimer accounts.",
+        "body": "Shared sessions open for Oppenheimer accounts.",
         "action": "Sign in"
       },
       "notInvited": {
-        "title": "This link isn’t shared with you",
-        "body": "It opens only for the people it names, by a verified email. Ask whoever shared it to add yours."
+        "title": "You don’t have access",
+        "body": "This session is shared with specific people, by a verified email. Ask whoever shared it to add yours."
       },
       "stopped": {
         "title": "This session is stopped",
-        "body": "Its terminal isn’t running. Whoever shared it can restart it, and this link will open it again."
+        "body": "Its terminal isn’t running. Whoever shared it can restart it, and this page will open it again."
       }
     }
   },

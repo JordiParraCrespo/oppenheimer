@@ -168,32 +168,26 @@ export const SessionErrors = {
     httpStatus: 429,
   },
   /**
-   * A share link that opens nothing: never issued, revoked, expired, or its
-   * session closed. One answer for all of them, so a holder learns nothing
-   * from a link that no longer works, and the owner's list reports the same
-   * for a link id that is not on this session.
+   * A share that opens nothing: the session was never shared at that
+   * address, its owner stopped sharing it, it expired, or the session closed.
+   * One answer for all of them, so a guest learns nothing from an address
+   * that no longer works.
    */
-  SHARE_LINK_NOT_FOUND: {
+  SHARE_NOT_FOUND: {
     code: 'SESSIONS_021',
-    message: 'That share link does not open anything',
+    message: 'That session is not shared, or no longer',
     httpStatus: 404,
   },
-  /** The link is for signed-in accounts, and nobody is signed in. */
-  SHARE_LINK_SIGN_IN_REQUIRED: {
+  /** Opening a shared session needs an account, and nobody is signed in. */
+  SHARE_SIGN_IN_REQUIRED: {
     code: 'SESSIONS_022',
-    message: 'Sign in to open this share link',
+    message: 'Sign in to open this shared session',
     httpStatus: 401,
   },
-  /** Signed in, and not one of the people the link names (or the email is unverified). */
-  SHARE_LINK_NOT_INVITED: {
+  /** Signed in, and not one of the people the share names (or the email is unverified). */
+  SHARE_NOT_INVITED: {
     code: 'SESSIONS_023',
-    message: 'This share link is not shared with you',
+    message: 'This session is not shared with you',
     httpStatus: 403,
-  },
-  /** The session already holds `MAX_SHARE_LINKS_PER_SESSION` live links. */
-  TOO_MANY_SHARE_LINKS: {
-    code: 'SESSIONS_024',
-    message: 'This session has as many share links as it can hold',
-    httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

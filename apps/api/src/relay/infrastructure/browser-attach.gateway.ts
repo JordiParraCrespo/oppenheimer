@@ -244,21 +244,20 @@ export class BrowserAttachGateway {
    * retries, and on the timer it keeps the socket.
    */
   private async authorize(claim: AttachTicket): Promise<AttachVerdict> {
-    // Through a share link, the link's own judgment first, asked again as at
-    // mint: revoked, expired, or no longer for this holder ends it whatever
-    // its creator may still do. A signed-in holder is judged as their
-    // account is now; one banned since holds nothing. The rest is the
-    // creator's judgement, below, as their own terminal's.
+    // Through a share, the share's own judgment first, asked again as at
+    // mint: stopped, expired, no longer for this guest, or narrowed to
+    // watching under a typing ticket ends it whatever the person who shared
+    // it may still do. The guest is judged as their account is now; one
+    // banned since holds nothing. The rest is the sharer's judgement, below,
+    // as their own terminal's.
     if (claim.share) {
-      const viewerId = claim.share.viewerUserId;
-      const viewer = viewerId ? await this.owners.findActiveOwner(viewerId) : null;
-      if (viewerId && !viewer) return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
-      const admitted = await this.sessions.shareLinkAdmits(
-        claim.share.linkId,
+      const viewer = await this.owners.findActiveOwner(claim.share.viewerUserId);
+      if (!viewer) return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+      const admitted = await this.sessions.shareAdmits(
+        claim.share.shareId,
         claim.sessionId,
-        viewer
-          ? { userId: viewer.id, email: viewer.email, emailVerified: viewer.emailVerified }
-          : null,
+        { userId: viewer.id, email: viewer.email, emailVerified: viewer.emailVerified },
+        claim.share.readOnly,
       );
       if (!admitted) return refuse('unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
     }
@@ -277,10 +276,10 @@ export class BrowserAttachGateway {
     if (!owner) {
       return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
     }
-    // A share link keeps minting tickets with nobody signed in as its
-    // creator, so the policy their own ticket passed at mint (`update
+    // A share keeps minting tickets with nobody signed in as the person who
+    // shared it, so the policy their own ticket passed at mint (`update
     // Session`) is asked again here, on their current roles: a role change
-    // that took it away ends every link they made.
+    // that took it away ends every share they made.
     if (claim.share) {
       const ability = await this.abilities.forRequest({
         user: { ...owner },
@@ -362,7 +361,7 @@ class BrowserAttachment implements AttachmentSink {
   private rechecking = false;
   private attached = false;
   private finished = false;
-  /** A read-only share link's attachment: no input, and the host told so. */
+  /** A read-only share's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
   /** The direct path's signalling, which this attachment only hands messages to. */
   private readonly directPath: DirectPathSignalling;
@@ -513,7 +512,7 @@ class BrowserAttachment implements AttachmentSink {
    */
   private input(bytes: Buffer): void {
     if (!this.attached || this.attachmentId === null || bytes.byteLength === 0) return;
-    // A read-only share link watches. The host attached tmux read-only too;
+    // A read-only share watches. The host attached tmux read-only too;
     // this is the relay's half, so a runner that predates the flag still
     // never sees a keystroke from it.
     if (this.readOnly) return;

@@ -23,7 +23,8 @@ export type ConsoleDialogRequest =
       /** The project a header's plus opened it for. */
       projectId?: string;
       onSaved?: (automation: { id: string }) => void;
-    };
+    }
+  | { kind: 'share-session'; sessionId: string };
 
 const consoleDialogs = createDialogSlot<ConsoleDialogRequest>('useConsoleDialog');
 

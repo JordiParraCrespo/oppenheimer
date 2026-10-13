@@ -37,9 +37,6 @@ import { ProjectGroup } from './project-group';
  * The dialog loads when first opened: the sidebar is on every authenticated
  * route, so what it imports is the console's first load.
  */
-const ShareSessionDialog = lazy(() =>
-  import('../dialogs/share-session').then((module) => ({ default: module.ShareSessionDialog })),
-);
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
@@ -72,7 +69,6 @@ export function SessionsSidebar() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
-  const [sharing, setSharing] = useState<SessionEntity | null>(null);
   // A later write that lands clears it, and so does Dismiss.
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
@@ -204,7 +200,9 @@ export function SessionsSidebar() {
                       onSettings={(target) =>
                         dialogs.open({ kind: 'project', projectId: target.id })
                       }
-                      onShare={setSharing}
+                      onShare={(target) =>
+                        dialogs.open({ kind: 'share-session', sessionId: target.id })
+                      }
                       onDelete={setDeleting}
                       onWrite={setFailure}
                     />
@@ -217,7 +215,6 @@ export function SessionsSidebar() {
       </div>
 
       <Suspense fallback={null}>
-        {sharing ? <ShareSessionDialog session={sharing} onClose={() => setSharing(null)} /> : null}
         {deleting ? (
           <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
         ) : null}

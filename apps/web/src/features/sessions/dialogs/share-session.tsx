@@ -1,77 +1,100 @@
 import {
-  Button,
-  Callout,
-  CodeBlock,
   Dialog,
   DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  Separator,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import { useCreateShareLink } from '@oppenheimer/frontend-consumer/react';
+import {
+  useHosts,
+  usePutSessionShare,
+  useSession,
+  useSessionShare,
+} from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ShareLinkForm } from '../forms/share-link';
-import { shareLinkUrl } from '../lib/share-links';
-import { ShareLinks } from '../sections/share-links';
+import { ShareSessionForm } from '../forms/share-session';
+import { shareDefaults } from '../lib/share-session';
+import { ShareSessionAccess } from '../sections/share-session-access';
 
 /**
- * Share a session's terminal with a link. The form makes one; the answer is
- * the only time its address exists, so it replaces the form with the address
- * to copy, and Another link brings the form back. The live links sit under
- * either, each revocable.
+ * Share a session (`ShareSession.dc.html`, and the Share dialog of
+ * `SessionsConsole (pages).dc.html`), from the terminal's status line or a
+ * session row's menu. A session not yet shared opens on Share session: who,
+ * permission, for how long. A shared one opens on Sharing: the link, who has
+ * access and until when; Add people goes back to the form with the share as
+ * it is, and sharing again replaces it at the same address.
  */
 export function ShareSessionDialog({
-  session,
+  sessionId,
   onClose,
 }: {
-  session: SessionEntity;
+  sessionId: string;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const create = useCreateShareLink();
-  const made = create.data;
+  const session = useSession(sessionId);
+  const hostId = session.data?.hostId;
+  const hostName = useHosts({
+    select: (hosts) => hosts.find((host) => host.id === hostId)?.name,
+    enabled: Boolean(hostId),
+  }).data;
+  const host = hostName ?? t('sessions.share.thisHost');
+  const share = useSessionShare(sessionId);
+  const put = usePutSessionShare();
+  const [adding, setAdding] = useState(false);
+
+  const current = share.data ?? null;
+  const composing = !share.isPending && (current === null || adding);
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-130">
+    <Dialog open onOpenChange={(open) => !open && !put.isPending && onClose()}>
+      <DialogContent size="form" closeLabel={t('common.close')}>
         <DialogHeader>
-          <DialogTitle>{t('sessions.share.title', { name: session.name })}</DialogTitle>
-          <DialogDescription>{t('sessions.share.description')}</DialogDescription>
+          <DialogTitle>
+            {composing || share.isPending
+              ? t('sessions.share.title')
+              : t('sessions.share.managing')}
+          </DialogTitle>
+          <DialogDescription>
+            <span className="font-mono text-sm">{session.data?.name}</span>
+            {' · '}
+            {t('sessions.share.on', { host })}
+          </DialogDescription>
         </DialogHeader>
-        <DialogBody>
-          <div className="flex flex-col gap-5 pb-7">
-            {made ? (
-              <div className="flex flex-col gap-3">
-                <CodeBlock
-                  code={shareLinkUrl(window.location.origin, made.token)}
-                  title={t('sessions.share.linkTitle')}
-                  copyLabel={t('common.copy')}
-                  copiedLabel={t('common.copied')}
-                />
-                <Callout>{t('sessions.share.onceOnly')}</Callout>
-                <div className="flex justify-end">
-                  <Button variant="secondary" onClick={() => create.reset()}>
-                    {t('sessions.share.another')}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <ErrorAlert error={create.error} fallback={t('sessions.share.failed')} />
-                <ShareLinkForm
-                  isPending={create.isPending}
-                  onSubmit={(input) => create.mutate({ sessionId: session.id, input })}
-                />
-              </>
-            )}
-            <Separator />
-            <ShareLinks sessionId={session.id} />
-          </div>
-        </DialogBody>
+        {share.isPending ? (
+          <DialogBody>
+            <Skeleton className="h-64 w-full" />
+          </DialogBody>
+        ) : share.error ? (
+          <DialogBody>
+            <ErrorAlert error={share.error} fallback={t('sessions.share.loadFailed')} />
+          </DialogBody>
+        ) : composing ? (
+          <ShareSessionForm
+            defaults={shareDefaults(adding ? current : null)}
+            host={host}
+            pending={put.isPending}
+            error={put.error}
+            onSubmit={(input) =>
+              put.mutate({ sessionId, input }, { onSuccess: () => setAdding(false) })
+            }
+            onCancel={() => (current ? setAdding(false) : onClose())}
+          />
+        ) : current ? (
+          <ShareSessionAccess
+            sessionId={sessionId}
+            share={current}
+            onAddPeople={() => {
+              put.reset();
+              setAdding(true);
+            }}
+            onDone={onClose}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@oppenheimer/design-system-web/badge';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { Chip } from '@oppenheimer/design-system-web/chip';
 import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
@@ -11,7 +12,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@oppenheimer/design-system-web/dialog';
-import { PlayIcon } from '@oppenheimer/design-system-web/icons';
+import { EyeIcon, PlayIcon } from '@oppenheimer/design-system-web/icons';
 import { Kbd } from '@oppenheimer/design-system-web/kbd';
 import { SessionPaneBack, SessionPaneHeader } from '@oppenheimer/design-system-web/session-pane-header';
 import { dotVariants } from '@oppenheimer/design-system-web/status-dot';
@@ -22,6 +23,7 @@ import {
   TerminalPrompt,
   TerminalScrollback,
 } from '@oppenheimer/design-system-web/terminal';
+import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import * as React from 'react';
 
 import { COLUMNS, TODAY } from './plan-fixtures';
@@ -238,6 +240,21 @@ export function SessionPaneHeaderDemo() {
       </div>
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         <SessionPaneHeader state="failed" name="retriever eval" stateLabel="Failed" meta="codex · gpt-5 · atlas" />
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border-subtle">
+        <SessionPaneHeader
+          state="running"
+          name="fix-auth-redirect"
+          stateLabel="Running"
+          back={<Wordmark size={14} />}
+          meta="Ends in 23h 41m"
+          actions={
+            <Badge variant="neutral">
+              <EyeIcon />
+              View only
+            </Badge>
+          }
+        />
       </div>
     </div>
   );

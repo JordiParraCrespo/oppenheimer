@@ -4,17 +4,19 @@ import { connectInstallation, createSession, pairHost } from '../../support/sess
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Sharing a session from the console, and opening the link signed out.
+ * Sharing a session from the console (`ShareSession.dc.html`), and opening it
+ * as a guest.
  *
- * The owner shares from the session row's menu; the dialog answers with the
- * address once, as `/shared#<secret>`, and lists the live link with Revoke. A
- * second, empty browser context is the holder: it sees what the link opens
- * and who shared it, and, once revoked, that it opens nothing. The terminal
- * itself is the session screen's (`session.spec.ts`, and a real runner in
- * `tests/fleet/`); there is no runner here, so the session is marked open the
- * way `session.spec.ts` does and the pane is not asserted.
+ * The owner shares from the session row's menu: Share session (who,
+ * permission, for how long), then Sharing (the link, who has access, Stop
+ * sharing). A second account in a browser of its own is the guest: it
+ * signs in, sees the session and what the share lets it do, and, once the
+ * owner stops sharing, that the session is not shared. The terminal itself
+ * is the session screen's (`session.spec.ts`, and a real runner in
+ * `tests/fleet/`); there is no runner here, so the session is marked open
+ * the way `session.spec.ts` does and the pane is not asserted.
  */
-test('a session shared to anyone opens signed out, and stops opening once revoked', async ({
+test('a session shared as a link opens for a signed-in guest, and stops once sharing stops', async ({
   page,
   browser,
 }) => {
@@ -37,25 +39,30 @@ test('a session shared to anyone opens signed out, and stops opening once revoke
   await page.getByRole('menuitem', { name: 'Share…' }).click();
 
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('No active links.')).toBeVisible();
-  await dialog.getByText('Anyone with the link', { exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: 'Share session' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Anyone with the link' }).click();
+  // A link only watches: write is there, and off.
+  await expect(dialog.getByRole('radio', { name: /Can write/ })).toBeDisabled();
   await dialog.getByRole('button', { name: 'Create link' }).click();
 
-  const address = dialog.getByText(/\/shared#[A-Za-z0-9_-]{43}$/);
+  await expect(dialog.getByRole('heading', { name: 'Sharing' })).toBeVisible();
+  const address = dialog.getByText(/\/s\/[A-Za-z0-9_-]{22}$/);
   await expect(address).toBeVisible();
   const url = (await address.textContent())?.trim() ?? '';
-  await expect(dialog.getByRole('button', { name: 'Revoke' })).toHaveCount(1);
+  await expect(dialog.getByText('Anyone with the link')).toBeVisible();
 
-  const holder = await browser.newContext();
-  const shared = await holder.newPage();
-  await shared.goto(url);
-  await expect(shared.getByRole('heading', { name })).toBeVisible();
-  await expect(shared.getByText('Watching')).toBeVisible();
+  const guestUser = await provisionedUser('guest');
+  const guestContext = await browser.newContext();
+  const guest = await guestContext.newPage();
+  await signInAs(guest, guestUser.user);
+  await guest.goto(url);
+  await expect(guest.getByText(name)).toBeVisible();
+  await expect(guest.getByText('View only', { exact: true })).toBeVisible();
 
-  await dialog.getByRole('button', { name: 'Revoke' }).click();
-  await expect(dialog.getByText('No active links.')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Stop sharing' }).click();
+  await expect(dialog).toBeHidden();
 
-  await shared.reload();
-  await expect(shared.getByText('This link doesn’t open anything')).toBeVisible();
-  await holder.close();
+  await guest.reload();
+  await expect(guest.getByText('This session isn’t shared')).toBeVisible();
+  await guestContext.close();
 });

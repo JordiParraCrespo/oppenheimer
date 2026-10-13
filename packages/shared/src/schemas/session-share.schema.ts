@@ -1,118 +1,124 @@
 import { z } from 'zod';
 
 /**
- * A share link opens one session's terminal to people outside its workspace
- * (`product/versions/mvp/21-session-share-links.md`).
+ * Sharing a session opens its terminal to people outside its workspace
+ * (`product/versions/mvp/21-session-share-links.md`). A session has at most
+ * one share, at one stable address, `/s/<slug>`.
  *
- * Two independent choices make a link: **what** the holder may do, and **who**
- * may hold it.
+ * Three choices make a share: **who** may open it, **what** they may do, and
+ * **for how long**.
  *
+ * - `audience`: `people`, only the accounts whose verified email is on the
+ *   share's list; `link`, anyone signed in who has the address. Opening a
+ *   share always needs an account.
  * - `access`: `read` watches the terminal (tmux attaches a read-only client
  *   and the relay drops its keystrokes); `write` types into it, which is a
- *   shell on the host as the person who shared it.
- * - `audience`: `anyone` with the link, signed in or not; `accounts`, anyone
- *   signed in to Oppenheimer; `people`, only the accounts whose email is on
- *   the link's list.
+ *   shell on the host as the person who shared it. Only named people may
+ *   write, and never for more than a day.
  */
-export const SHARE_LINK_ACCESS = ['read', 'write'] as const;
-export const shareLinkAccessSchema = z.enum(SHARE_LINK_ACCESS);
-export type ShareLinkAccess = z.infer<typeof shareLinkAccessSchema>;
+export const SESSION_SHARE_ACCESS = ['read', 'write'] as const;
+export const sessionShareAccessSchema = z.enum(SESSION_SHARE_ACCESS);
+export type SessionShareAccess = z.infer<typeof sessionShareAccessSchema>;
 
-export const SHARE_LINK_AUDIENCES = ['anyone', 'accounts', 'people'] as const;
-export const shareLinkAudienceSchema = z.enum(SHARE_LINK_AUDIENCES);
-export type ShareLinkAudience = z.infer<typeof shareLinkAudienceSchema>;
+export const SESSION_SHARE_AUDIENCES = ['people', 'link'] as const;
+export const sessionShareAudienceSchema = z.enum(SESSION_SHARE_AUDIENCES);
+export type SessionShareAudience = z.infer<typeof sessionShareAudienceSchema>;
 
-/** How long a new link lives; `null` is until it is revoked or the session closes. */
-export const SHARE_LINK_LIFETIMES = ['1h', '1d', '7d', '30d'] as const;
-export const shareLinkLifetimeSchema = z.enum(SHARE_LINK_LIFETIMES);
-export type ShareLinkLifetime = z.infer<typeof shareLinkLifetimeSchema>;
+/** How long a share lasts; `null` is until its owner stops sharing. */
+export const SESSION_SHARE_LIFETIMES = ['1h', '8h', '24h', '7d'] as const;
+export const sessionShareLifetimeSchema = z.enum(SESSION_SHARE_LIFETIMES);
+export type SessionShareLifetime = z.infer<typeof sessionShareLifetimeSchema>;
 
-export const SHARE_LINK_LIFETIME_MS: Record<ShareLinkLifetime, number> = {
+export const SESSION_SHARE_LIFETIME_MS: Record<SessionShareLifetime, number> = {
   '1h': 60 * 60 * 1000,
-  '1d': 24 * 60 * 60 * 1000,
+  '8h': 8 * 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000,
-  '30d': 30 * 24 * 60 * 60 * 1000,
 };
 
 /**
- * The longest a link may live, by what it opens and to whom: a link that
- * lets anyone with it type is a shell for whoever finds it, so it expires
- * within seven days and never lives "until revoked". Every other link may.
+ * The lifetimes write access may have: a share that types is a shell as its
+ * owner, so it ends within a day and is never "until I stop".
  */
-export function maxShareLinkLifetime(
-  access: ShareLinkAccess,
-  audience: ShareLinkAudience,
-): ShareLinkLifetime | null {
-  return access === 'write' && audience === 'anyone' ? '7d' : null;
-}
+export const WRITE_SHARE_LIFETIMES = [
+  '1h',
+  '8h',
+  '24h',
+] as const satisfies readonly SessionShareLifetime[];
 
-/** Whether `lifetime` (`null`: no expiry) is within {@link maxShareLinkLifetime}. */
-export function shareLinkLifetimeAllowed(
-  access: ShareLinkAccess,
-  audience: ShareLinkAudience,
-  lifetime: ShareLinkLifetime | null | undefined,
+/** The longest write access lasts, in milliseconds. */
+export const WRITE_SHARE_MAX_MS = SESSION_SHARE_LIFETIME_MS['24h'];
+
+/** Whether `lifetime` (`null`: no expiry) may go with `access`. */
+export function sessionShareLifetimeAllowed(
+  access: SessionShareAccess,
+  lifetime: SessionShareLifetime | null | undefined,
 ): boolean {
-  const max = maxShareLinkLifetime(access, audience);
-  if (max === null) return true;
-  return lifetime != null && SHARE_LINK_LIFETIME_MS[lifetime] <= SHARE_LINK_LIFETIME_MS[max];
+  if (access === 'read') return true;
+  return lifetime != null && (WRITE_SHARE_LIFETIMES as readonly string[]).includes(lifetime);
 }
 
-/** The most people one link names: a list longer than this is an audience of `accounts`. */
-export const MAX_SHARE_LINK_PEOPLE = 50;
+/** The most people one share names. */
+export const MAX_SESSION_SHARE_PEOPLE = 50;
 
-/** The most live links one session holds at once. */
-export const MAX_SHARE_LINKS_PER_SESSION = 20;
+const shareEmailSchema = z.string().trim().toLowerCase().email().max(320);
 
-/** `POST /sessions/{id}/share-links`. */
-export const createShareLinkSchema = z
+/** `PUT /sessions/{id}/share`: share the session, or replace how it is shared. */
+export const putSessionShareSchema = z
   .object({
-    access: shareLinkAccessSchema,
-    audience: shareLinkAudienceSchema,
+    audience: sessionShareAudienceSchema,
+    access: sessionShareAccessSchema,
     /** Emails of the accounts that may open it; only with `audience: 'people'`. */
-    people: z
-      .array(z.string().trim().toLowerCase().email().max(320))
-      .max(MAX_SHARE_LINK_PEOPLE)
-      .optional(),
-    lifetime: shareLinkLifetimeSchema.nullable().optional(),
-    label: z.string().trim().max(80).optional(),
+    people: z.array(shareEmailSchema).max(MAX_SESSION_SHARE_PEOPLE).optional(),
+    lifetime: sessionShareLifetimeSchema.nullable(),
   })
-  .refine((link) => link.audience !== 'people' || (link.people?.length ?? 0) > 0, {
+  .refine((share) => share.audience !== 'people' || (share.people?.length ?? 0) > 0, {
     params: { i18nKey: 'validation.required' },
     path: ['people'],
   })
-  // Only a link for specific people names people: a list on any other
-  // audience would read as a restriction that is not enforced.
-  .refine((link) => link.audience === 'people' || !link.people?.length, {
+  // Only a share for specific people names people: a list on a link would
+  // read as a restriction that is not enforced.
+  .refine((share) => share.audience === 'people' || !share.people?.length, {
     path: ['people'],
   })
-  .refine((link) => shareLinkLifetimeAllowed(link.access, link.audience, link.lifetime), {
+  .refine((share) => share.audience === 'people' || share.access === 'read', {
+    params: { i18nKey: 'validation.invalid' },
+    path: ['access'],
+  })
+  .refine((share) => sessionShareLifetimeAllowed(share.access, share.lifetime), {
     params: { i18nKey: 'validation.invalid' },
     path: ['lifetime'],
   });
 
-export type CreateShareLinkDto = z.infer<typeof createShareLinkSchema>;
+export type PutSessionShareDto = z.infer<typeof putSessionShareSchema>;
 
 /**
- * The link's secret, as the console carries it: in the URL **fragment**
- * (`/shared#<token>`), which a browser never sends to a server, and from there
- * in a request body, never a path or a query string a proxy would log.
+ * `PATCH /sessions/{id}/share/people`: the people a `people` share names,
+ * with nothing else changed. Removing the last one is stopping the share.
  */
-export const shareTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+export const setSessionSharePeopleSchema = z.object({
+  people: z.array(shareEmailSchema).min(1).max(MAX_SESSION_SHARE_PEOPLE),
+});
+
+export type SetSessionSharePeopleDto = z.infer<typeof setSessionSharePeopleSchema>;
+
+/** A share's address, `/s/<slug>`: 128 random bits, in base64url. */
+export const sessionShareSlugSchema = z.string().regex(/^[A-Za-z0-9_-]{22}$/);
 
 /** `POST /shared-sessions/lookup`. */
 export const findSharedSessionSchema = z.object({
-  token: shareTokenSchema,
+  slug: sessionShareSlugSchema,
 });
 
 export type FindSharedSessionDto = z.infer<typeof findSharedSessionSchema>;
 
 /**
- * `POST /shared-sessions/attach-ticket`. No window: a link opens the agent's
- * (window 0) and nothing else, so a holder cannot reach a shell window
- * opened beside it.
+ * `POST /shared-sessions/attach-ticket`. No window: a share opens the agent's
+ * (window 0) and nothing else, so a guest cannot reach a shell window opened
+ * beside it.
  */
 export const issueSharedAttachTicketSchema = z.object({
-  token: shareTokenSchema,
+  slug: sessionShareSlugSchema,
 });
 
 export type IssueSharedAttachTicketDto = z.infer<typeof issueSharedAttachTicketSchema>;

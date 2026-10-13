@@ -242,7 +242,7 @@ export {
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';
-export { RadioGroup, RadioGroupItem } from './components/radio-group';
+export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
 export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';

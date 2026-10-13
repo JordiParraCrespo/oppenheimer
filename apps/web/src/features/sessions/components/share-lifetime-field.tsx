@@ -1,69 +1,72 @@
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-  FieldSelect,
-} from '@oppenheimer/design-system-web';
-import {
-  maxShareLinkLifetime,
-  SHARE_LINK_LIFETIME_MS,
-  SHARE_LINK_LIFETIMES,
-} from '@oppenheimer/shared/schemas/session-share';
+import { Chip, Field, FieldDescription, FieldLabel, useNow } from '@oppenheimer/design-system-web';
+import { formatDateTime, useLocale } from '@oppenheimer/frontend-web';
 import { type Control, Controller, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { ShareLinkValues } from '../lib/share-links';
+import {
+  effectiveAccess,
+  lifetimeAllowed,
+  lifetimeMs,
+  SHARE_LIFETIME_CHOICES,
+  type ShareSessionValues,
+} from '../lib/share-session';
+
+/** The "Ends …" line moves with the clock, to the minute. */
+const CLOCK_MS = 60_000;
 
 /**
- * How long a link lives. A link that lets anyone with it type offers nothing
- * past its cap (`maxShareLinkLifetime`, seven days) and says why; the cap
- * itself is the API's, and the form's check is the same rule.
+ * How long a share lasts, as pills, and when that is. Write access offers
+ * nothing past a day; those pills stay on screen, faded, so the row never
+ * reflows when the permission changes.
  */
 export function ShareLifetimeField({
   control,
-  error,
   disabled,
 }: {
-  control: Control<ShareLinkValues>;
-  error: { message?: string } | undefined;
+  control: Control<ShareSessionValues>;
   disabled: boolean;
 }) {
   const { t } = useTranslation();
-  const [access, audience] = useWatch({ control, name: ['access', 'audience'] });
-  const max = maxShareLinkLifetime(access, audience);
-  const offered = [
-    ...SHARE_LINK_LIFETIMES.filter(
-      (lifetime) => max === null || SHARE_LINK_LIFETIME_MS[lifetime] <= SHARE_LINK_LIFETIME_MS[max],
-    ),
-    ...(max === null ? (['never'] as const) : []),
-  ];
+  const locale = useLocale();
+  const now = useNow(CLOCK_MS);
+  const [audience, access, lifetime] = useWatch({
+    control,
+    name: ['audience', 'access', 'lifetime'],
+  });
+  const writing = effectiveAccess(audience, access) === 'write';
+  const span = lifetimeMs(lifetime);
+  const hint =
+    span === null
+      ? t('sessions.share.neverHint')
+      : t(writing ? 'sessions.share.endsWrite' : 'sessions.share.endsRead', {
+          date: formatDateTime(new Date(now + span), locale),
+        });
 
   return (
-    <Field data-invalid={Boolean(error)}>
-      <FieldLabel>{t('sessions.share.lifetime')}</FieldLabel>
+    <Field>
+      <FieldLabel>{t('sessions.share.duration')}</FieldLabel>
       <Controller
         control={control}
         name="lifetime"
         render={({ field }) => (
-          <FieldSelect
-            aria-label={t('sessions.share.lifetime')}
-            placeholder={t('sessions.share.lifetime')}
-            searchPlaceholder={t('sessions.share.lifetimeSearch')}
-            emptyText={() => t('sessions.share.lifetimeNone')}
-            value={field.value}
-            onValueChange={field.onChange}
-            disabled={disabled}
-            options={offered.map((lifetime) => ({
-              value: lifetime,
-              label: t(`sessions.share.lifetimes.${lifetime}`),
-            }))}
-          />
+          <fieldset
+            className="m-0 flex flex-wrap gap-1.5 border-0 p-0"
+            aria-label={t('sessions.share.duration')}
+          >
+            {SHARE_LIFETIME_CHOICES.map((choice) => (
+              <Chip
+                key={choice}
+                variant="solid"
+                selected={field.value === choice}
+                disabled={disabled || !lifetimeAllowed(writing ? 'write' : 'read', choice)}
+                onClick={() => field.onChange(choice)}
+              >
+                {t(`sessions.share.lifetimes.${choice}`)}
+              </Chip>
+            ))}
+          </fieldset>
         )}
       />
-      {max !== null ? (
-        <FieldDescription>{t('sessions.share.lifetimeCapped')}</FieldDescription>
-      ) : null}
-      <FieldError errors={[error]} />
+      <FieldDescription>{hint}</FieldDescription>
     </Field>
   );
 }

@@ -243,93 +243,132 @@
     "name": "Nombre"
   },
   "share": {
-    "title": "Compartir «{{name}}»",
-    "description": "Un enlace que abre el terminal de esta sesión a alguien de fuera de tu espacio de trabajo, mientras tú puedas abrirla, hasta que caduque o lo revoques. Verán todo lo que muestre el terminal, secretos y rutas incluidos, y revocarlo no borra lo que ya hayan visto.",
-    "access": "Pueden",
-    "read": "Mirar",
-    "readHint": "Ver el terminal en directo. Nada de lo que escriban le llega.",
-    "write": "Escribir",
-    "writeHint": "Escribir en el terminal: una shell en tu máquina, como tú.",
-    "readBadge": "Solo mirar",
-    "writeBadge": "Puede escribir",
-    "audience": "Quién puede abrirlo",
-    "people": "Solo las personas que indique",
-    "peopleHint": "Entran con uno de estos correos verificados.",
-    "accounts": "Cualquiera con sesión iniciada",
-    "accountsHint": "Cualquiera con el enlace y una cuenta de Oppenheimer.",
-    "anyone": "Cualquiera con el enlace",
-    "anyoneHint": "Sin iniciar sesión. Quien tenga el enlace tiene el terminal.",
-    "emails": "Correos",
-    "emailsPlaceholder": "ada@example.com, grace@example.com",
-    "emailsHint": "Sepáralos con comas, espacios o saltos de línea.",
-    "peopleInvalid": "Escribe al menos un correo, y solo correos.",
-    "lifetime": "Caduca",
-    "lifetimes": {
-      "1h": "En 1 hora",
-      "1d": "En 1 día",
-      "7d": "En 7 días",
-      "30d": "En 30 días",
-      "never": "Nunca"
-    },
-    "lifetimeSearch": "Buscar una caducidad",
-    "lifetimeNone": "No hay esa caducidad",
-    "lifetimeCapped": "Los enlaces que permiten escribir a cualquiera caducan en 7 días como máximo.",
-    "lifetimeTooLong": "Un enlace que permite escribir a cualquiera debe caducar en 7 días como máximo.",
-    "writeWarning": "Quien abra este enlace podrá ejecutar comandos en tu máquina como tú. Mejor indicar las personas y una caducidad corta.",
-    "writeNote": "Las personas que indiques podrán ejecutar comandos en tu máquina como tú.",
-    "create": "Crear enlace",
-    "creating": "Creando…",
-    "failed": "No se pudo crear el enlace.",
-    "linkTitle": "Enlace para compartir",
-    "onceOnly": "Cópialo ahora: solo se muestra una vez. Si se pierde, revócalo y crea otro.",
-    "another": "Otro enlace",
-    "live": "Enlaces activos",
-    "none": "No hay enlaces activos.",
-    "listFailed": "No se pudieron cargar los enlaces.",
-    "revoke": "Revocar",
-    "revoking": "Revocando…",
-    "revokeFailed": "No se pudo revocar el enlace.",
-    "until": "Hasta el {{date}}",
-    "noExpiry": "Sin caducidad",
+    "title": "Compartir sesión",
+    "managing": "Compartida",
+    "on": "en {{host}}",
+    "thisHost": "este host",
+    "loadFailed": "No se pudo cargar cómo se comparte esta sesión.",
+    "who": "Con quién",
     "audiences": {
-      "anyone": "Cualquiera con el enlace",
-      "accounts": "Cualquiera con sesión iniciada"
-    }
+      "people": "Personas concretas",
+      "link": "Cualquiera con el enlace"
+    },
+    "peoplePlaceholder": "Nombre o correo",
+    "peopleLabel": "Personas con quien compartir",
+    "invite": "Invitar a {{email}}",
+    "inviteHint": "Fuera de este espacio · inician sesión para abrirla",
+    "inviteEmpty": "Escribe un correo completo para invitar a alguien de fuera del espacio.",
+    "outside": "fuera del espacio",
+    "removePerson": "Quitar a {{name}}",
+    "peopleRequired": "Añade al menos una persona.",
+    "linkHint": "Quien abra el enlace e inicie sesión podrá mirar. El acceso por enlace es siempre de solo lectura.",
+    "permission": "Permiso",
+    "access": {
+      "read": {
+        "label": "Puede ver",
+        "hint": "Ve el terminal en directo. No puede escribir ni parar la sesión."
+      },
+      "write": {
+        "label": "Puede escribir",
+        "hint": "Envía prompts y comandos. Se ejecutan como tú."
+      }
+    },
+    "writeLocked": "El acceso de escritura necesita personas concretas. Cambia a «Personas concretas» para darlo.",
+    "writeWarningTitle": "{{who}} actuará como tú en {{host}}",
+    "writeWarningCount_one": "{{count}} persona",
+    "writeWarningCount_other": "{{count}} personas",
+    "writeWarningBody": "Todo lo que envíen se ejecuta con tus credenciales y tu token de GitHub. Pueden hacer push, borrar archivos y gastar tu cuota.",
+    "writeAck": "Entiendo que actúan como yo en este host",
+    "ackRequired": "Confirma que lo entiendes antes de dar acceso de escritura.",
+    "duration": "Durante cuánto tiempo",
+    "lifetimes": {
+      "1h": "1 hora",
+      "8h": "8 horas",
+      "24h": "24 horas",
+      "7d": "7 días",
+      "never": "No caduca"
+    },
+    "endsRead": "Termina el {{date}}. Puedes dejar de compartir cuando quieras.",
+    "endsWrite": "Termina el {{date}}. El acceso de escritura dura 24 horas como máximo.",
+    "neverHint": "No caduca. El acceso sigue hasta que dejes de compartir.",
+    "submit": {
+      "people": "Compartir",
+      "link": "Crear enlace",
+      "write": "Dar acceso de escritura"
+    },
+    "submitting": "Compartiendo…",
+    "failed": "No se pudo compartir la sesión.",
+    "link": "Enlace",
+    "copyLink": "Copiar enlace",
+    "copied": "Copiado",
+    "linkHintLink": "Quien inicie sesión puede mirar. Nunca muestra controles de escritura.",
+    "linkHintPeople": "Solo las personas de abajo pueden abrirla. El resto ve «No tienes acceso».",
+    "whoHasAccess": "Quién tiene acceso",
+    "you": "{{email}} · tú",
+    "roles": {
+      "owner": "Propietario",
+      "read": "Puede ver",
+      "write": "Puede escribir"
+    },
+    "anyoneRow": "Cualquiera con el enlace",
+    "anyoneRowHint": "Debe iniciar sesión para abrirla",
+    "removeAccess": "Quitar acceso",
+    "expired": "terminado",
+    "never": "nunca",
+    "stop": "Dejar de compartir",
+    "stopping": "Dejando de compartir…",
+    "addPeople": "Añadir personas",
+    "done": "Hecho",
+    "updateFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+    "status": {
+      "share": "Compartir",
+      "read": "Compartida · solo ver",
+      "write": "Compartida · puede escribir",
+      "link": "enlace"
+    },
+    "statusTitle": "Compartir esta sesión"
   },
   "shared": {
-    "watching": "Mirando",
-    "typing": "Puedes escribir",
+    "viewOnly": "Solo ver",
+    "canWrite": "Puede escribir",
+    "endsIn": "Termina en {{time}}",
+    "leave": "Salir",
     "sharedBy": "Compartida por {{name}}",
+    "viewOnlyBy": "Solo ver · compartida por {{name}}",
+    "state": {
+      "live": "En marcha",
+      "stopped": "Parada"
+    },
     "status": {
       "connecting": "Conectando…",
       "live": "En directo",
-      "offline": "Máquina desconectada",
+      "offline": "Host desconectado",
       "closed": "Desconectado"
     },
     "ended": {
-      "stopped": "La sesión se detuvo.",
+      "stopped": "La sesión se paró.",
       "resolved": "La sesión se cerró.",
       "missing": "La sesión ya no existe.",
-      "unauthorized": "Este enlace ya no abre la sesión.",
-      "forbidden": "Este enlace ya no abre la sesión.",
-      "refused": "La máquina rechazó el terminal."
+      "unauthorized": "Esta sesión ya no está compartida contigo.",
+      "forbidden": "Esta sesión ya no está compartida contigo.",
+      "refused": "El host rechazó el terminal."
     },
     "gone": {
-      "title": "Este enlace no abre nada",
-      "body": "Puede que haya caducado o se haya revocado, o que la sesión se cerrara. Pide uno nuevo a quien lo compartió."
+      "title": "Esta sesión no está compartida",
+      "body": "Puede que haya caducado, que quien la compartió dejara de compartirla o que la sesión se cerrara. Pídele que la vuelva a compartir."
     },
     "signIn": {
       "title": "Inicia sesión para abrir esta sesión",
-      "body": "Este enlace está compartido con cuentas de Oppenheimer.",
+      "body": "Las sesiones compartidas se abren con una cuenta de Oppenheimer.",
       "action": "Iniciar sesión"
     },
     "notInvited": {
-      "title": "Este enlace no está compartido contigo",
-      "body": "Solo se abre para las personas que indica, por un correo verificado. Pide a quien lo compartió que añada el tuyo."
+      "title": "No tienes acceso",
+      "body": "Esta sesión está compartida con personas concretas, por un correo verificado. Pide a quien la compartió que añada el tuyo."
     },
     "stopped": {
-      "title": "Esta sesión está detenida",
-      "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y este enlace volverá a abrirla."
+      "title": "Esta sesión está parada",
+      "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y esta página la volverá a abrir."
     }
   }
 }

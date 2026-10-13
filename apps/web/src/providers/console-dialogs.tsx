@@ -12,6 +12,11 @@ const AddHostDialog = lazy(() =>
     default: module.AddHostDialog,
   })),
 );
+const ShareSessionDialog = lazy(() =>
+  import('@/features/sessions/dialogs/share-session').then((module) => ({
+    default: module.ShareSessionDialog,
+  })),
+);
 const AutomationEditorDialog = lazy(() =>
   import('@/features/automations/dialogs/automation-editor').then((module) => ({
     default: module.AutomationEditorDialog,
@@ -21,8 +26,8 @@ const AutomationEditorDialog = lazy(() =>
 /**
  * The console's dialogs, mounted once by the authenticated layout: whichever
  * one a surface asked for through `useConsoleDialog`, and nothing while none
- * did. App glue rather than a feature, because the three dialogs belong to
- * three features and a feature never imports another.
+ * did. App glue rather than a feature, because the dialogs belong to
+ * several features and a feature never imports another.
  */
 export function ConsoleDialogs() {
   const request = useConsoleDialogRequest();
@@ -48,6 +53,8 @@ export function ConsoleDialogs() {
             request.onUseHost?.(hostId);
           }}
         />
+      ) : request.kind === 'share-session' ? (
+        <ShareSessionDialog sessionId={request.sessionId} onClose={close} />
       ) : (
         <AutomationEditorDialog
           automationId={request.automationId}

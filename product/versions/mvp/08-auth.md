@@ -90,7 +90,9 @@ history) to work on the MVP.
   control plane (01-protocol.md). The relay checks the ticket, never the
   browser cookie, on the socket. The one way in from outside the
   workspace is a share link (21), whose ticket is judged as its
-  creator's, so it opens nothing they could not.
+  creator's, so it opens nothing they could not. Since 2026-10-13 that
+  way in is a session's one share (21): named people or anyone signed in,
+  judged as the member who shared it, and never signed out.
 - **GitHub access is per session.** The control plane mints a one-hour
   installation token narrowed to the session's repository and hands it
   to the runner over the relay; nothing lands on disk (00-scope.md).

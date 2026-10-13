@@ -1,12 +1,88 @@
-# Session share links
+# Sharing a session
 
 A member of a session's workspace can open that session's terminal to
-someone outside it with a link: to watch, or to type. Asked for on
-2026-10-08 ("share a session with a public link", then "people should be
-able to write as well and only read too", then "some kind of protection
-like anyone or some user"). This note records what was built and why.
+someone outside it: to watch, or to type. Asked for on 2026-10-08 ("share
+a session with a public link", then "people should be able to write as
+well and only read too", then "some kind of protection like anyone or some
+user"), and built that day as bearer links. Rebuilt on 2026-10-13 to the
+`ShareSession` design (`design/version1/ShareSession.dc.html`, and the
+Share dialog of `SessionsConsole (pages).dc.html`): one share per session,
+at one address, for named people or anyone signed in. What the links were,
+and why they changed, is under [Superseded](#superseded-links-2026-10-08).
 
-## Decided
+## Decided (2026-10-13)
+
+- **A session has one share, at one address.** `/s/<slug>`, a 128-bit
+  random slug. Sharing again replaces who, what and how long and keeps the
+  address; Stop sharing deletes the share, and the next share gets a new
+  address. The address is not a bearer secret, so the dialog shows it, and
+  Copy link works, every time it opens.
+- **Who: specific people, or anyone with the link.** People are matched on
+  a verified email, case-insensitively, at most fifty. "Anyone with the
+  link" is anyone **signed in** who has the address. Nothing opens signed
+  out: the page asks to sign in and comes back to the address.
+- **What: Can view or Can write.** A link only watches. Write access names
+  people, lasts 24 hours at most (1 hour, 8 hours or 24 hours), and the
+  dialog asks the sharer to tick "I understand they act as me on this
+  host" under a red warning before **Give write access** is on. Viewing
+  lasts 1 hour, 8 hours, 24 hours, 7 days or until stopped. The API's
+  schema, the aggregate and two `CHECK`s hold the same rules.
+- **A share acts as the person who last set it.** Every attach through it
+  is judged as their terminal would be — still a member, account active,
+  still holding `update Session`, host still theirs, session not stopped or
+  closed — at redemption and every minute after (`REAUTHORIZE_INTERVAL_MS`).
+  The relay also asks the share itself again each minute: stopped, expired,
+  the guest taken off the list, or a share narrowed to watching under a
+  ticket that types, ends the terminal.
+- **Read-only is enforced twice, neither by the browser**: the relay drops
+  every keystroke frame of a read-only attachment, and the runner attaches
+  tmux with `-f read-only,ignore-size`. Unchanged from the links.
+- **Refusals.** Signed out is `SESSIONS_022`, answered before the address
+  is looked up, so a signed-out caller learns nothing about it. An address
+  never shared, a share stopped or expired, and a closed session's share are
+  one answer, `SESSIONS_021`. Signed in and not named is `SESSIONS_023`,
+  which the page shows as "You don't have access". `SESSIONS_024` (too many
+  links) is retired.
+- **The console.** Share opens from the session row's menu and from the
+  right end of the terminal's status line, which reads "Shared · can write
+  · 2" or "Shared · view only · link" once shared. The dialog opens on
+  Share session (who, permission, for how long) or, once shared, on Sharing
+  (the link, who has access with the time left, × per person, Stop sharing,
+  Add people, Done). Workspaces are personal, so the people field suggests
+  no members: a whole email offers "Invite …".
+- **The guest page is as simple as it can be** (asked on 2026-10-13): one
+  bar — the wordmark, the session, its state, View only or Can write, Ends
+  in, and Leave for someone who can write — and the terminal. Not built from
+  the design: who else is here (presence), and the chat-style attribution
+  of prompts, which a terminal cannot draw.
+- **The public page shows only the session's name, its state, the access
+  the share gives and who shared it**, as before; it opens window 0 only.
+- **Sharing is `update Session` behind `sessions:write`**; reading how a
+  session is shared is `read Session`. The routes are `GET`, `PUT` and
+  `DELETE /v1/sessions/{id}/share` and `PATCH /v1/sessions/{id}/share/people`;
+  a guest's are `POST /v1/shared-sessions/lookup` and `…/attach-ticket`,
+  with the slug in the body.
+- **The links made before 2026-10-13 were dropped**, not converted
+  (`ReplaceShareLinksWithSessionShares1791000800000`).
+
+## Open questions
+
+1. **Who is watching.** The design shows who is in the session, on the
+   guest's bar and the owner's. The relay knows the attachments per
+   session; listing them, with a way to drop one, is the next step.
+2. **Notifying the people named.** A share is sent by hand; an email to
+   each address is the teams slice's mail.
+3. **Workspace members as suggestions**, once workspaces have more than
+   one member.
+4. **A transcript-only level**, below `read`, as OpenClaw's Session Share
+   does.
+
+## Superseded: links (2026-10-08)
+
+What follows is the design built on 2026-10-08 and replaced on
+2026-10-13. Kept as it was written.
+
+### Decided
 
 - **A link is two choices.** *Access*: `read` watches the terminal, `write`
   types into it. *Audience*: `anyone` with the link, signed in or not;
@@ -70,7 +146,7 @@ like anyone or some user"). This note records what was built and why.
   opening a terminal: sharing one is opening it for somebody else. Listing a
   session's links is `read Session`.
 
-## Compared with OpenClaw
+### Compared with OpenClaw
 
 Checked on 2026-10-08 against its docs (docs.openclaw.ai: `plugins/session-share`,
 `concepts/session-attachment`, `cli/attach`, `gateway/security`). OpenClaw has
@@ -85,7 +161,7 @@ the creator-access rule matches its "an approver never grants more than they
 hold". Its server-side cap on every grant became the seven-day cap on a link that
 lets anyone type; a transcript-only level under `read` is left open below.
 
-## Open questions
+### Open questions (then)
 
 1. **Re-copying a link.** Only the digest is kept, so the address cannot be
    shown again. Keeping it encrypted would allow it at the cost of a secret

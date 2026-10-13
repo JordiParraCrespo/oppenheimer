@@ -27,7 +27,7 @@ export interface IssuedAttachTicket {
 
 /**
  * Mints a single-use ticket for a claim its caller has already judged: a
- * member's terminal or a share link's.
+ * member's terminal or a share's.
  *
  * The ticket **travels in `Sec-WebSocket-Protocol`**, never the query string: a
  * browser can set a subprotocol but not WebSocket headers, and proxies, CDNs and load

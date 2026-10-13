@@ -1352,7 +1352,7 @@ export type UpdateProjectRequest = {
 };
 
 export type FindSharedSessionRequest = {
-    token: string;
+    slug: string;
 };
 
 export type SharedSessionResponseDto = {
@@ -1370,7 +1370,7 @@ export type SharedSessionResponseDto = {
 };
 
 export type IssueSharedAttachTicketRequest = {
-    token: string;
+    slug: string;
 };
 
 export type AttachTicketResponseDto = {
@@ -1596,66 +1596,55 @@ export type IssueAttachTicketRequest = {
     window?: number;
 };
 
-export type ShareLinkResponseDto = {
+export type SetSessionSharePeopleRequest = {
+    people: Array<string>;
+};
+
+export type SessionShareOwnerResponseDto = {
+    id: string;
+    name: string;
+    email: string;
+};
+
+export type SessionShareResponseDto = {
     id: string;
     sessionId: string;
+    /**
+     * The share’s address, `/s/<slug>`. It opens nothing on its own: a guest signs in, and is on `people` unless `audience` is `link`.
+     */
+    slug: string;
+    /**
+     * `people`, only the accounts on `people`; `link`, anyone signed in with the address.
+     */
+    audience: 'people' | 'link';
     /**
      * `read` watches the terminal; `write` types into it, as the person who shared it.
      */
     access: 'read' | 'write';
     /**
-     * `anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`.
-     */
-    audience: 'anyone' | 'accounts' | 'people';
-    /**
      * Emails; empty unless `audience` is `people`.
      */
     people: Array<string>;
-    label?: string | null;
-    expiresAt?: string | null;
-    revokedAt?: string | null;
     /**
-     * Neither revoked nor expired.
+     * No expiry when `null`.
      */
-    live: boolean;
-    createdAt: string;
+    expiresAt?: string | null;
+    /**
+     * Who shared it, while their account is active.
+     */
+    sharedBy?: SessionShareOwnerResponseDto | null;
+    updatedAt: string;
 };
 
-export type CreateShareLinkRequest = {
+export type SessionShareStateResponseDto = {
+    share?: SessionShareResponseDto | null;
+};
+
+export type PutSessionShareRequest = {
+    audience: 'people' | 'link';
     access: 'read' | 'write';
-    audience: 'anyone' | 'accounts' | 'people';
     people?: Array<string>;
-    lifetime?: '1h' | '1d' | '7d' | '30d' | null;
-    label?: string;
-};
-
-export type CreatedShareLinkResponseDto = {
-    id: string;
-    sessionId: string;
-    /**
-     * `read` watches the terminal; `write` types into it, as the person who shared it.
-     */
-    access: 'read' | 'write';
-    /**
-     * `anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`.
-     */
-    audience: 'anyone' | 'accounts' | 'people';
-    /**
-     * Emails; empty unless `audience` is `people`.
-     */
-    people: Array<string>;
-    label?: string | null;
-    expiresAt?: string | null;
-    revokedAt?: string | null;
-    /**
-     * Neither revoked nor expired.
-     */
-    live: boolean;
-    createdAt: string;
-    /**
-     * The link’s secret. Shown once and never again: only its digest is stored. The console puts it in the URL fragment, `/shared#<token>`.
-     */
-    token: string;
+    lifetime: '1h' | '8h' | '24h' | '7d' | null;
 };
 
 export type PrepareSessionRequest = {
@@ -6839,7 +6828,7 @@ export type FindSharedSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * SESSIONS_021 — Share link not found
+     * SESSIONS_021 — Not shared
      */
     404: ProblemDetailsDto;
     /**
@@ -6873,7 +6862,7 @@ export type IssueSharedAttachTicketErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * SESSIONS_021 — Share link not found
+     * SESSIONS_021 — Not shared
      */
     404: ProblemDetailsDto;
     /**
@@ -7145,16 +7134,50 @@ export type IssueAttachTicketResponses = {
 
 export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
 
-export type FindShareLinksData = {
+export type SetSessionSharePeopleData = {
+    body: SetSessionSharePeopleRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/share/people';
+};
+
+export type SetSessionSharePeopleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_021 — Not shared
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type SetSessionSharePeopleError = SetSessionSharePeopleErrors[keyof SetSessionSharePeopleErrors];
+
+export type SetSessionSharePeopleResponses = {
+    200: SessionShareResponseDto;
+};
+
+export type SetSessionSharePeopleResponse = SetSessionSharePeopleResponses[keyof SetSessionSharePeopleResponses];
+
+export type StopSessionShareData = {
     body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/sessions/{id}/share-links';
+    url: '/api/v1/sessions/{id}/share';
 };
 
-export type FindShareLinksErrors = {
+export type StopSessionShareErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7169,24 +7192,56 @@ export type FindShareLinksErrors = {
     404: ProblemDetailsDto;
 };
 
-export type FindShareLinksError = FindShareLinksErrors[keyof FindShareLinksErrors];
+export type StopSessionShareError = StopSessionShareErrors[keyof StopSessionShareErrors];
 
-export type FindShareLinksResponses = {
-    200: Array<ShareLinkResponseDto>;
+export type StopSessionShareResponses = {
+    204: void;
 };
 
-export type FindShareLinksResponse = FindShareLinksResponses[keyof FindShareLinksResponses];
+export type StopSessionShareResponse = StopSessionShareResponses[keyof StopSessionShareResponses];
 
-export type CreateShareLinkData = {
-    body: CreateShareLinkRequest;
+export type FindSessionShareData = {
+    body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/sessions/{id}/share-links';
+    url: '/api/v1/sessions/{id}/share';
 };
 
-export type CreateShareLinkErrors = {
+export type FindSessionShareErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindSessionShareError = FindSessionShareErrors[keyof FindSessionShareErrors];
+
+export type FindSessionShareResponses = {
+    200: SessionShareStateResponseDto;
+};
+
+export type FindSessionShareResponse = FindSessionShareResponses[keyof FindSessionShareResponses];
+
+export type PutSessionShareData = {
+    body: PutSessionShareRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/share';
+};
+
+export type PutSessionShareErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7202,55 +7257,18 @@ export type CreateShareLinkErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_024 — Too many share links
-     *
      * SESSIONS_005 — That session is closed
      */
     409: ProblemDetailsDto;
 };
 
-export type CreateShareLinkError = CreateShareLinkErrors[keyof CreateShareLinkErrors];
+export type PutSessionShareError = PutSessionShareErrors[keyof PutSessionShareErrors];
 
-export type CreateShareLinkResponses = {
-    201: CreatedShareLinkResponseDto;
+export type PutSessionShareResponses = {
+    200: SessionShareResponseDto;
 };
 
-export type CreateShareLinkResponse = CreateShareLinkResponses[keyof CreateShareLinkResponses];
-
-export type RevokeShareLinkData = {
-    body?: never;
-    path: {
-        id: string;
-        linkId: string;
-    };
-    query?: never;
-    url: '/api/v1/sessions/{id}/share-links/{linkId}';
-};
-
-export type RevokeShareLinkErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * SESSIONS_021 — Share link not found
-     *
-     * SESSIONS_001 — Session not found
-     */
-    404: ProblemDetailsDto;
-};
-
-export type RevokeShareLinkError = RevokeShareLinkErrors[keyof RevokeShareLinkErrors];
-
-export type RevokeShareLinkResponses = {
-    204: void;
-};
-
-export type RevokeShareLinkResponse = RevokeShareLinkResponses[keyof RevokeShareLinkResponses];
+export type PutSessionShareResponse = PutSessionShareResponses[keyof PutSessionShareResponses];
 
 export type PasteSessionImageData = {
     body: {
