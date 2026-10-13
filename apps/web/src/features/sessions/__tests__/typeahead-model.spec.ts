@@ -180,6 +180,16 @@ describe('TypeaheadModel', () => {
     }
   });
 
+  it('predicts deleting a line it did not see typed (Up recalled it)', () => {
+    const { screen, host } = grid('\u276f hello', 7);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['\x7f']);
+    host('\u276f hell', 6);
+    model.reconcile(screen);
+    keys(model, screen, ['\x7f', '\x7f']);
+    expect(shown(model, '\u276f hell')).toEqual({ text: '\u276f he', cursor: 4 });
+  });
+
   it('expires guesses the host has not confirmed in time', () => {
     const time = clock();
     const { screen, host } = grid('> ', 2);

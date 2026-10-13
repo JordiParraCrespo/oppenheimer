@@ -72,7 +72,10 @@ class FakeHost implements SessionStream {
     const keys = this.pending;
     this.pending = '';
     // What the line editor does with the keys: Backspace takes back what was
-    // typed and stops at the prompt, which is not the reader's to delete.
+    // typed and stops at the prompt, which is not the reader's to delete. The
+    // typeahead predicts the same (`skipLeadingPrompt` and Backspace at the
+    // start of the text in `typeahead-model.ts`); this is the host it is
+    // checked against, so the two say it independently on purpose.
     let echo = '';
     for (const key of keys) {
       if (key !== '\u007f') {

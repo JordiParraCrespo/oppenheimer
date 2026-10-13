@@ -119,6 +119,29 @@ const isBlank = (char: string) => char === ' ' || char === '';
 const isPromptMark = (char: string) =>
   [...char].length === 1 && !isBlank(char) && !/[\p{L}\p{N}]/u.test(char);
 
+/**
+ * Where the reader's text starts on a row whose run of text begins at
+ * `start`: past each prompt mark and the blank after it (`❯ `, `> `, `$ `, a
+ * box's `│ `), which are the program's. A Backspace guessed into them deleted
+ * the prompt until the host refused and the line sprang back.
+ *
+ * Read off the row rather than fixed where an epoch's first key landed: Up
+ * recalls a line and starts an epoch with the cursor at its end, and a floor
+ * there would leave every deletion of the recalled text unpredicted. Text
+ * the reader typed that starts with a mark and a blank (`- item`) only goes
+ * unpredicted at its start, never drawn wrong.
+ */
+function skipLeadingPrompt(
+  start: number,
+  cursor: number,
+  char: (col: number) => string,
+  blank: (col: number) => boolean,
+): number {
+  let at = start;
+  while (at + 2 <= cursor && isPromptMark(char(at)) && blank(at + 1)) at += 2;
+  return at;
+}
+
 /** The line after `key`, or `null` when the key's effect cannot be known. */
 function apply(state: LineState, key: TypeaheadKey): LineState | null {
   const cells = state.cells;
@@ -177,14 +200,9 @@ function sameState(a: LineState, b: LineState): boolean {
  */
 function regionAt(screen: TypeaheadScreen, row: number, col: number): Region | null {
   const blank = (x: number) => x < 0 || x >= screen.cols || isBlank(screen.cell(row, x).char);
-  let start = col;
-  while (start > 0 && !(blank(start - 1) && blank(start - 2))) start -= 1;
-  // A prompt's mark and the blank after it (`❯ `, `> `, `$ `, a box's `│ `)
-  // are the program's, not the reader's text: a Backspace guessed into them
-  // deleted the prompt until the host refused and the line sprang back.
-  while (start + 2 <= col && isPromptMark(screen.cell(row, start).char) && blank(start + 1)) {
-    start += 2;
-  }
+  let runStart = col;
+  while (runStart > 0 && !(blank(runStart - 1) && blank(runStart - 2))) runStart -= 1;
+  const start = skipLeadingPrompt(runStart, col, (x) => screen.cell(row, x).char, blank);
   let textEnd = col;
   while (textEnd < screen.cols && !(blank(textEnd) && blank(textEnd + 1))) textEnd += 1;
   let end = textEnd;
