@@ -1,7 +1,6 @@
 export { AppPending } from './components/app-pending';
 export {
   combineQueries,
-  type DataOf,
   QueryState,
   type QueryStateSource,
 } from './components/query-state';

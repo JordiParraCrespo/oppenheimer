@@ -5,7 +5,7 @@ import {
   useStartGoogleCalendarConnection,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog, type DataOf, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -34,8 +34,8 @@ export function GoogleCalendarCard() {
           <Skeleton className="h-16 w-full" />
         </QueryState.Pending>
         <QueryState.Error fallback={t('calendar.google.loadFailed')} />
-        <QueryState.Data>
-          {(data: DataOf<typeof connection>) =>
+        <QueryState.Data of={connection}>
+          {(data) =>
             data.isActive ? (
               <>
                 <CalendarSourceCard

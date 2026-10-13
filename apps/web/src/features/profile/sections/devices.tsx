@@ -13,13 +13,7 @@ import {
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
-import {
-  type DataOf,
-  ErrorAlert,
-  notifySuccess,
-  QueryState,
-  RelativeTime,
-} from '@oppenheimer/frontend-web';
+import { ErrorAlert, notifySuccess, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -48,8 +42,8 @@ export function DevicesSection() {
           <Skeleton className="h-16 w-full" />
         </QueryState.Pending>
         <QueryState.Error fallback={t('settings.devices.failed')} />
-        <QueryState.Data>
-          {(rows: DataOf<typeof devices>) => {
+        <QueryState.Data of={devices}>
+          {(rows) => {
             // This device first: it is the one row with nothing to do.
             const sorted = [...rows].sort((a, b) => Number(b.current) - Number(a.current));
             return (

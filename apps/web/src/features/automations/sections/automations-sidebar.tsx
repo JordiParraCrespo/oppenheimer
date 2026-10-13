@@ -8,12 +8,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import {
-  combineQueries,
-  type DataOf,
-  QueryState,
-  SidebarSearchField,
-} from '@oppenheimer/frontend-web';
+import { combineQueries, QueryState, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -113,8 +108,8 @@ export function AutomationsSidebar() {
               </EmptyState>
             </div>
           </QueryState.Empty>
-          <QueryState.Data>
-            {(data: DataOf<typeof ready>) =>
+          <QueryState.Data of={ready}>
+            {(data) =>
               data.shown.map(({ project, items }) => (
                 <AutomationGroup
                   key={project.id}

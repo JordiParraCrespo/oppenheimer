@@ -1,6 +1,6 @@
 import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import { useMyProfile } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ProfileEmailSection } from './profile-email';
 import { ProfileNameSection } from './profile-name';
@@ -28,8 +28,8 @@ export function ProfileDetailsSection() {
         </SettingsGroup>
       </QueryState.Pending>
       <QueryState.Error fallback={t('settings.profile.failed')} />
-      <QueryState.Data>
-        {(data: DataOf<typeof profile>) => (
+      <QueryState.Data of={profile}>
+        {(data) => (
           <ProfileNameSection profile={data}>
             <ProfilePictureSection profile={data} />
             <ProfileEmailSection profile={data} />

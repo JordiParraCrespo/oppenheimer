@@ -11,7 +11,7 @@ import { queryStateSlotProblems } from './query-state-slots.mjs';
 const PENDING = '<QueryState.Pending>loading</QueryState.Pending>';
 const ERROR = '<QueryState.Error fallback="failed" />';
 const EMPTY = '<QueryState.Empty>none</QueryState.Empty>';
-const DATA = '<QueryState.Data>{(rows: string[]) => rows.join()}</QueryState.Data>';
+const DATA = '<QueryState.Data of={things}>{(rows) => rows.join()}</QueryState.Data>';
 
 const section = (open, ...slots) => `export function ThingList() {
   return (
@@ -70,7 +70,7 @@ test('an arrow in a prop does not end the tag, and a comment does not count as a
 });
 
 test('two roots in one file are each checked on their own line', () => {
-  const source = `${section('<QueryState query={a}>', PENDING, ERROR, DATA)}${section('<QueryState query={b}>', PENDING, DATA)}`;
+  const source = `${section('<QueryState query={things}>', PENDING, ERROR, DATA)}${section('<QueryState query={things}>', PENDING, DATA)}`;
   assert.deepEqual(
     queryStateSlotProblems(source).map(({ line }) => line),
     [12],
@@ -78,14 +78,21 @@ test('two roots in one file are each checked on their own line', () => {
 });
 
 test("a nested root's slots do not count for the root around it", () => {
-  const inner = `<QueryState query={b}>${PENDING}${ERROR}${DATA}</QueryState>`;
+  const inner = `<QueryState query={things}>${PENDING}${ERROR}${DATA}</QueryState>`;
   const source = section(
-    '<QueryState query={a}>',
+    '<QueryState query={things}>',
     PENDING,
     `<QueryState.Data>{() => ${inner}}</QueryState.Data>`,
   );
   const reported = messages(source);
   assert.equal(reported.length, 1);
   assert.match(reported[0], /^3: <QueryState> without QueryState\.Error —/);
+});
+test('Data drawing another query than its root is reported', () => {
+  const other = '<QueryState.Data of={others}>{(rows) => rows.join()}</QueryState.Data>';
+  assert.match(
+    messages(section('<QueryState query={things}>', PENDING, ERROR, other))[0],
+    /^3: <QueryState\.Data of=\{others\}> under <QueryState query=\{things\}>/,
+  );
 });
 // oppenheimer:end web

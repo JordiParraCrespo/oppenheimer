@@ -1,7 +1,7 @@
 import { EditorPageBack, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
 import { useAutomation } from '@oppenheimer/frontend-consumer/react';
 import { AppError } from '@oppenheimer/frontend-core';
-import { type DataOf, QueryState, RouteError } from '@oppenheimer/frontend-web';
+import { QueryState, RouteError } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationHeader } from '../sections/automation-header';
@@ -41,8 +41,8 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
           )
         }
       </QueryState.Error>
-      <QueryState.Data>
-        {(data: DataOf<typeof automation>) => (
+      <QueryState.Data of={automation}>
+        {(data) => (
           <div className="flex flex-col gap-4">
             <EditorPageBack render={<Link to="/automations" />}>
               {t('automations.detail.back')}

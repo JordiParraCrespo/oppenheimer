@@ -1,6 +1,6 @@
 import { Button, Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { HostPanel } from '../components/host-panel';
@@ -17,8 +17,8 @@ export function HostOverview() {
         <Skeleton className="h-18 w-full" />
       </QueryState.Pending>
       <QueryState.Error fallback={t('settings.hosts.failed')} />
-      <QueryState.Data>
-        {(rows: DataOf<typeof hosts>) => (
+      <QueryState.Data of={hosts}>
+        {(rows) => (
           <HostPanel
             title={t('settings.hosts.title')}
             header={{ meta: String(rows.length) }}

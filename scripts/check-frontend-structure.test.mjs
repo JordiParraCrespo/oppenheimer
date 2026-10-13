@@ -376,7 +376,7 @@ test('a QueryState missing a rung is reported with its file and line', () => {
   return (
     <QueryState query={things}>
       <QueryState.Pending>loading</QueryState.Pending>
-      <QueryState.Data>{(rows: string[]) => rows.join()}</QueryState.Data>
+      <QueryState.Data of={things}>{(rows) => rows.join()}</QueryState.Data>
     </QueryState>
   );
 }

@@ -9,13 +9,6 @@ export interface QueryStateSource<T> {
 }
 
 /**
- * The data a source holds once it has answered: `(rows: DataOf<typeof hosts>) => …`.
- * Not distributed over a union, so a React Query result's pending and success
- * variants read as one source whose data is never `undefined`.
- */
-export type DataOf<Q> = [Q] extends [{ data: infer T }] ? Exclude<T, undefined> : never;
-
-/**
  * Several reads as one source, for a section that can draw nothing until all
  * of them have answered: pending while any is, failed with the first failure,
  * and `combine`d once every one holds data. The sessions sidebar groups its
@@ -42,7 +35,6 @@ export function combineQueries<A, B, T>(
 interface Rung {
   rung: 'failed' | 'pending' | 'empty' | 'data';
   failure: { error: unknown } | null;
-  data: unknown;
 }
 
 /**
@@ -59,9 +51,9 @@ export function rungOf<T>(
 ): Rung {
   const failure = error !== null && error !== undefined ? { error } : null;
   const keepsData = stale === 'keep' && data !== undefined;
-  if (failure && !keepsData) return { rung: 'failed', failure, data };
-  if (data === undefined) return { rung: 'pending', failure, data };
-  return { rung: isEmpty?.(data) ? 'empty' : 'data', failure, data };
+  if (failure && !keepsData) return { rung: 'failed', failure };
+  if (data === undefined) return { rung: 'pending', failure };
+  return { rung: isEmpty?.(data) ? 'empty' : 'data', failure };
 }
 
 const RungContext = createContext<Rung | null>(null);
@@ -85,7 +77,7 @@ function useRung(slot: string): Rung {
  *   <QueryState.Pending><Skeleton className="h-18 w-full" /></QueryState.Pending>
  *   <QueryState.Error fallback={t('settings.hosts.failed')} />
  *   <QueryState.Empty><HostsEmpty … /></QueryState.Empty>
- *   <QueryState.Data>{(rows: DataOf<typeof hosts>) => <HostRows rows={rows} />}</QueryState.Data>
+ *   <QueryState.Data of={hosts}>{(rows) => <HostRows rows={rows} />}</QueryState.Data>
  * </QueryState>
  * ```
  *
@@ -146,12 +138,20 @@ function QueryStateEmpty({ children }: { children: ReactNode }) {
 
 /**
  * The answer, handed to `children`: a function because the data only exists
- * on this rung. Annotate its parameter (`DataOf<typeof query>`) — a slot
- * cannot infer it from the root.
+ * on this rung. The root decides *whether* it draws; `of` (the root's own
+ * query) is *what* it draws, so the data is typed from the query itself and
+ * nothing is cast — a slot cannot see the root's type. `check:structure`
+ * holds `of` to the root's `query`.
  */
-function QueryStateData<T>({ children }: { children: (data: T) => ReactNode }) {
-  const { rung, data } = useRung('Data');
-  return rung === 'data' ? children(data as T) : null;
+function QueryStateData<T>({
+  of,
+  children,
+}: {
+  of: QueryStateSource<T>;
+  children: (data: T) => ReactNode;
+}) {
+  const { rung } = useRung('Data');
+  return rung === 'data' && of.data !== undefined ? children(of.data) : null;
 }
 
 export const QueryState = Object.assign(QueryStateRoot, {

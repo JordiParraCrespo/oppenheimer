@@ -9,7 +9,7 @@ import {
 import { PencilIcon } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { LaneBadge } from '../components/lane-badge';
 import { MarkdownBody } from '../components/markdown-body';
@@ -28,8 +28,8 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
         <Skeleton className="h-96 w-full" />
       </QueryState.Pending>
       <QueryState.Error fallback={t('pullRequests.detail.loadFailed')} />
-      <QueryState.Data>
-        {(pull: DataOf<typeof detail>) => {
+      <QueryState.Data of={detail}>
+        {(pull) => {
           const state = pullState(pull);
           return (
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-14">

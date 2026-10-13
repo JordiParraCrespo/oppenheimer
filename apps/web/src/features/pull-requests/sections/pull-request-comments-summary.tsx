@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, Skeleton } from '@oppenheimer/design-system-web';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequestActivity } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { commenters } from '../lib/activity';
 
@@ -15,8 +15,8 @@ export function PullRequestCommentsSummary({ address }: { address: PullRequestAd
         <Skeleton className="h-5 w-32" />
       </QueryState.Pending>
       <QueryState.Error fallback={t('pullRequests.detail.activity.loadFailed')} />
-      <QueryState.Data>
-        {(items: DataOf<typeof activity>) => {
+      <QueryState.Data of={activity}>
+        {(items) => {
           const people = commenters(items);
           return people.length ? (
             <ul className="m-0 flex list-none flex-col gap-3 p-0">

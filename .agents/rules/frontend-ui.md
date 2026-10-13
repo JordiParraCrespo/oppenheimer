@@ -22,7 +22,7 @@ multi-line, so a grep for `export` misses most of them.
 | A failure inside a screen that still draws its chrome (a form, a section, a dialog) | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
 | A failure that is the whole screen (the app cannot start, a route threw) | the kit's `ScreenFailure` | an `ErrorAlert` alone on an empty canvas, a hand-built `EmptyState` |
 | A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
-| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` with its `Pending`, `Error`, `Empty` and `Data` slots (`isEmpty` on the root for what counts as empty, `combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, an `Error` with a function child for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
+| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` with its `Pending`, `Error`, `Empty` and `Data` slots (`Data of={query}` draws the root's own query, typed; `isEmpty` on the root for what counts as empty, `combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, an `Error` with a function child for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
 | A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
 | "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
 | A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
@@ -111,6 +111,13 @@ look, is the shape this rule forbids.
   `QueryState.Data` gets the rows, `QueryState.Error` the failure,
   `RelativeTime` the words, `DiffView`'s `renderAnnotation` the annotation.
   A render prop with nothing to hand down is a slot, and a slot is a child.
+- **A read that can be switched off is a section rendered conditionally.**
+  A query waiting on an input that may not exist yet (`skipToken`, a caller's
+  `enabled`) is drawn by a section the parent renders only once the input
+  does: `{id ? <AutomationDetail id={id} /> : <PickOne />}`, with `id: string`
+  all the way down. Never hand `QueryState` a switched-off query: it reads as
+  still loading, and its skeleton never goes away. Suspense asks for the same
+  shape, so a section written this way moves to it unchanged.
 - **A compound's parts meet through the root's context**, never through props
   the caller threads from one part to the next. `QueryState`'s root decides
   the rung once and each slot reads it. In the kit and the design system the

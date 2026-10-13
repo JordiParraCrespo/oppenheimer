@@ -10,7 +10,7 @@ import {
 import { GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestLane } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_LANES } from '@oppenheimer/shared/schemas/pull-request';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,8 +39,8 @@ export function QueueTable() {
         <Skeleton className="h-80 w-full" />
       </QueryState.Pending>
       <QueryState.Error fallback={t('pullRequests.queue.loadFailed')} />
-      <QueryState.Data>
-        {(data: DataOf<typeof queue>) => {
+      <QueryState.Data of={queue}>
+        {(data) => {
           const scoped = inRepository(data.items, repo);
           const count = (value: PullRequestLane) =>
             scoped.filter((row) => row.lane === value).length;

@@ -14,7 +14,7 @@ import {
   useAutomations,
   useProjects,
 } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState, useLocale } from '@oppenheimer/frontend-web';
+import { QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -152,8 +152,8 @@ export function RunsTable({ automationId }: { automationId?: string }) {
               : t('automations.page.runsEmpty')}
           </RunsListEmpty>
         </QueryState.Empty>
-        <QueryState.Data>
-          {(data: DataOf<typeof runs>) =>
+        <QueryState.Data of={runs}>
+          {(data) =>
             data.items.map((run) => (
               <RunRow
                 key={run.id}

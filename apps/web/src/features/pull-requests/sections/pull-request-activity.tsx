@@ -1,7 +1,7 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequestActivity } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ActivityEntry } from '../components/activity-entry';
 import { activityEntries } from '../lib/activity';
@@ -26,8 +26,8 @@ export function PullRequestActivity({
           <Skeleton className="h-24 w-full" />
         </QueryState.Pending>
         <QueryState.Error fallback={t('pullRequests.detail.activity.loadFailed')} />
-        <QueryState.Data>
-          {(items: DataOf<typeof activity>) => {
+        <QueryState.Data of={activity}>
+          {(items) => {
             const entries = activityEntries(items);
             return entries.length ? (
               <ol className="m-0 flex list-none flex-col gap-2.5 p-0">

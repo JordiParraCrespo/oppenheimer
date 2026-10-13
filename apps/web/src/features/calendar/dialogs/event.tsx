@@ -102,7 +102,7 @@ export function EventDialog() {
                 <QueryState.Empty>
                   <FieldDescription>{t('calendar.event.gone')}</FieldDescription>
                 </QueryState.Empty>
-                <QueryState.Data>{() => form}</QueryState.Data>
+                <QueryState.Data of={events}>{() => form}</QueryState.Data>
               </QueryState>
             )}
           </div>

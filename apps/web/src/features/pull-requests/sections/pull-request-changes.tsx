@@ -1,7 +1,7 @@
 import { DiffFileTree, type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PendingNote, pendingByPath } from '../lib/review-draft';
@@ -43,8 +43,8 @@ export function PullRequestChanges({
       <QueryState.Empty>
         <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
       </QueryState.Empty>
-      <QueryState.Data>
-        {(rows: DataOf<typeof files>) => (
+      <QueryState.Data of={files}>
+        {(rows) => (
           <div className="flex min-h-0 flex-1 bg-card">
             <div className="min-w-0 flex-1 overflow-y-auto">
               {rows.map((file) => (

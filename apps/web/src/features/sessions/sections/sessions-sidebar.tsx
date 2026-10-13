@@ -8,13 +8,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
-import {
-  combineQueries,
-  type DataOf,
-  ErrorAlert,
-  QueryState,
-  useDragLabels,
-} from '@oppenheimer/frontend-web';
+import { combineQueries, ErrorAlert, QueryState, useDragLabels } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
@@ -172,8 +166,8 @@ export function SessionsSidebar() {
               </EmptyState>
             </div>
           </QueryState.Empty>
-          <QueryState.Data>
-            {(rows: DataOf<typeof ready>) => (
+          <QueryState.Data of={ready}>
+            {(rows) => (
               <DragProvider
                 {...handlers}
                 labels={dragLabels}

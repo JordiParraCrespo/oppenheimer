@@ -16,7 +16,7 @@ import {
 import { Bot, User } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAnalyticsRange } from '@oppenheimer/frontend-consumer';
 import { usePullRequestAnalytics } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState, useLocale } from '@oppenheimer/frontend-web';
+import { QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_ANALYTICS_RANGES } from '@oppenheimer/shared/schemas/pull-request';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsDelta } from '../components/analytics-figure';
@@ -81,8 +81,8 @@ export function AnalyticsOverview() {
           <Skeleton className="h-96 w-full" />
         </QueryState.Pending>
         <QueryState.Error fallback={t('pullRequests.analytics.loadFailed')} />
-        <QueryState.Data>
-          {(data: DataOf<typeof analytics>) => {
+        <QueryState.Data of={analytics}>
+          {(data) => {
             const mergedTotal = data.lanes.reduce((sum, lane) => sum + lane.value, 0);
             const waitingTotal = data.waiting.reduce((sum, row) => sum + row.value, 0);
             const from = (value: string) => t('pullRequests.analytics.from', { value });

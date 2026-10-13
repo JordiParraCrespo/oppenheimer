@@ -1,6 +1,6 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
 import { useRevokeShareLink, useShareLinks } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ShareLinkRow } from '../components/share-link-row';
 
@@ -26,8 +26,8 @@ export function ShareLinks({ sessionId }: { sessionId: string }) {
         <QueryState.Empty>
           <p className="text-sm text-fg-muted">{t('sessions.share.none')}</p>
         </QueryState.Empty>
-        <QueryState.Data>
-          {(rows: DataOf<typeof links>) => (
+        <QueryState.Data of={links}>
+          {(rows) => (
             <ul className="flex flex-col divide-y divide-border-subtle">
               {rows
                 .filter((link) => link.live)

@@ -29,7 +29,7 @@ function show(
         <QueryState.Error fallback="Could not load the hosts" />
       )}
       <QueryState.Empty>nothing here</QueryState.Empty>
-      <QueryState.Data>{(rows: string[]) => rows.join(', ')}</QueryState.Data>
+      <QueryState.Data of={query}>{(rows) => rows.join(', ')}</QueryState.Data>
     </QueryState>,
   );
 }

@@ -7,13 +7,7 @@ import {
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import {
-  ConfirmDialog,
-  type DataOf,
-  ErrorAlert,
-  QueryState,
-  useLocale,
-} from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert, QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -83,8 +77,8 @@ export function AutomationsTable() {
             </RoutineTableEmpty>
           </RoutineTable>
         </QueryState.Empty>
-        <QueryState.Data>
-          {(rows: DataOf<typeof automations>) => (
+        <QueryState.Data of={automations}>
+          {(rows) => (
             <RoutineTable>
               <RoutineTableHead
                 columns={[

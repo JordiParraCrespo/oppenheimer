@@ -3,7 +3,10 @@
  * that draws nothing: without `Error` a failed read is a blank, without
  * `Pending` the first load is. The types cannot say which children an element
  * needs, so this does: a `<QueryState>` holds a `Pending`, an `Error` and a
- * `Data`, and an `Empty` exactly when it is given `isEmpty`.
+ * `Data`, and an `Empty` exactly when it is given `isEmpty`. Its `Data` draws
+ * `of` the root's own `query`: the root decides whether `Data` draws, `of` is
+ * what it draws, and two different reads would let the one disagree with the
+ * other.
  *
  * A tripwire over the source text, not a parser: it pairs `<QueryState>` with
  * its closing tag and reads what is between them. `check-frontend-structure.mjs`
@@ -67,6 +70,14 @@ export function queryStateSlotProblems(source) {
       problems.push({
         line,
         message: `<QueryState> without ${missing.join(', ')} — each rung of a read draws something; a slot left out draws nothing`,
+      });
+    }
+    const query = /\bquery=\{([^}]*)\}/.exec(tag)?.[1].trim();
+    const of = /<QueryState\.Data\b[^>]*?\bof=\{([^}]*)\}/.exec(inside)?.[1].trim();
+    if (query && of && of !== query) {
+      problems.push({
+        line,
+        message: `<QueryState.Data of={${of}}> under <QueryState query={${query}}> — the slot draws the data of the query that decides whether it draws; pass the same one`,
       });
     }
     if (!emptyAsked && has('Empty')) {

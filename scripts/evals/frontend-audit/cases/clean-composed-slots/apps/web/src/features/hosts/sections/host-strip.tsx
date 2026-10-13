@@ -1,6 +1,6 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
-import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { HostChip } from '../components/host-chip';
 import { HostLine } from '../components/host-line';
@@ -21,8 +21,8 @@ export function HostStrip() {
       <QueryState.Empty>
         <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />
       </QueryState.Empty>
-      <QueryState.Data>
-        {(rows: DataOf<typeof hosts>) => (
+      <QueryState.Data of={hosts}>
+        {(rows) => (
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap gap-2">
               <HostsByPresence hosts={rows}>
