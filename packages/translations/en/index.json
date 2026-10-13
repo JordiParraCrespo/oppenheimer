@@ -716,9 +716,6 @@
       "endsRead": "Ends {{date}}. You can stop sharing any time.",
       "endsWrite": "Ends {{date}}. Write access lasts 24 hours at most.",
       "neverHint": "Does not expire. Access stays until you stop sharing.",
-      "lifetimeRequired": "Choose how long it lasts.",
-      "keptUntil": "Ends {{date}}, as it does now. Pick a length to change it.",
-      "keptNever": "Does not expire, as now. Pick a length to change it.",
       "submit": {
         "people": "Share",
         "link": "Create link",
@@ -746,6 +743,9 @@
       "stop": "Stop sharing",
       "stopping": "Stopping…",
       "addPeople": "Add people",
+      "addTitle": "Add people",
+      "addSubmit": "Add",
+      "addHint": "They get the same access as the people already on it: {{role}}, until the share ends.",
       "done": "Done",
       "updateFailed": "That change did not land. Try again.",
       "status": {

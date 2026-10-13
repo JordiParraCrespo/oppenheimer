@@ -1,11 +1,4 @@
-import {
-  Chip,
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-  useNow,
-} from '@oppenheimer/design-system-web';
+import { Chip, Field, FieldDescription, FieldLabel, useNow } from '@oppenheimer/design-system-web';
 import { formatDateTime, useLocale } from '@oppenheimer/frontend-web';
 import { type Control, Controller, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -23,19 +16,13 @@ const CLOCK_MS = 60_000;
 /**
  * How long a share lasts, as pills, and when that is. Write access offers
  * nothing past a day; those pills stay on screen, faded, so the row never
- * reflows when the permission changes. While people are added to a share,
- * no pill is on: its expiry stays as it is until one is picked.
+ * reflows when the permission changes.
  */
 export function ShareLifetimeField({
   control,
-  keptUntil,
-  error,
   disabled,
 }: {
   control: Control<ShareSessionValues>;
-  /** The share's own expiry, which `keep` leaves in place; `null` for none. */
-  keptUntil: Date | null;
-  error: { message?: string } | undefined;
   disabled: boolean;
 }) {
   const { t } = useTranslation();
@@ -46,21 +33,16 @@ export function ShareLifetimeField({
     name: ['audience', 'access', 'lifetime'],
   });
   const writing = effectiveAccess(audience, access) === 'write';
-  const span = lifetime === 'keep' ? null : lifetimeMs(lifetime);
-  const ends = lifetime === 'keep' ? keptUntil : span === null ? null : new Date(now + span);
+  const span = lifetimeMs(lifetime);
   const hint =
-    lifetime === 'keep'
-      ? ends
-        ? t('sessions.share.keptUntil', { date: formatDateTime(ends, locale) })
-        : t('sessions.share.keptNever')
-      : ends === null
-        ? t('sessions.share.neverHint')
-        : t(writing ? 'sessions.share.endsWrite' : 'sessions.share.endsRead', {
-            date: formatDateTime(ends, locale),
-          });
+    span === null
+      ? t('sessions.share.neverHint')
+      : t(writing ? 'sessions.share.endsWrite' : 'sessions.share.endsRead', {
+          date: formatDateTime(new Date(now + span), locale),
+        });
 
   return (
-    <Field data-invalid={Boolean(error)}>
+    <Field>
       <FieldLabel>{t('sessions.share.duration')}</FieldLabel>
       <Controller
         control={control}
@@ -85,7 +67,6 @@ export function ShareLifetimeField({
         )}
       />
       <FieldDescription>{hint}</FieldDescription>
-      <FieldError errors={[error]} />
     </Field>
   );
 }

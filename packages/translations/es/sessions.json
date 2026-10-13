@@ -291,9 +291,6 @@
     "endsRead": "Termina el {{date}}. Puedes dejar de compartir cuando quieras.",
     "endsWrite": "Termina el {{date}}. El acceso de escritura dura 24 horas como máximo.",
     "neverHint": "No caduca. El acceso sigue hasta que dejes de compartir.",
-    "lifetimeRequired": "Elige cuánto dura.",
-    "keptUntil": "Termina el {{date}}, como ahora. Elige una duración para cambiarlo.",
-    "keptNever": "No caduca, como ahora. Elige una duración para cambiarlo.",
     "submit": {
       "people": "Compartir",
       "link": "Crear enlace",
@@ -321,6 +318,9 @@
     "stop": "Dejar de compartir",
     "stopping": "Dejando de compartir…",
     "addPeople": "Añadir personas",
+    "addTitle": "Añadir personas",
+    "addSubmit": "Añadir",
+    "addHint": "Tendrán el mismo acceso que quienes ya están: {{role}}, hasta que termine.",
     "done": "Hecho",
     "updateFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
     "status": {

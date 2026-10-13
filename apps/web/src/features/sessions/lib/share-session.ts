@@ -1,4 +1,3 @@
-import type { SessionShare } from '@oppenheimer/frontend-consumer';
 import { AppError } from '@oppenheimer/frontend-core';
 import {
   type PutSessionShareDto,
@@ -26,8 +25,7 @@ export interface ShareSessionValues {
   /** Lowercased emails, in the order they were added. */
   people: string[];
   access: SessionShareAccess;
-  /** `keep`, while adding people, leaves the share's own expiry as it is. */
-  lifetime: ShareLifetimeChoice | 'keep';
+  lifetime: ShareLifetimeChoice;
   /** "I understand they act as me on this host", asked before write access. */
   ack: boolean;
 }
@@ -41,11 +39,7 @@ export function effectiveAccess(
 }
 
 /** Whether a lifetime may go with this access: write access ends within a day. */
-export function lifetimeAllowed(
-  access: SessionShareAccess,
-  choice: ShareLifetimeChoice | 'keep',
-): boolean {
-  if (choice === 'keep') return true;
+export function lifetimeAllowed(access: SessionShareAccess, choice: ShareLifetimeChoice): boolean {
   return sessionShareLifetimeAllowed(access, choice === 'never' ? null : choice);
 }
 
@@ -54,51 +48,25 @@ export function lifetimeMs(choice: ShareLifetimeChoice): number | null {
   return choice === 'never' ? null : SESSION_SHARE_LIFETIME_MS[choice];
 }
 
-/**
- * The dialog's values as the API takes them: the whole share for a `PUT`,
- * or, while adding people to a share whose who, permission and expiry are
- * all kept, only its people, so its expiry is not set again from now.
- */
-export function shareInput(
-  values: ShareSessionValues,
-): { kind: 'put'; input: PutSessionShareDto } | { kind: 'people'; people: string[] } {
-  if (values.lifetime === 'keep') return { kind: 'people', people: values.people };
+/** The dialog's values as the API takes them. */
+export function shareInput(values: ShareSessionValues): PutSessionShareDto {
+  const access = effectiveAccess(values.audience, values.access);
   return {
-    kind: 'put',
-    input: {
-      audience: values.audience,
-      access: effectiveAccess(values.audience, values.access),
-      ...(values.audience === 'people' ? { people: values.people } : {}),
-      lifetime: values.lifetime === 'never' ? null : values.lifetime,
-    },
+    audience: values.audience,
+    access,
+    ...(values.audience === 'people' ? { people: values.people } : {}),
+    lifetime: values.lifetime === 'never' ? null : values.lifetime,
   };
 }
 
-/** Whether these values still describe `share` in all but its people. */
-export function keepsShare(values: ShareSessionValues, share: SessionShare | null): boolean {
-  return (
-    share !== null &&
-    values.audience === share.audience &&
-    effectiveAccess(values.audience, values.access) === share.access
-  );
-}
-
-/**
- * Where the form starts: watching, for named people, for a day; or, to add
- * people to a share, what it already is, its expiry kept until another
- * length is picked. Write access asks again to be understood.
- */
-export function shareDefaults(share: SessionShare | null): ShareSessionValues {
-  if (!share)
-    return { audience: 'people', people: [], access: 'read', lifetime: '24h', ack: false };
-  return {
-    audience: share.audience,
-    people: share.people,
-    access: share.access,
-    lifetime: 'keep',
-    ack: false,
-  };
-}
+/** Where the form starts: watching, for named people, for a day. */
+export const SHARE_DEFAULTS: ShareSessionValues = {
+  audience: 'people',
+  people: [],
+  access: 'read',
+  lifetime: '24h',
+  ack: false,
+};
 
 /**
  * The form's own shape over the shared vocabulary. What the request may hold
@@ -106,34 +74,21 @@ export function shareDefaults(share: SessionShare | null): ShareSessionValues {
  * rules on people and on lifetime are one rule on both sides; write access
  * also has to be understood before it is given.
  */
-export function shareSessionFormSchema(
-  messages: { people: string; ack: string; lifetime: string },
-  share: SessionShare | null,
-): z.ZodType<ShareSessionValues> {
+export function shareSessionFormSchema(messages: {
+  people: string;
+  ack: string;
+}): z.ZodType<ShareSessionValues> {
   return z
     .object({
       audience: z.enum(['people', 'link']),
       people: z.array(z.string()),
       access: z.enum(['read', 'write']),
-      lifetime: z.enum(['1h', '8h', '24h', '7d', 'never', 'keep']),
+      lifetime: z.enum(['1h', '8h', '24h', '7d', 'never']),
       ack: z.boolean(),
     })
     .superRefine((values, ctx) => {
-      if (values.lifetime === 'keep' && !keepsShare(values, share)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['lifetime'],
-          message: messages.lifetime,
-        });
-      }
-      // People are checked as a `PUT` would carry them, whatever is sent.
-      const asPut = shareInput({ ...values, lifetime: '24h' });
-      const parsed = asPut.kind === 'put' ? putSessionShareSchema.safeParse(asPut.input) : null;
-      if (
-        parsed &&
-        !parsed.success &&
-        parsed.error.issues.some((issue) => issue.path[0] === 'people')
-      ) {
+      const parsed = putSessionShareSchema.safeParse(shareInput(values));
+      if (!parsed.success && parsed.error.issues.some((issue) => issue.path[0] === 'people')) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['people'], message: messages.people });
       }
       if (effectiveAccess(values.audience, values.access) === 'write' && !values.ack) {

@@ -15,11 +15,14 @@ import { SharePersonChip } from './share-person-chip';
  */
 export function SharePeopleInput({
   value,
+  exclude = [],
   onChange,
   invalid,
   disabled,
 }: {
   value: string[];
+  /** People already on the share, never offered again. */
+  exclude?: readonly string[];
   onChange: (people: string[]) => void;
   invalid: boolean;
   disabled: boolean;
@@ -28,7 +31,8 @@ export function SharePeopleInput({
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const typed = query.trim().toLowerCase();
-  const suggestion = isEmail(typed) && !value.includes(typed) ? typed : null;
+  const suggestion =
+    isEmail(typed) && !value.includes(typed) && !exclude.includes(typed) ? typed : null;
 
   function add(email: string) {
     onChange([...value, email]);
