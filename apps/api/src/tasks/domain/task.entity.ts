@@ -29,8 +29,8 @@ export interface TaskProps {
   organizationId: string;
   /** Always set; a task with no project is filed under the Unassigned one. */
   projectId: string;
-  /** One of the project's goals, or none. The database refuses a goal of another project. */
-  goalId: string | null;
+  /** One of the project's milestones, or none. The database refuses a milestone of another project. */
+  milestoneId: string | null;
   status: TaskStatus;
   /** Its place in the column (`task-rank.policy.ts`); empty until the repository places it. */
   rank: string;
@@ -50,7 +50,7 @@ export interface TaskProps {
 export interface CreateTaskProps {
   organizationId: string;
   projectId: string;
-  goalId: string | null;
+  milestoneId: string | null;
   status: TaskStatus;
   title: string;
   notes?: string;
@@ -69,7 +69,7 @@ export interface TaskEdit {
 
 /**
  * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
- * asks for, in one of four columns, under a project and maybe one of its goals. It
+ * asks for, in one of four columns, under a project and maybe one of its milestones. It
  * starts sessions or links existing ones, and attaching one is the only thing that
  * moves it on its own (§4).
  */
@@ -84,7 +84,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
       props: {
         organizationId: props.organizationId,
         projectId: props.projectId,
-        goalId: props.goalId,
+        milestoneId: props.milestoneId,
         status: props.status,
         rank: '',
         title: props.title.trim(),
@@ -106,8 +106,8 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get projectId(): string {
     return this.props.projectId;
   }
-  get goalId(): string | null {
-    return this.props.goalId;
+  get milestoneId(): string | null {
+    return this.props.milestoneId;
   }
   get status(): TaskStatus {
     return this.props.status;
@@ -151,10 +151,10 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     this.validate();
   }
 
-  /** File under a project and one of its goals, or none. The caller resolved both. */
-  file(projectId: string, goalId: string | null): void {
+  /** File under a project and one of its milestones, or none. The caller resolved both. */
+  file(projectId: string, milestoneId: string | null): void {
     this.props.projectId = projectId;
-    this.props.goalId = goalId;
+    this.props.milestoneId = milestoneId;
     this.setUpdatedAt(new Date());
   }
 

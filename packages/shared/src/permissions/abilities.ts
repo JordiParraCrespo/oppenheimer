@@ -67,7 +67,7 @@ export const KNOWN_SUBJECTS = [
   // workspace runs, and each of its runs is a session.
   'Automation',
   // Plan (`product/versions/mvp/17-plan.md`), workspace-owned like the rest:
-  // `Task` covers tasks, their goals and their links to sessions; `Calendar`
+  // `Task` covers tasks, their milestones and their links to sessions; `Calendar`
   // the workspace's own events and a person's Google Calendar connection.
   'Task',
   'Calendar',

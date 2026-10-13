@@ -4,7 +4,7 @@ import { createSessionSchema } from './session.schema.js';
 /**
  * Plan's board (`product/versions/mvp/17-plan.md`): a **task** is work a person
  * asks for, filed under a project and optionally under one of that project's
- * **goals**, in one of four columns. A task starts sessions or links existing
+ * **milestones**, in one of four columns. A task starts sessions or links existing
  * ones; the session is where the work happens.
  *
  * Dates are wall-clock: a due date is a calendar day and a due time a time of
@@ -25,7 +25,7 @@ export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['later', 'todo'
 
 export const TASK_TITLE_MAX = 500;
 export const TASK_NOTES_MAX = 10_000;
-export const GOAL_NAME_MAX = 200;
+export const MILESTONE_NAME_MAX = 200;
 
 /** A calendar day, `YYYY-MM-DD`, that is a real date. */
 export const calendarDateSchema = z
@@ -46,7 +46,7 @@ export const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 const taskTitleSchema = z.string().trim().min(1).max(TASK_TITLE_MAX);
 const taskNotesSchema = z.string().max(TASK_NOTES_MAX);
-const goalNameSchema = z.string().trim().min(1).max(GOAL_NAME_MAX);
+const milestoneNameSchema = z.string().trim().min(1).max(MILESTONE_NAME_MAX);
 
 /** A due time needs a due date; the console picks today when a time comes first. */
 function dueTimeHasDate(value: { dueDate?: string | null; dueTime?: string | null }): boolean {
@@ -55,7 +55,7 @@ function dueTimeHasDate(value: { dueDate?: string | null; dueTime?: string | nul
 
 /**
  * `POST /tasks`. Without a project the task is filed under the workspace's
- * Unassigned project, as a session is. A goal brings its own project, so a
+ * Unassigned project, as a session is. A milestone brings its own project, so a
  * `projectId` that disagrees with it is refused. New tasks go to the end of
  * their column.
  */
@@ -65,7 +65,7 @@ export const createTaskSchema = z
     notes: taskNotesSchema.optional(),
     status: taskStatusSchema.default('todo'),
     projectId: z.string().uuid().optional(),
-    goalId: z.string().uuid().nullable().optional(),
+    milestoneId: z.string().uuid().nullable().optional(),
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
   })
@@ -76,15 +76,15 @@ export type CreateTaskDto = z.infer<typeof createTaskSchema>;
 /**
  * `PATCH /tasks/{id}`. Every field optional; `null` clears. The status is not
  * here: a column change is a move, which also says where in the column.
- * Changing the project drops a goal of another project; choosing a goal moves
- * the task to the goal's project.
+ * Changing the project drops a milestone of another project; choosing a milestone moves
+ * the task to the milestone's project.
  */
 export const updateTaskSchema = z
   .object({
     title: taskTitleSchema.optional(),
     notes: taskNotesSchema.optional(),
     projectId: z.string().uuid().optional(),
-    goalId: z.string().uuid().nullable().optional(),
+    milestoneId: z.string().uuid().nullable().optional(),
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
   })
@@ -133,7 +133,7 @@ export type LinkTaskSessionDto = z.infer<typeof linkTaskSessionSchema>;
 /** `GET /tasks`. Every filter narrows; none returns the whole board. */
 export const listTasksQuerySchema = z.object({
   projectId: z.string().uuid().optional(),
-  goalId: z.string().uuid().optional(),
+  milestoneId: z.string().uuid().optional(),
   sessionId: z.string().uuid().optional(),
   dueFrom: calendarDateSchema.optional(),
   dueTo: calendarDateSchema.optional(),
@@ -141,27 +141,27 @@ export const listTasksQuerySchema = z.object({
 
 export type ListTasksQueryDto = z.infer<typeof listTasksQuerySchema>;
 
-/** `POST /goals`. A goal always has a project: it is what the project is aiming for. */
-export const createGoalSchema = z.object({
-  name: goalNameSchema,
+/** `POST /milestones`. A milestone always has a project: it is what the project is aiming for. */
+export const createMilestoneSchema = z.object({
+  name: milestoneNameSchema,
   projectId: z.string().uuid(),
   targetDate: calendarDateSchema.nullable().optional(),
 });
 
-export type CreateGoalDto = z.infer<typeof createGoalSchema>;
+export type CreateMilestoneDto = z.infer<typeof createMilestoneSchema>;
 
-/** `PATCH /goals/{id}`. Moving a goal to another project moves its tasks with it. */
-export const updateGoalSchema = z.object({
-  name: goalNameSchema.optional(),
+/** `PATCH /milestones/{id}`. Moving a milestone to another project moves its tasks with it. */
+export const updateMilestoneSchema = z.object({
+  name: milestoneNameSchema.optional(),
   projectId: z.string().uuid().optional(),
   targetDate: calendarDateSchema.nullable().optional(),
 });
 
-export type UpdateGoalDto = z.infer<typeof updateGoalSchema>;
+export type UpdateMilestoneDto = z.infer<typeof updateMilestoneSchema>;
 
-/** `GET /goals`. */
-export const listGoalsQuerySchema = z.object({
+/** `GET /milestones`. */
+export const listMilestonesQuerySchema = z.object({
   projectId: z.string().uuid().optional(),
 });
 
-export type ListGoalsQueryDto = z.infer<typeof listGoalsQuerySchema>;
+export type ListMilestonesQueryDto = z.infer<typeof listMilestonesQuerySchema>;

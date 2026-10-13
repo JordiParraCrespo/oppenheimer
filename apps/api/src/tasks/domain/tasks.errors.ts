@@ -7,10 +7,10 @@ export const TaskErrors = {
     message: 'Task not found',
     httpStatus: 404,
   },
-  /** Also a goal in another workspace. */
-  GOAL_NOT_FOUND: {
+  /** Also a milestone in another workspace. */
+  MILESTONE_NOT_FOUND: {
     code: 'TASKS_002',
-    message: 'Goal not found',
+    message: 'Milestone not found',
     httpStatus: 404,
   },
   NO_ACTIVE_ORGANIZATION: {
@@ -43,10 +43,10 @@ export const TaskErrors = {
     message: 'That position is no longer on the board',
     httpStatus: 409,
   },
-  /** A goal and its project disagree with what the request asked for. */
-  GOAL_PROJECT_MISMATCH: {
+  /** A milestone and its project disagree with what the request asked for. */
+  MILESTONE_PROJECT_MISMATCH: {
     code: 'TASKS_007',
-    message: 'That goal belongs to another project',
+    message: 'That milestone belongs to another project',
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

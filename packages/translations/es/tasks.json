@@ -60,29 +60,29 @@
     "endOfMonth": "Fin de mes",
     "inThreeMonths": "En 3 meses"
   },
-  "goals": {
-    "label": "Objetivos",
-    "title": "Objetivos",
-    "new": "Nuevo objetivo",
-    "empty": "Los objetivos agrupan tareas y cuentan cuántas están hechas.",
+  "milestones": {
+    "label": "Hitos",
+    "title": "Hitos",
+    "new": "Nuevo hito",
+    "empty": "Los hitos agrupan tareas y cuentan cuántas están hechas.",
     "noTarget": "Sin fecha",
     "progress": "{{done}} / {{total}} tareas",
     "edit": "Editar {{name}}",
-    "loadFailed": "No se han podido cargar tus objetivos.",
-    "emptyTitle": "Aún no hay objetivos"
+    "loadFailed": "No se han podido cargar tus hitos.",
+    "emptyTitle": "Aún no hay hitos"
   },
-  "goal": {
-    "newTitle": "Nuevo objetivo",
-    "editTitle": "Editar objetivo",
-    "name": "Objetivo",
+  "milestone": {
+    "newTitle": "Nuevo hito",
+    "editTitle": "Editar hito",
+    "name": "Hito",
     "namePlaceholder": "¿Qué quieres conseguir?",
     "target": "Fecha",
-    "add": "Añadir objetivo",
-    "delete": "Eliminar objetivo",
-    "deleteTitle": "¿Eliminar este objetivo?",
-    "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin objetivo.",
-    "saveFailed": "No se ha podido guardar el objetivo.",
-    "deleteFailed": "No se ha podido eliminar el objetivo."
+    "add": "Añadir hito",
+    "delete": "Eliminar hito",
+    "deleteTitle": "¿Eliminar este hito?",
+    "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+    "saveFailed": "No se ha podido guardar el hito.",
+    "deleteFailed": "No se ha podido eliminar el hito."
   },
   "dialog": {
     "newTitle": "Nueva tarea",
@@ -93,7 +93,7 @@
     "notesPlaceholder": "Añade notas",
     "status": "Estado",
     "project": "Proyecto",
-    "goal": "Objetivo",
+    "milestone": "Hito",
     "none": "Ninguno",
     "due": "Vence",
     "sessions": "Sesiones",

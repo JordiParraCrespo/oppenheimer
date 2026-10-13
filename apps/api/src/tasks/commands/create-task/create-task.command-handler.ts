@@ -9,7 +9,7 @@ import { TaskErrors } from '../../domain/tasks.errors';
 import { TASK_REPOSITORY } from '../../tasks.di-tokens';
 import { CreateTaskCommand } from './create-task.command';
 
-/** A new task, filed by the request's project and goal, at the end of its column. */
+/** A new task, filed by the request's project and milestone, at the end of its column. */
 @CommandHandler(CreateTaskCommand)
 export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskCommand, AggregateID> {
   constructor(
@@ -22,7 +22,7 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
     if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
     const filed = await this.filing.resolve(scope, {
       projectId: input.projectId,
-      goalId: input.goalId,
+      milestoneId: input.milestoneId,
     });
     const task = TaskEntity.createNew({
       organizationId: scope.organizationId,

@@ -15,7 +15,7 @@ export interface TaskPlacement {
 
 export interface TaskListFilter {
   projectId?: string;
-  goalId?: string;
+  milestoneId?: string;
   /** The tasks a session is on: the session header's "Back to task". */
   sessionId?: string;
   dueFrom?: string;
@@ -41,7 +41,7 @@ export interface TaskRepositoryPort {
   findOneById(scope: AccessScope, id: string): Promise<Option<TaskEntity>>;
   /** Insert a new task at `placement`, setting its rank. */
   insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskPlaceOutcome>;
-  /** Write the fields a person edits: title, notes, due date and time, project and goal. */
+  /** Write the fields a person edits: title, notes, due date and time, project and milestone. */
   saveFields(task: TaskEntity): Promise<void>;
   /** Move the task to `placement`, setting its status and rank. */
   move(task: TaskEntity, placement: TaskPlacement): Promise<TaskPlaceOutcome>;

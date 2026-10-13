@@ -12,7 +12,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.projectId = entity.projectId;
-    record.goalId = entity.goalId;
+    record.milestoneId = entity.milestoneId;
     record.status = entity.status;
     record.rank = entity.rank;
     record.title = entity.title;
@@ -43,7 +43,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
       props: {
         organizationId: record.organizationId,
         projectId: record.projectId,
-        goalId: record.goalId ?? null,
+        milestoneId: record.milestoneId ?? null,
         status: record.status,
         rank: record.rank,
         title: record.title,
@@ -68,7 +68,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     const dto = new TaskResponseDto();
     dto.id = entity.id;
     dto.projectId = entity.projectId;
-    dto.goalId = entity.goalId;
+    dto.milestoneId = entity.milestoneId;
     dto.status = entity.status;
     dto.rank = entity.rank;
     dto.title = entity.title;

@@ -60,29 +60,29 @@
     "endOfMonth": "End of month",
     "inThreeMonths": "In 3 months"
   },
-  "goals": {
-    "label": "Goals",
-    "title": "Goals",
-    "new": "New goal",
-    "empty": "Goals group tasks and track how many are done.",
+  "milestones": {
+    "label": "Milestones",
+    "title": "Milestones",
+    "new": "New milestone",
+    "empty": "Milestones group tasks and track how many are done.",
     "noTarget": "No target",
     "progress": "{{done}} / {{total}} tasks",
     "edit": "Edit {{name}}",
-    "loadFailed": "Couldn’t load your goals.",
-    "emptyTitle": "No goals yet"
+    "loadFailed": "Couldn’t load your milestones.",
+    "emptyTitle": "No milestones yet"
   },
-  "goal": {
-    "newTitle": "New goal",
-    "editTitle": "Edit goal",
-    "name": "Goal",
+  "milestone": {
+    "newTitle": "New milestone",
+    "editTitle": "Edit milestone",
+    "name": "Milestone",
     "namePlaceholder": "What are you aiming for?",
     "target": "Target",
-    "add": "Add goal",
-    "delete": "Delete goal",
-    "deleteTitle": "Delete this goal?",
-    "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a goal.",
-    "saveFailed": "Couldn’t save the goal.",
-    "deleteFailed": "Couldn’t delete the goal."
+    "add": "Add milestone",
+    "delete": "Delete milestone",
+    "deleteTitle": "Delete this milestone?",
+    "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+    "saveFailed": "Couldn’t save the milestone.",
+    "deleteFailed": "Couldn’t delete the milestone."
   },
   "dialog": {
     "newTitle": "New task",
@@ -93,7 +93,7 @@
     "notesPlaceholder": "Add notes",
     "status": "Status",
     "project": "Project",
-    "goal": "Goal",
+    "milestone": "Milestone",
     "none": "None",
     "due": "Due",
     "sessions": "Sessions",

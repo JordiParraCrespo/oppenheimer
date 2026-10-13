@@ -383,19 +383,19 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   {
     resource: 'tasks',
     label: 'Tasks',
-    description: 'Plan: tasks, goals, and the sessions a task started or links.',
+    description: 'Plan: tasks, milestones, and the sessions a task started or links.',
     levels: {
       read: {
         scope: 'tasks:read',
         label: 'Read',
-        description: 'Read the board, its tasks and goals, and which sessions a task links.',
+        description: 'Read the board, its tasks and milestones, and which sessions a task links.',
         policies: [{ action: 'read', subject: 'Task' }],
       },
       write: {
         scope: 'tasks:write',
         label: 'Edit',
         description:
-          'Create, edit, move and delete tasks and goals, link sessions, and start a session from a task.',
+          'Create, edit, move and delete tasks and milestones, link sessions, and start a session from a task.',
         // Starting a session from a task also asks `sessions:write` on the
         // route, so a tasks-only credential cannot reach a host.
         policies: [

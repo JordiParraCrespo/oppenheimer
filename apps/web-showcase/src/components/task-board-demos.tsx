@@ -2,7 +2,7 @@
 
 import { Button } from '@oppenheimer/design-system-web/button';
 import { DragProvider, type SortableGroups, SortableItem, useSortableGroups } from '@oppenheimer/design-system-web/drag';
-import { GoalCard, GoalEmpty, GoalGrid } from '@oppenheimer/design-system-web/goal-card';
+import { MilestoneCard, MilestoneEmpty, MilestoneGrid } from '@oppenheimer/design-system-web/milestone-card';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { EllipsisIcon, PlusIcon } from '@oppenheimer/design-system-web/icons';
 import {
@@ -34,33 +34,33 @@ interface Task {
   title: string;
   notes?: string;
   project?: string;
-  goal?: string;
+  milestone?: string;
   due?: string;
   dueTone?: 'soon' | 'overdue';
   session?: { state: 'running' | 'needs-input' | 'completed'; word: string; name: string; more?: number };
 }
 
 const TASKS: Record<string, Task> = {
-  t1: { id: 't1', title: 'Write a migration guide for legacy wallet users', project: 'XRP Mobile', goal: 'Ship XRP Mobile 2.0 to TestFlight' },
+  t1: { id: 't1', title: 'Write a migration guide for legacy wallet users', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight' },
   t2: { id: 't2', title: 'Evaluate Codex for nightly refactors', notes: 'Compare against Claude Code on the atlas test suite before switching anything over.' },
-  t3: { id: 't3', title: 'Address review comments on PR #121', project: 'XRP Mobile', goal: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Oct 7', session: { state: 'running', word: 'Running', name: 'PR #121 porting to peersyst' } },
-  t4: { id: 't4', title: 'Draft the beta waitlist email', project: 'Atlas', goal: 'Atlas public beta', due: 'Oct 10' },
+  t3: { id: 't3', title: 'Address review comments on PR #121', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Oct 7', session: { state: 'running', word: 'Running', name: 'PR #121 porting to peersyst' } },
+  t4: { id: 't4', title: 'Draft the beta waitlist email', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 10' },
   t5: { id: 't5', title: 'Rotate flama-ai API keys', project: 'Client sites', due: 'Yesterday', dueTone: 'overdue' },
-  t6: { id: 't6', title: 'Biometric unlock on Android', notes: 'Blocked on a keystore edge case on Pixel 6.', project: 'XRP Mobile', goal: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Tomorrow', dueTone: 'soon', session: { state: 'needs-input', word: 'Needs input', name: 'biometric-unlock', more: 1 } },
-  t7: { id: 't7', title: 'Atlas onboarding flow', project: 'Atlas', goal: 'Atlas public beta', due: 'Oct 11', session: { state: 'running', word: 'Running', name: 'atlas-onboarding-flow' } },
-  t8: { id: 't8', title: 'Upgrade React Native to 0.76', project: 'XRP Mobile', goal: 'Ship XRP Mobile 2.0 to TestFlight' },
+  t6: { id: 't6', title: 'Biometric unlock on Android', notes: 'Blocked on a keystore edge case on Pixel 6.', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Tomorrow', dueTone: 'soon', session: { state: 'needs-input', word: 'Needs input', name: 'biometric-unlock', more: 1 } },
+  t7: { id: 't7', title: 'Atlas onboarding flow', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 11', session: { state: 'running', word: 'Running', name: 'atlas-onboarding-flow' } },
+  t8: { id: 't8', title: 'Upgrade React Native to 0.76', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight' },
   t9: { id: 't9', title: 'flama-ai landing copy', project: 'Client sites', session: { state: 'completed', word: 'Completed', name: 'First version of the landing' } },
 };
 
 
-const GOALS = [
+const MILESTONES = [
   { id: 'Ship XRP Mobile 2.0 to TestFlight', meta: ['XRP Mobile', 'Nov 1'] },
   { id: 'Atlas public beta', meta: ['Atlas', 'Nov 16'] },
 ];
 
 /**
  * Plan's Tasks page as the design system draws it: the display header, the
- * goals (picking one narrows the board), and the board itself — drag a card
+ * milestones (picking one narrows the board), and the board itself — drag a card
  * within or across columns, check one off, add one at a column's foot.
  */
 export function TaskBoardDemo() {
@@ -71,11 +71,11 @@ export function TaskBoardDemo() {
     doing: ['t6', 't7'],
     done: ['t8', 't9'],
   });
-  const [goal, setGoal] = React.useState<string | null>(null);
+  const [milestone, setMilestone] = React.useState<string | null>(null);
   const [composing, setComposing] = React.useState<TaskStatus | null>(null);
   const [draft, setDraft] = React.useState('');
 
-  const visible = (ids: readonly string[]) => (goal ? ids.filter((id) => tasks[id]?.goal === goal) : ids);
+  const visible = (ids: readonly string[]) => (milestone ? ids.filter((id) => tasks[id]?.milestone === milestone) : ids);
   const shown: SortableGroups = Object.fromEntries(Object.entries(groups).map(([k, ids]) => [k, visible(ids)]));
   // A narrowed board moves the cards it shows; the hidden ones keep their place at the end.
   const sortable = useSortableGroups(shown, (next) =>
@@ -132,18 +132,18 @@ export function TaskBoardDemo() {
       </PageHeader>
       <section className="flex flex-col gap-3">
         <div className="flex items-center px-1">
-          <span className="eyebrow flex-1">Goals</span>
+          <span className="eyebrow flex-1">Milestones</span>
           <Button variant="ghost" size="sm">
             <PlusIcon />
-            New goal
+            New milestone
           </Button>
         </div>
-        <GoalGrid>
-          {GOALS.map((g) => {
-            const linked = Object.values(tasks).filter((t) => t.goal === g.id);
+        <MilestoneGrid>
+          {MILESTONES.map((g) => {
+            const linked = Object.values(tasks).filter((t) => t.milestone === g.id);
             const done = linked.filter((t) => doneIds.includes(t.id)).length;
             return (
-              <GoalCard
+              <MilestoneCard
                 key={g.id}
                 name={g.id}
                 meta={
@@ -154,18 +154,18 @@ export function TaskBoardDemo() {
                 done={done}
                 total={linked.length}
                 countLabel={`${done} / ${linked.length} tasks`}
-                selected={goal === g.id}
-                onSelect={() => setGoal((current) => (current === g.id ? null : g.id))}
+                selected={milestone === g.id}
+                onSelect={() => setMilestone((current) => (current === g.id ? null : g.id))}
                 action={
-                  <IconButton size="sm" aria-label="Edit goal">
+                  <IconButton size="sm" aria-label="Edit milestone">
                     <EllipsisIcon />
                   </IconButton>
                 }
               />
             );
           })}
-          <GoalEmpty title="No goals for this project">Goals group tasks and track how many are done.</GoalEmpty>
-        </GoalGrid>
+          <MilestoneEmpty title="No milestones for this project">Milestones group tasks and track how many are done.</MilestoneEmpty>
+        </MilestoneGrid>
       </section>
       <DragProvider
         live
@@ -193,14 +193,14 @@ export function TaskBoardDemo() {
                     onValueChange={setDraft}
                     label="Task title"
                     placeholder="What needs doing?"
-                    hint={goal ? `In ${goal}` : 'In all projects'}
+                    hint={milestone ? `In ${milestone}` : 'In all projects'}
                     onCancel={() => {
                       setComposing(null);
                       setDraft('');
                     }}
                     onSubmit={(title) => {
                       const id = `n${Date.now()}`;
-                      setTasks((current) => ({ ...current, [id]: { id, title, goal: goal ?? undefined } }));
+                      setTasks((current) => ({ ...current, [id]: { id, title, milestone: milestone ?? undefined } }));
                       setGroups((current) => ({ ...current, [column.id]: [...(current[column.id] ?? []), id] }));
                       setDraft('');
                     }}
@@ -215,7 +215,7 @@ export function TaskBoardDemo() {
                 if (!task) return null;
                 return (
                   <SortableItem key={id} id={id} data={{ type: 'task', label: task.title }}>
-                    <Card task={task} done={column.id === 'done'} onToggle={() => toggle(id)} hideGoal={goal !== null} />
+                    <Card task={task} done={column.id === 'done'} onToggle={() => toggle(id)} hideMilestone={milestone !== null} />
                   </SortableItem>
                 );
               })}
@@ -231,9 +231,9 @@ function Card({
   task,
   done,
   onToggle,
-  hideGoal,
+  hideMilestone,
   lifted,
-}: { task: Task; done: boolean; onToggle?: () => void; hideGoal?: boolean; lifted?: boolean }) {
+}: { task: Task; done: boolean; onToggle?: () => void; hideMilestone?: boolean; lifted?: boolean }) {
   return (
     <TaskCard
       title={task.title}
@@ -242,7 +242,7 @@ function Card({
       onToggleDone={onToggle}
       checkLabel={done ? 'Mark as not done' : 'Mark as done'}
       project={task.project}
-      goal={hideGoal ? undefined : task.goal}
+      milestone={hideMilestone ? undefined : task.milestone}
       due={task.due}
       dueTone={task.dueTone}
       onStart={lifted ? undefined : () => {}}

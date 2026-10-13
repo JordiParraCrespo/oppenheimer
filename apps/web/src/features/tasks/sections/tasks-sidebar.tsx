@@ -12,7 +12,7 @@ const board = getRouteApi('/_authenticated/plan/');
 /**
  * The board's sidebar list (`18-plan-product.md` §1): All projects, each
  * project with its open count, then Unassigned; "+" is the console's New
- * project. Picking one filters the board and drops a goal of another project.
+ * project. Picking one filters the board and drops a milestone of another project.
  */
 export function TasksSidebar() {
   const { t } = useTranslation();

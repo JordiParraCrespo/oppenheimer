@@ -2,7 +2,7 @@ import { FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
 import {
   useCreateTask,
   useDeleteTask,
-  useGoals,
+  useMilestones,
   useProjects,
   useTasks,
   useUpdateTask,
@@ -19,7 +19,7 @@ import { TaskSessionsRow } from './task-sessions-row';
 
 /**
  * The task dialog's body: the task (or a new one's values, filed where the
- * board is filtered), the projects and goals its rows offer, and the three
+ * board is filtered), the projects and milestones its rows offer, and the three
  * writes. The form takes values and hands them back.
  */
 export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () => void }) {
@@ -29,7 +29,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
   const filter = useBoardFilter();
   const tasks = useTasks({ select: (rows) => rows.find((row) => row.id === taskId) ?? null });
   const projects = useProjects();
-  const { data: goals } = useGoals();
+  const { data: milestones } = useMilestones();
   const [deleting, setDeleting] = useState(false);
   const create = useCreateTask({
     onSuccess: () => {
@@ -57,7 +57,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
   ];
   const values = task
     ? taskValues(task)
-    : newTaskValues(filter.projectId || unassigned?.id || '', filter.goalId ?? null);
+    : newTaskValues(filter.projectId || unassigned?.id || '', filter.milestoneId ?? null);
   const pending = create.isPending || update.isPending;
   const failure = create.error ?? update.error;
   const submit = (next: TaskFormOutput) => {
@@ -71,7 +71,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
       <TaskForm
         values={values}
         projects={choices}
-        goals={goals ?? []}
+        milestones={milestones ?? []}
         today={today}
         sessions={task ? <TaskSessionsRow task={task} /> : null}
         pending={pending}

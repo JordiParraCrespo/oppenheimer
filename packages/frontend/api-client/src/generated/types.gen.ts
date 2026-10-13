@@ -2097,7 +2097,7 @@ export type TaskResponseDto = {
      * Always set: a task with no project is filed under the Unassigned one.
      */
     projectId: string;
-    goalId?: string | null;
+    milestoneId?: string | null;
     status: 'later' | 'todo' | 'doing' | 'done';
     /**
      * Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.
@@ -2127,7 +2127,7 @@ export type CreateTaskRequest = {
     notes?: string;
     status?: 'later' | 'todo' | 'doing' | 'done';
     projectId?: string;
-    goalId?: string | null;
+    milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
 };
@@ -2136,7 +2136,7 @@ export type UpdateTaskRequest = {
     title?: string;
     notes?: string;
     projectId?: string;
-    goalId?: string | null;
+    milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
 };
@@ -2184,7 +2184,7 @@ export type LinkTaskSessionRequest = {
     seenStatus: 'later' | 'todo' | 'doing' | 'done';
 };
 
-export type GoalResponseDto = {
+export type MilestoneResponseDto = {
     id: string;
     projectId: string;
     name: string;
@@ -2200,13 +2200,13 @@ export type GoalResponseDto = {
     createdAt: string;
 };
 
-export type CreateGoalRequest = {
+export type CreateMilestoneRequest = {
     name: string;
     projectId: string;
     targetDate?: string | null;
 };
 
-export type UpdateGoalRequest = {
+export type UpdateMilestoneRequest = {
     name?: string;
     projectId?: string;
     targetDate?: string | null;
@@ -8212,9 +8212,9 @@ export type FindTasksData = {
          */
         sessionId?: string;
         /**
-         * Only this goal’s tasks.
+         * Only this milestone’s tasks.
          */
-        goalId?: string;
+        milestoneId?: string;
         /**
          * Only this project’s tasks.
          */
@@ -8259,11 +8259,11 @@ export type CreateTaskErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
     /**
-     * TASKS_007 — Goal of another project
+     * TASKS_007 — Milestone of another project
      *
      * TASKS_004 — Project archived or missing
      */
@@ -8361,13 +8361,13 @@ export type UpdateTaskErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      *
      * TASKS_001 — Task not found
      */
     404: ProblemDetailsDto;
     /**
-     * TASKS_007 — Goal of another project
+     * TASKS_007 — Milestone of another project
      *
      * TASKS_004 — Project archived or missing
      */
@@ -8534,19 +8534,19 @@ export type LinkTaskSessionResponses = {
 
 export type LinkTaskSessionResponse = LinkTaskSessionResponses[keyof LinkTaskSessionResponses];
 
-export type FindGoalsData = {
+export type FindMilestonesData = {
     body?: never;
     path?: never;
     query?: {
         /**
-         * Only this project’s goals.
+         * Only this project’s milestones.
          */
         projectId?: string;
     };
-    url: '/api/v1/goals';
+    url: '/api/v1/milestones';
 };
 
-export type FindGoalsErrors = {
+export type FindMilestonesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8557,22 +8557,22 @@ export type FindGoalsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindGoalsError = FindGoalsErrors[keyof FindGoalsErrors];
+export type FindMilestonesError = FindMilestonesErrors[keyof FindMilestonesErrors];
 
-export type FindGoalsResponses = {
-    200: Array<GoalResponseDto>;
+export type FindMilestonesResponses = {
+    200: Array<MilestoneResponseDto>;
 };
 
-export type FindGoalsResponse = FindGoalsResponses[keyof FindGoalsResponses];
+export type FindMilestonesResponse = FindMilestonesResponses[keyof FindMilestonesResponses];
 
-export type CreateGoalData = {
-    body: CreateGoalRequest;
+export type CreateMilestoneData = {
+    body: CreateMilestoneRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/goals';
+    url: '/api/v1/milestones';
 };
 
-export type CreateGoalErrors = {
+export type CreateMilestoneErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8587,24 +8587,24 @@ export type CreateGoalErrors = {
     409: ProblemDetailsDto;
 };
 
-export type CreateGoalError = CreateGoalErrors[keyof CreateGoalErrors];
+export type CreateMilestoneError = CreateMilestoneErrors[keyof CreateMilestoneErrors];
 
-export type CreateGoalResponses = {
-    201: GoalResponseDto;
+export type CreateMilestoneResponses = {
+    201: MilestoneResponseDto;
 };
 
-export type CreateGoalResponse = CreateGoalResponses[keyof CreateGoalResponses];
+export type CreateMilestoneResponse = CreateMilestoneResponses[keyof CreateMilestoneResponses];
 
-export type DeleteGoalData = {
+export type DeleteMilestoneData = {
     body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/goals/{id}';
+    url: '/api/v1/milestones/{id}';
 };
 
-export type DeleteGoalErrors = {
+export type DeleteMilestoneErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8614,29 +8614,29 @@ export type DeleteGoalErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
 };
 
-export type DeleteGoalError = DeleteGoalErrors[keyof DeleteGoalErrors];
+export type DeleteMilestoneError = DeleteMilestoneErrors[keyof DeleteMilestoneErrors];
 
-export type DeleteGoalResponses = {
+export type DeleteMilestoneResponses = {
     204: void;
 };
 
-export type DeleteGoalResponse = DeleteGoalResponses[keyof DeleteGoalResponses];
+export type DeleteMilestoneResponse = DeleteMilestoneResponses[keyof DeleteMilestoneResponses];
 
-export type UpdateGoalData = {
-    body: UpdateGoalRequest;
+export type UpdateMilestoneData = {
+    body: UpdateMilestoneRequest;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/goals/{id}';
+    url: '/api/v1/milestones/{id}';
 };
 
-export type UpdateGoalErrors = {
+export type UpdateMilestoneErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8646,7 +8646,7 @@ export type UpdateGoalErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
     /**
@@ -8655,13 +8655,13 @@ export type UpdateGoalErrors = {
     409: ProblemDetailsDto;
 };
 
-export type UpdateGoalError = UpdateGoalErrors[keyof UpdateGoalErrors];
+export type UpdateMilestoneError = UpdateMilestoneErrors[keyof UpdateMilestoneErrors];
 
-export type UpdateGoalResponses = {
-    200: GoalResponseDto;
+export type UpdateMilestoneResponses = {
+    200: MilestoneResponseDto;
 };
 
-export type UpdateGoalResponse = UpdateGoalResponses[keyof UpdateGoalResponses];
+export type UpdateMilestoneResponse = UpdateMilestoneResponses[keyof UpdateMilestoneResponses];
 
 export type FindCalendarEventsData = {
     body?: never;

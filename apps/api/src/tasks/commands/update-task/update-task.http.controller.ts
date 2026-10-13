@@ -45,17 +45,21 @@ export class UpdateTaskHttpController {
   @ApiOperation({
     summary: 'Change a task',
     description:
-      'Title, notes, due date and time, project and goal. Absent fields stay and `null` clears. Choosing a goal files the task under the goal’s project; changing the project drops a goal of another project. The column is a move.',
+      'Title, notes, due date and time, project and milestone. Absent fields stay and `null` clears. Choosing a milestone files the task under the milestone’s project; changing the project drops a milestone of another project. The column is a move.',
   })
   @ApiResponse({ status: 200, type: TaskResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Task not found', code: 'TASKS_001' })
-  @ApiProblemResponse({ status: 404, description: 'Goal not found', code: 'TASKS_002' })
+  @ApiProblemResponse({ status: 404, description: 'Milestone not found', code: 'TASKS_002' })
   @ApiProblemResponse({
     status: 409,
     description: 'Project archived or missing',
     code: 'TASKS_004',
   })
-  @ApiProblemResponse({ status: 409, description: 'Goal of another project', code: 'TASKS_007' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Milestone of another project',
+    code: 'TASKS_007',
+  })
   async update(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

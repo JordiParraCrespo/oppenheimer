@@ -49,7 +49,7 @@ export class TaskRepository
   async findAll(scope: AccessScope, filter: TaskListFilter): Promise<TaskEntity[]> {
     const query = this.scopedQuery(scope).orderBy('task.status').addOrderBy('task.rank');
     if (filter.projectId) query.andWhere('task.projectId = :projectId', filter);
-    if (filter.goalId) query.andWhere('task.goalId = :goalId', filter);
+    if (filter.milestoneId) query.andWhere('task.milestoneId = :milestoneId', filter);
     if (filter.dueFrom) query.andWhere('task.dueDate >= :dueFrom', filter);
     if (filter.dueTo) query.andWhere('task.dueDate <= :dueTo', filter);
     if (filter.sessionId) {
@@ -88,7 +88,7 @@ export class TaskRepository
         dueDate: task.dueDate,
         dueTime: task.dueTime,
         projectId: task.projectId,
-        goalId: task.goalId,
+        milestoneId: task.milestoneId,
       },
     );
   }

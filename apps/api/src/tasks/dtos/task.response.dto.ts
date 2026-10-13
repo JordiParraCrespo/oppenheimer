@@ -27,7 +27,7 @@ export class TaskResponseDto {
   projectId!: string;
 
   @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
-  goalId!: string | null;
+  milestoneId!: string | null;
 
   @ApiProperty({ enum: TASK_STATUSES })
   status!: TaskStatus;

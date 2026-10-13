@@ -11182,7 +11182,7 @@
     },
     "/api/v1/tasks": {
       "get": {
-        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).",
+        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).",
         "operationId": "findTasks",
         "parameters": [
           {
@@ -11216,10 +11216,10 @@
             }
           },
           {
-            "name": "goalId",
+            "name": "milestoneId",
             "required": false,
             "in": "query",
-            "description": "Only this goal’s tasks.",
+            "description": "Only this milestone’s tasks.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -11280,7 +11280,7 @@
         "tags": ["Tasks"]
       },
       "post": {
-        "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a goal brings its own project.",
+        "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project.",
         "operationId": "createTask",
         "parameters": [],
         "requestBody": {
@@ -11325,7 +11325,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found",
+            "description": "TASKS_002 — Milestone not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11335,7 +11335,7 @@
             }
           },
           "409": {
-            "description": "TASKS_007 — Goal of another project\n\nTASKS_004 — Project archived or missing",
+            "description": "TASKS_007 — Milestone of another project\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11418,7 +11418,7 @@
         "tags": ["Tasks"]
       },
       "patch": {
-        "description": "Title, notes, due date and time, project and goal. Absent fields stay and `null` clears. Choosing a goal files the task under the goal’s project; changing the project drops a goal of another project. The column is a move.",
+        "description": "Title, notes, due date and time, project and milestone. Absent fields stay and `null` clears. Choosing a milestone files the task under the milestone’s project; changing the project drops a milestone of another project. The column is a move.",
         "operationId": "updateTask",
         "parameters": [
           {
@@ -11472,7 +11472,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found\n\nTASKS_001 — Task not found",
+            "description": "TASKS_002 — Milestone not found\n\nTASKS_001 — Task not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11482,7 +11482,7 @@
             }
           },
           "409": {
-            "description": "TASKS_007 — Goal of another project\n\nTASKS_004 — Project archived or missing",
+            "description": "TASKS_007 — Milestone of another project\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11908,16 +11908,16 @@
         "tags": ["Tasks"]
       }
     },
-    "/api/v1/goals": {
+    "/api/v1/milestones": {
       "get": {
-        "description": "Of one project or of the workspace, oldest first. Progress counts the goal’s tasks.",
-        "operationId": "findGoals",
+        "description": "Of one project or of the workspace, oldest first. Progress counts the milestone’s tasks.",
+        "operationId": "findMilestones",
         "parameters": [
           {
             "name": "projectId",
             "required": false,
             "in": "query",
-            "description": "Only this project’s goals.",
+            "description": "Only this project’s milestones.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -11932,7 +11932,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/GoalResponseDto"
+                    "$ref": "#/components/schemas/MilestoneResponseDto"
                   }
                 }
               }
@@ -11964,18 +11964,18 @@
             "bearer": []
           }
         ],
-        "summary": "List goals, with their progress",
+        "summary": "List milestones, with their progress",
         "tags": ["Tasks"]
       },
       "post": {
-        "operationId": "createGoal",
+        "operationId": "createMilestone",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateGoalRequest"
+                "$ref": "#/components/schemas/CreateMilestoneRequest"
               }
             }
           }
@@ -11986,7 +11986,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoalResponseDto"
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
                 }
               }
             }
@@ -12027,14 +12027,14 @@
             "bearer": []
           }
         ],
-        "summary": "Add a goal to a project",
+        "summary": "Add a milestone to a project",
         "tags": ["Tasks"]
       }
     },
-    "/api/v1/goals/{id}": {
+    "/api/v1/milestones/{id}": {
       "patch": {
         "description": "Its name, target date or project. Moving it to another project moves its tasks.",
-        "operationId": "updateGoal",
+        "operationId": "updateMilestone",
         "parameters": [
           {
             "name": "id",
@@ -12050,7 +12050,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateGoalRequest"
+                "$ref": "#/components/schemas/UpdateMilestoneRequest"
               }
             }
           }
@@ -12061,7 +12061,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoalResponseDto"
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
                 }
               }
             }
@@ -12087,7 +12087,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found",
+            "description": "TASKS_002 — Milestone not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12112,12 +12112,12 @@
             "bearer": []
           }
         ],
-        "summary": "Change a goal",
+        "summary": "Change a milestone",
         "tags": ["Tasks"]
       },
       "delete": {
-        "description": "Its tasks stay, with no goal.",
-        "operationId": "deleteGoal",
+        "description": "Its tasks stay, with no milestone.",
+        "operationId": "deleteMilestone",
         "parameters": [
           {
             "name": "id",
@@ -12153,7 +12153,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found",
+            "description": "TASKS_002 — Milestone not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12168,7 +12168,7 @@
             "bearer": []
           }
         ],
-        "summary": "Delete a goal",
+        "summary": "Delete a milestone",
         "tags": ["Tasks"]
       }
     },
@@ -20275,7 +20275,7 @@
             "format": "uuid",
             "description": "Always set: a task with no project is filed under the Unassigned one."
           },
-          "goalId": {
+          "milestoneId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -20363,7 +20363,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "goalId": {
+          "milestoneId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -20397,7 +20397,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "goalId": {
+          "milestoneId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -20553,7 +20553,7 @@
         },
         "required": ["seenStatus"]
       },
-      "GoalResponseDto": {
+      "MilestoneResponseDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -20589,7 +20589,7 @@
         },
         "required": ["id", "projectId", "name", "doneCount", "totalCount", "createdAt"]
       },
-      "CreateGoalRequest": {
+      "CreateMilestoneRequest": {
         "type": "object",
         "properties": {
           "name": {
@@ -20609,7 +20609,7 @@
         },
         "required": ["name", "projectId"]
       },
-      "UpdateGoalRequest": {
+      "UpdateMilestoneRequest": {
         "type": "object",
         "properties": {
           "name": {

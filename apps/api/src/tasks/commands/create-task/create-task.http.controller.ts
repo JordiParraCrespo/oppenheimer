@@ -37,16 +37,20 @@ export class CreateTaskHttpController {
   @ApiOperation({
     summary: 'Add a task to the board',
     description:
-      'At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a goal brings its own project.',
+      'At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project.',
   })
   @ApiResponse({ status: 201, type: TaskResponseDto })
-  @ApiProblemResponse({ status: 404, description: 'Goal not found', code: 'TASKS_002' })
+  @ApiProblemResponse({ status: 404, description: 'Milestone not found', code: 'TASKS_002' })
   @ApiProblemResponse({
     status: 409,
     description: 'Project archived or missing',
     code: 'TASKS_004',
   })
-  @ApiProblemResponse({ status: 409, description: 'Goal of another project', code: 'TASKS_007' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Milestone of another project',
+    code: 'TASKS_007',
+  })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,

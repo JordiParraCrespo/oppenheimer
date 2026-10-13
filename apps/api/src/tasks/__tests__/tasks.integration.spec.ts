@@ -4,26 +4,26 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
-import { GoalOrmEntity } from '../database/goal.orm-entity';
-import { GoalRepository } from '../database/goal.repository';
+import { MilestoneOrmEntity } from '../database/milestone.orm-entity';
+import { MilestoneRepository } from '../database/milestone.repository';
 import { TaskOrmEntity } from '../database/task.orm-entity';
 import { TaskRepository } from '../database/task.repository';
 import { TaskSessionOrmEntity } from '../database/task-session.orm-entity';
-import { GoalEntity } from '../domain/goal.entity';
+import { MilestoneEntity } from '../domain/milestone.entity';
 import { TaskEntity } from '../domain/task.entity';
-import { GoalMapper } from '../goal.mapper';
+import { MilestoneMapper } from '../milestone.mapper';
 import { TaskMapper } from '../task.mapper';
 
 /**
  * Plan's board against a real Postgres (`product/versions/mvp/19-plan-tasks-and-goals.md`):
- * the order a column keeps under concurrent moves, the one goal key and what it carries,
+ * the order a column keeps under concurrent moves, the one milestone key and what it carries,
  * and the attach rule's lock. The schema is the migrations', so a wrong key fails here.
  */
 describe('tasks: the board (integration)', () => {
   let pg: StartedTestContainer;
   let dataSource: DataSource;
   let tasks: TaskRepository;
-  let goals: GoalRepository;
+  let milestones: MilestoneRepository;
   let organizationId: string;
   let userId: string;
   let projectId: string;
@@ -54,13 +54,16 @@ describe('tasks: the board (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      entities: [TaskOrmEntity, GoalOrmEntity, TaskSessionOrmEntity, OutboxMessageSchema],
+      entities: [TaskOrmEntity, MilestoneOrmEntity, TaskSessionOrmEntity, OutboxMessageSchema],
       synchronize: false,
     });
     await dataSource.initialize();
     const outbox = new OutboxService(dataSource);
     tasks = new TaskRepository(dataSource.getRepository(TaskOrmEntity), new TaskMapper(), outbox);
-    goals = new GoalRepository(dataSource.getRepository(GoalOrmEntity), new GoalMapper());
+    milestones = new MilestoneRepository(
+      dataSource.getRepository(MilestoneOrmEntity),
+      new MilestoneMapper(),
+    );
   }, 180000);
 
   afterAll(async () => {
@@ -110,12 +113,12 @@ describe('tasks: the board (integration)', () => {
   async function add(
     title: string,
     status: TaskEntity['status'] = 'todo',
-    goalId: string | null = null,
+    milestoneId: string | null = null,
   ) {
     const task = TaskEntity.createNew({
       organizationId,
       projectId,
-      goalId,
+      milestoneId,
       status,
       title,
       createdByUserId: userId,
@@ -166,32 +169,32 @@ describe('tasks: the board (integration)', () => {
     );
   });
 
-  it('keeps a task’s goal in its project, nulls only the goal when the goal goes, and moves tasks with their goal', async () => {
-    const goal = GoalEntity.createNew({
+  it('keeps a task’s milestone in its project, nulls only the milestone when the milestone goes, and moves tasks with their milestone', async () => {
+    const milestone = MilestoneEntity.createNew({
       organizationId,
       projectId,
       name: 'Ship 2.0',
       targetDate: null,
       createdByUserId: userId,
     });
-    await goals.insert(goal);
-    const task = await add('t', 'todo', goal.id);
-    await add('done one', 'done', goal.id);
-    expect((await goals.findAll(scope(), {}))[0].progress).toEqual({ done: 1, total: 2 });
+    await milestones.insert(milestone);
+    const task = await add('t', 'todo', milestone.id);
+    await add('done one', 'done', milestone.id);
+    expect((await milestones.findAll(scope(), {}))[0].progress).toEqual({ done: 1, total: 2 });
 
-    // A task in another project cannot name this goal: the composite key refuses it.
-    task.file(otherProjectId, goal.id);
-    await expect(tasks.saveFields(task)).rejects.toThrow(/FK_task_goal/);
+    // A task in another project cannot name this milestone: the composite key refuses it.
+    task.file(otherProjectId, milestone.id);
+    await expect(tasks.saveFields(task)).rejects.toThrow(/FK_task_milestone/);
 
-    goal.edit({ projectId: otherProjectId });
-    await goals.save(goal);
+    milestone.edit({ projectId: otherProjectId });
+    await milestones.save(milestone);
     const moved = (await tasks.findOneById(scope(), task.id)).unwrap();
     expect(moved.projectId).toBe(otherProjectId);
-    expect(moved.goalId).toBe(goal.id);
+    expect(moved.milestoneId).toBe(milestone.id);
 
-    await goals.delete(goal);
+    await milestones.delete(milestone);
     const kept = (await tasks.findOneById(scope(), task.id)).unwrap();
-    expect(kept.goalId).toBeNull();
+    expect(kept.milestoneId).toBeNull();
     expect(kept.projectId).toBe(otherProjectId);
   });
 

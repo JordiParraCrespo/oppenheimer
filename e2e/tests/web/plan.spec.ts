@@ -26,7 +26,7 @@ async function drag(page: Page, from: Locator, to: Locator) {
  * Plan, in a browser, against the real control plane
  * (`product/versions/mvp/17-plan.md`): the rail's third list, a task's life on
  * the board — added from the dialog and inline, dragged across columns,
- * ticked done, filed under a goal, deleted — and a session started from a
+ * ticked done, filed under a milestone, deleted — and a session started from a
  * card, which moves it to In progress and links back from the session.
  * Only GitHub is faked; the host has no runner, so the session is queued.
  */
@@ -41,7 +41,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   for (const name of ['Later', 'To do', 'In progress', 'Done'] as const) {
     await expect(column(page, name)).toBeVisible();
   }
-  await expect(page.getByText('No goals yet')).toBeVisible();
+  await expect(page.getByText('No milestones yet')).toBeVisible();
 
   // New task: the dialog, with a due date.
   await page.getByRole('button', { name: 'New task', exact: true }).click();
@@ -78,12 +78,12 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
     .click();
   await expect(column(page, 'To do').getByText('Ship the wallet list')).toBeVisible();
 
-  // A goal, and a task filed under it; the goal filters the board.
-  await page.getByRole('button', { name: 'New goal', exact: true }).click();
-  const goal = page.getByRole('dialog', { name: 'New goal' });
-  await goal.getByLabel('Goal').fill('Wallet 2.0');
-  await goal.getByRole('button', { name: 'Add goal' }).click();
-  await expect(goal).toBeHidden();
+  // A milestone, and a task filed under it; the milestone filters the board.
+  await page.getByRole('button', { name: 'New milestone', exact: true }).click();
+  const milestone = page.getByRole('dialog', { name: 'New milestone' });
+  await milestone.getByLabel('Milestone').fill('Wallet 2.0');
+  await milestone.getByRole('button', { name: 'Add milestone' }).click();
+  await expect(milestone).toBeHidden();
   await card(page, 'Ship the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });
   await edit.getByRole('button', { name: 'Wallet 2.0' }).click();
@@ -94,7 +94,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
     .getByRole('button', { name: /^Wallet 2\.0/ })
     .first()
     .click();
-  await expect(page).toHaveURL(/goal=/);
+  await expect(page).toHaveURL(/milestone=/);
   await expect(card(page, 'Write the release notes')).toHaveCount(0);
   await expect(card(page, 'Ship the wallet list')).toBeVisible();
 
