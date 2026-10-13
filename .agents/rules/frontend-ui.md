@@ -84,6 +84,29 @@ multi-line, so a grep for `export` misses most of them.
 | Rendered markdown someone wrote | `Prose` | `dangerouslySetInnerHTML` into an unstyled `div` |
 | Counts over time, shares of a whole, ranked reasons | `BarChart`, `LineChart`, `RingChart`, `BarList` | a chart library, `RunHistory` stretched |
 | A choice that exists but cannot be picked now (an offline host) | a `disabled` `ChipSelect` option whose `description` says why | hiding it, an error after the pick |
+| A setting that applies the moment it flips | `Switch` | a `Checkbox` with no Save, a `SegmentedControl` of On / Off |
+| A short set of values in a form, one or several (For how long, a bot's projects) | `PillGroup` (`multiple` for a set) | `PillTabs`, `SegmentedControl`, a row of `Chip`s with your own state |
+| A small bounded count (Parallel sessions) | `NumberStepper` | an `Input type="number"`, a `ChipSelect` of numbers |
+| Who a thing is shared with, by name or email | `PeoplePicker` (+ `PersonChip`) | a `ChipSelect` of members, an `Input` and a list of your own |
+| Who can open a shared thing, and until when | `AccessList` + `AccessRow` | a `SummaryCard`, a table |
+| One facet of a list page's filter (Plan's Project, the queue's Checks) | `FacetSelect` (`pill` or `labelled`) | a `DropdownMenu` with a hand-built trigger, `PillTabs` |
+| Milestones on time | `MilestoneTimeline`; `MilestoneGlyph` for the mark elsewhere | a `MonthCalendar`, a hand-drawn diamond |
+| The period a page reports on | `DateRangePicker` | two `DatePicker`s |
+| Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
+| Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `CalendarSourceCard` per account |
+| An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it) | a `SessionItem` with an avatar |
+| A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
+| A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |
+| Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
+| The bar over one thing's own settings | `SettingsTopBar` | a `PageHeader`, a hand-built header |
+| The agent chat's transcript | `ChatTranscript` with `ChatUserMessage`, `TurnHeader`, `ChatReply`, `MessageTrail` | a `Card` per message, `Prose` alone |
+| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow` | a `Disclosure` per call, a `CodeBlock` of the log |
+| A turn's files, plan, subagents, questions, objects | `ChangedFilesCard`, `ProposedPlanCard`, `SubagentRunCard`, `QuestionsPill`, `ContextCard` | a `Card` of `div`s, a `PullRequestRow` |
+| A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
+| Panels on top of the chat composer, or one notice there | `ComposerStack` + `ComposerStackRow`, `ComposerTaskList`; `ComposerNotice` | a `Card` above the `Composer` |
+| A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel` | a `Dialog`, a `RadioGroup` |
+| Dictation, the context meter, the `/` and `@` menus | `VoiceRecorderBar`, `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
+| The chat's header, open threads, find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` | `SessionPaneHeader`, a tab strip of your own |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by

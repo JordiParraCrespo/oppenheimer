@@ -63,17 +63,24 @@ function PillGroup({ value, onValueChange, multiple = false, className, ...props
 /**
  * One pill. `count` rides after the label in mono; `mono` sets the label in
  * mono (a repository's `owner/name`); `check` draws the 16px round box first,
- * for a set whose pills read as ticks (Always ask before). Anything before the
- * label (an 18px `Avatar`, an icon) is a child.
+ * for a set whose pills read as ticks (Always ask before). `leading` is an
+ * 18px `Avatar` before the label (Allowed bots), which tightens the pill's
+ * left edge to it; an icon is a child.
  */
 function PillGroupItem({
   count,
   mono = false,
   check = false,
+  leading,
   className,
   children,
   ...props
-}: TogglePrimitive.Props & { count?: React.ReactNode; mono?: boolean; check?: boolean }) {
+}: TogglePrimitive.Props & {
+  count?: React.ReactNode;
+  mono?: boolean;
+  check?: boolean;
+  leading?: React.ReactNode;
+}) {
   return (
     <TogglePrimitive
       data-slot="pill-group-item"
@@ -81,6 +88,7 @@ function PillGroupItem({
         'group/pill inline-flex h-7.5 items-center gap-1.75 rounded-pill bg-hover-surface px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,color,transform] duration-instant ease-standard select-none hover:bg-control-hover active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:bg-selected-surface data-pressed:text-selected-fg [&_svg]:shrink-0',
         mono && 'font-mono text-[12.5px]',
         check && 'pl-2',
+        leading !== undefined && 'pl-1.5',
         className,
       )}
       {...props}
@@ -93,6 +101,7 @@ function PillGroupItem({
           <CheckIcon className="size-2.5 stroke-[3]" />
         </span>
       ) : null}
+      {leading}
       {children}
       {count !== undefined ? <span className="figures font-mono text-[11px] text-fg-subtle">{count}</span> : null}
     </TogglePrimitive>

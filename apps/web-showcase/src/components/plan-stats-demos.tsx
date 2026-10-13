@@ -173,7 +173,7 @@ export function AreaChartDemo() {
     <div className="grid w-full gap-10 lg:grid-cols-2">
       <div className="flex flex-col gap-3">
         <span className="flex items-baseline justify-between gap-3">
-          <span className="text-[15px] font-medium">Tokens per week</span>
+          <span className="text-body font-medium">Tokens per week</span>
           <ChartLegend series={TOKEN_SERIES} />
         </span>
         <AreaChart
@@ -185,7 +185,7 @@ export function AreaChartDemo() {
         />
       </div>
       <div className="flex flex-col gap-3">
-        <span className="text-[15px] font-medium">Cost per week</span>
+        <span className="text-body font-medium">Cost per week</span>
         <AreaChart
           series={[{ key: 'cost', label: 'Cost', tone: 'chart-3' }]}
           points={WEEKS.map(([label, a, b]) => ({ label, values: { cost: Math.round((a * 9 + b * 6) * 10) / 10 } }))}

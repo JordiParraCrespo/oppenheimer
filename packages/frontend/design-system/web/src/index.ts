@@ -11,8 +11,6 @@ export {
   AlertTitle,
 } from './components/alert';
 export type { AvatarGradient } from './components/avatar';
-export type { AvatarOption } from './components/avatar-picker';
-export { AvatarPicker, BotAvatar } from './components/avatar-picker';
 export {
   AVATAR_GRADIENTS,
   Avatar,
@@ -22,6 +20,8 @@ export {
   AvatarGroupCount,
   AvatarImage,
 } from './components/avatar';
+export type { AvatarOption } from './components/avatar-picker';
+export { AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
 export { BotItem, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
@@ -59,6 +59,7 @@ export {
   LineChart,
   RingChart,
 } from './components/charts';
+export type { ProposedPlanLabels, SubagentState } from './components/chat-cards';
 export {
   AnsweredQuestions,
   ChangedFileRow,
@@ -69,7 +70,6 @@ export {
   SubagentRow,
   SubagentRunCard,
 } from './components/chat-cards';
-export type { ProposedPlanLabels, SubagentState } from './components/chat-cards';
 export {
   ComposerContextMeter,
   ComposerMenu,
@@ -162,9 +162,13 @@ export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
-export type { DateRange, DateRangePickerLabels, DateRangePreset } from './components/date-range-picker';
-export { DateRangePicker } from './components/date-range-picker';
 export { DatePicker } from './components/date-picker';
+export type {
+  DateRange,
+  DateRangePickerLabels,
+  DateRangePreset,
+} from './components/date-range-picker';
+export { DateRangePicker } from './components/date-range-picker';
 export {
   Dialog,
   DialogBody,
@@ -291,6 +295,7 @@ export type { TimelineMilestone, TimelineRow } from './components/milestone-time
 export { MilestoneGlyph, MilestoneTimeline } from './components/milestone-timeline';
 export type { CalendarEntryData, CalendarEntryKind } from './components/month-calendar';
 export { CalendarEntry, MonthCalendar } from './components/month-calendar';
+export { NumberStepper } from './components/number-stepper';
 export {
   PageHeader,
   PageHeaderCrumbs,
@@ -302,11 +307,10 @@ export {
   PageHeaderStat,
   PageHeaderTitleInput,
 } from './components/page-header';
-export { NumberStepper } from './components/number-stepper';
-export type { PeoplePickerLabels, Person } from './components/people-picker';
-export { PeoplePicker, PersonChip } from './components/people-picker';
 export { Panel, PanelGrid } from './components/panel';
 export { PasswordInput } from './components/password-input';
+export type { PeoplePickerLabels, Person } from './components/people-picker';
+export { PeoplePicker, PersonChip } from './components/people-picker';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';
 export { PermissionMenu } from './components/permission-menu';
 export { PillGroup, PillGroupItem } from './components/pill-group';
@@ -346,6 +350,8 @@ export type {
 export { RepositorySelect } from './components/repository-select';
 export type { ReviewVerdict } from './components/review-decision';
 export { ReviewDecision, SubmitReviewButton } from './components/review-decision';
+export type { RoutineCardLabels } from './components/routine-card';
+export { RoutineCard } from './components/routine-card';
 export type { RoutineRunState } from './components/routine-item';
 export {
   RoutineItem,
@@ -371,8 +377,6 @@ export {
   RunsListFoot,
   RunsListHead,
 } from './components/runs-list';
-export type { RoutineCardLabels } from './components/routine-card';
-export { RoutineCard } from './components/routine-card';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';

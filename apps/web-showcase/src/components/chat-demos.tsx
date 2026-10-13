@@ -98,6 +98,7 @@ import {
   RefreshCwIcon,
   SearchIcon,
   SlidersHorizontalIcon,
+  SquareIcon,
   TerminalIcon,
   WorkflowIcon,
   XIcon,
@@ -199,7 +200,7 @@ function ChatWorkBody() {
           tone="danger"
           output={'$ pnpm test runner\n ✓ step.test.ts (36)\n ✗ cancel.test.ts > tool ignores signal\n   expected 5000 to be less than 5100\n Tests  1 failed | 37 passed'}
         />
-        <ToolCallRow icon={<FileTextIcon />} verb="Edited" target="runner/step.ts" meta={<DiffStat additions={42} deletions={8} className="text-[11.5px]" />} />
+        <ToolCallRow icon={<FileTextIcon />} verb="Edited" target="runner/step.ts" meta={<DiffStat additions={42} deletions={8} />} />
         <ToolCallRow icon={<DatabaseIcon />} verb="Called" target="linear.get_issue" meta="MCP" />
       </ToolCallGroup>
       <ToolCallLive verb="Running" target="pnpm build --filter console" elapsed="6s" />
@@ -268,7 +269,7 @@ function ChatCardsBody() {
         summary={
           <>
             <span className="font-medium text-fg">3 subagents</span>·<span>1 running</span>·
-            <span className="text-danger">1 failed</span>·<span className="font-mono text-[12px]">48s</span>
+            <span className="text-danger">1 failed</span>·<span className="font-mono text-xs">48s</span>
           </>
         }
       >
@@ -342,7 +343,7 @@ function ChatStatusBody() {
           <span className="line-through">Gemini 2.5 Pro</span>
         </TranscriptDivider>
         <TranscriptDivider icon={<GitBranchIcon />}>
-          <a href="#chatstatus" className="text-[14px] text-link">
+          <a href="#chatstatus" className="text-operate text-link">
             Continued from chat
           </a>
         </TranscriptDivider>
@@ -401,11 +402,11 @@ function ChatStatusBody() {
 function FakeField({ placeholder, stop }: { placeholder: string; stop?: boolean }) {
   return (
     <div className="rounded-lg border border-border-subtle bg-card">
-      <div className="min-h-11.5 px-3.5 pt-3 pb-1.5 text-[15px] leading-[1.55] text-fg-subtle">{placeholder}</div>
+      <div className="min-h-11.5 px-3.5 pt-3 pb-1.5 text-body text-fg-subtle">{placeholder}</div>
       <div className="flex items-center gap-1 pr-2 pb-2 pl-1.5">
         <span className="flex-1" />
         <span className="flex size-7 items-center justify-center rounded-pill bg-fg text-canvas">
-          {stop ? <span className="size-2.25 rounded-[2px] bg-current" /> : <ArrowUpIcon className="size-3.5" />}
+          {stop ? <SquareIcon className="size-2.5 fill-current" /> : <ArrowUpIcon className="size-3.5" />}
         </span>
       </div>
     </div>
@@ -441,7 +442,7 @@ function ChatStackBody() {
             />
           </div>
           <ComposerStackRow icon={<FileTextIcon />} actions={<ComposerStackAction>Review</ComposerStackAction>}>
-            <span className="font-medium">3 files changed</span> <DiffStat additions={80} deletions={12} className="ml-1.5 text-[12px]" />
+            <span className="font-medium">3 files changed</span> <DiffStat additions={80} deletions={12} />
           </ComposerStackRow>
           <ComposerStackRow
             icon={<PauseIcon />}
@@ -480,17 +481,17 @@ function ChatStackBody() {
             </>
           }
         >
-          Press <span className="font-mono text-[12px]">⇧Tab</span> to switch to plan mode before large changes.
+          Press <span className="font-mono text-xs">⇧Tab</span> to switch to plan mode before large changes.
         </ComposerNotice>
         <ComposerNotice icon={<GitBranchIcon className="text-warning" />} action={<ComposerStackAction>Switch branch</ComposerStackAction>}>
-          Thread is on <span className="font-mono text-[12px]">acme/cancel-path</span>, worktree is on{' '}
-          <span className="font-mono text-[12px]">main</span>
+          Thread is on <span className="font-mono text-xs">acme/cancel-path</span>, worktree is on{' '}
+          <span className="font-mono text-xs">main</span>
         </ComposerNotice>
         <ComposerNotice icon={<ClockIcon />} action={<ComposerStackAction>Wake now</ComposerStackAction>}>
-          Snoozed until <span className="font-mono text-[12px]">14:00</span>. The agent resumes on its own.
+          Snoozed until <span className="font-mono text-xs">14:00</span>. The agent resumes on its own.
         </ComposerNotice>
         <ComposerNotice icon={<span className="size-1.5 rounded-pill bg-warning motion-safe:animate-pulse-dot" />}>
-          Reconnecting to <span className="font-mono text-[12px]">optimus</span>… messages are held
+          Reconnecting to <span className="font-mono text-xs">optimus</span>… messages are held
         </ComposerNotice>
       </div>
     </div>
@@ -628,7 +629,7 @@ function ChatComposerExtrasBody() {
           </ComposerMenuItem>
         </ComposerMenu>
       </div>
-      <p className="m-0 max-w-184 text-[15px] leading-[1.55]">
+      <p className="m-0 max-w-184 text-body">
         Use <ChatMention>@gateway/cancel.ts</ChatMention> and the{' '}
         <ChatMention variant="token" icon={<BoxesIcon />}>
           test-writer
@@ -661,7 +662,7 @@ function ChatChromeBody() {
           title="Wire run cancel through the agent gateway"
           meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>}
           status={
-            <StatusDot state="running" pulse density="compact" className="text-[12.5px] text-fg-muted">
+            <StatusDot state="running" pulse density="compact">
               Running
             </StatusDot>
           }

@@ -13,8 +13,8 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
   return (
     <div className="flex items-center gap-4 px-5 py-3.5">
       <span className="flex flex-1 flex-col gap-0.5">
-        <span className="text-[14px]">{label}</span>
-        {hint ? <span className="text-[12.5px] text-fg-muted">{hint}</span> : null}
+        <span className="text-operate">{label}</span>
+        {hint ? <span className="text-sm text-fg-muted">{hint}</span> : null}
       </span>
       {children}
     </div>
@@ -40,7 +40,7 @@ export function SwitchDemo() {
           <Switch checked disabled title="The GitHub Bot template keeps this on" aria-label="Run shell commands" />
         </Row>
       </div>
-      <label className="flex items-center gap-2.5 text-[13px] text-fg-muted">
+      <label className="flex items-center gap-2.5 text-sm text-fg-muted">
         <Switch size="sm" checked={compare} onCheckedChange={setCompare} />
         Compare with previous period
       </label>
@@ -121,10 +121,15 @@ export function PillGroupDemo() {
             ['quota', 'Quota Bot', 'QB'],
             ['research', 'Research Bot', 'RB'],
           ].map(([id, name, initials]) => (
-            <PillGroupItem key={id} value={id} className="pl-1.5">
-              <Avatar size={18}>
-                <AvatarFallback>{initials}</AvatarFallback>
-              </Avatar>
+            <PillGroupItem
+              key={id}
+              value={id}
+              leading={
+                <Avatar size={18}>
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+              }
+            >
               {name}
             </PillGroupItem>
           ))}
