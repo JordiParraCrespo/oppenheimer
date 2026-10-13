@@ -1,3 +1,4 @@
+export { AccessList, AccessRow } from './components/access-list';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
@@ -221,6 +222,8 @@ export {
   PageHeaderTitleInput,
 } from './components/page-header';
 export { NumberStepper } from './components/number-stepper';
+export type { PeoplePickerLabels, Person } from './components/people-picker';
+export { PeoplePicker, PersonChip } from './components/people-picker';
 export { Panel, PanelGrid } from './components/panel';
 export { PasswordInput } from './components/password-input';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';

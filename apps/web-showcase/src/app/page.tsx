@@ -57,6 +57,7 @@ import {
 } from '../components/host-link-demos';
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
+import { AccessListDemo, PeoplePickerDemo } from '../components/share-demos';
 import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/control-demos';
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
@@ -1403,6 +1404,28 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
   offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />
+      </Spec>
+
+      <GroupHead>Share</GroupHead>
+
+      <Spec
+        id="peoplepicker"
+        title="PeoplePicker · PersonChip"
+        meta="people-picker.tsx"
+        desc="Who a session is shared with, by name or email. Typing opens a list of members not yet picked; a full address nobody in the workspace has becomes one Invite row, marked outside the workspace. Picked people sit under the field as PersonChips. Enter picks the first match, Backspace in an empty field drops the last chip. A server-searched roster passes onQueryChange."
+        code={`<PeoplePicker people={members} value={picked} onValueChange={setPicked} />`}
+      >
+        <PeoplePickerDemo />
+      </Spec>
+
+      <Spec
+        id="accesslist"
+        title="AccessList"
+        meta="access-list.tsx"
+        desc="Who can open a shared session, and until when. A hairline card, one row per holder: the avatar, the name over a subtle line, the role as a neutral Badge, the time left in mono in a 72px column so the ends line up. The owner cannot be removed and keeps the button's room; a link is a row of its own, so stopping it reads like removing a person."
+        code={`<AccessList><AccessRow avatar={…} name="Lea Brandt" sub="lea@acme.dev" role="Can view" ends="23h left" onRemove={…} /></AccessList>`}
+      >
+        <AccessListDemo />
       </Spec>
 
       <GroupHead>Media</GroupHead>

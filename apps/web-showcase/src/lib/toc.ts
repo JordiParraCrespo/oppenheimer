@@ -61,6 +61,8 @@ import {
   ToggleRightIcon,
   TagsIcon,
   DiffIcon,
+  UsersIcon,
+  UserCheckIcon,
   type LucideIcon,
   TypeIcon,
   UnplugIcon,
@@ -209,6 +211,13 @@ export const TOC: TocGroup[] = [
       { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
       { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
       { id: 'sessionpane', label: 'SessionPaneHeader', icon: PanelTopIcon, components: ['session-pane-header'] },
+    ],
+  },
+  {
+    group: 'Share',
+    items: [
+      { id: 'peoplepicker', label: 'PeoplePicker · PersonChip', icon: UsersIcon, components: ['people-picker'] },
+      { id: 'accesslist', label: 'AccessList', icon: UserCheckIcon, components: ['access-list'] },
     ],
   },
   {
