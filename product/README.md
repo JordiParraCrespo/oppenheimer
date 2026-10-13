@@ -399,3 +399,14 @@ earlier note:
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
+- `versions/mvp/02-runner.md` §10 said an agent CLI that is not installed is
+  left alone and that OpenCode is never updated, because its updater asks.
+  On 2026-10-12 the runner learned to install agent CLIs and `gh` when the
+  person asks (`runner agents install`, `runner tools install gh`), user-level
+  and without sudo, from install entries in the catalog; and OpenCode joins
+  the hourly updates, told its install method so it does not ask. `git` and
+  `tmux` stay with the package manager. The host installer now asks which
+  agent CLIs to install, defaulting to Claude Code and gh, so the Add host
+  command leaves a host ready to run a session (`versions/mvp/09` §2).
+  Developing Oppenheimer itself on a new machine is one command,
+  `scripts/dev/bootstrap.sh`, with `mise.toml` pinning the toolchain.

@@ -447,7 +447,7 @@ func (a *App) Status(ctx context.Context, out io.Writer) error {
 		if tool.Found() {
 			value = tool.Version
 		} else if !tool.Required {
-			value = "not found (sessions still open; the agent shows an install hint)"
+			value = "not found (sessions still open): " + installHintFor(facts.Platform, tool.Name)
 		}
 		p.printf("%s\t%s\n", tool.Name, value)
 	}

@@ -5,6 +5,15 @@ description: Verify a change end to end against the real API, a real runner and,
 
 # Verify a change end to end
 
+## 0. A machine that has never run it
+
+`scripts/dev/bootstrap.sh --check` says what this machine lacks: Node 22,
+pnpm, Go, golangci-lint and gh (pinned in `mise.toml`), Docker with compose
+and the docker group, Playwright's chromium and ffmpeg, a signed-in gh.
+Without `--check` it installs what needs no root; `--sudo` also does Docker
+and the browsers' system libraries. A docker group it just added needs a
+re-login, which no script can do for you.
+
 ## 1. Stand the stack up
 
 ```bash

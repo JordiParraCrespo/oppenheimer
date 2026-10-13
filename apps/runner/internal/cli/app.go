@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -94,8 +95,16 @@ func New(version string) (*App, error) {
 		}
 	}
 
+	// Before anything probes or starts tmux: the directories the catalog's
+	// installers write to, so a CLI the runner installed is on the PATH of
+	// the probe, the service and every session.
+	if err := os.Setenv("PATH", WithInstallBins(os.Getenv("PATH"), paths.UserHome)); err != nil {
+		return nil, err
+	}
 	hostSvc := hostapp.New(hostapp.Options{
-		Prober: system.New(), Updater: lockedUpdater{paths: paths, next: system.Updater{}},
+		Prober:        system.New(),
+		Updater:       lockedUpdater{paths: paths, next: system.Updater{}},
+		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		WorkspaceRoot: paths.Workspaces, Version: version,
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
@@ -248,6 +257,21 @@ func unit(paths Paths) svcdomain.Unit {
 		Env:        env,
 		User:       accountName(),
 	}
+}
+
+// WithInstallBins is path with every catalog installer's directory under
+// home appended, each once. Appended, not prepended: a CLI the person
+// installed their own way, earlier on PATH, keeps winning over one the runner
+// put in `~/.local/bin`.
+func WithInstallBins(path, home string) string {
+	entries := filepath.SplitList(path)
+	for _, bin := range hostdomain.InstallBins() {
+		dir := filepath.Join(home, bin)
+		if !slices.Contains(entries, dir) {
+			entries = append(entries, dir)
+		}
+	}
+	return strings.Join(entries, string(os.PathListSeparator))
 }
 
 // ServicePATH is the installer's PATH as the service should carry it: only

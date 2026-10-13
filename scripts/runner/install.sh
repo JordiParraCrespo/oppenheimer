@@ -11,10 +11,12 @@
 # What it does, in order, and nothing else:
 #   1. refuses to run as root
 #   2. works out this machine's target (darwin/linux x arm64/amd64)
-#   3. asks its questions up front — where sessions' code lives, and whether to
-#      install git or tmux if one is missing — and installs nothing without a
-#      "y" typed on a terminal. With no terminal to ask on (an agent, CI) it
-#      installs nothing and stops before the token is spent
+#   3. asks its questions up front — where sessions' code lives, which agent
+#      CLIs to install, and whether to install git or tmux if one is missing —
+#      and installs nothing from a package manager without a "y" typed on a
+#      terminal. With no terminal to ask on (an agent, CI) it installs no
+#      package and stops before the token is spent, and installs only the
+#      agents --agents names
 #   4. downloads the signed release manifest over HTTPS and, where OpenSSL 3 is
 #      available, checks its Ed25519 signature against the release keys stamped
 #      into this script (the runner checks every later update itself)
@@ -23,6 +25,9 @@
 #   7. registers this host — or, when it is already paired to this control
 #      plane, keeps that pairing without spending the token
 #   8. installs the launchd agent or the systemd user unit and starts it
+#   9. installs the coding-agent CLIs chosen in step 3 (Claude Code and the
+#      GitHub CLI unless told otherwise), as this user and without sudo,
+#      through the runner's own `agents install` / `tools install`
 #
 # It is re-runnable: running the same command again repairs a half-finished
 # install instead of failing on "already paired".
@@ -49,6 +54,11 @@ usage: OPPENHEIMER_REGISTRATION_TOKEN=<token> install.sh --url <control plane UR
   --release-base
                 where the signed manifest and artifacts are served from; your
                 control plane puts its own in the command it hands you
+  --agents      the agent CLIs to install for you, user-level and without sudo:
+                any of claude, codex, opencode, grok and gh (GitHub's CLI),
+                comma-separated, or none. Asked on a terminal when not given,
+                defaulting to the ones of claude and gh that are missing;
+                with no terminal and no --agents, none
   --allow-container
                 pair this machine even though it looks like a container or CI job
   --token       the registration token, if it is not in OPPENHEIMER_REGISTRATION_TOKEN
@@ -231,6 +241,75 @@ choose_workspaces() {
 	[ "$WORKSPACES" != "$default" ] || WORKSPACES=""
 }
 
+# The agent CLIs and host tools the runner installs itself (its catalog's
+# `install` entries), and the ones offered by default: Claude Code is the
+# agent the MVP is built around, and gh is what opens a pull request from a
+# session.
+KNOWN_AGENTS="claude codex opencode grok gh"
+DEFAULT_AGENTS="claude gh"
+
+# missing_of <names…> — the ones not on PATH, space-separated.
+missing_of() {
+	for a in "$@"; do
+		command -v "$a" >/dev/null 2>&1 || printf '%s ' "$a"
+	done
+}
+
+# known_agents <answer> — the answer as the names the runner installs: commas
+# read as spaces, `claude-code` as `claude`, `none` as nothing. A name it does
+# not know stops the install, before anything is downloaded.
+known_agents() {
+	for a in $(printf '%s' "$1" | tr ',' ' '); do
+		case "$a" in
+		none) ;;
+		claude-code) printf 'claude ' ;;
+		*)
+			case " $KNOWN_AGENTS " in
+			*" $a "*) printf '%s ' "$a" ;;
+			*) die "--agents: $a is not one of: $KNOWN_AGENTS (or none)" ;;
+			esac
+			;;
+		esac
+	done
+}
+
+# choose_agents — which CLIs the runner installs after pairing. --agents
+# decides when given. Otherwise a terminal is asked, with the defaults this
+# machine lacks as the answer Enter gives; with no terminal, none. Each install
+# is the vendor's own installer into the user's home, so unlike git and tmux
+# it needs no sudo and is safe to offer by default.
+choose_agents() {
+	if [ -z "$AGENTS" ] && has_tty; then
+		missing="$(missing_of $KNOWN_AGENTS)"
+		if [ -n "$missing" ]; then
+			say "    not on this machine yet: ${missing% }"
+			offer="$(missing_of $DEFAULT_AGENTS)"
+			AGENTS="$(ask 'Which should the runner install for you (as you, no sudo)? Names separated by spaces, or none' "${offer% }")"
+		fi
+	fi
+	AGENTS="$(known_agents "${AGENTS:-none}")"
+	AGENTS="${AGENTS% }"
+	[ -z "$AGENTS" ] || say "    after pairing, the runner will install: $AGENTS"
+}
+
+# install_agents — step 9. A failed install does not undo the pairing: the
+# host works without that agent, and the line to retry it is printed.
+install_agents() {
+	[ -n "$AGENTS" ] || return 0
+	failed=""
+	for a in $AGENTS; do
+		case "$a" in
+		gh) kind="tools" ;;
+		*) kind="agents" ;;
+		esac
+		step "installing $a"
+		"$RUNNER" "$kind" install "$a" || failed="$failed $kind:$a"
+	done
+	for f in $failed; do
+		say "warning: ${f#*:} was not installed; retry with: oppenheimer-runner ${f%%:*} install ${f#*:}"
+	done
+}
+
 main() {
 	RELEASE_BASE="${OPPENHEIMER_RELEASE_BASE:-https://get.oppenheimer.dev/releases}"
 	CHANNEL="${OPPENHEIMER_CHANNEL:-stable}"
@@ -239,6 +318,7 @@ main() {
 	NAME=""
 	WORKSPACES=""
 	ALLOW_CONTAINER=""
+	AGENTS="${OPPENHEIMER_AGENTS:-}"
 	RUNNER_HOME="${RUNNER_HOME:-$HOME/.oppenheimer}"
 
 	while [ $# -gt 0 ]; do
@@ -250,6 +330,7 @@ main() {
 		--release-base) RELEASE_BASE="${2:-}"; shift 2 ;;
 		--workspaces) WORKSPACES="${2:-}"; shift 2 ;;
 		--allow-container) ALLOW_CONTAINER="--allow-container"; shift ;;
+		--agents) AGENTS="${2:-}"; [ -n "$AGENTS" ] || AGENTS="none"; shift 2 ;;
 		--yes | -y | --no-deps)
 			die "$1 is gone: nothing is installed without a \"y\" typed on a terminal. Install git and tmux yourself, or run this from a terminal" ;;
 		-h | --help) usage; exit 0 ;;
@@ -320,6 +401,7 @@ main() {
 	# 3. Every question before anything is downloaded, so the rest runs
 	#    unattended and a "no" costs nothing.
 	choose_workspaces
+	choose_agents
 	ensure_tools
 
 	WORK="$(mktemp -d)"
@@ -405,6 +487,9 @@ Stop here and tell us; do not retry with a different mirror."
 	# 8. The service.
 	step "installing the service"
 	"$RUNNER" install
+
+	# 9. The agent CLIs chosen in step 3.
+	install_agents
 
 	step "done"
 	"$RUNNER" status || true

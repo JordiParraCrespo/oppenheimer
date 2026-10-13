@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -154,6 +155,9 @@ func (p *Prober) Tool(ctx context.Context, name string) domain.Tool {
 
 	// Not under the lock: a version call may take up to probeTimeout.
 	tool := domain.Tool{Name: name, Path: path, Version: p.version(ctx, path)}
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		tool.Resolved = resolved
+	}
 	// An answer cut short by the caller going away is not worth keeping.
 	if statErr == nil && ctx.Err() == nil {
 		p.mu.Lock()

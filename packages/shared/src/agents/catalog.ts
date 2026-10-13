@@ -16,7 +16,8 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way.
+ * that the same way. The two script builders beside the install entries
+ * (`vendorInstaller`, `npmUserInstall`) are private: they only spell data.
  */
 
 /**
@@ -228,6 +229,66 @@ export interface CodingAgentLoginTarget {
   readonly path?: string;
 }
 
+/**
+ * How the runner installs a CLI on a host that does not have it, unattended
+ * and as the person's own account: no `sudo`, no terminal, nothing on stdin
+ * (`product/versions/mvp/02-runner.md` §10).
+ *
+ * Each platform's entry is a POSIX `sh` script, run with `sh -c`. It prefers
+ * the vendor's own installer, fetched to a file first so a download cut short
+ * fails the install instead of feeding half a script to a shell, and a
+ * user-level destination. A platform with no entry is one the runner does not
+ * install on; it says so rather than guessing.
+ *
+ * `bin` is the directory, `~`-relative, the script leaves the executable in.
+ * The runner puts every catalog `bin` on its own `PATH` at start, so a CLI it
+ * installed is found by the next probe and by the sessions' tmux server
+ * without the person editing a shell profile the service never reads.
+ */
+export interface HostInstall {
+  readonly macos?: string;
+  readonly linux?: string;
+  readonly bin: string;
+}
+
+/**
+ * How a CLI was installed, told from where its executable really lives: the
+ * first entry whose `pathContains` is a substring of the resolved path names
+ * the `<method>` an updater that needs one is given.
+ */
+export interface InstallMethod {
+  readonly method: string;
+  readonly pathContains: string;
+}
+
+/**
+ * A vendor's installer script: fetched whole to a temporary file, then run.
+ * `curl … | bash` would run whatever arrived when the download is cut short,
+ * and report success; this fails instead.
+ */
+function vendorInstaller(url: string): string {
+  return [
+    'set -eu',
+    'tmp="$(mktemp)"',
+    'trap \'rm -f "$tmp"\' EXIT',
+    `curl -fsSL ${url} -o "$tmp"`,
+    'bash "$tmp" </dev/null',
+  ].join('\n');
+}
+
+/**
+ * A package from the npm registry, installed under `~/.local` so the global
+ * prefix is the person's own and `npm` needs no root. Node is a prerequisite
+ * the script names rather than installs.
+ */
+function npmUserInstall(pkg: string): string {
+  return [
+    'set -eu',
+    'command -v npm >/dev/null 2>&1 || { echo "npm is not on PATH; install Node.js 22 first" >&2; exit 1; }',
+    `npm install --global --prefix "$HOME/.local" ${pkg}`,
+  ].join('\n');
+}
+
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
   readonly label: string;
@@ -285,10 +346,21 @@ export interface CodingAgentDefinition {
    * latest release **without asking**: the runner runs it unattended, with no
    * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
    *
-   * Absent: this CLI has no updater that runs without asking (OpenCode's,
-   * or a plain shell's none), and the runner leaves it alone.
+   * `<method>` in the argv is the install method `updateMethods` tells from
+   * the executable's path; when none matches, the runner leaves the CLI
+   * alone rather than run an updater that would stop to ask.
+   *
+   * Absent: this CLI has no updater that runs without asking (a plain
+   * shell's none), and the runner leaves it alone.
    */
   readonly update?: readonly string[];
+  /** What `<method>` in `update` is, by where the executable lives. */
+  readonly updateMethods?: readonly InstallMethod[];
+  /**
+   * How the runner installs this CLI when the person asks it to
+   * (`runner agents install`). Absent: it never does (a plain shell).
+   */
+  readonly install?: HostInstall;
 }
 
 /** A model's levels and default, frozen as the rest of the catalog is. */
@@ -386,6 +458,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `claude update|upgrade`: "Check for updates and install if available",
     // claude 2.1.284. It takes no options and asks nothing.
     update: Object.freeze(['update']),
+    // The native installer, the one Anthropic documents first: one binary in
+    // `~/.local/bin`, no Node, and it keeps itself current through `update`.
+    install: Object.freeze({
+      macos: vendorInstaller('https://claude.ai/install.sh'),
+      linux: vendorInstaller('https://claude.ai/install.sh'),
+      bin: '~/.local/bin',
+    }),
   }),
   codex: Object.freeze({
     id: 'codex',
@@ -489,6 +568,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `codex update`: "Update Codex to the latest version", codex-cli 0.158.0.
     // Its options are config overrides only; it asks nothing.
     update: Object.freeze(['update']),
+    // `@openai/codex` from npm, which is what OpenAI's README installs first
+    // and the one way that is the same on macOS and Linux. Under a `~/.local`
+    // prefix so it needs no root, and `codex update` finds it there.
+    install: Object.freeze({
+      macos: npmUserInstall('@openai/codex'),
+      linux: npmUserInstall('@openai/codex'),
+      bin: '~/.local/bin',
+    }),
   }),
   opencode: Object.freeze({
     id: 'opencode',
@@ -617,10 +704,28 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
     }),
-    // No `update`. `opencode upgrade` (1.18.33) has no flag that means "do
-    // not ask", and it asks "Install anyways?" whenever it cannot tell how it
-    // was installed — which is exactly when replacing it is not ours to do.
-    // OpenCode's own launch-time autoupdate skips the same case.
+    // `opencode upgrade` (1.18.33) asks "Install anyways?" whenever it cannot
+    // tell how it was installed, and has no flag that means "do not ask". It
+    // does take the method (`--method curl|npm|pnpm|bun|brew`), and told it,
+    // it detects nothing and asks nothing. So the runner tells it, from where
+    // the executable really lives; an OpenCode none of these match is one
+    // whose replacement is not ours to do, and it is left alone, as
+    // OpenCode's own launch-time autoupdate leaves it.
+    update: Object.freeze(['upgrade', '--method', '<method>']),
+    updateMethods: Object.freeze([
+      Object.freeze({ method: 'curl', pathContains: '/.opencode/bin/' }),
+      Object.freeze({ method: 'brew', pathContains: '/Cellar/' }),
+      Object.freeze({ method: 'bun', pathContains: '/.bun/' }),
+      Object.freeze({ method: 'pnpm', pathContains: '/pnpm/' }),
+      Object.freeze({ method: 'npm', pathContains: '/node_modules/' }),
+    ]),
+    // OpenCode's own installer, which puts the binary in `~/.opencode/bin` —
+    // the path the `curl` method above recognises.
+    install: Object.freeze({
+      macos: vendorInstaller('https://opencode.ai/install'),
+      linux: vendorInstaller('https://opencode.ai/install'),
+      bin: '~/.opencode/bin',
+    }),
   }),
   grok: Object.freeze({
     id: 'grok',
@@ -709,6 +814,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `grok update`: "Check for updates or install a specific version", grok
     // 1.0.44. Bare, it installs the latest and asks nothing.
     update: Object.freeze(['update']),
+    // `@xai-official/grok` from npm rather than `x.ai/cli/install.sh`: the
+    // package lands in a directory this catalog can name, and the script's
+    // destination is not documented anywhere this repo can hold it to.
+    install: Object.freeze({
+      macos: npmUserInstall('@xai-official/grok'),
+      linux: npmUserInstall('@xai-official/grok'),
+      bin: '~/.local/bin',
+    }),
   }),
   shell: Object.freeze({
     id: 'shell',

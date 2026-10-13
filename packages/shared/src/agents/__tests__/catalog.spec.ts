@@ -357,9 +357,12 @@ describe('the runner launch table', () => {
       render,
       updatesOutputPath,
       renderUpdates,
+      hostToolsOutputPath,
+      renderHostTools,
     } = require('../../../scripts/emit-agent-catalog.cjs');
     expect(readFileSync(outputPath, 'utf8')).toBe(render());
     expect(readFileSync(updatesOutputPath, 'utf8')).toBe(renderUpdates());
+    expect(readFileSync(hostToolsOutputPath, 'utf8')).toBe(renderHostTools());
   });
 });
 
@@ -368,9 +371,36 @@ describe('agent updates', () => {
     // Read off each CLI's own `--help`; the runner runs these with no terminal.
     expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
     expect(CODING_AGENTS.codex.update).toEqual(['update']);
-    // `opencode upgrade` asks "Install anyways?" and has no flag not to.
-    expect(CODING_AGENTS.opencode.update).toBeUndefined();
+    // `opencode upgrade` asks "Install anyways?" unless told the method, which
+    // the runner reads off where the binary lives.
+    expect(CODING_AGENTS.opencode.update).toEqual(['upgrade', '--method', '<method>']);
+    expect(CODING_AGENTS.opencode.updateMethods?.map((m) => m.method)).toContain('curl');
     expect(CODING_AGENTS.grok.update).toEqual(['update']);
     expect(CODING_AGENTS.shell.update).toBeUndefined();
+  });
+});
+
+describe('agent installs', () => {
+  it('installs every agent as the person, never with sudo, and the blank terminal not at all', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const install = CODING_AGENTS[id].install;
+      if (id === 'shell') {
+        expect(install).toBeUndefined();
+        continue;
+      }
+      expect(install?.macos, id).toBeTruthy();
+      expect(install?.linux, id).toBeTruthy();
+      expect(install?.bin.startsWith('~/'), id).toBe(true);
+      expect(`${install?.macos}\n${install?.linux}`, id).not.toMatch(/\bsudo\b/);
+    }
+  });
+
+  it('never pipes a download straight into a shell', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const install = CODING_AGENTS[id].install;
+      for (const script of [install?.macos, install?.linux]) {
+        expect(script ?? '').not.toMatch(/curl[^\n]*\|\s*(ba)?sh/);
+      }
+    }
   });
 });

@@ -42,3 +42,11 @@ type Prober interface {
 type Updater interface {
 	Update(ctx context.Context, tool, path string, args []string) error
 }
+
+// Installer runs a catalog install script for tool: `sh -c script`, as the
+// runner's own account, bounded by domain.ToolInstallTimeout, with no
+// terminal and nothing on stdin. A failure's message is the reason, fit to
+// show a person.
+type Installer interface {
+	Install(ctx context.Context, tool, script string) error
+}

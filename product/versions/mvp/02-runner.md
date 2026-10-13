@@ -63,6 +63,8 @@ user-facing diagnostics are the same artifact and the same version.
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
 | `agents update` | bring every installed agent CLI current now, the round `run` does on its own (§10) |
+| `agents install <name>` | install an agent CLI the host lacks, user-level, with the catalog's installer (§10) |
+| `tools [ls]` / `tools install gh` | the host tools and how to get a missing one; installs `gh`, prints the package manager's command for `git` and `tmux` (§10) |
 | `selfcheck` | a staged binary proving it can parse the config and speak the protocol before it becomes the service (09 §5) |
 | `version` | version, commit, build date, protocol range |
 
@@ -552,8 +554,8 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 ### 10. Host facts and health
 
 Collected at register, on `host.preflight`, and summarised in every
-heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode` and
-`grok` presence and version (one list, `ProbedTools`), free disk on the
+heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode`,
+`grok` and `gh` presence and version (one list, `ProbedTools`), free disk on the
 workspaces filesystem, load, runner version and channel. Only `git` and
 `tmux` are required. A missing agent is a hint on the engine button, not
 a refusal — a session still opens and the shell's own "command not
@@ -575,11 +577,42 @@ waits for its update. A CLI one release behind is refused by its vendor the day 
 ships that needs the newer one, and the person would find out in the
 session's terminal. A running session keeps the binary it started with;
 the next session starts the new one. An agent that is not installed is
-left alone, and so is one whose updater cannot run without asking
-(OpenCode's asks whenever it cannot tell how it was installed): the catalog
-gives it no `update`. A failure is logged and retried; `runner agents
+left alone, and so is one whose updater cannot run without asking.
+OpenCode's asks whenever it cannot tell how it was installed; it takes the
+method as a flag, so the catalog spells its updater with `<method>` and lists
+how to tell the method from where the executable really lives (`curl` for
+`~/.opencode/bin`, `brew`, `bun`, `pnpm`, `npm`). An OpenCode none of them
+matches is left alone. *(Changed 2026-10-12: until then OpenCode had no
+`update` and was never kept current.)* A failure is logged and retried;
+`runner agents
 update` runs the round by hand (09 open question 4 says what to do when it
 fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
+
+**Installing tools** (decided 2026-10-12). Updating is ours; installing is
+the person's choice, made by asking: `runner agents install <name>` for an
+agent CLI and `runner tools install gh` for GitHub's CLI. Both run the
+catalog's `install` entry (`packages/shared/src/agents/catalog.ts` for
+agents, `host-tools.ts` for `git`, `tmux` and `gh`), generated into the
+runner's `host_tools.gen.go`: a POSIX `sh` script per platform family,
+run as the runner's account with no terminal and nothing on stdin, under the
+same per-agent lock as an update, bounded at ten minutes. The scripts prefer
+the vendor's own installer, fetched to a file before it runs (never `curl |
+sh`, which runs half a script when a download is cut), and a user-level
+destination; none uses `sudo`. Claude Code and OpenCode use their vendors'
+installers; Codex and Grok use their npm packages under a `~/.local` prefix,
+because that is a destination the catalog can name; `gh` is its release
+tarball, checked against the release's checksums, on Linux and Homebrew on
+macOS. Each entry names the directory it installs into, and the runner
+appends every such directory to its own `PATH` at start, so a tool it
+installed is found by the next probe and by the sessions' tmux server
+without the person editing a shell profile the service never reads. An
+install of a tool already on `PATH` does nothing. `git` and `tmux` stay with
+the package manager: the runner never takes root, so it answers `HOST_010`
+with the exact command (`brew install git tmux`, `sudo apt-get install -y
+git tmux`), and `runner tools` and `runner status` print the one line that
+gets each missing tool onto the host. Asking for the install from the
+console — a session for an agent the host lacks offering to install it —
+needs a link message and is open question 10.
 
 ### 11. State on disk
 
@@ -680,3 +713,11 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
    measured and **not** taken: a create sees its base as it is now, and the
    fetch costs about half a second. A treeless clone was measured slower
    than shallow (13.4 s against 9.3 s to a ready spare on vscode).
+10. **Installing from the console.** The runner installs agent CLIs and `gh`
+   when asked on the host (§10). The console's half is still missing: a
+   `host.install` link command answered with the install's outcome, an API
+   route under the host that sends it, and New session offering "Install
+   Codex on this host" when the inventory has no `codex` instead of starting
+   a session whose terminal says "command not found". The host facts already
+   carry every tool and version the console needs to show what each host can
+   run.
