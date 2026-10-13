@@ -102,6 +102,58 @@ describe('the turn fold (headless)', () => {
     });
   });
 
+  it('keeps the model and token usage the agent reported, for Stats', () => {
+    const turn = replay([
+      prompt,
+      entry(TURN_EVENT_KINDS.ENDED, {
+        exitCode: 0,
+        costUsd: 0.18,
+        model: 'claude-sonnet-4-5-20250929',
+        inputTokens: 941,
+        outputTokens: 2250,
+        cacheReadTokens: 123456,
+        cacheWriteTokens: 9876,
+      }),
+    ]);
+    expect(turn).toMatchObject({
+      model: 'claude-sonnet-4-5-20250929',
+      inputTokens: 941,
+      outputTokens: 2250,
+      cacheReadTokens: 123456,
+      cacheWriteTokens: 9876,
+    });
+  });
+
+  it('reads usage an older runner never sent as not measured, never as zero', () => {
+    const turn = replay([prompt, entry(TURN_EVENT_KINDS.ENDED, { exitCode: 0, costUsd: 0.1 })]);
+    expect(turn).toMatchObject({
+      model: null,
+      inputTokens: null,
+      outputTokens: null,
+      cacheReadTokens: null,
+      cacheWriteTokens: null,
+    });
+  });
+
+  it('drops a model id the column cannot hold and a count that is not one', () => {
+    const turn = replay([
+      prompt,
+      entry(TURN_EVENT_KINDS.ENDED, {
+        exitCode: 0,
+        model: 'm'.repeat(65),
+        inputTokens: -3,
+        outputTokens: 1.5,
+        cacheReadTokens: '12',
+      }),
+    ]);
+    expect(turn).toMatchObject({
+      model: null,
+      inputTokens: null,
+      outputTokens: null,
+      cacheReadTokens: null,
+    });
+  });
+
   it('completes on exit code zero', () => {
     const turn = replay([prompt, entry(TURN_EVENT_KINDS.ENDED, { exitCode: 0 })]);
     expect(turn?.state).toBe('completed');

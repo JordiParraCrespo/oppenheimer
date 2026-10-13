@@ -11,6 +11,7 @@ import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
+import type { SessionUsageWeek } from './database/session-usage.repository.port';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import type {
   NewSessionEvent,
@@ -161,6 +162,31 @@ export class WorkSessionMapper
       costUsd: record.costUsd === null ? null : Number(record.costUsd),
       permissionDenials: record.permissionDenials,
       outputRef: record.outputRef,
+      model: record.model,
+      inputTokens: tokenCount(record.inputTokens),
+      outputTokens: tokenCount(record.outputTokens),
+      cacheReadTokens: tokenCount(record.cacheReadTokens),
+      cacheWriteTokens: tokenCount(record.cacheWriteTokens),
+    };
+  }
+
+  /**
+   * One row of the weekly usage aggregate. Postgres sums `bigint` and `numeric`
+   * into `numeric`, which `pg` returns as a string, so every figure is read
+   * here once rather than at each caller.
+   */
+  usageWeekToRead(row: unknown): SessionUsageWeek {
+    const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+    return {
+      weekStart: String(record.weekStart),
+      projectId: String(record.projectId),
+      model: typeof record.model === 'string' ? record.model : null,
+      inputTokens: summed(record.inputTokens),
+      outputTokens: summed(record.outputTokens),
+      cacheReadTokens: summed(record.cacheReadTokens),
+      cacheWriteTokens: summed(record.cacheWriteTokens),
+      costUsd: summed(record.costUsd),
+      turns: summed(record.turns),
     };
   }
 
@@ -183,6 +209,11 @@ export class WorkSessionMapper
     record.costUsd = turn.costUsd === null ? null : turn.costUsd.toFixed(6);
     record.permissionDenials = turn.permissionDenials;
     record.outputRef = turn.outputRef;
+    record.model = turn.model;
+    record.inputTokens = turn.inputTokens === null ? null : String(turn.inputTokens);
+    record.outputTokens = turn.outputTokens === null ? null : String(turn.outputTokens);
+    record.cacheReadTokens = turn.cacheReadTokens === null ? null : String(turn.cacheReadTokens);
+    record.cacheWriteTokens = turn.cacheWriteTokens === null ? null : String(turn.cacheWriteTokens);
     return record;
   }
 
@@ -562,4 +593,21 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
   return { imageId: image.imageId, mediaType: image.mediaType };
+}
+
+/**
+ * A `bigint` column as the fold reads it. `pg` returns bigint as a string so
+ * that nothing past 2^53 is silently rounded; a token count never gets there,
+ * and one that somehow did reads as unmeasured rather than as a wrong number.
+ */
+function tokenCount(value: string | null): number | null {
+  if (value === null) return null;
+  const count = Number(value);
+  return Number.isSafeInteger(count) && count >= 0 ? count : null;
+}
+
+/** A sum as the aggregate returns it: a numeric string, a number, or null for nothing summed. */
+function summed(value: unknown): number {
+  const total = typeof value === 'number' ? value : Number(value ?? 0);
+  return Number.isFinite(total) ? total : 0;
 }
