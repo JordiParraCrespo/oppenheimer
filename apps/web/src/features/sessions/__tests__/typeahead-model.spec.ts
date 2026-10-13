@@ -180,6 +180,16 @@ describe('TypeaheadModel', () => {
     }
   });
 
+  it('leaves a list bullet the reader typed deletable (`- item` is text, not prompt)', () => {
+    const { screen, host } = grid('\u2502 > - a', 7);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['\x7f']);
+    host('\u2502 > - ', 6);
+    model.reconcile(screen);
+    keys(model, screen, ['\x7f', '\x7f']);
+    expect(shown(model, '\u2502 > - ')).toEqual({ text: '\u2502 >', cursor: 4 });
+  });
+
   it('predicts deleting a line it did not see typed (Up recalled it)', () => {
     const { screen, host } = grid('\u276f hello', 7);
     const model = new TypeaheadModel(clock().now);

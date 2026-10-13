@@ -106,12 +106,22 @@ async function typeAhead(browser: Browser, c: Case, keys: (page: Page) => Promis
     deviceScaleFactor: c.dpr,
     viewport: { width: 700, height: 160 },
   });
-  // Linux browsers with a software GL stay on the DOM renderer
-  // (`terminal-webgl-policy.ts`); this one says it is a Mac to get WebGL.
+  // The renderer is the case's, not the machine's. WebGL: Linux browsers with
+  // a software GL stay on the DOM renderer (`terminal-webgl-policy.ts`), so
+  // this one says it is a Mac. DOM: a Mac, or a hardware GL, would attach
+  // WebGL, so this one has no WebGL2 context to give it (the addon then
+  // fails to construct, and the terminal stays on DOM, as on a real failure).
   if (c.renderer === 'webgl') {
     await context.addInitScript(() =>
       Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' }),
     );
+  } else {
+    await context.addInitScript(() => {
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, ...args) {
+        return args[0] === 'webgl2' ? null : getContext.apply(this, args as never);
+      } as typeof getContext;
+    });
   }
   const page = await context.newPage();
   const query = new URLSearchParams({ mode: c.mode, face: c.face });

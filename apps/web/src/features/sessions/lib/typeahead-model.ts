@@ -115,9 +115,17 @@ function isNarrowPrintable(char: string): boolean {
 
 const isBlank = (char: string) => char === ' ' || char === '';
 
-/** One glyph that is neither a letter, a digit nor blank: how a prompt ends. */
+/**
+ * One glyph that is neither a letter, a digit nor blank: how a prompt ends.
+ * Not a list bullet (`-`, `*`, `+`, `•`), which starts the reader's own text
+ * far more often than it ends a prompt: taken for one, a recalled `- item`
+ * lost its bullet to the prompt and deleting through it bounced.
+ */
 const isPromptMark = (char: string) =>
-  [...char].length === 1 && !isBlank(char) && !/[\p{L}\p{N}]/u.test(char);
+  [...char].length === 1 &&
+  !isBlank(char) &&
+  !/[\p{L}\p{N}]/u.test(char) &&
+  !'-*+\u2022'.includes(char);
 
 /**
  * Where the reader's text starts on a row whose run of text begins at
