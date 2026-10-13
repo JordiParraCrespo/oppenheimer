@@ -76,4 +76,16 @@ test('two roots in one file are each checked on their own line', () => {
     [12],
   );
 });
+
+test("a nested root's slots do not count for the root around it", () => {
+  const inner = `<QueryState query={b}>${PENDING}${ERROR}${DATA}</QueryState>`;
+  const source = section(
+    '<QueryState query={a}>',
+    PENDING,
+    `<QueryState.Data>{() => ${inner}}</QueryState.Data>`,
+  );
+  const reported = messages(source);
+  assert.equal(reported.length, 1);
+  assert.match(reported[0], /^3: <QueryState> without QueryState\.Error —/);
+});
 // oppenheimer:end web

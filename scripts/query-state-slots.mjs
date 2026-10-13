@@ -36,6 +36,9 @@ export function queryStateSlotProblems(source) {
   const text = blankComments(source);
   const problems = [];
   const open = [];
+  // Roots already closed: a root nested in another's `Data` owns its slots,
+  // and they say nothing about the root around it.
+  const closed = [];
   for (const match of text.matchAll(ROOT)) {
     if (!match[1]) {
       open.push(match.index);
@@ -44,7 +47,16 @@ export function queryStateSlotProblems(source) {
     const start = open.pop();
     if (start === undefined) continue;
     const tag = openingTag(text, start + '<QueryState'.length);
-    const inside = text.slice(start + '<QueryState'.length + tag.length, match.index);
+    const from = start + '<QueryState'.length + tag.length;
+    let inside = '';
+    let at = from;
+    for (const [innerStart, innerEnd] of closed.filter(([s, e]) => s > from && e < match.index)) {
+      if (innerStart < at) continue;
+      inside += text.slice(at, innerStart);
+      at = innerEnd;
+    }
+    inside += text.slice(at, match.index);
+    closed.push([start, match.index + match[0].length]);
     const line = text.slice(0, start).split('\n').length;
     const has = (slot) => new RegExp(`<QueryState\\.${slot}\\b`).test(inside);
     const emptyAsked = /\bisEmpty\s*=/.test(tag);
