@@ -113,12 +113,8 @@ function isNarrowPrintable(char: string): boolean {
   return !(code >= 0x300 && code < 0x370);
 }
 
-/**
- * An empty cell or any space, the no-break one included: Claude Code draws
- * its prompt as `❯` and a no-break space, and read as text it let a guessed
- * Backspace delete the prompt.
- */
-const isBlank = (char: string) => char === '' || /^\s$/u.test(char);
+/** An empty cell or one horizontal space of any kind (a space, a no-break space). */
+const isBlank = (char: string) => char === '' || /^\p{Zs}$/u.test(char);
 
 /**
  * One glyph that is neither a letter, a digit nor blank: how a prompt ends.
