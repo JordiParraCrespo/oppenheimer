@@ -29,8 +29,8 @@ src/components/
 ├── control-demos.tsx # Switch, PillGroup and NumberStepper in settings rows
 ├── share-demos.tsx   # PeoplePicker (members, an outside invite) and AccessList
 ├── plan-stats-demos.tsx # MilestoneTimeline, FacetSelect (both forms), DateRangePicker, AreaChart, CalendarAccountList
-├── employee-demos.tsx # BotItem, AvatarPicker (popover and Profile), RoutineCard (on, paused, editing), the settings list rows, SettingsTopBar
-├── chat-demos.tsx    # the agent chat, one demo per Chat Components family, each on the pane's recessed ground
+├── employee-demos.tsx # BotItem (unread, needs input) under eyebrow group heads, SidebarEmptyCard, AvatarPicker (popover and Profile), RoutineCard (on, paused, editing), the settings list rows, SettingsTopBar
+├── chat-demos.tsx    # the agent chat, one demo per Chat Components family (bot-to-bot and proposed instructions among the cards, the composer approval, the new bot's empty state), each on the pane's recessed ground
 ├── feedback.tsx      # Alert, Badge, Skeleton, the toast, the command palette's parts
 ├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
 ├── app-sidebar.tsx   # the TOC with scroll-spy

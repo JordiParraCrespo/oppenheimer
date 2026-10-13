@@ -61,9 +61,13 @@ export {
 export type { ProposedPlanLabels, SubagentState } from './components/chat-cards';
 export {
   AnsweredQuestions,
+  BotExchange,
+  BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
   ContextCard,
+  ProposedFile,
+  ProposedFileLine,
   ProposedPlanCard,
   QuestionsPill,
   SubagentRow,
@@ -91,6 +95,7 @@ export {
   ApprovalFile,
   ApprovalPanel,
   ChoiceRow,
+  ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
 export type { ThreadFindLabels } from './components/chat-header';
@@ -414,6 +419,7 @@ export {
 export {
   Sidebar,
   SidebarContent,
+  SidebarEmptyCard,
   SidebarEmptyRow,
   SidebarFooter,
   SidebarGroup,
@@ -468,7 +474,12 @@ export {
   TaskComposer,
   TaskSessionChip,
 } from './components/task-board';
-export { TemplateGrid, TemplateItem } from './components/template-grid';
+export {
+  TemplateGrid,
+  TemplateItem,
+  TemplateTile,
+  TemplateTiles,
+} from './components/template-grid';
 export type { TerminalHostLink, TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,
