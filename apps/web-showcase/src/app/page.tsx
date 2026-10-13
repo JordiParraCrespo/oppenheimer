@@ -57,6 +57,17 @@ import {
 } from '../components/host-link-demos';
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
+import { ChatSection } from '../components/chat-demos';
+import { EmployeesSection } from '../components/employee-demos';
+import {
+  AreaChartDemo,
+  CalendarAccountsDemo,
+  DateRangePickerDemo,
+  FacetSelectDemo,
+  MilestoneTimelineDemo,
+} from '../components/plan-stats-demos';
+import { ShareSection } from '../components/share-demos';
+import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/control-demos';
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
@@ -794,6 +805,36 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="switch"
+        title="Switch"
+        meta="switch.tsx"
+        desc="A setting that takes effect the moment it flips: Learn automatically, a connector, a routine's Active, Notifications. A 34×20 pill with a 16px white knob, the action blue when on and the control grey when off; 30×18 (sm) in a popover's foot. A setting the template holds is disabled with its reason as the title, at half strength. A choice that waits for Save is a Checkbox."
+        code={`<Switch checked={learn} onCheckedChange={setLearn} aria-label="Learn automatically" />`}
+      >
+        <SwitchDemo />
+      </Spec>
+
+      <Spec
+        id="pillgroup"
+        title="PillGroup"
+        meta="pill-group.tsx"
+        desc="A form value picked from a short row of 30px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
+        code={`<PillGroup value={ttl} onValueChange={setTtl} aria-label="For how long"><PillGroupItem value="1h">1 hour</PillGroupItem><PillGroupItem value="7d" disabled>7 days</PillGroupItem></PillGroup>`}
+      >
+        <PillGroupDemo />
+      </Spec>
+
+      <Spec
+        id="numberstepper"
+        title="NumberStepper"
+        meta="number-stepper.tsx"
+        desc="A small bounded count a person nudges: Parallel sessions (1–8), Hop limit (1–6). Minus, the value in mono 28px wide, plus, on a pill track with 2px of inset; a button at its bound turns off, and the value stays typeable and steps with the arrow keys. A number with a unit and room to type is an Input."
+        code={`<NumberStepper value={parallel} onValueChange={setParallel} min={1} max={8} aria-label="Parallel sessions" />`}
+      >
+        <NumberStepperDemo />
+      </Spec>
+
+      <Spec
         id="disclosure"
         title="Disclosure"
         meta="disclosure.tsx"
@@ -1264,6 +1305,57 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       </Spec>
 
       <Spec
+        id="calendaraccounts"
+        title="CalendarAccountList"
+        meta="calendar-source.tsx"
+        desc="More than one connected Google account, under the calendar's sources: a grouped list on the hover wash, one row per account with the provider's mark, the address and how its sync stands behind a dot in mono. A failed sync turns the dot red and offers Reconnect; every row disconnects with its ×. Add account is the last row."
+        code={`<CalendarAccountList><CalendarAccountRow mark={<BrandGlyph name="google" />} account="me@acme.dev" status="Synced 2 min ago" onDisconnect={…} /><CalendarAccountAdd onClick={connect} /></CalendarAccountList>`}
+      >
+        <CalendarAccountsDemo />
+      </Spec>
+
+      <Spec
+        id="milestones"
+        title="MilestoneTimeline · MilestoneGlyph"
+        meta="milestone-timeline.tsx"
+        desc="Milestones on time, one row per project, scrolling sideways and opening on today. Months in uppercase at their first day with a hairline down the rows, week numbers in mono, today an inverted pill with a line through every row. Each project is its name and done share over a track from three weeks before its first milestone to ten days past its last; each milestone a diamond at its due day, filled muted when done. Point at one and it fills in ink and shows the share done, the task count and the due day. MilestoneGlyph is the same diamond, 8px, for the sidebar row and the filter pill."
+        code={`<MilestoneTimeline rows={rows} today={today} onOpenMilestone={edit} onOpenRow={openProject} />`}
+      >
+        <MilestoneTimelineDemo />
+      </Spec>
+
+      <Spec
+        id="facetselect"
+        title="FacetSelect"
+        meta="facet-select.tsx"
+        desc="One facet of a list's filter picked from a short menu: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. The menu is radio rows with the count each pick would leave. pill (30px) is Plan's board: the icon, then the facet's name or the pick. labelled (34px) is the pull-request queue: the facet's name muted, then the current option."
+        code={`<FacetSelect label="Difficulty" options={lanes} value={lane} onValueChange={setLane} />
+<FacetSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} value={project} onValueChange={setProject} />`}
+      >
+        <FacetSelectDemo />
+      </Spec>
+
+      <Spec
+        id="daterange"
+        title="DateRangePicker"
+        meta="date-range-picker.tsx"
+        desc="The period Stats reports on. A hairline pill with the preset's name muted and the range in mono, opening presets beside two months: the range fills the selected wash between its two inked ends, today is ringed and days after it are off. The first click starts a range, the second ends it, the pointer previews it; a preset applies at once. The foot holds the compare switch, the range's length and Done."
+        code={`<DateRangePicker value={range} onValueChange={setRange} presets={presets} today={today} compare={compare} onCompareChange={setCompare} />`}
+      >
+        <DateRangePickerDemo />
+      </Spec>
+
+      <Spec
+        id="areachart"
+        title="AreaChart"
+        meta="charts.tsx"
+        desc="Volume over time, for Stats: tokens and cost per week. A monotone curve per series, so it never overshoots a value, over a wash of its tone (12% alone, 8% when two overlap); ticks on the left, a label under every week, and LineChart's crosshair, dots and readout. Two rates without volume stay a LineChart."
+        code={`<AreaChart series={series} points={weeks} ticks={[0, 1, 2, 3, 4]} format={(v) => \`\${v}M\`} aria-label="Tokens per week" />`}
+      >
+        <AreaChartDemo />
+      </Spec>
+
+      <Spec
         id="plandialogs"
         title="Task & session dialogs"
         meta="dialog.tsx · chip.tsx · chip-select.tsx · date-picker.tsx"
@@ -1373,6 +1465,12 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       >
         <HostCardsDemo />
       </Spec>
+
+      <ChatSection />
+
+      <EmployeesSection />
+
+      <ShareSection />
 
       <GroupHead>Media</GroupHead>
 
