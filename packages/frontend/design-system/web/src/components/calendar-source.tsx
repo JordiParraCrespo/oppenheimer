@@ -1,8 +1,10 @@
 import { PlusIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { TONE_BG } from '../internal/data-tone';
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
+import type { CalendarAccent } from './month-calendar';
 
 /**
  * The calendar's sidebar: what it shows and where it comes from.
@@ -97,13 +99,15 @@ function CalendarAccountList({ className, ...props }: React.ComponentProps<'div'
  * One account: the provider's 13px mark, the address, and how its sync
  * stands in 11px mono behind a 6px dot (success while syncing, danger when
  * it failed). A failed one offers `onReconnect` as a link under the status;
- * every one has the 24px round × to disconnect.
+ * every one has the 24px round × to disconnect. With `accent`, an 8px swatch
+ * before the address names the colour the month draws its events in.
  */
 function CalendarAccountRow({
   mark,
   account,
   status,
   failed = false,
+  accent,
   onReconnect,
   onDisconnect,
   labels,
@@ -116,6 +120,8 @@ function CalendarAccountRow({
   /** "Synced 2 min ago", "Sync failed · 3h ago". */
   status: React.ReactNode;
   failed?: boolean;
+  /** The colour its events wear on the month (`CalendarEntryData.accent`). */
+  accent?: CalendarAccent;
   onReconnect?: () => void;
   onDisconnect?: () => void;
   labels?: { reconnect?: string; disconnect?: (account: string) => string };
@@ -131,7 +137,10 @@ function CalendarAccountRow({
         {mark}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
-        <span className="truncate text-[13px] text-fg">{account}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {accent ? <span aria-hidden className={cn('size-2 shrink-0 rounded-pill', TONE_BG[accent])} /> : null}
+          <span className="truncate text-[13px] text-fg">{account}</span>
+        </span>
         <span className="figures flex items-center gap-1.5 font-mono text-[11px] text-fg-subtle">
           <span aria-hidden className={cn('size-1.5 shrink-0 rounded-pill', failed ? 'bg-danger' : 'bg-success')} />
           {status}

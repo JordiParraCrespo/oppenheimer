@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
@@ -9,37 +8,41 @@ import {
   CalendarGrantRevokedError,
   CalendarProviderError,
   type CalendarProviderPort,
+  type CalendarReadGrant,
   GOOGLE_CALENDAR_SCOPE,
   type ProviderCalendarEvent,
+  type ProviderEventsRead,
 } from './calendar-provider.port';
-import { emailOfIdToken, googleEventsToProvider, nextDay } from './google-calendar-event.util';
+import { accountOfIdToken, googleEventsToProvider, nextDay } from './google-calendar-event.util';
 
 /** A page is 2 500 events at most; a month of anyone's calendar fits in one or two. */
 const PAGE_SIZE = 2500;
 const MAX_PAGES = 4;
 const TIMEOUT_MS = 10_000;
 /**
- * A month view is one token refresh and a page or two; four calls in flight
- * per process is plenty, and a burst past twenty waiting answers `CALENDAR_010`
- * rather than hanging the card.
+ * A month view is one token refresh and a page or two per connected account,
+ * read in parallel: five accounts is ten to fifteen calls. Eight in flight per
+ * process keeps one person's month from queueing behind itself, and a burst
+ * past forty waiting answers `CALENDAR_010` rather than hanging the card.
  */
-const LIMITS = { maxInFlight: 4, maxQueued: 20, maxWaitMs: 5_000 };
+const LIMITS = { maxInFlight: 8, maxQueued: 40, maxWaitMs: 5_000 };
 /** Google's per-project quota: every connected account draws on it. */
 const PROJECT: Bucket = 'project';
 /** Google's reasons for a per-person quota refusal, and for a per-project one. */
 const PERSON_REASONS = new Set(['userRateLimitExceeded']);
 const PROJECT_REASONS = new Set(['rateLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded']);
 
-type Bucket = 'project' | `grant:${string}`;
+type Bucket = 'project' | `connection:${string}`;
 
 /**
  * Google Calendar, read-only, through the same OAuth client as Google sign-in. The
  * redirect lands on the console (`/plan/calendar/google`), which posts the code back,
  * as Connect GitHub does; so the redirect URI is the console's.
  *
- * Google counts calls per person and per project, and enforces both. Every
- * call here goes through one {@link UpstreamLimiter}: a call counts against the
- * person's grant and the project, a refusal pauses whichever Google named, and
+ * Google counts calls per Google account and per project, and enforces both.
+ * Every call here goes through one {@link UpstreamLimiter}: a call counts
+ * against its connection (one Google account, so one bucket each when a person
+ * has several) and the project, a refusal pauses whichever Google named, and
  * a paused bucket answers `CALENDAR_010` without asking Google again, on every
  * replica (`.agents/rules/integrations.md`).
  */
@@ -63,14 +66,16 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
     return Boolean(this.clientId && this.clientSecret);
   }
 
-  authorizationUrl(state: string): string {
+  authorizationUrl(state: string, loginHint?: string): string {
     const url = new URL(this.config('googleAuthUrl'));
     url.searchParams.set('client_id', this.clientId ?? '');
     url.searchParams.set('redirect_uri', this.redirectUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', `openid email ${GOOGLE_CALENDAR_SCOPE}`);
     url.searchParams.set('access_type', 'offline');
-    url.searchParams.set('prompt', 'consent');
+    // `select_account`: a second account can be chosen, not the one signed in.
+    url.searchParams.set('prompt', 'consent select_account');
+    if (loginHint) url.searchParams.set('login_hint', loginHint);
     url.searchParams.set('include_granted_scopes', 'true');
     url.searchParams.set('state', state);
     return url.toString();
@@ -81,21 +86,26 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
       { code, redirect_uri: this.redirectUri, grant_type: 'authorization_code' },
       [PROJECT],
     );
-    const accountEmail = emailOfIdToken(body.id_token);
-    if (!accountEmail) throw new CalendarProviderError('Google returned no account email');
     return {
       refreshToken: typeof body.refresh_token === 'string' ? body.refresh_token : null,
-      accountEmail,
+      account: accountOfIdToken(body.id_token),
       scopes: typeof body.scope === 'string' ? body.scope.split(' ') : [],
     };
   }
 
   async listEvents(
-    refreshToken: string,
+    grant: CalendarReadGrant,
     range: { from: string; to: string; timeZone: string },
-  ): Promise<ProviderCalendarEvent[]> {
-    const buckets = bucketsOf(refreshToken);
-    const accessToken = await this.accessToken(refreshToken, buckets);
+  ): Promise<ProviderEventsRead> {
+    const buckets = bucketsOf(grant.connectionId);
+    const token = await this.token(
+      { refresh_token: grant.refreshToken, grant_type: 'refresh_token' },
+      buckets,
+    );
+    if (typeof token.access_token !== 'string') {
+      throw new CalendarProviderError('Google returned no access token');
+    }
+    const accessToken = token.access_token;
     const events: ProviderCalendarEvent[] = [];
     let pageToken: string | undefined;
     for (let page = 0; page < MAX_PAGES; page += 1) {
@@ -123,24 +133,15 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
       pageToken = typeof body.nextPageToken === 'string' ? body.nextPageToken : undefined;
       if (!pageToken) break;
     }
-    return events;
+    // A grant that holds `openid` gets an ID token on refresh too: what keys a
+    // connection written before accounts were keyed by `sub`.
+    return { events, account: accountOfIdToken(token.id_token) };
   }
 
-  async revoke(refreshToken: string): Promise<void> {
+  async revoke(grant: CalendarReadGrant): Promise<void> {
     const url = new URL(`${this.config('googleOauthBaseUrl')}/revoke`);
-    url.searchParams.set('token', refreshToken);
-    await this.fetch(url, { method: 'POST' }, bucketsOf(refreshToken)).catch(() => undefined);
-  }
-
-  private async accessToken(refreshToken: string, buckets: Bucket[]): Promise<string> {
-    const body = await this.token(
-      { refresh_token: refreshToken, grant_type: 'refresh_token' },
-      buckets,
-    );
-    if (typeof body.access_token !== 'string') {
-      throw new CalendarProviderError('Google returned no access token');
-    }
-    return body.access_token;
+    url.searchParams.set('token', grant.refreshToken);
+    await this.fetch(url, { method: 'POST' }, bucketsOf(grant.connectionId)).catch(() => undefined);
   }
 
   /** Google's token endpoint. `invalid_grant` is a grant that is gone, not a fault. */
@@ -217,11 +218,12 @@ function previousDay(date: string): string {
 }
 
 /**
- * What a call counts against: the person's grant (keyed by a digest, so a
- * credential never becomes a cache key) and the project every grant shares.
+ * What a call counts against: the Google account, which is one connection (so
+ * a person with several has a bucket per account, and one paused account does
+ * not stop the others), and the project every account shares.
  */
-function bucketsOf(refreshToken: string): Bucket[] {
-  return [`grant:${createHash('sha256').update(refreshToken).digest('hex').slice(0, 16)}`, PROJECT];
+function bucketsOf(connectionId: string): Bucket[] {
+  return [`connection:${connectionId}`, PROJECT];
 }
 
 /**

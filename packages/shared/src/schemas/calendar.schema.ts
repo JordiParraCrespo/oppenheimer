@@ -83,3 +83,40 @@ export const connectGoogleCalendarSchema = z.object({
 });
 
 export type ConnectGoogleCalendarDto = z.infer<typeof connectGoogleCalendarSchema>;
+
+/**
+ * Several Google accounts per person (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
+ * §5): at most this many connections, and one colour per connection, from the
+ * lowest index none of the person's others holds.
+ */
+export const GOOGLE_CALENDAR_ACCOUNTS_MAX = 5;
+
+/**
+ * `POST /calendar/google/connections`: start connecting an account, or, with a
+ * `connectionId`, reconnect that one (Google's account chooser opens on it).
+ */
+export const startGoogleCalendarConnectionSchema = z.object({
+  connectionId: z.string().uuid().optional(),
+});
+
+export type StartGoogleCalendarConnectionDto = z.infer<typeof startGoogleCalendarConnectionSchema>;
+
+/** One of the caller's Google accounts, as the sidebar lists it. */
+export const googleCalendarConnectionSchema = z.object({
+  id: z.string().uuid(),
+  accountEmail: z.string(),
+  status: z.enum(['active', 'revoked']),
+  colorIndex: z
+    .number()
+    .int()
+    .min(0)
+    .max(GOOGLE_CALENDAR_ACCOUNTS_MAX - 1),
+  connectedAt: z.string(),
+});
+
+export type GoogleCalendarConnection = z.infer<typeof googleCalendarConnectionSchema>;
+
+/** How one account's read went: `revoked` asks to reconnect, `error` to retry. */
+export const googleCalendarAccountReadStatusSchema = z.enum(['ok', 'revoked', 'error']);
+
+export type GoogleCalendarAccountReadStatus = z.infer<typeof googleCalendarAccountReadStatusSchema>;

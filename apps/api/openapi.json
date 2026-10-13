@@ -12446,10 +12446,10 @@
         "tags": ["Calendar"]
       }
     },
-    "/api/v1/calendar/google/connection": {
+    "/api/v1/calendar/google/connections": {
       "get": {
-        "description": "Whether there is one, the account, and whether Google still honours it.",
-        "operationId": "findGoogleCalendarConnection",
+        "description": "Every account connected to the calendar, oldest first (five at most): its address, whether Google still honours it, and its colour on the month.",
+        "operationId": "findGoogleCalendarConnections",
         "parameters": [],
         "responses": {
           "200": {
@@ -12457,7 +12457,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoogleCalendarConnectionResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GoogleCalendarConnectionResponseDto"
+                  }
                 }
               }
             }
@@ -12488,11 +12491,87 @@
             "bearer": []
           }
         ],
-        "summary": "The caller’s own Google Calendar connection",
+        "summary": "The caller’s own Google accounts",
         "tags": ["Calendar"]
       },
       "post": {
-        "description": "The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. A new grant replaces the caller’s old one.",
+        "description": "Google’s consent page, read-only, with its account chooser, carrying a single-use state for this caller in this workspace. With `connectionId`, a reconnect of that account: the chooser opens on its address. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.",
+        "operationId": "startGoogleCalendarConnection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartGoogleCalendarConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarConnectStartResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CALENDAR_011 / CALENDAR_007 — Five accounts already connected, or no such connection of the caller’s to reconnect",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CALENDAR_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start connecting a Google account",
+        "tags": ["Calendar"]
+      }
+    },
+    "/api/v1/calendar/google/connection": {
+      "post": {
+        "description": "The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. An account the caller already connected is reconnected in place, keeping its colour; another is added, up to five.",
         "operationId": "connectGoogleCalendar",
         "parameters": [],
         "requestBody": {
@@ -12546,6 +12625,16 @@
               }
             }
           },
+          "409": {
+            "description": "CALENDAR_011 — Five accounts already connected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After",
             "content": {
@@ -12574,11 +12663,24 @@
         ],
         "summary": "Finish connecting Google Calendar",
         "tags": ["Calendar"]
-      },
+      }
+    },
+    "/api/v1/calendar/google/connections/{id}": {
       "delete": {
-        "description": "Revokes the grant at Google and forgets it. With no connection, nothing happens.",
-        "operationId": "disconnectGoogleCalendar",
-        "parameters": [],
+        "description": "Revokes that account’s grant at Google and forgets it; its colour is free for the next account. An id that is not one of the caller’s does nothing.",
+        "operationId": "removeGoogleCalendarConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connection.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -12609,69 +12711,13 @@
             "bearer": []
           }
         ],
-        "summary": "Disconnect Google Calendar",
-        "tags": ["Calendar"]
-      }
-    },
-    "/api/v1/calendar/google/connection/start": {
-      "post": {
-        "description": "Google’s consent page, read-only, carrying a single-use state for this caller in this workspace. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.",
-        "operationId": "startGoogleCalendarConnection",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GoogleCalendarConnectStartResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "CALENDAR_004 — Not configured",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Start connecting Google Calendar",
+        "summary": "Remove a Google account from the calendar",
         "tags": ["Calendar"]
       }
     },
     "/api/v1/calendar/google/events": {
       "get": {
-        "description": "Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.",
+        "description": "Every connected account, read through to Google in parallel and not stored; times in `timeZone`. A meeting invited to two of the accounts comes back once. One account failing marks only itself in `accounts`. Read-only: these events cannot be changed here.",
         "operationId": "findGoogleCalendarEvents",
         "parameters": [
           {
@@ -12710,10 +12756,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CalendarEventResponseDto"
-                  }
+                  "$ref": "#/components/schemas/GoogleCalendarEventsResponseDto"
                 }
               }
             }
@@ -12748,28 +12791,8 @@
               }
             }
           },
-          "409": {
-            "description": "CALENDAR_007 — Not connected",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
           "429": {
-            "description": "CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "CALENDAR_008 — Google did not answer",
+            "description": "CALENDAR_010 — Google Calendar's rate limit stopped every account; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12794,7 +12817,7 @@
             "bearer": []
           }
         ],
-        "summary": "The caller’s Google Calendar between two days",
+        "summary": "The caller’s Google Calendars between two days",
         "tags": ["Calendar"]
       }
     },
@@ -20749,23 +20772,41 @@
       "GoogleCalendarConnectionResponseDto": {
         "type": "object",
         "properties": {
-          "connected": {
-            "type": "boolean",
-            "description": "Whether the caller has connected, revoked or not."
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "accountEmail": {
             "type": "string",
-            "nullable": true,
             "example": "ana@example.com"
           },
           "status": {
             "type": "string",
-            "nullable": true,
             "enum": ["active", "revoked"],
-            "description": "`revoked` when Google dropped the grant: the card offers Reconnect."
+            "description": "`revoked` when Google dropped the grant: the account offers Reconnect."
+          },
+          "colorIndex": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "The account’s colour on the month: the lowest free one when it was connected, never reassigned."
+          },
+          "connectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it was first connected."
           }
         },
-        "required": ["connected"]
+        "required": ["id", "accountEmail", "status", "colorIndex", "connectedAt"]
+      },
+      "StartGoogleCalendarConnectionRequest": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "GoogleCalendarConnectStartResponseDto": {
         "type": "object",
@@ -20796,6 +20837,94 @@
           }
         },
         "required": ["code", "state"]
+      },
+      "GoogleCalendarEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Ours a uuid; Google’s its own id, with the day for an all-day event spanning several."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["personal", "google"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Empty for Google’s events, which are read-only here."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-07"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "09:30"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "10:00"
+          },
+          "busy": {
+            "type": "boolean",
+            "description": "Busy, or free time drawn muted."
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The connection it was read from; the first one read when two accounts share it."
+          }
+        },
+        "required": ["id", "source", "title", "notes", "date", "allDay", "busy", "connectionId"]
+      },
+      "GoogleCalendarAccountReadResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The connection."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ok", "revoked", "error"],
+            "description": "`revoked`: Google dropped the grant, reconnect it. `error`: Google did not answer for it this time."
+          }
+        },
+        "required": ["id", "status"]
+      },
+      "GoogleCalendarEventsResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoogleCalendarEventResponseDto"
+            }
+          },
+          "accounts": {
+            "description": "One per connection: one account failing marks only itself.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoogleCalendarAccountReadResponseDto"
+            }
+          }
+        },
+        "required": ["events", "accounts"]
       },
       "PullRequestLaneReasonDto": {
         "type": "object",

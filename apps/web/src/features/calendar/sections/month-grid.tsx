@@ -2,7 +2,7 @@ import { CalendarEntry, DragProvider, MonthCalendar } from '@oppenheimer/design-
 import {
   useAutomations,
   useCalendarEvents,
-  useGoogleCalendarConnection,
+  useGoogleCalendarConnections,
   useGoogleCalendarEvents,
   useTasks,
   useUpdateCalendarEvent,
@@ -11,11 +11,13 @@ import {
 import { ErrorAlert, useDragLabels, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useHiddenAccounts } from '../hooks/use-hidden-accounts';
 import { useMonth } from '../hooks/use-month';
 import {
   automationItems,
   type CalendarItem,
   eventItems,
+  googleItems,
   taskItems,
   toEntry,
 } from '../lib/calendar-items';
@@ -25,9 +27,10 @@ const calendar = getRouteApi('/_authenticated/plan/calendar');
 
 /**
  * The month (`20-plan-calendar.md` §2) on the design system's calendar: the
- * items of the layers that are on — personal events, Google's, tasks due,
- * scheduled automation runs. A personal event opens its dialog, a task its
- * card on the board, an automation its page, a Google event Google. A
+ * items of the layers that are on — personal events, Google's (each in its
+ * account's colour, less the accounts switched off), tasks due, scheduled
+ * automation runs. A personal event opens its dialog, a task its card on
+ * the board, an automation its page, a Google event its read-only view. A
  * personal event or a task dragged onto another day moves there.
  */
 export function MonthGrid() {
@@ -41,11 +44,12 @@ export function MonthGrid() {
   const hidden = hiddenLayers(off);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const events = useCalendarEvents(range);
-  const connection = useGoogleCalendarConnection();
+  const { data: connections = [] } = useGoogleCalendarConnections();
+  const { hidden: hiddenAccounts } = useHiddenAccounts();
   const google = useGoogleCalendarEvents(
     range,
     timeZone,
-    hidden.has('google') ? undefined : connection.data,
+    !hidden.has('google') && connections.some((connection) => connection.isActive),
   );
   const { data: tasks } = useTasks({ select: (rows) => taskItems(rows, range.from, range.to) });
   const { data: automations } = useAutomations({
@@ -56,7 +60,9 @@ export function MonthGrid() {
 
   const items: CalendarItem[] = [
     ...(hidden.has('events') ? [] : eventItems(events.data ?? [], 'events')),
-    ...(hidden.has('google') ? [] : eventItems(google.data ?? [], 'google')),
+    ...(hidden.has('google')
+      ? []
+      : googleItems(google.data?.events ?? [], connections, hiddenAccounts)),
     ...(hidden.has('tasks') ? [] : (tasks ?? [])),
     ...(hidden.has('automations') ? [] : (automations ?? [])),
   ];
@@ -71,7 +77,7 @@ export function MonthGrid() {
     else if (item.layer === 'tasks') go({ to: '/plan', search: { task: item.id } });
     else if (item.layer === 'automations')
       go({ to: '/automations/$automationId', params: { automationId: item.id } });
-    else if (item.url) window.open(item.url, '_blank', 'noopener');
+    else navigate({ search: (previous) => ({ ...previous, google: item.id }) });
   };
 
   return (

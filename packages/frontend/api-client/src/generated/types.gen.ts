@@ -2258,15 +2258,24 @@ export type UpdateCalendarEventRequest = {
 };
 
 export type GoogleCalendarConnectionResponseDto = {
+    id: string;
+    accountEmail: string;
     /**
-     * Whether the caller has connected, revoked or not.
+     * `revoked` when Google dropped the grant: the account offers Reconnect.
      */
-    connected: boolean;
-    accountEmail?: string | null;
+    status: 'active' | 'revoked';
     /**
-     * `revoked` when Google dropped the grant: the card offers Reconnect.
+     * The account’s colour on the month: the lowest free one when it was connected, never reassigned.
      */
-    status?: 'active' | 'revoked';
+    colorIndex: number;
+    /**
+     * When it was first connected.
+     */
+    connectedAt: string;
+};
+
+export type StartGoogleCalendarConnectionRequest = {
+    connectionId?: string;
 };
 
 export type GoogleCalendarConnectStartResponseDto = {
@@ -2280,6 +2289,54 @@ export type GoogleCalendarConnectStartResponseDto = {
 export type ConnectGoogleCalendarRequest = {
     code: string;
     state: string;
+};
+
+export type GoogleCalendarEventResponseDto = {
+    /**
+     * Ours a uuid; Google’s its own id, with the day for an all-day event spanning several.
+     */
+    id: string;
+    source: 'personal' | 'google';
+    title: string;
+    /**
+     * Empty for Google’s events, which are read-only here.
+     */
+    notes: string;
+    date: string;
+    allDay: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    /**
+     * Busy, or free time drawn muted.
+     */
+    busy: boolean;
+    /**
+     * Where a Google event opens in Google Calendar; null for a personal one.
+     */
+    url?: string | null;
+    /**
+     * The connection it was read from; the first one read when two accounts share it.
+     */
+    connectionId: string;
+};
+
+export type GoogleCalendarAccountReadResponseDto = {
+    /**
+     * The connection.
+     */
+    id: string;
+    /**
+     * `revoked`: Google dropped the grant, reconnect it. `error`: Google did not answer for it this time.
+     */
+    status: 'ok' | 'revoked' | 'error';
+};
+
+export type GoogleCalendarEventsResponseDto = {
+    events: Array<GoogleCalendarEventResponseDto>;
+    /**
+     * One per connection: one account failing marks only itself.
+     */
+    accounts: Array<GoogleCalendarAccountReadResponseDto>;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -8796,14 +8853,14 @@ export type UpdateCalendarEventResponses = {
 
 export type UpdateCalendarEventResponse = UpdateCalendarEventResponses[keyof UpdateCalendarEventResponses];
 
-export type DisconnectGoogleCalendarData = {
+export type FindGoogleCalendarConnectionsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/calendar/google/connection';
+    url: '/api/v1/calendar/google/connections';
 };
 
-export type DisconnectGoogleCalendarErrors = {
+export type FindGoogleCalendarConnectionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8814,22 +8871,22 @@ export type DisconnectGoogleCalendarErrors = {
     403: ProblemDetailsDto;
 };
 
-export type DisconnectGoogleCalendarError = DisconnectGoogleCalendarErrors[keyof DisconnectGoogleCalendarErrors];
+export type FindGoogleCalendarConnectionsError = FindGoogleCalendarConnectionsErrors[keyof FindGoogleCalendarConnectionsErrors];
 
-export type DisconnectGoogleCalendarResponses = {
-    204: void;
+export type FindGoogleCalendarConnectionsResponses = {
+    200: Array<GoogleCalendarConnectionResponseDto>;
 };
 
-export type DisconnectGoogleCalendarResponse = DisconnectGoogleCalendarResponses[keyof DisconnectGoogleCalendarResponses];
+export type FindGoogleCalendarConnectionsResponse = FindGoogleCalendarConnectionsResponses[keyof FindGoogleCalendarConnectionsResponses];
 
-export type FindGoogleCalendarConnectionData = {
-    body?: never;
+export type StartGoogleCalendarConnectionData = {
+    body: StartGoogleCalendarConnectionRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/calendar/google/connection';
+    url: '/api/v1/calendar/google/connections';
 };
 
-export type FindGoogleCalendarConnectionErrors = {
+export type StartGoogleCalendarConnectionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8838,15 +8895,23 @@ export type FindGoogleCalendarConnectionErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
+    /**
+     * CALENDAR_011 / CALENDAR_007 — Five accounts already connected, or no such connection of the caller’s to reconnect
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
 };
 
-export type FindGoogleCalendarConnectionError = FindGoogleCalendarConnectionErrors[keyof FindGoogleCalendarConnectionErrors];
+export type StartGoogleCalendarConnectionError = StartGoogleCalendarConnectionErrors[keyof StartGoogleCalendarConnectionErrors];
 
-export type FindGoogleCalendarConnectionResponses = {
-    200: GoogleCalendarConnectionResponseDto;
+export type StartGoogleCalendarConnectionResponses = {
+    200: GoogleCalendarConnectStartResponseDto;
 };
 
-export type FindGoogleCalendarConnectionResponse = FindGoogleCalendarConnectionResponses[keyof FindGoogleCalendarConnectionResponses];
+export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectionResponses[keyof StartGoogleCalendarConnectionResponses];
 
 export type ConnectGoogleCalendarData = {
     body: ConnectGoogleCalendarRequest;
@@ -8871,6 +8936,10 @@ export type ConnectGoogleCalendarErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * CALENDAR_011 — Five accounts already connected
+     */
+    409: ProblemDetailsDto;
+    /**
      * CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
@@ -8888,14 +8957,19 @@ export type ConnectGoogleCalendarResponses = {
 
 export type ConnectGoogleCalendarResponse = ConnectGoogleCalendarResponses[keyof ConnectGoogleCalendarResponses];
 
-export type StartGoogleCalendarConnectionData = {
+export type RemoveGoogleCalendarConnectionData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * The connection.
+         */
+        id: string;
+    };
     query?: never;
-    url: '/api/v1/calendar/google/connection/start';
+    url: '/api/v1/calendar/google/connections/{id}';
 };
 
-export type StartGoogleCalendarConnectionErrors = {
+export type RemoveGoogleCalendarConnectionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8904,19 +8978,15 @@ export type StartGoogleCalendarConnectionErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
-    /**
-     * CALENDAR_004 — Not configured
-     */
-    503: ProblemDetailsDto;
 };
 
-export type StartGoogleCalendarConnectionError = StartGoogleCalendarConnectionErrors[keyof StartGoogleCalendarConnectionErrors];
+export type RemoveGoogleCalendarConnectionError = RemoveGoogleCalendarConnectionErrors[keyof RemoveGoogleCalendarConnectionErrors];
 
-export type StartGoogleCalendarConnectionResponses = {
-    200: GoogleCalendarConnectStartResponseDto;
+export type RemoveGoogleCalendarConnectionResponses = {
+    204: void;
 };
 
-export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectionResponses[keyof StartGoogleCalendarConnectionResponses];
+export type RemoveGoogleCalendarConnectionResponse = RemoveGoogleCalendarConnectionResponses[keyof RemoveGoogleCalendarConnectionResponses];
 
 export type FindGoogleCalendarEventsData = {
     body?: never;
@@ -8952,17 +9022,9 @@ export type FindGoogleCalendarEventsErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * CALENDAR_007 — Not connected
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After
+     * CALENDAR_010 — Google Calendar's rate limit stopped every account; try again after Retry-After
      */
     429: ProblemDetailsDto;
-    /**
-     * CALENDAR_008 — Google did not answer
-     */
-    502: ProblemDetailsDto;
     /**
      * CALENDAR_004 — Not configured
      */
@@ -8972,7 +9034,7 @@ export type FindGoogleCalendarEventsErrors = {
 export type FindGoogleCalendarEventsError = FindGoogleCalendarEventsErrors[keyof FindGoogleCalendarEventsErrors];
 
 export type FindGoogleCalendarEventsResponses = {
-    200: Array<CalendarEventResponseDto>;
+    200: GoogleCalendarEventsResponseDto;
 };
 
 export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];

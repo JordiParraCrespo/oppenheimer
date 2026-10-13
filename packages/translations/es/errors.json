@@ -169,6 +169,7 @@
     "CALENDAR_008": "Google Calendar no ha respondido. Inténtalo de nuevo en un momento.",
     "CALENDAR_009": "Un evento tiene que terminar después de empezar.",
     "CALENDAR_010": "Google Calendar nos ha pedido que vayamos más despacio. Vuelve a intentarlo en un minuto.",
+    "CALENDAR_011": "Ya tienes cinco cuentas de Google conectadas, el máximo del calendario. Quita una para añadir otra.",
     "INBOUND_001": "Esa fuente de eventos no se conoce.",
     "INBOUND_002": "La entrega no incluye un identificador de entrega.",
     "SESS_001": "El host no tiene constancia de esa sesión.",

@@ -623,6 +623,7 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
 | `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
 | `CALENDAR_010` <a id="calendar_010" />   | Google Calendar's rate limit was reached; try again shortly | 429 |
+| `CALENDAR_011` <a id="calendar_011" />   | That is as many Google accounts as the calendar takes | 409 |
 
 `CALENDAR_003` is a range that runs backwards or covers more than 62 days.
 
@@ -635,8 +636,12 @@ else's. Start again from Connect Google Calendar.
 `CALENDAR_006` is Google refusing the code, returning no refresh token, or a
 consent screen where the calendar permission was left unticked.
 
-`CALENDAR_007` is no connection, or one Google has since revoked (or one sealed
-under a `CALENDAR_TOKEN_KEY` that was replaced): connect again.
+`CALENDAR_007` is no such connection of the caller's (a reconnect of an account
+since removed), or one Google has since revoked (or one sealed under a
+`CALENDAR_TOKEN_KEY` that was replaced): connect again.
+
+`CALENDAR_011` is a sixth Google account: a person connects five at most.
+Remove one, or reconnect one already listed, which does not count again.
 
 ## Inbound events
 

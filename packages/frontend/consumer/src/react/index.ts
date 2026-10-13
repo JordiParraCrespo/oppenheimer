@@ -21,9 +21,10 @@ export {
   useConnectGoogleCalendar,
   useCreateCalendarEvent,
   useDeleteCalendarEvent,
-  useDisconnectGoogleCalendar,
-  useGoogleCalendarConnection,
+  useGoogleCalendarConnections,
   useGoogleCalendarEvents,
+  useLatestGoogleCalendarRead,
+  useRemoveGoogleCalendarConnection,
   useStartGoogleCalendarConnection,
   useUpdateCalendarEvent,
 } from './calendar.queries';
