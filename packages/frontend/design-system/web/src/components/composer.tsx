@@ -233,23 +233,18 @@ function Composer({
     </div>
   );
 
-  if (above) {
-    return (
-      <div data-slot="composer-stack" className="flex flex-col">
-        {above}
-        {field}
-      </div>
-    );
-  }
-  if (!scope) return field;
+  if (!above && !scope) return field;
   return (
     <div data-slot="composer-stack" className="flex flex-col">
-      <div
-        data-slot="composer-scope"
-        className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
-      >
-        {scope}
-      </div>
+      {above}
+      {scope ? (
+        <div
+          data-slot="composer-scope"
+          className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
+        >
+          {scope}
+        </div>
+      ) : null}
       {field}
     </div>
   );
