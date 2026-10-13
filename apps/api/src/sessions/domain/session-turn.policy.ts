@@ -1,3 +1,4 @@
+import { TURN_MODEL_MAX_LENGTH } from '@oppenheimer/shared/protocol';
 import { SESSION_EVENT_KINDS, type SessionLogEntry } from './session-state.policy';
 
 /**
@@ -18,7 +19,7 @@ import { SESSION_EVENT_KINDS, type SessionLogEntry } from './session-state.polic
  *   completes on `done`, or on `idle` after having been seen working. It fails with
  *   the session and is cancelled when the session is stopped or closed under it.
  * - **headless** (the next slice): the runner reports `turn.started` and
- *   `turn.ended` with the exit code, result and cost, evidence that wins over the
+ *   `turn.ended` with the exit code, result, cost, model and token usage, evidence that wins over the
  *   inference above.
  */
 export const TURN_STATES = [
@@ -56,8 +57,10 @@ export const TURN_EVENT_KINDS = {
   /** The agent process for a turn started. Payload `{ turn?, agentSessionId? }`. */
   STARTED: 'turn.started',
   /**
-   * The agent process exited. Payload `{ turn?, exitCode, result?, costUsd?,
-   * permissionDenials?, outputRef? }`.
+   * The agent process exited. Payload `turnEndedPayloadSchema` in
+   * `@oppenheimer/shared/protocol`: `{ exitCode, result?, costUsd?,
+   * permissionDenials?, outputRef?, model?, inputTokens?, outputTokens?,
+   * cacheReadTokens?, cacheWriteTokens? }`.
    */
   ENDED: 'turn.ended',
 } as const;
@@ -80,6 +83,16 @@ export interface SessionTurnFold {
   costUsd: number | null;
   permissionDenials: number;
   outputRef: string | null;
+  /**
+   * The model and token usage the agent reported for the turn (23 §4). Null is
+   * "not measured": an interactive turn reports nothing, and an agent that does
+   * not print usage leaves them null too. Never zero for unknown.
+   */
+  model: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cacheReadTokens: number | null;
+  cacheWriteTokens: number | null;
 }
 
 export function isLiveTurn(turn: Pick<SessionTurnFold, 'state'> | null): boolean {
@@ -108,6 +121,11 @@ function newTurn(
     costUsd: null,
     permissionDenials: 0,
     outputRef: null,
+    model: null,
+    inputTokens: null,
+    outputTokens: null,
+    cacheReadTokens: null,
+    cacheWriteTokens: null,
   };
 }
 
@@ -125,6 +143,17 @@ function text(payload: unknown, name: string): string | null {
 function integer(payload: unknown, name: string): number | null {
   const value = field(payload, name);
   return typeof value === 'number' && Number.isInteger(value) ? value : null;
+}
+
+function tokenCount(payload: unknown, name: string): number | null {
+  const value = field(payload, name);
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+/** A model id longer than `session_turn."model"` holds is not one: it is dropped, never cut. */
+function modelId(payload: unknown): string | null {
+  const value = text(payload, 'model');
+  return value !== null && value.length <= TURN_MODEL_MAX_LENGTH ? value : null;
 }
 
 function finiteNumber(payload: unknown, name: string): number | null {
@@ -239,6 +268,11 @@ export function foldTurnEvent(
         costUsd: finiteNumber(event.payload, 'costUsd') ?? latest.costUsd,
         permissionDenials: integer(event.payload, 'permissionDenials') ?? latest.permissionDenials,
         outputRef: text(event.payload, 'outputRef') ?? latest.outputRef,
+        model: modelId(event.payload) ?? latest.model,
+        inputTokens: tokenCount(event.payload, 'inputTokens') ?? latest.inputTokens,
+        outputTokens: tokenCount(event.payload, 'outputTokens') ?? latest.outputTokens,
+        cacheReadTokens: tokenCount(event.payload, 'cacheReadTokens') ?? latest.cacheReadTokens,
+        cacheWriteTokens: tokenCount(event.payload, 'cacheWriteTokens') ?? latest.cacheWriteTokens,
       };
       // The exit code is the wrapper's, so it decides even a turn the screen had
       // already called finished.
@@ -280,6 +314,11 @@ export function sameTurn(a: SessionTurnFold | null, b: SessionTurnFold | null): 
     a.costUsd === b.costUsd &&
     a.permissionDenials === b.permissionDenials &&
     a.outputRef === b.outputRef &&
+    a.model === b.model &&
+    a.inputTokens === b.inputTokens &&
+    a.outputTokens === b.outputTokens &&
+    a.cacheReadTokens === b.cacheReadTokens &&
+    a.cacheWriteTokens === b.cacheWriteTokens &&
     a.prompt === b.prompt
   );
 }

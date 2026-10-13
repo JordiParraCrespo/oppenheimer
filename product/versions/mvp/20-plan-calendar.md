@@ -131,6 +131,16 @@ Access tokens are minted per request and never stored.
 
 Disconnect revokes the token at Google and deletes the row.
 
+> As built since, a person connects **up to five Google accounts**, keyed by
+> Google's `sub`, each with its own colour on the month and its own toggle
+> under the Google layer (`23-plan-milestones-stats-accounts.md` §5,
+> migration `1791000900000-AddCalendarAccounts`). The one-connection unique
+> above, `GET`/`DELETE /calendar/google/connection` and
+> `POST …/connection/start` are replaced by `GET`/`POST
+> /calendar/google/connections` and `DELETE …/connections/:id`; the
+> callback is still `POST /calendar/google/connection`. What follows in §4–5
+> is the single-account design as it was decided.
+
 ## 5. Reading Google
 
 No events are stored and nothing syncs. The Google layer is a read

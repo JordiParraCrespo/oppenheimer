@@ -92,7 +92,7 @@ export class ConsumerApp {
     return this.kernel.container.get(TOKENS.PullRequestsRepository);
   }
 
-  /** Plan's board: tasks, the goals over them, and the sessions a task started or links. */
+  /** Plan's board: tasks, the milestones over them, and the sessions a task started or links. */
   get tasks(): TasksRepository {
     return this.kernel.container.get(TOKENS.TasksRepository);
   }

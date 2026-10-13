@@ -219,12 +219,13 @@
       "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
       "AUTOMATIONS_008": "Esa ejecución no existe.",
       "TASKS_001": "Esa tarea no existe o se ha eliminado.",
-      "TASKS_002": "Ese objetivo no existe o se ha eliminado.",
+      "TASKS_002": "Ese hito no existe o se ha eliminado.",
       "TASKS_003": "Elige un espacio de trabajo antes de trabajar con tareas.",
       "TASKS_004": "Ese proyecto no admite tareas. Puede que se haya archivado.",
       "TASKS_005": "Esa sesión no existe o está en otro espacio de trabajo.",
       "TASKS_006": "El tablero cambió mientras movías esa tarea. Se ha recargado; inténtalo de nuevo.",
-      "TASKS_007": "Ese objetivo pertenece a otro proyecto.",
+      "TASKS_007": "Ese hito pertenece a otro proyecto.",
+      "TASKS_008": "Alguien lo ha cambiado desde que lo abriste. Recarga y vuelve a intentarlo.",
       "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
       "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
       "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
@@ -235,6 +236,7 @@
       "CALENDAR_008": "Google Calendar no ha respondido. Inténtalo de nuevo en un momento.",
       "CALENDAR_009": "Un evento tiene que terminar después de empezar.",
       "CALENDAR_010": "Google Calendar nos ha pedido que vayamos más despacio. Vuelve a intentarlo en un minuto.",
+      "CALENDAR_011": "Ya tienes cinco cuentas de Google conectadas, el máximo del calendario. Quita una para añadir otra.",
       "INBOUND_001": "Esa fuente de eventos no se conoce.",
       "INBOUND_002": "La entrega no incluye un identificador de entrega.",
       "SESS_001": "El host no tiene constancia de esa sesión.",
@@ -1393,14 +1395,11 @@
     "nav": {
       "label": "Plan",
       "tasks": "Tareas",
-      "calendar": "Calendario"
+      "calendar": "Calendario",
+      "milestones": "Hitos"
     },
     "sidebar": {
-      "projects": "Proyectos",
-      "all": "Todos los proyectos",
-      "unassigned": "Sin asignar",
-      "newProject": "Nuevo proyecto",
-      "loadFailed": "No se han podido cargar tus proyectos."
+      "unassigned": "Sin asignar"
     },
     "board": {
       "title": "Tareas",
@@ -1450,29 +1449,35 @@
       "endOfMonth": "Fin de mes",
       "inThreeMonths": "En 3 meses"
     },
-    "goals": {
-      "label": "Objetivos",
-      "title": "Objetivos",
-      "new": "Nuevo objetivo",
-      "empty": "Los objetivos agrupan tareas y cuentan cuántas están hechas.",
+    "milestones": {
+      "label": "Hitos",
+      "title": "Hitos",
+      "new": "Nuevo hito",
+      "empty": "Los hitos dividen un proyecto en etapas con una fecha objetivo. El progreso es la parte de sus tareas que está hecha.",
       "noTarget": "Sin fecha",
       "progress": "{{done}} / {{total}} tareas",
       "edit": "Editar {{name}}",
-      "loadFailed": "No se han podido cargar tus objetivos.",
-      "emptyTitle": "Aún no hay objetivos"
+      "loadFailed": "No se han podido cargar tus hitos.",
+      "emptyTitle": "No hay hitos en este proyecto",
+      "ofTasks_one": "de {{count}} tarea",
+      "ofTasks_other": "de {{count}} tareas",
+      "today": "Hoy",
+      "earlier": "Antes",
+      "later": "Después",
+      "clickToEdit": "Haz clic para editar"
     },
-    "goal": {
-      "newTitle": "Nuevo objetivo",
-      "editTitle": "Editar objetivo",
-      "name": "Objetivo",
+    "milestone": {
+      "newTitle": "Nuevo hito",
+      "editTitle": "Editar hito",
+      "name": "Hito",
       "namePlaceholder": "¿Qué quieres conseguir?",
       "target": "Fecha",
-      "add": "Añadir objetivo",
-      "delete": "Eliminar objetivo",
-      "deleteTitle": "¿Eliminar este objetivo?",
-      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin objetivo.",
-      "saveFailed": "No se ha podido guardar el objetivo.",
-      "deleteFailed": "No se ha podido eliminar el objetivo."
+      "add": "Añadir hito",
+      "delete": "Eliminar hito",
+      "deleteTitle": "¿Eliminar este hito?",
+      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+      "saveFailed": "No se ha podido guardar el hito.",
+      "deleteFailed": "No se ha podido eliminar el hito."
     },
     "dialog": {
       "newTitle": "Nueva tarea",
@@ -1483,7 +1488,7 @@
       "notesPlaceholder": "Añade notas",
       "status": "Estado",
       "project": "Proyecto",
-      "goal": "Objetivo",
+      "milestone": "Hito",
       "none": "Ninguno",
       "due": "Vence",
       "sessions": "Sesiones",
@@ -1530,23 +1535,35 @@
       "start": "Iniciar sesión de trabajo",
       "queue": "Poner en cola",
       "failed": "No se ha podido iniciar la sesión."
+    },
+    "filters": {
+      "milestone": "Hito",
+      "anyMilestone": "Cualquier hito",
+      "project": "Proyecto",
+      "allProjects": "Todos los proyectos",
+      "noProject": "Sin proyecto",
+      "allMilestones": "Todos los hitos",
+      "clear": "Limpiar"
     }
   },
   "calendar": {
     "sidebar": {
-      "layers": "Mostrar"
+      "layers": "Calendarios"
     },
     "layers": {
-      "events": "Mis eventos",
+      "events": "Personal",
       "google": "Google Calendar",
-      "tasks": "Tareas que vencen",
-      "automations": "Ejecuciones de automatizaciones"
+      "tasks": "Fechas de tareas",
+      "automations": "Automatizaciones"
     },
     "header": {
       "previous": "Mes anterior",
       "next": "Mes siguiente",
       "today": "Hoy",
-      "newEvent": "Nuevo evento"
+      "newEvent": "Nuevo evento",
+      "meetings": "reuniones",
+      "tasksDue": "tareas para entregar",
+      "runs": "ejecuciones de automatizaciones"
     },
     "grid": {
       "more_one": "{{count}} más",
@@ -1573,22 +1590,38 @@
     },
     "google": {
       "title": "Google Calendar",
+      "accounts": "Cuentas de Google",
       "description": "Muestra tus eventos de Google junto a los tuyos. Solo lectura: no se escribe nada en Google.",
       "connect": "Conectar Google Calendar",
+      "add": "Añadir cuenta",
+      "atLimit": "Puedes conectar hasta {{count}} cuentas de Google.",
       "reconnect": "Volver a conectar",
-      "revoked": "Google ya no nos deja leer este calendario. Vuelve a conectarlo para verlo.",
-      "connectedAs": "Conectado como {{email}}",
-      "disconnect": "Desconectar",
-      "disconnectTitle": "¿Desconectar Google Calendar?",
-      "disconnectDescription": "Sus eventos dejan de mostrarse. Puedes volver a conectarlo cuando quieras.",
-      "disconnectFailed": "No se ha podido desconectar Google Calendar.",
+      "connected": "Conectada",
+      "updatedNow": "Actualizado ahora mismo",
+      "updated": "Actualizado hace {{age}}",
+      "needsReconnect": "Hay que volver a conectarla",
+      "readFailed": "No se ha podido leer ahora",
+      "remove": "Quitar",
+      "removeLabel": "Quitar {{email}}",
+      "removeTitle": "¿Quitar esta cuenta de Google?",
+      "removeDescription": "{{email}} deja el calendario, y sus eventos con ella. Puedes volver a conectarla cuando quieras.",
+      "removeFailed": "No se ha podido quitar la cuenta de Google.",
       "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
-      "loadFailed": "No se ha podido comprobar la conexión con Google Calendar.",
+      "loadFailed": "No se han podido comprobar tus cuentas de Google.",
       "connecting": "Conectando Google Calendar…",
       "connectFailed": "No se ha podido conectar Google Calendar.",
       "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-      "back": "Volver al calendario",
-      "readOnly": "Solo lectura"
+      "back": "Volver al calendario"
+    },
+    "googleEvent": {
+      "untitled": "(Sin título)",
+      "when": "Cuándo",
+      "account": "Cuenta",
+      "shows": "Se muestra como",
+      "busy": "Ocupado",
+      "free": "Libre",
+      "readOnly": "Aquí es de solo lectura: cámbialo en Google Calendar.",
+      "open": "Abrir en Google Calendar"
     }
   },
   "hosts": {
@@ -2049,7 +2082,7 @@
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
     "taskAdded": "Tarea añadida.",
     "taskDeleted": "Tarea eliminada.",
-    "goalAdded": "Objetivo añadido.",
+    "milestoneAdded": "Hito añadido.",
     "taskSessionStarted": "Sesión iniciada.",
     "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar.",
     "pullRequestsSlowedDown": "GitHub nos pidió ir más despacio, así que a algunas filas les falta una parte. Aparecerá en la siguiente lectura.",

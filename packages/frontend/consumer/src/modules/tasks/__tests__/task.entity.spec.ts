@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareRank, GoalEntity, TaskEntity } from '../task.entity';
+import { compareRank, MilestoneEntity, TaskEntity } from '../task.entity';
 
 const task = (
   overrides: Partial<{
@@ -51,10 +51,10 @@ describe('TaskEntity', () => {
   });
 });
 
-describe('GoalEntity', () => {
+describe('MilestoneEntity', () => {
   it('is complete only when it has tasks and all are done', () => {
-    expect(new GoalEntity('g', 'p', 'G', null, 0, 0, new Date()).isComplete).toBe(false);
-    expect(new GoalEntity('g', 'p', 'G', null, 1, 4, new Date()).percent).toBe(25);
-    expect(new GoalEntity('g', 'p', 'G', null, 2, 2, new Date()).isComplete).toBe(true);
+    expect(new MilestoneEntity('g', 'p', 'G', null, 0, 0, new Date()).isComplete).toBe(false);
+    expect(new MilestoneEntity('g', 'p', 'G', null, 1, 4, new Date()).percent).toBe(25);
+    expect(new MilestoneEntity('g', 'p', 'G', null, 2, 2, new Date()).isComplete).toBe(true);
   });
 });

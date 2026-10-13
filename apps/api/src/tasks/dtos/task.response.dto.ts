@@ -27,7 +27,7 @@ export class TaskResponseDto {
   projectId!: string;
 
   @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
-  goalId!: string | null;
+  milestoneId!: string | null;
 
   @ApiProperty({ enum: TASK_STATUSES })
   status!: TaskStatus;
@@ -59,6 +59,24 @@ export class TaskResponseDto {
 
   @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
   completedAt!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description: 'Why the task waits on a person; null when it does not. Done clears it.',
+    example: 'Waiting on the keystore fix for Pixel 6',
+  })
+  blockedReason!: string | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
+  blockedAt!: string | null;
+
+  @ApiProperty({
+    description:
+      'Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.',
+    example: 3,
+  })
+  version!: number;
 
   @ApiProperty({ type: [TaskSessionLinkResponseDto], description: 'Oldest first.' })
   sessions!: TaskSessionLinkResponseDto[];
