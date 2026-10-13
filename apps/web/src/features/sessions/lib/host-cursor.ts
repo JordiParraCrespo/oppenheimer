@@ -20,7 +20,10 @@ const OWN_CURSOR_MODE = 7725;
  */
 export function bindHostCursor(term: Terminal): IDisposable & {
   visible(): boolean;
-  /** `applied` runs once the terminal has taken the change, or at once if there is none. */
+  /**
+   * `applied` runs once the terminal has taken every change asked for so
+   * far, and only for the latest call: a later call replaces it.
+   */
   suppress(hidden: boolean, applied?: () => void): void;
 } {
   let visible = true;
@@ -38,25 +41,27 @@ export function bindHostCursor(term: Terminal): IDisposable & {
     return false;
   });
 
-  // Callers waiting on a write xterm has not parsed yet. A second caller
-  // asking for the same state joins them rather than being told it is done:
-  // the terminal is not there until the write is.
-  let waiting: (() => void)[] | null = null;
+  // Writes xterm has not parsed yet, and the callback of the latest call. The
+  // terminal is where the latest call asked only once every write is parsed,
+  // so that is when the callback runs; one a later call replaced never does.
+  let unparsed = 0;
+  let latest: (() => void) | undefined;
+  const settle = () => {
+    const run = latest;
+    latest = undefined;
+    run?.();
+  };
   const suppress = (hidden: boolean, applied?: () => void) => {
-    if (hidden === suppressed || !visible) {
-      suppressed = hidden;
-      if (!applied) return;
-      if (waiting) waiting.push(applied);
-      else applied();
-      return;
+    latest = applied;
+    if (hidden !== suppressed && visible) {
+      unparsed += 1;
+      term.write(`\u001b[?25;${OWN_CURSOR_MODE}${hidden ? 'l' : 'h'}`, () => {
+        unparsed -= 1;
+        if (unparsed === 0) settle();
+      });
     }
     suppressed = hidden;
-    const callbacks = applied ? [applied] : [];
-    waiting = callbacks;
-    term.write(`\u001b[?25;${OWN_CURSOR_MODE}${hidden ? 'l' : 'h'}`, () => {
-      if (waiting === callbacks) waiting = null;
-      for (const callback of callbacks) callback();
-    });
+    if (unparsed === 0) settle();
   };
 
   return {

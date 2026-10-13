@@ -144,34 +144,25 @@ const harness = {
   renderer: () => (container.querySelector('.xterm-rows') ? 'dom' : 'webgl'),
   /**
    * Starts counting the cursors on screen in every painted frame: the
-   * terminal's own (the DOM renderer's cursor element, unless an overlay cell
-   * covers it) and the typeahead's (an overlay cell in the caret's colour). `stopWatching` hands the counts
+   * terminal's own (the DOM renderer's cursor element, unless a typeahead
+   * cell covers it) and the typeahead's (the cell its painter marks
+   * `data-cursor`). `stopWatching` hands the counts
    * back.
    */
   watchCursors(): void {
-    const caret = getComputedStyle(document.documentElement)
-      .getPropertyValue('--term-caret')
-      .trim();
-    const probe = document.createElement('i');
-    probe.style.color = caret;
-    document.body.appendChild(probe);
-    const caretColor = getComputedStyle(probe).color;
-    probe.remove();
     watching = true;
     frames = [];
     const sample = () => {
       // After the frame's callbacks, so what is counted is what was painted.
       setTimeout(() => {
-        const layer = Array.from(
-          container.querySelectorAll<HTMLElement>('.xterm-screen > div'),
-        ).find((element) => element.style.zIndex === '6');
-        // The terminal's cursor counts where it can be seen: an overlay cell
-        // painted over it hides it.
+        const cells = Array.from(container.querySelectorAll('[data-typeahead] > *'));
+        // The terminal's cursor counts where it can be seen: a typeahead
+        // cell painted over it hides it.
         const covered = (cursor: Element) => {
           const box = cursor.getBoundingClientRect();
           const x = box.left + box.width / 2;
           const y = box.top + box.height / 2;
-          return Array.from(layer?.children ?? []).some((cell) => {
+          return cells.some((cell) => {
             const over = cell.getBoundingClientRect();
             return x >= over.left && x <= over.right && y >= over.top && y <= over.bottom;
           });
@@ -179,9 +170,7 @@ const harness = {
         const own = Array.from(container.querySelectorAll('.xterm-rows .xterm-cursor')).filter(
           (cursor) => !covered(cursor),
         ).length;
-        const guessed = Array.from(layer?.children ?? []).filter(
-          (cell) => (cell as HTMLElement).style.backgroundColor === caretColor,
-        ).length;
+        const guessed = container.querySelectorAll('[data-typeahead] > [data-cursor]').length;
         frames.push(own + guessed);
       });
       if (watching) requestAnimationFrame(sample);

@@ -113,21 +113,16 @@ export function bindTypeahead(
   // A guess going away hands the cursor back to the terminal, whose show is
   // parsed a moment later, not now: cleared at once, the guess left a frame
   // with no cursor at all after every echo, and typing read as blinking. So
-  // the overlay clears once the terminal has its cursor back, unless a newer
-  // guess has been drawn by then.
-  let paints = 0;
+  // the overlay clears once the terminal has its cursor back; a newer guess
+  // drawn before then replaces that clear.
   const redraw = () => {
-    paints += 1;
     const view = options.shouldDraw() ? model.view() : null;
     if (view && view.cells.length > 0) {
       hostCursor.suppress(true);
       draw(view);
-      return;
+    } else {
+      hostCursor.suppress(false, () => draw(null));
     }
-    const paint = paints;
-    hostCursor.suppress(false, () => {
-      if (paint === paints) draw(null);
-    });
   };
 
   let expiry: ReturnType<typeof setTimeout> | null = null;
