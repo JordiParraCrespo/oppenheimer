@@ -136,51 +136,46 @@ export function RunsTable({ automationId }: { automationId?: string }) {
 
       {/* A refetch that fails keeps the page already drawn, with the
           failure above it. */}
-      <QueryState
-        query={runs}
-        stale="keep"
-        pending={
+      <QueryState query={runs} isEmpty={(data) => data.items.length === 0} stale="keep">
+        <QueryState.Pending>
           <div className="flex flex-col gap-1 px-1.5">
             <Skeleton className="h-11 w-full" />
             <Skeleton className="h-11 w-full" />
             <Skeleton className="h-11 w-full" />
           </div>
-        }
-        errorFallback={t('automations.runs.loadFailed')}
-        errorClassName="mx-1.5 mb-1.5"
-        empty={{
-          when: (data) => data.items.length === 0,
-          show: (
-            <RunsListEmpty>
-              {counts?.all || filters.dirty
-                ? t('automations.runs.noMatch')
-                : t('automations.page.runsEmpty')}
-            </RunsListEmpty>
-          ),
-        }}
-      >
-        {(data) =>
-          data.items.map((run) => (
-            <RunRow
-              key={run.id}
-              state={runState(run.status)}
-              title={runTitle(run, t)}
-              aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
-              routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
-              date={monthDay(run.createdAt, locale)}
-              time={clock(run.createdAt)}
-              disabled={!run.sessionId}
-              onClick={() => {
-                if (run.sessionId) {
-                  navigate({
-                    to: '/automations/$automationId/sessions/$sessionId',
-                    params: { automationId: run.automationId, sessionId: run.sessionId },
-                  });
-                }
-              }}
-            />
-          ))
-        }
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('automations.runs.loadFailed')} className="mx-1.5 mb-1.5" />
+        <QueryState.Empty>
+          <RunsListEmpty>
+            {counts?.all || filters.dirty
+              ? t('automations.runs.noMatch')
+              : t('automations.page.runsEmpty')}
+          </RunsListEmpty>
+        </QueryState.Empty>
+        <QueryState.Data of={runs}>
+          {(data) =>
+            data.items.map((run) => (
+              <RunRow
+                key={run.id}
+                state={runState(run.status)}
+                title={runTitle(run, t)}
+                aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
+                routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
+                date={monthDay(run.createdAt, locale)}
+                time={clock(run.createdAt)}
+                disabled={!run.sessionId}
+                onClick={() => {
+                  if (run.sessionId) {
+                    navigate({
+                      to: '/automations/$automationId/sessions/$sessionId',
+                      params: { automationId: run.automationId, sessionId: run.sessionId },
+                    });
+                  }
+                }}
+              />
+            ))
+          }
+        </QueryState.Data>
       </QueryState>
 
       {page?.total ? (

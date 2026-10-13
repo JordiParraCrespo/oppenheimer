@@ -132,6 +132,10 @@
       "neededBy": ["web"],
       "scripts": ["check:structure"]
     },
+    "scripts/query-state-slots.mjs": {
+      "identifiers": ["query-state-slots"],
+      "neededBy": ["web"]
+    },
     "scripts/check-react-compiler.mjs": {
       "identifiers": ["check-react-compiler", "check:compiler"],
       "neededBy": ["web"],

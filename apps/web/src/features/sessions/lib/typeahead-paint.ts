@@ -10,14 +10,12 @@ export interface TypeaheadColors {
   cursorText: string;
 }
 
-/** How one paint draws its cells, the cursor's look resolved. */
+/** The colours one paint uses, the cursor's resolved. */
 interface PaintColors {
   background: string;
   foreground: string;
   cursorBackground: string;
   cursorText: string;
-  /** The caret is a bar this many CSS pixels wide, in `cursorBackground`; `null` for a block. */
-  bar: number | null;
 }
 
 interface Painter {
@@ -68,11 +66,7 @@ export function createTypeaheadPainter(
       const box = screen?.getBoundingClientRect();
       if (!painter || !box || box.width === 0 || box.height === 0) return;
       // The cursor looks like the one it stands in for: the terminal's caret,
-      // a bar as the terminal draws it, or the inverse cell an Ink program
-      // paints. The caret's shape is the terminal's option, not a shape a
-      // program asked for: the host's cursor is hidden while a guess shows.
-      const bar =
-        caret && term.options.cursorStyle === 'bar' ? (term.options.cursorWidth ?? 1) : null;
+      // or the inverse cell an Ink program paints.
       painter.paint(
         view,
         {
@@ -80,7 +74,6 @@ export function createTypeaheadPainter(
           foreground: colors.foreground,
           cursorBackground: caret ? colors.cursor : colors.foreground,
           cursorText: caret ? colors.cursorText : colors.background,
-          bar,
         },
         box,
       );
@@ -97,16 +90,6 @@ export function createTypeaheadPainter(
   };
 }
 
-/** A DOM cell's colours: a block cursor inverts it, a bar is an inset edge. */
-function cellStyle(cursor: boolean, colors: PaintColors): string[] {
-  if (cursor && colors.bar === null) {
-    return [`background:${colors.cursorBackground}`, `color:${colors.cursorText}`];
-  }
-  const style = [`background:${colors.background}`, `color:${colors.foreground}`];
-  if (cursor) style.push(`box-shadow:inset ${colors.bar}px 0 0 ${colors.cursorBackground}`);
-  return style;
-}
-
 function cssFont(term: Terminal, size: number): string {
   return `${term.options.fontWeight ?? 'normal'} ${size}px ${term.options.fontFamily ?? 'monospace'}`;
 }
@@ -115,6 +98,9 @@ function cssFont(term: Terminal, size: number): string {
 function domPainter(term: Terminal, screen: HTMLElement): Painter {
   const layer = document.createElement('div');
   layer.setAttribute('aria-hidden', 'true');
+  // What the layer is and which cell is its cursor, for whoever inspects the
+  // page (the e2e cursor count reads these, not styles that may change).
+  layer.dataset.typeahead = '';
   layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:6;';
   screen.appendChild(layer);
   return {
@@ -128,6 +114,7 @@ function domPainter(term: Terminal, screen: HTMLElement): Painter {
       }
       view.cells.forEach((cell, index) => {
         const span = layer.children[index] as HTMLElement;
+        span.toggleAttribute('data-cursor', cell.cursor);
         span.textContent = cell.char;
         span.style.cssText = [
           'position:absolute',
@@ -140,7 +127,8 @@ function domPainter(term: Terminal, screen: HTMLElement): Painter {
           // After `font`, whose shorthand resets the line height.
           `font:${font}`,
           `line-height:${cellHeight}px`,
-          ...cellStyle(cell.cursor, colors),
+          `background:${cell.cursor ? colors.cursorBackground : colors.background}`,
+          `color:${cell.cursor ? colors.cursorText : colors.foreground}`,
         ].join(';');
       });
     },
@@ -163,6 +151,7 @@ function domPainter(term: Terminal, screen: HTMLElement): Painter {
 function canvasPainter(term: Terminal, screen: HTMLElement): Painter {
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
+  canvas.dataset.typeahead = '';
   canvas.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;z-index:6;';
   screen.appendChild(canvas);
   const context = canvas.getContext('2d');
@@ -205,15 +194,10 @@ function canvasPainter(term: Terminal, screen: HTMLElement): Painter {
       for (const cell of view.cells) {
         const left = Math.floor(cell.col * cellWidth);
         const right = Math.ceil((cell.col + 1) * cellWidth);
-        const block = cell.cursor && colors.bar === null;
-        context.fillStyle = block ? colors.cursorBackground : colors.background;
+        context.fillStyle = cell.cursor ? colors.cursorBackground : colors.background;
         context.fillRect(left, top, right - left, cellHeight);
-        context.fillStyle = block ? colors.cursorText : colors.foreground;
+        context.fillStyle = cell.cursor ? colors.cursorText : colors.foreground;
         context.fillText(cell.char, cell.col * cellWidth, top + charTop + deviceChar);
-        if (cell.cursor && colors.bar !== null) {
-          context.fillStyle = colors.cursorBackground;
-          context.fillRect(left, top, Math.max(1, Math.round(colors.bar * dpr)), cellHeight);
-        }
       }
     },
     clear() {

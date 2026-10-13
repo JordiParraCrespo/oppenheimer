@@ -12,8 +12,10 @@ import { cn } from '../lib/utils';
  * `size="lg"` is the routine page itself (28px title, 44px glyph); `md` is
  * the editor and every other page (24px, 36px); `display` is a page that
  * opens on its own name rather than a record's (Plan's Tasks and Calendar):
- * the ladder's H1, no glyph, and its facts under it in a `PageHeaderMeta`
- * with `indent={false}`, each a `PageHeaderStat`.
+ * the frames' 34px title, no glyph, and its facts under it in a
+ * `PageHeaderMeta` with `indent={false}`, each a `PageHeaderStat`. Handed to
+ * the row as `meta`, the facts sit under the title in one column and the
+ * actions align with their line, as the frames draw it.
  */
 function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   return (
@@ -62,6 +64,7 @@ function PageHeaderRow({
   icon,
   title,
   actions,
+  meta,
   size = 'md',
   className,
   ...props
@@ -70,13 +73,37 @@ function PageHeaderRow({
   /** The name, or a `PageHeaderTitleInput` while editing. */
   title: React.ReactNode;
   actions?: React.ReactNode;
+  /** A `PageHeaderMeta` under the title, the actions aligned with its line. */
+  meta?: React.ReactNode;
   size?: 'md' | 'lg' | 'display';
 }) {
+  const heading =
+    typeof title === 'string' ? (
+      <h1
+        className={cn(
+          'm-0 min-w-0 flex-1 truncate font-semibold text-fg',
+          size === 'display'
+            ? 'text-[34px] leading-[1.1] tracking-[-0.022em]'
+            : size === 'lg'
+              ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
+              : 'text-[24px] leading-[1.25] tracking-[-0.018em]',
+        )}
+      >
+        {title}
+      </h1>
+    ) : (
+      title
+    );
   return (
     <div
       data-slot="page-header-row"
       data-size={size}
-      className={cn('flex min-w-0 items-center gap-3', size === 'lg' && 'gap-3.5', className)}
+      className={cn(
+        'flex min-w-0 gap-3',
+        meta ? 'flex-wrap items-end gap-x-5' : 'items-center',
+        size === 'lg' && 'gap-3.5',
+        className,
+      )}
       {...props}
     >
       {icon && size !== 'display' ? (
@@ -90,21 +117,13 @@ function PageHeaderRow({
           {icon}
         </span>
       ) : null}
-      {typeof title === 'string' ? (
-        <h1
-          className={cn(
-            'm-0 min-w-0 flex-1 truncate font-semibold text-fg',
-            size === 'display'
-              ? 'text-h1'
-              : size === 'lg'
-                ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
-                : 'text-[24px] leading-[1.25] tracking-[-0.018em]',
-          )}
-        >
-          {title}
-        </h1>
+      {meta ? (
+        <div className="flex min-w-60 flex-1 flex-col gap-2">
+          {heading}
+          {meta}
+        </div>
       ) : (
-        title
+        heading
       )}
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
     </div>

@@ -66,4 +66,10 @@ export const CalendarErrors = {
     message: "Google Calendar's rate limit was reached; try again shortly",
     httpStatus: 429,
   },
+  /** The person already holds the five accounts the calendar takes; remove one first. */
+  GOOGLE_ACCOUNT_LIMIT_REACHED: {
+    code: 'CALENDAR_011',
+    message: 'That is as many Google accounts as the calendar takes',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

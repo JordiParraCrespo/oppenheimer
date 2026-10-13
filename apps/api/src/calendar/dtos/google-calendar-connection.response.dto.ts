@@ -1,19 +1,30 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { GOOGLE_CALENDAR_ACCOUNTS_MAX } from '@oppenheimer/shared';
 
-/** The caller's own Google Calendar connection, as the sidebar card shows it. */
+/** One of the caller's Google accounts, as the sidebar lists it. Never the token. */
 export class GoogleCalendarConnectionResponseDto {
-  @ApiProperty({ description: 'Whether the caller has connected, revoked or not.' })
-  connected!: boolean;
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
 
-  @ApiPropertyOptional({ nullable: true, type: String, example: 'ana@example.com' })
-  accountEmail!: string | null;
+  @ApiProperty({ example: 'ana@example.com' })
+  accountEmail!: string;
 
-  @ApiPropertyOptional({
-    nullable: true,
+  @ApiProperty({
     enum: ['active', 'revoked'],
-    description: '`revoked` when Google dropped the grant: the card offers Reconnect.',
+    description: '`revoked` when Google dropped the grant: the account offers Reconnect.',
   })
-  status!: 'active' | 'revoked' | null;
+  status!: 'active' | 'revoked';
+
+  @ApiProperty({
+    minimum: 0,
+    maximum: GOOGLE_CALENDAR_ACCOUNTS_MAX - 1,
+    description:
+      'The account’s colour on the month: the lowest free one when it was connected, never reassigned.',
+  })
+  colorIndex!: number;
+
+  @ApiProperty({ type: String, format: 'date-time', description: 'When it was first connected.' })
+  connectedAt!: string;
 }
 
 /** Where Connect Google Calendar sends the browser. */

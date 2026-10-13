@@ -10,31 +10,33 @@ export function PullRequestCommentsSummary({ address }: { address: PullRequestAd
   const { t } = useTranslation();
   const activity = usePullRequestActivity(address);
   return (
-    <QueryState
-      query={activity}
-      pending={<Skeleton className="h-5 w-32" />}
-      errorFallback={t('pullRequests.detail.activity.loadFailed')}
-    >
-      {(items) => {
-        const people = commenters(items);
-        return people.length ? (
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
-            {people.map((person) => (
-              <li key={person.login} className="flex items-center gap-2.5 text-operate">
-                <Avatar size="sm">
-                  <AvatarFallback>{person.login.slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span className="min-w-0 flex-1 truncate text-fg">@{person.login}</span>
-                <span className="text-sm text-fg-muted">
-                  {t('pullRequests.detail.rail.commentCount', { count: person.count })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="m-0 text-sm text-fg-muted">{t('pullRequests.detail.rail.noComments')}</p>
-        );
-      }}
+    <QueryState query={activity}>
+      <QueryState.Pending>
+        <Skeleton className="h-5 w-32" />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('pullRequests.detail.activity.loadFailed')} />
+      <QueryState.Data of={activity}>
+        {(items) => {
+          const people = commenters(items);
+          return people.length ? (
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
+              {people.map((person) => (
+                <li key={person.login} className="flex items-center gap-2.5 text-operate">
+                  <Avatar size="sm">
+                    <AvatarFallback>{person.login.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="min-w-0 flex-1 truncate text-fg">@{person.login}</span>
+                  <span className="text-sm text-fg-muted">
+                    {t('pullRequests.detail.rail.commentCount', { count: person.count })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="m-0 text-sm text-fg-muted">{t('pullRequests.detail.rail.noComments')}</p>
+          );
+        }}
+      </QueryState.Data>
     </QueryState>
   );
 }

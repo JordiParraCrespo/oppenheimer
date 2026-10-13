@@ -59,6 +59,7 @@ import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity
 import { SessionShareOrmEntity } from './database/session-share.orm-entity';
 import { SessionShareRepository } from './database/session-share.repository';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
+import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
@@ -78,6 +79,7 @@ import {
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
   SESSION_SHARE_REPOSITORY,
+  SESSION_USAGE_READER,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
 import { SessionResource } from './sessions.resource';
@@ -145,6 +147,7 @@ const adapters: Provider[] = [
   { provide: RECORD_SESSION_EVENTS, useClass: RecordSessionEventsResolver },
   { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
+  { provide: SESSION_USAGE_READER, useClass: SessionUsageRepository },
 ];
 
 /** Sessions: the row, its checkouts, its append-only log and the fold of that log. */
@@ -200,9 +203,10 @@ const adapters: Provider[] = [
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },
   ],
-  // The three application ports, and nothing else. The repository is this module's
-  // persistence adapter: publishing it would let the next slice read and append
-  // past `RECORD_SESSION_EVENTS`, which is the door that checks the host.
-  exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP, SESSION_RECONCILIATION],
+  // The three application ports and the usage read, and nothing else. The
+  // repository is this module's persistence adapter: publishing it would let the
+  // next slice read and append past `RECORD_SESSION_EVENTS`, which is the door
+  // that checks the host. The usage reader only aggregates, so it can be handed out.
+  exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP, SESSION_RECONCILIATION, SESSION_USAGE_READER],
 })
 export class SessionsModule {}

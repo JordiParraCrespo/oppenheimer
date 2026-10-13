@@ -35,8 +35,8 @@ const PROJECTS: ChipSelectOption[] = [
   { value: 'atlas', label: 'Atlas' },
   { value: 'client-sites', label: 'Client sites' },
 ];
-const GOAL_OPTIONS: ChipSelectOption[] = [
-  { value: 'none', label: 'No goal' },
+const MILESTONE_OPTIONS: ChipSelectOption[] = [
+  { value: 'none', label: 'No milestone' },
   { value: 'atlas-beta', label: 'Atlas public beta' },
 ];
 const HOST_OPTIONS: ChipSelectOption[] = [
@@ -51,7 +51,7 @@ const REPO_OPTIONS: ChipSelectOption[] = [
 /**
  * The task dialog and Start session as the system draws them, in one state
  * each: the statuses and the agent's models are fixed, so they are chips;
- * projects, goals, hosts and repositories grow with the workspace, so they
+ * projects, milestones, hosts and repositories grow with the workspace, so they
  * are `ChipSelect`s that filter. What a pick does (an offline host, a
  * queued start) is the console's, not drawn here.
  */
@@ -60,7 +60,7 @@ export function PlanDialogsDemo() {
   const [startOpen, setStartOpen] = React.useState(false);
   const [status, setStatus] = React.useState<TaskStatus>('todo');
   const [project, setProject] = React.useState('atlas');
-  const [goal, setGoal] = React.useState('atlas-beta');
+  const [milestone, setMilestone] = React.useState('atlas-beta');
   const [due, setDue] = React.useState<string | null>('2026-10-10');
   const [host, setHost] = React.useState('mac-studio');
   const [repo, setRepo] = React.useState('atlas');
@@ -108,9 +108,9 @@ export function PlanDialogsDemo() {
               <dd className="col-span-3 m-0">
                 <ChipSelect value={project} onValueChange={setProject} options={PROJECTS} aria-label="Project" searchPlaceholder="Search projects…" emptyText="No project matches." />
               </dd>
-              <dt className="col-span-1 text-fg-muted">Goal</dt>
+              <dt className="col-span-1 text-fg-muted">Milestone</dt>
               <dd className="col-span-3 m-0">
-                <ChipSelect value={goal} onValueChange={setGoal} options={GOAL_OPTIONS} aria-label="Goal" searchPlaceholder="Search goals…" emptyText="No goal matches." />
+                <ChipSelect value={milestone} onValueChange={setMilestone} options={MILESTONE_OPTIONS} aria-label="Milestone" searchPlaceholder="Search milestones…" emptyText="No milestone matches." />
               </dd>
               <dt className="col-span-1 text-fg-muted">Sessions</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">

@@ -11244,7 +11244,7 @@
     },
     "/api/v1/tasks": {
       "get": {
-        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).",
+        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).",
         "operationId": "findTasks",
         "parameters": [
           {
@@ -11278,10 +11278,10 @@
             }
           },
           {
-            "name": "goalId",
+            "name": "milestoneId",
             "required": false,
             "in": "query",
-            "description": "Only this goal’s tasks.",
+            "description": "Only this milestone’s tasks.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -11342,9 +11342,27 @@
         "tags": ["Tasks"]
       },
       "post": {
-        "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a goal brings its own project.",
+        "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project.",
         "operationId": "createTask",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Up to 128 characters. A retried request with the same key answers the row the first one made.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -11387,7 +11405,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found",
+            "description": "TASKS_002 — Milestone not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11397,7 +11415,7 @@
             }
           },
           "409": {
-            "description": "TASKS_007 — Goal of another project\n\nTASKS_004 — Project archived or missing",
+            "description": "TASKS_007 — Milestone of another project\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11480,7 +11498,7 @@
         "tags": ["Tasks"]
       },
       "patch": {
-        "description": "Title, notes, due date and time, project and goal. Absent fields stay and `null` clears. Choosing a goal files the task under the goal’s project; changing the project drops a goal of another project. The column is a move.",
+        "description": "Title, notes, due date and time, project and milestone. Absent fields stay and `null` clears. Choosing a milestone files the task under the milestone’s project; changing the project drops a milestone of another project. The column is a move.",
         "operationId": "updateTask",
         "parameters": [
           {
@@ -11534,7 +11552,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found\n\nTASKS_001 — Task not found",
+            "description": "TASKS_002 — Milestone not found\n\nTASKS_001 — Task not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11544,7 +11562,7 @@
             }
           },
           "409": {
-            "description": "TASKS_007 — Goal of another project\n\nTASKS_004 — Project archived or missing",
+            "description": "TASKS_008 — Changed since it was read\n\nTASKS_007 — Milestone of another project\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11570,6 +11588,23 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "if-match",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "The version you read; the delete is refused (`TASKS_008`) when it is no longer current.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -11601,6 +11636,16 @@
           },
           "404": {
             "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_008 — Changed since it was read",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11685,7 +11730,7 @@
             }
           },
           "409": {
-            "description": "TASKS_006 — Stale position",
+            "description": "TASKS_008 — Changed since it was read\n\nTASKS_006 — Stale position",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11970,16 +12015,16 @@
         "tags": ["Tasks"]
       }
     },
-    "/api/v1/goals": {
+    "/api/v1/milestones": {
       "get": {
-        "description": "Of one project or of the workspace, oldest first. Progress counts the goal’s tasks.",
-        "operationId": "findGoals",
+        "description": "Of one project or of the workspace, oldest first. Progress counts the milestone’s tasks.",
+        "operationId": "findMilestones",
         "parameters": [
           {
             "name": "projectId",
             "required": false,
             "in": "query",
-            "description": "Only this project’s goals.",
+            "description": "Only this project’s milestones.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -11994,7 +12039,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/GoalResponseDto"
+                    "$ref": "#/components/schemas/MilestoneResponseDto"
                   }
                 }
               }
@@ -12026,18 +12071,36 @@
             "bearer": []
           }
         ],
-        "summary": "List goals, with their progress",
+        "summary": "List milestones, with their progress",
         "tags": ["Tasks"]
       },
       "post": {
-        "operationId": "createGoal",
-        "parameters": [],
+        "operationId": "createMilestone",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Up to 128 characters. A retried request with the same key answers the row the first one made.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateGoalRequest"
+                "$ref": "#/components/schemas/CreateMilestoneRequest"
               }
             }
           }
@@ -12048,7 +12111,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoalResponseDto"
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
                 }
               }
             }
@@ -12089,14 +12152,14 @@
             "bearer": []
           }
         ],
-        "summary": "Add a goal to a project",
+        "summary": "Add a milestone to a project",
         "tags": ["Tasks"]
       }
     },
-    "/api/v1/goals/{id}": {
+    "/api/v1/milestones/{id}": {
       "patch": {
         "description": "Its name, target date or project. Moving it to another project moves its tasks.",
-        "operationId": "updateGoal",
+        "operationId": "updateMilestone",
         "parameters": [
           {
             "name": "id",
@@ -12112,7 +12175,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateGoalRequest"
+                "$ref": "#/components/schemas/UpdateMilestoneRequest"
               }
             }
           }
@@ -12123,7 +12186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoalResponseDto"
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
                 }
               }
             }
@@ -12149,7 +12212,7 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found",
+            "description": "TASKS_002 — Milestone not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12159,7 +12222,7 @@
             }
           },
           "409": {
-            "description": "TASKS_004 — Project archived or missing",
+            "description": "TASKS_008 — Changed since it was read\n\nTASKS_004 — Project archived or missing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12174,17 +12237,34 @@
             "bearer": []
           }
         ],
-        "summary": "Change a goal",
+        "summary": "Change a milestone",
         "tags": ["Tasks"]
       },
       "delete": {
-        "description": "Its tasks stay, with no goal.",
-        "operationId": "deleteGoal",
+        "description": "Its tasks stay, with no milestone.",
+        "operationId": "deleteMilestone",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "if-match",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "The version you read; the delete is refused (`TASKS_008`) when it is no longer current.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -12215,7 +12295,17 @@
             }
           },
           "404": {
-            "description": "TASKS_002 — Goal not found",
+            "description": "TASKS_002 — Milestone not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TASKS_008 — Changed since it was read",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12230,7 +12320,111 @@
             "bearer": []
           }
         ],
-        "summary": "Delete a goal",
+        "summary": "Delete a milestone",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/plan/stats": {
+      "get": {
+        "description": "Tasks created and completed, tokens per model and agent cost, per week from `from` to `to` (included, at most 371 days) in `timeZone`, for the workspace or one project, and the period of the same length before it unless `compare=false`.",
+        "operationId": "findPlanStats",
+        "parameters": [
+          {
+            "name": "compare",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["true", "false"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeZone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "Europe/Madrid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-13",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "example": "2026-09-14",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanStatsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TASKS_003 — No active organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Plan’s Stats for a period",
         "tags": ["Tasks"]
       }
     },
@@ -12508,10 +12702,10 @@
         "tags": ["Calendar"]
       }
     },
-    "/api/v1/calendar/google/connection": {
+    "/api/v1/calendar/google/connections": {
       "get": {
-        "description": "Whether there is one, the account, and whether Google still honours it.",
-        "operationId": "findGoogleCalendarConnection",
+        "description": "Every account connected to the calendar, oldest first (five at most): its address, whether Google still honours it, and its colour on the month.",
+        "operationId": "findGoogleCalendarConnections",
         "parameters": [],
         "responses": {
           "200": {
@@ -12519,7 +12713,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoogleCalendarConnectionResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GoogleCalendarConnectionResponseDto"
+                  }
                 }
               }
             }
@@ -12550,11 +12747,87 @@
             "bearer": []
           }
         ],
-        "summary": "The caller’s own Google Calendar connection",
+        "summary": "The caller’s own Google accounts",
         "tags": ["Calendar"]
       },
       "post": {
-        "description": "The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. A new grant replaces the caller’s old one.",
+        "description": "Google’s consent page, read-only, with its account chooser, carrying a single-use state for this caller in this workspace. With `connectionId`, a reconnect of that account: the chooser opens on its address. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.",
+        "operationId": "startGoogleCalendarConnection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartGoogleCalendarConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarConnectStartResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CALENDAR_011 / CALENDAR_007 — Five accounts already connected, or no such connection of the caller’s to reconnect",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CALENDAR_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start connecting a Google account",
+        "tags": ["Calendar"]
+      }
+    },
+    "/api/v1/calendar/google/connection": {
+      "post": {
+        "description": "The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. An account the caller already connected is reconnected in place, keeping its colour; another is added, up to five.",
         "operationId": "connectGoogleCalendar",
         "parameters": [],
         "requestBody": {
@@ -12608,6 +12881,16 @@
               }
             }
           },
+          "409": {
+            "description": "CALENDAR_011 — Five accounts already connected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After",
             "content": {
@@ -12636,11 +12919,24 @@
         ],
         "summary": "Finish connecting Google Calendar",
         "tags": ["Calendar"]
-      },
+      }
+    },
+    "/api/v1/calendar/google/connections/{id}": {
       "delete": {
-        "description": "Revokes the grant at Google and forgets it. With no connection, nothing happens.",
-        "operationId": "disconnectGoogleCalendar",
-        "parameters": [],
+        "description": "Revokes that account’s grant at Google and forgets it; its colour is free for the next account. An id that is not one of the caller’s does nothing.",
+        "operationId": "removeGoogleCalendarConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connection.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -12671,69 +12967,13 @@
             "bearer": []
           }
         ],
-        "summary": "Disconnect Google Calendar",
-        "tags": ["Calendar"]
-      }
-    },
-    "/api/v1/calendar/google/connection/start": {
-      "post": {
-        "description": "Google’s consent page, read-only, carrying a single-use state for this caller in this workspace. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.",
-        "operationId": "startGoogleCalendarConnection",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GoogleCalendarConnectStartResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "CALENDAR_004 — Not configured",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Start connecting Google Calendar",
+        "summary": "Remove a Google account from the calendar",
         "tags": ["Calendar"]
       }
     },
     "/api/v1/calendar/google/events": {
       "get": {
-        "description": "Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.",
+        "description": "Every connected account, read through to Google in parallel and not stored; times in `timeZone`. A meeting invited to two of the accounts comes back once. One account failing marks only itself in `accounts`. Read-only: these events cannot be changed here.",
         "operationId": "findGoogleCalendarEvents",
         "parameters": [
           {
@@ -12772,10 +13012,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CalendarEventResponseDto"
-                  }
+                  "$ref": "#/components/schemas/GoogleCalendarEventsResponseDto"
                 }
               }
             }
@@ -12810,28 +13047,8 @@
               }
             }
           },
-          "409": {
-            "description": "CALENDAR_007 — Not connected",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
           "429": {
-            "description": "CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "CALENDAR_008 — Google did not answer",
+            "description": "CALENDAR_010 — Google Calendar's rate limit stopped every account; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12856,7 +13073,7 @@
             "bearer": []
           }
         ],
-        "summary": "The caller’s Google Calendar between two days",
+        "summary": "The caller’s Google Calendars between two days",
         "tags": ["Calendar"]
       }
     },
@@ -20317,7 +20534,7 @@
             "format": "uuid",
             "description": "Always set: a task with no project is filed under the Unassigned one."
           },
-          "goalId": {
+          "milestoneId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -20356,6 +20573,22 @@
             "nullable": true,
             "format": "date-time"
           },
+          "blockedReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the task waits on a person; null when it does not. Done clears it.",
+            "example": "Waiting on the keystore fix for Pixel 6"
+          },
+          "blockedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "version": {
+            "type": "number",
+            "description": "Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.",
+            "example": 3
+          },
           "sessions": {
             "description": "Oldest first.",
             "type": "array",
@@ -20379,6 +20612,7 @@
           "rank",
           "title",
           "notes",
+          "version",
           "sessions",
           "createdAt",
           "updatedAt"
@@ -20405,7 +20639,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "goalId": {
+          "milestoneId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -20439,7 +20673,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "goalId": {
+          "milestoneId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -20453,6 +20687,17 @@
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "nullable": true
+          },
+          "blockedReason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
           }
         }
       },
@@ -20467,6 +20712,11 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
           }
         },
         "required": ["status", "afterTaskId"]
@@ -20595,7 +20845,7 @@
         },
         "required": ["seenStatus"]
       },
-      "GoalResponseDto": {
+      "MilestoneResponseDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -20624,14 +20874,19 @@
             "type": "number",
             "description": "All its tasks."
           },
+          "version": {
+            "type": "number",
+            "description": "Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.",
+            "example": 3
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "required": ["id", "projectId", "name", "doneCount", "totalCount", "createdAt"]
+        "required": ["id", "projectId", "name", "doneCount", "totalCount", "version", "createdAt"]
       },
-      "CreateGoalRequest": {
+      "CreateMilestoneRequest": {
         "type": "object",
         "properties": {
           "name": {
@@ -20651,7 +20906,7 @@
         },
         "required": ["name", "projectId"]
       },
-      "UpdateGoalRequest": {
+      "UpdateMilestoneRequest": {
         "type": "object",
         "properties": {
           "name": {
@@ -20667,8 +20922,201 @@
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
           }
         }
+      },
+      "PlanStatsModelTokensDto": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "The model the turns ran on; null when the agent did not say.",
+            "example": "claude-sonnet-4-5"
+          },
+          "total": {
+            "type": "number",
+            "description": "Input plus output tokens over the period."
+          },
+          "byWeek": {
+            "description": "Per week, in the order of `weeks`.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["total", "byWeek"]
+      },
+      "PlanStatsPeriodDto": {
+        "type": "object",
+        "properties": {
+          "tasksCompleted": {
+            "type": "number"
+          },
+          "tasksCreated": {
+            "type": "number"
+          },
+          "tokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Input plus output tokens of the turns that reported usage; null when none did."
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true,
+            "description": "What the agents reported the turns cost, in US dollars; null when none did."
+          },
+          "pullRequestsMerged": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pull requests merged; null while pull requests are not counted on Plan."
+          },
+          "completedByWeek": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "createdByWeek": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "tokensByModel": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanStatsModelTokensDto"
+            }
+          },
+          "costByWeek": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["tasksCompleted", "tasksCreated", "completedByWeek", "createdByWeek"]
+      },
+      "PlanStatsTotalsDto": {
+        "type": "object",
+        "properties": {
+          "tasksCompleted": {
+            "type": "number"
+          },
+          "tasksCreated": {
+            "type": "number"
+          },
+          "tokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Input plus output tokens of the turns that reported usage; null when none did."
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true,
+            "description": "What the agents reported the turns cost, in US dollars; null when none did."
+          },
+          "pullRequestsMerged": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pull requests merged; null while pull requests are not counted on Plan."
+          }
+        },
+        "required": ["tasksCompleted", "tasksCreated"]
+      },
+      "PlanStatsProjectDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tasksCompleted": {
+            "type": "number"
+          },
+          "tokens": {
+            "type": "number",
+            "nullable": true
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true
+          },
+          "pullRequestsMerged": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["projectId", "tasksCompleted"]
+      },
+      "PlanStatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Madrid"
+          },
+          "weeks": {
+            "description": "The Mondays of the weeks the period touches, oldest first; every series follows them.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "current": {
+            "$ref": "#/components/schemas/PlanStatsPeriodDto"
+          },
+          "previous": {
+            "nullable": true,
+            "description": "The period of the same length just before `from`; null without `compare`.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanStatsTotalsDto"
+              }
+            ]
+          },
+          "previousFrom": {
+            "type": "string",
+            "nullable": true,
+            "format": "date"
+          },
+          "previousTo": {
+            "type": "string",
+            "nullable": true,
+            "format": "date"
+          },
+          "projects": {
+            "description": "Projects with any activity in the period.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanStatsProjectDto"
+            }
+          },
+          "tokensMeasured": {
+            "type": "string",
+            "enum": ["headless", "none"],
+            "description": "`headless`: tokens and cost count the turns that report usage (headless ones); interactive turns in a terminal report none yet."
+          }
+        },
+        "required": ["from", "to", "timeZone", "weeks", "current", "projects", "tokensMeasured"]
       },
       "CalendarEventResponseDto": {
         "type": "object",
@@ -20791,23 +21239,41 @@
       "GoogleCalendarConnectionResponseDto": {
         "type": "object",
         "properties": {
-          "connected": {
-            "type": "boolean",
-            "description": "Whether the caller has connected, revoked or not."
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "accountEmail": {
             "type": "string",
-            "nullable": true,
             "example": "ana@example.com"
           },
           "status": {
             "type": "string",
-            "nullable": true,
             "enum": ["active", "revoked"],
-            "description": "`revoked` when Google dropped the grant: the card offers Reconnect."
+            "description": "`revoked` when Google dropped the grant: the account offers Reconnect."
+          },
+          "colorIndex": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "The account’s colour on the month: the lowest free one when it was connected, never reassigned."
+          },
+          "connectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it was first connected."
           }
         },
-        "required": ["connected"]
+        "required": ["id", "accountEmail", "status", "colorIndex", "connectedAt"]
+      },
+      "StartGoogleCalendarConnectionRequest": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "GoogleCalendarConnectStartResponseDto": {
         "type": "object",
@@ -20838,6 +21304,94 @@
           }
         },
         "required": ["code", "state"]
+      },
+      "GoogleCalendarEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Ours a uuid; Google’s its own id, with the day for an all-day event spanning several."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["personal", "google"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Empty for Google’s events, which are read-only here."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-07"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "09:30"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "10:00"
+          },
+          "busy": {
+            "type": "boolean",
+            "description": "Busy, or free time drawn muted."
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The connection it was read from; the first one read when two accounts share it."
+          }
+        },
+        "required": ["id", "source", "title", "notes", "date", "allDay", "busy", "connectionId"]
+      },
+      "GoogleCalendarAccountReadResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The connection."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ok", "revoked", "error"],
+            "description": "`revoked`: Google dropped the grant, reconnect it. `error`: Google did not answer for it this time."
+          }
+        },
+        "required": ["id", "status"]
+      },
+      "GoogleCalendarEventsResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoogleCalendarEventResponseDto"
+            }
+          },
+          "accounts": {
+            "description": "One per connection: one account failing marks only itself.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoogleCalendarAccountReadResponseDto"
+            }
+          }
+        },
+        "required": ["events", "accounts"]
       },
       "PullRequestLaneReasonDto": {
         "type": "object",

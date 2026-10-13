@@ -3,6 +3,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -36,7 +37,7 @@ export class ConnectGoogleCalendarHttpController {
   @ApiOperation({
     summary: 'Finish connecting Google Calendar',
     description:
-      'The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. A new grant replaces the caller’s old one.',
+      'The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. An account the caller already connected is reconnected in place, keeping its colour; another is added, up to five.',
   })
   @ApiResponse({ status: 201, type: GoogleCalendarConnectionResponseDto })
   @ApiProblemResponse({
@@ -46,16 +47,23 @@ export class ConnectGoogleCalendarHttpController {
   })
   @ApiProblemResponse({ status: 400, description: 'State rejected', code: 'CALENDAR_005' })
   @ApiProblemResponse({ status: 400, description: 'Google refused', code: 'CALENDAR_006' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Five accounts already connected',
+    code: 'CALENDAR_011',
+  })
   @ApiProblemResponse({ status: 503, description: 'Not configured', code: 'CALENDAR_004' })
   async connect(
     @CurrentAccessScope() scope: AccessScope,
     @Body() body: ConnectGoogleCalendarRequest,
   ): Promise<GoogleCalendarConnectionResponseDto> {
-    await this.commandBus.execute(new ConnectGoogleCalendarCommand({ scope, input: body }));
+    const id = await this.commandBus.execute<ConnectGoogleCalendarCommand, AggregateID>(
+      new ConnectGoogleCalendarCommand({ scope, input: body }),
+    );
     const connection = await this.queryBus.execute<
       FindGoogleCalendarConnectionQuery,
-      CalendarConnectionEntity | null
-    >(new FindGoogleCalendarConnectionQuery({ scope }));
+      CalendarConnectionEntity
+    >(new FindGoogleCalendarConnectionQuery({ scope, id }));
     return this.mapper.toResponse(connection);
   }
 }

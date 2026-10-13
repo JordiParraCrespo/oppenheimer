@@ -1,12 +1,16 @@
-import { type GoalResponseDto, heyApiSdk, type TaskResponseDto } from '@oppenheimer/api-client';
+import {
+  heyApiSdk,
+  type MilestoneResponseDto,
+  type TaskResponseDto,
+} from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { injectable } from 'inversify';
 import type { CreateSessionInput } from '../sessions/session.entity';
 import { toCreateSessionRequest } from '../sessions/sessions.repository';
 import {
-  GoalEntity,
-  type GoalInput,
+  MilestoneEntity,
+  type MilestoneInput,
   type TaskEntity as Task,
   TaskEntity,
   type TaskFilter,
@@ -19,7 +23,7 @@ function toTask(data: TaskResponseDto): Task {
   return new TaskEntity(
     data.id,
     data.projectId,
-    data.goalId ?? null,
+    data.milestoneId ?? null,
     data.status,
     data.rank,
     data.title,
@@ -34,11 +38,13 @@ function toTask(data: TaskResponseDto): Task {
     })),
     new Date(data.createdAt),
     new Date(data.updatedAt),
+    data.blockedReason ?? null,
+    data.version,
   );
 }
 
-function toGoal(data: GoalResponseDto): GoalEntity {
-  return new GoalEntity(
+function toMilestone(data: MilestoneResponseDto): MilestoneEntity {
+  return new MilestoneEntity(
     data.id,
     data.projectId,
     data.name,
@@ -141,32 +147,32 @@ export class TasksRepository {
     return toTask(data);
   }
 
-  @MapApiError(TasksErrors.FETCH_GOALS_FAILED)
-  async findGoals(): Promise<GoalEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findGoals(), TasksErrors.FETCH_GOALS_FAILED);
-    return data.map(toGoal);
+  @MapApiError(TasksErrors.FETCH_MILESTONES_FAILED)
+  async findMilestones(): Promise<MilestoneEntity[]> {
+    const data = await unwrapBody(heyApiSdk.findMilestones(), TasksErrors.FETCH_MILESTONES_FAILED);
+    return data.map(toMilestone);
   }
 
-  @MapApiError(TasksErrors.SAVE_GOAL_FAILED)
-  async createGoal(input: GoalInput): Promise<GoalEntity> {
+  @MapApiError(TasksErrors.SAVE_MILESTONE_FAILED)
+  async createMilestone(input: MilestoneInput): Promise<MilestoneEntity> {
     const data = await unwrapBody(
-      heyApiSdk.createGoal({ body: input }),
-      TasksErrors.SAVE_GOAL_FAILED,
+      heyApiSdk.createMilestone({ body: input }),
+      TasksErrors.SAVE_MILESTONE_FAILED,
     );
-    return toGoal(data);
+    return toMilestone(data);
   }
 
-  @MapApiError(TasksErrors.SAVE_GOAL_FAILED)
-  async updateGoal(id: string, input: Partial<GoalInput>): Promise<GoalEntity> {
+  @MapApiError(TasksErrors.SAVE_MILESTONE_FAILED)
+  async updateMilestone(id: string, input: Partial<MilestoneInput>): Promise<MilestoneEntity> {
     const data = await unwrapBody(
-      heyApiSdk.updateGoal({ path: { id }, body: input }),
-      TasksErrors.SAVE_GOAL_FAILED,
+      heyApiSdk.updateMilestone({ path: { id }, body: input }),
+      TasksErrors.SAVE_MILESTONE_FAILED,
     );
-    return toGoal(data);
+    return toMilestone(data);
   }
 
-  @MapApiError(TasksErrors.DELETE_GOAL_FAILED)
-  async removeGoal(id: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteGoal({ path: { id } }), TasksErrors.DELETE_GOAL_FAILED);
+  @MapApiError(TasksErrors.DELETE_MILESTONE_FAILED)
+  async removeMilestone(id: string): Promise<void> {
+    await unwrap(heyApiSdk.deleteMilestone({ path: { id } }), TasksErrors.DELETE_MILESTONE_FAILED);
   }
 }

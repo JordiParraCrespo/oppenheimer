@@ -23,6 +23,8 @@ import { StatBar } from './stat-card';
  *   others and reads its values out above the chart.
  * - `LineChart`: two series over time with a crosshair, a dot per series on
  *   the hovered point, ticks on the right, and the readout above.
+ * - `AreaChart`: volume over time (Plan's Stats): monotone curves over a
+ *   wash of their tone, ticks on the left, a label under every point.
  * - `RingChart`: shares of a whole (the lane mix) as a ring with rounded
  *   arcs and gaps, the total in the middle; its rows are `ChartRow`s.
  * - `BarList`: ranked rows (why pull requests waited), each a label, the
@@ -269,39 +271,121 @@ interface LinePoint {
   values: Record<string, number>;
 }
 
-function LineChart({
+/**
+ * A monotone cubic through the points (Fritsch–Carlson): smooth, and it never
+ * overshoots a value, so a curve never dips under zero or above a peak.
+ */
+function monotonePath(points: readonly (readonly [number, number])[]) {
+  const n = points.length;
+  const first = points[0];
+  if (!first) return '';
+  if (n < 2) return `M${first[0]} ${first[1]}`;
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = points[i] as [number, number];
+    const [x1, y1] = points[i + 1] as [number, number];
+    slope.push((y1 - y0) / (x1 - x0));
+  }
+  const m: number[] = points.map((_, i) => {
+    if (i === 0) return slope[0] ?? 0;
+    if (i === n - 1) return slope[n - 2] ?? 0;
+    const a = slope[i - 1] ?? 0;
+    const b = slope[i] ?? 0;
+    return a * b <= 0 ? 0 : (a + b) / 2;
+  });
+  for (let i = 0; i < n - 1; i++) {
+    const d = slope[i] ?? 0;
+    if (d === 0) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = (m[i] ?? 0) / d;
+    const b = (m[i + 1] ?? 0) / d;
+    const s = a * a + b * b;
+    if (s > 9) {
+      const t = 3 / Math.sqrt(s);
+      m[i] = t * a * d;
+      m[i + 1] = t * b * d;
+    }
+  }
+  let out = `M${first[0]} ${first[1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = points[i] as [number, number];
+    const [x1, y1] = points[i + 1] as [number, number];
+    const h = (x1 - x0) / 3;
+    out += ` C${x0 + h} ${y0 + (m[i] ?? 0) * h} ${x1 - h} ${y1 - (m[i + 1] ?? 0) * h} ${x1} ${y1}`;
+  }
+  return out;
+}
+
+/**
+ * The frame `LineChart` and `AreaChart` share: the readout over the plot,
+ * the rules at the ticks, the ticks on one side, the crosshair and a dot per
+ * series on the hovered point, and the points listed for assistive
+ * technology. The two charts differ only in how a series is drawn (`draw`),
+ * which side the ticks sit on, and the x axis under the plot.
+ */
+function TimeSeries({
+  slot,
   series,
   points,
   ticks,
-  height = 160,
-  format = plain,
-  from,
-  to,
+  height,
+  format,
+  tickSide,
+  draw,
+  xAxis,
   className,
   'aria-label': ariaLabel,
 }: {
+  slot: string;
   series: readonly ChartSeries[];
   points: readonly LinePoint[];
-  /** Y values to rule and label, ascending; the last is the top. */
   ticks: readonly number[];
-  height?: number;
-  format?: (value: number) => string;
-  /** The x axis's two ends ("Sep 5", "Oct 4"). */
-  from?: React.ReactNode;
-  to?: React.ReactNode;
+  height: number;
+  format: (value: number) => string;
+  tickSide: 'left' | 'right';
+  /** One series' marks inside the 100×100 plot, given its points there. */
+  draw: (s: ChartSeries, at: readonly (readonly [number, number])[]) => React.ReactNode;
+  /** What sits under the plot, given the hovered index and the x of a point (0–100). */
+  xAxis: (hover: number | null, x: (i: number) => number) => React.ReactNode;
   className?: string;
   'aria-label': string;
 }) {
   const [hover, setHover] = React.useState<number | null>(null);
-  const top = ticks[ticks.length - 1] ?? Math.max(1, ...points.flatMap((p) => Object.values(p.values)));
+  // An empty period (`ticks={[0]}`, every value 0) still draws its zero line.
+  const top = Math.max(1, ticks[ticks.length - 1] ?? Math.max(...points.flatMap((p) => Object.values(p.values))));
   const x = (i: number) => (points.length < 2 ? 50 : (i / (points.length - 1)) * 100);
   const y = (v: number) => 100 - (Math.min(v, top) / top) * 100;
-  const path = (key: string) => points.map((p, i) => `${i ? 'L' : 'M'}${x(i)} ${y(p.values[key] ?? 0)}`).join(' ');
   const hovered = hover === null ? null : points[hover];
+  const tickColumn = (
+    <div aria-hidden className="relative" style={{ height }}>
+      {ticks.map((t) => (
+        <span
+          key={t}
+          className={cn(
+            'figures absolute translate-y-1/2 text-[11px] text-fg-subtle',
+            tickSide === 'left' ? 'right-0' : 'left-0',
+          )}
+          // biome-ignore lint/style/noInlineStyles: the label sits at its value.
+          style={{ bottom: `${(t / top) * 100}%` }}
+        >
+          {format(t)}
+        </span>
+      ))}
+    </div>
+  );
   return (
-    <figure data-slot="line-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
+    <figure data-slot={slot} className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
       <ChartReadout series={series} label={hovered?.label} values={hovered?.values} format={format} />
-      <div className="grid grid-cols-[minmax(0,1fr)_34px] gap-x-2.5">
+      <div
+        className={cn(
+          'grid gap-x-2.5',
+          tickSide === 'left' ? 'grid-cols-[34px_minmax(0,1fr)] gap-x-2' : 'grid-cols-[minmax(0,1fr)_34px]',
+        )}
+      >
+        {tickSide === 'left' ? tickColumn : null}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: the hover readout repeats the figure's data, which the list below carries for assistive technology. */}
         <div
           className="relative"
@@ -320,16 +404,7 @@ function LineChart({
           ))}
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full overflow-visible">
             {series.map((s) => (
-              <path
-                key={s.key}
-                d={path(s.key)}
-                fill="none"
-                stroke={TONE_STROKE[s.tone]}
-                strokeWidth={2}
-                vectorEffect="non-scaling-stroke"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
+              <g key={s.key}>{draw(s, points.map((p, i) => [x(i), y(p.values[s.key] ?? 0)] as const))}</g>
             ))}
           </svg>
           {hovered && hover !== null ? (
@@ -357,25 +432,9 @@ function LineChart({
             ))}
           </div>
         </div>
-        <div aria-hidden className="relative" style={{ height }}>
-          {ticks.map((t) => (
-            <span
-              key={t}
-              className="figures absolute left-0 translate-y-1/2 text-[11px] text-fg-subtle"
-              // biome-ignore lint/style/noInlineStyles: the label sits at its value.
-              style={{ bottom: `${(t / top) * 100}%` }}
-            >
-              {format(t)}
-            </span>
-          ))}
-        </div>
+        {tickSide === 'right' ? tickColumn : null}
       </div>
-      {from || to ? (
-        <div aria-hidden className="flex justify-between pr-11 text-[11px] text-fg-subtle">
-          <span>{from}</span>
-          <span>{to}</span>
-        </div>
-      ) : null}
+      {xAxis(hover, x)}
       <ul className="sr-only">
         {points.map((p) => (
           <li key={p.label}>
@@ -384,6 +443,146 @@ function LineChart({
         ))}
       </ul>
     </figure>
+  );
+}
+
+function linePath(at: readonly (readonly [number, number])[]) {
+  return at.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join(' ');
+}
+
+function SeriesLine({ d, tone }: { d: string; tone: DataTone }) {
+  return (
+    <path
+      d={d}
+      fill="none"
+      stroke={TONE_STROKE[tone]}
+      strokeWidth={2}
+      vectorEffect="non-scaling-stroke"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    />
+  );
+}
+
+function LineChart({
+  series,
+  points,
+  ticks,
+  height = 160,
+  format = plain,
+  from,
+  to,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  series: readonly ChartSeries[];
+  points: readonly LinePoint[];
+  /** Y values to rule and label, ascending; the last is the top. */
+  ticks: readonly number[];
+  height?: number;
+  format?: (value: number) => string;
+  /** The x axis's two ends ("Sep 5", "Oct 4"). */
+  from?: React.ReactNode;
+  to?: React.ReactNode;
+  className?: string;
+  'aria-label': string;
+}) {
+  return (
+    <TimeSeries
+      slot="line-chart"
+      series={series}
+      points={points}
+      ticks={ticks}
+      height={height}
+      format={format}
+      tickSide="right"
+      draw={(s, at) => <SeriesLine d={linePath(at)} tone={s.tone} />}
+      xAxis={() =>
+        from || to ? (
+          <div aria-hidden className="flex justify-between pr-11 text-[11px] text-fg-subtle">
+            <span>{from}</span>
+            <span>{to}</span>
+          </div>
+        ) : null
+      }
+      className={className}
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+/**
+ * AreaChart — a quantity over time where the volume is the point (Plan's
+ * Stats: tokens and cost per week, tasks done). A monotone curve per series
+ * over a wash of its tone (12% alone, 8% when series overlap), the ticks on
+ * the left in a 34px column, a label under every point, and the same
+ * crosshair, dots and readout as `LineChart`. A comparison of two rates
+ * without volume stays a `LineChart`.
+ */
+function AreaChart({
+  series,
+  points,
+  ticks,
+  height = 200,
+  format = plain,
+  area = true,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  series: readonly ChartSeries[];
+  points: readonly LinePoint[];
+  /** Y values to rule and label, ascending; the last is the top. */
+  ticks: readonly number[];
+  height?: number;
+  format?: (value: number) => string;
+  /** The wash under each curve; off leaves the curves alone. */
+  area?: boolean;
+  className?: string;
+  'aria-label': string;
+}) {
+  const wash = series.length > 1 ? 0.08 : 0.12;
+  return (
+    <TimeSeries
+      slot="area-chart"
+      series={series}
+      points={points}
+      ticks={ticks}
+      height={height}
+      format={format}
+      tickSide="left"
+      draw={(s, at) => {
+        const line = monotonePath(at);
+        const first = at[0];
+        const last = at[at.length - 1];
+        return (
+          <>
+            {area && first && last && at.length > 1 ? (
+              <path d={`${line} L${last[0]} 100 L${first[0]} 100 Z`} fill={TONE_STROKE[s.tone]} opacity={wash} />
+            ) : null}
+            <SeriesLine d={line} tone={s.tone} />
+          </>
+        );
+      }}
+      xAxis={(hover, x) => (
+        <div aria-hidden className="relative ml-10.5 h-4">
+          {points.map((p, i) => (
+            <span
+              key={p.label}
+              className={cn(
+                'figures absolute -translate-x-1/2 text-[11px] whitespace-nowrap text-fg-subtle',
+                hover === i && 'text-fg',
+              )}
+              // biome-ignore lint/style/noInlineStyles: the label sits under its point.
+              style={{ left: `${x(i)}%` }}
+            >
+              {p.label}
+            </span>
+          ))}
+        </div>
+      )}
+      className={className}
+      aria-label={ariaLabel}
+    />
   );
 }
 
@@ -504,6 +703,6 @@ function BarList({
   );
 }
 
-export { BarChart, BarList, ChartHero, ChartLegend, ChartRow, LineChart, RingChart };
+export { AreaChart, BarChart, BarList, ChartHero, ChartLegend, ChartRow, LineChart, RingChart };
 export type { BarDatum, ChartSeries, LinePoint };
 export type { DataTone };

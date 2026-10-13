@@ -16,6 +16,8 @@ export class CalendarEventEntity {
     public readonly busy: boolean,
     /** Where a Google event opens in Google Calendar. */
     public readonly url: string | null,
+    /** The Google account a Google event was read from; null for a personal one. */
+    public readonly connectionId: string | null = null,
   ) {}
 
   get isEditable(): boolean {
@@ -23,23 +25,38 @@ export class CalendarEventEntity {
   }
 }
 
-/** The caller's own Google Calendar connection. */
+/**
+ * One of the caller's Google accounts (`23-plan-milestones-stats-accounts.md`
+ * §5): up to five, each with the colour the month draws its events in.
+ */
 export class GoogleCalendarConnectionEntity {
   constructor(
-    public readonly connected: boolean,
-    public readonly accountEmail: string | null,
-    public readonly status: 'active' | 'revoked' | null,
+    public readonly id: string,
+    public readonly accountEmail: string,
+    public readonly status: 'active' | 'revoked',
+    /** 0–4, picked when it was connected and never reassigned. */
+    public readonly colorIndex: number,
+    public readonly connectedAt: string,
   ) {}
 
-  /** Connected, and Google still honours the grant. */
+  /** Google still honours the grant. */
   get isActive(): boolean {
-    return this.connected && this.status === 'active';
+    return this.status === 'active';
   }
 
-  /** Google dropped the grant: the card offers Reconnect. */
+  /** Google dropped the grant: the account offers Reconnect. */
   get needsReconnect(): boolean {
-    return this.connected && this.status === 'revoked';
+    return this.status === 'revoked';
   }
+}
+
+/** How one account's read went: `revoked` asks to reconnect, `error` to retry. */
+export type GoogleAccountReadStatus = 'ok' | 'revoked' | 'error';
+
+/** Every account's events for the days on screen, each meeting once, and how each account went. */
+export interface GoogleCalendarRead {
+  events: CalendarEventEntity[];
+  accounts: { id: string; status: GoogleAccountReadStatus }[];
 }
 
 export interface CalendarEventInput {

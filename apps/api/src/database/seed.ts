@@ -57,7 +57,8 @@ import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-en
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
-import { GoalOrmEntity } from '../tasks/database/goal.orm-entity';
+import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
+import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
@@ -110,7 +111,8 @@ const dataSource = new DataSource({
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
     TaskOrmEntity,
-    GoalOrmEntity,
+    MilestoneOrmEntity,
+    PlanEventOrmEntity,
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,

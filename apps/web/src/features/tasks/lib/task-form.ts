@@ -18,7 +18,7 @@ export type TaskFormValues = Omit<CreateTaskDto, 'status' | 'projectId' | 'notes
 /** A new task's values: filed where the board is filtered, in the column it was asked from. */
 export function newTaskValues(
   projectId: string,
-  goalId: string | null,
+  milestoneId: string | null,
   status: TaskStatus = 'todo',
 ): TaskFormValues {
   return {
@@ -26,7 +26,7 @@ export function newTaskValues(
     notes: '',
     status,
     projectId,
-    goalId,
+    milestoneId,
     dueDate: null,
     dueTime: null,
   };
@@ -38,7 +38,7 @@ export function taskValues(task: TaskEntity): TaskFormValues {
     notes: task.notes,
     status: task.status,
     projectId: task.projectId,
-    goalId: task.goalId,
+    milestoneId: task.milestoneId,
     dueDate: task.dueDate,
     dueTime: task.dueTime,
   };
@@ -53,7 +53,7 @@ export function dueQuickDays(today: string) {
   };
 }
 
-/** A goal's target's one-click days: the end of this month, three months on. */
+/** A milestone's target's one-click days: the end of this month, three months on. */
 export function targetQuickDays(today: string) {
   const [year, month] = today.split('-').map(Number);
   const endOfMonth = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);

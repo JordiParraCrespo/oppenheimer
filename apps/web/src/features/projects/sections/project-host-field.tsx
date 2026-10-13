@@ -1,5 +1,6 @@
 import { Chip, FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { type Control, useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { ProjectFormValues } from '../lib/project-draft';
@@ -16,21 +17,28 @@ export function ProjectHostField({ control }: { control: Control<ProjectFormValu
     <div className="flex flex-col gap-2">
       <span className="text-xs text-fg-muted">{t('projects.dialog.host')}</span>
       <div className="flex flex-wrap gap-1.5">
-        {hosts.isPending ? (
-          <Skeleton className="h-7 w-24" />
-        ) : hosts.data?.length ? (
-          hosts.data.map((host) => (
-            <Chip
-              key={host.id}
-              selected={field.value === host.id}
-              onClick={() => field.onChange(field.value === host.id ? null : host.id)}
-            >
-              {host.name}
-            </Chip>
-          ))
-        ) : (
-          <FieldDescription>{t('projects.dialog.noHost')}</FieldDescription>
-        )}
+        <QueryState query={hosts} isEmpty={(rows) => rows.length === 0}>
+          <QueryState.Pending>
+            <Skeleton className="h-7 w-24" />
+          </QueryState.Pending>
+          <QueryState.Error fallback={t('sessions.new.host.failed')} />
+          <QueryState.Empty>
+            <FieldDescription>{t('projects.dialog.noHost')}</FieldDescription>
+          </QueryState.Empty>
+          <QueryState.Data of={hosts}>
+            {(rows) =>
+              rows.map((host) => (
+                <Chip
+                  key={host.id}
+                  selected={field.value === host.id}
+                  onClick={() => field.onChange(field.value === host.id ? null : host.id)}
+                >
+                  {host.name}
+                </Chip>
+              ))
+            }
+          </QueryState.Data>
+        </QueryState>
       </div>
     </div>
   );

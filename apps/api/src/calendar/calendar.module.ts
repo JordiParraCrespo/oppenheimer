@@ -18,8 +18,8 @@ import { CreateCalendarEventCommandHandler } from './commands/create-calendar-ev
 import { CreateCalendarEventHttpController } from './commands/create-calendar-event/create-calendar-event.http.controller';
 import { DeleteCalendarEventCommandHandler } from './commands/delete-calendar-event/delete-calendar-event.command-handler';
 import { DeleteCalendarEventHttpController } from './commands/delete-calendar-event/delete-calendar-event.http.controller';
-import { DisconnectGoogleCalendarCommandHandler } from './commands/disconnect-google-calendar/disconnect-google-calendar.command-handler';
-import { DisconnectGoogleCalendarHttpController } from './commands/disconnect-google-calendar/disconnect-google-calendar.http.controller';
+import { RemoveGoogleCalendarConnectionCommandHandler } from './commands/remove-google-calendar-connection/remove-google-calendar-connection.command-handler';
+import { RemoveGoogleCalendarConnectionHttpController } from './commands/remove-google-calendar-connection/remove-google-calendar-connection.http.controller';
 import { StartGoogleCalendarConnectionCommandHandler } from './commands/start-google-calendar-connection/start-google-calendar-connection.command-handler';
 import { StartGoogleCalendarConnectionHttpController } from './commands/start-google-calendar-connection/start-google-calendar-connection.http.controller';
 import { UpdateCalendarEventCommandHandler } from './commands/update-calendar-event/update-calendar-event.command-handler';
@@ -33,8 +33,9 @@ import { GoogleCalendarGateway } from './infrastructure/google-calendar.gateway'
 import { FindCalendarEventQueryHandler } from './queries/find-calendar-event/find-calendar-event.query-handler';
 import { FindCalendarEventsHttpController } from './queries/find-calendar-events/find-calendar-events.http.controller';
 import { FindCalendarEventsQueryHandler } from './queries/find-calendar-events/find-calendar-events.query-handler';
-import { FindGoogleCalendarConnectionHttpController } from './queries/find-google-calendar-connection/find-google-calendar-connection.http.controller';
 import { FindGoogleCalendarConnectionQueryHandler } from './queries/find-google-calendar-connection/find-google-calendar-connection.query-handler';
+import { FindGoogleCalendarConnectionsHttpController } from './queries/find-google-calendar-connections/find-google-calendar-connections.http.controller';
+import { FindGoogleCalendarConnectionsQueryHandler } from './queries/find-google-calendar-connections/find-google-calendar-connections.query-handler';
 import { FindGoogleCalendarEventsHttpController } from './queries/find-google-calendar-events/find-google-calendar-events.http.controller';
 import { FindGoogleCalendarEventsQueryHandler } from './queries/find-google-calendar-events/find-google-calendar-events.query-handler';
 
@@ -43,10 +44,10 @@ const httpControllers = [
   CreateCalendarEventHttpController,
   UpdateCalendarEventHttpController,
   DeleteCalendarEventHttpController,
-  FindGoogleCalendarConnectionHttpController,
+  FindGoogleCalendarConnectionsHttpController,
   StartGoogleCalendarConnectionHttpController,
   ConnectGoogleCalendarHttpController,
-  DisconnectGoogleCalendarHttpController,
+  RemoveGoogleCalendarConnectionHttpController,
   FindGoogleCalendarEventsHttpController,
 ];
 
@@ -56,18 +57,20 @@ const commandHandlers: Provider[] = [
   DeleteCalendarEventCommandHandler,
   StartGoogleCalendarConnectionCommandHandler,
   ConnectGoogleCalendarCommandHandler,
-  DisconnectGoogleCalendarCommandHandler,
+  RemoveGoogleCalendarConnectionCommandHandler,
 ];
 const queryHandlers: Provider[] = [
   FindCalendarEventsQueryHandler,
   FindCalendarEventQueryHandler,
   FindGoogleCalendarConnectionQueryHandler,
+  FindGoogleCalendarConnectionsQueryHandler,
   FindGoogleCalendarEventsQueryHandler,
 ];
 
 /**
  * Plan's calendar (`product/versions/mvp/20-plan-calendar.md`): the workspace's own
- * events, and a person's Google Calendar read through to Google and never stored.
+ * events, and a person's Google accounts (up to five, `23-plan-milestones-stats-accounts.md`
+ * §5) read through to Google and never stored.
  * Task due dates and automation runs are the console's to place beside them, from
  * the modules that own them.
  */

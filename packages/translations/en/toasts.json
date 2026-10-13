@@ -20,7 +20,7 @@
   "passwordChanged": "Password changed. Other devices are signed out.",
   "taskAdded": "Task added.",
   "taskDeleted": "Task deleted.",
-  "goalAdded": "Goal added.",
+  "milestoneAdded": "Milestone added.",
   "taskSessionStarted": "Session started.",
   "taskSessionQueued": "Session queued. It starts when its host reconnects.",
   "pullRequestsSlowedDown": "GitHub asked us to slow down, so some rows are missing a part. They fill on the next read.",

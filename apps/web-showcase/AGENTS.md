@@ -18,7 +18,7 @@ src/components/
 ├── demos.tsx         # interactive demos (menus, the Add host dialog, scope chips, slug field, composer, sidebar, terminal, carousel)
 ├── host-link-demos.tsx # a terminal stepping through its host-link phases (banner and notice forms), and the drop zones
 ├── drag-demos.tsx    # the drag layer on its own: a sortable pair of groups, tokens and bins with accepts
-├── task-board-demos.tsx # Plan's board, goals and display header
+├── task-board-demos.tsx # Plan's board, milestones and display header
 ├── calendar-demos.tsx # the month in the page's DragProvider, its sidebar, the date picker
 ├── plan-dialog-demos.tsx # the task and Start session dialogs (visual states only) and the session pane header
 ├── plan-fixtures.ts  # what the Plan demos share: the fixed today and the columns
@@ -26,6 +26,11 @@ src/components/
 ├── diff-demos.tsx    # a pull request's Changes: two files, unified or split, comments, the file tree, the file-type marks
 ├── pr-analytics-demos.tsx # the review month: bars, tiles, the wait lines, the lane ring, why PRs waited
 ├── pull-request-fixtures.ts # one pull request's patches and changed files
+├── control-demos.tsx # Switch, PillGroup and NumberStepper in settings rows
+├── share-demos.tsx   # PeoplePicker (members, an outside invite) and AccessList
+├── plan-stats-demos.tsx # MilestoneTimeline, FacetSelect (both forms), DateRangePicker, AreaChart, CalendarAccountList
+├── employee-demos.tsx # BotItem, AvatarPicker (popover and Profile), RoutineCard (on, paused, editing), the settings list rows, SettingsTopBar
+├── chat-demos.tsx    # the agent chat, one demo per Chat Components family, each on the pane's recessed ground
 ├── feedback.tsx      # Alert, Badge, Skeleton, the toast, the command palette's parts
 ├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
 ├── app-sidebar.tsx   # the TOC with scroll-spy

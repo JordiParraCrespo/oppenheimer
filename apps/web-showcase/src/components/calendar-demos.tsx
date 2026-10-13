@@ -1,8 +1,7 @@
 'use client';
 
-import { BrandGlyph } from '@oppenheimer/design-system-web/brand-glyph';
 import { Button } from '@oppenheimer/design-system-web/button';
-import { CalendarLayerItem, CalendarSourceCard } from '@oppenheimer/design-system-web/calendar-source';
+import { CalendarLayerItem } from '@oppenheimer/design-system-web/calendar-source';
 import { DatePicker } from '@oppenheimer/design-system-web/date-picker';
 import { DragProvider } from '@oppenheimer/design-system-web/drag';
 import { CalendarIcon, CircleCheckIcon, PlusIcon, UserIcon, ZapIcon } from '@oppenheimer/design-system-web/icons';
@@ -81,13 +80,6 @@ export function MonthCalendarDemo() {
             {layer.label}
           </CalendarLayerItem>
         ))}
-        <CalendarSourceCard
-          className="mx-2.5 mt-4"
-          mark={<BrandGlyph name="google" />}
-          name="Google Calendar"
-          account="jordiparra99@gmail.com"
-          status="Synced 2 min ago"
-        />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col gap-6">
         <PageHeader>
