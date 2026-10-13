@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>html,body{margin:0;height:100%}a{color:var(--link,#0066cc);text-decoration:none}a:hover{text-decoration:underline}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
+
+<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}">
+<div style="flex:none;position:relative;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px 0 20px;min-width:0">
+<span class="op-wordmark" style="font-size:17px">Oppenheimer</span>
+<span style="color:var(--fg-subtle)">/</span>
+<span style="font-size:14px;color:var(--fg-muted)">Sessions</span>
+<span style="color:var(--fg-subtle)">/</span>
+<span style="font-size:14px;color:var(--fg-muted)">acme-web</span>
+<span style="flex:1"></span>
+<div style="display:flex;align-items:center">
+<sc-for list="{{ presence }}" as="p" hint-placeholder-count="0">
+<span class="op-avatar op-avatar--sm" title="{{ p.title }}" style="margin-left:-6px;box-shadow:0 0 0 2px var(--background);background:{{ p.bg }};color:{{ p.fg }}">{{ p.initials }}</span>
+</sc-for>
+</div>
+<sc-if value="{{ presenceAny }}"><span style="font-size:12.5px;color:var(--fg-muted);white-space:nowrap">{{ presenceLabel }}</span></sc-if>
+</div>
+</sc-if>
+
+<div role="tablist" aria-label="Prototype screens" style="flex:none;align-self:center;order:-1;margin-top:10px;display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface);max-width:calc(100% - 32px);overflow-x:auto">
+<sc-for list="{{ screens }}" as="s" hint-placeholder-count="3">
+<button type="button" role="tab" aria-selected="{{ s.on }}" onClick="{{ s.pick }}" style="display:flex;align-items:center;gap:7px;height:28px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer;transition:background 80ms,color 80ms;background:{{ s.bg }};color:{{ s.fg }}"><span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ s.n }}</span>{{ s.label }}</button>
+</sc-for>
+</div>
+
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:{{ framePad }}">
+<div style="flex:1;min-height:0;width:100%;max-width:1040px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card)">
+
+<div style="flex:none;display:flex;align-items:center;gap:10px;min-width:0;height:46px;padding:0 12px 0 14px;border-bottom:1px solid var(--border-subtle)">
+<sc-if value="{{ isExternal }}"><span class="op-wordmark" style="flex:none;font-size:14px">Oppenheimer</span><span style="flex:none;color:var(--fg-subtle)">/</span></sc-if>
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ stateDot }}"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:13px">fix-auth-redirect</span>
+<span style="flex:none;font-size:12.5px;color:var(--fg-muted)">{{ stateLabel }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);white-space:nowrap">Claude Code · mbp-jordi</span>
+<span style="flex:1"></span>
+<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ isShared }}">
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ openShare }}" style="gap:7px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ sharedIcon }}" size="13" hint-size="13px,13px"></x-import>{{ sharedSummary }}</button>
+</sc-if>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ openShare }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="users" size="13" hint-size="13px,13px"></x-import>Share</button>
+</sc-if>
+<sc-if value="{{ isExternal }}">
+<div style="display:flex;align-items:center;padding-left:6px"><sc-for list="{{ presence }}" as="p" hint-placeholder-count="2"><span class="op-avatar op-avatar--sm" title="{{ p.title }}" style="width:22px;height:22px;font-size:9.5px;margin-left:2px;background:{{ p.bg }};color:{{ p.fg }}">{{ p.initials }}</span></sc-for></div>
+<span class="op-badge op-badge--neutral" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ accessIcon }}" size="12" hint-size="12px,12px"></x-import>{{ accessBadge }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Ends in {{ extEnds }}</span>
+<sc-if value="{{ isWriter }}"><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ leave }}" style="color:var(--fg-muted)">Leave</button></sc-if>
+</sc-if>
+</div>
+
+<sc-if value="{{ showTerm }}" hint-placeholder-val="{{ true }}">
+<div class="op-term" style="flex:1;min-height:0;position:relative">
+<div class="op-term__scroll" ref="{{ scrollRef }}">
+<sc-for list="{{ feed }}" as="f" hint-placeholder-count="4">
+<sc-if value="{{ f.you }}">
+<div class="op-term__you" style="flex-direction:column;gap:4px">
+<span style="display:flex;align-items:center;gap:8px;font-family:var(--font-sans);font-size:11.5px;color:var(--fg-muted)"><span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:980px;font-size:8.5px;font-weight:600;background:{{ f.bg }};color:{{ f.fg }}">{{ f.initials }}</span>{{ f.author }}<sc-if value="{{ f.meta }}"><span style="color:var(--fg-subtle)">· {{ f.meta }}</span></sc-if></span>
+<span style="display:flex;gap:10px"><span class="op-term__youchev">❯</span><span class="op-term__youtext">{{ f.text }}</span></span>
+</div>
+</sc-if>
+<sc-if value="{{ f.agent }}"><div class="op-term__turn"><div class="op-term__turnbody"><sc-for list="{{ f.lines }}" as="l" hint-placeholder-count="1"><div class="op-term__line" data-tone="{{ l.tone }}">{{ l.text }}</div></sc-for></div></div></sc-if>
+<sc-if value="{{ f.out }}"><div class="op-term__out"><sc-for list="{{ f.lines }}" as="l" hint-placeholder-count="2"><div class="op-term__line" data-tone="{{ l.tone }}">{{ l.text }}</div></sc-for></div></sc-if>
+<sc-if value="{{ f.note }}"><div class="op-term__line" data-tone="dim" style="margin:10px 0;font-family:var(--font-sans);font-size:12px">{{ f.text }}</div></sc-if>
+<sc-if value="{{ f.pending }}"><div class="op-term__turn"><div class="op-term__turnbody"><div class="op-term__line op-term__thinking">Thinking…</div></div></div></sc-if>
+</sc-for>
+</div>
+
+<div class="op-term__prompt"><span class="op-term__chev">❯</span><input class="op-term__input" placeholder="{{ promptPh }}" value="{{ draft }}" onChange="{{ setDraft }}" onKeyDown="{{ draftKey }}" disabled="{{ promptLocked }}"></div>
+<div class="op-term__status">
+<span class="op-term__statusitem op-link"><span class="op-link__dot"></span><span class="op-link__label">Connected</span></span>
+<span class="op-term__statusitem">6% used · 4h 2m</span>
+<span class="op-term__statusitem">51% used · 4d 3h</span>
+<span class="op-term__statusitem">763.4 MB</span>
+<span class="op-term__statusitem">bypass permissions on</span>
+<span class="op-term__statusitem">1 host</span>
+<sc-if value="{{ isShared }}"><span class="op-term__statusitem">{{ sharedStatus }}</span></sc-if>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<sc-if value="{{ dlgOpen }}">
+<div class="op-scrim" onClick="{{ closeShare }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick="{{ stop }}" style="max-width:560px;overflow:visible">
+<div class="op-dialog__head"><h2 class="op-dialog__title" id="share-title" style="margin:0">{{ dlgTitle }}</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeShare }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
+<p class="op-dialog__desc" style="margin:0"><span style="font-family:var(--font-mono);font-size:13px">fix-auth-redirect</span> · Claude Code on mbp-jordi</p>
+
+<sc-if value="{{ composing }}" hint-placeholder-val="{{ true }}">
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px;max-height:calc(100vh - 220px);overflow-y:auto">
+
+<div class="op-field">
+<span class="op-label">Who</span>
+<div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface);align-self:flex-start">
+<sc-for list="{{ modes }}" as="m" hint-placeholder-count="2">
+<button type="button" onClick="{{ m.pick }}" style="display:flex;align-items:center;gap:7px;height:28px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="13" hint-size="13px,13px"></x-import>{{ m.label }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ modePeople }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative">
+<label class="op-input op-input--md" style="cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mail" size="15" hint-size="15px,15px"></x-import></span><input class="op-input__el" type="text" autoFocus="{{ true }}" placeholder="Name or email" value="{{ q }}" onChange="{{ setQ }}" onFocus="{{ focusQ }}" onBlur="{{ blurQ }}" onKeyDown="{{ qKey }}"></label>
+<sc-if value="{{ suggestOpen }}">
+<div class="op-listbox" role="listbox" style="right:0">
+<sc-for list="{{ suggestions }}" as="o" hint-placeholder-count="3">
+<button class="op-option" type="button" role="option" onMouseDown="{{ o.hold }}" onClick="{{ o.pick }}" style="padding:7px 10px;gap:10px;font-size:13px">
+<span class="op-avatar op-avatar--sm" style="flex:none">{{ o.initials }}</span>
+<span class="op-option__stack"><span>{{ o.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11.5px">{{ o.desc }}</span></span>
+</button>
+</sc-for>
+<sc-if value="{{ suggestNone }}"><div class="op-listbox__empty">Type a full email address to invite someone outside the workspace.</div></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ peopleAny }}">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ people }}" as="p" hint-placeholder-count="1">
+<span class="op-chip" style="gap:7px;padding-left:4px"><span class="op-avatar op-avatar--sm" style="width:20px;height:20px;font-size:9px">{{ p.initials }}</span>{{ p.name }}<sc-if value="{{ p.external }}"><span style="font-size:11.5px;color:var(--fg-subtle)">outside workspace</span></sc-if><button class="op-chip__x" type="button" aria-label="Remove {{ p.name }}" onClick="{{ p.remove }}">×</button></span>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{ modeLink }}">
+<span class="op-hint">Anyone who opens the link and signs in can watch. Link access is always view only.</span>
+</sc-if>
+</div>
+
+<div class="op-field">
+<span class="op-label">Permission</span>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{ accessOpts }}" as="a" hint-placeholder-count="2">
+<button type="button" role="radio" aria-checked="{{ a.on }}" onClick="{{ a.pick }}" disabled="{{ a.off }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 14px;border-radius:14px;font:inherit;text-align:left;cursor:pointer;transition:background 80ms,border-color 80ms,opacity 80ms;border:1px solid {{ a.bd }};background:{{ a.bg }};color:var(--fg);opacity:{{ a.op }}">
+<span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500"><span style="display:flex;color:{{ a.ic }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ a.icon }}" size="15" hint-size="15px,15px"></x-import></span>{{ a.label }}</span>
+<span style="font-size:12.5px;line-height:1.4;color:var(--fg-muted);text-wrap:pretty">{{ a.desc }}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ writeLocked }}"><span class="op-hint">Write access needs named people. Switch to “Specific people” to grant it.</span></sc-if>
+</div>
+
+<sc-if value="{{ isWrite }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid color-mix(in srgb, var(--danger) 38%, transparent);background:color-mix(in srgb, var(--danger) 6%, var(--card))">
+<div style="display:flex;gap:10px;align-items:flex-start">
+<span style="display:flex;flex:none;margin-top:2px;color:var(--danger)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-triangle" size="16" hint-size="16px,16px"></x-import></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:14px;font-weight:600;color:var(--danger)">{{ writeWho }} will act as you on mbp-jordi</span>
+<span style="font-size:13px;line-height:1.5;color:var(--fg);text-wrap:pretty">Everything they send runs with your credentials, your GitHub token and bypass permissions on. They can push to acme/web, delete files and spend your quota.</span>
+</div>
+</div>
+<label class="op-check" style="font-size:13px">
+<input type="checkbox" checked="{{ ack }}" onChange="{{ toggleAck }}">
+<span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+<span class="op-check__text">I understand they act as me on this host</span>
+</label>
+</div>
+</sc-if>
+
+<div class="op-field">
+<span class="op-label">For how long</span>
+<div class="op-pills">
+<sc-for list="{{ durPills }}" as="d" hint-placeholder-count="5">
+<button class="op-pill" type="button" data-on="{{ d.on }}" disabled="{{ d.off }}" onClick="{{ d.pick }}" style="opacity:{{ d.op }}">{{ d.label }}</button>
+</sc-for>
+</div>
+<span class="op-hint">{{ durHint }}</span>
+</div>
+</div>
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ cancelCompose }}">Cancel</button>
+<button class="op-btn op-btn--md {{ submitVariant }}" type="button" disabled="{{ submitBlocked }}" onClick="{{ submit }}">{{ submitLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ managing }}">
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px">
+<div class="op-field">
+<span class="op-label">Link</span>
+<div style="display:flex;align-items:center;gap:8px;padding:5px 5px 5px 14px;border-radius:10px;background:var(--field);border:1px solid var(--border-subtle)">
+<code style="flex:1;min-width:0;font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">oppenheimer.dev/s/fx7Q-2kLm</code>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ copyLink }}" style="flex:none;gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ copyIcon }}" size="13" hint-size="13px,13px"></x-import>{{ copyLabel }}</button>
+</div>
+<span class="op-hint">{{ linkHint }}</span>
+</div>
+<div class="op-field">
+<span class="op-label">Who has access</span>
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px">
+<sc-for list="{{ accessRows }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 12px;border-top:{{ r.sep }}">
+<span class="op-avatar op-avatar--sm" style="flex:none;background:{{ r.bg }};color:{{ r.fg }}">{{ r.initials }}</span>
+<span style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0"><span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+<span class="op-badge op-badge--neutral" style="flex:none">{{ r.role }}</span>
+<span style="flex:none;width:72px;text-align:right;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ r.ends }}</span>
+<sc-if value="{{ r.removable }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Remove access" title="Remove access" onClick="{{ r.remove }}" style="flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button></sc-if>
+<sc-if value="{{ r.fixed }}"><span style="flex:none;width:28px"></span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ stopSharing }}" style="color:var(--danger)">Stop sharing</button>
+<span style="flex:1"></span>
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ addMore }}">Add people</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ closeShare }}">Done</button>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+const MEMBERS = [
+  { id: 'ana', name: 'Ana Ruiz', email: 'ana@acme.dev', initials: 'AR' },
+  { id: 'lea', name: 'Lea Brandt', email: 'lea@acme.dev', initials: 'LB' },
+  { id: 'marc', name: 'Marc Soler', email: 'marc@acme.dev', initials: 'MS' },
+  { id: 'tomas', name: 'Tomás Vidal', email: 'tomas@acme.dev', initials: 'TV' },
+];
+const DUR = {
+  '1h': { label: '1 hour', end: 'Oct 13, 15:20', rel: '59m' },
+  '8h': { label: '8 hours', end: 'Oct 13, 22:20', rel: '7h 59m' },
+  '24h': { label: '24 hours', end: 'Oct 14, 14:20', rel: '23h 59m' },
+  '7d': { label: '7 days', end: 'Oct 20, 14:20', rel: '6d 23h' },
+  none: { label: 'Never expires', end: null, rel: 'never' },
+};
+const L = (text, tone) => ({ text, tone: tone || '' });
+const JP = { author: 'Jordi Parra', initials: 'JP', bg: 'var(--primary)', fg: '#fff' };
+const AR = { author: 'Ana Ruiz', initials: 'AR', bg: 'color-mix(in srgb, var(--primary) 14%, var(--card))', fg: 'var(--primary)' };
+const BASE = [
+  { you: true, ...JP, text: 'The login redirect drops the ?next param. Find why and fix it.' },
+  { agent: true, lines: [L('Reading src/auth/redirect.ts and the middleware that calls it.')] },
+  { out: true, lines: [L('$ rg -n "next=" src/auth', 'dim'), L("src/auth/redirect.ts:42  const target = url.searchParams.get('next')"), L("src/middleware.ts:18    return NextResponse.redirect(new URL('/login', req.url))")] },
+  { agent: true, lines: [L('The middleware builds /login without carrying next. Patching middleware.ts to append it.')] },
+  { out: true, lines: [L('M src/middleware.ts  +4 −1', 'accent'), L('$ pnpm test auth', 'dim'), L('✓ 14 passed (1.8s)', 'success')] },
+];
+const STREAM = [
+  { agent: true, lines: [L('Adding a test for an encoded next value.')] },
+  { out: true, lines: [L('A src/auth/__tests__/redirect.test.ts  +22', 'accent')] },
+  { out: true, lines: [L('$ pnpm test auth', 'dim'), L('✓ 15 passed (1.9s)', 'success')] },
+  { agent: true, lines: [L('Done. Two files changed. Ready to commit when you are.')] },
+];
+const REPLY = [
+  { agent: true, lines: [L('Decoding next until it is stable, capped at three passes, then validating it is same-origin.')] },
+  { out: true, lines: [L('M src/auth/redirect.ts  +6 −2', 'accent'), L('$ pnpm test auth', 'dim'), L('✓ 16 passed (2.0s)', 'success')] },
+];
+const REQ = 'Also handle a next value that is URL-encoded twice.';
+const isEmail = s => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(s);
+
+class Component extends DCLogic {
+  state = {
+    screen: 'owner',
+    dlg: false, view: 'compose', mode: 'people', people: [], q: '', qFocus: false,
+    access: 'read', approve: true, ack: false, dur: '24h',
+    shared: null, copied: false, request: false, ownerExtra: [],
+    vIdx: 0, requested: false, ended: false,
+    joined: true, draft: '', pending: null, wExtra: [],
+  };
+  scrollRef = React.createRef();
+  timers = [];
+  later(fn, ms) { const t = setTimeout(fn, ms); this.timers.push(t); }
+  componentDidMount() { this.applyTheme(); this.tick = setInterval(() => { if (this.state.screen === 'viewer' && !this.state.ended) this.setState(s => ({ vIdx: s.vIdx >= STREAM.length + 2 ? 0 : s.vIdx + 1 })); }, 2400); }
+  componentWillUnmount() { clearInterval(this.tick); this.timers.forEach(clearTimeout); }
+  componentDidUpdate(pp) { if (pp.theme !== this.props.theme) this.applyTheme(); const el = this.scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }
+  applyTheme() { document.documentElement.setAttribute('data-theme', this.props.theme === 'dark' ? 'dark' : 'light'); }
+
+  addPerson(p) { this.setState(s => s.people.find(x => x.id === p.id) ? { q: '' } : { people: [...s.people, p], q: '' }); }
+  submit() {
+    const s = this.state;
+    const access = s.mode === 'link' ? 'read' : s.access;
+    this.setState({ view: 'manage', shared: { mode: s.mode, people: s.people, access, approve: s.approve, dur: s.dur } });
+    
+  }
+  approveReq() {
+    this.setState(s => ({ request: false, ownerExtra: [...s.ownerExtra, { you: true, ...AR, meta: 'approved by you', text: REQ }, { pending: true }] }));
+    this.later(() => this.setState(s => ({ ownerExtra: [...s.ownerExtra.filter(f => !f.pending), ...REPLY] })), 1400);
+  }
+  sendWriter() {
+    const text = this.state.draft.trim(); if (!text) return;
+    const approval = false;
+    if (approval) {
+      this.setState({ draft: '', pending: text });
+      this.later(() => { if (this.state.pending !== text) return; this.setState(s => ({ pending: null, wExtra: [...s.wExtra, { you: true, ...AR, meta: 'approved by Jordi Parra', text }, { pending: true }] })); this.later(() => this.setState(s => ({ wExtra: [...s.wExtra.filter(f => !f.pending), ...REPLY] })), 1400); }, 2600);
+    } else {
+      this.setState(s => ({ draft: '', wExtra: [...s.wExtra, { you: true, ...AR, text }, { pending: true }] }));
+      this.later(() => this.setState(s => ({ wExtra: [...s.wExtra.filter(f => !f.pending), ...REPLY] })), 1400);
+    }
+  }
+
+  renderVals() {
+    const s = this.state;
+    const approval = this.props.approval ?? true;
+    const isOwner = s.screen === 'owner', isViewer = s.screen === 'viewer', isWriter = s.screen === 'writer';
+    const go = screen => () => this.setState({ screen, dlg: false });
+    const screens = [['owner', '1', 'Share flow'], ['viewer', '2', 'Viewer · read'], ['writer', '3', 'Collaborator · write']].map(([k, n, label]) => ({ n, label, on: s.screen === k, pick: go(k), bg: s.screen === k ? 'var(--card)' : 'transparent', fg: s.screen === k ? 'var(--fg)' : 'var(--fg-muted)' }));
+
+    let feed = BASE;
+    if (isOwner) feed = [...BASE, ...s.ownerExtra];
+    if (isViewer) feed = [...BASE, { note: true, text: 'Lea Brandt joined · view only' }, ...STREAM.slice(0, s.vIdx), ...(s.vIdx < STREAM.length ? [{ pending: true }] : [])];
+    if (isWriter) feed = [...BASE, { note: true, text: 'Ana Ruiz joined · can write' }, ...s.wExtra];
+
+    const sh = s.shared;
+    const shPeople = sh ? sh.people : [];
+    const av = (p, extra) => ({ initials: p.initials, title: p.name, bg: 'var(--control)', fg: 'var(--fg)', ...extra });
+    let presence = [], presenceLabel = '';
+    if (isOwner && sh) { presence = shPeople.map(p => av(p)); presenceLabel = shPeople.length ? (shPeople.length + ' with access') : 'Link shared'; }
+    if (isViewer) { presence = [av({ initials: 'JP', name: 'Jordi Parra · owner' }, { bg: 'var(--primary)', fg: '#fff' }), av({ initials: 'LB', name: 'Lea Brandt · you' })]; presenceLabel = '2 here'; }
+    if (isWriter) { presence = [av({ initials: 'JP', name: 'Jordi Parra · owner' }, { bg: 'var(--primary)', fg: '#fff' }), av({ initials: 'AR', name: 'Ana Ruiz · you' }, { bg: 'color-mix(in srgb, var(--primary) 14%, var(--card))', fg: 'var(--primary)' }), av({ initials: 'LB', name: 'Lea Brandt · viewing' })]; presenceLabel = '3 here'; }
+
+    const added = new Set(s.people.map(p => p.id));
+    const ql = s.q.trim().toLowerCase();
+    let sugg = MEMBERS.filter(m => !added.has(m.id) && (!ql || m.name.toLowerCase().includes(ql) || m.email.includes(ql))).map(m => ({ ...m, desc: m.email + ' · workspace member', pick: e => { e.preventDefault(); this.addPerson(m); } }));
+    if (ql && isEmail(ql) && !MEMBERS.some(m => m.email === ql)) sugg = [{ initials: ql.slice(0, 2).toUpperCase(), name: 'Invite ' + ql, desc: 'Outside this workspace · they sign in to open it', pick: e => { e.preventDefault(); this.addPerson({ id: ql, name: ql, email: ql, initials: ql.slice(0, 2).toUpperCase(), external: true }); } }];
+
+    sugg = sugg.map(o => ({ ...o, hold: e => e.preventDefault() }));
+    const isWrite = s.mode === 'people' && s.access === 'write';
+    const writeLocked = s.mode === 'link';
+    const accessOpts = [
+      { k: 'read', label: 'Can view', icon: 'eye', desc: 'Watch the terminal live. Can’t type or stop the session.' },
+      { k: 'write', label: 'Can write', icon: 'terminal', desc: 'Send prompts and commands. They run as you.' },
+    ].map(a => { const on = (writeLocked ? 'read' : s.access) === a.k; const off = a.k === 'write' && writeLocked; const danger = a.k === 'write' && on;
+      return { ...a, on, off, op: off ? '.45' : '1', pick: () => this.setState(st => ({ access: a.k, ack: false, dur: a.k === 'write' && !['1h', '8h', '24h'].includes(st.dur) ? '1h' : (a.k === 'write' && st.access !== 'write' ? '1h' : st.dur) })),
+        bd: danger ? 'color-mix(in srgb, var(--danger) 45%, transparent)' : on ? 'var(--primary)' : 'var(--border-subtle)',
+        bg: danger ? 'color-mix(in srgb, var(--danger) 6%, var(--card))' : on ? 'var(--selected-surface)' : 'transparent',
+        ic: danger ? 'var(--danger)' : on ? 'var(--primary)' : 'var(--fg-subtle)' }; });
+    const durPills = Object.keys(DUR).map(k => { const off = isWrite && (k === '7d' || k === 'none'); return { label: DUR[k].label, on: s.dur === k, off, op: off ? '.4' : '1', pick: () => this.setState({ dur: k }) }; });
+    const d = DUR[s.dur];
+    const durHint = !d.end ? 'Does not expire. Access stays until you stop sharing.' : isWrite ? `Ends ${d.end}. Write access lasts 24 hours at most.` : `Ends ${d.end}. You can stop sharing any time.`;
+    const writeWho = s.people.length === 1 ? s.people[0].name : s.people.length ? s.people.length + ' people' : 'They';
+    const submitBlocked = (s.mode === 'people' && !s.people.length) || (isWrite && !s.ack);
+    const submitLabel = s.mode === 'link' ? 'Create link' : isWrite ? 'Give write access' : 'Share';
+
+    let accessRows = [{ initials: 'JP', name: 'Jordi Parra', sub: 'jordiparra99@gmail.com · you', role: 'Owner', ends: '', bg: 'var(--primary)', fg: '#fff', fixed: true }];
+    if (sh) {
+      const sd = DUR[sh.dur];
+      if (sh.mode === 'link') accessRows.push({ initials: '··', name: 'Anyone with the link', sub: 'Must sign in to open', role: 'Can view', ends: sd.rel, bg: 'var(--control)', fg: 'var(--fg-muted)', removable: true, remove: () => this.setState({ shared: null, view: 'compose', request: false }) });
+      shPeople.forEach(p => accessRows.push({ initials: p.initials, name: p.name, sub: p.external ? p.email + ' · outside workspace' : p.email, role: sh.access === 'write' ? 'Can write' : 'Can view', ends: sd.rel, bg: 'var(--control)', fg: 'var(--fg)', removable: true,
+        remove: () => this.setState(st => { const people = st.shared.people.filter(x => x.id !== p.id); return people.length ? { shared: { ...st.shared, people }, request: p.id === 'ana' ? false : st.request } : { shared: null, view: 'compose', request: false }; }) }));
+    }
+    accessRows = accessRows.map((r, i) => ({ ...r, sep: i ? '1px solid var(--border-subtle)' : '0' }));
+    const shWrite = sh && sh.access === 'write';
+    const sharedSummary = sh ? (shWrite ? 'Can write' : 'View only') + ' · ' + (sh.mode === 'link' ? 'link' : shPeople.length + (shPeople.length === 1 ? ' person' : ' people')) : '';
+    const sharedStatus = sh ? (shWrite ? 'shared · can write' : 'shared · view only') + ' · ends in ' + DUR[sh.dur].rel : '';
+
+    const gateFacts = [
+      { icon: 'terminal', ic: 'var(--danger)', title: 'Runs as Jordi Parra on mbp-jordi', desc: 'His credentials, his GitHub token, bypass permissions on. Commands can change or delete files on that machine.' },
+      false ? { icon: 'shield', ic: 'var(--fg-subtle)', title: 'Jordi approves each prompt', desc: 'What you send waits until he runs it. You can withdraw it before then.' }
+               : { icon: 'zap', ic: 'var(--fg-subtle)', title: 'Prompts run immediately', desc: 'No approval step. Jordi can remove your access or stop the session at any time.' },
+      { icon: 'users', ic: 'var(--fg-subtle)', title: 'Everything is attributed to you', desc: 'Your name is shown beside every prompt you send, to everyone in the session. Access ends Oct 13, 15:20.' },
+    ];
+
+    return {
+      screens, isOwner, isViewer, isWriter, isExternal: !isOwner,
+      presence, presenceAny: presence.length > 0, presenceLabel,
+      stateDot: isViewer && s.vIdx >= STREAM.length ? 'var(--success)' : 'var(--warning)',
+      stateLabel: isViewer && s.vIdx >= STREAM.length ? 'Idle' : 'Running',
+      isShared: !!sh, sharedSummary, sharedStatus, sharedIcon: shWrite ? 'terminal' : 'eye',
+      openShare: () => this.setState({ dlg: true, view: sh ? 'manage' : 'compose', request: false }),
+      accessIcon: isWriter ? 'terminal' : 'eye', accessBadge: isWriter ? 'Can write' : 'View only', extEnds: isWriter ? '59m' : '23h 41m',
+      leave: go('owner'),
+      showEnded: isViewer && s.ended, showTerm: !(isViewer && s.ended),
+      unend: () => this.setState({ ended: false }), simulateEnd: e => { e.preventDefault(); this.setState({ ended: true }); },
+      scrollRef: this.scrollRef, feed,
+      ownerRequest: isOwner && s.request, requestText: REQ,
+      approveReq: () => this.approveReq(),
+      declineReq: () => this.setState(st => ({ request: false, ownerExtra: [...st.ownerExtra, { note: true, text: 'You declined a prompt from Ana Ruiz' }] })),
+      canSimulate: isOwner && shWrite && !s.request && shPeople.some(p => p.id === 'ana'),
+      simulateReq: e => { e.preventDefault(); if (sh.approve) this.setState({ request: true }); else this.setState(st => ({ ownerExtra: [...st.ownerExtra, { you: true, ...AR, text: REQ }, ...REPLY] })); },
+      notRequested: !s.requested, requested: s.requested, requestWrite: () => this.setState({ requested: true }),
+      writerPending: isWriter && !!s.pending, pendingText: s.pending || '', withdraw: () => this.setState({ pending: null }),
+      approvalNote: approval ? 'Jordi approves each prompt' : 'prompts run immediately',
+      writerPh: s.pending ? 'Waiting for approval…' : 'Send a prompt to the agent', writerLocked: !!s.pending || !s.joined,
+      framePad: '14px',
+      promptPh: isViewer ? 'View only · shared by Jordi Parra' : isWriter ? 'Send a prompt to the agent' : 'Send a prompt to the agent',
+      promptLocked: isViewer,
+      draft: isOwner ? s.ownerDraft || '' : s.draft, setDraft: e => this.setState(isOwner ? { ownerDraft: e.target.value } : { draft: e.target.value }), draftKey: e => { if (e.key === 'Enter' && isWriter) this.sendWriter(); },
+      gateOpen: isWriter && !s.joined, gateFacts,
+      join: () => this.setState({ joined: true }), joinAsViewer: go('viewer'),
+
+      dlgOpen: isOwner && s.dlg, dlgTitle: s.view === 'manage' ? 'Sharing' : 'Share session',
+      closeShare: () => this.setState({ dlg: false }), stop: e => e.stopPropagation(),
+      cancelCompose: () => this.setState({ dlg: false, view: sh ? 'manage' : 'compose' }),
+      composing: s.view === 'compose', managing: s.view === 'manage',
+      modes: [['people', 'Specific people', 'users'], ['link', 'Anyone with the link', 'globe']].map(([k, label, icon]) => ({ label, icon, pick: () => this.setState({ mode: k }), bg: s.mode === k ? 'var(--card)' : 'transparent', fg: s.mode === k ? 'var(--fg)' : 'var(--fg-muted)' })),
+      modePeople: s.mode === 'people', modeLink: s.mode === 'link',
+      q: s.q, setQ: e => this.setState({ q: e.target.value }), focusQ: () => this.setState({ qFocus: true }), blurQ: () => this.setState({ qFocus: false }),
+      qKey: e => { if (e.key === 'Enter' && sugg[0]) { e.preventDefault(); sugg[0].pick(e); } if (e.key === 'Backspace' && !s.q && s.people.length) this.setState(st => ({ people: st.people.slice(0, -1) })); if (e.key === 'Escape') e.target.blur(); },
+      suggestOpen: s.qFocus, suggestions: sugg, suggestNone: !sugg.length,
+      people: s.people.map(p => ({ ...p, remove: () => this.setState(st => ({ people: st.people.filter(x => x.id !== p.id) })) })), peopleAny: s.people.length > 0,
+      accessOpts, writeLocked, isWrite, writeWho,
+      approve: s.approve, toggleApprove: () => this.setState(st => ({ approve: !st.approve })),
+      approveDesc: s.approve ? 'Their prompts wait in your session until you run them.' : 'Their prompts run the moment they press enter.',
+      ack: s.ack, toggleAck: () => this.setState(st => ({ ack: !st.ack })),
+      durPills, durHint,
+      submitBlocked, submitLabel, submitVariant: isWrite ? 'op-btn--danger' : 'op-btn--primary', submit: () => this.submit(),
+      copyLabel: s.copied ? 'Copied' : 'Copy link', copyIcon: s.copied ? 'check' : 'copy',
+      copyLink: () => { this.setState({ copied: true }); this.later(() => this.setState({ copied: false }), 1600); },
+      linkHint: sh && sh.mode === 'link' ? 'Anyone who signs in can watch. Never shows write controls.' : 'Only the people below can open it. Others see “You don’t have access”.',
+      accessRows,
+      stopSharing: () => this.setState({ shared: null, view: 'compose', dlg: false, request: false, people: [], ack: false }),
+      addMore: () => this.setState({ view: 'compose', people: sh ? sh.people : [], mode: sh ? sh.mode : 'people', access: sh ? sh.access : 'read', ack: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -22,15 +22,19 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`SetPassword`](version1/SetPassword.dc.html) | Set a new password |
 | [`CreateWorkspace`](version1/CreateWorkspace.dc.html) | Onboarding step 2 — name your workspace and pick its address |
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
-| [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the command and agent prompt fold behind "Inspect command and prompt" |
+| [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the agent prompt comes first, the install command folds behind "Install manually instead", and a Connection list follows the install |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
-| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and automations, the sidebar grouped by project, terminal, composer |
+| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer |
+| [`ShareSession`](version1/ShareSession.dc.html) | Share a session — the Share dialog (who, permission, for how long), the link and who has access, and the session as a guest sees it |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
-| [`Tasks`](version1/Tasks.dc.html) | Plan — the rail's third item: tasks by status (To do, In progress, Later, Done) per project, goals, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
-| [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the rail's fourth item: the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge |
+| [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
+| [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge, and a merge manager chat |
+| [`Bots`](version1/Bots.dc.html) | Employees — the rail's second item: bots in sidebar groups, each a chat with a model, effort and approval mode, slash commands and a collapsible trace |
+| [`BotSettings`](version1/BotSettings.dc.html) | A bot's settings — identity and photo, instructions with revisions, memory, projects and repositories, tools and connectors, limits, host, bot-to-bot messages, routines and notifications |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace, watched repositories and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
+| [`Chat Components`](version1/Chat%20Components.dc.html) | Inventory of the agent chat — transcript, work and tools, cards, dividers and status, the composer and what sits above it, decisions, header, find and empty state |
 
 States inside the onboarding screens are live: the workspace address checks
 availability as you type, GitHub flips to connected, the host registers after a
@@ -58,7 +62,8 @@ and Add a host. Settings keeps its Add a host page. The onboarding
 AddHost folds the install command and agent prompt behind an "Inspect
 command and prompt" disclosure. The export keeps the versions it replaced
 as `SessionsConsole (pages).dc.html` and `AddHost (cards).dc.html`,
-byte-for-byte the 2026-09-26 frames.
+byte-for-byte the 2026-09-26 frames until the 2026-10-13 export edited
+them (below).
 
 `Emails` and `version1/emails/` are the transactional emails: verify
 email, welcome (workspace ready), reset password, password changed,
@@ -99,6 +104,27 @@ Watched repositories are configured in Settings only, and `PullRequests`
 links there; the merge card's score is drawn, not a rule.
 `version1/explore-oppenheimer-agent.dc.html` is an exploration kept out of
 the screen list above (see the last section).
+
+The 2026-10-13 export adds four frames and touches every other one.
+`ShareSession` draws sharing a session. The Share dialog in a console,
+opened from the terminal's status line and from a session row's menu, is
+in `SessionsConsole (pages)` only; `SessionsConsole` has no Share yet.
+`Bots` and
+`BotSettings` are Employees, a fifth rail item that every console frame
+now carries: named bots with a photo (`version1/assets/employees/`),
+grouped in the sidebar, each a chat. `Chat Components` is the inventory
+those chats are built from. `Tasks` renames goals to milestones, adds a
+Stats view (tasks, pull requests, tokens and cost per week and per
+project; `version1/CurvedAreaChart.jsx` is its chart) and a project
+manager chat, and lists more than one Google account. `PullRequests`
+adds a merge manager chat and filters with a sort, and drops the Merge
+confidence card. `AddHost`, and Add a host in the console, lead with the
+agent prompt, fold the command behind "Install manually instead" and show
+a Connection list (waiting, runner installed, host connected, tools on
+PATH); onboarding gains "Skip for now". The frame this replaced is kept
+as `AddHost (command-first).dc.html`. A Settings host card shows disk
+used. The wordmark loses its "Console" suffix on every frame, the kept
+`(pages)` and `(cards)` ones included.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -180,5 +206,32 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Watched repositories and the merge verdict are pull-request policy, owned
   by `../../../next-steps/0.2-pull-requests.md`; the Settings section and
   the Merge confidence score are visuals of it, not decisions.
+- Two edits made here on 2026-10-10 are not in the 2026-10-13 export and
+  were merged back over it: `PullRequests` has no watched-repositories
+  view of its own and counts a waiting pull request as blocked, and the
+  Settings policy reads "These apply to every watched repository."
+  `explore-oppenheimer-agent.dc.html` is not in that export either and
+  stays as it was.
+- Employees (`Bots`, `BotSettings`, the rail item) are in no note. The
+  nearest is the product's own agent, 0.6
+  (`../../../next-steps/0.6-mcp-cli-and-agent.md`); the frames decide none
+  of it. `Chat Components`, and the manager chats in `Tasks` and
+  `PullRequests`, draw a session as a chat, which is 0.7
+  (`../../../next-steps/0.7-terminal-and-chat.md`). Its layout follows
+  Synara's chat components.
+- `ShareSession` is the visual of `../21-session-share-links.md`, which is
+  built. The frame differs from the note in two places, not reconciled:
+  its link asks whoever opens it to sign in and is always view only, where
+  the note has an `anyone` audience that need not sign in and may write
+  for up to seven days.
+- Milestones and Stats in `Tasks` run ahead of
+  `../19-plan-tasks-and-goals.md`, which still says goals and has no
+  statistics. The agent-first Add a host and its
+  Skip run ahead of `../05-screens.md`, which has the command and prompt
+  side by side behind the Inspect fold.
+- Left out of the 2026-10-13 export: `version1/assets/scientists/`
+  (portraits no frame references), `github.md` and `assets/prod/` (the
+  canvas's import log and two screenshots of Synara's README), and again
+  `screens/`, `screenshots/` and the pasted screenshot in `version1/`.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
