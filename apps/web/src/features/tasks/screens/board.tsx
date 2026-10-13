@@ -5,13 +5,14 @@ import { useNewTaskShortcut } from '../hooks/use-new-task-shortcut';
 import { NEW_TASK } from '../lib/board-search';
 import { BoardColumns } from '../sections/board-columns';
 import { BoardHeader } from '../sections/board-header';
-import { MilestonesStrip } from '../sections/milestones-strip';
+import { BoardMilestoneFilter } from '../sections/board-milestone-filter';
 
 const board = getRouteApi('/_authenticated/plan/');
 
 /**
- * Plan's board (`product/versions/mvp/18-plan-product.md` §2): the header,
- * the milestones strip and the four columns, and the two dialogs the address opens.
+ * Plan's board (`product/versions/mvp/18-plan-product.md` §2): the header with
+ * its milestone filter, the four columns, and the two dialogs the address opens.
+ * The milestones themselves are their own view (`/plan/milestones`).
  * Each part reads what it draws; this screen only lays them out.
  */
 export function BoardScreen() {
@@ -24,7 +25,7 @@ export function BoardScreen() {
     // scroller reaches through its gutter on its own.
     <div className="flex flex-col gap-7">
       <BoardHeader onNew={openNew} />
-      <MilestonesStrip />
+      <BoardMilestoneFilter />
       <BoardColumns />
       <TaskDialog />
       <StartSessionDialog />

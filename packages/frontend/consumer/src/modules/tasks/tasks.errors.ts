@@ -11,4 +11,5 @@ export const TasksErrors = {
   FETCH_MILESTONES_FAILED: { code: 'TASKS_CLIENT_007', message: 'Failed to load the milestones' },
   SAVE_MILESTONE_FAILED: { code: 'TASKS_CLIENT_008', message: 'Failed to save the milestone' },
   DELETE_MILESTONE_FAILED: { code: 'TASKS_CLIENT_009', message: 'Failed to delete the milestone' },
+  FETCH_STATS_FAILED: { code: 'TASKS_CLIENT_010', message: 'Failed to load the stats' },
 } as const satisfies Record<string, ErrorDefinition>;

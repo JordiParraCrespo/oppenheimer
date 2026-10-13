@@ -9,28 +9,25 @@ import {
 import { Ellipsis, Plus } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
-import { getRouteApi } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MilestoneDialog } from '../dialogs/milestone';
-import { useBoardFilter } from '../hooks/use-board-filter';
-
-const board = getRouteApi('/_authenticated/plan/');
+import { useScopeProject } from '../hooks/use-scope-project';
 
 /**
- * The milestones over the board (`18-plan-product.md` §2): one card per milestone of the
- * projects shown. A card filters the board to its milestone and back; its "…"
- * edits it. The strip owns the milestone dialog, since New milestone and every Edit are
- * its own buttons.
+ * The Milestones view's cards (`23-plan-milestones-stats-accounts.md` §2): one
+ * per milestone of the projects shown, dated or not. A card opens the board
+ * filtered to its milestone; its "…" edits it. The section owns the milestone
+ * dialog, since New milestone and every Edit are its own buttons.
  */
-export function MilestonesStrip() {
+export function MilestoneCards() {
   const { t } = useTranslation();
   const locale = useLocale();
-  const filter = useBoardFilter();
-  const navigate = board.useNavigate();
+  const { projectId } = useScopeProject();
+  const navigate = useNavigate();
   const milestones = useMilestones({
-    select: (rows) =>
-      rows.filter((milestone) => !filter.projectId || milestone.projectId === filter.projectId),
+    select: (rows) => rows.filter((milestone) => !projectId || milestone.projectId === projectId),
   });
   const { data: projectNames } = useProjects({
     select: (rows) => new Map(rows.map((row) => [row.id, row.isUnassigned ? '' : row.name])),
@@ -73,16 +70,7 @@ export function MilestonesStrip() {
                 done: milestone.doneCount,
                 total: milestone.totalCount,
               })}
-              selected={filter.milestoneId === milestone.id}
-              onSelect={() =>
-                navigate({
-                  search: (previous) => ({
-                    ...previous,
-                    milestone: previous.milestone === milestone.id ? undefined : milestone.id,
-                  }),
-                  replace: true,
-                })
-              }
+              onSelect={() => navigate({ to: '/plan', search: { milestone: milestone.id } })}
               action={
                 <IconButton
                   size="sm"
@@ -107,17 +95,9 @@ export function MilestonesStrip() {
       {editing ? (
         <MilestoneDialog
           milestoneId={editing === 'new' ? undefined : editing}
-          projectId={filter.projectId || undefined}
+          projectId={projectId || undefined}
           onClose={() => setEditing(null)}
-          onDeleted={(id) => {
-            setEditing(null);
-            if (filter.milestoneId === id) {
-              navigate({
-                search: (previous) => ({ ...previous, milestone: undefined }),
-                replace: true,
-              });
-            }
-          }}
+          onDeleted={() => setEditing(null)}
         />
       ) : null}
     </section>

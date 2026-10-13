@@ -15,6 +15,7 @@ import { TaskForm } from '../forms/task-form';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
 import { newTaskValues, type TaskFormOutput, taskValues } from '../lib/task-form';
+import { TaskBlockedRow } from './task-blocked-row';
 import { TaskSessionsRow } from './task-sessions-row';
 
 /**
@@ -74,6 +75,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
         milestones={milestones ?? []}
         today={today}
         sessions={task ? <TaskSessionsRow task={task} /> : null}
+        blocked={task && !task.isDone ? <TaskBlockedRow task={task} /> : null}
         pending={pending}
         error={failure ? resolveError(failure, t('tasks.dialog.saveFailed')) : null}
         submitLabel={t(task ? 'tasks.dialog.save' : 'tasks.dialog.add')}

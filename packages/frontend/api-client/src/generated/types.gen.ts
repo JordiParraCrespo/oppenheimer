@@ -8807,7 +8807,13 @@ export type UpdateMilestoneResponse = UpdateMilestoneResponses[keyof UpdateMiles
 export type FindPlanStatsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query: {
+        compare?: 'true' | 'false';
+        projectId?: string;
+        timeZone: string;
+        to: string;
+        from: string;
+    };
     url: '/api/v1/plan/stats';
 };
 

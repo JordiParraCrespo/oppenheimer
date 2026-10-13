@@ -2,26 +2,34 @@ import { IconButton, RoutineItem, SidebarListHead, Skeleton } from '@oppenheimer
 import { Folder, Inbox, Layers, Plus } from '@oppenheimer/design-system-web/icons';
 import { useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
-import { UNASSIGNED_SLUG } from '../hooks/use-board-filter';
+import { useScopeProject } from '../hooks/use-scope-project';
+import { UNASSIGNED_SLUG } from '../lib/plan-scope';
 
-const board = getRouteApi('/_authenticated/plan/');
+/** The Plan views a project narrows: the sidebar's links keep the reader on the one they are on. */
+type ScopedView = '/plan' | '/plan/milestones' | '/plan/stats';
 
 /**
  * The board's sidebar list (`18-plan-product.md` §1): All projects, each
  * project with its open count, then Unassigned; "+" is the console's New
- * project. Picking one filters the board and drops a milestone of another project.
+ * project. Picking one narrows the view the reader is on (the board, Milestones
+ * or Stats) to it.
  */
 export function TasksSidebar() {
   const { t } = useTranslation();
-  // `useMatch`, not `useSearch`: the shell mounts this sidebar and outlives
-  // the board, so a navigation away renders it once more with the board's
-  // match already gone. `useSearch` throws on that render and takes the
-  // console to its error boundary; this reads the same search and answers
-  // undefined for the one frame before the shell swaps the sidebar out.
-  const project = board.useMatch({ shouldThrow: false, select: (match) => match.search.project });
+  // From the location, not one route's match: the shell mounts this sidebar
+  // over three views and outlives each of them.
+  const { slug: project } = useScopeProject();
+  const view = useRouterState({
+    select: (state): ScopedView =>
+      state.location.pathname.startsWith('/plan/milestones')
+        ? '/plan/milestones'
+        : state.location.pathname.startsWith('/plan/stats')
+          ? '/plan/stats'
+          : '/plan',
+  });
   const projects = useProjects();
   const { data: open } = useTasks({
     select: (rows) => {
@@ -56,7 +64,7 @@ export function TasksSidebar() {
           meta={total === undefined ? undefined : String(total)}
           active={!project}
           nativeButton={false}
-          render={<Link to="/plan" />}
+          render={<Link to={view} />}
         />
         {projects.isPending ? (
           <Skeleton className="h-7.5 w-full" />
@@ -76,7 +84,7 @@ export function TasksSidebar() {
                 meta={String(open?.get(row.id) ?? 0)}
                 active={project === row.slug}
                 nativeButton={false}
-                render={<Link to="/plan" search={{ project: row.slug }} />}
+                render={<Link to={view} search={{ project: row.slug }} />}
               />
             ))}
             {unassigned ? (
@@ -86,7 +94,7 @@ export function TasksSidebar() {
                 meta={String(open?.get(unassigned.id) ?? 0)}
                 active={project === UNASSIGNED_SLUG}
                 nativeButton={false}
-                render={<Link to="/plan" search={{ project: UNASSIGNED_SLUG }} />}
+                render={<Link to={view} search={{ project: UNASSIGNED_SLUG }} />}
               />
             ) : null}
           </>

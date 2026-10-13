@@ -29,10 +29,18 @@ export class TaskEntity {
     public readonly sessions: TaskSessionLink[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    /** Why it waits on a person, or null. Done clears it. */
+    public readonly blockedReason: string | null = null,
+    /** Goes up on every write, whoever made it. */
+    public readonly version = 1,
   ) {}
 
   get isDone(): boolean {
     return this.status === 'done';
+  }
+
+  get isBlocked(): boolean {
+    return !this.isDone && this.blockedReason !== null;
   }
 
   /** Open and due before `today` (`YYYY-MM-DD`, the viewer's). */
@@ -83,6 +91,8 @@ export interface TaskInput {
   milestoneId?: string | null;
   dueDate?: string | null;
   dueTime?: string | null;
+  /** Marks the task blocked and says why; `null` unblocks it. */
+  blockedReason?: string | null;
 }
 
 /** A column change: first when `afterTaskId` is null, else directly after that task. */
@@ -104,4 +114,56 @@ export interface TaskFilter {
   sessionId?: string;
   dueFrom?: string;
   dueTo?: string;
+}
+
+/** A model's tokens over a Stats period. */
+export interface PlanStatsModelTokens {
+  model: string | null;
+  total: number;
+  byWeek: number[];
+}
+
+/** One period's headline numbers; null where a source is not measured. */
+export interface PlanStatsTotals {
+  tasksCompleted: number;
+  tasksCreated: number;
+  tokens: number | null;
+  costUsd: number | null;
+  pullRequestsMerged: number | null;
+}
+
+/**
+ * Plan's Stats for a period (`GET /plan/stats`): every series follows `weeks`,
+ * the Mondays the period touches in the viewer's zone.
+ */
+export interface PlanStats {
+  from: string;
+  to: string;
+  weeks: string[];
+  current: PlanStatsTotals & {
+    completedByWeek: number[];
+    createdByWeek: number[];
+    tokensByModel: PlanStatsModelTokens[] | null;
+    costByWeek: number[] | null;
+  };
+  previous: PlanStatsTotals | null;
+  previousFrom: string | null;
+  previousTo: string | null;
+  projects: {
+    projectId: string;
+    tasksCompleted: number;
+    tokens: number | null;
+    costUsd: number | null;
+  }[];
+  /** `headless`: only turns that report usage are counted; `none`: nothing reported yet. */
+  tokensMeasured: 'headless' | 'none';
+}
+
+/** What a Stats read asks for. `timeZone` is the viewer's IANA zone. */
+export interface PlanStatsRequest {
+  from: string;
+  to: string;
+  timeZone: string;
+  projectId?: string;
+  compare: boolean;
 }

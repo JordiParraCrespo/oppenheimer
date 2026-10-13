@@ -3,7 +3,9 @@
   "nav": {
     "label": "Plan",
     "tasks": "Tasks",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "milestones": "Milestones",
+    "stats": "Stats"
   },
   "sidebar": {
     "projects": "Projects",
@@ -42,7 +44,8 @@
     "markDone": "Mark as done",
     "markNotDone": "Mark as not done",
     "start": "Start session",
-    "openSession": "Open session {{name}}"
+    "openSession": "Open session {{name}}",
+    "blocked": "Blocked · {{reason}}"
   },
   "sessionState": {
     "waiting": "Needs input",
@@ -69,7 +72,9 @@
     "progress": "{{done}} / {{total}} tasks",
     "edit": "Edit {{name}}",
     "loadFailed": "Couldn’t load your milestones.",
-    "emptyTitle": "No milestones yet"
+    "emptyTitle": "No milestones yet",
+    "ofTasks_one": "of {{count}} task",
+    "ofTasks_other": "of {{count}} tasks"
   },
   "milestone": {
     "newTitle": "New milestone",
@@ -140,5 +145,82 @@
     "start": "Start session",
     "queue": "Queue session",
     "failed": "Couldn’t start the session."
+  },
+  "filters": {
+    "milestone": "Milestone",
+    "anyMilestone": "Any milestone"
+  },
+  "blocked": {
+    "label": "Blocked",
+    "reason": "Why it is blocked",
+    "placeholder": "What is it waiting on?",
+    "add": "Mark as blocked",
+    "mark": "Block",
+    "unblock": "Unblock",
+    "saving": "Saving…",
+    "saveFailed": "Couldn’t save that."
+  },
+  "stats": {
+    "title": "Stats",
+    "loadFailed": "Couldn’t load the stats.",
+    "vsPrevious": "vs previous period",
+    "notMeasured": "Not measured yet",
+    "perTask": "{{cost}} per task done",
+    "tokensPending": "Tokens and cost appear here once sessions report their usage. Interactive sessions in a terminal don’t report it yet.",
+    "presets": {
+      "7d": "Last 7 days",
+      "4w": "Last 4 weeks",
+      "8w": "Last 8 weeks",
+      "12w": "Last 12 weeks",
+      "qtd": "This quarter",
+      "ytd": "Year to date"
+    },
+    "picker": {
+      "custom": "Custom",
+      "compare": "Compare with previous period",
+      "done": "Done",
+      "previous": "Previous month",
+      "next": "Next month",
+      "choose": "Date range",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days"
+    },
+    "cards": {
+      "completed": "Tasks completed",
+      "created": "Tasks created",
+      "tokens": "Tokens",
+      "cost": "Agent cost"
+    },
+    "series": {
+      "completed": "Completed",
+      "created": "Created",
+      "unknownModel": "Unknown model"
+    },
+    "charts": {
+      "tasks": "Tasks per week",
+      "tokens": "Tokens per week",
+      "cost": "Cost per week"
+    },
+    "projects": {
+      "title": "Projects",
+      "gone": "Deleted project",
+      "done_one": "{{count}} done",
+      "done_other": "{{count}} done",
+      "usage": "{{tokens}} tokens · {{cost}}"
+    }
+  },
+  "overview": {
+    "loadFailed": "Couldn’t load this project.",
+    "done": "Tasks completed",
+    "percent": "{{percent}}% of the project",
+    "doing": "In progress",
+    "needsInput": "Needs input",
+    "needsInputDetail": "Blocked or overdue",
+    "nextMilestone": "Next milestone",
+    "noMilestone": "None scheduled",
+    "blocked": "Blocked · {{reason}}",
+    "overdue": "Overdue since {{day}}",
+    "due": "Due {{day}}",
+    "noDue": "No due date"
   }
 }

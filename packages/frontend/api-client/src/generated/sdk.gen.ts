@@ -1890,7 +1890,7 @@ export const updateMilestone = <ThrowOnError extends boolean = false>(options: O
  *
  * Tasks created and completed, tokens per model and agent cost, per week from `from` to `to` (included, at most 371 days) in `timeZone`, for the workspace or one project, and the period of the same length before it unless `compare=false`.
  */
-export const findPlanStats = <ThrowOnError extends boolean = false>(options?: Options<FindPlanStatsData, ThrowOnError>): RequestResult<FindPlanStatsResponses, FindPlanStatsErrors, ThrowOnError> => (options?.client ?? client).get<FindPlanStatsResponses, FindPlanStatsErrors, ThrowOnError>({
+export const findPlanStats = <ThrowOnError extends boolean = false>(options: Options<FindPlanStatsData, ThrowOnError>): RequestResult<FindPlanStatsResponses, FindPlanStatsErrors, ThrowOnError> => (options.client ?? client).get<FindPlanStatsResponses, FindPlanStatsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/plan/stats',
     ...options

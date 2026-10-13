@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -31,6 +31,11 @@ export class FindPlanStatsHttpController {
     description:
       'Tasks created and completed, tokens per model and agent cost, per week from `from` to `to` (included, at most 371 days) in `timeZone`, for the workspace or one project, and the period of the same length before it unless `compare=false`.',
   })
+  @ApiQuery({ name: 'from', required: true, type: String, format: 'date', example: '2026-09-14' })
+  @ApiQuery({ name: 'to', required: true, type: String, format: 'date', example: '2026-10-13' })
+  @ApiQuery({ name: 'timeZone', required: true, type: String, example: 'Europe/Madrid' })
+  @ApiQuery({ name: 'projectId', required: false, type: String, format: 'uuid' })
+  @ApiQuery({ name: 'compare', required: false, enum: ['true', 'false'] })
   @ApiResponse({ status: 200, type: PlanStatsResponseDto })
   @ApiProblemResponse({ status: 400, description: 'No active organization', code: 'TASKS_003' })
   async stats(

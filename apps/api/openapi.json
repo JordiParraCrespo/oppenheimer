@@ -12266,7 +12266,55 @@
       "get": {
         "description": "Tasks created and completed, tokens per model and agent cost, per week from `from` to `to` (included, at most 371 days) in `timeZone`, for the workspace or one project, and the period of the same length before it unless `compare=false`.",
         "operationId": "findPlanStats",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "compare",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["true", "false"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeZone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "Europe/Madrid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-13",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "example": "2026-09-14",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

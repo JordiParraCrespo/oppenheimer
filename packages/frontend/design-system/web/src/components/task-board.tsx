@@ -147,6 +147,7 @@ function TaskCard({
   due,
   dueTone = 'default',
   session,
+  blocked,
   onStart,
   startLabel = 'Start session',
   className,
@@ -165,6 +166,11 @@ function TaskCard({
   dueTone?: TaskDueTone;
   /** A `TaskSessionChip`. */
   session?: React.ReactNode;
+  /**
+   * Why the task waits on a person ("Blocked · waiting on the keystore fix"):
+   * a line in the warning hue, since needing someone is a state. Not drawn once done.
+   */
+  blocked?: React.ReactNode;
   /** Shown on hover while the task has no session and is not done. */
   onStart?: () => void;
   startLabel?: string;
@@ -199,6 +205,12 @@ function TaskCard({
           {title}
         </span>
         {notes && !done ? <span className="line-clamp-2 text-xs leading-[1.45] text-fg-muted">{notes}</span> : null}
+        {blocked && !done ? (
+          <span data-slot="task-card-blocked" className="flex min-w-0 items-start gap-1.5 text-xs leading-[1.45] text-warning">
+            <span aria-hidden className="mt-[5px] size-1.5 shrink-0 rounded-pill bg-warning" />
+            <span className="line-clamp-2">{blocked}</span>
+          </span>
+        ) : null}
         {hasMeta ? (
           <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-fg-muted">
             {project ? (

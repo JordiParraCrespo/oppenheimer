@@ -11,6 +11,8 @@ import {
 import {
   type MilestoneEntity,
   type MilestoneInput,
+  type PlanStats,
+  type PlanStatsRequest,
   TaskEntity,
   type TaskFilter,
   type TaskInput,
@@ -26,6 +28,7 @@ export const tasksKeys = {
   list: (filter: TaskFilter) => [...tasksKeys.lists(), filter] as const,
   milestones: () => [...tasksKeys.all, 'milestones'] as const,
   milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
+  stats: (request: PlanStatsRequest) => [...tasksKeys.all, 'stats', request] as const,
 };
 
 /** The whole board, which every column, count and card reads. */
@@ -52,6 +55,19 @@ export function useSessionTasks(sessionId: string | undefined) {
     select: (rows) =>
       rows.filter((row) => row.sessions.some((link) => link.sessionId === sessionId)),
     enabled: sessionId !== undefined,
+  });
+}
+
+/**
+ * Plan's Stats for a period. Under `tasksKeys.all`, so a change on the board
+ * (the workspace feed's `task.changed`) refetches it with the rest.
+ */
+export function usePlanStats(request: PlanStatsRequest) {
+  const app = useConsumerApp();
+  return useQuery<PlanStats, Error>({
+    queryKey: tasksKeys.stats(request),
+    queryFn: () => app.tasks.stats(request),
+    placeholderData: (previous) => previous,
   });
 }
 
