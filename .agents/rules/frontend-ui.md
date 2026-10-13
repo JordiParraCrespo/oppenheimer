@@ -103,7 +103,7 @@ multi-line, so a grep for `export` misses most of them.
 | The agent chat's transcript | `ChatTranscript` with `ChatUserMessage`, `TurnHeader`, `ChatReply`, `MessageTrail` | a `Card` per message, `Prose` alone |
 | What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow` | a `Disclosure` per call, a `CodeBlock` of the log |
 | A turn's files, plan, subagents, questions, objects | `ChangedFilesCard`, `ProposedPlanCard`, `SubagentRunCard`, `QuestionsPill`, `ContextCard` | a `Card` of `div`s, a `PullRequestRow` |
-| What a bot said to another bot, and the instructions it proposes for itself | `BotExchange` + `BotExchangeTurn`; `ProposedFile` + `ProposedFileLine` | a `ChatUserMessage`, a `DiffView` of one file |
+| What a bot said to another bot, and the instructions it proposes for itself | `BotExchange` + `BotExchangeTurn`; `ProposedFile` + `ProposedFileLine` (`ProposedFileAction` for its quiet choices, `outcome` once decided) | a `ChatUserMessage`, a `DiffView` of one file |
 | A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
 | Panels on top of the chat composer, or one notice there | `ComposerStack` + `ComposerStackRow`, `ComposerTaskList`; `ComposerNotice` | a `Card` above the `Composer` |
 | A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel`; in a bot's chat, `ComposerApproval` in `Composer`'s `above` | a `Dialog`, a `RadioGroup`, an `ApprovalPanel` stacked over the composer |

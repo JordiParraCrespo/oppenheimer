@@ -447,17 +447,18 @@ function BotExchangeTurn({
 /**
  * ProposedFile — a file a bot proposes for itself (its INSTRUCTIONS.md), on
  * an 18px card: the file's glyph and mono name, a "Proposed by" pill, the
- * added lines in green mono, then the `actions` (Review in settings and
- * Reject as ghost buttons, which take muted ink here, then Accept) while it
- * waits, or the outcome as muted words once `settled`. The proposal follows under a hairline, one `ProposedFileLine` each, the added
- * ones in green; settled, it fades back.
+ * added lines in green mono, then what can be done about it. While it waits
+ * that is `actions`: quiet `ProposedFileAction`s (Review in settings,
+ * Reject) and the caller's Accept. Once decided it is `outcome`, in muted
+ * words ("Accepted"), and the proposal fades back. The proposal follows
+ * under a hairline, one `ProposedFileLine` each, the added ones in green.
  */
 function ProposedFile({
   file,
   by,
   additions,
   actions,
-  settled = false,
+  outcome,
   className,
   children,
 }: {
@@ -465,13 +466,15 @@ function ProposedFile({
   /** The pill: "Proposed by Plan Bot". */
   by?: React.ReactNode;
   additions?: number;
-  /** The buttons while it waits; once `settled`, the outcome ("Accepted"). */
+  /** While it waits: `ProposedFileAction`s, then the one that accepts. */
   actions?: React.ReactNode;
-  settled?: boolean;
+  /** Once decided: the outcome in words. Present, it replaces `actions`. */
+  outcome?: React.ReactNode;
   className?: string;
   /** `ProposedFileLine`s. */
   children: React.ReactNode;
 }) {
+  const settled = outcome !== undefined && outcome !== null;
   return (
     <div
       data-slot="proposed-file"
@@ -488,16 +491,31 @@ function ProposedFile({
           <span className="figures font-mono text-[12px] text-success">+{additions}</span>
         ) : null}
         <span className="flex-1" />
-        {actions ? (
-          <span className="flex min-h-7 items-center gap-0.5 group-data-settled/file:pr-1.5 [&>[data-variant=ghost]]:font-normal [&>[data-variant=ghost]]:text-fg-muted [&>[data-variant=ghost]:hover]:text-fg group-data-settled/file:text-[12.5px] group-data-settled/file:text-fg-muted">
-            {actions}
+        {settled ? (
+          <span role="status" className="flex min-h-7 items-center pr-1.5 text-[12.5px] text-fg-muted">
+            {outcome}
           </span>
+        ) : actions ? (
+          <span className="flex min-h-7 items-center gap-0.5">{actions}</span>
         ) : null}
       </div>
       <pre className="m-0 border-t border-border-subtle px-4 pt-2.5 pb-3.5 font-mono text-[12.5px] leading-[1.65] break-words whitespace-pre-wrap transition-opacity duration-base group-data-settled/file:opacity-55">
         {children}
       </pre>
     </div>
+  );
+}
+
+/** A quiet choice on a `ProposedFile` (Review in settings, Reject): muted ink, full ink on hover. */
+function ProposedFileAction({ className, ...props }: React.ComponentProps<typeof Button>) {
+  return (
+    <Button
+      data-slot="proposed-file-action"
+      variant="ghost"
+      size="sm"
+      className={cn('font-normal text-fg-muted hover:text-fg', className)}
+      {...props}
+    />
   );
 }
 
@@ -554,6 +572,7 @@ export {
   ChangedFilesCard,
   ContextCard,
   ProposedFile,
+  ProposedFileAction,
   ProposedFileLine,
   ProposedPlanCard,
   QuestionsPill,

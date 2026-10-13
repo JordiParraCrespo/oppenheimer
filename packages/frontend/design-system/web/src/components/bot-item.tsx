@@ -20,7 +20,9 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
  * message at 12.5px muted on the second ("You: …" when it was yours). An
  * unread chat sets the name at 600, the preview in full ink and a 7px blue
  * dot at the end; one waiting on the person (`needsInput`: an approval, a
- * question) reads the same with an amber dot instead. 52px, 14px radius, rows 2px apart in a `BotList`.
+ * question) reads the same with an amber dot instead: both set
+ * `data-attention`, which carries the weight. 52px, 14px radius, rows 2px
+ * apart in a `BotList`.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
  * hiding the age while it shows.
@@ -67,7 +69,9 @@ function BotItem({
     <ButtonPrimitive
       data-slot="bot-item"
       data-active={active || undefined}
-      data-unread={unread || needsInput || undefined}
+      data-unread={unread || undefined}
+      data-needs-input={needsInput || undefined}
+      data-attention={unread || needsInput || undefined}
       role={inRow ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       render={render}
@@ -90,7 +94,7 @@ function BotItem({
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-[14px] font-medium tracking-[-0.009em] group-data-unread/bot:font-semibold">
+          <span className="min-w-0 flex-1 truncate text-[14px] font-medium tracking-[-0.009em] group-data-attention/bot:font-semibold">
             {name}
           </span>
           {age ? (
@@ -101,7 +105,7 @@ function BotItem({
         </span>
         {preview ? (
           <span className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted group-data-unread/bot:text-fg">
+            <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted group-data-attention/bot:text-fg">
               {preview}
             </span>
             {needsInput ? (

@@ -67,6 +67,7 @@ export {
   ChangedFilesCard,
   ContextCard,
   ProposedFile,
+  ProposedFileAction,
   ProposedFileLine,
   ProposedPlanCard,
   QuestionsPill,
