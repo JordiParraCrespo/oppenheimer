@@ -38,6 +38,7 @@ export {
   useHostsSnapshot,
   useRemoveHost,
   useRenameHost,
+  useSuspenseHostPresence,
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,

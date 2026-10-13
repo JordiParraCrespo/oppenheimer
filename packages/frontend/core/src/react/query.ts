@@ -3,8 +3,11 @@ import {
   type QueryKey,
   type UseQueryOptions,
   type UseQueryResult,
+  type UseSuspenseQueryOptions,
+  type UseSuspenseQueryResult,
   useQueries as useTanstackQueries,
   useQuery as useTanstackQuery,
+  useSuspenseQuery as useTanstackSuspenseQuery,
 } from '@tanstack/react-query';
 import { shareEntities } from './share-entities';
 
@@ -34,3 +37,22 @@ export const useQueries = ((options: { queries: readonly object[] }) =>
     ...options,
     queries: options.queries.map((query) => ({ structuralSharing: shareEntities, ...query })),
   } as never)) as typeof useTanstackQueries;
+
+/**
+ * TanStack Query's `useSuspenseQuery`, sharing entities as {@link useQuery}
+ * does. The component that calls it suspends until the first answer and
+ * throws a first failure to the nearest error boundary, so `data` is never
+ * `undefined`: loading is the `<Suspense>` above it, failure the kit's
+ * `QueryErrorBoundary`. A later failure over data already drawn does not
+ * throw; it is `error` on the result, for the reader to show beside the data.
+ */
+export function useSuspenseQuery<
+  TQueryFnData = unknown,
+  TError = DefaultError,
+  TData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey,
+>(
+  options: UseSuspenseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+): UseSuspenseQueryResult<TData, TError> {
+  return useTanstackSuspenseQuery({ structuralSharing: shareEntities, ...options });
+}

@@ -17,6 +17,7 @@
     "year": "{{count}}a"
   },
   "dismiss": "Descartar",
+  "retry": "Reintentar",
   "breadcrumb": "Ruta de navegación",
   "dateField": {
     "none": "Sin fecha",

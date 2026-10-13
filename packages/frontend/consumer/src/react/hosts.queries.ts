@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -70,6 +70,24 @@ export function useHostPresence<TData = HostEntity[]>({
 } = {}) {
   const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), enabled && watching);
   return useHostList<TData>({ enabled, ...(select ? { select } : {}) }, poll);
+}
+
+/**
+ * {@link useHostPresence} for a section under `<Suspense>`: the same list, the
+ * same poll, but it suspends until the first answer and throws a first
+ * failure to the nearest error boundary, so `data` is always the hosts. A poll
+ * that fails over hosts already drawn does not throw; it is `error` on the
+ * result. The pilot of Suspense reads (Settings → Hosts); the rest of the
+ * console reads `useHostPresence` through `QueryState`.
+ */
+export function useSuspenseHostPresence() {
+  const app = useConsumerApp();
+  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), true);
+  return useSuspenseQuery<HostEntity[], Error>({
+    queryKey: hostsKeys.list(),
+    queryFn: () => app.hosts.findAll(),
+    ...poll,
+  });
 }
 
 type HostListOptions<TData> = Omit<

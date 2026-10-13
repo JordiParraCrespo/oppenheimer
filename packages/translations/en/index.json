@@ -18,6 +18,7 @@
       "year": "{{count}}y"
     },
     "dismiss": "Dismiss",
+    "retry": "Try again",
     "breadcrumb": "Breadcrumb",
     "dateField": {
       "none": "No date",

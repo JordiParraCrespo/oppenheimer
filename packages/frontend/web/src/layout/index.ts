@@ -1,4 +1,5 @@
 export { AppPending } from './components/app-pending';
+export { QueryErrorBoundary } from './components/query-error-boundary';
 export {
   combineQueries,
   QueryState,
