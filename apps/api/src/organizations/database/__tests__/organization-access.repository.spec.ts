@@ -1,3 +1,4 @@
+import { Not } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
 import { Session } from '../../../auth/database/session.orm-entity';
 import { AccessGrantOrmEntity } from '../../../authz/database/access-grant.orm-entity';
@@ -38,10 +39,16 @@ describe('OrganizationAccessRepository.revokeFor', () => {
     );
   });
 
-  it('moves a session to the organization the person joined first', async () => {
+  it('moves a session to the organization joined first, never the one being left', async () => {
     const { repository, manager } = repositoryWith({ organizationId: 'org-first' });
 
     await repository.revokeFor('u1', 'org1');
+
+    expect(manager.findOne).toHaveBeenCalledWith(expect.anything(), {
+      // Excluded by id, not by trusting Better Auth's delete to have landed.
+      where: { userId: 'u1', organizationId: Not('org1') },
+      order: { createdAt: 'ASC' },
+    });
 
     expect(manager.update.mock.calls[0][2]).toEqual({
       activeOrganizationId: 'org-first',
