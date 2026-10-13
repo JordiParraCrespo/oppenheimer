@@ -27,7 +27,13 @@ export { BrandGlyph } from './components/brand-glyph';
 export { BrandMark } from './components/brand-mark';
 export type { ButtonProps } from './components/button';
 export { Button, buttonVariants } from './components/button';
-export { CalendarLayerItem, CalendarSourceCard } from './components/calendar-source';
+export {
+  CalendarAccountAdd,
+  CalendarAccountList,
+  CalendarAccountRow,
+  CalendarLayerItem,
+  CalendarSourceCard,
+} from './components/calendar-source';
 export type { CalloutTone } from './components/callout';
 export { Callout } from './components/callout';
 export {
@@ -41,6 +47,7 @@ export {
 } from './components/card';
 export type { BarDatum, ChartSeries, DataTone, LinePoint } from './components/charts';
 export {
+  AreaChart,
   BarChart,
   BarList,
   ChartHero,
@@ -87,6 +94,8 @@ export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
+export type { DateRange, DateRangePickerLabels, DateRangePreset } from './components/date-range-picker';
+export { DateRangePicker } from './components/date-range-picker';
 export { DatePicker } from './components/date-picker';
 export {
   Dialog,
@@ -168,6 +177,8 @@ export {
 export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
+export type { FacetOption } from './components/facet-select';
+export { FacetSelect } from './components/facet-select';
 export {
   Field,
   FieldAction,
@@ -208,6 +219,8 @@ export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
+export type { TimelineMilestone, TimelineRow } from './components/milestone-timeline';
+export { MilestoneGlyph, MilestoneTimeline } from './components/milestone-timeline';
 export type { CalendarEntryData, CalendarEntryKind } from './components/month-calendar';
 export { CalendarEntry, MonthCalendar } from './components/month-calendar';
 export {

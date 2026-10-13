@@ -23,6 +23,8 @@ import { StatBar } from './stat-card';
  *   others and reads its values out above the chart.
  * - `LineChart`: two series over time with a crosshair, a dot per series on
  *   the hovered point, ticks on the right, and the readout above.
+ * - `AreaChart`: volume over time (Plan's Stats): monotone curves over a
+ *   wash of their tone, ticks on the left, a label under every point.
  * - `RingChart`: shares of a whole (the lane mix) as a ring with rounded
  *   arcs and gaps, the total in the middle; its rows are `ChartRow`s.
  * - `BarList`: ranked rows (why pull requests waited), each a label, the
@@ -387,6 +389,195 @@ function LineChart({
   );
 }
 
+/**
+ * A monotone cubic through the points (Fritsch–Carlson): smooth, and it never
+ * overshoots a value, so a curve never dips under zero or above a peak.
+ */
+function monotonePath(points: readonly (readonly [number, number])[]) {
+  const n = points.length;
+  const first = points[0];
+  if (!first) return '';
+  if (n < 2) return `M${first[0]} ${first[1]}`;
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = points[i] as [number, number];
+    const [x1, y1] = points[i + 1] as [number, number];
+    slope.push((y1 - y0) / (x1 - x0));
+  }
+  const m: number[] = points.map((_, i) => {
+    if (i === 0) return slope[0] ?? 0;
+    if (i === n - 1) return slope[n - 2] ?? 0;
+    const a = slope[i - 1] ?? 0;
+    const b = slope[i] ?? 0;
+    return a * b <= 0 ? 0 : (a + b) / 2;
+  });
+  for (let i = 0; i < n - 1; i++) {
+    const d = slope[i] ?? 0;
+    if (d === 0) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = (m[i] ?? 0) / d;
+    const b = (m[i + 1] ?? 0) / d;
+    const s = a * a + b * b;
+    if (s > 9) {
+      const t = 3 / Math.sqrt(s);
+      m[i] = t * a * d;
+      m[i + 1] = t * b * d;
+    }
+  }
+  let out = `M${first[0]} ${first[1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = points[i] as [number, number];
+    const [x1, y1] = points[i + 1] as [number, number];
+    const h = (x1 - x0) / 3;
+    out += ` C${x0 + h} ${y0 + (m[i] ?? 0) * h} ${x1 - h} ${y1 - (m[i + 1] ?? 0) * h} ${x1} ${y1}`;
+  }
+  return out;
+}
+
+/**
+ * AreaChart — a quantity over time where the volume is the point (Plan's
+ * Stats: tokens and cost per week, tasks done). A monotone curve per series
+ * over a wash of its tone (12% alone, 8% when series overlap), the ticks on
+ * the left in a 34px column, a label under every point, and the same
+ * crosshair, dots and readout as `LineChart`. A comparison of two rates
+ * without volume stays a `LineChart`.
+ */
+function AreaChart({
+  series,
+  points,
+  ticks,
+  height = 200,
+  format = plain,
+  area = true,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  series: readonly ChartSeries[];
+  points: readonly LinePoint[];
+  /** Y values to rule and label, ascending; the last is the top. */
+  ticks: readonly number[];
+  height?: number;
+  format?: (value: number) => string;
+  /** The wash under each curve; off leaves the curves alone. */
+  area?: boolean;
+  className?: string;
+  'aria-label': string;
+}) {
+  const [hover, setHover] = React.useState<number | null>(null);
+  const top = ticks[ticks.length - 1] ?? Math.max(1, ...points.flatMap((p) => Object.values(p.values)));
+  const x = (i: number) => (points.length < 2 ? 50 : (i / (points.length - 1)) * 100);
+  const y = (v: number) => 100 - (Math.min(v, top) / top) * 100;
+  const hovered = hover === null ? null : points[hover];
+  const wash = series.length > 1 ? 0.08 : 0.12;
+  return (
+    <figure data-slot="area-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
+      <ChartReadout series={series} label={hovered?.label} values={hovered?.values} format={format} />
+      <div className="grid grid-cols-[34px_minmax(0,1fr)] gap-x-2">
+        <div aria-hidden className="relative" style={{ height }}>
+          {ticks.map((t) => (
+            <span
+              key={t}
+              className="figures absolute right-0 translate-y-1/2 text-[11px] text-fg-subtle"
+              // biome-ignore lint/style/noInlineStyles: the label sits at its value.
+              style={{ bottom: `${(t / top) * 100}%` }}
+            >
+              {format(t)}
+            </span>
+          ))}
+        </div>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: the hover readout repeats the figure's data, which the list below carries for assistive technology. */}
+        <div
+          className="relative"
+          // biome-ignore lint/style/noInlineStyles: the plot's height is the caller's.
+          style={{ height }}
+          onMouseLeave={() => setHover(null)}
+        >
+          {ticks.map((t) => (
+            <span
+              key={t}
+              aria-hidden
+              className="absolute inset-x-0 h-px bg-border-subtle"
+              // biome-ignore lint/style/noInlineStyles: the rule sits at its value.
+              style={{ bottom: `${(t / top) * 100}%` }}
+            />
+          ))}
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full overflow-visible">
+            {series.map((s) => {
+              const line = monotonePath(points.map((p, i) => [x(i), y(p.values[s.key] ?? 0)] as const));
+              return (
+                <g key={s.key}>
+                  {area && points.length > 1 ? (
+                    <path d={`${line} L${x(points.length - 1)} 100 L${x(0)} 100 Z`} fill={TONE_STROKE[s.tone]} opacity={wash} />
+                  ) : null}
+                  <path
+                    d={line}
+                    fill="none"
+                    stroke={TONE_STROKE[s.tone]}
+                    strokeWidth={2}
+                    vectorEffect="non-scaling-stroke"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                </g>
+              );
+            })}
+          </svg>
+          {hovered && hover !== null ? (
+            <>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 w-px bg-border"
+                // biome-ignore lint/style/noInlineStyles: the crosshair follows the pointer.
+                style={{ left: `${x(hover)}%` }}
+              />
+              {series.map((s) => (
+                <span
+                  key={s.key}
+                  aria-hidden
+                  className={cn('pointer-events-none absolute -mb-[4.5px] -ml-[4.5px] size-[9px] rounded-pill shadow-[0_0_0_2px_var(--card)]', TONE_BG[s.tone])}
+                  // biome-ignore lint/style/noInlineStyles: the dot sits on the value.
+                  style={{ left: `${x(hover)}%`, bottom: `${100 - y(hovered.values[s.key] ?? 0)}%` }}
+                />
+              ))}
+            </>
+          ) : null}
+          <div className="absolute inset-0 flex">
+            {points.map((p, i) => (
+              <span key={p.label} aria-hidden className="h-full flex-1" onMouseEnter={() => setHover(i)} />
+            ))}
+          </div>
+        </div>
+        <span aria-hidden />
+        <div aria-hidden className="relative mt-1.5 h-4">
+          {points.map((p, i) => (
+            <span
+              key={p.label}
+              className={cn(
+                'figures absolute -translate-x-1/2 text-[11px] whitespace-nowrap text-fg-subtle',
+                hover === i && 'text-fg',
+              )}
+              // biome-ignore lint/style/noInlineStyles: the label sits under its point.
+              style={{ left: `${x(i)}%` }}
+            >
+              {p.label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <ul className="sr-only">
+        {points.map((p) => (
+          <li key={p.label}>
+            {p.label}: {series.map((s) => `${s.label} ${format(p.values[s.key] ?? 0)}`).join(', ')}
+          </li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
 function RingChart({
   segments,
   label,
@@ -504,6 +695,6 @@ function BarList({
   );
 }
 
-export { BarChart, BarList, ChartHero, ChartLegend, ChartRow, LineChart, RingChart };
+export { AreaChart, BarChart, BarList, ChartHero, ChartLegend, ChartRow, LineChart, RingChart };
 export type { BarDatum, ChartSeries, LinePoint };
 export type { DataTone };
