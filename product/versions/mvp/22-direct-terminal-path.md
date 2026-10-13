@@ -60,8 +60,9 @@ predictive echo hides whatever distance is left for what is typed most.
   (Claude Code, like every Ink program). While a guess is drawn the
   terminal's own cursor is hidden, so the reader sees one cursor, the
   predicted one, and not the host's trailing a few keys behind it. A
-  Backspace or Left never reaches into the prompt (`❯ `, `> `, `$ `): at
-  the start of the text the guess is that the key does nothing, which is
+  Backspace or Left never reaches into the prompt (`❯ `, `> `, `$ `; the
+  blank after the mark may be any space, and Claude Code's is a no-break
+  one): at the start of the text the guess is that the key does nothing, which is
   what a line editor does there. Whether a guess ever moves when its echo
   lands, or springs back after it, is photographed in Chromium by the e2e
   `terminal` project (`e2e/tests/terminal/`). It draws only above 30 ms of
