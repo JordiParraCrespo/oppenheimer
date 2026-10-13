@@ -3,7 +3,11 @@ import { Injectable } from '@nestjs/common';
 import type { AddMemberDto, UpdateOrganizationDto } from '@oppenheimer/shared';
 import { APIError } from 'better-auth/api';
 import { auth } from '../../auth/infrastructure/better-auth.config';
-import { asRecord, betterAuthHeaders, unwrap } from '../../auth/infrastructure/better-auth.util';
+import {
+  betterAuthHeaders,
+  unwrap,
+  upstreamCodeOf,
+} from '../../auth/infrastructure/better-auth.util';
 import type {
   FullOrganizationResponseDto,
   MemberResponseDto,
@@ -15,10 +19,6 @@ import { invokeOrganizationApi } from './organization-error.util';
 
 /** Better Auth's code for a slug some organization already has. */
 const SLUG_TAKEN_CODE = 'ORGANIZATION_SLUG_ALREADY_TAKEN';
-
-function upstreamCodeOf(error: APIError): unknown {
-  return asRecord(asRecord(error).body).code;
-}
 
 /**
  * The organization port, over the Better Auth organization plugin's server API

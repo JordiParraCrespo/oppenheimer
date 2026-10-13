@@ -52,25 +52,12 @@ export class MembershipAccessPolicy {
     undo: (entry: Entry) => Promise<unknown>,
   ): Promise<Entry> {
     const entry = await write();
-    try {
-      await this.grant(entry);
-    } catch (error) {
-      try {
-        await undo(entry);
-      } catch (undoError) {
-        // The caller must see why they were refused, not an error about the
-        // cleanup; the half-made membership is what this log is for.
-        this.logger.error(
-          {
-            message: 'Could not undo a roster change whose application role failed',
-            userId: entry.userId,
-            organizationId: entry.organizationId,
-          },
-          undoError instanceof Error ? undoError.stack : String(undoError),
-        );
-      }
-      throw error;
-    }
+    await this.compensating(
+      () => this.grant(entry),
+      () => undo(entry),
+      'Could not undo a roster change whose application role failed',
+      entry,
+    );
     return entry;
   }
 
@@ -85,27 +72,14 @@ export class MembershipAccessPolicy {
    * store needs none.
    */
   async reassign<T>(entry: RosterEntry, write: () => Promise<T>): Promise<T> {
-    const before = await this.scopedRoleIds(entry.userId, entry.organizationId);
+    const before = await this.userRoles.findScopedRoleIds(entry.userId, entry.organizationId);
     await this.grant(entry);
-    try {
-      return await write();
-    } catch (error) {
-      try {
-        await this.userRoles.setRolesForUser(entry.userId, before, entry.organizationId);
-      } catch (restoreError) {
-        // The caller must see why the change was refused, not an error about
-        // the cleanup; the half-changed membership is what this log is for.
-        this.logger.error(
-          {
-            message: 'Could not restore the application roles of a refused role change',
-            userId: entry.userId,
-            organizationId: entry.organizationId,
-          },
-          restoreError instanceof Error ? restoreError.stack : String(restoreError),
-        );
-      }
-      throw error;
-    }
+    return this.compensating(
+      write,
+      () => this.userRoles.setRolesForUser(entry.userId, before, entry.organizationId),
+      'Could not restore the application roles of a refused role change',
+      entry,
+    );
   }
 
   /**
@@ -133,15 +107,29 @@ export class MembershipAccessPolicy {
   }
 
   /**
-   * The roles assigned to `userId` in `organizationId` itself. The port answers
-   * a scoped read with the global assignments included; those are not this
-   * scope's to rewrite.
+   * Run `action`; when it fails, run `cleanup` and raise the action's own error.
+   * The caller must see why they were refused, not an error about the
+   * cleanup; a cleanup that fails is logged with the half-changed membership
+   * it leaves.
    */
-  private async scopedRoleIds(userId: string, organizationId: string): Promise<string[]> {
-    const [inScope, global] = await Promise.all([
-      this.userRoles.findRoleIdsForUser(userId, organizationId),
-      this.userRoles.findRoleIdsForUser(userId, null),
-    ]);
-    return inScope.filter((id) => !global.includes(id));
+  private async compensating<T>(
+    action: () => Promise<T>,
+    cleanup: () => Promise<unknown>,
+    message: string,
+    entry: RosterEntry,
+  ): Promise<T> {
+    try {
+      return await action();
+    } catch (error) {
+      try {
+        await cleanup();
+      } catch (cleanupError) {
+        this.logger.error(
+          { message, userId: entry.userId, organizationId: entry.organizationId },
+          cleanupError instanceof Error ? cleanupError.stack : String(cleanupError),
+        );
+      }
+      throw error;
+    }
   }
 }

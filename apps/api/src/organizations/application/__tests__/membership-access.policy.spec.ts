@@ -8,7 +8,7 @@ describe('MembershipAccessPolicy', () => {
   const roles = { findOneByName: vi.fn() };
   const userRoles = {
     setRolesForUser: vi.fn().mockResolvedValue(undefined),
-    findRoleIdsForUser: vi.fn(),
+    findScopedRoleIds: vi.fn(),
     replaceMembershipRole: vi.fn().mockResolvedValue(undefined),
   };
   const access = { revokeFor: vi.fn().mockResolvedValue(undefined) };
@@ -20,7 +20,7 @@ describe('MembershipAccessPolicy', () => {
     roles.findOneByName.mockImplementation(async (name: string) => Some({ id: `${name}-role` }));
     userRoles.replaceMembershipRole.mockResolvedValue(undefined);
     userRoles.setRolesForUser.mockResolvedValue(undefined);
-    userRoles.findRoleIdsForUser.mockResolvedValue([]);
+    userRoles.findScopedRoleIds.mockResolvedValue([]);
     policy = new MembershipAccessPolicy(
       roles as never,
       userRoles as never,
@@ -107,10 +107,10 @@ describe('MembershipAccessPolicy', () => {
 
     // The caller may have just demoted themselves: undoing Better Auth's write
     // would need the permission they gave up, so only the app's own store moves.
+    // A role also held globally is its own scoped grant: restoring the scope must
+    // not drop it.
     it('puts back the roles held in this organization when Better Auth refuses', async () => {
-      userRoles.findRoleIdsForUser.mockImplementation(async (_user: string, org: string | null) =>
-        org === null ? ['global-role'] : ['global-role', 'owner-role', 'custom-role'],
-      );
+      userRoles.findScopedRoleIds.mockResolvedValue(['user-role', 'owner-role', 'custom-role']);
       const refusal = new Error('forbidden');
 
       await expect(policy.reassign(entry('member'), () => Promise.reject(refusal))).rejects.toBe(
@@ -119,7 +119,7 @@ describe('MembershipAccessPolicy', () => {
 
       expect(userRoles.setRolesForUser).toHaveBeenCalledWith(
         'u1',
-        ['owner-role', 'custom-role'],
+        ['user-role', 'owner-role', 'custom-role'],
         'org1',
       );
     });

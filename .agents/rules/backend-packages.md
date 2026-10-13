@@ -88,9 +88,10 @@ libraries that are the point of that package: `typeorm` for `ddd` and
 entries are conscious exceptions: the cache takes the app's `ioredis` client
 (the app owns the connection), and `core` re-exports prometheus's instrument
 types. `pnpm check:public-api` (`scripts/check-backend-public-api.mjs`) reads
-the declarations `tsc` would emit and fails on anything else; it needs the
-backend packages built (`turbo run build --filter='./packages/backend/*'`),
-and it fails closed on a package that does not compile. Its `ALLOWED` holds
+the declarations `tsc` would emit, in memory, and fails on anything else. A
+package's own sources need no build, but the declarations of the packages it
+depends on do (`turbo run build --filter='./packages/backend/*'`), and it fails
+closed on a package that does not compile. Its `ALLOWED` holds
 the list and the reason for each entry. Adding to it is a decision for review,
 in its own diff.
 
