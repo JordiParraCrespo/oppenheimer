@@ -206,6 +206,13 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Watched repositories and the merge verdict are pull-request policy, owned
   by `../../../next-steps/0.2-pull-requests.md`; the Settings section and
   the Merge confidence score are visuals of it, not decisions.
+- `PullRequests` as of the 2026-10-13 export is built without its merge
+  manager chat, the Chat tab and the review agent ("The screens as built"
+  in `../../../next-steps/0.2-pull-requests.md`). Departures from the
+  frame: the queue row keeps one Review button, which opens Changes; the
+  verdict pill in the bar is not drawn (the toast says what the review
+  did); and the Settings policy under Watched repositories (Track, Starts
+  in lane, Notify) is not built.
 - Two edits made here on 2026-10-10 are not in the 2026-10-13 export and
   were merged back over it: `PullRequests` has no watched-repositories
   view of its own and counts a waiting pull request as blocked, and the
