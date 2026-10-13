@@ -95,7 +95,7 @@ function FacetSelect({
       <DropdownMenuContent style={{ minWidth: menuWidth ?? (variant === 'pill' ? 240 : 200) }}>
         <DropdownMenuRadioGroup value={current?.value} onValueChange={(next) => onValueChange(String(next))}>
           {options.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value}>
+            <DropdownMenuRadioItem key={option.value} value={option.value} closeOnClick>
               <span className="flex items-center gap-2.5">
                 <span className="min-w-0 flex-1 truncate">{option.label}</span>
                 {option.count !== undefined ? (

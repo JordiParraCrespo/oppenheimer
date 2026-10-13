@@ -31,6 +31,11 @@ async function drag(page: Page, from: Locator, to: Locator) {
  * which moves it to In progress and links back from the session.
  * Only GitHub is faked; the host has no runner, so the session is queued.
  */
+/** A row of Plan's sidebar head: Tasks, Milestones, Calendar, Stats. */
+function planNav(page: Page, name: string) {
+  return page.getByRole('navigation', { name: 'Plan' }).getByText(name, { exact: true });
+}
+
 test('a task from the dialog to deletion, across the board', async ({ page }) => {
   test.slow();
   const owner = await provisionedUser('plan');
@@ -80,7 +85,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
 
   // A milestone, made on the Milestones view, and a task filed under it; the
   // board's milestone facet filters to it.
-  await page.getByRole('link', { name: 'Milestones', exact: false }).first().click();
+  await planNav(page, 'Milestones').click();
   await expect(page).toHaveURL(/\/plan\/milestones/);
   await expect(page.getByText('No milestones yet')).toBeVisible();
   await page.getByRole('button', { name: 'New milestone', exact: true }).click();
@@ -88,7 +93,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await milestone.getByLabel('Milestone').fill('Wallet 2.0');
   await milestone.getByRole('button', { name: 'Add milestone' }).click();
   await expect(milestone).toBeHidden();
-  await page.getByRole('link', { name: 'Tasks', exact: false }).first().click();
+  await planNav(page, 'Tasks').click();
   await card(page, 'Ship the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });
   await edit.getByRole('button', { name: 'Wallet 2.0' }).click();
@@ -113,13 +118,13 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   ).toBeVisible();
 
   // The Milestones view counts it; Stats counts what was made this week.
-  await page.getByRole('link', { name: 'Milestones', exact: false }).first().click();
+  await planNav(page, 'Milestones').click();
   await expect(page.getByText('0 / 1 tasks')).toBeVisible();
-  await page.getByRole('link', { name: 'Stats', exact: true }).click();
+  await planNav(page, 'Stats').click();
   await expect(page).toHaveURL(/\/plan\/stats/);
-  await expect(page.getByText('Tasks created')).toBeVisible();
+  await expect(page.getByText('Created in the period')).toBeVisible();
   await expect(page.getByText('Tasks per week')).toBeVisible();
-  await page.getByRole('link', { name: 'Tasks', exact: false }).first().click();
+  await planNav(page, 'Tasks').click();
 
   // Delete, behind a confirmation.
   await card(page, 'Ship the wallet list').click();

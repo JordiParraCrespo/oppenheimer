@@ -186,8 +186,8 @@
       "days_other": "{{count}} days"
     },
     "cards": {
-      "completed": "Tasks completed",
-      "created": "Tasks created",
+      "completed": "Completed in the period",
+      "created": "Created in the period",
       "tokens": "Tokens",
       "cost": "Agent cost"
     },
@@ -211,7 +211,7 @@
   },
   "overview": {
     "loadFailed": "Couldn’t load this project.",
-    "done": "Tasks completed",
+    "done": "Done overall",
     "percent": "{{percent}}% of the project",
     "doing": "In progress",
     "needsInput": "Needs input",

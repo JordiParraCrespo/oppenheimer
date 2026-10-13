@@ -1578,8 +1578,8 @@
         "days_other": "{{count}} días"
       },
       "cards": {
-        "completed": "Tareas completadas",
-        "created": "Tareas creadas",
+        "completed": "Completadas en el periodo",
+        "created": "Creadas en el periodo",
         "tokens": "Tokens",
         "cost": "Coste de los agentes"
       },
@@ -1603,7 +1603,7 @@
     },
     "overview": {
       "loadFailed": "No se ha podido cargar este proyecto.",
-      "done": "Tareas completadas",
+      "done": "Hechas en total",
       "percent": "{{percent}} % del proyecto",
       "doing": "En curso",
       "needsInput": "Necesita atención",
