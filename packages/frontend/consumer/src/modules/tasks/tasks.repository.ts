@@ -11,8 +11,6 @@ import { toCreateSessionRequest } from '../sessions/sessions.repository';
 import {
   MilestoneEntity,
   type MilestoneInput,
-  type PlanStats,
-  type PlanStatsRequest,
   type TaskEntity as Task,
   TaskEntity,
   type TaskFilter,
@@ -147,46 +145,6 @@ export class TasksRepository {
       TasksErrors.LINK_FAILED,
     );
     return toTask(data);
-  }
-
-  @MapApiError(TasksErrors.FETCH_STATS_FAILED)
-  async stats(request: PlanStatsRequest): Promise<PlanStats> {
-    const { compare, ...query } = request;
-    const data = await unwrapBody(
-      heyApiSdk.findPlanStats({ query: { ...query, compare: compare ? 'true' : 'false' } }),
-      TasksErrors.FETCH_STATS_FAILED,
-    );
-    return {
-      from: data.from,
-      to: data.to,
-      weeks: data.weeks,
-      current: {
-        ...data.current,
-        tokens: data.current.tokens ?? null,
-        costUsd: data.current.costUsd ?? null,
-        pullRequestsMerged: data.current.pullRequestsMerged ?? null,
-        tokensByModel:
-          data.current.tokensByModel?.map((row) => ({ ...row, model: row.model ?? null })) ?? null,
-        costByWeek: data.current.costByWeek ?? null,
-      },
-      previous: data.previous
-        ? {
-            ...data.previous,
-            tokens: data.previous.tokens ?? null,
-            costUsd: data.previous.costUsd ?? null,
-            pullRequestsMerged: data.previous.pullRequestsMerged ?? null,
-          }
-        : null,
-      previousFrom: data.previousFrom ?? null,
-      previousTo: data.previousTo ?? null,
-      projects: data.projects.map((row) => ({
-        projectId: row.projectId,
-        tasksCompleted: row.tasksCompleted,
-        tokens: row.tokens ?? null,
-        costUsd: row.costUsd ?? null,
-      })),
-      tokensMeasured: data.tokensMeasured,
-    };
   }
 
   @MapApiError(TasksErrors.FETCH_MILESTONES_FAILED)

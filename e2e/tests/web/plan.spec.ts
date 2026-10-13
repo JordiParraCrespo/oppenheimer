@@ -26,12 +26,12 @@ async function drag(page: Page, from: Locator, to: Locator) {
  * Plan, in a browser, against the real control plane
  * (`product/versions/mvp/17-plan.md`): the rail's third list, a task's life on
  * the board — added from the dialog and inline, dragged across columns,
- * ticked done, filed under a milestone (made on the Milestones view), marked
- * blocked, counted on Stats, deleted — and a session started from a card,
+ * ticked done, filed under a milestone (made on the Milestones view, where it
+ * lies on the timeline), deleted — and a session started from a card,
  * which moves it to In progress and links back from the session.
  * Only GitHub is faked; the host has no runner, so the session is queued.
  */
-/** A row of Plan's sidebar head: Tasks, Milestones, Calendar, Stats. */
+/** A row of Plan's sidebar head: Tasks, Milestones, Calendar. */
 function planNav(page: Page, name: string) {
   return page.getByRole('navigation', { name: 'Plan' }).getByText(name, { exact: true });
 }
@@ -87,12 +87,17 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   // board's milestone facet filters to it.
   await planNav(page, 'Milestones').click();
   await expect(page).toHaveURL(/\/plan\/milestones/);
-  await expect(page.getByText('No milestones yet')).toBeVisible();
+  await expect(page.getByText('No milestones for this project')).toBeVisible();
   await page.getByRole('button', { name: 'New milestone', exact: true }).click();
   const milestone = page.getByRole('dialog', { name: 'New milestone' });
   await milestone.getByLabel('Milestone').fill('Wallet 2.0');
+  await milestone.locator('[data-slot="date-picker"]').click();
+  await page.getByRole('button', { name: 'End of month' }).click();
   await milestone.getByRole('button', { name: 'Add milestone' }).click();
   await expect(milestone).toBeHidden();
+  // On the timeline: the project's track with the milestone's diamond.
+  const timeline = page.locator('[data-slot="milestone-timeline"]');
+  await expect(timeline.getByLabel('Wallet 2.0', { exact: true })).toBeVisible();
   await planNav(page, 'Tasks').click();
   await card(page, 'Ship the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });
@@ -105,25 +110,10 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await expect(card(page, 'Write the release notes')).toHaveCount(0);
   await expect(card(page, 'Ship the wallet list')).toBeVisible();
 
-  // Blocked, with a reason the card shows.
-  await card(page, 'Ship the wallet list').click();
-  const blocking = page.getByRole('dialog', { name: 'Edit task' });
-  await blocking.getByRole('button', { name: 'Mark as blocked' }).click();
-  await blocking.getByLabel('Why it is blocked').fill('Waiting on the design review');
-  await blocking.getByRole('button', { name: 'Block', exact: true }).click();
-  await expect(blocking.getByText('Waiting on the design review')).toBeVisible();
-  await blocking.getByRole('button', { name: 'Cancel' }).click();
-  await expect(
-    card(page, 'Ship the wallet list').getByText('Blocked · Waiting on the design review'),
-  ).toBeVisible();
-
-  // The Milestones view counts it; Stats counts what was made this week.
+  // The timeline counts it: the milestone's card on hover, 0% of one task.
   await planNav(page, 'Milestones').click();
-  await expect(page.getByText('0 / 1 tasks')).toBeVisible();
-  await planNav(page, 'Stats').click();
-  await expect(page).toHaveURL(/\/plan\/stats/);
-  await expect(page.getByText('Created in the period')).toBeVisible();
-  await expect(page.getByText('Tasks per week')).toBeVisible();
+  await timeline.getByLabel('Wallet 2.0', { exact: true }).hover();
+  await expect(timeline.getByText('of 1 task')).toBeVisible();
   await planNav(page, 'Tasks').click();
 
   // Delete, behind a confirmation.
@@ -202,7 +192,7 @@ test('the calendar: a personal event on a day, and the layers', async ({ page })
   const owner = await provisionedUser('plancalendar');
   await signInAs(page, owner.user);
   const plan = page.getByRole('navigation', { name: 'Plan' });
-  const layer = page.getByRole('checkbox', { name: 'My events' });
+  const layer = page.getByRole('checkbox', { name: 'Personal' });
 
   // Into the board through the sidebar from a calendar opened cold, with the
   // board's chunk (the dev server's module, which the stack serves) held back

@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 /**
  * The project a Plan view is narrowed to, by slug (`unassigned` for the
- * workspace's Unassigned project). The board, Milestones and Stats all read
- * it, so the sidebar's project list keeps the reader on the view they are on.
+ * workspace's Unassigned project). The board and Milestones both read it, from
+ * the Project filter above each.
  */
 export const planScopeSearchSchema = z.object({ project: searchText });
 export type PlanScopeSearch = z.infer<typeof planScopeSearchSchema>;

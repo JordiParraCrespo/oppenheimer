@@ -128,7 +128,7 @@ function CalendarEntry({
       ) : null}
       {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-fg-subtle" /> : null}
       {entry.time ? (
-        <span className={cn('figures shrink-0 text-micro text-fg-subtle', !full && '@max-[140px]/day:hidden')}>
+        <span className={cn('figures shrink-0 text-micro text-fg-subtle', !full && '@max-[110px]/day:hidden')}>
           {entry.time}
         </span>
       ) : null}

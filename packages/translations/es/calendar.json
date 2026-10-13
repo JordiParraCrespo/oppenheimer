@@ -1,18 +1,21 @@
 {
   "sidebar": {
-    "layers": "Mostrar"
+    "layers": "Calendarios"
   },
   "layers": {
-    "events": "Mis eventos",
+    "events": "Personal",
     "google": "Google Calendar",
-    "tasks": "Tareas que vencen",
-    "automations": "Ejecuciones de automatizaciones"
+    "tasks": "Fechas de tareas",
+    "automations": "Automatizaciones"
   },
   "header": {
     "previous": "Mes anterior",
     "next": "Mes siguiente",
     "today": "Hoy",
-    "newEvent": "Nuevo evento"
+    "newEvent": "Nuevo evento",
+    "meetings": "reuniones",
+    "tasksDue": "tareas para entregar",
+    "runs": "ejecuciones de automatizaciones"
   },
   "grid": {
     "more_one": "{{count}} más",

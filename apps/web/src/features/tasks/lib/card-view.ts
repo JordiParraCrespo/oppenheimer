@@ -16,8 +16,6 @@ export interface TaskCardView {
   /** `Tomorrow · 09:00`, or null with no due date or once done. */
   due: string | null;
   dueTone: TaskDueTone;
-  /** Why it waits on a person, or null; never on a done card. */
-  blockedReason: string | null;
 }
 
 /**
@@ -50,7 +48,6 @@ export function cardView(
         : null,
     due: due ? [context.dayLabel(due), task.dueTime].filter(Boolean).join(' · ') : null,
     dueTone: away === null ? 'default' : away < 0 ? 'overdue' : away <= 1 ? 'soon' : 'default',
-    blockedReason: task.isBlocked ? task.blockedReason : null,
   };
 }
 

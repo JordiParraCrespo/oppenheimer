@@ -57,19 +57,15 @@ export function eventItems(
   }));
 }
 
-/**
- * Google's events, each in its account's colour, leaving out the accounts
- * this viewer switched off (and any account no longer listed).
- */
+/** Google's events, each in its account's colour, leaving out any account no longer listed. */
 export function googleItems(
   events: readonly CalendarEventEntity[],
   connections: readonly GoogleCalendarConnectionEntity[],
-  hidden: readonly string[],
 ): CalendarItem[] {
   const byId = new Map(connections.map((connection) => [connection.id, connection]));
   const shown = events.filter((event) => {
     const id = event.connectionId;
-    return id !== null && byId.has(id) && !hidden.includes(id);
+    return id !== null && byId.has(id);
   });
   return eventItems(shown, 'google').map((item, index) => {
     const connection = byId.get(shown[index].connectionId ?? '');

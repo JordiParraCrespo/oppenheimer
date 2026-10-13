@@ -1291,14 +1291,13 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
 
       <Spec
         id="calendar"
-        title="MonthCalendar · CalendarSourceCard"
+        title="MonthCalendar · CalendarLayerItem"
         meta="month-calendar.tsx · calendar-source.tsx"
-        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. The page owns the DragProvider: an entry is a calendar-entry source and a day a target whose id is its date, and N more lists the day to read, not to drag. Automation runs keep their schedule. It shares one month grid with DatePicker. The sidebar lists what the month draws, each source a row with a Checkbox, and the connected calendar's card says when it last synced."
+        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. The page owns the DragProvider: an entry is a calendar-entry source and a day a target whose id is its date, and N more lists the day to read, not to drag. Automation runs keep their schedule. It shares one month grid with DatePicker. The sidebar lists what the month draws, each source a row with a Checkbox in ink; the connected accounts are a CalendarAccountList."
         code={`<DragProvider overlay={(a) => <CalendarEntry entry={byId(a.id)} lifted />} onDragEnd={({ active, over }) => over && move(active.id, over.id)}>
   <MonthCalendar year={2026} month={9} today={today} entries={entries} onOpenEntry={open} onAddDay={add} />
 </DragProvider>
-<CalendarLayerItem icon={<CalendarIcon />} checked onCheckedChange={toggle}>Google Calendar</CalendarLayerItem>
-<CalendarSourceCard mark={<BrandGlyph name="google" />} name="Google Calendar" account="me@example.com" status="Synced 2 min ago" />`}
+<CalendarLayerItem icon={<CalendarIcon />} checked onCheckedChange={toggle}>Google Calendar</CalendarLayerItem>`}
         bare
       >
         <MonthCalendarDemo />

@@ -1392,15 +1392,10 @@
       "label": "Plan",
       "tasks": "Tasks",
       "calendar": "Calendar",
-      "milestones": "Milestones",
-      "stats": "Stats"
+      "milestones": "Milestones"
     },
     "sidebar": {
-      "projects": "Projects",
-      "all": "All projects",
-      "unassigned": "Unassigned",
-      "newProject": "New project",
-      "loadFailed": "Couldn’t load your projects."
+      "unassigned": "Unassigned"
     },
     "board": {
       "title": "Tasks",
@@ -1432,8 +1427,7 @@
       "markDone": "Mark as done",
       "markNotDone": "Mark as not done",
       "start": "Start session",
-      "openSession": "Open session {{name}}",
-      "blocked": "Blocked · {{reason}}"
+      "openSession": "Open session {{name}}"
     },
     "sessionState": {
       "waiting": "Needs input",
@@ -1455,14 +1449,18 @@
       "label": "Milestones",
       "title": "Milestones",
       "new": "New milestone",
-      "empty": "Milestones group tasks and track how many are done.",
+      "empty": "Milestones split a project into stages with a target date. Progress is the share of their tasks that are done.",
       "noTarget": "No target",
       "progress": "{{done}} / {{total}} tasks",
       "edit": "Edit {{name}}",
       "loadFailed": "Couldn’t load your milestones.",
-      "emptyTitle": "No milestones yet",
+      "emptyTitle": "No milestones for this project",
       "ofTasks_one": "of {{count}} task",
-      "ofTasks_other": "of {{count}} tasks"
+      "ofTasks_other": "of {{count}} tasks",
+      "today": "Today",
+      "earlier": "Earlier",
+      "later": "Later",
+      "clickToEdit": "Click to edit"
     },
     "milestone": {
       "newTitle": "New milestone",
@@ -1536,97 +1534,32 @@
     },
     "filters": {
       "milestone": "Milestone",
-      "anyMilestone": "Any milestone"
-    },
-    "blocked": {
-      "label": "Blocked",
-      "reason": "Why it is blocked",
-      "placeholder": "What is it waiting on?",
-      "add": "Mark as blocked",
-      "mark": "Block",
-      "unblock": "Unblock",
-      "saving": "Saving…",
-      "saveFailed": "Couldn’t save that."
-    },
-    "stats": {
-      "title": "Stats",
-      "loadFailed": "Couldn’t load the stats.",
-      "vsPrevious": "vs previous period",
-      "notMeasured": "Not measured yet",
-      "perTask": "{{cost}} per task done",
-      "tokensPending": "Tokens and cost appear here once sessions report their usage. Interactive sessions in a terminal don’t report it yet.",
-      "presets": {
-        "7d": "Last 7 days",
-        "4w": "Last 4 weeks",
-        "8w": "Last 8 weeks",
-        "12w": "Last 12 weeks",
-        "qtd": "This quarter",
-        "ytd": "Year to date"
-      },
-      "picker": {
-        "custom": "Custom",
-        "compare": "Compare with previous period",
-        "done": "Done",
-        "previous": "Previous month",
-        "next": "Next month",
-        "choose": "Date range",
-        "days_one": "{{count}} day",
-        "days_other": "{{count}} days"
-      },
-      "cards": {
-        "completed": "Completed in the period",
-        "created": "Created in the period",
-        "tokens": "Tokens",
-        "cost": "Agent cost"
-      },
-      "series": {
-        "completed": "Completed",
-        "created": "Created",
-        "unknownModel": "Unknown model"
-      },
-      "charts": {
-        "tasks": "Tasks per week",
-        "tokens": "Tokens per week",
-        "cost": "Cost per week"
-      },
-      "projects": {
-        "title": "Projects",
-        "gone": "Deleted project",
-        "done_one": "{{count}} done",
-        "done_other": "{{count}} done",
-        "usage": "{{tokens}} tokens · {{cost}}"
-      }
-    },
-    "overview": {
-      "loadFailed": "Couldn’t load this project.",
-      "done": "Done overall",
-      "percent": "{{percent}}% of the project",
-      "doing": "In progress",
-      "needsInput": "Needs input",
-      "needsInputDetail": "Blocked or overdue",
-      "nextMilestone": "Next milestone",
-      "noMilestone": "None scheduled",
-      "blocked": "Blocked · {{reason}}",
-      "overdue": "Overdue since {{day}}",
-      "due": "Due {{day}}",
-      "noDue": "No due date"
+      "anyMilestone": "Any milestone",
+      "project": "Project",
+      "allProjects": "All projects",
+      "noProject": "No project",
+      "allMilestones": "All milestones",
+      "clear": "Clear"
     }
   },
   "calendar": {
     "sidebar": {
-      "layers": "Show"
+      "layers": "Calendars"
     },
     "layers": {
-      "events": "My events",
+      "events": "Personal",
       "google": "Google Calendar",
-      "tasks": "Tasks due",
-      "automations": "Automation runs"
+      "tasks": "Task due dates",
+      "automations": "Automations"
     },
     "header": {
       "previous": "Previous month",
       "next": "Next month",
       "today": "Today",
-      "newEvent": "New event"
+      "newEvent": "New event",
+      "meetings": "meetings",
+      "tasksDue": "tasks due",
+      "runs": "automation runs"
     },
     "grid": {
       "more_one": "{{count}} more",

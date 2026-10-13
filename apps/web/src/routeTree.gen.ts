@@ -39,7 +39,6 @@ import { Route as AuthenticatedAutomationsRunsRouteImport } from './routes/_auth
 import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authenticated/plan/index'
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
-import { Route as AuthenticatedPlanStatsRouteImport } from './routes/_authenticated/plan/stats'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -207,11 +206,6 @@ const AuthenticatedPlanMilestonesRoute =
     path: '/milestones',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
-const AuthenticatedPlanStatsRoute = AuthenticatedPlanStatsRouteImport.update({
-  id: '/stats',
-  path: '/stats',
-  getParentRoute: () => AuthenticatedPlanRoute,
-} as any)
 const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -309,7 +303,6 @@ export interface FileRoutesByFullPath {
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
-  '/plan/stats': typeof AuthenticatedPlanStatsRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -346,7 +339,6 @@ export interface FileRoutesByTo {
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
-  '/plan/stats': typeof AuthenticatedPlanStatsRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -392,7 +384,6 @@ export interface FileRoutesById {
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
-  '/_authenticated/plan/stats': typeof AuthenticatedPlanStatsRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -436,7 +427,6 @@ export interface FileRouteTypes {
     | '/automations/runs'
     | '/plan/calendar'
     | '/plan/milestones'
-    | '/plan/stats'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -473,7 +463,6 @@ export interface FileRouteTypes {
     | '/automations/runs'
     | '/plan/calendar'
     | '/plan/milestones'
-    | '/plan/stats'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -518,7 +507,6 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/runs'
     | '/_authenticated/plan/calendar'
     | '/_authenticated/plan/milestones'
-    | '/_authenticated/plan/stats'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -759,13 +747,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanMilestonesRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
-    '/_authenticated/plan/stats': {
-      id: '/_authenticated/plan/stats'
-      path: '/stats'
-      fullPath: '/plan/stats'
-      preLoaderRoute: typeof AuthenticatedPlanStatsRouteImport
-      parentRoute: typeof AuthenticatedPlanRoute
-    }
     '/_authenticated/pulls/': {
       id: '/_authenticated/pulls/'
       path: '/'
@@ -925,7 +906,6 @@ const AuthenticatedAutomationsRouteWithChildren =
 interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
-  AuthenticatedPlanStatsRoute: typeof AuthenticatedPlanStatsRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
 }
@@ -933,7 +913,6 @@ interface AuthenticatedPlanRouteChildren {
 const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
-  AuthenticatedPlanStatsRoute: AuthenticatedPlanStatsRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
 }

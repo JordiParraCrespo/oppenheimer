@@ -4,7 +4,7 @@ import { MilestonesScreen } from '@/features/tasks/screens/milestones';
 
 /**
  * Plan's Milestones (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
- * §1): the timeline and the milestone cards; `?project=` narrows them.
+ * §1): the timeline, one track per project; `?project=` narrows it.
  */
 export const Route = createFileRoute('/_authenticated/plan/milestones')({
   validateSearch: planScopeSearchSchema,

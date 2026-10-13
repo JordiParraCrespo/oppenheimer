@@ -36,30 +36,3 @@ export function accountRowState(
   if (connection.needsReconnect || read === 'revoked') return 'revoked';
   return read === 'error' ? 'failed' : 'connected';
 }
-
-export const HIDDEN_ACCOUNTS_KEY = 'oppenheimer.calendar.hiddenGoogleAccounts';
-
-/** The accounts this viewer switched off; anything unreadable, or storage off, is none. */
-export function storedHiddenAccounts(): readonly string[] {
-  try {
-    const stored: unknown = JSON.parse(window.localStorage.getItem(HIDDEN_ACCOUNTS_KEY) ?? '[]');
-    return Array.isArray(stored)
-      ? [...new Set(stored.filter((id): id is string => typeof id === 'string'))]
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-export function rememberHiddenAccounts(ids: readonly string[]) {
-  try {
-    window.localStorage.setItem(HIDDEN_ACCOUNTS_KEY, JSON.stringify(ids));
-  } catch {
-    // Private browsing or a full quota: the toggle holds until the page reloads.
-  }
-}
-
-/** `ids` with `id` flipped. */
-export function toggleHiddenAccount(ids: readonly string[], id: string): string[] {
-  return ids.includes(id) ? ids.filter((other) => other !== id) : [...ids, id];
-}

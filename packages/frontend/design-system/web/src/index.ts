@@ -35,7 +35,6 @@ export {
   CalendarAccountList,
   CalendarAccountRow,
   CalendarLayerItem,
-  CalendarSourceCard,
 } from './components/calendar-source';
 export type { CalloutTone } from './components/callout';
 export { Callout } from './components/callout';
@@ -291,7 +290,11 @@ export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
 export { MilestoneCard, MilestoneEmpty, MilestoneGrid } from './components/milestone-card';
-export type { TimelineMilestone, TimelineRow } from './components/milestone-timeline';
+export type {
+  MilestoneTimelineControls,
+  TimelineMilestone,
+  TimelineRow,
+} from './components/milestone-timeline';
 export { MilestoneGlyph, MilestoneTimeline } from './components/milestone-timeline';
 export type {
   CalendarAccent,

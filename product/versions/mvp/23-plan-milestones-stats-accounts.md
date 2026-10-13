@@ -353,6 +353,19 @@ Answered by the owner on 2026-10-13.
    the board, and one project's overview (§3) heads it when a project is
    picked. The agents' Projects section can mount the same sections
    when it lands.
+2. **The console is the frame, and only the frame.** Later the same day
+   the owner found the build invented too much and had it match the
+   2026-10-13 `Tasks` frame. This replaces 1 and part of decided 5. Plan's
+   sidebar is Tasks, Milestones and Calendar, with no project list (the
+   board and Milestones filter by project in the page) and no Stats.
+   There is no project overview, no Blocked row on a task, and no toggle
+   per Google account. Milestones is the timeline alone, edge to edge,
+   with the frame's empty card. The calendar's sidebar names the layers
+   as the frame does (Google Calendar, Personal, Task due dates,
+   Automations), and its header counts the month's meetings, tasks due
+   and automation runs. The API keeps `GET /plan/stats`,
+   `GET /plan/summary` and `blockedReason` for the agents' Projects
+   section, which another agent is building.
 
 ## As built (2026-10-13)
 
@@ -366,21 +379,24 @@ Where the build differs from the sections above:
   a write that names one is a conditional `UPDATE` and answers
   `TASKS_008`. Deletes take the version as `If-Match`.
 - **Live updates**: `task.changed` and `milestone.changed` on the workspace
-  stream; the board's poll stands down while the stream is live, and Stats
-  refetches with the board.
+  stream; the board's poll stands down while the stream is live.
 - **Tokens and cost** read `SESSION_USAGE_READER` from the sessions module.
   The columns, the fold and the runner's parser are built, but the runner
-  has no headless drive yet, so nothing reports usage and Stats says
-  "Not measured yet" until that slice lands (`01-protocol.md`, `turn.ended`).
+  has no headless drive yet, so nothing reports usage
+  (`tokensMeasured: 'none'`) until that slice lands (`01-protocol.md`,
+  `turn.ended`).
 - **Pull requests** are not on Stats yet (decided 4); the response carries
   `pullRequestsMerged: null`.
 - **Milestones in the console**: the board's milestone strip is gone; the
-  board filters with a milestone facet, and Milestones is its own view: the
-  timeline over the milestone cards.
-- **Blocked** is set from the task dialog's Blocked row, which saves on its
-  own; the card shows the reason in the warning hue.
+  board filters with Project and Milestone facets, and Milestones is its
+  own view, the timeline alone (settled 2). A milestone with no target
+  date has no place on it: it is still a facet on the board and a choice
+  in the task dialog.
+- **Blocked** is in the API only (settled 2); the console neither sets nor
+  shows it.
 - **Google accounts**: as §5, with the differences note 20's "As built
   since" lists (the callback route keeps its name, a quota refusal is
-  `CALENDAR_010` only when every account was refused, and toggles per
-  account show from two accounts up). A Google event opens a read-only
-  dialog that names its account.
+  `CALENDAR_010` only when every account was refused). There is no toggle
+  per account (settled 2): each account's events wear its colour and name
+  it in the tooltip. A Google event opens a read-only dialog that names
+  its account.

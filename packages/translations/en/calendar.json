@@ -1,18 +1,21 @@
 {
   "sidebar": {
-    "layers": "Show"
+    "layers": "Calendars"
   },
   "layers": {
-    "events": "My events",
+    "events": "Personal",
     "google": "Google Calendar",
-    "tasks": "Tasks due",
-    "automations": "Automation runs"
+    "tasks": "Task due dates",
+    "automations": "Automations"
   },
   "header": {
     "previous": "Previous month",
     "next": "Next month",
     "today": "Today",
-    "newEvent": "New event"
+    "newEvent": "New event",
+    "meetings": "meetings",
+    "tasksDue": "tasks due",
+    "runs": "automation runs"
   },
   "grid": {
     "more_one": "{{count}} more",

@@ -27,7 +27,6 @@ export function TaskForm({
   milestones,
   today,
   sessions,
-  blocked,
   pending,
   error,
   submitLabel,
@@ -41,8 +40,6 @@ export function TaskForm({
   today: string;
   /** The Sessions row, for a task that exists. */
   sessions: ReactNode;
-  /** The Blocked row, for a task that exists; it saves on its own. */
-  blocked?: ReactNode;
   pending: boolean;
   error: ResolvedErrorMessage | null;
   submitLabel: string;
@@ -125,7 +122,6 @@ export function TaskForm({
         />
         <TaskMilestoneRow control={control} milestones={milestones} />
         {sessions}
-        {blocked}
         <TaskDueRow control={control} today={today} />
       </div>
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />

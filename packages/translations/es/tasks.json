@@ -4,15 +4,10 @@
     "label": "Plan",
     "tasks": "Tareas",
     "calendar": "Calendario",
-    "milestones": "Hitos",
-    "stats": "Estadísticas"
+    "milestones": "Hitos"
   },
   "sidebar": {
-    "projects": "Proyectos",
-    "all": "Todos los proyectos",
-    "unassigned": "Sin asignar",
-    "newProject": "Nuevo proyecto",
-    "loadFailed": "No se han podido cargar tus proyectos."
+    "unassigned": "Sin asignar"
   },
   "board": {
     "title": "Tareas",
@@ -44,8 +39,7 @@
     "markDone": "Marcar como hecha",
     "markNotDone": "Marcar como no hecha",
     "start": "Iniciar sesión de trabajo",
-    "openSession": "Abrir la sesión {{name}}",
-    "blocked": "Bloqueada · {{reason}}"
+    "openSession": "Abrir la sesión {{name}}"
   },
   "sessionState": {
     "waiting": "Necesita respuesta",
@@ -67,14 +61,18 @@
     "label": "Hitos",
     "title": "Hitos",
     "new": "Nuevo hito",
-    "empty": "Los hitos agrupan tareas y cuentan cuántas están hechas.",
+    "empty": "Los hitos dividen un proyecto en etapas con una fecha objetivo. El progreso es la parte de sus tareas que está hecha.",
     "noTarget": "Sin fecha",
     "progress": "{{done}} / {{total}} tareas",
     "edit": "Editar {{name}}",
     "loadFailed": "No se han podido cargar tus hitos.",
-    "emptyTitle": "Aún no hay hitos",
+    "emptyTitle": "No hay hitos en este proyecto",
     "ofTasks_one": "de {{count}} tarea",
-    "ofTasks_other": "de {{count}} tareas"
+    "ofTasks_other": "de {{count}} tareas",
+    "today": "Hoy",
+    "earlier": "Antes",
+    "later": "Después",
+    "clickToEdit": "Haz clic para editar"
   },
   "milestone": {
     "newTitle": "Nuevo hito",
@@ -148,79 +146,11 @@
   },
   "filters": {
     "milestone": "Hito",
-    "anyMilestone": "Cualquier hito"
-  },
-  "blocked": {
-    "label": "Bloqueada",
-    "reason": "Por qué está bloqueada",
-    "placeholder": "¿Qué está esperando?",
-    "add": "Marcar como bloqueada",
-    "mark": "Bloquear",
-    "unblock": "Desbloquear",
-    "saving": "Guardando…",
-    "saveFailed": "No se ha podido guardar."
-  },
-  "stats": {
-    "title": "Estadísticas",
-    "loadFailed": "No se han podido cargar las estadísticas.",
-    "vsPrevious": "frente al periodo anterior",
-    "notMeasured": "Aún sin medir",
-    "perTask": "{{cost}} por tarea hecha",
-    "tokensPending": "Los tokens y el coste aparecen aquí cuando las sesiones informan de su uso. Las sesiones interactivas en un terminal aún no lo hacen.",
-    "presets": {
-      "7d": "Últimos 7 días",
-      "4w": "Últimas 4 semanas",
-      "8w": "Últimas 8 semanas",
-      "12w": "Últimas 12 semanas",
-      "qtd": "Este trimestre",
-      "ytd": "En lo que va de año"
-    },
-    "picker": {
-      "custom": "Personalizado",
-      "compare": "Comparar con el periodo anterior",
-      "done": "Hecho",
-      "previous": "Mes anterior",
-      "next": "Mes siguiente",
-      "choose": "Periodo",
-      "days_one": "{{count}} día",
-      "days_other": "{{count}} días"
-    },
-    "cards": {
-      "completed": "Completadas en el periodo",
-      "created": "Creadas en el periodo",
-      "tokens": "Tokens",
-      "cost": "Coste de los agentes"
-    },
-    "series": {
-      "completed": "Completadas",
-      "created": "Creadas",
-      "unknownModel": "Modelo desconocido"
-    },
-    "charts": {
-      "tasks": "Tareas por semana",
-      "tokens": "Tokens por semana",
-      "cost": "Coste por semana"
-    },
-    "projects": {
-      "title": "Proyectos",
-      "gone": "Proyecto eliminado",
-      "done_one": "{{count}} hecha",
-      "done_other": "{{count}} hechas",
-      "usage": "{{tokens}} tokens · {{cost}}"
-    }
-  },
-  "overview": {
-    "loadFailed": "No se ha podido cargar este proyecto.",
-    "done": "Hechas en total",
-    "percent": "{{percent}} % del proyecto",
-    "doing": "En curso",
-    "needsInput": "Necesita atención",
-    "needsInputDetail": "Bloqueadas o vencidas",
-    "nextMilestone": "Próximo hito",
-    "noMilestone": "Ninguno programado",
-    "blocked": "Bloqueada · {{reason}}",
-    "overdue": "Vencida desde el {{day}}",
-    "due": "Vence el {{day}}",
-    "noDue": "Sin fecha"
+    "anyMilestone": "Cualquier hito",
+    "project": "Proyecto",
+    "allProjects": "Todos los proyectos",
+    "noProject": "Sin proyecto",
+    "allMilestones": "Todos los hitos",
+    "clear": "Limpiar"
   }
 }

@@ -1,33 +1,44 @@
-import { PageHeader, PageHeaderRow } from '@oppenheimer/design-system-web';
-import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useTranslation } from 'react-i18next';
+import type { MilestoneTimelineControls } from '@oppenheimer/design-system-web';
+import { useRef, useState } from 'react';
+import { MilestoneDialog } from '../dialogs/milestone';
 import { useScopeProject } from '../hooks/use-scope-project';
-import { MilestoneCards } from '../sections/milestone-cards';
+import { MilestonesHeader } from '../sections/milestones-header';
 import { MilestonesTimeline } from '../sections/milestones-timeline';
+import { PlanFilters } from '../sections/plan-filters';
 
 /**
- * Plan's Milestones (`23-plan-milestones-stats-accounts.md` §1): the timeline of
- * every project's dated milestones, then a card per milestone. `?project=`
- * narrows both, as it narrows the board.
+ * Plan's Milestones (the 2026-10-13 `Tasks` frame): the header, the Project
+ * filter and the timeline. The header's buttons move the timeline and open New
+ * milestone; a milestone on it opens its edit dialog. The screen holds what the
+ * two share: the timeline's handle and which milestone the dialog is for.
  */
 export function MilestonesScreen() {
-  const { t } = useTranslation();
   const { projectId } = useScopeProject();
-  const { data: projectName } = useProjects({
-    select: (rows) => {
-      const project = rows.find((row) => row.id === projectId);
-      if (!project) return undefined;
-      return project.isUnassigned ? t('tasks.sidebar.unassigned') : project.name;
-    },
-  });
+  const timeline = useRef<MilestoneTimelineControls>(null);
+  const [editing, setEditing] = useState<string | 'new' | null>(null);
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader>
-        <PageHeaderRow size="display" title={projectName ?? t('tasks.milestones.title')} />
-      </PageHeader>
-      <MilestonesTimeline />
-      <MilestoneCards />
+      <MilestonesHeader
+        onToday={() => timeline.current?.today()}
+        onEarlier={() => timeline.current?.earlier()}
+        onLater={() => timeline.current?.later()}
+        onNew={() => setEditing('new')}
+      />
+      <PlanFilters />
+      <MilestonesTimeline
+        controls={timeline}
+        onEdit={(id) => setEditing(id)}
+        onNew={() => setEditing('new')}
+      />
+      {editing ? (
+        <MilestoneDialog
+          milestoneId={editing === 'new' ? undefined : editing}
+          projectId={projectId || undefined}
+          onClose={() => setEditing(null)}
+          onDeleted={() => setEditing(null)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { CalendarLayerItem, SidebarListHead } from '@oppenheimer/design-system-web';
-import { CalendarDays, CircleCheck, CircleDot, Zap } from '@oppenheimer/design-system-web/icons';
+import { CalendarDays, CircleCheck, User, Zap } from '@oppenheimer/design-system-web/icons';
 import { getRouteApi } from '@tanstack/react-router';
-import { Fragment, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   CALENDAR_LAYERS,
@@ -9,30 +9,28 @@ import {
   hiddenLayers,
   toggleLayer,
 } from '../lib/calendar-search';
-import { GoogleAccountLayers } from './google-account-layers';
 import { GoogleAccountsCard } from './google-accounts-card';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 
 /** Each layer's glyph: the month draws its entries with the same. */
 const ICON: Record<CalendarLayer, ReactNode> = {
-  events: <CircleDot />,
+  events: <User />,
   google: <CalendarDays />,
   tasks: <CircleCheck />,
   automations: <Zap />,
 };
 
 /**
- * The calendar's sidebar list (`20-plan-calendar.md` §1): a toggle per layer,
- * kept in the address so a link shows the same month (the Google layer with
- * a toggle per account under it, kept on this device), and the Google
- * accounts.
+ * The calendar's sidebar list (the 2026-10-13 `Tasks` frame): Calendars, a
+ * toggle per layer kept in the address so a link shows the same month, and
+ * the Google accounts.
  */
 export function CalendarSidebar() {
   const { t } = useTranslation();
   // `useMatch`, not `useSearch`: the shell mounts this sidebar and outlives
   // the calendar, so a navigation away renders it once more with the
-  // calendar's match already gone — see `tasks-sidebar.tsx`.
+  // calendar's match already gone.
   const off = calendar.useMatch({ shouldThrow: false, select: (match) => match.search.off });
   const navigate = calendar.useNavigate();
   const hidden = hiddenLayers(off);
@@ -42,21 +40,19 @@ export function CalendarSidebar() {
       <SidebarListHead label={t('calendar.sidebar.layers')} />
       <div className="flex flex-col gap-0.5 px-3 pb-4">
         {CALENDAR_LAYERS.map((layer) => (
-          <Fragment key={layer}>
-            <CalendarLayerItem
-              icon={ICON[layer]}
-              checked={!hidden.has(layer)}
-              onCheckedChange={() =>
-                navigate({
-                  search: (previous) => ({ ...previous, off: toggleLayer(previous.off, layer) }),
-                  replace: true,
-                })
-              }
-            >
-              {t(`calendar.layers.${layer}`)}
-            </CalendarLayerItem>
-            {layer === 'google' ? <GoogleAccountLayers /> : null}
-          </Fragment>
+          <CalendarLayerItem
+            key={layer}
+            icon={ICON[layer]}
+            checked={!hidden.has(layer)}
+            onCheckedChange={() =>
+              navigate({
+                search: (previous) => ({ ...previous, off: toggleLayer(previous.off, layer) }),
+                replace: true,
+              })
+            }
+          >
+            {t(`calendar.layers.${layer}`)}
+          </CalendarLayerItem>
         ))}
       </div>
       <GoogleAccountsCard />

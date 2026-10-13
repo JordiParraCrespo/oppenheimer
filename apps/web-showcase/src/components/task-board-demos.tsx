@@ -37,7 +37,6 @@ interface Task {
   milestone?: string;
   due?: string;
   dueTone?: 'soon' | 'overdue';
-  blocked?: string;
   session?: { state: 'running' | 'needs-input' | 'completed'; word: string; name: string; more?: number };
 }
 
@@ -47,7 +46,7 @@ const TASKS: Record<string, Task> = {
   t3: { id: 't3', title: 'Address review comments on PR #121', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Oct 7', session: { state: 'running', word: 'Running', name: 'PR #121 porting to peersyst' } },
   t4: { id: 't4', title: 'Draft the beta waitlist email', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 10' },
   t5: { id: 't5', title: 'Rotate flama-ai API keys', project: 'Client sites', due: 'Yesterday', dueTone: 'overdue' },
-  t6: { id: 't6', title: 'Biometric unlock on Android', blocked: 'Blocked · a keystore edge case on Pixel 6',  project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Tomorrow', dueTone: 'soon', session: { state: 'needs-input', word: 'Needs input', name: 'biometric-unlock', more: 1 } },
+  t6: { id: 't6', title: 'Biometric unlock on Android', notes: 'Blocked on a keystore edge case on Pixel 6.', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Tomorrow', dueTone: 'soon', session: { state: 'needs-input', word: 'Needs input', name: 'biometric-unlock', more: 1 } },
   t7: { id: 't7', title: 'Atlas onboarding flow', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 11', session: { state: 'running', word: 'Running', name: 'atlas-onboarding-flow' } },
   t8: { id: 't8', title: 'Upgrade React Native to 0.76', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight' },
   t9: { id: 't9', title: 'flama-ai landing copy', project: 'Client sites', session: { state: 'completed', word: 'Completed', name: 'First version of the landing' } },
@@ -246,7 +245,6 @@ function Card({
       milestone={hideMilestone ? undefined : task.milestone}
       due={task.due}
       dueTone={task.dueTone}
-      blocked={task.blocked}
       onStart={lifted ? undefined : () => {}}
       session={
         task.session ? (

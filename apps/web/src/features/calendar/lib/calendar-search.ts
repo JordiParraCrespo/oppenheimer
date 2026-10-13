@@ -2,7 +2,7 @@ import { searchText } from '@oppenheimer/frontend-web';
 import { z } from 'zod';
 
 /** What the month draws, each one a toggle in the sidebar (`20-plan-calendar.md` §1). */
-export const CALENDAR_LAYERS = ['events', 'google', 'tasks', 'automations'] as const;
+export const CALENDAR_LAYERS = ['google', 'events', 'tasks', 'automations'] as const;
 export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 
 /**

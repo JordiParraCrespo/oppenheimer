@@ -117,9 +117,6 @@ export function BoardColumns() {
         milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
         dueTone={view.dueTone}
-        blocked={
-          view.blockedReason ? t('tasks.card.blocked', { reason: view.blockedReason }) : undefined
-        }
         startLabel={t('tasks.card.start')}
         onStart={
           lifted || task.sessions.length > 0
