@@ -1,4 +1,5 @@
 import type { IBufferCell, IDisposable, Terminal } from '@xterm/xterm';
+import { bindHostCursor } from './host-cursor';
 import {
   classifyTypeaheadKey,
   TypeaheadModel,
@@ -72,14 +73,11 @@ export function bindTypeahead(
     return height;
   };
   let glyphHeight = measureGlyph();
-  let cursorVisible = true;
-  const trackCursor = (visible: boolean) => (params: (number | number[])[]) => {
-    if (params.some((param) => param === 25)) cursorVisible = visible;
-    // Seen, not handled: xterm still applies the mode.
-    return false;
-  };
-  const onShow = term.parser.registerCsiHandler({ prefix: '?', final: 'h' }, trackCursor(true));
-  const onHide = term.parser.registerCsiHandler({ prefix: '?', final: 'l' }, trackCursor(false));
+  // While a prediction is drawn the terminal's own cursor is kept off screen:
+  // it marks where the host has got to, a few keys behind, and drawn under the
+  // predicted one it read as a second cursor trailing the first, which is the
+  // lag the prediction is there to hide.
+  const hostCursor = bindHostCursor(term);
 
   const nullCell = term.buffer.active.getNullCell();
   const cellAt = (row: number, col: number): IBufferCell | undefined => {
@@ -95,7 +93,7 @@ export function bindTypeahead(
       const buffer = term.buffer.active;
       // A reader scrolled back is reading, not typing at the prompt.
       if (buffer.viewportY !== buffer.baseY) return null;
-      if (cursorVisible) return { row: buffer.cursorY, col: buffer.cursorX };
+      if (hostCursor.visible()) return { row: buffer.cursorY, col: buffer.cursorX };
       if (row !== undefined) {
         const col = inverseCellOn(row);
         return col === null || col === 'many' ? null : { row, col };
@@ -138,13 +136,18 @@ export function bindTypeahead(
       overlay.replaceChildren();
       return;
     }
-    const cellWidth = (screenElement?.clientWidth ?? 0) / term.cols;
-    const cellHeight = (screenElement?.clientHeight ?? 0) / term.rows;
+    // The screen's own box, which xterm sizes to the fractional cell it draws
+    // in: `clientWidth` rounds it, and the guess drifted off the host's
+    // columns the further right it was typed.
+    const box = screenElement?.getBoundingClientRect();
+    const cellWidth = (box?.width ?? 0) / term.cols;
+    const cellHeight = (box?.height ?? 0) / term.rows;
     if (cellWidth === 0 || cellHeight === 0) return;
     const font = fontOf();
     const padTop = Math.max(0, Math.floor((cellHeight - glyphHeight) / 2));
     // The cursor looks like the one it stands in for: the terminal's caret, or
     // the inverse cell an Ink program paints.
+    const cursorVisible = hostCursor.visible();
     const cursorBackground = cursorVisible ? colors.cursor : colors.foreground;
     const cursorText = cursorVisible ? colors.cursorText : colors.background;
     while (overlay.childElementCount > view.cells.length) overlay.lastElementChild?.remove();
@@ -172,7 +175,11 @@ export function bindTypeahead(
     });
   };
 
-  const redraw = () => draw(options.shouldDraw() ? model.view() : null);
+  const redraw = () => {
+    const view = options.shouldDraw() ? model.view() : null;
+    hostCursor.suppress(Boolean(view && view.cells.length > 0));
+    draw(view);
+  };
 
   let expiry: ReturnType<typeof setTimeout> | null = null;
   const scheduleExpiry = () => {
@@ -218,8 +225,7 @@ export function bindTypeahead(
     dispose() {
       if (frame !== null) cancelAnimationFrame(frame);
       if (expiry !== null) clearTimeout(expiry);
-      onShow.dispose();
-      onHide.dispose();
+      hostCursor.dispose();
       onParsed.dispose();
       onResize.dispose();
       overlay.remove();
