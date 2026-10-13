@@ -32,8 +32,8 @@ Grading:
   alternative on its file, appears in the skill's JSON block.
 - **noise**: a `medium` or `high` finding on a case file that no expectation
   names. Rules in `tolerate` (a missing render budget, a class entity's identity
-  lost on refetch, a missing e2e spec) are
-  fair on any new file and count for nothing either way. Findings on files
+  lost on refetch, a missing e2e spec, a component nothing mounts: a fixture
+  adds files and mounts none) are fair on any new file and count for nothing either way. Findings on files
   outside the change are counted, not scored: they are the codebase's.
 - A case passes with full recall and no noise. A decoy passes with no noise.
 
