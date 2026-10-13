@@ -30,10 +30,9 @@ function check(files, extra = {}) {
   const root = mkdtempSync(join(tmpdir(), 'oppenheimer-structure-'));
   roots.push(root);
   mkdirSync(join(root, 'scripts'));
-  copyFileSync(
-    new URL('./check-frontend-structure.mjs', import.meta.url),
-    join(root, 'scripts/check-frontend-structure.mjs'),
-  );
+  for (const script of ['check-frontend-structure.mjs', 'query-state-slots.mjs']) {
+    copyFileSync(new URL(`./${script}`, import.meta.url), join(root, 'scripts', script));
+  }
   // A feature is named after a module of the kernel or of the product package.
   mkdirSync(join(root, 'packages/frontend/core/src/modules/users'), { recursive: true });
   mkdirSync(join(root, 'packages/frontend/consumer/src/modules/things'), { recursive: true });
@@ -369,5 +368,20 @@ export function ThingCount() {
   assert.match(report, /sections\/two\.tsx: 2 components \(ThingList, ThingRow\)/);
   assert.match(report, /sections\/typed\.tsx: 2 components \(ThingList, ThingRow\)/);
   assert.doesNotMatch(report, /sections\/one\.tsx/);
+});
+
+test('a QueryState missing a rung is reported with its file and line', () => {
+  const { report } = check({
+    'src/features/things/sections/no-error.tsx': `export function ThingList({ things }: { things: Source }) {
+  return (
+    <QueryState query={things}>
+      <QueryState.Pending>loading</QueryState.Pending>
+      <QueryState.Data of={things}>{(rows) => rows.join()}</QueryState.Data>
+    </QueryState>
+  );
+}
+`,
+  });
+  assert.match(report, /sections\/no-error\.tsx:3: <QueryState> without QueryState\.Error —/);
 });
 // oppenheimer:end web

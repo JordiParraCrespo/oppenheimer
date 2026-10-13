@@ -1534,7 +1534,8 @@
       "offlineSince": "{{host}} lleva desconectado desde {{when}}. La sesión espera en cola y empieza cuando su runner se vuelva a conectar.",
       "start": "Iniciar sesión de trabajo",
       "queue": "Poner en cola",
-      "failed": "No se ha podido iniciar la sesión."
+      "failed": "No se ha podido iniciar la sesión.",
+      "loadFailed": "No se han podido cargar la tarea, su proyecto o los hosts."
     },
     "filters": {
       "milestone": "Hito",

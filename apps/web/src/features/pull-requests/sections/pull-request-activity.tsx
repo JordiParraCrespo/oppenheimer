@@ -21,23 +21,25 @@ export function PullRequestActivity({
       <h2 className="m-0 text-h4 font-semibold text-fg">
         {t('pullRequests.detail.activity.title')}
       </h2>
-      <QueryState
-        query={activity}
-        pending={<Skeleton className="h-24 w-full" />}
-        errorFallback={t('pullRequests.detail.activity.loadFailed')}
-      >
-        {(items) => {
-          const entries = activityEntries(items);
-          return entries.length ? (
-            <ol className="m-0 flex list-none flex-col gap-2.5 p-0">
-              {entries.map((entry) => (
-                <ActivityEntry key={entry.id} entry={entry} base={base} />
-              ))}
-            </ol>
-          ) : (
-            <p className="m-0 text-sm text-fg-muted">{t('pullRequests.detail.activity.empty')}</p>
-          );
-        }}
+      <QueryState query={activity}>
+        <QueryState.Pending>
+          <Skeleton className="h-24 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('pullRequests.detail.activity.loadFailed')} />
+        <QueryState.Data of={activity}>
+          {(items) => {
+            const entries = activityEntries(items);
+            return entries.length ? (
+              <ol className="m-0 flex list-none flex-col gap-2.5 p-0">
+                {entries.map((entry) => (
+                  <ActivityEntry key={entry.id} entry={entry} base={base} />
+                ))}
+              </ol>
+            ) : (
+              <p className="m-0 text-sm text-fg-muted">{t('pullRequests.detail.activity.empty')}</p>
+            );
+          }}
+        </QueryState.Data>
       </QueryState>
     </section>
   );
