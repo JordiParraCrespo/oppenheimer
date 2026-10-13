@@ -98,6 +98,9 @@ function cssFont(term: Terminal, size: number): string {
 function domPainter(term: Terminal, screen: HTMLElement): Painter {
   const layer = document.createElement('div');
   layer.setAttribute('aria-hidden', 'true');
+  // What the layer is and which cell is its cursor, for whoever inspects the
+  // page (the e2e cursor count reads these, not styles that may change).
+  layer.dataset.typeahead = '';
   layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:6;';
   screen.appendChild(layer);
   return {
@@ -111,6 +114,7 @@ function domPainter(term: Terminal, screen: HTMLElement): Painter {
       }
       view.cells.forEach((cell, index) => {
         const span = layer.children[index] as HTMLElement;
+        span.toggleAttribute('data-cursor', cell.cursor);
         span.textContent = cell.char;
         span.style.cssText = [
           'position:absolute',
@@ -147,6 +151,7 @@ function domPainter(term: Terminal, screen: HTMLElement): Painter {
 function canvasPainter(term: Terminal, screen: HTMLElement): Painter {
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
+  canvas.dataset.typeahead = '';
   canvas.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;z-index:6;';
   screen.appendChild(canvas);
   const context = canvas.getContext('2d');
