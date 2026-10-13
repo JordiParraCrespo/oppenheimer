@@ -88,11 +88,7 @@ export function mountSessionTerminal(
     ...TERMINAL_FONT,
     theme: readTerminalTheme(),
     cursorBlink: false,
-    // A text field's caret, one pixel wide, focused or not. A program can
-    // still ask for another shape (DECSCUSR) and xterm draws that.
-    cursorStyle: 'bar',
-    cursorWidth: 1,
-    cursorInactiveStyle: 'bar',
+    cursorStyle: 'block',
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
     scrollback: 5000,
