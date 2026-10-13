@@ -676,3 +676,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   turns; Stats ships without pull requests first; each Google account
   gets a colour and a toggle of its own, five at most. Who draws the
   Stats screen, this plan or the agents', is open.
+- 2026-10-13: Plan's second cut is built (23 "As built"): milestones
+  everywhere, the event log with versions and actors, blocked tasks, the
+  Milestones and Stats views (Stats is Plan's own view, settled when the
+  owner asked for the whole screen without the agents), several Google
+  accounts. Tokens and cost wait on the runner's headless drive.

@@ -10,7 +10,7 @@ this note only fixes the contract they build on (§7).
 
 The owner answered the open questions on 2026-10-13; what they settled
 is under "Decided" at the end, and the sections below are written to
-match. One question is still open.
+match. It is built: "As built" at the end says where the build differs.
 
 ## 1. What the frame changes
 
