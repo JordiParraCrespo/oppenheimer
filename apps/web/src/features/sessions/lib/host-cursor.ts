@@ -38,14 +38,25 @@ export function bindHostCursor(term: Terminal): IDisposable & {
     return false;
   });
 
+  // Callers waiting on a write xterm has not parsed yet. A second caller
+  // asking for the same state joins them rather than being told it is done:
+  // the terminal is not there until the write is.
+  let waiting: (() => void)[] | null = null;
   const suppress = (hidden: boolean, applied?: () => void) => {
     if (hidden === suppressed || !visible) {
       suppressed = hidden;
-      applied?.();
+      if (!applied) return;
+      if (waiting) waiting.push(applied);
+      else applied();
       return;
     }
     suppressed = hidden;
-    term.write(`\u001b[?25;${OWN_CURSOR_MODE}${hidden ? 'l' : 'h'}`, applied);
+    const callbacks = applied ? [applied] : [];
+    waiting = callbacks;
+    term.write(`\u001b[?25;${OWN_CURSOR_MODE}${hidden ? 'l' : 'h'}`, () => {
+      if (waiting === callbacks) waiting = null;
+      for (const callback of callbacks) callback();
+    });
   };
 
   return {

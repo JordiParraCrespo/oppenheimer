@@ -37,6 +37,20 @@ class FakeHost implements SessionStream {
     this.write(this.mode === 'inverse' ? `\u001b[?25l${this.line()}` : PROMPT);
   }
 
+  /**
+   * Output that is not the line: a spinner two rows down, redrawn every 25 ms
+   * as a busy agent's status is, in tmux's hide-and-show frame, the cursor
+   * saved and put back around it.
+   */
+  spin(): void {
+    const glyphs = '|/-\\';
+    let at = 0;
+    setInterval(() => {
+      at = (at + 1) % glyphs.length;
+      this.write(`\u001b[?25l\u001b7\u001b[3;1H${glyphs[at]}\u001b8\u001b[?25h`);
+    }, 25);
+  }
+
   hold(): void {
     this.holding = true;
   }
@@ -118,6 +132,7 @@ const host = new FakeHost(mode);
 const container = document.getElementById('terminal') as HTMLElement;
 mountSessionTerminal(container, host, { typeahead: () => true });
 host.start();
+if (params.get('spin')) host.spin();
 
 let watching = false;
 let frames: number[] = [];
@@ -129,8 +144,8 @@ const harness = {
   renderer: () => (container.querySelector('.xterm-rows') ? 'dom' : 'webgl'),
   /**
    * Starts counting the cursors on screen in every painted frame: the
-   * terminal's own (the DOM renderer's cursor element) and the typeahead's
-   * (an overlay cell in the caret's colour). `stopWatching` hands the counts
+   * terminal's own (the DOM renderer's cursor element, unless an overlay cell
+   * covers it) and the typeahead's (an overlay cell in the caret's colour). `stopWatching` hands the counts
    * back.
    */
   watchCursors(): void {
@@ -147,10 +162,23 @@ const harness = {
     const sample = () => {
       // After the frame's callbacks, so what is counted is what was painted.
       setTimeout(() => {
-        const own = container.querySelectorAll('.xterm-rows .xterm-cursor').length;
         const layer = Array.from(
           container.querySelectorAll<HTMLElement>('.xterm-screen > div'),
         ).find((element) => element.style.zIndex === '6');
+        // The terminal's cursor counts where it can be seen: an overlay cell
+        // painted over it hides it.
+        const covered = (cursor: Element) => {
+          const box = cursor.getBoundingClientRect();
+          const x = box.left + box.width / 2;
+          const y = box.top + box.height / 2;
+          return Array.from(layer?.children ?? []).some((cell) => {
+            const over = cell.getBoundingClientRect();
+            return x >= over.left && x <= over.right && y >= over.top && y <= over.bottom;
+          });
+        };
+        const own = Array.from(container.querySelectorAll('.xterm-rows .xterm-cursor')).filter(
+          (cursor) => !covered(cursor),
+        ).length;
         const guessed = Array.from(layer?.children ?? []).filter(
           (cell) => (cell as HTMLElement).style.backgroundColor === caretColor,
         ).length;
