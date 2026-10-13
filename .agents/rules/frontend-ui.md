@@ -69,7 +69,7 @@ multi-line, so a grep for `export` misses most of them.
 | A command someone runs on their own machine to fix it | `CommandRow` in a `CommandRowList` | a `CodeBlock` per command, inline `<code>` in a sentence |
 | Attaching files by dropping them on a pane | `DropZone` around a `full` pane; on a page the shell frames, the kit's `usePaneDrop` | `dragenter` listeners in a feature, an outline drawn by a screen |
 | Moving or reordering things by dragging (cards between columns, an entry to another day, a session to another project, the sidebar's and the rail's order) | the drag layer: `DragProvider` with `SortableGroup` / `SortableItem` or `useDraggable` / `useDroppable`; `SortableSessionItem`, `SortableSidebarProjectGroup` and `SortableRailItem` for the sidebar's sessions and projects and the rail, `useSortableControl` for any other item that is also a link or a button | `draggable` attributes, pointer listeners, dnd-kit imported in a feature |
-| Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `GoalCard` above | a `Card` grid, a table |
+| Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `MilestoneCard` above | a `Card` grid, a table |
 | A month with things on its days | `MonthCalendar` (`CalendarEntry` per item) inside the page's `DragProvider` | a grid of `div`s, a calendar library |
 | Picking a day | `DatePicker` | `<input type="date">`, a `ChipSelect` of dates |
 | A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
@@ -93,7 +93,7 @@ multi-line, so a grep for `export` misses most of them.
 | Milestones on time | `MilestoneTimeline`; `MilestoneGlyph` for the mark elsewhere | a `MonthCalendar`, a hand-drawn diamond |
 | The period a page reports on | `DateRangePicker` | two `DatePicker`s |
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
-| Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `CalendarSourceCard` per account |
+| Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `Card` per account |
 | An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it) | a `SessionItem` with an avatar |
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
 | A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |

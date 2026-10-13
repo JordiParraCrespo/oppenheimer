@@ -71,17 +71,17 @@ describe('hostsKeys', () => {
 });
 
 describe('tasksKeys', () => {
-  it('refreshes every task list, the board and a session’s alike, without touching the goals', async () => {
+  it('refreshes every task list, the board and a session’s alike, without touching the milestones', async () => {
     const board = tasksKeys.list({});
     const session = tasksKeys.list({ sessionId: 's-1' });
-    const goals = tasksKeys.goalList();
-    const client = cacheWith(board, session, goals);
+    const milestones = tasksKeys.milestoneList();
+    const client = cacheWith(board, session, milestones);
 
     await client.invalidateQueries({ queryKey: tasksKeys.lists() });
 
     expect(invalidated(client, board)).toBe(true);
     expect(invalidated(client, session)).toBe(true);
-    expect(invalidated(client, goals)).toBe(false);
+    expect(invalidated(client, milestones)).toBe(false);
   });
 });
 

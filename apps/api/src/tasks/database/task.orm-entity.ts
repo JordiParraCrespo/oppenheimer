@@ -19,23 +19,29 @@ import {
  * reads its neighbours again (§2). `rank` is `COLLATE "C"` so the database sorts
  * the keys byte by byte, as the rank policy builds them.
  *
- * The goal key is one composite foreign key, `(organizationId, goalId, projectId)`
- * to the goal's `(organizationId, id, projectId)`: a task's goal is always of the
- * task's project; deleting a goal nulls only `goalId`; and moving a goal to another
+ * The milestone key is one composite foreign key, `(organizationId, milestoneId, projectId)`
+ * to the milestone's `(organizationId, id, projectId)`: a task's milestone is always of the
+ * task's project; deleting a milestone nulls only `milestoneId`; and moving a milestone to another
  * project carries its tasks' `projectId` with it (`ON UPDATE CASCADE`).
  */
 @Entity('task')
 @Unique('UQ_task_rank', ['organizationId', 'status', 'rank'])
 @Unique('UQ_task_organization_id', ['organizationId', 'id'])
 @Index('IDX_task_project', ['organizationId', 'projectId'])
-@Index('IDX_task_goal', ['organizationId', 'goalId', 'projectId'], {
-  where: '"goalId" IS NOT NULL',
+@Index('IDX_task_milestone', ['organizationId', 'milestoneId', 'projectId'], {
+  where: '"milestoneId" IS NOT NULL',
 })
 @Index('IDX_task_due', ['organizationId', 'dueDate'], { where: '"dueDate" IS NOT NULL' })
 @Index('IDX_task_created_by', ['createdByUserId'], { where: '"createdByUserId" IS NOT NULL' })
 @Check('CHK_task_status', `"status" IN ('later', 'todo', 'doing', 'done')`)
 @Check('CHK_task_due_time', `"dueTime" ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`)
 @Check('CHK_task_due_time_has_date', `"dueTime" IS NULL OR "dueDate" IS NOT NULL`)
+@Check('CHK_task_version', `"version" >= 1`)
+@Check('CHK_task_blocked', `("blockedReason" IS NULL) = ("blockedAt" IS NULL)`)
+@Index('UQ_task_idempotency_key', ['organizationId', 'idempotencyKey'], {
+  unique: true,
+  where: '"idempotencyKey" IS NOT NULL',
+})
 export class TaskOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -47,7 +53,7 @@ export class TaskOrmEntity {
   projectId!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  goalId!: string | null;
+  milestoneId!: string | null;
 
   @Column({ type: 'varchar', length: 16 })
   status!: TaskStatus;
@@ -71,6 +77,21 @@ export class TaskOrmEntity {
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   completedAt!: Date | null;
+
+  /** Goes up on every write; a writer that read it may write only while it holds. */
+  @Column({ type: 'integer', default: 1 })
+  version!: number;
+
+  /** Why the task waits on a person; set with {@link blockedAt}. */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  blockedReason!: string | null;
+
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  blockedAt!: Date | null;
+
+  /** The client's `Idempotency-Key` on the create that made it. */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  idempotencyKey!: string | null;
 
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;

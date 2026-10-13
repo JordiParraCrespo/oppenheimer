@@ -10,7 +10,11 @@ import {
 } from '../../calendar.di-tokens';
 import type { CalendarConnectionRepositoryPort } from '../../database/calendar-connection.repository.port';
 import { CalendarErrors } from '../../domain/calendar.errors';
-import { CalendarConnectionEntity } from '../../domain/calendar-connection.entity';
+import { canConnectAnotherAccount, nextColorIndex } from '../../domain/calendar-accounts.policy';
+import {
+  CalendarConnectionEntity,
+  type CalendarGrantProps,
+} from '../../domain/calendar-connection.entity';
 import {
   type CalendarGrant,
   type CalendarProviderPort,
@@ -20,10 +24,15 @@ import type { TokenSealerPort } from '../../infrastructure/token-sealer.port';
 import { ConnectGoogleCalendarCommand } from './connect-google-calendar.command';
 
 /**
- * Finishes Connect Google Calendar: the state is spent first, so a stolen redirect
- * cannot be replayed, then the code is exchanged once. A grant without a refresh
- * token or without the calendar permission is refused rather than stored, and a
- * new grant replaces the person's old one.
+ * Finishes connecting a Google account: the state is spent first, so a stolen
+ * redirect cannot be replayed, then the code is exchanged once. A grant without
+ * a refresh token, without the calendar permission or without an ID token
+ * (which says which account it is) is refused rather than stored.
+ *
+ * An account the person already connected is reconnected in place, keeping its
+ * colour: matched by Google's `sub`, or, for a row kept before subjects were,
+ * by its address, which keys that row. Any other account is a new connection,
+ * up to five, in the lowest colour none of the person's others holds.
  */
 @CommandHandler(ConnectGoogleCalendarCommand)
 export class ConnectGoogleCalendarCommandHandler
@@ -54,14 +63,44 @@ export class ConnectGoogleCalendarCommandHandler
           : 'Google returned no refresh token',
       });
     }
-    const connection = CalendarConnectionEntity.connect({
-      organizationId: scope.organizationId,
-      userId: scope.userId,
-      accountEmail: grant.accountEmail,
+    if (!grant.account) {
+      throw new AppError(CalendarErrors.GOOGLE_GRANT_REFUSED, {
+        detail: 'Google returned no ID token naming the account',
+      });
+    }
+    return this.keep(scope, scope.organizationId, {
+      accountEmail: grant.account.email,
+      accountSubject: grant.account.subject,
       refreshTokenSealed: this.sealer.seal(grant.refreshToken),
       scopes: grant.scopes,
     });
-    await this.connections.upsert(connection);
+  }
+
+  private async keep(
+    scope: ConnectGoogleCalendarCommand['scope'],
+    organizationId: string,
+    grant: CalendarGrantProps,
+  ): Promise<AggregateID> {
+    const held = await this.connections.findAllOwn(scope);
+    const same =
+      held.find((row) => row.accountSubject !== null && row.isAccountOf(grant)) ??
+      held.find((row) => row.isAccountOf(grant));
+    if (same) {
+      same.reconnect(grant);
+      await this.connections.save(same);
+      return same.id;
+    }
+    const colorIndex = nextColorIndex(held.map((row) => row.colorIndex));
+    if (!canConnectAnotherAccount(held.length) || colorIndex === null) {
+      throw new AppError(CalendarErrors.GOOGLE_ACCOUNT_LIMIT_REACHED);
+    }
+    const connection = CalendarConnectionEntity.connect({
+      organizationId,
+      userId: scope.userId,
+      colorIndex,
+      ...grant,
+    });
+    await this.connections.insert(connection);
     return connection.id;
   }
 

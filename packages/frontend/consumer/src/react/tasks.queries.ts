@@ -9,8 +9,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
-  type GoalEntity,
-  type GoalInput,
+  type MilestoneEntity,
+  type MilestoneInput,
   TaskEntity,
   type TaskFilter,
   type TaskInput,
@@ -24,8 +24,8 @@ export const tasksKeys = {
   all: ['tasks'] as const,
   lists: () => [...tasksKeys.all, 'list'] as const,
   list: (filter: TaskFilter) => [...tasksKeys.lists(), filter] as const,
-  goals: () => [...tasksKeys.all, 'goals'] as const,
-  goalList: () => [...tasksKeys.goals(), 'list'] as const,
+  milestones: () => [...tasksKeys.all, 'milestones'] as const,
+  milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
 };
 
 /** The whole board, which every column, count and card reads. */
@@ -55,21 +55,21 @@ export function useSessionTasks(sessionId: string | undefined) {
   });
 }
 
-/** The goals of the workspace, with their progress. */
-export function useGoals<TData = GoalEntity[]>(
-  options?: Omit<UseQueryOptions<GoalEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
+/** The milestones of the workspace, with their progress. */
+export function useMilestones<TData = MilestoneEntity[]>(
+  options?: Omit<UseQueryOptions<MilestoneEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
-  return useQuery<GoalEntity[], Error, TData>({
-    queryKey: tasksKeys.goalList(),
-    queryFn: () => app.tasks.findGoals(),
+  return useQuery<MilestoneEntity[], Error, TData>({
+    queryKey: tasksKeys.milestoneList(),
+    queryFn: () => app.tasks.findMilestones(),
     ...options,
   });
 }
 
 /**
  * The server's answer replaces that task's row on the board, or removes it on a
- * delete; goals refetch when a goal's `doneCount` or `totalCount` can move.
+ * delete; milestones refetch when a milestone's `doneCount` or `totalCount` can move.
  * `previous` is the row before the write: read from the board unless the caller
  * already drew a provisional one there. A board read already in flight is
  * cancelled first, so an answer from before the write cannot land on top of it.
@@ -89,15 +89,15 @@ async function settleTask(
     const rest = rows.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
   });
-  if (!boardKnown || movesGoalProgress(previous, task)) {
-    void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
+  if (!boardKnown || movesMilestoneProgress(previous, task)) {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
   }
 }
 
-/** A task joined or left a goal, or one on a goal turned Done or back. */
-function movesGoalProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
-  const before = was?.goalId ?? null;
-  const after = now?.goalId ?? null;
+/** A task joined or left a milestone, or one on a milestone turned Done or back. */
+function movesMilestoneProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
+  const before = was?.milestoneId ?? null;
+  const after = now?.milestoneId ?? null;
   if (before !== after) return true;
   return before !== null && (was?.isDone ?? false) !== (now?.isDone ?? false);
 }
@@ -181,7 +181,7 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
   return new TaskEntity(
     task.id,
     task.projectId,
-    task.goalId,
+    task.milestoneId,
     move.status,
     rank,
     task.title,
@@ -253,42 +253,44 @@ export function useUnlinkTaskSession(
   });
 }
 
-export function useCreateGoal(options?: UseMutationOptions<GoalEntity, Error, GoalInput>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: GoalInput) => app.tasks.createGoal(input),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
-    }),
-  });
-}
-
-export interface UpdateGoalVariables {
-  id: string;
-  input: Partial<GoalInput>;
-}
-
-/** A goal moved to another project takes its tasks with it, so the board refetches too. */
-export function useUpdateGoal(
-  options?: UseMutationOptions<GoalEntity, Error, UpdateGoalVariables>,
+export function useCreateMilestone(
+  options?: UseMutationOptions<MilestoneEntity, Error, MilestoneInput>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: UpdateGoalVariables) => app.tasks.updateGoal(id, input),
+    mutationFn: (input: MilestoneInput) => app.tasks.createMilestone(input),
+    ...withCacheOnSuccess(options, () => {
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
+    }),
+  });
+}
+
+export interface UpdateMilestoneVariables {
+  id: string;
+  input: Partial<MilestoneInput>;
+}
+
+/** A milestone moved to another project takes its tasks with it, so the board refetches too. */
+export function useUpdateMilestone(
+  options?: UseMutationOptions<MilestoneEntity, Error, UpdateMilestoneVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: UpdateMilestoneVariables) => app.tasks.updateMilestone(id, input),
     ...withCacheOnSuccess(options, () => {
       void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
     }),
   });
 }
 
-/** Its tasks lose their goal, so the board refetches too. */
-export function useDeleteGoal(options?: UseMutationOptions<void, Error, string>) {
+/** Its tasks lose their milestone, so the board refetches too. */
+export function useDeleteMilestone(options?: UseMutationOptions<void, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => app.tasks.removeGoal(id),
+    mutationFn: (id: string) => app.tasks.removeMilestone(id),
     ...withCacheOnSuccess(options, () => {
       void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
     }),

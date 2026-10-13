@@ -17,6 +17,7 @@ the control plane and the console make it true. The product word is
 | 18 | [The product](18-plan-product.md) | What the frames say Plan is, screen by screen, and the gaps they leave |
 | 19 | [Tasks and goals: the backend](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, links, and what the sessions module must add |
 | 20 | [The calendar](20-plan-calendar.md) | The month view composed from four reads; Google read through a port, uncached on the server; personal events in one table |
+| 23 | [Second cut](23-plan-milestones-stats-accounts.md) | The 2026-10-13 frame: milestones, needs input, Stats, several Google accounts (proposed) |
 
 ## Slices
 

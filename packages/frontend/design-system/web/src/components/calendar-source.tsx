@@ -1,8 +1,10 @@
 import { PlusIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { TONE_BG } from '../internal/data-tone';
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
+import type { CalendarAccent } from './month-calendar';
 
 /**
  * The calendar's sidebar: what it shows and where it comes from.
@@ -11,9 +13,6 @@ import { Checkbox } from './checkbox';
  *   personal events, task due dates, automation runs), as a sidebar row
  *   with its glyph and a `Checkbox` on the right. The whole row toggles
  *   it; a source that is off fades back.
- * - `CalendarSourceCard`: a connected calendar under the list, on the hover
- *   wash: the provider's mark and name, the account, and when it last
- *   synced in mono.
  * - `CalendarAccountList`: every connected account, for more than one: a
  *   grouped list on the hover wash at the 14px radius, hairlines between
  *   `CalendarAccountRow`s and `CalendarAccountAdd` last.
@@ -47,39 +46,13 @@ function CalendarLayerItem({
         </span>
       ) : null}
       <span className="min-w-0 flex-1 truncate text-operate">{children}</span>
-      <Checkbox checked={checked} onCheckedChange={(next) => onCheckedChange?.(next)} />
+      {/* In ink, as the frame draws a layer: a view setting, not an action. */}
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(next) => onCheckedChange?.(next)}
+        className="data-checked:border-fg data-checked:bg-fg data-checked:text-canvas"
+      />
     </label>
-  );
-}
-
-function CalendarSourceCard({
-  mark,
-  name,
-  account,
-  status,
-  className,
-  ...props
-}: Omit<React.ComponentProps<'div'>, 'children'> & {
-  /** The provider's own mark (`BrandGlyph name="google"`). */
-  mark?: React.ReactNode;
-  name: React.ReactNode;
-  account?: React.ReactNode;
-  /** "Synced 2 min ago". */
-  status?: React.ReactNode;
-}) {
-  return (
-    <div
-      data-slot="calendar-source-card"
-      className={cn('flex flex-col gap-1 rounded-md bg-hover-surface p-3', className)}
-      {...props}
-    >
-      <span className="flex items-center gap-2 text-sm font-medium text-fg [&_svg]:size-[13px] [&_svg]:shrink-0">
-        {mark}
-        {name}
-      </span>
-      {account ? <span className="truncate text-xs text-fg-muted">{account}</span> : null}
-      {status ? <span className="figures text-micro text-fg-subtle">{status}</span> : null}
-    </div>
   );
 }
 
@@ -97,13 +70,15 @@ function CalendarAccountList({ className, ...props }: React.ComponentProps<'div'
  * One account: the provider's 13px mark, the address, and how its sync
  * stands in 11px mono behind a 6px dot (success while syncing, danger when
  * it failed). A failed one offers `onReconnect` as a link under the status;
- * every one has the 24px round × to disconnect.
+ * every one has the 24px round × to disconnect. With `accent`, an 8px swatch
+ * before the address names the colour the month draws its events in.
  */
 function CalendarAccountRow({
   mark,
   account,
   status,
   failed = false,
+  accent,
   onReconnect,
   onDisconnect,
   labels,
@@ -116,6 +91,8 @@ function CalendarAccountRow({
   /** "Synced 2 min ago", "Sync failed · 3h ago". */
   status: React.ReactNode;
   failed?: boolean;
+  /** The colour its events wear on the month (`CalendarEntryData.accent`). */
+  accent?: CalendarAccent;
   onReconnect?: () => void;
   onDisconnect?: () => void;
   labels?: { reconnect?: string; disconnect?: (account: string) => string };
@@ -131,7 +108,10 @@ function CalendarAccountRow({
         {mark}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
-        <span className="truncate text-[13px] text-fg">{account}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {accent ? <span aria-hidden className={cn('size-2 shrink-0 rounded-pill', TONE_BG[accent])} /> : null}
+          <span className="truncate text-[13px] text-fg">{account}</span>
+        </span>
         <span className="figures flex items-center gap-1.5 font-mono text-[11px] text-fg-subtle">
           <span aria-hidden className={cn('size-1.5 shrink-0 rounded-pill', failed ? 'bg-danger' : 'bg-success')} />
           {status}
@@ -179,4 +159,4 @@ function CalendarAccountAdd({ className, children = 'Add account', ...props }: R
   );
 }
 
-export { CalendarAccountAdd, CalendarAccountList, CalendarAccountRow, CalendarLayerItem, CalendarSourceCard };
+export { CalendarAccountAdd, CalendarAccountList, CalendarAccountRow, CalendarLayerItem };

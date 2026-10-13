@@ -249,6 +249,14 @@ runner does with it and point back.
   and the Go twin is generated from it. `download` marks the clone step
   of a repository the host has never held, which is a first download
   rather than a fetch. A failure is `session.failed`, not a step status.
+  When a headless turn's agent exits, the runner logs `turn.ended`: its
+  payload is `packages/shared/src/protocol/turn-event.ts` (Go twin
+  generated), the exit code plus optional `agentSessionId`, `result`,
+  `costUsd`, `permissionDenials`, `outputRef` and, since 2026-10-13
+  (23 §4), `model`, `inputTokens`, `outputTokens`, `cacheReadTokens` and
+  `cacheWriteTokens`, read from Claude Code's result. The fields are
+  additive and the control plane reads each by name, so an older peer on
+  either side leaves them unmeasured (null), never zero.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

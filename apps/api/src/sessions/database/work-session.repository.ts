@@ -651,8 +651,10 @@ export class WorkSessionRepository
         `INSERT INTO "session_turn"
            ("organizationId", "sessionId", "seq", "origin", "drive", "state", "prompt",
             "observedWorking", "startedAt", "endedAt", "exitCode", "agentSessionId",
-            "result", "failureDetail", "costUsd", "permissionDenials", "outputRef")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+            "result", "failureDetail", "costUsd", "permissionDenials", "outputRef",
+            "model", "inputTokens", "outputTokens", "cacheReadTokens", "cacheWriteTokens")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,
+                 $18,$19,$20,$21,$22)
          ON CONFLICT ("sessionId", "seq") DO UPDATE SET
            "drive" = EXCLUDED."drive", "state" = EXCLUDED."state",
            "prompt" = EXCLUDED."prompt", "observedWorking" = EXCLUDED."observedWorking",
@@ -660,7 +662,10 @@ export class WorkSessionRepository
            "exitCode" = EXCLUDED."exitCode", "agentSessionId" = EXCLUDED."agentSessionId",
            "result" = EXCLUDED."result", "failureDetail" = EXCLUDED."failureDetail",
            "costUsd" = EXCLUDED."costUsd", "permissionDenials" = EXCLUDED."permissionDenials",
-           "outputRef" = EXCLUDED."outputRef", "updatedAt" = now()`,
+           "outputRef" = EXCLUDED."outputRef", "model" = EXCLUDED."model",
+           "inputTokens" = EXCLUDED."inputTokens", "outputTokens" = EXCLUDED."outputTokens",
+           "cacheReadTokens" = EXCLUDED."cacheReadTokens",
+           "cacheWriteTokens" = EXCLUDED."cacheWriteTokens", "updatedAt" = now()`,
         [
           row.organizationId,
           row.sessionId,
@@ -679,6 +684,11 @@ export class WorkSessionRepository
           row.costUsd,
           row.permissionDenials,
           row.outputRef,
+          row.model,
+          row.inputTokens,
+          row.outputTokens,
+          row.cacheReadTokens,
+          row.cacheWriteTokens,
         ],
       );
     }

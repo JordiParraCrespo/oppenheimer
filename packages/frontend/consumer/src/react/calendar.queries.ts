@@ -8,11 +8,13 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { useSyncExternalStore } from 'react';
 import type {
   CalendarEventEntity,
   CalendarEventInput,
   CalendarRange,
   GoogleCalendarConnectionEntity,
+  GoogleCalendarRead,
 } from '../modules/calendar/calendar-event.entity';
 import { useConsumerApp } from './context';
 
@@ -21,9 +23,10 @@ export const calendarKeys = {
   events: () => [...calendarKeys.all, 'events'] as const,
   eventRange: (range: CalendarRange) => [...calendarKeys.events(), range] as const,
   google: () => [...calendarKeys.all, 'google'] as const,
-  googleConnection: () => [...calendarKeys.google(), 'connection'] as const,
+  googleConnections: () => [...calendarKeys.google(), 'connections'] as const,
+  googleReads: () => [...calendarKeys.google(), 'events'] as const,
   googleEvents: (range: CalendarRange, timeZone: string) =>
-    [...calendarKeys.google(), 'events', range, timeZone] as const,
+    [...calendarKeys.googleReads(), range, timeZone] as const,
 };
 
 /** How long Google's month stays fresh before a focus reads it again. */
@@ -42,41 +45,78 @@ export function useCalendarEvents<TData = CalendarEventEntity[]>(
   });
 }
 
-export function useGoogleCalendarConnection() {
+/** The viewer's Google accounts, oldest first; `select` for one of them or a count. */
+export function useGoogleCalendarConnections<TData = GoogleCalendarConnectionEntity[]>(
+  options?: Omit<
+    UseQueryOptions<GoogleCalendarConnectionEntity[], Error, TData>,
+    'queryKey' | 'queryFn'
+  >,
+) {
   const app = useConsumerApp();
-  return useQuery({
-    queryKey: calendarKeys.googleConnection(),
-    queryFn: () => app.calendar.findGoogleConnection(),
+  return useQuery<GoogleCalendarConnectionEntity[], Error, TData>({
+    queryKey: calendarKeys.googleConnections(),
+    queryFn: () => app.calendar.findGoogleConnections(),
+    ...options,
   });
 }
 
 /**
- * The viewer's Google Calendar for the days on screen, read through the API and
- * never stored. Asks nothing until the connection is active.
+ * Every Google account's events for the days on screen, read through the API
+ * and never stored, each meeting once. Asks nothing until `enabled` (an account
+ * is active and the layer is on). An account the read found revoked refreshes
+ * the account list, which then offers Reconnect.
  */
-export function useGoogleCalendarEvents(
+export function useGoogleCalendarEvents<TData = GoogleCalendarRead>(
   range: CalendarRange,
   timeZone: string,
-  connection: GoogleCalendarConnectionEntity | undefined,
+  enabled: boolean,
+  options?: { select?: (read: GoogleCalendarRead) => TData },
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-  return useQuery({
+  return useQuery<GoogleCalendarRead, Error, TData>({
     queryKey: calendarKeys.googleEvents(range, timeZone),
-    queryFn: connection?.isActive
+    queryFn: enabled
       ? async () => {
-          try {
-            return await app.calendar.findGoogleEvents({ ...range, timeZone });
-          } catch (error) {
-            // A revoked grant shows on the connection card as Reconnect.
-            void queryClient.invalidateQueries({ queryKey: calendarKeys.googleConnection() });
-            throw error;
+          const read = await app.calendar.findGoogleEvents({ ...range, timeZone });
+          if (read.accounts.some((account) => account.status === 'revoked')) {
+            void queryClient.invalidateQueries({ queryKey: calendarKeys.googleConnections() });
           }
+          return read;
         }
       : skipToken,
     staleTime: GOOGLE_FRESH_MS,
     retry: false,
+    ...options,
   });
+}
+
+/**
+ * The Google read most recently answered, whichever month it was for, and
+ * when: what the account list says "Updated 2m ago" from and marks a failing
+ * account by. Nothing until a read has answered.
+ */
+export function useLatestGoogleCalendarRead(): {
+  read: GoogleCalendarRead | undefined;
+  updatedAt: number;
+} {
+  const queryClient = useQueryClient();
+  const cache = queryClient.getQueryCache();
+  const latest = () => {
+    let newest: { data?: unknown; dataUpdatedAt: number } | undefined;
+    for (const query of cache.findAll({ queryKey: calendarKeys.googleReads() })) {
+      if (query.state.data && (!newest || query.state.dataUpdatedAt > newest.dataUpdatedAt)) {
+        newest = query.state;
+      }
+    }
+    return newest;
+  };
+  // The query cache: its state objects are replaced on each update, so one is a stable snapshot.
+  const state = useSyncExternalStore((onChange) => cache.subscribe(onChange), latest, latest);
+  return {
+    read: state?.data as GoogleCalendarRead | undefined,
+    updatedAt: state?.dataUpdatedAt ?? 0,
+  };
 }
 
 export function useCreateCalendarEvent(
@@ -122,13 +162,16 @@ export function useDeleteCalendarEvent(options?: UseMutationOptions<void, Error,
   });
 }
 
-/** Asks for Google's consent page and sends the browser there. */
+/**
+ * Asks for Google's consent page and sends the browser there: a new account,
+ * or, given a connection's id, a reconnect of that one.
+ */
 export function useStartGoogleCalendarConnection(
-  options?: UseMutationOptions<string, Error, void>,
+  options?: UseMutationOptions<string, Error, string | undefined>,
 ) {
   const app = useConsumerApp();
   return useMutation({
-    mutationFn: () => app.calendar.startGoogleConnection(),
+    mutationFn: (connectionId?: string) => app.calendar.startGoogleConnection(connectionId),
     ...withCacheOnSuccess(options, (url) => {
       window.location.assign(url);
     }),
@@ -147,21 +190,22 @@ export function useConnectGoogleCalendar(
   return useMutation({
     mutationFn: ({ code, state }: { code: string; state: string }) =>
       app.calendar.connectGoogle(code, state),
-    ...withCacheOnSuccess(options, (connection) => {
-      queryClient.setQueryData(calendarKeys.googleConnection(), connection);
+    ...withCacheOnSuccess(options, () => {
       void queryClient.invalidateQueries({ queryKey: calendarKeys.google() });
     }),
   });
 }
 
-export function useDisconnectGoogleCalendar(options?: UseMutationOptions<void, Error, void>) {
+/** Removes one Google account: its events leave the month and its colour is free again. */
+export function useRemoveGoogleCalendarConnection(
+  options?: UseMutationOptions<void, Error, string>,
+) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => app.calendar.disconnectGoogle(),
+    mutationFn: (id: string) => app.calendar.removeGoogleConnection(id),
     ...withCacheOnSuccess(options, () => {
-      queryClient.removeQueries({ queryKey: calendarKeys.google() });
-      void queryClient.invalidateQueries({ queryKey: calendarKeys.googleConnection() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.google() });
     }),
   });
 }

@@ -10,8 +10,8 @@ import {
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import {
   useCreateTask,
-  useGoals,
   useHosts,
+  useMilestones,
   useMoveTask,
   useProjects,
   useSessions,
@@ -62,7 +62,9 @@ export function BoardColumns() {
   const { data: unassignedId } = useProjects({
     select: (rows) => rows.find((row) => row.isUnassigned)?.id,
   });
-  const { data: goals } = useGoals({ select: (rows) => new Map(rows.map((row) => [row.id, row])) });
+  const { data: milestones } = useMilestones({
+    select: (rows) => new Map(rows.map((row) => [row.id, row])),
+  });
   const { data: sessions } = useSessions({
     select: (rows) => new Map(rows.map((row) => [row.id, row])),
   });
@@ -92,12 +94,12 @@ export function BoardColumns() {
     filter,
     today,
     projectName: (id: string) => projectNames?.get(id) ?? null,
-    goalName: (id: string) => goals?.get(id)?.name ?? null,
+    milestoneName: (id: string) => milestones?.get(id)?.name ?? null,
     dayLabel: (iso: string) =>
       dueDayLabel(iso, today, words, (day) => formatCalendarDay(day, locale, 'short')),
   };
-  const goal = filter.goalId ? goals?.get(filter.goalId) : undefined;
-  const filed = goal?.name ?? (filter.projectId ? projectNames?.get(filter.projectId) : null);
+  const milestone = filter.milestoneId ? milestones?.get(filter.milestoneId) : undefined;
+  const filed = milestone?.name ?? (filter.projectId ? projectNames?.get(filter.projectId) : null);
 
   const card = (task: TaskEntity, lifted = false) => {
     const view = cardView(task, context);
@@ -112,7 +114,7 @@ export function BoardColumns() {
           move.mutate({ id: task.id, status: task.isDone ? 'todo' : 'done', afterTaskId: null })
         }
         project={view.projectName ?? undefined}
-        goal={view.goalName ?? undefined}
+        milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
         dueTone={view.dueTone}
         startLabel={t('tasks.card.start')}
@@ -197,7 +199,7 @@ export function BoardColumns() {
                           title,
                           status,
                           projectId: filter.projectId || unassignedId,
-                          goalId: filter.goalId ?? null,
+                          milestoneId: filter.milestoneId ?? null,
                         })
                       }
                     />
