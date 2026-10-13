@@ -20,6 +20,22 @@ The **`web` project passes but is not a CI row yet.** Run
 journeys. Adding it to `scripts/ci/local.mjs` is a separate CI decision: the
 scheduled workflow would need a Chromium.
 
+The **`terminal` project** needs Chromium and nothing else: no stack. It is the
+console's session terminal on a fake host whose echo the test holds back
+(`tests/terminal/page/`), and it checks what typing ahead of a slow host looks
+like. Each case photographs the screen with the predicted keys drawn, lets the
+echo go, and photographs it again once the echo has landed and again after any
+unconfirmed guess would have expired. All three must be the same picture:
+nothing may move or spring back, neither the letters nor the caret. It runs
+both renderers, four pixel ratios, several installed faces served under a name
+the terminal's font stack asks for, and both ways an agent shows its cursor (a
+visible caret, or Ink's inverse cell). The one thing it cannot see is the WebGL
+renderer above 1x, which headless Chromium draws blank;
+`apps/web/src/features/sessions/__tests__/typeahead-webgl-baseline.spec.ts`
+holds the rule there. Run it after any change to the session terminal, the
+typeahead or the terminal's font and cursor:
+`pnpm --filter @oppenheimer/e2e e2e:terminal`.
+
 ## The two stubs, and what they are for
 
 Two of the console's surfaces talk to something this repository does not own,
@@ -151,6 +167,7 @@ node scripts/stack/stack.mjs up --web      # `down` stops what it started
 pnpm test:e2e                              # everything (from the repo root)
 pnpm --filter @oppenheimer/e2e e2e:api           # API only, no browser needed
 pnpm --filter @oppenheimer/e2e e2e:web           # browser only
+pnpm --filter @oppenheimer/e2e e2e:terminal      # the session terminal alone: no stack needed
 pnpm --filter @oppenheimer/e2e e2e:ratelimit     # see "The rate-limit test" below
 ```
 

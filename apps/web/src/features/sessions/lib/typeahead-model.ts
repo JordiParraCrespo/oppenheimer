@@ -115,6 +115,41 @@ function isNarrowPrintable(char: string): boolean {
 
 const isBlank = (char: string) => char === ' ' || char === '';
 
+/**
+ * One glyph that is neither a letter, a digit nor blank: how a prompt ends.
+ * Not a list bullet (`-`, `*`, `+`, `•`), which starts the reader's own text
+ * far more often than it ends a prompt: taken for one, a recalled `- item`
+ * lost its bullet to the prompt and deleting through it bounced.
+ */
+const isPromptMark = (char: string) =>
+  [...char].length === 1 &&
+  !isBlank(char) &&
+  !/[\p{L}\p{N}]/u.test(char) &&
+  !'-*+\u2022'.includes(char);
+
+/**
+ * Where the reader's text starts on a row whose run of text begins at
+ * `start`: past each prompt mark and the blank after it (`❯ `, `> `, `$ `, a
+ * box's `│ `), which are the program's. A Backspace guessed into them deleted
+ * the prompt until the host refused and the line sprang back.
+ *
+ * Read off the row rather than fixed where an epoch's first key landed: Up
+ * recalls a line and starts an epoch with the cursor at its end, and a floor
+ * there would leave every deletion of the recalled text unpredicted. Text
+ * the reader typed that starts with a mark and a blank (`- item`) only goes
+ * unpredicted at its start, never drawn wrong.
+ */
+function skipLeadingPrompt(
+  start: number,
+  cursor: number,
+  char: (col: number) => string,
+  blank: (col: number) => boolean,
+): number {
+  let at = start;
+  while (at + 2 <= cursor && isPromptMark(char(at)) && blank(at + 1)) at += 2;
+  return at;
+}
+
 /** The line after `key`, or `null` when the key's effect cannot be known. */
 function apply(state: LineState, key: TypeaheadKey): LineState | null {
   const cells = state.cells;
@@ -129,12 +164,16 @@ function apply(state: LineState, key: TypeaheadKey): LineState | null {
       return { cells: next, cursor: state.cursor + 1 };
     }
     case 'backspace': {
-      if (state.cursor === 0) return null;
+      // At the start of the text a line editor does nothing, and that is the
+      // guess: not knowing would drop the guesses before it, and the letters
+      // they had deleted came back until the echo. A program that does
+      // something there contradicts it, which drops it like any wrong guess.
+      if (state.cursor === 0) return state;
       const next = [...cells.slice(0, state.cursor - 1), ...cells.slice(state.cursor), ' '];
       return { cells: next, cursor: state.cursor - 1 };
     }
     case 'left':
-      return state.cursor === 0 ? null : { cells, cursor: state.cursor - 1 };
+      return state.cursor === 0 ? state : { cells, cursor: state.cursor - 1 };
     case 'right':
       // At the end of the text, Right is the program's (Claude Code takes a
       // suggestion with it), so only a move within the text is predicted.
@@ -169,8 +208,9 @@ function sameState(a: LineState, b: LineState): boolean {
  */
 function regionAt(screen: TypeaheadScreen, row: number, col: number): Region | null {
   const blank = (x: number) => x < 0 || x >= screen.cols || isBlank(screen.cell(row, x).char);
-  let start = col;
-  while (start > 0 && !(blank(start - 1) && blank(start - 2))) start -= 1;
+  let runStart = col;
+  while (runStart > 0 && !(blank(runStart - 1) && blank(runStart - 2))) runStart -= 1;
+  const start = skipLeadingPrompt(runStart, col, (x) => screen.cell(row, x).char, blank);
   let textEnd = col;
   while (textEnd < screen.cols && !(blank(textEnd) && blank(textEnd + 1))) textEnd += 1;
   let end = textEnd;

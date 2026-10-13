@@ -12,7 +12,8 @@
     "e2e:ratelimit": "RUN_RATE_LIMIT=1 playwright test --project=api --workers=1 --grep @ratelimit",
     "lint": "biome check .",
     "report": "playwright show-report",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "e2e:terminal": "playwright test --project=terminal"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",
@@ -20,7 +21,8 @@
     "@types/node": "^22.10.0",
     "@types/pg": "^8.20.0",
     "pg": "^8.22.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0"
   },
   "dependencies": {
     "@oppenheimer/env": "workspace:*"
