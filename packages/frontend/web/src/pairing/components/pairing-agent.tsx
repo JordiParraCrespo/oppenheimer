@@ -44,6 +44,10 @@ const STATE_INK: Record<ConnectionRowState, string> = {
  * "Agent prompt", and Copy prompt, the primary, on its right; the prompt
  * itself is the fold, closed by default, because copying it is the action
  * and reading it is for whoever wants to first.
+ *
+ * Only the onboarding step caps the prompt and scrolls it. In the dialog it
+ * runs uncapped, because `DialogBody` already scrolls and a dialog gets one
+ * scrollbar (`.agents/rules/frontend-ui.md`).
  */
 export function PairingPrompt({
   pairing,
@@ -76,7 +80,7 @@ export function PairingPrompt({
       </div>
       <DisclosurePanel className="mt-0 border-t border-border-subtle">
         {pairing ? (
-          <pre className="m-0 max-h-45 overflow-y-auto overscroll-contain px-3.5 py-3 font-mono text-[11.5px] leading-[1.7] wrap-anywhere whitespace-pre-wrap text-fg group-data-[layout=step]/pairing:max-h-50 group-data-[layout=step]/pairing:px-4 group-data-[layout=step]/pairing:py-3.5 group-data-[layout=step]/pairing:text-xs">
+          <pre className="m-0 px-3.5 py-3 font-mono text-[11.5px] leading-[1.7] wrap-anywhere whitespace-pre-wrap text-fg group-data-[layout=step]/pairing:max-h-50 group-data-[layout=step]/pairing:overflow-y-auto group-data-[layout=step]/pairing:overscroll-contain group-data-[layout=step]/pairing:px-4 group-data-[layout=step]/pairing:py-3.5 group-data-[layout=step]/pairing:text-xs">
             {pairing.agentPrompt}
           </pre>
         ) : (
