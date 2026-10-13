@@ -115,18 +115,35 @@ append-only table, written in the same transaction as the change:
 | `taskId` | uuid | no FK: the row outlives the task |
 | `projectId` | uuid | the task's project at the time |
 | `milestoneId` | uuid null | likewise |
-| `kind` | varchar(24) | `created` · `completed` · `reopened` · `deleted` · `moved` · `edited` · `blocked` · `unblocked` · `session_linked`, a `CHECK` |
+| `kind` | varchar(24) | a closed set, a `CHECK` (below) |
 | `actorType` | varchar(8) | `user` · `agent` |
 | `actorUserId` | uuid | the person, or the person the agent acts for |
 | `actorAgentId` | uuid null | set when `actorType = 'agent'` |
-| `payload` | jsonb | the fields that changed, small |
+| `payload` | jsonb | per kind: the old and new value of the one field it names |
 | `occurredAt` | timestamptz | |
 
 Indexes `(organizationId, occurredAt)` and `(organizationId, projectId,
-occurredAt)`. It does three jobs: stats (a reopen does not take back
-last week's completion), the log the agents' "Auto"
-mode promises ("each one is still logged here", §7), and the activity
-a task dialog can show later. Retention: kept; at our scale it is a few
+occurredAt)`.
+
+**The kinds are closed**, so the table stays a log of what matters and
+not a copy of every write:
+
+| Kind | Written when | Serves |
+|------|--------------|--------|
+| `created`, `deleted` | the task is created or deleted | stats |
+| `completed`, `reopened` | status enters or leaves Done | stats (a reopen does not take back last week's completion) |
+| `status_changed` | status moves between Later, To do and In progress | the agents' log |
+| `rescheduled` | `dueDate` or `dueTime` changes | the agents' log |
+| `reassigned` | the project or the milestone changes | the agents' log |
+| `blocked`, `unblocked` | `blockedReason` is set or cleared | the agents' log |
+| `session_linked` | a session is started from the task or linked to it | the agents' log |
+
+A reorder within a column (rank only) and edits to the title or notes
+write nothing. That is what "every change logged" means for the agents
+(§7): the changes above, which are the ones their permissions name; an
+agent's rank and text edits show in its own transcript, not here. A new
+kind needs a reader first. The same rows are the activity a task dialog
+can show later. Retention: kept; at our scale it is a few
 rows per task. Partition by month only if a workspace ever reaches
 millions of rows. Backfill: one `created` per existing task at its
 `createdAt`, one `completed` per Done task at its `completedAt`.
@@ -166,9 +183,15 @@ provider)`. The frame lists several accounts per person.
   callback's ID token carries both. New column `accountSubject
   varchar(255)`; unique becomes `(organizationId, userId, provider,
   accountSubject)`. The existing row gets its `sub` on its next token
-  refresh (the refresh returns an ID token once `openid` was granted);
-  until then it is null, and a partial unique index covers the non-null
-  rows. Cap: five accounts per person.
+  refresh (the refresh returns an ID token once `openid` was granted).
+  Two partial unique indexes hold both states: `(organizationId,
+  userId, provider, accountSubject) WHERE accountSubject IS NOT NULL`,
+  and `(organizationId, userId, provider) WHERE accountSubject IS NULL`,
+  so there is at most one unkeyed row per person, which is the one the
+  old unique key already allowed. New connections always carry a `sub`:
+  the callback refuses a token response without an ID token, so no new
+  null row can be written. The second index is dropped by a later
+  migration once no null row is left. Cap: five accounts per person.
 - **Routes**: `GET /calendar/google/connections` (list: id, email,
   status, connectedAt); `POST /calendar/google/connections` (start; the
   consent URL gets `prompt=consent select_account` so a second account
@@ -215,11 +238,16 @@ the controllers send. What this module guarantees them:
   `create`/`update Task` on milestones. The session and PR keys belong
   to the sessions and pull-requests modules.
 - **No lost updates.** A `version` integer on `task` and `milestone`,
-  bumped on every write; `PATCH` and `move` accept an optional
-  `expectedVersion` (and `If-Match` over HTTP) and answer
-  `TASK_VERSION_CONFLICT` (409) when it is stale. The console keeps
-  sending none; agents always send one, so a person's edit made while
-  the agent was thinking wins.
+  incremented by **every** write, whoever sends it and whether or not it
+  carries an expected version: edits, `move` (a rank-only reorder
+  included), complete and reopen, blocked, the attach rule, a milestone
+  rename or retarget. `PATCH` and `move` accept an optional
+  `expectedVersion` (and `If-Match` over HTTP); with one, the write is a
+  conditional `UPDATE … WHERE version = $expected` and answers
+  `TASK_VERSION_CONFLICT` (409) when no row matched. The console keeps
+  sending none, but its writes still bump the version; agents always
+  send one, so a person's edit (or drag) made while the agent was
+  thinking makes the agent's later write fail, and the agent re-reads.
 - **Idempotent creates.** `CreateTaskCommand` and
   `CreateMilestoneCommand` take an optional idempotency key, as
   starting a session from a task already does, so a retried tool call
@@ -242,8 +270,10 @@ Each ships on its own, in this order, with the integration tests named.
 2. **The event log and the agent contract.** `task_event` with its
    backfill, `actor`, `version` and `expectedVersion`, idempotent
    creates, `TaskChanged` / `MilestoneChanged` on the workspace feed.
-   Tests: every command writes exactly one event with its actor; a stale
-   `expectedVersion` is refused and changes nothing; a create retried
+   Tests: each logged change writes exactly one event of its kind with
+   its actor, and a rank-only move or a notes edit writes none; a console
+   write without `expectedVersion` still bumps the version, so an agent's
+   write with the version it read before is refused and changes nothing; a create retried
    with one key makes one task; reopening a task leaves its `completed`
    event.
 3. **Needs input.** `blockedReason`, `summarizePlan` in
@@ -256,7 +286,8 @@ Each ships on its own, in this order, with the integration tests named.
    a DST change in `tz`; the comparison period; a deleted task still
    counts in the week it was completed.
 5. **Several Google accounts** (§5). Tests: two accounts list, read and
-   deduplicate; one revoked account leaves the other's events; the cap.
+   deduplicate; one revoked account leaves the other's events; the cap; a
+   second unkeyed row for the same person is refused by the index.
 6. **Stats: tokens and cost.** Usage on `session_turn`, the runner and
    protocol change, `SessionUsageReader`.
 7. **Stats: pull requests.** `PullRequestStatsReader` with its limiter
