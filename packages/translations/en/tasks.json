@@ -142,7 +142,8 @@
     "offlineSince": "{{host}} has been offline since {{when}}. The session waits as Queued and starts when its runner reconnects.",
     "start": "Start session",
     "queue": "Queue session",
-    "failed": "Couldn’t start the session."
+    "failed": "Couldn’t start the session.",
+    "loadFailed": "Couldn’t load the task, its project or the hosts."
   },
   "filters": {
     "milestone": "Milestone",

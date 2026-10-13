@@ -47,29 +47,30 @@ export function GoogleAccountsCard() {
     <section aria-label={t('calendar.google.accounts')} className="flex flex-col">
       <SidebarListHead label={t('calendar.google.accounts')} />
       <div className="mx-3 flex flex-col gap-2">
-        <QueryState
-          query={connections}
-          pending={<Skeleton className="h-16 w-full" />}
-          errorFallback={t('calendar.google.loadFailed')}
-        >
-          {(rows) =>
-            rows.length === 0 ? (
-              <div className="flex flex-col gap-2 rounded-md bg-hover-surface p-3">
-                <span className="flex items-center gap-2 text-sm font-medium text-fg [&_svg]:size-3.25">
-                  <BrandGlyph name="google" />
-                  {t('calendar.google.title')}
-                </span>
-                <p className="text-xs text-fg-muted">{t('calendar.google.description')}</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  pending={start.isPending}
-                  onClick={() => start.mutate(undefined)}
-                >
-                  {t('calendar.google.connect')}
-                </Button>
-              </div>
-            ) : (
+        <QueryState query={connections} isEmpty={(rows) => rows.length === 0}>
+          <QueryState.Pending>
+            <Skeleton className="h-16 w-full" />
+          </QueryState.Pending>
+          <QueryState.Error fallback={t('calendar.google.loadFailed')} />
+          <QueryState.Empty>
+            <div className="flex flex-col gap-2 rounded-md bg-hover-surface p-3">
+              <span className="flex items-center gap-2 text-sm font-medium text-fg [&_svg]:size-3.25">
+                <BrandGlyph name="google" />
+                {t('calendar.google.title')}
+              </span>
+              <p className="text-xs text-fg-muted">{t('calendar.google.description')}</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                pending={start.isPending}
+                onClick={() => start.mutate(undefined)}
+              >
+                {t('calendar.google.connect')}
+              </Button>
+            </div>
+          </QueryState.Empty>
+          <QueryState.Data of={connections}>
+            {(rows) => (
               <CalendarAccountList>
                 {rows.map((connection) => {
                   const state = accountRowState(connection, readOf(connection.id));
@@ -104,8 +105,8 @@ export function GoogleAccountsCard() {
                   {t('calendar.google.add')}
                 </CalendarAccountAdd>
               </CalendarAccountList>
-            )
-          }
+            )}
+          </QueryState.Data>
         </QueryState>
         <ErrorAlert
           error={start.error}
