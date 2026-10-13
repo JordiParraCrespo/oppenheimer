@@ -220,10 +220,12 @@ export {
   PageHeaderStat,
   PageHeaderTitleInput,
 } from './components/page-header';
+export { NumberStepper } from './components/number-stepper';
 export { Panel, PanelGrid } from './components/panel';
 export { PasswordInput } from './components/password-input';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';
 export { PermissionMenu } from './components/permission-menu';
+export { PillGroup, PillGroupItem } from './components/pill-group';
 export type { PillTabsSize } from './components/pill-tabs';
 export { PillTab, PillTabs } from './components/pill-tabs';
 export {
@@ -355,6 +357,7 @@ export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
+export { Switch } from './components/switch';
 export type { TaskDueTone, TaskStatus } from './components/task-board';
 export {
   TASK_STATUS_STATE,

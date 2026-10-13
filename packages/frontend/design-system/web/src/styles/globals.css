@@ -143,6 +143,7 @@
     --hover-surface: rgba(0, 0, 0, 0.04);
     --active-surface: rgba(0, 0, 0, 0.07);
     --selected-surface: rgba(0, 113, 227, 0.1);
+    --selected-fg: var(--primary); /* the ink on the selected wash: a picked pill */
 
     /* ---- The two blues ----------------------------------------------- */
     --primary: var(--op-blue-500); /* one blue for actions */
@@ -515,6 +516,7 @@
     --hover-surface: rgba(255, 255, 255, 0.06);
     --active-surface: rgba(255, 255, 255, 0.1);
     --selected-surface: rgba(41, 151, 255, 0.16);
+    --selected-fg: var(--op-blue-400); /* the export lifts it a step in dark (`.op-pill[data-on]`) */
 
     --primary: var(--op-blue-500);
     --primary-hover: #1a83ea;
@@ -766,6 +768,7 @@
   --color-hover-surface: var(--hover-surface);
   --color-active-surface: var(--active-surface);
   --color-selected-surface: var(--selected-surface);
+  --color-selected-fg: var(--selected-fg);
   --color-primary-hover: var(--primary-hover);
   --color-primary-active: var(--primary-active);
   --color-link: var(--link);

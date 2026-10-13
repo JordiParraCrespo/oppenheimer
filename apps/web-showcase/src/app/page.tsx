@@ -57,6 +57,7 @@ import {
 } from '../components/host-link-demos';
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
+import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/control-demos';
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
@@ -791,6 +792,36 @@ export default function Page() {
         code={`<RadioGroup value={verdict} onValueChange={setVerdict} aria-label="Verdict"><RadioGroupItem value="approve" label="Approve" description="…" /></RadioGroup>`}
       >
         <RadioGroupDemo />
+      </Spec>
+
+      <Spec
+        id="switch"
+        title="Switch"
+        meta="switch.tsx"
+        desc="A setting that takes effect the moment it flips: Learn automatically, a connector, a routine's Active, Notifications. A 34×20 pill with a 16px white knob, the action blue when on and the control grey when off; 30×18 (sm) in a popover's foot. A setting the template holds is disabled with its reason as the title, at half strength. A choice that waits for Save is a Checkbox."
+        code={`<Switch checked={learn} onCheckedChange={setLearn} aria-label="Learn automatically" />`}
+      >
+        <SwitchDemo />
+      </Spec>
+
+      <Spec
+        id="pillgroup"
+        title="PillGroup"
+        meta="pill-group.tsx"
+        desc="A form value picked from a short row of 30px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
+        code={`<PillGroup value={ttl} onValueChange={setTtl} aria-label="For how long"><PillGroupItem value="1h">1 hour</PillGroupItem><PillGroupItem value="7d" disabled>7 days</PillGroupItem></PillGroup>`}
+      >
+        <PillGroupDemo />
+      </Spec>
+
+      <Spec
+        id="numberstepper"
+        title="NumberStepper"
+        meta="number-stepper.tsx"
+        desc="A small bounded count a person nudges: Parallel sessions (1–8), Hop limit (1–6). Minus, the value in mono 28px wide, plus, on a pill track with 2px of inset; a button at its bound turns off, and the value stays typeable and steps with the arrow keys. A number with a unit and room to type is an Input."
+        code={`<NumberStepper value={parallel} onValueChange={setParallel} min={1} max={8} aria-label="Parallel sessions" />`}
+      >
+        <NumberStepperDemo />
       </Spec>
 
       <Spec
