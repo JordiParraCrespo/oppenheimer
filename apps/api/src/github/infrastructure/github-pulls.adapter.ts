@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { GithubErrors } from '../domain/github.errors';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
 import type {
@@ -103,6 +103,8 @@ interface RawCombinedStatus {
  */
 @Injectable()
 export class GithubPullsAdapter implements GithubPullsPort {
+  private readonly logger = new Logger(GithubPullsAdapter.name);
+
   constructor(private readonly http: GithubHttp) {}
 
   async listPullRequests(
@@ -339,7 +341,12 @@ export class GithubPullsAdapter implements GithubPullsPort {
     if (!nodeId) return false;
     // GraphQL answers a refusal with `200` and an `errors` list: a repository
     // without auto-merge, or a pull request already clean enough to merge now.
-    const { body } = await this.request<{ errors?: unknown[] }>(`${this.http.api}/graphql`, {
+    // Either way the approval stands and the pull request waits, so the
+    // answer is false; what GitHub said is logged, since a refusal for any
+    // other reason (a permission, a moved head) reads the same to the caller.
+    const { body } = await this.request<{
+      errors?: { type?: string; message?: string }[];
+    }>(`${this.http.api}/graphql`, {
       credential,
       method: 'POST',
       body: {
@@ -347,7 +354,13 @@ export class GithubPullsAdapter implements GithubPullsPort {
         variables: { id: nodeId, method: method.toUpperCase(), sha },
       },
     });
-    return !body.errors?.length;
+    if (!body.errors?.length) return true;
+    this.logger.warn({
+      message: 'GitHub did not turn on auto-merge',
+      pullRequest: nodeId,
+      errors: body.errors.map((error) => ({ type: error.type, message: error.message })),
+    });
+    return false;
   }
 
   private repo(fullName: string): string {

@@ -30,9 +30,8 @@ function MergePath({
       className={cn('min-w-0 flex-row flex-wrap items-center gap-x-5 gap-y-3 px-5 py-3.5', className)}
     >
       <div className="flex min-w-0 flex-[1_1_260px] flex-wrap items-center gap-x-5 gap-y-2 text-xs text-fg-muted">
-        {leading}
-        <span className="flex-1" />
-        <ol className="m-0 flex list-none flex-wrap items-center gap-x-3.5 gap-y-1.5 p-0">
+        {leading ? <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">{leading}</div> : null}
+        <ol className="m-0 ml-auto flex list-none flex-wrap items-center gap-x-3.5 gap-y-1.5 p-0">
           {steps.map((step) => (
             <li key={step.id} data-state={step.state} className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <span aria-hidden className={cn('size-1.75 shrink-0 rounded-pill', DOT[step.state])} />
