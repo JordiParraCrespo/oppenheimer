@@ -467,7 +467,8 @@ function AreaChart({
   'aria-label': string;
 }) {
   const [hover, setHover] = React.useState<number | null>(null);
-  const top = ticks[ticks.length - 1] ?? Math.max(1, ...points.flatMap((p) => Object.values(p.values)));
+  // An empty period (`ticks={[0]}`, every value 0) still draws its zero line.
+  const top = Math.max(1, ticks[ticks.length - 1] ?? Math.max(...points.flatMap((p) => Object.values(p.values))));
   const x = (i: number) => (points.length < 2 ? 50 : (i / (points.length - 1)) * 100);
   const y = (v: number) => 100 - (Math.min(v, top) / top) * 100;
   const hovered = hover === null ? null : points[hover];

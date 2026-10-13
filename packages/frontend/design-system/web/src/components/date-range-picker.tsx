@@ -49,7 +49,7 @@ function daysIn(range: DateRange) {
  * the selected wash between its two ends, which take the 10px radius and
  * the ink; today is ringed; days after today are off, since nothing has
  * happened there yet. The foot holds the compare switch, the range's length
- * in mono and Done.
+ * in mono and Done. Below `sm` the months stack, so a phone gets both.
  *
  * The first click on a day starts a range and the second ends it (in either
  * order); the pointer previews the second end. A preset applies at once.
@@ -191,7 +191,7 @@ function DateRangePicker({
                 <ChevronRightIcon className="size-3.75" />
               </IconButton>
             </div>
-            <div className="-mt-9.5 flex gap-6">
+            <div className="-mt-9.5 flex flex-col gap-6 sm:flex-row">
               {[view, second].map((m) => (
                 <div key={`${m.year}-${m.month}`} className="flex w-56 flex-col gap-1.5">
                   <span className="flex h-7 items-center justify-center text-[13.5px] font-medium">
