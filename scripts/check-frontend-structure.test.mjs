@@ -370,4 +370,44 @@ export function ThingCount() {
   assert.match(report, /sections\/typed\.tsx: 2 components \(ThingList, ThingRow\)/);
   assert.doesNotMatch(report, /sections\/one\.tsx/);
 });
+
+test('a QueryState missing a rung is reported; one with every slot it needs passes', () => {
+  const slots = (empty) => `
+      <QueryState.Pending>loading</QueryState.Pending>
+      <QueryState.Error fallback="failed" />${empty ? '\n      <QueryState.Empty>none</QueryState.Empty>' : ''}
+      <QueryState.Data>{(rows: string[]) => rows.join()}</QueryState.Data>`;
+  const section = (open, body) => `export function ThingList({ things }: { things: Source }) {
+  return (
+    ${open}${body}
+    </QueryState>
+  );
+}
+`;
+  const { report } = check({
+    'src/features/things/sections/whole.tsx': section(
+      '<QueryState query={things} isEmpty={(rows) => rows.length === 0}>',
+      slots(true),
+    ),
+    'src/features/things/sections/plain.tsx': section('<QueryState query={things}>', slots(false)),
+    'src/features/things/sections/no-error.tsx': section(
+      '<QueryState query={things}>',
+      slots(false).replace('<QueryState.Error fallback="failed" />', ''),
+    ),
+    'src/features/things/sections/no-empty.tsx': section(
+      '<QueryState query={things} isEmpty={(rows) => !rows.length}>',
+      slots(false),
+    ),
+    'src/features/things/sections/stray-empty.tsx': section(
+      '<QueryState query={things}>',
+      slots(true),
+    ),
+  });
+  assert.doesNotMatch(report, /sections\/(whole|plain)\.tsx/);
+  assert.match(report, /sections\/no-error\.tsx:3: <QueryState> without QueryState\.Error —/);
+  assert.match(
+    report,
+    /sections\/no-empty\.tsx:3: <QueryState> without QueryState\.Empty \(it is given isEmpty\)/,
+  );
+  assert.match(report, /sections\/stray-empty\.tsx:3: <QueryState\.Empty> with no isEmpty/);
+});
 // oppenheimer:end web

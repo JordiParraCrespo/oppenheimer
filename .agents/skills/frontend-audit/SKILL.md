@@ -139,6 +139,17 @@ come up empty, so run it on every file in scope that returns JSX:
 2. **Every string the user can read goes through `t()` (`U3`).** That
    includes `aria-label`, `placeholder`, `title` and template literals.
 3. **Colour outside the linter's reach (`U2`)**, and **forms (`U4`)**.
+4. **Compose, don't configure (`U6`).** Read every new or changed
+   component's props, in the app, the kit and the design system alike. A
+   `ReactNode` inside an object prop (`empty={{ when, show }}`), a
+   `renderX` prop that receives nothing, a boolean that switches what the
+   component draws (`compact`, `showActions`, `isEditing`), or parts of one
+   compound wired together by props the caller threads, is `U6`: name the
+   slots the caller should compose instead. Not `U6`: a boolean that reports
+   the state of the same thing (`pending`, `disabled`, `open`), and a function
+   child or render prop that hands down data the caller does not have
+   (`QueryState.Data`, `DiffView`'s `renderAnnotation`). A section that
+   draws a read's four states without `QueryState` is `U1`.
 
 ### Evidence bar
 
@@ -162,9 +173,10 @@ reported:
   kind directory or a route over the cap), `R2`, `R3`, `R4`, `R5`, `R8`,
   `R9`, `R10`, `R12`, `R13`, `U1`, `U2`, `U3`, or `R11` when the fix is a
   new `*-render.spec.tsx` modelled on an existing one. Everything else
-  (`P*`, `R1`, `R6`, `R7`, `R14`, `U4`, `U5`, `M-arch`, `M-design`, `M-compiler`,
-  `M-render`, `M-bundle`) moves code between packages, splits a component,
-  changes a budget or needs a new e2e spec: a person decides those.
+  (`P*`, `R1`, `R6`, `R7`, `R14`, `U4`, `U5`, `U6`, `M-arch`, `M-design`,
+  `M-compiler`, `M-render`, `M-bundle`) moves code between packages, reshapes
+  a component's props, splits a component, changes a budget or needs a new
+  e2e spec: a person decides those.
 - The fix stays inside `apps/web`, `packages/frontend/*` and
   `packages/translations`, changes no URL, no public export of a package, no
   API call, and no render budget's number. A `U3` fix adds the key to every
@@ -233,6 +245,7 @@ tracking issue and the evals key on them.
 | `U3` | A user-visible string not going through `t()` | "Translate everything the user can read" |
 | `U4` | A form not built as React Hook Form over a shared Zod schema, or a form that fetches | forms.md, frontend-architecture.md "A feature holds kind directories" |
 | `U5` | A screen wired to the API with no spec in `e2e/tests/web/` | "Every product surface gets an end-to-end spec" |
+| `U6` | A component configured where it should compose: a `ReactNode` in an object prop, a `renderX` prop that hands down nothing, a boolean that switches what it draws, or a compound's parts wired by threaded props | frontend-ui.md "Compose, don't configure" |
 | `M-*` | A mechanical check failed | Step 1 |
 
 A rule that seems wrong or unenforceable as written is not a finding against

@@ -19,15 +19,15 @@ function show(
   options: { renderError?: (error: unknown) => string; stale?: 'replace' | 'keep' } = {},
 ) {
   return render(
-    <QueryState
-      query={query}
-      pending="loading"
-      errorFallback="Could not load the hosts"
-      renderError={options.renderError}
-      stale={options.stale}
-      empty={{ when: (rows) => rows.length === 0, show: 'nothing here' }}
-    >
-      {(rows) => rows.join(', ')}
+    <QueryState query={query} stale={options.stale} isEmpty={(rows) => rows.length === 0}>
+      <QueryState.Pending>loading</QueryState.Pending>
+      {options.renderError ? (
+        <QueryState.Error>{options.renderError}</QueryState.Error>
+      ) : (
+        <QueryState.Error fallback="Could not load the hosts" />
+      )}
+      <QueryState.Empty>nothing here</QueryState.Empty>
+      <QueryState.Data>{(rows: string[]) => rows.join(', ')}</QueryState.Data>
     </QueryState>,
   );
 }
@@ -73,6 +73,21 @@ describe('QueryState', () => {
   it('shows the empty state for an empty answer', () => {
     const { container } = show({ isPending: false, error: null, data: [] });
     expect(container.textContent).toBe('nothing here');
+  });
+
+  it('draws a later failure where its slot sits, above the data it keeps', () => {
+    const { container } = show(
+      { isPending: false, error: boom, data: ['optimus'] },
+      { stale: 'keep', renderError: () => 'stale' },
+    );
+    expect(container.textContent).toBe('staleoptimus');
+  });
+
+  it('refuses a slot drawn outside its root', () => {
+    // React logs the throw it rethrows; the assertion is the throw.
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => render(<QueryState.Pending>loading</QueryState.Pending>)).toThrow(/outside/);
+    quiet.mockRestore();
   });
 
   it('hands the data to its children', () => {

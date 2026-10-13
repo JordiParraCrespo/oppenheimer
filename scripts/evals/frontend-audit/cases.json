@@ -120,6 +120,30 @@
       "why": "Imports another feature's component. pnpm arch fails; the audit has to run it and report it, not re-derive it."
     },
     {
+      "id": "config-object-slots",
+      "commit": "feat(web): hosts overview panel with an add link under it",
+      "expect": [
+        {
+          "rule": "U6",
+          "file": "apps/web/src/features/hosts/components/host-panel.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/sections/host-overview.tsx"]
+        }
+      ],
+      "why": "The panel takes its parts as configuration: a header object holding nodes, `empty={{ when, show }}`, and a renderFooter that hands down nothing. Each is a slot the caller should compose; QueryState had exactly this shape before it became slots. Every check passes."
+    },
+    {
+      "id": "boolean-mode-props",
+      "commit": "feat(web): hosts strip of chips over the host list",
+      "expect": [
+        {
+          "rule": "U6",
+          "file": "apps/web/src/features/hosts/components/host-summary.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/sections/host-strip.tsx"]
+        }
+      ],
+      "why": "One component drawn two ways by four booleans: `compact` turns it into a chip and switches off what the others turn on. The chip is its own component and the trailing facts are children."
+    },
+    {
       "id": "clean-leaf-ticker",
       "commit": "feat(web): host list shows when each host last answered",
       "expect": [],
@@ -137,6 +161,12 @@
       "commit": "feat(web): track whether the hosts tab is visible",
       "expect": [],
       "why": "Decoy for R9: an effect in hooks/ that subscribes to a DOM event and says so."
+    },
+    {
+      "id": "clean-composed-slots",
+      "commit": "feat(web): hosts strip of chips over the host list",
+      "expect": [],
+      "why": "Decoy for U6: the same feature as boolean-mode-props, composed. The chip is its own component, the row's trailing facts are its children, and the one function child hands down the host it draws, which is data the caller does not have."
     }
   ]
 }

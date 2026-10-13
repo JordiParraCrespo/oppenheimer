@@ -16,7 +16,7 @@ import {
 import { Bot, User } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAnalyticsRange } from '@oppenheimer/frontend-consumer';
 import { usePullRequestAnalytics } from '@oppenheimer/frontend-consumer/react';
-import { QueryState, useLocale } from '@oppenheimer/frontend-web';
+import { type DataOf, QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_ANALYTICS_RANGES } from '@oppenheimer/shared/schemas/pull-request';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsDelta } from '../components/analytics-figure';
@@ -76,158 +76,160 @@ export function AnalyticsOverview() {
           ) : null}
         </PageHeaderMeta>
       </PageHeader>
-      <QueryState
-        query={analytics}
-        pending={<Skeleton className="h-96 w-full" />}
-        errorFallback={t('pullRequests.analytics.loadFailed')}
-      >
-        {(data) => {
-          const mergedTotal = data.lanes.reduce((sum, lane) => sum + lane.value, 0);
-          const waitingTotal = data.waiting.reduce((sum, row) => sum + row.value, 0);
-          const from = (value: string) => t('pullRequests.analytics.from', { value });
-          return (
-            <>
-              {data.complete ? null : (
-                <Callout>{t('pullRequests.analytics.capped', { range: rangeWord })}</Callout>
-              )}
-              <CreatedMergedPanel analytics={data} />
-              <div className="grid gap-3 md:grid-cols-3">
-                <StatCard
-                  label={t('pullRequests.analytics.reviewedByYou')}
-                  value={data.reviewedByYou.value}
-                  detail={
-                    <AnalyticsDelta
-                      delta={deltaOf(data.reviewedByYou, true)}
-                      previous={from(String(data.reviewedByYou.previous))}
-                    />
-                  }
-                />
-                <StatCard
-                  label={t('pullRequests.analytics.waitForReview')}
-                  value={formatHours(data.waitForReview.value)}
-                  detail={
-                    <AnalyticsDelta
-                      delta={deltaOf(data.waitForReview, false)}
-                      previous={from(formatHours(data.waitForReview.previous))}
-                    />
-                  }
-                />
-                <StatCard
-                  label={t('pullRequests.analytics.timeToMerge')}
-                  value={formatHours(data.timeToMerge.value)}
-                  detail={
-                    <AnalyticsDelta
-                      delta={deltaOf(data.timeToMerge, false)}
-                      previous={from(formatHours(data.timeToMerge.previous))}
-                    />
-                  }
-                />
-              </div>
-              <Panel
-                title={t('pullRequests.analytics.waitTitle')}
-                meta={t('pullRequests.analytics.vsPrevious', { range: rangeWord })}
-              >
-                <div className="grid gap-2 sm:grid-cols-2">
+      <QueryState query={analytics}>
+        <QueryState.Pending>
+          <Skeleton className="h-96 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('pullRequests.analytics.loadFailed')} />
+        <QueryState.Data>
+          {(data: DataOf<typeof analytics>) => {
+            const mergedTotal = data.lanes.reduce((sum, lane) => sum + lane.value, 0);
+            const waitingTotal = data.waiting.reduce((sum, row) => sum + row.value, 0);
+            const from = (value: string) => t('pullRequests.analytics.from', { value });
+            return (
+              <>
+                {data.complete ? null : (
+                  <Callout>{t('pullRequests.analytics.capped', { range: rangeWord })}</Callout>
+                )}
+                <CreatedMergedPanel analytics={data} />
+                <div className="grid gap-3 md:grid-cols-3">
                   <StatCard
-                    label={
-                      <span className="flex items-center gap-2">
-                        <span className="size-2 rounded-pill bg-chart-1" />
-                        {t('pullRequests.analytics.agents')}
-                        <Bot className="ml-auto size-3.5 text-fg-subtle" aria-hidden />
-                      </span>
-                    }
-                    value={formatHours(data.waitForReviewAgents.value)}
+                    label={t('pullRequests.analytics.reviewedByYou')}
+                    value={data.reviewedByYou.value}
                     detail={
                       <AnalyticsDelta
-                        delta={deltaOf(data.waitForReviewAgents, false)}
-                        previous={from(formatHours(data.waitForReviewAgents.previous))}
+                        delta={deltaOf(data.reviewedByYou, true)}
+                        previous={from(String(data.reviewedByYou.previous))}
                       />
                     }
                   />
                   <StatCard
-                    label={
-                      <span className="flex items-center gap-2">
-                        <span className="size-2 rounded-pill bg-chart-2" />
-                        {t('pullRequests.analytics.people')}
-                        <User className="ml-auto size-3.5 text-fg-subtle" aria-hidden />
-                      </span>
-                    }
-                    value={formatHours(data.waitForReviewPeople.value)}
+                    label={t('pullRequests.analytics.waitForReview')}
+                    value={formatHours(data.waitForReview.value)}
                     detail={
                       <AnalyticsDelta
-                        delta={deltaOf(data.waitForReviewPeople, false)}
-                        previous={from(formatHours(data.waitForReviewPeople.previous))}
+                        delta={deltaOf(data.waitForReview, false)}
+                        previous={from(formatHours(data.waitForReview.previous))}
+                      />
+                    }
+                  />
+                  <StatCard
+                    label={t('pullRequests.analytics.timeToMerge')}
+                    value={formatHours(data.timeToMerge.value)}
+                    detail={
+                      <AnalyticsDelta
+                        delta={deltaOf(data.timeToMerge, false)}
+                        previous={from(formatHours(data.timeToMerge.previous))}
                       />
                     }
                   />
                 </div>
-              </Panel>
-              <PanelGrid>
                 <Panel
-                  title={t('pullRequests.analytics.laneMix')}
+                  title={t('pullRequests.analytics.waitTitle')}
                   meta={t('pullRequests.analytics.vsPrevious', { range: rangeWord })}
                 >
-                  <RingChart
-                    label={t('pullRequests.analytics.mergedWord')}
-                    value={mergedTotal}
-                    segments={data.lanes.map((lane) => ({
-                      key: lane.lane,
-                      label: t(`pullRequests.lanes.${lane.lane}`),
-                      value: lane.value,
-                      tone: LANE_TONE[lane.lane],
-                    }))}
-                  />
-                  <div className="flex flex-col">
-                    {data.lanes.map((lane) => (
-                      <ChartRow
-                        key={lane.lane}
-                        tone={LANE_TONE[lane.lane]}
-                        label={t(`pullRequests.lanes.${lane.lane}`)}
-                        value={lane.value}
-                        share={`${shareOf(lane.value, mergedTotal)}%`}
-                        delta={
-                          <AnalyticsDelta
-                            delta={{
-                              value: `${lane.value - lane.previous >= 0 ? '+' : '−'}${Math.abs(lane.value - lane.previous)}`,
-                              tone: 'flat',
-                            }}
-                            previous=""
-                          />
-                        }
-                      />
-                    ))}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <StatCard
+                      label={
+                        <span className="flex items-center gap-2">
+                          <span className="size-2 rounded-pill bg-chart-1" />
+                          {t('pullRequests.analytics.agents')}
+                          <Bot className="ml-auto size-3.5 text-fg-subtle" aria-hidden />
+                        </span>
+                      }
+                      value={formatHours(data.waitForReviewAgents.value)}
+                      detail={
+                        <AnalyticsDelta
+                          delta={deltaOf(data.waitForReviewAgents, false)}
+                          previous={from(formatHours(data.waitForReviewAgents.previous))}
+                        />
+                      }
+                    />
+                    <StatCard
+                      label={
+                        <span className="flex items-center gap-2">
+                          <span className="size-2 rounded-pill bg-chart-2" />
+                          {t('pullRequests.analytics.people')}
+                          <User className="ml-auto size-3.5 text-fg-subtle" aria-hidden />
+                        </span>
+                      }
+                      value={formatHours(data.waitForReviewPeople.value)}
+                      detail={
+                        <AnalyticsDelta
+                          delta={deltaOf(data.waitForReviewPeople, false)}
+                          previous={from(formatHours(data.waitForReviewPeople.previous))}
+                        />
+                      }
+                    />
                   </div>
                 </Panel>
-                <Panel
-                  title={t('pullRequests.analytics.waited')}
-                  meta={
-                    <span className="figures">
-                      {t('pullRequests.analytics.waitedMeta', { n: waitingTotal })}
-                    </span>
-                  }
-                >
-                  {data.waiting.length ? (
-                    <BarList
-                      rows={data.waiting.map((row) => ({
-                        key: row.reason,
-                        label: t(`pullRequests.blocker.${row.reason}`),
-                        value: row.value,
-                        share: shareOf(row.value, waitingTotal),
-                        detail: t('pullRequests.analytics.medianHold', {
-                          hours: formatHours(row.medianHours),
-                        }),
+                <PanelGrid>
+                  <Panel
+                    title={t('pullRequests.analytics.laneMix')}
+                    meta={t('pullRequests.analytics.vsPrevious', { range: rangeWord })}
+                  >
+                    <RingChart
+                      label={t('pullRequests.analytics.mergedWord')}
+                      value={mergedTotal}
+                      segments={data.lanes.map((lane) => ({
+                        key: lane.lane,
+                        label: t(`pullRequests.lanes.${lane.lane}`),
+                        value: lane.value,
+                        tone: LANE_TONE[lane.lane],
                       }))}
                     />
-                  ) : (
-                    <p className="m-0 text-sm text-fg-muted">
-                      {t('pullRequests.analytics.nothingWaits')}
-                    </p>
-                  )}
-                </Panel>
-              </PanelGrid>
-            </>
-          );
-        }}
+                    <div className="flex flex-col">
+                      {data.lanes.map((lane) => (
+                        <ChartRow
+                          key={lane.lane}
+                          tone={LANE_TONE[lane.lane]}
+                          label={t(`pullRequests.lanes.${lane.lane}`)}
+                          value={lane.value}
+                          share={`${shareOf(lane.value, mergedTotal)}%`}
+                          delta={
+                            <AnalyticsDelta
+                              delta={{
+                                value: `${lane.value - lane.previous >= 0 ? '+' : '−'}${Math.abs(lane.value - lane.previous)}`,
+                                tone: 'flat',
+                              }}
+                              previous=""
+                            />
+                          }
+                        />
+                      ))}
+                    </div>
+                  </Panel>
+                  <Panel
+                    title={t('pullRequests.analytics.waited')}
+                    meta={
+                      <span className="figures">
+                        {t('pullRequests.analytics.waitedMeta', { n: waitingTotal })}
+                      </span>
+                    }
+                  >
+                    {data.waiting.length ? (
+                      <BarList
+                        rows={data.waiting.map((row) => ({
+                          key: row.reason,
+                          label: t(`pullRequests.blocker.${row.reason}`),
+                          value: row.value,
+                          share: shareOf(row.value, waitingTotal),
+                          detail: t('pullRequests.analytics.medianHold', {
+                            hours: formatHours(row.medianHours),
+                          }),
+                        }))}
+                      />
+                    ) : (
+                      <p className="m-0 text-sm text-fg-muted">
+                        {t('pullRequests.analytics.nothingWaits')}
+                      </p>
+                    )}
+                  </Panel>
+                </PanelGrid>
+              </>
+            );
+          }}
+        </QueryState.Data>
       </QueryState>
     </>
   );

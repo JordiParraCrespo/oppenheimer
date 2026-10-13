@@ -5,7 +5,7 @@ import {
   useStartGoogleCalendarConnection,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, type DataOf, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -29,49 +29,53 @@ export function GoogleCalendarCard() {
 
   return (
     <section aria-label={t('calendar.google.title')} className="mx-3 flex flex-col gap-2">
-      <QueryState
-        query={connection}
-        pending={<Skeleton className="h-16 w-full" />}
-        errorFallback={t('calendar.google.loadFailed')}
-      >
-        {(data) =>
-          data.isActive ? (
-            <>
-              <CalendarSourceCard
-                mark={<BrandGlyph name="google" />}
-                name={t('calendar.google.title')}
-                account={data.accountEmail ?? undefined}
-                status={t('calendar.google.readOnly')}
-              />
-              <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-                {t('calendar.google.disconnect')}
-              </Button>
-            </>
-          ) : (
-            <div className="flex flex-col gap-2 rounded-md bg-hover-surface p-3">
-              <span className="flex items-center gap-2 text-sm font-medium text-fg [&_svg]:size-[13px]">
-                <BrandGlyph name="google" />
-                {t('calendar.google.title')}
-              </span>
-              <p className="text-xs text-fg-muted">
-                {t(data.needsReconnect ? 'calendar.google.revoked' : 'calendar.google.description')}
-              </p>
-              <ErrorAlert
-                error={start.error}
-                fallback={t('calendar.google.startFailed')}
-                onDismiss={start.reset}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                pending={start.isPending}
-                onClick={() => start.mutate()}
-              >
-                {t(data.needsReconnect ? 'calendar.google.reconnect' : 'calendar.google.connect')}
-              </Button>
-            </div>
-          )
-        }
+      <QueryState query={connection}>
+        <QueryState.Pending>
+          <Skeleton className="h-16 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('calendar.google.loadFailed')} />
+        <QueryState.Data>
+          {(data: DataOf<typeof connection>) =>
+            data.isActive ? (
+              <>
+                <CalendarSourceCard
+                  mark={<BrandGlyph name="google" />}
+                  name={t('calendar.google.title')}
+                  account={data.accountEmail ?? undefined}
+                  status={t('calendar.google.readOnly')}
+                />
+                <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
+                  {t('calendar.google.disconnect')}
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 rounded-md bg-hover-surface p-3">
+                <span className="flex items-center gap-2 text-sm font-medium text-fg [&_svg]:size-[13px]">
+                  <BrandGlyph name="google" />
+                  {t('calendar.google.title')}
+                </span>
+                <p className="text-xs text-fg-muted">
+                  {t(
+                    data.needsReconnect ? 'calendar.google.revoked' : 'calendar.google.description',
+                  )}
+                </p>
+                <ErrorAlert
+                  error={start.error}
+                  fallback={t('calendar.google.startFailed')}
+                  onDismiss={start.reset}
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  pending={start.isPending}
+                  onClick={() => start.mutate()}
+                >
+                  {t(data.needsReconnect ? 'calendar.google.reconnect' : 'calendar.google.connect')}
+                </Button>
+              </div>
+            )
+          }
+        </QueryState.Data>
       </QueryState>
       {confirming ? (
         <ConfirmDialog

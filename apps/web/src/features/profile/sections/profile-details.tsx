@@ -1,6 +1,6 @@
 import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import { useMyProfile } from '@oppenheimer/frontend-consumer/react';
-import { QueryState } from '@oppenheimer/frontend-web';
+import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ProfileEmailSection } from './profile-email';
 import { ProfileNameSection } from './profile-name';
@@ -17,10 +17,8 @@ export function ProfileDetailsSection() {
   const profile = useMyProfile();
 
   return (
-    <QueryState
-      query={profile}
-      errorFallback={t('settings.profile.failed')}
-      pending={
+    <QueryState query={profile}>
+      <QueryState.Pending>
         <SettingsGroup aria-busy>
           {[0, 1, 2, 3].map((row) => (
             <SettingsRow key={row} label={<Skeleton className="h-4 w-28" />}>
@@ -28,14 +26,16 @@ export function ProfileDetailsSection() {
             </SettingsRow>
           ))}
         </SettingsGroup>
-      }
-    >
-      {(data) => (
-        <ProfileNameSection profile={data}>
-          <ProfilePictureSection profile={data} />
-          <ProfileEmailSection profile={data} />
-        </ProfileNameSection>
-      )}
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('settings.profile.failed')} />
+      <QueryState.Data>
+        {(data: DataOf<typeof profile>) => (
+          <ProfileNameSection profile={data}>
+            <ProfilePictureSection profile={data} />
+            <ProfileEmailSection profile={data} />
+          </ProfileNameSection>
+        )}
+      </QueryState.Data>
     </QueryState>
   );
 }

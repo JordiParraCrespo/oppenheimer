@@ -94,16 +94,15 @@ export function EventDialog() {
             {isNew ? (
               form
             ) : (
-              <QueryState
-                query={events}
-                pending={<Skeleton className="h-60 w-full" />}
-                errorFallback={t('calendar.event.loadFailed')}
-                empty={{
-                  when: (row) => row === null,
-                  show: <FieldDescription>{t('calendar.event.gone')}</FieldDescription>,
-                }}
-              >
-                {() => form}
+              <QueryState query={events} isEmpty={(row) => row === null}>
+                <QueryState.Pending>
+                  <Skeleton className="h-60 w-full" />
+                </QueryState.Pending>
+                <QueryState.Error fallback={t('calendar.event.loadFailed')} />
+                <QueryState.Empty>
+                  <FieldDescription>{t('calendar.event.gone')}</FieldDescription>
+                </QueryState.Empty>
+                <QueryState.Data>{() => form}</QueryState.Data>
               </QueryState>
             )}
           </div>

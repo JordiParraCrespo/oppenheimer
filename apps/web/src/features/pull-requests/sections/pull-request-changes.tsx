@@ -1,7 +1,7 @@
 import { DiffFileTree, type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
-import { QueryState } from '@oppenheimer/frontend-web';
+import { type DataOf, QueryState } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PendingNote, pendingByPath } from '../lib/review-draft';
@@ -35,52 +35,51 @@ export function PullRequestChanges({
   const pendingOn = pendingByPath(pending);
 
   return (
-    <QueryState
-      query={files}
-      pending={<Skeleton className="min-h-0 w-full flex-1" />}
-      errorFallback={t('pullRequests.changes.loadFailed')}
-      empty={{
-        when: (rows) => rows.length === 0,
-        show: (
-          <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
-        ),
-      }}
-    >
-      {(rows) => (
-        <div className="flex min-h-0 flex-1 bg-card">
-          <div className="min-w-0 flex-1 overflow-y-auto">
-            {rows.map((file) => (
-              <ChangesFile
-                key={file.path}
-                address={address}
-                file={file}
-                layout={layout}
-                pending={pendingOn.get(file.path) ?? NO_PENDING}
-                onAddPending={onAddPending}
-                onDiscardPending={onDiscardPending}
+    <QueryState query={files} isEmpty={(rows) => rows.length === 0}>
+      <QueryState.Pending>
+        <Skeleton className="min-h-0 w-full flex-1" />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('pullRequests.changes.loadFailed')} />
+      <QueryState.Empty>
+        <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
+      </QueryState.Empty>
+      <QueryState.Data>
+        {(rows: DataOf<typeof files>) => (
+          <div className="flex min-h-0 flex-1 bg-card">
+            <div className="min-w-0 flex-1 overflow-y-auto">
+              {rows.map((file) => (
+                <ChangesFile
+                  key={file.path}
+                  address={address}
+                  file={file}
+                  layout={layout}
+                  pending={pendingOn.get(file.path) ?? NO_PENDING}
+                  onAddPending={onAddPending}
+                  onDiscardPending={onDiscardPending}
+                />
+              ))}
+            </div>
+            <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border-subtle lg:flex">
+              <DiffFileTree
+                files={rows}
+                selected={selected}
+                onSelect={(path) => {
+                  setSelected(path);
+                  document
+                    .getElementById(`file-${path}`)
+                    ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                }}
+                labels={{
+                  title: t('pullRequests.changes.files'),
+                  filter: t('pullRequests.changes.filter'),
+                  viewed: (done, total) => t('pullRequests.changes.viewed', { done, total }),
+                }}
+                className="w-full"
               />
-            ))}
+            </aside>
           </div>
-          <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border-subtle lg:flex">
-            <DiffFileTree
-              files={rows}
-              selected={selected}
-              onSelect={(path) => {
-                setSelected(path);
-                document
-                  .getElementById(`file-${path}`)
-                  ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-              }}
-              labels={{
-                title: t('pullRequests.changes.files'),
-                filter: t('pullRequests.changes.filter'),
-                viewed: (done, total) => t('pullRequests.changes.viewed', { done, total }),
-              }}
-              className="w-full"
-            />
-          </aside>
-        </div>
-      )}
+        )}
+      </QueryState.Data>
     </QueryState>
   );
 }

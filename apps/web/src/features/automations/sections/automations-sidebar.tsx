@@ -8,7 +8,12 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { combineQueries, QueryState, SidebarSearchField } from '@oppenheimer/frontend-web';
+import {
+  combineQueries,
+  type DataOf,
+  QueryState,
+  SidebarSearchField,
+} from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +53,7 @@ export function AutomationsSidebar() {
     ),
   }));
   const shown = term ? groups.filter((group) => group.items.length) : groups;
+  const ready = combineQueries(projects, automations, (rows) => ({ count: rows.length, shown }));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -88,48 +94,44 @@ export function AutomationsSidebar() {
         </div>
 
         {/* A failed read is not "no projects": say it failed. */}
-        <QueryState
-          query={combineQueries(projects, automations, (rows) => ({ count: rows.length, shown }))}
-          pending={
+        <QueryState query={ready} isEmpty={(data) => data.count === 0}>
+          <QueryState.Pending>
             <div className="flex flex-col gap-2 px-3 pt-2">
               <Skeleton className="h-7.5 w-full" />
               <Skeleton className="h-7.5 w-full" />
             </div>
-          }
-          errorFallback={t('automations.sidebar.loadFailed')}
-          errorClassName="mx-3 mt-2"
-          empty={{
-            when: (ready) => ready.count === 0,
-            show: (
-              <div className="px-3 pt-2">
-                <EmptyState compact>
-                  <EmptyState.Header>
-                    <EmptyState.Description>
-                      {t('automations.sidebar.noProjects')}
-                    </EmptyState.Description>
-                  </EmptyState.Header>
-                </EmptyState>
-              </div>
-            ),
-          }}
-        >
-          {(ready) =>
-            ready.shown.map(({ project, items }) => (
-              <AutomationGroup
-                key={project.id}
-                project={project}
-                items={items}
-                open={Boolean(term) || !closed.includes(project.id)}
-                onOpenChange={(next) =>
-                  setClosed((current) =>
-                    next ? current.filter((id) => id !== project.id) : [...current, project.id],
-                  )
-                }
-                searching={Boolean(term)}
-                onNew={(target) => dialogs.open({ kind: 'automation', projectId: target.id })}
-              />
-            ))
-          }
+          </QueryState.Pending>
+          <QueryState.Error fallback={t('automations.sidebar.loadFailed')} className="mx-3 mt-2" />
+          <QueryState.Empty>
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>
+                    {t('automations.sidebar.noProjects')}
+                  </EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          </QueryState.Empty>
+          <QueryState.Data>
+            {(data: DataOf<typeof ready>) =>
+              data.shown.map(({ project, items }) => (
+                <AutomationGroup
+                  key={project.id}
+                  project={project}
+                  items={items}
+                  open={Boolean(term) || !closed.includes(project.id)}
+                  onOpenChange={(next) =>
+                    setClosed((current) =>
+                      next ? current.filter((id) => id !== project.id) : [...current, project.id],
+                    )
+                  }
+                  searching={Boolean(term)}
+                  onNew={(target) => dialogs.open({ kind: 'automation', projectId: target.id })}
+                />
+              ))
+            }
+          </QueryState.Data>
         </QueryState>
       </div>
     </div>

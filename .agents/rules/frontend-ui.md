@@ -22,7 +22,7 @@ multi-line, so a grep for `export` misses most of them.
 | A failure inside a screen that still draws its chrome (a form, a section, a dialog) | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
 | A failure that is the whole screen (the app cannot start, a route threw) | the kit's `ScreenFailure` | an `ErrorAlert` alone on an empty canvas, a hand-built `EmptyState` |
 | A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
-| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` (`combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, `renderError` for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
+| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` with its `Pending`, `Error`, `Empty` and `Data` slots (`isEmpty` on the root for what counts as empty, `combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, an `Error` with a function child for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
 | A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
 | "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
 | A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
@@ -88,6 +88,42 @@ multi-line, so a grep for `export` misses most of them.
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by
 one.
+
+## Compose, don't configure
+
+A component that draws several parts takes them as children, and the caller
+puts them where they go. The design system's `EmptyState.Header`, the kit's
+`QueryState.Pending` and `PageHeader`'s parts are the shape; a component that
+grows a prop for each part it might draw, or a boolean for each way it might
+look, is the shape this rule forbids.
+
+- **A part the caller draws is a child or a compound part.** A header, an
+  empty state, a placeholder, a row of actions: `<QueryState.Empty>…</…>`,
+  never `empty={{ when, show }}`, `header={{ title, action }}` or a
+  `renderFooter={() => …}` that receives nothing.
+- **A boolean that changes what a component is, is a second component or a
+  part left out.** `compact`, `isEditing`, `showActions`, `withFooter`,
+  `variant="readonly"` that hides half the markup: the caller composes the
+  version it wants, or picks an explicit variant component. A
+  boolean that reports the state of the same thing (`pending`, `disabled`,
+  `open`, `active`) is not a mode, and stays a prop.
+- **A function child hands down data the caller does not have.**
+  `QueryState.Data` gets the rows, `QueryState.Error` the failure,
+  `RelativeTime` the words, `DiffView`'s `renderAnnotation` the annotation.
+  A render prop with nothing to hand down is a slot, and a slot is a child.
+- **A compound's parts meet through the root's context**, never through props
+  the caller threads from one part to the next. `QueryState`'s root decides
+  the rung once and each slot reads it. In the kit and the design system the
+  parts live in one file as `Root.Part` (`Object.assign`); an app keeps one
+  component per file, so a compound a feature needs is the kit's, and a
+  feature that grows one promotes it.
+
+Why: `QueryState` took its rungs as `pending`, `errorFallback`,
+`errorClassName`, `renderError` and `empty={{ when, show }}`, and each new
+need (a class on the failure, a failure said another way, a failure kept beside
+the data) was one more prop. The caller could not place a rung, and a reader had to
+learn each prop to read a section. As slots, a section reads as the states it
+draws, in the order it draws them. `/frontend-audit` reports a break as `U6`.
 
 ## A success toasts when the reader could miss it
 

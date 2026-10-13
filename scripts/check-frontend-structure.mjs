@@ -545,6 +545,58 @@ for (const file of polling) {
   }
 }
 
+// A read's states are `QueryState`'s slots, and a slot left out is a rung
+// that draws nothing: without `Error` a failed read is a blank, without
+// `Pending` the first load is. The types cannot say which children an element
+// needs, so this does: every `<QueryState>` holds a `Pending`, an `Error` and a
+// `Data`, and an `Empty` exactly when it is given `isEmpty`. The kit's own
+// spec composes the slots conditionally, so specs are not read.
+const QUERY_STATE_SLOTS = ['Pending', 'Error', 'Data'];
+const QUERY_STATE_ROOT = /<(\/?)QueryState(?=[\s>])/g;
+const queryStateFiles = [
+  ...APPS.flatMap(({ app }) =>
+    existsSync(join(root, app, 'src')) ? sources(join(root, app, 'src')) : [],
+  ),
+  ...readdirSync(join(root, 'packages/frontend')).flatMap((pkg) => {
+    const dir = join(root, 'packages/frontend', pkg, 'src');
+    return existsSync(dir) ? sources(dir) : [];
+  }),
+];
+// Comments blanked rather than cut, so a reported line is the file's line.
+const blankComments = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\/|(?<![:'"`\\])\/\/.*$/gm, (comment) =>
+    comment.replace(/[^\n]/g, ' '),
+  );
+for (const file of queryStateFiles) {
+  const source = blankComments(readFileSync(file, 'utf8'));
+  const stack = [];
+  for (const match of source.matchAll(QUERY_STATE_ROOT)) {
+    if (!match[1]) {
+      stack.push(match.index);
+      continue;
+    }
+    const start = stack.pop();
+    if (start === undefined) continue;
+    const tag = openingTag(source, start + '<QueryState'.length);
+    const inside = source.slice(start + '<QueryState'.length + tag.length, match.index);
+    const line = source.slice(0, start).split('\n').length;
+    const has = (slot) => new RegExp(`<QueryState\\.${slot}\\b`).test(inside);
+    const missing = QUERY_STATE_SLOTS.filter((slot) => !has(slot));
+    const emptyAsked = /\bisEmpty\s*=/.test(tag);
+    if (emptyAsked && !has('Empty')) missing.push('Empty (it is given isEmpty)');
+    if (missing.length > 0) {
+      fail(
+        `${relative(root, file)}:${line}: <QueryState> without ${missing.map((slot) => `QueryState.${slot}`).join(', ')} — each rung of a read draws something; a slot left out draws nothing`,
+      );
+    }
+    if (!emptyAsked && has('Empty')) {
+      fail(
+        `${relative(root, file)}:${line}: <QueryState.Empty> with no isEmpty on its <QueryState> — the root decides what is empty, so the slot never draws`,
+      );
+    }
+  }
+}
+
 // docs: every workspace package documented, frontend surfaces with an ARCHITECTURE.md
 const workspacePackages = [];
 const PACKAGE_ROOTS = [
