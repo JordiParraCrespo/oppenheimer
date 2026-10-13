@@ -741,6 +741,11 @@
   --animate-appear-fast: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-appear: op-effort-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-drag-lift: op-drag-lift var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  /* The agent chat: work in flight breathes between 55% and full ink, and
+     the write head of a streaming reply blinks. Both sit behind
+     `motion-safe:`, since reduced motion zeroes durations, not animations. */
+  --animate-shimmer: op-chat-shimmer 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-caret: op-caret 1s steps(2) infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
   /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
@@ -952,6 +957,26 @@
 
   ::selection {
     background: var(--selected-surface);
+  }
+}
+
+@keyframes op-chat-shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes op-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }
 

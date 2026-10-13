@@ -58,6 +58,16 @@ import {
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
 import {
+  ChatCardsDemo,
+  ChatChromeDemo,
+  ChatComposerExtrasDemo,
+  ChatDecisionsDemo,
+  ChatStackDemo,
+  ChatStatusDemo,
+  ChatTranscriptDemo,
+  ChatWorkDemo,
+} from '../components/chat-demos';
+import {
   AvatarPickerDemo,
   BotItemsDemo,
   RoutineCardsDemo,
@@ -1469,6 +1479,88 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
   offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />
+      </Spec>
+
+      <GroupHead>Chat</GroupHead>
+
+      <Spec
+        id="chattranscript"
+        title="Transcript"
+        meta="chat-transcript.tsx"
+        desc="The chat's column: the person's turns are cards on the right at 82%, attachments above and the time and copy and edit under, the actions on hover; an @file is a ChatMention. Each agent turn opens on a TurnHeader, a 13px line on a hairline to the edge: working (breathing), worked with its model and time (folding the turn's work), stopped, interrupted, resumed. The answer is ChatReply, unboxed at 15px; MessageTrail carries copy, fork and retry with the tokens in mono. StreamingCaret is the write head."
+        code={`<ChatTranscript><ChatUserMessage time="09:12" actions={…}>…</ChatUserMessage><TurnHeader state="done" elapsed="1m 13s" model="Claude Sonnet 4.5" onToggle={fold} /><ChatReply>{markdown}</ChatReply><MessageTrail actions={…} meta="3.1k tokens" /></ChatTranscript>`}
+      >
+        <ChatTranscriptDemo />
+      </Spec>
+
+      <Spec
+        id="chatwork"
+        title="Work and tools"
+        meta="chat-work.tsx"
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s."
+        code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
+      >
+        <ChatWorkDemo />
+      </Spec>
+
+      <Spec
+        id="chatcards"
+        title="Cards"
+        meta="chat-cards.tsx"
+        desc="What a turn leaves in the transcript. ChangedFilesCard closes a turn that edited files, a row per file that opens its diff. ProposedPlanCard is plan mode's answer on the 28px card, folding past ten lines, with Refine and the split Implement. SubagentRunCard lists the subagents a turn launched, live or finished, with Stop all. QuestionsPill folds questions asked without stopping; AnsweredQuestions keeps the record. ContextCard is an object made or given, one row that opens it."
+        code={`<ChangedFilesCard title="3 files changed" additions={80} deletions={12} actions={…}><ChangedFileRow path="runner/step.ts" additions={42} deletions={8} /></ChangedFilesCard>`}
+      >
+        <ChatCardsDemo />
+      </Spec>
+
+      <Spec
+        id="chatstatus"
+        title="Dividers and status"
+        meta="chat-status.tsx"
+        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes. ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
+        code={`<ChatErrorBanner title="Turn failed" actions={<ChatErrorAction variant="danger">Continue task</ChatErrorAction>} onDismiss={…}>{error}</ChatErrorBanner>`}
+      >
+        <ChatStatusDemo />
+      </Spec>
+
+      <Spec
+        id="chatstack"
+        title="Above the composer"
+        meta="chat-composer-stack.tsx"
+        desc="Panels fuse onto the top of the composer: rounded on top, open at the bottom, on the hover wash, hairlines between. Top to bottom: the goal, the tasks with their count, the live changes, the queue (paused, steerable), then the input. ComposerNotice is one fact with at most one action in the same fused shape: a tip, a branch mismatch, a snooze, a reconnect."
+        code={`<ComposerStack><ComposerStackRow icon={<FileTextIcon />} actions={<ComposerStackAction>Review</ComposerStackAction>}>3 files changed</ComposerStackRow></ComposerStack>`}
+      >
+        <ChatStackDemo />
+      </Spec>
+
+      <Spec
+        id="chatdecisions"
+        title="Decisions"
+        meta="chat-decisions.tsx"
+        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. The number keys pick a row, only while focus is inside the card."
+        code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
+      >
+        <ChatDecisionsDemo />
+      </Spec>
+
+      <Spec
+        id="chatcomposer"
+        title="Composer extras"
+        meta="chat-composer-extras.tsx"
+        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
+        code={`<ComposerMenu><ComposerMenuGroup label="Built-in"><ComposerMenuItem icon={<LayersIcon />} description="Think first" hint="/plan" highlighted>Plan</ComposerMenuItem></ComposerMenuGroup></ComposerMenu>`}
+      >
+        <ChatComposerExtrasDemo />
+      </Spec>
+
+      <Spec
+        id="chatchrome"
+        title="Header, find, empty"
+        meta="chat-header.tsx"
+        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open threads sit over it as ChatTabs, the current one on the canvas with its close. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use."
+        code={`<ChatHeader title="Wire run cancel" meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>} status={<StatusDot state="running" pulse density="compact">Running</StatusDot>} actions={…} />`}
+      >
+        <ChatChromeDemo />
       </Spec>
 
       <GroupHead>Employees</GroupHead>

@@ -61,6 +61,7 @@ import {
   ToggleRightIcon,
   TagsIcon,
   DiffIcon,
+  MicIcon,
   MilestoneIcon,
   ListFilterIcon,
   CalendarRangeIcon,
@@ -220,6 +221,19 @@ export const TOC: TocGroup[] = [
       { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
       { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
       { id: 'sessionpane', label: 'SessionPaneHeader', icon: PanelTopIcon, components: ['session-pane-header'] },
+    ],
+  },
+  {
+    group: 'Chat',
+    items: [
+      { id: 'chattranscript', label: 'Transcript', icon: MessageSquareIcon, components: ['chat-transcript'] },
+      { id: 'chatwork', label: 'Work and tools', icon: SlidersHorizontalIcon, components: ['chat-work'] },
+      { id: 'chatcards', label: 'Cards', icon: RectangleHorizontalIcon, components: ['chat-cards'] },
+      { id: 'chatstatus', label: 'Dividers and status', icon: TriangleAlertIcon, components: ['chat-status'] },
+      { id: 'chatstack', label: 'Above the composer', icon: LayersIcon, components: ['chat-composer-stack'] },
+      { id: 'chatdecisions', label: 'Decisions', icon: ShieldCheckIcon, components: ['chat-decisions'] },
+      { id: 'chatcomposer', label: 'Composer extras', icon: MicIcon, components: ['chat-composer-extras'] },
+      { id: 'chatchrome', label: 'Header, find, empty', icon: PanelTopIcon, components: ['chat-header'] },
     ],
   },
   {

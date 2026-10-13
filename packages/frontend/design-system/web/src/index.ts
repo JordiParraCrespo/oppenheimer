@@ -59,6 +59,71 @@ export {
   LineChart,
   RingChart,
 } from './components/charts';
+export {
+  AnsweredQuestions,
+  ChangedFileRow,
+  ChangedFilesCard,
+  ContextCard,
+  ProposedPlanCard,
+  QuestionsPill,
+  SubagentRow,
+  SubagentRunCard,
+} from './components/chat-cards';
+export type { ProposedPlanLabels, SubagentState } from './components/chat-cards';
+export {
+  ComposerContextMeter,
+  ComposerMenu,
+  ComposerMenuGroup,
+  ComposerMenuItem,
+  VoiceRecorderBar,
+} from './components/chat-composer-extras';
+export type { ComposerTask } from './components/chat-composer-stack';
+export {
+  ComposerNotice,
+  ComposerStack,
+  ComposerStackAction,
+  ComposerStackRow,
+  ComposerTaskList,
+} from './components/chat-composer-stack';
+export type { Choice, QuestionLabels } from './components/chat-decisions';
+export {
+  ApprovalApp,
+  ApprovalCommand,
+  ApprovalFile,
+  ApprovalPanel,
+  ChoiceRow,
+  QuestionPanel,
+} from './components/chat-decisions';
+export type { ThreadFindLabels } from './components/chat-header';
+export {
+  ChatEmptyState,
+  ChatHeader,
+  ChatHeaderTag,
+  ChatTab,
+  ChatTabStrip,
+  ChatTrayButton,
+  ThreadFindBar,
+} from './components/chat-header';
+export type { ChatErrorLabels } from './components/chat-status';
+export {
+  ChatErrorAction,
+  ChatErrorBanner,
+  ChatNotice,
+  FloatingChip,
+  TranscriptDivider,
+} from './components/chat-status';
+export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
+export {
+  ChatAttachment,
+  ChatMention,
+  ChatReply,
+  ChatTranscript,
+  ChatUserMessage,
+  MessageTrail,
+  StreamingCaret,
+  TurnHeader,
+} from './components/chat-transcript';
+export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
