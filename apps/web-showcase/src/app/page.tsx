@@ -69,7 +69,7 @@ import {
 import { ShareSection } from '../components/share-demos';
 import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/control-demos';
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
-import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
+import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
 import { TaskBoardDemo, TaskStatusDots } from '../components/task-board-demos';
@@ -778,7 +778,7 @@ export default function Page() {
         id="segmented"
         title="SegmentedControl"
         meta="segmented-control.tsx"
-        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Briefing / Description / Changes, a lane), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Description / Changes), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
@@ -1370,7 +1370,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="prqueue"
         title="PullRequestTable"
         meta="pull-request-table.tsx"
-        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width: from 880px Size, Checks and Conflicts are columns, narrower they fold under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search and PillTabs, the foot is RunsListFoot."
+        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width in three steps: from 1080px Size, Checks and Conflicts are columns; from 720px they fold into a line under the title and the actions keep their column; narrower, the actions wrap under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search, a ChipSelect of repositories with a count per row and the Difficulty, Checks and Waiting FacetSelects; the order is fixed (Deep first, then the longest wait), and the foot is RunsListFoot."
         code={`<PullRequestTable>
   <PullRequestTableHead />
   <PullRequestRow lane={<Badge variant="strong">Deep</Badge>} title="Move session tokens to the runner keychain" reference="oppenheimer #482" author="Session · auth-hardening" additions={612} deletions={248} checks="passing" checksLabel="Passing" conflicts="passing" conflictsLabel="No conflicts" waiting="1d 3h" onOpen={open}
@@ -1382,17 +1382,16 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       </Spec>
 
       <Spec
-        id="prbriefing"
-        title="Briefing · ReviewDecision"
-        meta="pull-request-header.tsx · stat-card.tsx · merge-path.tsx · panel.tsx · review-decision.tsx · prose.tsx"
-        desc="One pull request, opened on its briefing. The bar holds the views (a medium SegmentedControl, Changes carrying its DiffStat), Open review session and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup, the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill), lane and reference, the title at H2 and the branch head → base. StatCards lead with the numbers (a 24px mono figure, a unit, a StatBar of shares or a track); MergePath is a horizontal Stepper of Checks, Conflicts, Review and Merge (a gate not met is failed), with the next step and its actions under a hairline. StatCard and Panel are Cards. The rest are Panels: the brief with its FactTiles and lane, the review session, the pending comments as DiffCommentLinks, where it changes, the reviewers. Description renders the author's markdown in Prose. The second frame is the same page held by a conflict."
-        code={`<PullRequestHeader state="active" stateLabel="Open" lane={<Badge variant="strong">Deep</Badge>} reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
-<StatCard label="Checks" value="214 / 214" unit="Passing" bar={<StatBar track segments={[{ share: 100, tone: 'success' }]} />} />
-<MergePath title="Path to merge" summary="2 of 4 done" steps={[{ id: 'checks', label: 'Checks', detail: 'All passing', state: 'done' }, …]} note="Squash and merge into main" actions={…} />
+        id="prdescription"
+        title="Description · ReviewDecision"
+        meta="pull-request-header.tsx · merge-path.tsx · review-decision.tsx · prose.tsx"
+        desc="One pull request, opened on its Description. The bar holds the two views (a medium SegmentedControl, Changes carrying its DiffStat), GitHub and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup (Comment, Approve, Approve and merge, Request changes), the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill) and reference, the title at H2 and the branch head → base. MergePath is the status strip under it: the DiffStat and the file count, then Checks, Conflicts and Merge, each a dot in its state's colour with its word, and Review changes and a MergeButton on the right; it wraps on a narrow pane. Under it the author's markdown renders in Prose on a Card. The second frame is the same page held by a conflict."
+        code={`<PullRequestHeader state="active" stateLabel="Open" reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
+<MergePath leading={<><DiffStat additions={612} deletions={248} /><span>4 files in 2 folders</span></>} steps={[{ id: 'checks', label: 'Checks', meta: 'All passing', state: 'done' }, …]} actions={…} />
 <Popover><PopoverTrigger render={<SubmitReviewButton count={2} />}>Submit review</PopoverTrigger><PopoverContent align="end"><ReviewDecision verdicts={…} verdict={v} onVerdictChange={setV} comment={c} onCommentChange={setC} submitLabel="Approve and merge" onSubmit={submit} /></PopoverContent></Popover>`}
         bare
       >
-        <PullRequestBriefingDemo />
+        <PullRequestDescriptionDemo />
       </Spec>
 
       <Spec

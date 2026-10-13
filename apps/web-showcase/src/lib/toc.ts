@@ -201,9 +201,9 @@ export const TOC: TocGroup[] = [
     group: 'Pull requests',
     items: [
       { id: 'prqueue', label: 'PullRequestTable', icon: GitPullRequestIcon, components: ['pull-request-table'] },
-      { id: 'prbriefing', label: 'Briefing · ReviewDecision', icon: FileTextIcon, components: ['pull-request-header', 'stat-card', 'merge-path', 'panel', 'review-decision', 'prose'] },
+      { id: 'prdescription', label: 'Description · ReviewDecision', icon: FileTextIcon, components: ['pull-request-header', 'merge-path', 'review-decision', 'prose'] },
       { id: 'diffview', label: 'DiffView · DiffFileTree', icon: FileDiffIcon, components: ['diff-view', 'diff-file-tree', 'file-icon', 'diff-stat'] },
-      { id: 'pranalytics', label: 'Charts', icon: ChartColumnIcon, components: ['charts'] },
+      { id: 'pranalytics', label: 'Charts · StatCard · Panel', icon: ChartColumnIcon, components: ['charts', 'stat-card', 'panel'] },
     ],
   },
   {
