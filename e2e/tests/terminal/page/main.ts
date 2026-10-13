@@ -119,11 +119,51 @@ const container = document.getElementById('terminal') as HTMLElement;
 mountSessionTerminal(container, host, { typeahead: () => true });
 host.start();
 
+let watching = false;
+let frames: number[] = [];
+
 /** Everything the spec reads or does, on `window.harness`. */
 const harness = {
   host,
   /** Which renderer draws: the WebGL addon leaves no DOM rows behind. */
   renderer: () => (container.querySelector('.xterm-rows') ? 'dom' : 'webgl'),
+  /**
+   * Starts counting the cursors on screen in every painted frame: the
+   * terminal's own (the DOM renderer's cursor element) and the typeahead's
+   * (an overlay cell in the caret's colour). `stopWatching` hands the counts
+   * back.
+   */
+  watchCursors(): void {
+    const caret = getComputedStyle(document.documentElement)
+      .getPropertyValue('--term-caret')
+      .trim();
+    const probe = document.createElement('i');
+    probe.style.color = caret;
+    document.body.appendChild(probe);
+    const caretColor = getComputedStyle(probe).color;
+    probe.remove();
+    watching = true;
+    frames = [];
+    const sample = () => {
+      // After the frame's callbacks, so what is counted is what was painted.
+      setTimeout(() => {
+        const own = container.querySelectorAll('.xterm-rows .xterm-cursor').length;
+        const layer = Array.from(
+          container.querySelectorAll<HTMLElement>('.xterm-screen > div'),
+        ).find((element) => element.style.zIndex === '6');
+        const guessed = Array.from(layer?.children ?? []).filter(
+          (cell) => (cell as HTMLElement).style.backgroundColor === caretColor,
+        ).length;
+        frames.push(own + guessed);
+      });
+      if (watching) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  },
+  stopWatching(): number[] {
+    watching = false;
+    return frames;
+  },
   /**
    * The terminal's screen in page CSS pixels. Only the prompt line changes
    * between a prediction and its echo, so the whole screen is compared.

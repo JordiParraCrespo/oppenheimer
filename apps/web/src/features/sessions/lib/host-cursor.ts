@@ -18,9 +18,11 @@ const OWN_CURSOR_MODE = 7725;
  * swallowed rather than painted for a frame; only one with nothing else in it
  * but blink is, and anything more is let through whole.
  */
-export function bindHostCursor(
-  term: Terminal,
-): IDisposable & { visible(): boolean; suppress(hidden: boolean): void } {
+export function bindHostCursor(term: Terminal): IDisposable & {
+  visible(): boolean;
+  /** `applied` runs once the terminal has taken the change, or at once if there is none. */
+  suppress(hidden: boolean, applied?: () => void): void;
+} {
   let visible = true;
   let suppressed = false;
   const own = (params: (number | number[])[]) => params.includes(OWN_CURSOR_MODE);
@@ -36,11 +38,14 @@ export function bindHostCursor(
     return false;
   });
 
-  const suppress = (hidden: boolean) => {
-    if (hidden === suppressed) return;
+  const suppress = (hidden: boolean, applied?: () => void) => {
+    if (hidden === suppressed || !visible) {
+      suppressed = hidden;
+      applied?.();
+      return;
+    }
     suppressed = hidden;
-    if (!visible) return;
-    term.write(`\u001b[?25;${OWN_CURSOR_MODE}${hidden ? 'l' : 'h'}`);
+    term.write(`\u001b[?25;${OWN_CURSOR_MODE}${hidden ? 'l' : 'h'}`, applied);
   };
 
   return {
