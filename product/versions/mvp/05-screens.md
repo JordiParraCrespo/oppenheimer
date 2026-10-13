@@ -17,7 +17,7 @@
   then connects it by choosing the organization again; until it is done the
   repo chip lists nothing and its foot row is the way out (below). (4) Add a host, agent first (2026-10-13 export):
   the agent prompt in a card with Copy prompt, the prompt text behind its
-  Show fold, the one-hour token's line under it with "Install manually
+  fold, the one-hour token's line under it with "Install manually
   instead" across from it (the install command on one line with its
   Copy), and a Connection list — Runner installed with its version, then
   Host connected with the machine's name and OS — with Continue, Skip for
@@ -214,7 +214,7 @@
   prompt into the coding agent on the machine — then the agent prompt's
   card with **Copy prompt**, reading Copied for a moment, because the way
   in is copying the instruction rather than reading it (the prompt itself
-  is behind the card's Show fold); the token line under it — whose New
+  is behind the card's fold); the token line under it — whose New
   token replaces the token on screen, retiring it in the same write, so a
   command pasted into the wrong window stops working at once — with
   **Install manually instead** across from it, which opens the install

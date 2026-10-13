@@ -1636,15 +1636,12 @@
       "format": "Install format",
       "command": "Command",
       "agentPrompt": "Agent prompt",
-      "show": "Show",
-      "hide": "Hide",
-      "manualShow": "Install manually instead",
-      "manualHide": "Hide manual install",
       "manualLead": "Run this on the machine yourself instead:",
       "connection": "Connection",
       "installWaiting": "Waiting for the agent to run the install",
       "installed": "Runner installed",
-      "connected": "Host connected"
+      "connected": "Host connected",
+      "manual": "Install manually instead"
     },
     "add": {
       "title": "Add a host",

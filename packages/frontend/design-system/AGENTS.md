@@ -86,7 +86,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   failure (`ErrorAlert`) may put its one Dismiss or Retry in `AlertAction`.
 - **Copy first, read second, the prompt before the command.** Add a host
   (onboarding and the console's dialog) leads with the agent prompt: one
-  card with Copy prompt, its text behind the card's Show fold, and the
+  card with Copy prompt, its text behind the card's fold, and the
   install command behind "Install manually instead", one line with its
   Copy. The Settings page shows both forms outright as one `CodeBlock
   layout="panel"` with Command / Agent prompt tabs on its band.

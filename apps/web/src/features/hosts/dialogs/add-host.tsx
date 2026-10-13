@@ -45,19 +45,17 @@ export function AddHostDialog({
         </DialogHeader>
 
         <DialogBody>
-          <div className="flex flex-col gap-4.5">
-            <PairingGate availability={availability}>
-              <PairingChrome
-                pairing={pairing ?? null}
-                expiresAt={expiresAt}
-                expired={expired}
-                onRegenerate={regenerate}
-                busy={isPending}
-                host={host}
-                error={error}
-              />
-            </PairingGate>
-          </div>
+          <PairingGate availability={availability}>
+            <PairingChrome
+              pairing={pairing ?? null}
+              expiresAt={expiresAt}
+              expired={expired}
+              onRegenerate={regenerate}
+              busy={isPending}
+              host={host}
+              error={error}
+            />
+          </PairingGate>
         </DialogBody>
 
         <DialogFooter>

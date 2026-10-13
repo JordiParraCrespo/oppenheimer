@@ -220,86 +220,112 @@ const SELECT_COPY = {
 };
 
 /**
- * Add a host, from the inventory: one sentence, two copy Buttons, the token
- * line, the instruction as a CodeBlock panel behind a Disclosure, and a
- * StatusDot line that resolves in place so nothing under it moves. The
- * product draws the same column from the kit's pairing parts.
+ * Add a host, from the inventory, agent first (the 2026-10-13 export): one
+ * sentence, the agent prompt in a card whose band is a Disclosure with Copy
+ * prompt beside it, the token line with the manual install folded across from
+ * it, and the Connection rows resolving in place. The product draws the same
+ * column from the kit's `PairingChrome`.
  */
 export function AddHostDialogDemo() {
-  const [tab, setTab] = React.useState('cmd');
-  const [registered, setRegistered] = React.useState(false);
+  const [stage, setStage] = React.useState(0);
+  const rows = [
+    { pending: 'Waiting for the agent to run the install', done: 'Runner installed', detail: 'v0.9.2' },
+    { pending: 'Host connected', done: 'Host connected', detail: 'mac-studio · macOS 15' },
+  ];
   return (
-    <Dialog onOpenChange={(open) => !open && setRegistered(false)}>
+    <Dialog onOpenChange={(open) => !open && setStage(0)}>
       <DialogTrigger render={<Button variant="secondary" />}>Add a host…</DialogTrigger>
       <DialogContent size="form">
         <DialogHeader>
           <DialogTitle>Add a host</DialogTitle>
           <DialogDescription>
-            Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.
+            Paste this prompt into the coding agent on the machine you want sessions on. It
+            installs the runner and connects it. Nothing is exposed to the internet.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
           <div className="flex flex-col gap-4.5">
-            <div className="flex flex-col gap-2.5">
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary">
+            <Disclosure className="overflow-hidden rounded-md border border-border-subtle bg-card">
+              <div className="flex items-center justify-between gap-3 py-2 pr-2 pl-3.5">
+                <DisclosureTrigger tone="muted" className="w-auto">
+                  Agent prompt
+                </DisclosureTrigger>
+                <Button size="sm">
                   <CopyIcon />
-                  Copy install command
-                </Button>
-                <Button variant="ghost">
-                  <BotIcon />
-                  Copy agent prompt
+                  Copy prompt
                 </Button>
               </div>
-              <div className="flex flex-wrap items-baseline gap-2.5 text-xs">
-                <span className="figures whitespace-nowrap text-fg-subtle">
-                  Token expires in 59:41 · single use
-                </span>
-                <Link href="#dialog" className="whitespace-nowrap">
-                  New token
-                </Link>
+              <DisclosurePanel className="mt-0 border-t border-border-subtle">
+                <pre className="m-0 px-3.5 py-3 font-mono text-[11.5px] leading-[1.7] whitespace-pre-wrap text-fg">
+                  {PROMPT}
+                </pre>
+              </DisclosurePanel>
+            </Disclosure>
+            <Disclosure className="gap-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <div className="flex flex-wrap items-baseline gap-2.5 text-[11.5px]">
+                  <span className="figures whitespace-nowrap text-fg-subtle">
+                    Token expires in 59:41 · single use
+                  </span>
+                  <Link href="#dialog" className="whitespace-nowrap">
+                    New token
+                  </Link>
+                </div>
+                <DisclosureTrigger tone="muted" className="w-auto">
+                  Install manually instead
+                </DisclosureTrigger>
               </div>
-            </div>
-            <Disclosure>
-              <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
-              <DisclosurePanel className="mt-2.5">
-                <CodeBlock
-                  layout="panel"
-                  code={tab === 'cmd' ? INSTALL : PROMPT}
-                  tabs={[
-                    { value: 'cmd', label: 'Command' },
-                    { value: 'prompt', label: 'Agent prompt' },
-                  ]}
-                  tab={tab}
-                  onTabChange={setTab}
-                />
+              <DisclosurePanel className="mt-0">
+                <CodeBlock code={INSTALL} />
               </DisclosurePanel>
             </Disclosure>
             <div className="h-px bg-border-subtle" />
-            <div className="flex min-h-10.5 items-center">
-              {registered ? (
-                <StatusDot state="running" className="items-center">
-                  <span className="figures text-sm">mac-studio</span>
-                  <span className="text-xs text-fg-muted">macOS 15 · git, tmux, claude ready</span>
-                </StatusDot>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setRegistered(true)}
-                  className="text-left"
-                  title="Click to simulate the host registering"
+            <button
+              type="button"
+              onClick={() => setStage((current) => Math.min(rows.length, current + 1))}
+              className="flex flex-col gap-1.5 text-left"
+              title="Click to simulate the runner installing and connecting"
+            >
+              <span className="font-mono text-[11px] tracking-[0.02em] text-fg-subtle uppercase">
+                Connection
+              </span>
+              {rows.map((row, index) => (
+                <span
+                  key={row.done}
+                  className="grid w-full grid-cols-[7px_minmax(0,1fr)_auto] items-center gap-x-3 py-2"
                 >
-                  <StatusDot state="pending" pulse>
-                    Waiting for the host to connect…
-                  </StatusDot>
-                </button>
-              )}
-            </div>
+                  <span
+                    aria-hidden
+                    className={
+                      index < stage
+                        ? 'size-1.75 rounded-pill bg-success'
+                        : index === stage
+                          ? 'size-1.75 animate-pulse-dot rounded-pill bg-fg-subtle'
+                          : 'size-1.75 rounded-pill bg-border'
+                    }
+                  />
+                  <span
+                    className={
+                      index < stage
+                        ? 'text-[13px] text-fg'
+                        : index === stage
+                          ? 'text-[13px] text-fg-muted'
+                          : 'text-[13px] text-fg-subtle'
+                    }
+                  >
+                    {index < stage ? row.done : row.pending}
+                  </span>
+                  <span className="figures font-mono text-xs text-fg-muted">
+                    {index < stage ? row.detail : null}
+                  </span>
+                </span>
+              ))}
+            </button>
           </div>
         </DialogBody>
         <DialogFooter>
           <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
-          <Button disabled={!registered}>Use this host</Button>
+          <Button disabled={stage === 0}>Use this host</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

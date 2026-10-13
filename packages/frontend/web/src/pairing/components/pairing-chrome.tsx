@@ -28,9 +28,11 @@ export interface PairedMachine {
  *
  * The onboarding step and the console's Add a host dialog draw it. `layout`
  * is the export's two sizes: the step's 12px prompt and 14px rows, the
- * dialog's 11.5px prompt and 13px rows (`SessionsConsole.dc.html`). Settings
+ * dialog's 11.5px prompt and 13px rows (`SessionsConsole.dc.html`). It lands
+ * on the root as `data-layout`, and each part sizes itself from that through
+ * the `pairing` group, so none of them takes the layout as a prop. Settings
  * shows the instruction outright, so it composes `PairingToken`,
- * `PairingInstruction` and `PairingStatus`.
+ * `PairingInstruction` and `PairingStatus`, at the dialog's sizes.
  */
 export function PairingChrome({
   pairing,
@@ -62,50 +64,47 @@ export function PairingChrome({
 }) {
   const { t } = useTranslation();
   return (
-    <>
+    <div
+      data-slot="pairing-chrome"
+      data-layout={layout}
+      className="group/pairing flex flex-col gap-4.5 data-[layout=step]:gap-5"
+    >
       <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} />
-      <PairingPrompt pairing={pairing} layout={layout} />
-      <PairingManualInstall pairing={pairing} layout={layout}>
+      <PairingPrompt pairing={pairing} />
+      <PairingManualInstall pairing={pairing}>
         <PairingToken
           expiresAt={expiresAt}
           expired={expired}
           onRegenerate={onRegenerate}
           busy={busy}
-          layout={layout}
         />
       </PairingManualInstall>
       <Separator />
-      <PairingConnection host={host} layout={layout} />
-    </>
+      <PairingConnection host={host} />
+    </div>
   );
 }
 
+/**
+ * The token's clock and New token: 11.5px, or onboarding's 12px inside a
+ * `step` chrome.
+ */
 export function PairingToken({
   expiresAt,
   expired,
   onRegenerate,
   busy,
-  layout = 'dialog',
 }: {
   expiresAt: Date | null;
   expired: boolean;
   onRegenerate: () => void;
   busy?: boolean;
-  /** `step`: onboarding's 12px line. `dialog`: the 11.5px of Add a host. */
-  layout?: 'step' | 'dialog';
 }) {
   const { t } = useTranslation();
-  const step = layout === 'step';
 
   return (
-    <div className="flex flex-wrap items-baseline gap-2.5">
-      <span
-        className={
-          step
-            ? 'figures text-xs whitespace-nowrap text-fg-subtle'
-            : 'figures text-[11.5px] whitespace-nowrap text-fg-subtle'
-        }
-      >
+    <div className="flex flex-wrap items-baseline gap-2.5 text-[11.5px] group-data-[layout=step]/pairing:text-xs">
+      <span className="figures whitespace-nowrap text-fg-subtle">
         {/* An expired token can pair nothing, so the line says so rather
               than counting down through zero. */}
         {expired ? (
@@ -115,7 +114,7 @@ export function PairingToken({
         ) : null}
       </span>
       <TextLink
-        className={step ? 'text-xs' : 'text-[11.5px] whitespace-nowrap'}
+        className="whitespace-nowrap"
         render={<button type="button" onClick={onRegenerate} disabled={busy} />}
       >
         {t('hosts.pairing.newToken')}

@@ -13,15 +13,12 @@
     "format": "Formato de instalación",
     "command": "Comando",
     "agentPrompt": "Instrucción para el agente",
-    "show": "Mostrar",
-    "hide": "Ocultar",
-    "manualShow": "Instalar a mano",
-    "manualHide": "Ocultar la instalación manual",
     "manualLead": "Ejecuta esto tú mismo en la máquina:",
     "connection": "Conexión",
     "installWaiting": "Esperando a que el agente ejecute la instalación",
     "installed": "Runner instalado",
-    "connected": "Host conectado"
+    "connected": "Host conectado",
+    "manual": "Instalar a mano"
   },
   "add": {
     "title": "Añadir un host",
