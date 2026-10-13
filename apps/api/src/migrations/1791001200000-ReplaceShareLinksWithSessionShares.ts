@@ -21,8 +21,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * the table grows with sessions. An expired share opens nothing and stays
  * until its owner stops it or shares again, or the session is erased.
  */
-export class ReplaceShareLinksWithSessionShares1791000800000 implements MigrationInterface {
-  name = 'ReplaceShareLinksWithSessionShares1791000800000';
+export class ReplaceShareLinksWithSessionShares1791001200000 implements MigrationInterface {
+  name = 'ReplaceShareLinksWithSessionShares1791001200000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('DROP TABLE session_share_link');

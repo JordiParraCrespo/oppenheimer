@@ -63,7 +63,7 @@ and why they changed, is under [Superseded](#superseded-links-2026-10-08).
   a guest's are `POST /v1/shared-sessions/lookup` and `…/attach-ticket`,
   with the slug in the body.
 - **The links made before 2026-10-13 were dropped**, not converted
-  (`ReplaceShareLinksWithSessionShares1791000800000`).
+  (`ReplaceShareLinksWithSessionShares1791001200000`).
 
 ## Open questions
 
