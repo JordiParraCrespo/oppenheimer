@@ -258,7 +258,8 @@ export class WorkSessionRepository
   }
 
   async findAllPaginated(scope: AccessScope, filters: SessionFilters): Promise<SessionListPage> {
-    const query = this.scopedQuery(scope);
+    // A pull request's review session is the Pull requests area's, listed there.
+    const query = this.scopedQuery(scope).andWhere(`session.origin <> 'review'`);
     if (filters.projectId) query.andWhere('session.projectId = :projectId', filters);
     if (filters.hostId) query.andWhere('session.hostId = :hostId', filters);
     if (filters.state) query.andWhere('session.state = :state', filters);

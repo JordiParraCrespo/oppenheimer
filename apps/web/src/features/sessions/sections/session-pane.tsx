@@ -24,8 +24,11 @@ export function SessionPane({
   sessionId,
   closed,
   statusItem,
+  composer,
 }: {
   sessionId: string;
+  /** An input row under the terminal, with this placeholder (`SessionTerminal`). */
+  composer?: string;
   /**
    * A chip at the head of the terminal's status bar: the task this session is
    * on ("Back to task", `18-plan-product.md` §4). The route composes it, since
@@ -124,7 +127,12 @@ export function SessionPane({
        surface in dark mode. */
     <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        <SessionTerminal sessionId={session.id} hostId={session.hostId} statusItem={statusItem} />
+        <SessionTerminal
+          sessionId={session.id}
+          hostId={session.hostId}
+          statusItem={statusItem}
+          composer={composer}
+        />
       </div>
     </div>
   );

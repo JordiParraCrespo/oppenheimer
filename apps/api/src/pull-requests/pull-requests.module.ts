@@ -10,12 +10,19 @@ import { MergePullRequestCommandHandler } from './commands/merge-pull-request/me
 import { MergePullRequestHttpController } from './commands/merge-pull-request/merge-pull-request.http.controller';
 import { SetRepositoryWatchCommandHandler } from './commands/set-repository-watch/set-repository-watch.command-handler';
 import { SetRepositoryWatchHttpController } from './commands/set-repository-watch/set-repository-watch.http.controller';
+import { StartReviewSessionCommandHandler } from './commands/start-review-session/start-review-session.command-handler';
+import { StartReviewSessionHttpController } from './commands/start-review-session/start-review-session.http.controller';
 import { SubmitPullRequestReviewCommandHandler } from './commands/submit-pull-request-review/submit-pull-request-review.command-handler';
 import { SubmitPullRequestReviewHttpController } from './commands/submit-pull-request-review/submit-pull-request-review.http.controller';
+import { ReviewSessionOrmEntity } from './database/review-session.orm-entity';
+import { ReviewSessionRepository } from './database/review-session.repository';
 import { WatchedRepositoryOrmEntity } from './database/watched-repository.orm-entity';
 import { WatchedRepositoryRepository } from './database/watched-repository.repository';
 import { PullRequestMapper } from './pull-request.mapper';
-import { WATCHED_REPOSITORY_REPOSITORY } from './pull-requests.di-tokens';
+import {
+  REVIEW_SESSION_REPOSITORY,
+  WATCHED_REPOSITORY_REPOSITORY,
+} from './pull-requests.di-tokens';
 import { PullRequestResource } from './pull-requests.resource';
 import { FindPullRequestHttpController } from './queries/find-pull-request/find-pull-request.http.controller';
 import { FindPullRequestQueryHandler } from './queries/find-pull-request/find-pull-request.query-handler';
@@ -29,6 +36,8 @@ import { FindPullRequestFilesHttpController } from './queries/find-pull-request-
 import { FindPullRequestFilesQueryHandler } from './queries/find-pull-request-files/find-pull-request-files.query-handler';
 import { FindPullRequestsHttpController } from './queries/find-pull-requests/find-pull-requests.http.controller';
 import { FindPullRequestsQueryHandler } from './queries/find-pull-requests/find-pull-requests.query-handler';
+import { FindReviewSessionsHttpController } from './queries/find-review-sessions/find-review-sessions.http.controller';
+import { FindReviewSessionsQueryHandler } from './queries/find-review-sessions/find-review-sessions.query-handler';
 import { FindWatchedRepositoriesHttpController } from './queries/find-watched-repositories/find-watched-repositories.http.controller';
 import { FindWatchedRepositoriesQueryHandler } from './queries/find-watched-repositories/find-watched-repositories.query-handler';
 
@@ -37,6 +46,7 @@ const httpControllers = [
   FindPullRequestsHttpController,
   FindPullRequestAnalyticsHttpController,
   FindWatchedRepositoriesHttpController,
+  FindReviewSessionsHttpController,
   SetRepositoryWatchHttpController,
   FindPullRequestHttpController,
   FindPullRequestFilesHttpController,
@@ -45,6 +55,7 @@ const httpControllers = [
   SubmitPullRequestReviewHttpController,
   AddPullRequestCommentHttpController,
   MergePullRequestHttpController,
+  StartReviewSessionHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -52,6 +63,7 @@ const commandHandlers: Provider[] = [
   SubmitPullRequestReviewCommandHandler,
   AddPullRequestCommentCommandHandler,
   MergePullRequestCommandHandler,
+  StartReviewSessionCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -62,6 +74,7 @@ const queryHandlers: Provider[] = [
   FindPullRequestActivityQueryHandler,
   FindWatchedRepositoriesQueryHandler,
   FindPullRequestAnalyticsQueryHandler,
+  FindReviewSessionsQueryHandler,
 ];
 
 /**
@@ -69,13 +82,14 @@ const queryHandlers: Provider[] = [
  * the queue, a pull request's briefing, files and comments, reviews and merges
  * in the caller's own name, and analytics. Pull requests are GitHub's, read
  * through `PULL_REQUEST_ACCESS`; what this module keeps is which repositories a
- * person watches, and the rules — lanes, what holds a pull request — it sorts
+ * person watches, the review sessions they started from a pull request, and
+ * the rules — lanes, what holds a pull request — it sorts
  * them by.
  */
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([WatchedRepositoryOrmEntity]),
+    TypeOrmModule.forFeature([WatchedRepositoryOrmEntity, ReviewSessionOrmEntity]),
     AuthzKernelModule.forFeature([PullRequestResource]),
     GithubModule,
   ],
@@ -86,6 +100,7 @@ const queryHandlers: Provider[] = [
     PullRequestMapper,
     WatchedRepositoriesResolver,
     { provide: WATCHED_REPOSITORY_REPOSITORY, useClass: WatchedRepositoryRepository },
+    { provide: REVIEW_SESSION_REPOSITORY, useClass: ReviewSessionRepository },
   ],
 })
 export class PullRequestsModule {}

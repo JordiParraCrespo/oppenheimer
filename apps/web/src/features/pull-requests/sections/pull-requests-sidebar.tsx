@@ -3,11 +3,13 @@ import { Activity, GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { ReviewSessionsList } from './review-sessions-list';
 
 /**
  * The console's sidebar body on Pull requests
  * (`product/versions/mvp/design/version1/PullRequests.dc.html`): the two
- * views, the queue and analytics. The queue's count is every open pull
+ * views, the queue and analytics, then For review, the reader's review
+ * sessions. The queue's count is every open pull
  * request in it, whatever the scope. The repository is picked in the queue's
  * own toolbar, and which repositories are watched is set in Settings.
  */
@@ -36,6 +38,7 @@ export function PullRequestsSidebar() {
           render={<Link to="/pulls/analytics" />}
         />
       </div>
+      <ReviewSessionsList />
     </div>
   );
 }

@@ -292,3 +292,30 @@ export interface PullRequestAnalytics {
   lanes: ({ lane: PullRequestLane } & AnalyticsFigure)[];
   waiting: { reason: PullRequestBlocker; value: number; medianHours: number | null }[];
 }
+
+/**
+ * A review session: a session started from a pull request's Chat tab, in a
+ * worktree of its head branch, listed under For review and never under
+ * Sessions. The title and repository are as they were when it started.
+ */
+export interface ReviewSession {
+  sessionId: string;
+  installationId: string;
+  githubRepoId: number;
+  number: number;
+  repository: string;
+  title: string;
+  headRef: string;
+  hostId: string;
+  state: string;
+  createdAt: Date;
+}
+
+/** Whether a review session reviews the pull request at `address`. */
+export function reviews(session: ReviewSession, address: PullRequestAddress): boolean {
+  return (
+    session.installationId === address.installationId &&
+    session.githubRepoId === address.githubRepoId &&
+    session.number === address.number
+  );
+}

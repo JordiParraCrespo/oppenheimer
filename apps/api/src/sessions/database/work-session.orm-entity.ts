@@ -175,9 +175,13 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   ackedReportHash!: string | null;
 
-  /** Who asked for the session: `person`, or `automation` (whose run points back here). */
+  /**
+   * Who asked for the session: `person`, `automation` (whose run points back
+   * here) or `review` (a pull request's review session, which the Sessions
+   * list leaves out).
+   */
   @Column({ type: 'varchar', length: 16, default: 'person' })
-  origin!: 'person' | 'automation';
+  origin!: 'person' | 'automation' | 'review';
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

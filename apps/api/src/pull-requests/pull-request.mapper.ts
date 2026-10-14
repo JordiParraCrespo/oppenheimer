@@ -17,6 +17,7 @@ import type {
   GithubReviewComment,
   GithubTimelineItem,
 } from '../github/infrastructure/github-pulls.port';
+import type { ReviewSessionRow } from './database/review-session.repository.port';
 import {
   type AnalyticsWindow,
   barsOf,
@@ -48,6 +49,7 @@ import type {
   WatchedRepositoryDto,
 } from './dtos/pull-request.response.dto';
 import type { PullRequestAnalyticsResponseDto } from './dtos/pull-request-analytics.response.dto';
+import type { ReviewSessionDto } from './dtos/review-session.response.dto';
 
 const LANES: PullRequestLane[] = ['deep', 'medium', 'quick'];
 
@@ -171,6 +173,21 @@ export class PullRequestMapper {
       })),
       reviewers: this.reviewersOf(snapshot),
       viewerLogin,
+    };
+  }
+
+  toReviewSession(row: ReviewSessionRow): ReviewSessionDto {
+    return {
+      sessionId: row.sessionId,
+      installationId: row.installationId,
+      githubRepoId: row.githubRepoId,
+      number: row.number,
+      repository: row.repository,
+      title: row.title,
+      headRef: row.headRef,
+      hostId: row.hostId,
+      state: row.state,
+      createdAt: row.createdAt.toISOString(),
     };
   }
 

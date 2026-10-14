@@ -46,8 +46,12 @@ export type TurnOrigin = (typeof TURN_ORIGINS)[number];
 export const TURN_DRIVES = ['interactive', 'headless'] as const;
 export type TurnDrive = (typeof TURN_DRIVES)[number];
 
-/** Who asked for a session. The first turn's origin is the session's. */
-export const SESSION_ORIGINS = ['person', 'automation'] as const;
+/**
+ * Who asked for a session. The first turn's origin is the session's, except a
+ * `review` (a person reviewing a pull request from its Chat tab), whose first
+ * turn is a person's.
+ */
+export const SESSION_ORIGINS = ['person', 'automation', 'review'] as const;
 export type SessionOrigin = (typeof SESSION_ORIGINS)[number];
 
 /** The kinds a headless runner and the follow-up path will write; nothing appends them yet. */
@@ -185,7 +189,11 @@ export function foldTurnEvent(
       // The first task. The API writes it at create and a runner may read it back
       // out of the agent's transcript; either way it opens turn one, once.
       if (latest) return latest;
-      return newTurn(1, sessionOrigin, text(event.payload, 'text'));
+      return newTurn(
+        1,
+        sessionOrigin === 'review' ? 'person' : sessionOrigin,
+        text(event.payload, 'text'),
+      );
     }
     case TURN_EVENT_KINDS.REQUESTED: {
       // A follow-up: the next turn, queued behind the live one if there is one.

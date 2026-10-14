@@ -11,6 +11,7 @@ import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TerminalComposer } from '../components/terminal-composer';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
@@ -22,6 +23,9 @@ import { SessionShareButton } from './session-share-button';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
+
+/** How long a composed line waits before its Enter, so the agent reads it as typed, not pasted. */
+const SUBMIT_AFTER_MS = 40;
 
 /**
  * The session's terminal: the scrollback and the status band. No window
@@ -47,11 +51,18 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItem,
+  composer,
 }: {
   sessionId: string;
   hostId: string;
   /** Drawn first in the status bar: the session's task, when the route has one. */
   statusItem?: ReactNode;
+  /**
+   * An input row under the grid, with this placeholder: a line sent to the
+   * agent on Enter, as if typed at its prompt. A pull request's review
+   * session has one ("Ask the review agent, or run a command").
+   */
+  composer?: string;
 }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
@@ -64,7 +75,7 @@ export function SessionTerminal({
     hostId,
     snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
   });
-  const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
+  const { containerRef, status, hasOutput, ended, retryNow, awaySince, send } = terminal;
   const phase = hostLinkPhaseOf({
     status,
     away: awaySince !== null,
@@ -139,6 +150,18 @@ export function SessionTerminal({
               />
             )}
           </div>
+        ) : null}
+
+        {composer ? (
+          <TerminalComposer
+            placeholder={composer}
+            onSubmit={(text) => {
+              // The text, then Enter on its own write: sent together, an agent's
+              // input box reads the pair as a paste and keeps the newline.
+              send(text);
+              setTimeout(() => send('\r'), SUBMIT_AFTER_MS);
+            }}
+          />
         ) : null}
 
         {phase ? (

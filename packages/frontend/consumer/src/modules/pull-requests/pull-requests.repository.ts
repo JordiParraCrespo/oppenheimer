@@ -23,6 +23,7 @@ import {
   type PullRequestScope,
   type ReviewInput,
   type ReviewOutcome,
+  type ReviewSession,
   type WatchedRepository,
 } from './pull-request.entity';
 import { PullRequestsErrors } from './pull-requests.errors';
@@ -248,6 +249,38 @@ export class PullRequestsRepository {
       heyApiSdk.mergePullRequest({ path: address, body: { method } }),
       PullRequestsErrors.MERGE_FAILED,
     );
+  }
+
+  /** The caller's review sessions not closed, newest first. */
+  @MapApiError(PullRequestsErrors.FETCH_REVIEW_SESSIONS_FAILED)
+  async reviewSessions(): Promise<ReviewSession[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findReviewSessions(),
+      PullRequestsErrors.FETCH_REVIEW_SESSIONS_FAILED,
+    );
+    return data.map((row) => ({ ...row, createdAt: new Date(row.createdAt) }));
+  }
+
+  /**
+   * Starts a review session on `hostId` and answers its id. The key belongs
+   * to the attempt, as New session's does: a retry after a lost answer finds
+   * the session the first one made.
+   */
+  @MapApiError(PullRequestsErrors.START_REVIEW_FAILED)
+  async startReviewSession(
+    address: PullRequestAddress,
+    hostId: string,
+    idempotencyKey: string,
+  ): Promise<string> {
+    const data = await unwrapBody(
+      heyApiSdk.startReviewSession({
+        path: address,
+        body: { hostId },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      PullRequestsErrors.START_REVIEW_FAILED,
+    );
+    return data.sessionId;
   }
 
   @MapApiError(PullRequestsErrors.FETCH_REPOSITORIES_FAILED)

@@ -11,17 +11,19 @@ import {
 import { signInAs } from '../../support/web';
 
 /**
- * Review in a session, from a pull request's page to a real runner: one press
- * on the host the console picked starts Claude Code in a worktree of the pull
- * request's head branch, with the review prompt as its first task, and opens
- * the session. The stub's #14 is `fix/wallet-empty-state` on `xrp-mobile`,
- * which the fleet's git server also carries; the `claude` shim prints the argv
- * it was started with. Needs the console on `WEB_URL`.
+ * A pull request's review session, from its Chat tab to a real runner: one
+ * press on the host the console picked starts Claude Code in a worktree of
+ * the head branch, with the review prompt as its first task, and the tab
+ * shows its terminal. The session is listed under For review and never under
+ * Sessions. The stub's #14 is `fix/wallet-empty-state` on `xrp-mobile`,
+ * which the fleet's git server also carries; the `claude` shim prints the
+ * argv it was started with, then hands the pane to a shell, so a line sent
+ * from the composer under the terminal runs there. Needs the console on `WEB_URL`.
  */
 test.describe.configure({ timeout: 240_000 });
 test.use({ baseURL: WEB_URL });
 
-test('a pull request opens a review session on its head branch', async ({ page }) => {
+test('a pull request’s Chat tab starts a review session on its head branch', async ({ page }) => {
   const up = await fetch(WEB_URL).then(
     (response) => response.ok,
     () => false,
@@ -37,22 +39,37 @@ test('a pull request opens a review session on its head branch', async ({ page }
   await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible({
     timeout: 30_000,
   });
-  // Where it runs is on the bar: the one online host, picked for the reader.
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await expect(page).toHaveURL(/view=chat/);
+  // Where it runs: the one online host, picked for the reader.
   await expect(page.getByRole('button', { name: 'Host', exact: true })).toContainText(
     box.host.name,
   );
-  await page.getByRole('button', { name: 'Review in a session' }).click();
-  await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]{36}$/, { timeout: 30_000 });
-  const sessionId = page.url().split('/').pop() as string;
+  await page.getByRole('button', { name: 'Start review session' }).click();
+
+  // The tab becomes the session: its bar names the pull request and its branch.
+  await expect(page.getByText('review · xrp-mobile #14')).toBeVisible({ timeout: 30_000 });
+  await expect(page).toHaveURL(/\/pulls\/.+view=chat/);
+
+  const reviews = (await (await api.get('/api/v1/pulls/review-sessions')).json()) as {
+    sessionId: string;
+    number: number;
+    headRef: string;
+    hostId: string;
+  }[];
+  expect(reviews).toHaveLength(1);
+  expect(reviews[0]).toMatchObject({ number: 14, headRef: STUB_BRANCH, hostId: box.id });
+  const sessionId = reviews[0]?.sessionId as string;
   await waitForLifecycle(api, sessionId, 'open');
 
-  const session = (await (await api.get(`/api/v1/sessions/${sessionId}`)).json()) as {
-    agent: string;
-    hostId: string;
-    checkouts: { baseBranch: string }[];
+  // A review session is the Pull requests area's: Sessions does not list it.
+  const sessions = (await (await api.get('/api/v1/sessions')).json()) as {
+    data: { id: string }[];
   };
-  expect(session).toMatchObject({ agent: 'claude-code', hostId: box.id });
-  expect(session.checkouts[0]?.baseBranch).toBe(STUB_BRANCH);
+  expect(sessions.data.map((row) => row.id)).not.toContain(sessionId);
+  await expect(
+    page.getByRole('listitem').filter({ hasText: '#14 Fix the empty state' }),
+  ).toBeVisible();
 
   // Claude Code starts on the review prompt, edits approved, in the worktree
   // of the head branch.
@@ -65,5 +82,13 @@ test('a pull request opens a review session on its head branch', async ({ page }
     `git merge-base --is-ancestor origin/${STUB_BRANCH} HEAD && echo HEAD-OF-$((1+1))\r`,
   );
   await terminal.waitFor('HEAD-OF-2', 30_000);
+
+  // The composer under the terminal sends a line to the agent, as typed at
+  // its prompt: here the shim's shell runs it.
+  const composer = page.getByRole('textbox', { name: 'Ask the review agent, or run a command' });
+  await composer.fill('echo COMPOSED-$((2+3))');
+  await composer.press('Enter');
+  await expect(composer).toHaveValue('');
+  await terminal.waitFor('COMPOSED-5', 30_000);
   await terminal.close();
 });

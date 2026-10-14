@@ -17,11 +17,10 @@ import {
   PULL_REQUEST_VIEWS,
   type PullRequestView,
 } from '../lib/pull-request-search';
-import { ReviewSession } from './review-session';
 
 /**
  * The bar over a pull request, its one header: back to the queue and its
- * two views, GitHub, Review in a session and Submit review. On Changes the views give way to
+ * three views, GitHub, and Submit review. On Changes the views give way to
  * Back and the diff's layout. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.
  */
@@ -101,7 +100,6 @@ export function PullRequestToolbar({
           <SquareArrowOutUpRight />
         </IconButton>
       ) : null}
-      {pull?.isOpen ? <ReviewSession pull={pull} /> : null}
       {pull?.isOpen ? review : null}
     </div>
   );

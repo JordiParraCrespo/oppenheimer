@@ -3,7 +3,10 @@
     "title": "Pull requests",
     "views": "Views",
     "queue": "PR queue",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "forReview": "For review",
+    "searchReviews": "Search review sessions",
+    "clearSearch": "Clear search"
   },
   "queue": {
     "title": "PR queue",
@@ -112,7 +115,8 @@
     "viewLabel": "View",
     "views": {
       "description": "Description",
-      "changes": "Changes"
+      "changes": "Changes",
+      "chat": "Chat"
     },
     "openOnGithub": "Open on GitHub",
     "loadFailed": "Could not load the pull request.",
@@ -252,7 +256,7 @@
     "hoverWeek": "Hover a week"
   },
   "reviewSession": {
-    "start": "Review in a session",
+    "start": "Start review session",
     "starting": "Starting…",
     "host": "Host",
     "search": "Search hosts…",
@@ -260,6 +264,12 @@
     "offline": "offline",
     "noHost": "No host is online. Start the runner on one of your machines.",
     "fork": "It comes from a fork, which a session cannot check out yet.",
-    "failed": "Could not start the review session."
+    "failed": "Could not start the review session.",
+    "title": "Review this pull request in a session",
+    "description": "Claude Code starts on one of your hosts in a worktree of {{branch}}, reads the diff and opens with two or three lines. Then ask it anything.",
+    "bar": "review · {{repository}} #{{number}}",
+    "close": "Show the pull request",
+    "loadFailed": "Could not load the review session.",
+    "composer": "Ask the review agent, or run a command"
   }
 }

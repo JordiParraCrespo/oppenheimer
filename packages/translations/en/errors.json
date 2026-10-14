@@ -96,6 +96,7 @@
     "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
     "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
     "PULLS_001": "Choose a workspace before working with pull requests.",
+    "PULLS_002": "This pull request comes from a fork, which a session cannot check out yet.",
     "SESSIONS_001": "We could not find that session.",
     "SESSIONS_002": "Choose a workspace before working with sessions.",
     "SESSIONS_003": "We could not find that checkout on this session.",

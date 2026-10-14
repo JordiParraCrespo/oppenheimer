@@ -198,6 +198,8 @@ export function useTerminal(
 
   return {
     containerRef,
+    /** Writes to the agent's window as if typed into the grid; nothing while no link is open. */
+    send: (data: string) => streamRef.current?.send(data),
     status,
     hasOutput,
     ended,
