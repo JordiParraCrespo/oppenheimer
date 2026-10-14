@@ -6,12 +6,17 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 const chipVariants = cva(
-  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill border px-2.5 text-sm font-medium whitespace-nowrap text-fg transition-[background-color,color,border-color] duration-fast ease-standard outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-3.5',
+  'inline-flex shrink-0 items-center gap-1.5 rounded-pill border text-sm font-medium whitespace-nowrap text-fg transition-[background-color,color,border-color] duration-fast ease-standard outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-3.5',
   {
     variants: {
       variant: {
         outline: 'border-border bg-transparent',
         solid: 'border-transparent bg-control text-control-fg',
+      },
+      /** `md` is a chip that is a form's field (a task's project), level with the `Input` above it. */
+      size: {
+        sm: 'h-7 px-2.5',
+        md: 'h-(--control-h-md) px-3.5',
       },
       interactive: {
         true: 'cursor-pointer hover:bg-hover-surface data-selected:border-transparent data-selected:bg-selected-surface data-selected:text-link',
@@ -20,6 +25,7 @@ const chipVariants = cva(
     },
     defaultVariants: {
       variant: 'outline',
+      size: 'sm',
       interactive: false,
     },
   },
@@ -39,16 +45,17 @@ type ChipProps = Omit<VariantProps<typeof chipVariants>, 'interactive'> & {
   );
 
 /**
- * Chip — a chosen value or a filter: 28px pill, 13px medium, hairline border.
+ * Chip — a chosen value or a filter: 28px pill (34px at `size="md"`, when it
+ * is a form's field), 13px medium, hairline border.
  * Clicks, toggles, dismisses. A leading icon (or check) sits in front of the
  * label; `selected` takes the blue tint; `solid` is the neutral filled form.
  *
  * Renders a button when it has `onClick`, otherwise a span, so a read-only
  * chip ("✓ git") is not announced as a control.
  */
-function Chip({ className, variant, selected, icon, children, ...props }: ChipProps) {
+function Chip({ className, variant, size, selected, icon, children, ...props }: ChipProps) {
   const classes = cn(
-    chipVariants({ variant, interactive: props.onClick !== undefined }),
+    chipVariants({ variant, size, interactive: props.onClick !== undefined }),
     className,
   );
   if (props.onClick !== undefined) {

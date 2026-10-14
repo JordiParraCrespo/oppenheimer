@@ -10,8 +10,16 @@ import { Button } from './button';
 import { Chip } from './chip';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
+/** The trigger on each rung of the control ramp, padded and set as `Input`'s. */
+const TRIGGER_SIZE = {
+  sm: 'h-(--control-h-sm) px-2.5 text-sm [&_svg]:size-3.5',
+  md: 'h-(--control-h-md) px-3 text-operate [&_svg]:size-4',
+  lg: 'h-(--control-h-lg) px-3.5 text-lg [&_svg]:size-[18px]',
+} as const;
+
 /**
- * DatePicker — a due date, or a day for an event: a 34px trigger with the
+ * DatePicker — a due date, or a day for an event: a trigger on the control
+ * ramp (34px by default, the same field as an `Input` beside it) with the
  * calendar glyph, the day ("Sat, Oct 10") and a chevron, opening a small
  * month: today ringed, the picked day filled in ink, the days of the
  * months around it muted. Under the grid, quick picks as chips (Today,
@@ -29,6 +37,7 @@ function DatePicker({
   placeholder,
   quick,
   labels = {},
+  size = 'md',
   className,
 }: {
   value: IsoDate | null;
@@ -39,6 +48,8 @@ function DatePicker({
   placeholder?: string;
   quick?: readonly { label: string; value: IsoDate }[];
   labels?: { choose?: string; previous?: string; next?: string; clear?: string };
+  /** The rung of the control ramp, as an `Input`'s `size`. */
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -71,13 +82,16 @@ function DatePicker({
         aria-haspopup="dialog"
         data-slot="date-picker"
         className={cn(
-          'flex h-(--control-h-sm) min-w-[184px] items-center gap-2 rounded-sm border border-border bg-card pr-2.5 pl-2.5 text-left text-sm text-fg outline-none transition-[border-color,box-shadow] duration-fast ease-standard hover:border-fg-subtle focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring',
+          'flex min-w-[184px] items-center gap-2 rounded-sm border border-field-border bg-field text-left text-fg outline-none transition-[border-color,box-shadow] duration-fast ease-standard hover:border-border-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring [&_svg]:shrink-0',
+          TRIGGER_SIZE[size],
           className,
         )}
       >
-        <CalendarIcon className="size-3.5 shrink-0 text-fg-muted" aria-hidden />
-        <span className={cn('min-w-0 flex-1 truncate', !value && 'text-fg-subtle')}>{label}</span>
-        <ChevronDownIcon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden />
+        <CalendarIcon className="text-fg-muted" aria-hidden />
+        <span className={cn('min-w-0 flex-1 truncate', !value && 'text-field-placeholder')}>
+          {label}
+        </span>
+        <ChevronDownIcon className="text-fg-subtle" aria-hidden />
       </PopoverTrigger>
       <PopoverContent
         align="start"

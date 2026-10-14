@@ -31,6 +31,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   (SF Mono on Apple platforms), tabular (`figures` utility). Nothing is
   vendored: the fonts are the reader's own.
 - **One control ramp**: 28 / 34 / 42px for Button, IconButton, Input, ChipSelect.
+  **A form's fields stand at 34px**: `Input`, `DatePicker` and
+  `FieldSelect`'s field look default to the `md` rung, and a `Chip` that is a
+  field takes `size="md"`, so a label column of mixed controls reads as one
+  height. A
+  smaller or larger field is a `size` the caller asks for, never a height of
+  the component's own.
 - **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
   press a pill, read inside an 18.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
