@@ -4,7 +4,7 @@ import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-cons
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
-import { UNASSIGNED_SLUG } from '../lib/plan-scope';
+import { planCounts, UNASSIGNED_SLUG } from '../lib/plan-scope';
 
 /** The facets' first option: nothing narrowed. */
 const ALL = 'all';
@@ -25,12 +25,10 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
     },
   });
   const { data: projects } = useProjects();
-  const { data: tasks } = useTasks();
+  const { data: counts } = useTasks({ select: planCounts });
   const { data: milestones } = useMilestones({
     select: (rows) => rows.filter((row) => !projectId || row.projectId === projectId),
   });
-  const count = (keep: (task: { projectId: string; milestoneId: string | null }) => boolean) =>
-    tasks ? tasks.filter(keep).length : undefined;
   const unassigned = projects?.find((row) => row.isUnassigned);
   const set = (search: { project?: string; milestone?: string }) =>
     navigate({
@@ -58,20 +56,20 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
           set({ project, milestone: keepMilestone ? milestoneId : undefined });
         }}
         options={[
-          { value: ALL, label: t('tasks.filters.allProjects'), count: count(() => true) },
+          { value: ALL, label: t('tasks.filters.allProjects'), count: counts?.all },
           ...(projects ?? [])
             .filter((row) => !row.isUnassigned)
             .map((row) => ({
               value: row.slug,
               label: row.name,
-              count: count((task) => task.projectId === row.id),
+              count: counts ? (counts.byProject[row.id] ?? 0) : undefined,
             })),
           ...(unassigned
             ? [
                 {
                   value: UNASSIGNED_SLUG,
                   label: t('tasks.filters.noProject'),
-                  count: count((task) => task.projectId === unassigned.id),
+                  count: counts ? (counts.byProject[unassigned.id] ?? 0) : undefined,
                 },
               ]
             : []),
@@ -89,7 +87,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
             ...(milestones ?? []).map((row) => ({
               value: row.id,
               label: row.name,
-              count: count((task) => task.milestoneId === row.id),
+              count: counts ? (counts.byMilestone[row.id] ?? 0) : undefined,
             })),
           ]}
         />
