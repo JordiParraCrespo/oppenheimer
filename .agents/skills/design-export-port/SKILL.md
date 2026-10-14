@@ -27,56 +27,21 @@ The export is the spec, but the artboards are the truth: where they
 override the system, the artboards win, because they are what the user
 approved. Write that decision down in the token file.
 
-## Run with no arguments: the autonomous delta sync
+## Two modes
 
-`/design-export-port` with nothing after it means "catch the design system
-up with the latest export and ship it". Do the whole job without stopping
-for confirmation; the person reviews the captures and the pull request.
-§0 and §3's questions become the defaults below, and you stop to ask only
-when the frames contradict each other or the package (two drawings of one
-thing, a token the artboards override two ways).
-
-1. **Delta.** `node .agents/skills/design-export-port/scripts/export-delta.mjs`.
-   It reads `last-port.json` (the export sync commit the package last caught
-   up with) and prints the frames that are new, changed or gone since, with
-   each frame's props and the lines the export's README added. "Up to date"
-   ends the run: say so in one line. A first port (no `last-port.json`) is
-   not autonomous; follow §0.
-2. **Branch.** Start from `origin/main` on the session's branch.
-3. **Inventory.** Render each new or changed frame in the states its props
-   offer (§2), light and dark. For more than two frames, fan out one
-   read-only agent per frame or frame group, each given the package's
-   component list and asked to tag every element as **covered**, a
-   **change** to an existing component (a variant, a slot, a state) or
-   **new**. Spot-check the claims that decide work. Leave out what the
-   README or the notes say the product does not build, and frames that are
-   app screens made of covered components (their assembly is the app's,
-   not the package's).
-4. **Build** every new component and every change in one pull request, on
-   the defaults: compose, don't configure (parts as children or compound
-   parts; a boolean that changes what a component is becomes a second
-   component; `pending`, `disabled`, `open`, `active` stay props); a demo
-   per piece in the showcase group the export's family maps to, on the
-   ground the product draws it on (the chat's recessed grey, the
-   sidebar's surface); never copy imagery of real people.
-5. **Verify** (§7) to zero: types in the package, the showcase, `apps/web`
-   and `packages/frontend/web`; the package's `test`; Biome;
-   `pnpm lint:design` at the warnings it had; `pnpm check:compiler`.
-6. **Captures.** Build the showcase and shoot one `--element` per new
-   component and per changed state, `--scale 2`, light and dark (§6). Look
-   at each against the frame's capture and fix what differs before anyone
-   else sees it. Then send them to the person in one message per group,
-   each with a one-line caption saying what it shows.
-7. **Ship** (§8, §9): docs, a changeset, `last-port.json` set to the sync
-   commit you ported, then `/steward`: commit by path, `pnpm ci:local`,
-   push on green, the pull request with the report, and drive it through
-   review to merge.
-
-Close with what was built, what was left out and why, and the link.
+- **Asked** (arguments, or a first port): §0 to §9 as written, with the
+  person: a plan to confirm, then the screens one per turn.
+- **Autonomous** (`/design-export-port` alone): catch the package up with
+  every export sync since the last port and ship it, without stopping for
+  confirmation. The same steps run; each says what changes under
+  **Autonomous**. Stop to ask only when the frames contradict each other or
+  the package (two drawings of one thing, a token the artboards override
+  two ways). Close with what was built, what was left out and why, and the
+  pull request's link.
 
 ## 0. Plan, then confirm
 
-With arguments, or on a first port, plan and confirm. First decide which kind of run this is. A **first port** maps a whole
+First decide which kind of run this is. A **first port** maps a whole
 export onto the package. A **delta sync** is a later export that changes a
 few screens: its README names the delta, the diff against the previous sync
 shows the rest, and the job is the components that delta needs, on top of
@@ -99,6 +64,17 @@ the questions that change the work before writing a line:
 4. Callers: which apps import which components, and what happens to the
    ones the screens no longer need (keep compiling, or rebuild the
    screens first)?
+
+**Autonomous:** there is no plan to confirm. Run
+`node .agents/skills/design-export-port/scripts/export-delta.mjs`: from
+`last-port.json` (the export sync the package last caught up with) it
+prints the frames new, changed or gone since, each frame's props, the
+README's own note on the delta, and any commit that changed the frames
+under a subject that is not a sync's. "Up to date" ends the run in one
+line. No `last-port.json` means a first port, which is never autonomous.
+The questions above take these answers: the artboards win; only what the
+screens use; the package's vocabulary; callers keep compiling. Start from
+`origin/main` on the session's branch.
 
 ## 1. Read the export
 
@@ -148,8 +124,7 @@ where the copy and the states live.
 ## 3. Review page by page, with the user
 
 Walk the screens **one per turn**, in flow order, and wait before moving
-on. In the autonomous run there is no walk: the captures in its step 6 are
-the review. In an asked-for delta sync, walk the changed states instead, and when the user has
+on. In a delta sync, walk the changed states instead, and when the user has
 already agreed the inventory, present them together rather than one per
 turn. Send the light and dark capture, then list only what is new on that
 page:
@@ -167,6 +142,16 @@ Modelling rules that hold regardless of product are in
 `references/modelling.md`. Close the walk with the inventory grouped the
 way the export groups its families and every open decision answered.
 Only then build.
+
+**Autonomous:** no walk; the captures in §6 are the review. Render each
+new or changed frame in the states its props offer, light and dark. For
+more than two frames, fan out one read-only agent per frame or frame
+group, given the package's component list, to tag every element
+**covered**, a **change** to an existing component (a variant, a slot, a
+state) or **new**, and spot-check the claims that decide work. Build every
+new component and every change, in one pull request. Leave out what the
+export's README or the product notes say is not built, and frames that are
+app screens made of covered components (their assembly is the app's).
 
 ## 4. Tokens
 
@@ -229,6 +214,10 @@ Keep the JS `tailwind.config.ts` preset in sync with the same values.
 - Behaviour the frames hand-write twice (two drags, two month grids) is
   one primitive the surfaces compose. Port the frame's numbers onto the
   token ramp, not its script.
+- Compose, don't configure: parts are children or compound parts, a
+  boolean that changes what a component is becomes a second component,
+  and state (`pending`, `disabled`, `open`, `active`) stays a prop.
+- Never copy imagery of real people from an export; demos draw initials.
 - Stay in the package. A frame that implies new behaviour in the app, the
   API or the runner (an upload for files that are not images) is listed as
   out of scope in the PR, not built in it, unless the user asked for it.
@@ -252,9 +241,15 @@ the top and the section ids you name in light and dark, applies both theme
 selectors, and exits non-zero on console errors (a hydration mismatch
 included) or a server that never answers. `--state 'section:tag:steps'`
 captures one state of a section's demo after clicks or a held drag, as an
-element shot; raise `--height` for a tall section. `--element
-'name|selector|steps'` shoots one component, padded, which is the capture
-a person reviews; add `--scale 2` for those.
+element shot; raise `--height` for a tall section. `--elements
+shots.json` shoots single components, padded, which are the captures a
+person reviews; add `--scale 2` for those. Each demo sits on the ground the
+product draws it on (the chat's recessed grey, the sidebar's surface).
+
+**Autonomous:** shoot one element per new component and per changed
+state. Look at each beside the frame's capture and fix what differs, then
+send them to the person, one message per group, each with a one-line
+caption.
 
 A demo that renders a clock on a prerendered page mismatches on hydration;
 mark that one node `suppressHydrationWarning`, never the section.
@@ -275,6 +270,9 @@ When the person reviewing wants to compare without running anything,
 frame capture beside the showcase capture that ports it, light and dark.
 It is a local helper, not a step: build it when asked.
 
+**Autonomous:** all of it to zero, plus `packages/frontend/web`'s types,
+`pnpm lint:design` at the warnings it had, and `pnpm check:compiler`.
+
 ## 8. Docs, in the same PR
 
 `packages/frontend/design-system/AGENTS.md` (rules and vocabulary as now agreed),
@@ -287,6 +285,8 @@ agent notes if a stated rule changed.
 One PR: tokens, the inventory by family, what was dropped and why, the
 showcase, docs, the verification list, the out-of-scope list, and
 `last-port.json` moved to the sync commit the PR ports, so the next
-autonomous run starts from there. Append a dated note to `references/`
-with what this export needed that the workflow did not predict, labelled
-as not to be replayed.
+autonomous run starts from there. Ship through `/steward`: commit by
+path, `pnpm ci:local`, push on green, the report in the description; in
+the autonomous mode, drive it through review to merge. Append a dated
+note to `references/` with what this export needed that the workflow did
+not predict, labelled as not to be replayed.

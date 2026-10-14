@@ -14,6 +14,17 @@
  * Exits 0 and prints "Up to date" when no sync landed since the last port.
  * It reads git only; it writes nothing. The port's pull request updates
  * `last-port.json` to the sync commit it ported.
+ *
+ * The contract it relies on, and fails loudly when broken:
+ * - A sync is a commit whose subject matches SYNC_SUBJECT, the form every
+ *   sync so far has used: `docs(design): sync the version-1 export of
+ *   2026-10-14`. A commit that changes the frames under any other subject
+ *   is listed as unrecognised, so a sync named another way is seen, never
+ *   skipped.
+ * - A frame's props are the JSON in its `data-props` attribute, quoted the
+ *   way Claude Design writes it (`&quot;`). A frame whose attribute does not
+ *   parse stops the run with its name.
+ * Every file under the frames directory is reported, assets included.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -29,18 +40,21 @@ const a = args({
 const git = (...argv) => execFileSync('git', argv, { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 << 20 }).trim();
 const state = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'last-port.json'), 'utf8'));
 const frames = `${a.design}/${a.version}`;
+const SYNC_SUBJECT = /^docs\(design\): sync the .+ export of /;
 
-// A sync commit is the one that copies an export in; its subject says so.
-const syncs = git('log', '--format=%H%x09%ad%x09%s', '--date=short', `${state.export}..HEAD`, '--', a.design)
+const commits = git('log', '--format=%H%x09%ad%x09%s', '--date=short', `${state.export}..HEAD`, '--', frames)
   .split('\n')
   .filter(Boolean)
   .map((line) => line.split('\t'))
-  .filter(([, , subject]) => /sync the .*export/i.test(subject))
   .map(([sha, date, subject]) => ({ sha, date, subject }));
+const syncs = commits.filter((c) => SYNC_SUBJECT.test(c.subject));
+const unrecognised = commits.filter((c) => !SYNC_SUBJECT.test(c.subject) && !c.subject.startsWith('Merge '));
 
 if (syncs.length === 0) {
-  const msg = `Up to date: no export sync since ${state.label} (${state.export.slice(0, 8)}).`;
-  console.log(a.json ? JSON.stringify({ upToDate: true, last: state }) : msg);
+  const lines = [`Up to date: no export sync since ${state.label} (${state.export.slice(0, 8)}).`];
+  if (unrecognised.length)
+    lines.push('', 'These commits changed the frames under another subject; read them before calling it up to date:', ...unrecognised.map((c) => `- \`${c.sha.slice(0, 8)}\` ${c.date} ${c.subject}`));
+  console.log(a.json ? JSON.stringify({ upToDate: true, last: state, unrecognised }) : lines.join('\n'));
   process.exit(0);
 }
 
@@ -48,8 +62,7 @@ const latest = syncs[0];
 const changes = git('diff', '--name-status', '--find-renames', state.export, latest.sha, '--', frames)
   .split('\n')
   .filter(Boolean)
-  .map((line) => line.split('\t'))
-  .filter(([, path]) => !path.includes('/assets/') || path.endsWith('.svg'));
+  .map((line) => line.split('\t'));
 
 const delta = { added: [], changed: [], removed: [] };
 for (const [status, path, renamed] of changes) {
@@ -65,11 +78,14 @@ function detail(file) {
   const stat = git('diff', '--numstat', state.export, latest.sha, '--', path).split('\t');
   let props = '';
   if (file.endsWith('.html')) {
-    try {
-      const html = git('show', `${latest.sha}:${path}`);
-      const raw = (html.match(/data-props="([^"]*)"/) ?? [])[1];
-      if (raw) props = Object.keys(JSON.parse(raw.replaceAll('&quot;', '"').replaceAll('&amp;', '&'))).join(', ');
-    } catch {}
+    const raw = git('show', `${latest.sha}:${path}`).match(/data-props="([^"]*)"/)?.[1];
+    if (raw !== undefined) {
+      try {
+        props = Object.keys(JSON.parse(raw.replaceAll('&quot;', '"').replaceAll('&amp;', '&'))).join(', ');
+      } catch (e) {
+        throw new Error(`${file}: data-props is not JSON (${e.message}); the props contract above no longer holds`);
+      }
+    }
   }
   return { file, added: Number(stat[0]) || 0, removed: Number(stat[1]) || 0, props };
 }
@@ -93,6 +109,7 @@ const report = {
   added: delta.added.map(detail),
   changed: delta.changed.map(detail),
   removed: delta.removed,
+  unrecognised,
   readmeAdded,
 };
 
@@ -117,5 +134,14 @@ for (const [title, list] of [
   out.push(`## ${title}`, '', '| Frame | Lines | Props |', '| --- | --- | --- |', ...list.map(row), '');
 }
 if (report.removed.length) out.push('## Removed frames', '', ...report.removed.map((f) => `- \`${f}\``), '');
+if (unrecognised.length)
+  out.push(
+    '## Commits that changed the frames under another subject',
+    '',
+    'Read these: one may be a sync named another way, or an edit the port must keep.',
+    '',
+    ...unrecognised.map((c) => `- \`${c.sha.slice(0, 8)}\` ${c.date} ${c.subject}`),
+    '',
+  );
 if (readmeAdded) out.push("## What the export's README added", '', readmeAdded, '');
 console.log(out.join('\n'));
