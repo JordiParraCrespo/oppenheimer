@@ -113,6 +113,12 @@
             "command": ".agents/hooks/arch-check.sh",
             "timeout": 180,
             "statusMessage": "Checking API architecture boundaries..."
+          },
+          {
+            "type": "command",
+            "command": "node .agents/hooks/screenshot-guard.mjs",
+            "timeout": 15,
+            "statusMessage": "Checking a visual change has screenshots..."
           }
         ]
       }

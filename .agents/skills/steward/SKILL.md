@@ -1,6 +1,6 @@
 ---
 name: steward
-description: How to drive a pull request in this repository to mergeable. CI is local, so there are no GitHub checks to wait for; a pull request carries a green `pnpm ci:local` report for its head, which whoever merges reads. Use when opening, updating or watching a pull request here, or when a `main-red` issue is open.
+description: How to drive a pull request in this repository to mergeable. CI is local, so there are no GitHub checks to wait for; a pull request carries a green `pnpm ci:local` report for its head, which whoever merges reads, and a change to what the console shows carries light and dark screenshots taken on the local stack. Use when opening, updating or watching a pull request here, or when a `main-red` issue is open.
 ---
 
 # Driving a pull request here
@@ -25,8 +25,20 @@ scheduled run is what catches a report that was wrong.
    `## Local CI` heading. Replace it after each push, so the report always
    names the head commit.
 
+4. If the branch changes what the console shows (`apps/web/src`,
+   `apps/web/public`, `packages/frontend/web/src`,
+   `packages/frontend/design-system/web/src`, `packages/translations`;
+   not tests, stories or docs), take its screenshots with the `local-stack`
+   skill ("Show a visual change") before you push: light and dark, every
+   route the change shows on. Look at each one, send them to the user, and
+   give the description a `## Screenshots` section naming the routes,
+   themes, widths and the commit they were taken on. A change there that is
+   not visual says why in that section instead. Take them again after a
+   push that changes how it looks.
+
 A pull request is ready when the report's commit is its head, every row is
-green, and every review thread has an answer. There is nothing to wait for
+green, a visual change has its screenshots, and every review thread has an
+answer. There is nothing to wait for
 on GitHub: do not poll for checks, and do not push an empty commit to start
 one.
 

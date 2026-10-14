@@ -9,6 +9,8 @@
         "apps/web",
         "deploy/kamal/deploy.web.yml",
         "e2e/tests/web",
+        "e2e/tests/screens",
+        "scripts/evals/pr-screenshots",
         ".agents/skills/shadcn/evals/evals.json",
         "scripts/evals/query-keys",
         "scripts/evals/frontend-audit",

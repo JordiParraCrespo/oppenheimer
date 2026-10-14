@@ -151,7 +151,8 @@ When you add a file that mentions an optional app (CI, compose,
   hook is the precise check, and `pnpm check:hooks` runs its cases. Stage
   files by path. The
   same file formats every edit with Biome and runs the architecture check
-  (`.agents/hooks/arch-check.sh`) before a task ends
+  (`.agents/hooks/arch-check.sh`) and the screenshot guard
+  (`.agents/hooks/screenshot-guard.mjs`) before a task ends
 
 ### Backend (`apps/api` + `packages/backend/*`)
 
@@ -398,6 +399,17 @@ pnpm changeset          # Create a changeset for versioning
   `/scaffold-feature` builds the shape and `pnpm check:structure` checks it
 - UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
+- **A change to what the console shows gets screenshots, every time.**
+  Anything under `apps/web/src`, `apps/web/public`,
+  `packages/frontend/web/src`, `packages/frontend/design-system/web/src` or
+  `packages/translations` that is not a test, story or doc: before the pull
+  request is opened or updated, run the `/local-stack` skill's "Show a
+  visual change" step: stack up `--web`, `pnpm --filter @oppenheimer/e2e
+  screens` on each route the change shows on, light and dark. Look at every
+  picture, send them to the user, and give the pull request a
+  `## Screenshots` section (`/steward`). The screenshot guard holds the end
+  of a task until `.screenshots/` is newer than the change; a change there
+  that is not visual writes why to `.screenshots/not-visual.md`
 - Routes in `apps/web` — a new URL, a guard, a layout
   route, search params, or anything that regenerates `routeTree.gen.ts` — is
   the `/tanstack-routing` skill (`.agents/skills/tanstack-routing/`). A route

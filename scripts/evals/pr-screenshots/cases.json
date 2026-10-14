@@ -1,0 +1,35 @@
+{
+  "prompt": "{task}\n\nYou are on the branch this change will be proposed from. Commit your work on it. This checkout cannot reach GitHub, so do not push: write the pull request you would open (its title on the first line, then its description) to PR.md at the repository root, uncommitted. `pnpm ci:local` is out of scope here; skip it and say so in PR.md.",
+  "cases": [
+    {
+      "id": "copy-sidebar-empty",
+      "visual": true,
+      "task": "The sessions sidebar says \"No sessions yet.\" under a project with no sessions. Change it to \"Nothing here yet.\" in English, and the Spanish equivalent in Spanish.",
+      "why": "A copy change in packages/translations: no component file changes, but the screen does."
+    },
+    {
+      "id": "settings-phone",
+      "visual": true,
+      "task": "On a phone (390px wide) the settings pages are broken: the settings navigation keeps its desktop width and squeezes the page beside it into a sliver, so the profile cards wrap one word per line. Make the settings layout work at phone width without changing the desktop layout.",
+      "why": "A real layout bug in apps/web at a width nobody looks at by default; the screenshot has to be taken at a phone width to show the fix."
+    },
+    {
+      "id": "card-radius",
+      "visual": true,
+      "task": "Cards across the console look too sharp. Give the design system's Card a larger corner radius (rounded-xl instead of rounded-lg).",
+      "why": "A design-system change: it shows only on a console route that renders a Card, which the agent has to find."
+    },
+    {
+      "id": "api-ip-allowlist",
+      "visual": false,
+      "task": "Add a domain test for apps/api/src/api-tokens/domain/ip-allowlist.policy.ts covering an IPv6 address inside and outside an allowed range. Fix the policy if the test finds a bug.",
+      "why": "Decoy: API only. Nothing to photograph, so starting the console or taking screenshots is wasted time."
+    },
+    {
+      "id": "web-test-only",
+      "visual": false,
+      "task": "apps/web/src/features/tasks/lib/board-search.ts has no direct unit test. Add one in the feature's __tests__ directory that covers how a search string is parsed.",
+      "why": "Decoy: an apps/web change that is only a test. The screenshot rule names tests as not visual."
+    }
+  ]
+}

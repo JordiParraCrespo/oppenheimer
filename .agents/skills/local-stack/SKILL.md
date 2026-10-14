@@ -1,6 +1,6 @@
 ---
 name: local-stack
-description: Verify a change end to end against the real API, a real runner and, when it matters, the console. Use when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
+description: Verify a change end to end against the real API, a real runner and the console, and photograph the console for a pull request. Use it on every change that alters what the console shows (apps/web, packages/frontend/web, the web design system, the translations), before the change is committed for a pull request, to take and show light and dark screenshots of each screen it touches. Use it also when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
 ---
 
 # Verify a change end to end
@@ -32,10 +32,58 @@ drop the variable and the same suite runs every host in a container.
 In an environment that ships its own Chromium, point Playwright at it with
 `PLAYWRIGHT_CHROMIUM_PATH`.
 
-## 3. Report and tear down
+## 3. Show a visual change
 
-Report which rows you ran, what they printed, and what you did not run and
-why. Then:
+Every change that alters what the console shows gets screenshots, taken
+here and shown to the user, before its pull request is opened or updated.
+That is any change to `apps/web/src`, `apps/web/public`,
+`packages/frontend/web/src`, `packages/frontend/design-system/web/src` or
+`packages/translations` other than tests, stories and docs. The Stop hook
+`.agents/hooks/screenshot-guard.mjs` holds the end of a task on such a
+branch until `.screenshots/` is newer than the change.
+
+1. Bring the stack up with the console: `node scripts/stack/stack.mjs up --web`.
+   It serves this checkout's source through Vite, so later edits show
+   without a restart.
+2. Name the routes the change shows on and photograph them:
+
+   ```bash
+   SCREENS="/sessions,/settings/profile" \
+     PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium \
+     pnpm --filter @oppenheimer/e2e screens
+   ```
+
+   Each route is taken light and dark, signed in as a fresh account that
+   owns a workspace, into `.screenshots/` (git-ignored) with a
+   `manifest.json` naming the commit. `anon:/login` takes a signed-out
+   route; `SCREENS_GITHUB=1` connects a stub GitHub installation first, so
+   the composer and project screens have repositories; `SCREENS_WIDTHS=1440,390`
+   adds a phone. Leave `PLAYWRIGHT_CHROMIUM_PATH` out where Playwright has its
+   own browser. A component in the design system or the kit is photographed
+   on a console route that renders it. A state an empty account cannot reach
+   (a dialog open, a row's menu, a host online) is a few lines in a
+   throwaway spec beside `e2e/tests/screens/screens.spec.ts` that reaches it
+   and calls `page.screenshot` into `.screenshots/`; do not commit it.
+3. Look at every picture yourself (read the PNG). The change has to be
+   visible in it and nothing else has to look broken: clipped text, an
+   overflow, a dark-mode colour that vanishes. Fix what you find and take
+   them again.
+4. Show them to the user: send the files (`SendUserFile`, or the session's
+   way of attaching a file) with a line on what each one shows. Where no
+   such tool exists, list the paths.
+5. Give the pull request a `## Screenshots` section: the routes, the
+   widths and themes, the commit from `manifest.json`, and what a reviewer
+   should look at in each. The images stay in the session; they are not
+   committed or uploaded.
+
+A change in those paths that does not show on screen (a renamed prop, a
+hook's internals) skips this: write one line saying why to
+`.screenshots/not-visual.md` and put the same line under `## Screenshots`.
+
+## 4. Report and tear down
+
+Report which rows you ran, what they printed, which screenshots you took,
+and what you did not run and why. Then:
 
 ```bash
 node scripts/stack/stack.mjs down
