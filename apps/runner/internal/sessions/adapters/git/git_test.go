@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -143,16 +142,12 @@ func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 		t.Fatalf("the worktree has no files: %v", err)
 	}
 
-	deadline := time.Now().Add(30 * time.Second)
-	for {
-		_, err := os.Stat(filepath.Join(mirror, "shallow"))
-		if os.IsNotExist(err) {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("the mirror was never deepened")
-		}
-		time.Sleep(20 * time.Millisecond)
+	// Wait for the deepen itself, not for its shallow file to go: git drops
+	// that file before it has written every ref, so polling for it raced the
+	// assertions below.
+	c.Wait()
+	if _, err := os.Stat(filepath.Join(mirror, "shallow")); !os.IsNotExist(err) {
+		t.Fatalf("the mirror was never deepened: %v", err)
 	}
 	if got := strings.TrimSpace(git(t, mirror, "config", "remote.origin.partialclonefilter")); got != "blob:none" {
 		t.Fatalf("partialclonefilter = %q, want blob:none", got)
