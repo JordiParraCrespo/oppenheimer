@@ -15,6 +15,11 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { BotOrmEntity } from '../bots/database/bot.orm-entity';
+import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
+import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
+import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
+import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
@@ -110,6 +115,11 @@ export default new DataSource({
     CalendarConnectionOrmEntity,
     GithubUserGrantOrmEntity,
     WatchedRepositoryOrmEntity,
+    BotOrmEntity,
+    BotGroupOrmEntity,
+    BotDocumentOrmEntity,
+    BotDocumentRevisionOrmEntity,
+    BotMemoryFactOrmEntity,
     UserRoleOrmEntity,
     RoleCatalogVersionOrmEntity,
     UserRoleVersionOrmEntity,

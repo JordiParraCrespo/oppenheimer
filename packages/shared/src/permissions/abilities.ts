@@ -74,6 +74,9 @@ export const KNOWN_SUBJECTS = [
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
+  // Bots (`product/versions/mvp/25-bots.md`), workspace-owned like automations:
+  // `Bot` covers a bot, its sidebar groups, its documents and its memory.
+  'Bot',
   'all',
 ] as const;
 
@@ -372,6 +375,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'PullRequest',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Bot',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

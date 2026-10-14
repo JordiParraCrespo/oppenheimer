@@ -604,6 +604,47 @@ on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
 `overlapping`, the rate caps, `missed`), and a reason that would repeat every time
 pauses the automation with a `pausedReason`.
 
+## Bots
+
+A bot is a worker you talk to: who it is, its soul and instructions with their
+history, and what it remembers, kept in the API; its turns run on its home host.
+See `product/versions/mvp/25-bots.md`.
+
+| Code                                 | Title                                        | HTTP |
+| ------------------------------------ | -------------------------------------------- | ---- |
+| `BOTS_001` <a id="bots_001" />       | Bot not found                                | 404  |
+| `BOTS_002` <a id="bots_002" />       | Bots belong to an organization               | 400  |
+| `BOTS_003` <a id="bots_003" />       | Bot group not found                          | 404  |
+| `BOTS_004` <a id="bots_004" />       | A group with that name already exists        | 409  |
+| `BOTS_005` <a id="bots_005" />       | Bot document not found                       | 404  |
+| `BOTS_006` <a id="bots_006" />       | The document was changed since it was loaded | 409  |
+| `BOTS_007` <a id="bots_007" />       | Revision not found                           | 404  |
+| `BOTS_008` <a id="bots_008" />       | Memory fact not found                        | 404  |
+| `BOTS_009` <a id="bots_009" />       | The bot remembers as much as it can          | 422  |
+| `BOTS_010` <a id="bots_010" />       | That model cannot run a bot                  | 422  |
+
+`BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
+another workspace.
+
+`BOTS_004` compares names without case: "Engineering" and "engineering" are one
+group.
+
+`BOTS_005` is a document name other than `soul` and `instructions`, the two a bot
+has.
+
+`BOTS_006` is optimistic concurrency: a save carries the `baseRevision` the editor
+loaded, and a save over a newer one is refused rather than silently winning. When
+the save was stale, the problem's `revision` extension is the revision that is
+current now. Reload and save again.
+
+`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
+turn. Forget one first.
+
+`BOTS_010` is a model id Claude Code's catalog does not list. A bot runs Claude
+Code; leave `model` null for its default.
+
+A home host the caller may not use answers `HOSTS_001`, as a session's does.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or
