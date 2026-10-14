@@ -42,8 +42,8 @@ export const useQueries = ((options: { queries: readonly object[] }) =>
  * TanStack Query's `useSuspenseQuery`, sharing entities as {@link useQuery}
  * does. The component that calls it suspends until the first answer and
  * throws a first failure to the nearest error boundary, so `data` is never
- * `undefined`: loading is the `<Suspense>` above it, failure the kit's
- * `QueryErrorBoundary`. A later failure over data already drawn does not
+ * `undefined`: loading and failure are drawn by the kit's `QueryState` with
+ * no `query` around it. A later failure over data already drawn does not
  * throw; it is `error` on the result, for the reader to show beside the data.
  */
 export function useSuspenseQuery<

@@ -1,8 +1,7 @@
 import { QueryClient, QueryClientProvider, useSuspenseQuery } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Suspense } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { QueryErrorBoundary } from './query-error-boundary';
+import { QueryState } from './query-state';
 
 // Partial: the forms concern's index also loads the i18n instance, which
 // needs the real `initReactI18next`.
@@ -32,23 +31,25 @@ function show(fetch: () => Promise<string[]>) {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   return render(
     <QueryClientProvider client={client}>
-      <QueryErrorBoundary fallback="Could not load the hosts">
-        <Suspense fallback="loading">
+      <QueryState>
+        <QueryState.Pending>loading</QueryState.Pending>
+        <QueryState.Error fallback="Could not load the hosts" />
+        <QueryState.Data>
           <Hosts fetch={fetch} />
-        </Suspense>
-      </QueryErrorBoundary>
+        </QueryState.Data>
+      </QueryState>
     </QueryClientProvider>,
   );
 }
 
-describe('QueryErrorBoundary', () => {
-  it('lets the Suspense below it hold the place until the first answer', async () => {
+describe('QueryState around a Suspense read', () => {
+  it('draws Pending, and only Pending, until the first answer', async () => {
     show(() => new Promise(() => {}));
     expect(await screen.findByText('loading')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('draws a first failure in place of the read, not its placeholder', async () => {
+  it('draws a first failure on Error, not Pending', async () => {
     show(() => Promise.reject(new Error('boom')));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByText('loading')).toBeNull();

@@ -21,7 +21,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `SidebarSearchField` (a sidebar search box that keeps the half-typed word and hands its caller the settled one), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
 | `pairing` | `PairingChrome`, the column that pairs a machine with a pairing it is handed: `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
-| `layout` | `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState`, `QueryErrorBoundary` | middle |
+| `layout` | `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState` | middle |
 | `shell` | `AppShell` (the sidebar, top bar, user menu and command palette are its parts), `SettingsSidebar`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), the nav types | top |
 | `auth` | `AuthLayout`, `BrandLogo`, the auth primitives, `SocialLoginButtons`, `OAuthCallbackNotice`, `SessionRestoreError`, `redirectSignedIn` | top |
 

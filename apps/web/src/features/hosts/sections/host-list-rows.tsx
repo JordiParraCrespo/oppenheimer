@@ -5,9 +5,9 @@ import { HostsEmpty } from '../components/hosts-empty';
 import { HostRow } from './host-row';
 
 /**
- * The host cards, under `HostList`'s boundaries. The list is `GET /v1/hosts`,
- * which leaves removed hosts out, so a host removed here leaves the list with
- * the refetch. It subscribes because it draws the rows, and each card shows
+ * The host cards, in `HostList`'s `QueryState.Data`. The list is
+ * `GET /v1/hosts`, which leaves removed hosts out, so a host removed here
+ * leaves the list with the refetch. It subscribes because it draws the rows, and each card shows
  * whether its host is online, which this read polls to keep current; a row
  * gets its host by reference, kept across a poll that changed nothing
  * (`shareEntities`).
