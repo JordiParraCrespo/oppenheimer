@@ -24,7 +24,15 @@ export function AutomationDetail({ automationId }: { automationId: string }) {
       </EditorPageBack>
       <ErrorAlert error={error} fallback={t('automations.detail.loadFailed')} />
       <AutomationHeader automation={automation} />
-      <RunHistoryCard automationId={automationId} />
+      <QueryState>
+        <QueryState.Pending>
+          <Skeleton shape="lg" className="h-47.5 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('automations.history.loadFailed')} />
+        <QueryState.Data>
+          <RunHistoryCard automationId={automationId} />
+        </QueryState.Data>
+      </QueryState>
       <QueryState>
         <QueryState.Pending>
           <RunsList>

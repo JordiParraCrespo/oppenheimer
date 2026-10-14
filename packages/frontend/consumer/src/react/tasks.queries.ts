@@ -19,7 +19,7 @@ import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
 import { useProjectListQuery } from './projects.queries';
-import { sessionsKeys } from './sessions.queries';
+import { sessionsKeys, useSessionListPoll, useSessionListQuery } from './sessions.queries';
 
 /**
  * One list, the whole board: every column, count and card reads it, and a
@@ -85,12 +85,57 @@ export function useSessionTasks(sessionId: string | undefined) {
 export function useMilestones<TData = MilestoneEntity[]>(
   options?: Omit<UseQueryOptions<MilestoneEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
-  return useQuery<MilestoneEntity[], Error, TData>({
-    queryKey: tasksKeys.milestoneList(),
-    queryFn: () => app.tasks.findMilestones(),
-    ...options,
+  return useQuery<MilestoneEntity[], Error, TData>({ ...useMilestoneListQuery(), ...options });
+}
+
+/**
+ * The task dialog's and the milestones timeline's three reads under a
+ * Suspense `QueryState`: the tasks, the projects they are filed under and the
+ * milestones, fetched side by side. `error` is the first refetch that failed
+ * over data already drawn.
+ */
+export function useSuspenseTasksProjectsMilestones() {
+  const [tasks, projects, milestones] = useSuspenseQueries({
+    queries: [useTaskListQuery(), useProjectListQuery(), useMilestoneListQuery()],
   });
+  return {
+    tasks: tasks.data,
+    projects: projects.data,
+    milestones: milestones.data,
+    error: tasks.error ?? projects.error ?? milestones.error,
+  };
+}
+
+/**
+ * The board's reads under a Suspense `QueryState`: the tasks, and what a card
+ * names beside its title — its project, its milestone, its session and that
+ * session's host — fetched side by side. `error` is the first refetch that
+ * failed over data already drawn.
+ */
+export function useSuspenseTaskBoard() {
+  const [tasks, projects, milestones, sessions, hosts] = useSuspenseQueries({
+    queries: [
+      useTaskListQuery(),
+      useProjectListQuery(),
+      useMilestoneListQuery(),
+      { ...useSessionListQuery(), ...useSessionListPoll() },
+      useHostListQuery(),
+    ],
+  });
+  return {
+    tasks: tasks.data,
+    projects: projects.data,
+    milestones: milestones.data,
+    sessions: sessions.data,
+    hosts: hosts.data,
+    error: tasks.error ?? projects.error ?? milestones.error ?? sessions.error ?? hosts.error,
+  };
+}
+
+/** The milestones read, for every hook over it: the key and the fetch, once. */
+function useMilestoneListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: tasksKeys.milestoneList(), queryFn: () => app.tasks.findMilestones() };
 }
 
 /**

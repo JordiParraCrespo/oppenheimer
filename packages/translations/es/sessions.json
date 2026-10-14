@@ -373,5 +373,8 @@
       "title": "Esta sesión está parada",
       "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y esta página la volverá a abrir."
     }
+  },
+  "screen": {
+    "loadFailed": "No se ha podido actualizar esta sesión."
   }
 }

@@ -11,7 +11,15 @@ export function RunsOverviewScreen() {
   return (
     <>
       <OverviewTop />
-      <RunHistoryCard />
+      <QueryState>
+        <QueryState.Pending>
+          <Skeleton shape="lg" className="h-47.5 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('automations.history.loadFailed')} />
+        <QueryState.Data>
+          <RunHistoryCard />
+        </QueryState.Data>
+      </QueryState>
       <QueryState>
         <QueryState.Pending>
           <RunsList>

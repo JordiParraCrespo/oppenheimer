@@ -7,13 +7,13 @@ import { TOKENS } from '../../di/tokens';
 import type { AutomationEntity, RunPage } from '../../modules/automations/automation.entity';
 import {
   automationsKeys,
-  useAutomation,
   useAutomations,
   useCreateAutomation,
   useDeleteAutomation,
   useDuplicateAutomation,
   useRunAutomation,
   useSetAutomationPaused,
+  useSuspenseAutomation,
   useSuspenseAutomationRuns,
   useTriggerPreview,
   useUpdateAutomation,
@@ -66,7 +66,12 @@ function setup(
       </QueryClientProvider>
     );
   }
-  return { wrapper, queryClient };
+  // A Suspense read renders nothing until it answers: `result.current` is
+  // null until then.
+  function suspended({ children }: { children: ReactNode }) {
+    return wrapper({ children: <Suspense>{children}</Suspense> });
+  }
+  return { wrapper, suspended, queryClient };
 }
 
 /** The interval the query would poll at for the data it holds now. */
@@ -129,45 +134,31 @@ describe('useAutomations', () => {
   });
 });
 
-describe('useAutomations and useAutomation', () => {
+describe('useAutomations and useSuspenseAutomation', () => {
   it('opens an automation from the list without asking for it again', async () => {
     const findById = vi.fn();
-    const { wrapper } = setup(
+    const { wrapper, suspended } = setup(
       { findAll: vi.fn().mockResolvedValue([automation('a-1'), automation('a-2')]), findById },
       { defaultOptions: defaultQueryClientOptions(60_000) },
     );
     const { result: list } = renderHook(() => useAutomations(), { wrapper });
     await waitFor(() => expect(list.current.isSuccess).toBe(true));
 
-    const { result: detail } = renderHook(() => useAutomation('a-2'), { wrapper });
+    const { result: detail } = renderHook(() => useSuspenseAutomation('a-2'), {
+      wrapper: suspended,
+    });
 
     expect(detail.current.data).toBe(list.current.data?.[1]);
     expect(findById).not.toHaveBeenCalled();
   });
 });
 
-describe('useAutomation', () => {
-  it('asks for nothing until there is an id', async () => {
-    const findById = vi.fn().mockResolvedValue(automation('a-1'));
-    const { wrapper } = setup({ findById });
-    const { result, rerender } = renderHook(({ id }) => useAutomation(id), {
-      wrapper,
-      initialProps: { id: undefined as string | undefined },
-    });
-
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(findById).not.toHaveBeenCalled();
-
-    rerender({ id: 'a-1' });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(findById).toHaveBeenCalledWith('a-1');
-  });
-
+describe('useSuspenseAutomation', () => {
   it('polls only while the automation is running', async () => {
     const findById = vi.fn().mockResolvedValue(automation('a-1', true));
-    const { wrapper, queryClient } = setup({ findById });
-    const { result } = renderHook(() => useAutomation('a-1'), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const { suspended, queryClient } = setup({ findById });
+    const { result } = renderHook(() => useSuspenseAutomation('a-1'), { wrapper: suspended });
+    await waitFor(() => expect(result.current?.isSuccess).toBe(true));
 
     expect(pollInterval(queryClient, automationsKeys.detail('a-1'))).toBe(
       LIVE_POLL.liveRun.interval,
@@ -380,12 +371,15 @@ describe('automation writes', () => {
           answerStale = resolve;
         }),
       );
-    const { wrapper, queryClient } = setup({ findById, pause: vi.fn().mockResolvedValue(saved) });
+    const { suspended, queryClient } = setup({
+      findById,
+      pause: vi.fn().mockResolvedValue(saved),
+    });
     const { result } = renderHook(
-      () => ({ detail: useAutomation('a-1'), paused: useSetAutomationPaused() }),
-      { wrapper },
+      () => ({ detail: useSuspenseAutomation('a-1'), paused: useSetAutomationPaused() }),
+      { wrapper: suspended },
     );
-    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current?.detail.isSuccess).toBe(true));
     act(() => void queryClient.refetchQueries({ queryKey: reads.detail }));
     await waitFor(() => expect(findById).toHaveBeenCalledTimes(2));
 
