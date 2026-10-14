@@ -552,14 +552,20 @@ for (const file of polling) {
 // a product package's `useSuspense…` hook draws an `ErrorAlert` too. A
 // tripwire on the file, not a proof that the alert is handed that `error`.
 const SUSPENSE_READ = /\buseSuspense[A-Z]\w*\(/;
+// A section where a refetch that fails changes nothing on screen (a form
+// seeded once, a filter row) says why on a comment of its own, instead of
+// drawing an alert the reader cannot act on. Read from the raw source: `code`
+// drops comments.
+const NOT_DRAWN = /\/\/ A refetch that fails is not drawn here: \S/;
 for (const { app } of APPS) {
   const src = join(root, app, 'src');
   if (!existsSync(src)) continue;
   for (const file of sources(src)) {
-    const source = code(readFileSync(file, 'utf8'));
-    if (SUSPENSE_READ.test(source) && !/<ErrorAlert\b/.test(source)) {
+    const raw = readFileSync(file, 'utf8');
+    const source = code(raw);
+    if (SUSPENSE_READ.test(source) && !/<ErrorAlert\b/.test(source) && !NOT_DRAWN.test(raw)) {
       fail(
-        `${relative(root, file)}: reads through ${SUSPENSE_READ.exec(source)[0].slice(0, -1)} and draws no ErrorAlert — a refetch that fails over drawn data does not throw; show the read's \`error\` beside the data`,
+        `${relative(root, file)}: reads through ${SUSPENSE_READ.exec(source)[0].slice(0, -1)} and draws no ErrorAlert — a refetch that fails over drawn data does not throw; show the read's \`error\` beside the data, or say why it is not drawn (\`// A refetch that fails is not drawn here: …\`)`,
       );
     }
   }

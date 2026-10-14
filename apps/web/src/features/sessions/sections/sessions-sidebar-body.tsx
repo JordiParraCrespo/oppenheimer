@@ -5,7 +5,7 @@ import {
   sortableProjectId,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import { useSuspenseSessionsProjectsHosts } from '@oppenheimer/frontend-consumer/react';
+import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useNavigate } from '@tanstack/react-router';
@@ -57,7 +57,7 @@ const DeleteSessionDialog = lazy(() =>
 export function SessionsSidebarBody() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { sessions: all, projects, hosts: everyHost, error } = useSuspenseSessionsProjectsHosts();
+  const { sessions: all, projects, hosts: everyHost, error } = useSuspenseSessionsSidebar();
   const hosts = everyHost.map((host) => ({ id: host.id, name: host.name }));
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');

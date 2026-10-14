@@ -83,11 +83,12 @@ export function useSuspenseAutomations() {
 }
 
 /**
- * The automations sidebar's two reads under a Suspense `QueryState`: the
- * projects it groups by and the automations in them, fetched side by side.
+ * The automations and the projects they are grouped under, under a Suspense
+ * `QueryState`, fetched side by side: the sidebar's groups and the runs
+ * list's facets.
  * `error` is the first refetch that failed over data already drawn.
  */
-export function useSuspenseAutomationsAndProjects() {
+export function useSuspenseAutomationsByProject() {
   const [automations, projects] = useSuspenseQueries({
     queries: [{ ...useAutomationListQuery(), ...useAutomationListPoll() }, useProjectListQuery()],
   });

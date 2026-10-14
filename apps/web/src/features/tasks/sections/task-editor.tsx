@@ -2,7 +2,7 @@ import { FieldDescription } from '@oppenheimer/design-system-web';
 import {
   useCreateTask,
   useDeleteTask,
-  useSuspenseTasksProjectsMilestones,
+  useSuspensePlan,
   useUpdateTask,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
@@ -27,7 +27,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
   const resolveError = useErrorMessage();
   const today = useToday();
   const filter = useBoardFilter();
-  const { tasks, projects, milestones, error } = useSuspenseTasksProjectsMilestones();
+  const { tasks, projects, milestones, error } = useSuspensePlan();
   const task = taskId ? tasks.find((row) => row.id === taskId) : undefined;
   const [deleting, setDeleting] = useState(false);
   const create = useCreateTask({
