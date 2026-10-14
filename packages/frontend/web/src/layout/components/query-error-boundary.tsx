@@ -1,6 +1,7 @@
 import { Button } from '@oppenheimer/design-system-web';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
-import { Component, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 
@@ -17,10 +18,12 @@ import { ErrorAlert } from '../../forms';
  * </QueryErrorBoundary>
  * ```
  *
- * Try again resets the queries that failed (`QueryErrorResetBoundary`) before
- * drawing the children again, so they fetch rather than rethrow the error
- * they cached. Only a first failure lands here: a refetch that fails over data
- * already drawn is `error` on the read, for the section to show beside it.
+ * TanStack's recipe (its Suspense guide): `react-error-boundary`'s
+ * `ErrorBoundary` inside `QueryErrorResetBoundary`, whose `reset` runs on Try
+ * again before the children draw again, so they fetch rather than rethrow the
+ * error they cached. Only a first failure lands here: a refetch that fails
+ * over data already drawn is `error` on the read, for the section to show
+ * beside it.
  */
 export function QueryErrorBoundary({
   fallback,
@@ -35,19 +38,19 @@ export function QueryErrorBoundary({
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
-        <Boundary
+        <ErrorBoundary
           onReset={reset}
-          failure={(error, retry) => (
+          fallbackRender={({ error, resetErrorBoundary }) => (
             <BoundaryFailure
               error={error}
               fallback={fallback}
               className={className}
-              onRetry={retry}
+              onRetry={resetErrorBoundary}
             />
           )}
         >
           {children}
-        </Boundary>
+        </ErrorBoundary>
       )}
     </QueryErrorResetBoundary>
   );
@@ -77,34 +80,4 @@ function BoundaryFailure({
       }
     />
   );
-}
-
-/**
- * React's error boundary, which only a class can be. `failed` is kept beside
- * `error` because a thrown `undefined` is still a failure.
- */
-class Boundary extends Component<
-  {
-    onReset: () => void;
-    failure: (error: unknown, retry: () => void) => ReactNode;
-    children: ReactNode;
-  },
-  { failed: boolean; error: unknown }
-> {
-  state = { failed: false, error: null as unknown };
-
-  static getDerivedStateFromError(error: unknown) {
-    return { failed: true, error };
-  }
-
-  retry = () => {
-    this.props.onReset();
-    this.setState({ failed: false, error: null });
-  };
-
-  render() {
-    return this.state.failed
-      ? this.props.failure(this.state.error, this.retry)
-      : this.props.children;
-  }
 }
