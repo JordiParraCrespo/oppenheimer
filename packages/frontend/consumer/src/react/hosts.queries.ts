@@ -52,6 +52,17 @@ export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>)
 }
 
 /**
+ * {@link useHosts} for a section under a Suspense `QueryState`: no poll, and
+ * `select` reads less than the whole list, as there.
+ */
+export function useSuspenseHosts<TData = HostEntity[]>(select?: (hosts: HostEntity[]) => TData) {
+  return useSuspenseQuery<HostEntity[], Error, TData>({
+    ...useHostListQuery(),
+    ...(select ? { select } : {}),
+  });
+}
+
+/**
  * The hosts, for a view that shows whether each is online. Presence is not
  * streamed to the console yet, so the list polls on `LIVE_POLL.hostPresence`
  * while `watching` holds: for as long as Settings → Hosts is mounted, and for
@@ -77,8 +88,7 @@ export function useHostPresence<TData = HostEntity[]>({
  * same poll, but it suspends until the first answer and throws a first
  * failure to the nearest error boundary, so `data` is always the hosts. A poll
  * that fails over hosts already drawn does not throw; it is `error` on the
- * result. The pilot of Suspense reads (Settings → Hosts); the rest of the
- * console reads `useHostPresence` through `QueryState`.
+ * result.
  */
 export function useSuspenseHostPresence() {
   const list = useHostListQuery();
@@ -88,8 +98,8 @@ export function useSuspenseHostPresence() {
 
 /**
  * What `GET /v1/hosts` is, for every read of it: the key and the fetch, once.
- * {@link useHostList} and {@link useSuspenseHostPresence} both spread it, so
- * the Suspense read cannot drift from the one `QueryState` sections use.
+ * {@link useHostList} and the Suspense reads all spread it, so they cannot
+ * drift from one another.
  */
 function useHostListQuery() {
   const app = useConsumerApp();

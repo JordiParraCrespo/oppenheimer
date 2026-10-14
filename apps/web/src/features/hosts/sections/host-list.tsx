@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { HostListRows } from './host-list-rows';
 
 /**
- * The hosts, one card each: the pilot of Suspense reads. The rows read the
+ * The hosts, one card each, read under Suspense. The rows read the
  * list themselves and suspend until it answers, so this composes only the
  * read's other states: a skeleton in the card's place while they wait, and a
  * first failure as an `Alert` that says why, with Try again.

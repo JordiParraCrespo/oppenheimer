@@ -1,13 +1,8 @@
-import {
-  RoutineTable,
-  RoutineTableEmpty,
-  RoutineTableHead,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
+import { RoutineTable, RoutineTableEmpty, RoutineTableHead } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
-import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog, ErrorAlert, QueryState, useLocale } from '@oppenheimer/frontend-web';
+import { useProjects, useSuspenseAutomations } from '@oppenheimer/frontend-consumer/react';
+import { ConfirmDialog, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,13 +22,16 @@ import { automationTriggerText } from '../lib/trigger-text';
  *
  * Delete asks first, like the automation's own page. The table owns which
  * row's confirm is open, because a row's menu unmounts when it closes.
+ *
+ * Read under Suspense: the screen's `QueryState` draws the placeholder and a
+ * first failure. A refetch that fails keeps the rows and says so above them.
  */
 export function AutomationsTable() {
   const { t } = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
   const dialogs = useConsoleDialog();
-  const automations = useAutomations();
+  const { data: rows, error } = useSuspenseAutomations();
   const { data: projectNames } = useProjects({
     select: (projects) => new Map(projects.map((project) => [project.id, project.name])),
   });
@@ -45,7 +43,7 @@ export function AutomationsTable() {
     onDeleted: () => setDeleting(null),
   });
   // The list holds many automations, so its one alert says which one failed.
-  const failedName = automations.data?.find((row) => row.id === actions.failedId)?.name;
+  const failedName = rows.find((row) => row.id === actions.failedId)?.name;
 
   return (
     <div className="flex flex-col gap-3">
@@ -55,62 +53,47 @@ export function AutomationsTable() {
         title={failedName ? t('automations.page.actionFailedFor', { name: failedName }) : undefined}
         onDismiss={actions.dismissFailure}
       />
-      {/* A failed load is the page's to say, beside a failed action — not a
-          row of the table. */}
-      <QueryState query={automations} isEmpty={(rows) => rows.length === 0}>
-        <QueryState.Pending>
-          <RoutineTable>
-            <div className="flex flex-col gap-1.5 p-1.5">
-              <Skeleton className="h-13.5 w-full" />
-              <Skeleton className="h-13.5 w-full" />
-            </div>
-          </RoutineTable>
-        </QueryState.Pending>
-        <QueryState.Error fallback={t('automations.page.loadFailed')} />
-        <QueryState.Empty>
-          <RoutineTable>
-            <RoutineTableEmpty>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
-                <Zap />
-              </span>
-              <span>{t('automations.page.empty')}</span>
-            </RoutineTableEmpty>
-          </RoutineTable>
-        </QueryState.Empty>
-        <QueryState.Data of={automations}>
-          {(rows) => (
-            <RoutineTable>
-              <RoutineTableHead
-                columns={[
-                  t('automations.table.automation'),
-                  t('automations.table.trigger'),
-                  t('automations.table.next'),
-                  t('automations.table.status'),
-                ]}
-              />
-              {rows.map((automation) => (
-                <AutomationTableRow
-                  key={automation.id}
-                  automation={automation}
-                  subline={automationSubline(automation, projectNames?.get(automation.projectId))}
-                  trigger={automationTriggerText(automation, locale, t)}
-                  onOpen={() =>
-                    navigate({
-                      to: '/automations/$automationId',
-                      params: { automationId: automation.id },
-                    })
-                  }
-                  onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
-                  onRunNow={() => actions.runNow(automation.id)}
-                  onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
-                  onDuplicate={() => actions.duplicate(automation.id)}
-                  onDelete={() => setDeleting(automation)}
-                />
-              ))}
-            </RoutineTable>
-          )}
-        </QueryState.Data>
-      </QueryState>
+      <ErrorAlert error={error} fallback={t('automations.page.loadFailed')} />
+      {rows.length === 0 ? (
+        <RoutineTable>
+          <RoutineTableEmpty>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
+              <Zap />
+            </span>
+            <span>{t('automations.page.empty')}</span>
+          </RoutineTableEmpty>
+        </RoutineTable>
+      ) : (
+        <RoutineTable>
+          <RoutineTableHead
+            columns={[
+              t('automations.table.automation'),
+              t('automations.table.trigger'),
+              t('automations.table.next'),
+              t('automations.table.status'),
+            ]}
+          />
+          {rows.map((automation) => (
+            <AutomationTableRow
+              key={automation.id}
+              automation={automation}
+              subline={automationSubline(automation, projectNames?.get(automation.projectId))}
+              trigger={automationTriggerText(automation, locale, t)}
+              onOpen={() =>
+                navigate({
+                  to: '/automations/$automationId',
+                  params: { automationId: automation.id },
+                })
+              }
+              onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
+              onRunNow={() => actions.runNow(automation.id)}
+              onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
+              onDuplicate={() => actions.duplicate(automation.id)}
+              onDelete={() => setDeleting(automation)}
+            />
+          ))}
+        </RoutineTable>
+      )}
       {deleting ? (
         <ConfirmDialog
           title={t('automations.deleteDialog.title', { name: deleting.name })}

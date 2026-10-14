@@ -1011,7 +1011,8 @@
       "duplicate": "Duplicate",
       "delete": "Delete automation",
       "resumeAction": "Resume",
-      "notFound": "This automation does not exist, or was deleted."
+      "notFound": "This automation does not exist, or was deleted.",
+      "loadFailed": "This automation could not be loaded."
     },
     "editor": {
       "newTitle": "New automation",

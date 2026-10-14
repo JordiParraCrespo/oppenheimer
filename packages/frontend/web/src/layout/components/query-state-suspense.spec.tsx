@@ -68,4 +68,36 @@ describe('QueryState around a Suspense read', () => {
     expect(await screen.findByText('optimus, build-03')).toBeTruthy();
     expect(fetch).toHaveBeenCalledTimes(2);
   });
+
+  it('hands a function child the retry that resets the boundary, for a failure said another way', async () => {
+    const fetch = vi
+      .fn<() => Promise<string[]>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(['optimus']);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <QueryClientProvider client={client}>
+        <QueryState>
+          <QueryState.Pending>loading</QueryState.Pending>
+          <QueryState.Error>
+            {(_error, retry) => (
+              <button type="button" onClick={retry}>
+                Reload
+              </button>
+            )}
+          </QueryState.Error>
+          <QueryState.Data>
+            <Hosts fetch={fetch} />
+          </QueryState.Data>
+        </QueryState>
+      </QueryClientProvider>,
+    );
+
+    const reload = await screen.findByRole('button', { name: 'Reload' });
+    await act(async () => fireEvent.click(reload));
+
+    expect(await screen.findByText('optimus')).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
 });
