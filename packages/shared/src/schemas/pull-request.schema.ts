@@ -15,8 +15,16 @@ export type PullRequestScope = (typeof PULL_REQUEST_SCOPES)[number];
 export const PULL_REQUEST_LANES = ['deep', 'medium', 'quick'] as const;
 export type PullRequestLane = (typeof PULL_REQUEST_LANES)[number];
 
-/** What submitting a review does: comment only, approve (and merge when it can), or send it back. */
-export const REVIEW_VERDICTS = ['comment', 'approve', 'request_changes'] as const;
+/**
+ * What submitting a review does: comment only, approve and leave the merge to
+ * you, approve and merge once the required checks pass, or send it back.
+ */
+export const REVIEW_VERDICTS = [
+  'comment',
+  'approve',
+  'approve_and_merge',
+  'request_changes',
+] as const;
 export type ReviewVerdict = (typeof REVIEW_VERDICTS)[number];
 
 export const MERGE_METHODS = ['squash', 'merge', 'rebase'] as const;
@@ -54,7 +62,11 @@ export const submitPullRequestReviewSchema = z
   })
   // GitHub refuses a review that asks for changes, or only comments, with nothing to say.
   .refine(
-    (value) => value.verdict === 'approve' || Boolean(value.body) || value.comments.length > 0,
+    (value) =>
+      value.verdict === 'approve' ||
+      value.verdict === 'approve_and_merge' ||
+      Boolean(value.body) ||
+      value.comments.length > 0,
     {
       path: ['body'],
     },

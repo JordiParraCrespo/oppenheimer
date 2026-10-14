@@ -46,6 +46,7 @@ import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
+import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
 import { Route as AuthenticatedPlanCalendarGoogleRouteImport } from './routes/_authenticated/plan/calendar_.google'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
@@ -247,6 +248,12 @@ const AuthenticatedSettingsProfileRoute =
     path: '/profile',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsRepositoriesRoute =
+  AuthenticatedSettingsRepositoriesRouteImport.update({
+    id: '/repositories',
+    path: '/repositories',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedPlanCalendarGoogleRoute =
   AuthenticatedPlanCalendarGoogleRouteImport.update({
     id: '/calendar_/google',
@@ -307,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
+  '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/plan/': typeof AuthenticatedPlanIndexRoute
@@ -343,6 +351,7 @@ export interface FileRoutesByTo {
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
+  '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
   '/plan': typeof AuthenticatedPlanIndexRoute
@@ -388,6 +397,7 @@ export interface FileRoutesById {
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
+  '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/_authenticated/plan/': typeof AuthenticatedPlanIndexRoute
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/profile'
+    | '/settings/repositories'
     | '/onboarding/'
     | '/automations/'
     | '/plan/'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/profile'
+    | '/settings/repositories'
     | '/onboarding'
     | '/automations'
     | '/plan'
@@ -511,6 +523,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/settings/profile'
+    | '/_authenticated/settings/repositories'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
     | '/_authenticated/plan/'
@@ -796,6 +809,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/repositories': {
+      id: '/_authenticated/settings/repositories'
+      path: '/repositories'
+      fullPath: '/settings/repositories'
+      preLoaderRoute: typeof AuthenticatedSettingsRepositoriesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/plan/calendar_/google': {
       id: '/_authenticated/plan/calendar_/google'
       path: '/calendar/google'
@@ -935,6 +955,7 @@ const AuthenticatedPullsRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
+  AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
@@ -942,6 +963,8 @@ interface AuthenticatedSettingsRouteChildren {
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
+  AuthenticatedSettingsRepositoriesRoute:
+    AuthenticatedSettingsRepositoriesRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,

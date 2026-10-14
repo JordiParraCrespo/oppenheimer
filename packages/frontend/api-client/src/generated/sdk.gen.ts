@@ -2134,7 +2134,7 @@ export const findPullRequestActivity = <ThrowOnError extends boolean = false>(op
 /**
  * Submit a review
  *
- * Posted to GitHub in the caller’s own name with its line comments: comment, request changes, or approve — which then merges when GitHub allows it, and otherwise leaves the pull request waiting.
+ * Posted to GitHub in the caller’s own name with its line comments: comment, request changes, approve, or approve and merge — which merges now when GitHub allows it, and otherwise turns on auto-merge so it merges once the required checks pass.
  */
 export const submitPullRequestReview = <ThrowOnError extends boolean = false>(options: Options<SubmitPullRequestReviewData, ThrowOnError>): RequestResult<SubmitPullRequestReviewResponses, SubmitPullRequestReviewErrors, ThrowOnError> => (options.client ?? client).post<SubmitPullRequestReviewResponses, SubmitPullRequestReviewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

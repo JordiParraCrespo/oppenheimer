@@ -14,11 +14,10 @@ import { useTranslation } from 'react-i18next';
 import { LaneBadge } from '../components/lane-badge';
 import { MarkdownBody } from '../components/markdown-body';
 import { PullRequestRail } from '../components/pull-request-rail';
-import { pullState } from '../lib/briefing';
-import { PullRequestActivity } from './pull-request-activity';
+import { pullState } from '../lib/pull-state';
 import { PullRequestCommentsSummary } from './pull-request-comments-summary';
 
-/** The description on its card with its activity under it, and the rail beside them. */
+/** The description on its card, and the rail beside it: merge status, comments, reviews, checks. */
 export function PullRequestDescription({ address }: { address: PullRequestAddress }) {
   const { t } = useTranslation();
   const detail = usePullRequest(address);
@@ -68,7 +67,6 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
                     </Button>
                   </CardFooter>
                 </Card>
-                <PullRequestActivity address={address} base={pull.htmlUrl} />
               </div>
               <PullRequestRail
                 pull={pull}

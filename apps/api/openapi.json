@@ -14213,7 +14213,7 @@
     },
     "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/reviews": {
       "post": {
-        "description": "Posted to GitHub in the caller’s own name with its line comments: comment, request changes, or approve — which then merges when GitHub allows it, and otherwise leaves the pull request waiting.",
+        "description": "Posted to GitHub in the caller’s own name with its line comments: comment, request changes, approve, or approve and merge — which merges now when GitHub allows it, and otherwise turns on auto-merge so it merges once the required checks pass.",
         "operationId": "submitPullRequestReview",
         "parameters": [
           {
@@ -21913,7 +21913,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "enum": ["checks", "conflicts", "review", "merge"]
+            "enum": ["checks", "conflicts", "merge"]
           },
           "state": {
             "type": "string",
@@ -22223,7 +22223,7 @@
         "properties": {
           "verdict": {
             "type": "string",
-            "enum": ["comment", "approve", "request_changes"]
+            "enum": ["comment", "approve", "approve_and_merge", "request_changes"]
           },
           "body": {
             "type": "string",
@@ -22268,10 +22268,14 @@
         "properties": {
           "merged": {
             "type": "boolean",
-            "description": "Merged now; false for a comment, a change request, or an approval GitHub would not merge yet."
+            "description": "Merged now; false for a comment, a change request, an approval alone, or an approve-and-merge GitHub would not merge yet."
+          },
+          "autoMerge": {
+            "type": "boolean",
+            "description": "Approve and merge only: GitHub will merge it once its required checks pass. False when the repository does not allow auto-merge, so it waits."
           }
         },
-        "required": ["merged"]
+        "required": ["merged", "autoMerge"]
       },
       "AddPullRequestCommentRequest": {
         "type": "object",

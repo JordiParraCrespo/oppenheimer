@@ -1113,10 +1113,7 @@
       "title": "Pull requests",
       "views": "Views",
       "queue": "PR queue",
-      "analytics": "Analytics",
-      "repositories": "Repositories",
-      "allRepositories": "All repositories",
-      "noRepositories": "No watched repositories yet."
+      "analytics": "Analytics"
     },
     "queue": {
       "title": "PR queue",
@@ -1137,19 +1134,17 @@
       },
       "search": "Search title, repo, #number, author",
       "clearSearch": "Clear search",
-      "laneLabel": "Lane",
       "all": "All",
       "noMatch": "No pull request matches “{{query}}”.",
       "emptyTitle": "Nothing in this view",
       "emptyHint": "Pull requests opened by your sessions or teammates land here with a lane already picked.",
       "emptyWatchingTitle": "You are not watching any repositories",
-      "emptyWatchingHint": "Search for repositories with Watch repositories. Their open pull requests show up here.",
+      "emptyWatchingHint": "Pick the repositories to watch in Settings. Their open pull requests show up here.",
       "loadFailed": "Could not load pull requests.",
       "notConnectedTitle": "Connect GitHub to see pull requests",
       "notConnectedHint": "Install the GitHub App on the account that holds your repositories.",
       "connect": "Connect GitHub",
       "range": "{{first}}–{{last}} of {{total}}",
-      "openChanges": "Open changes",
       "review": "Review",
       "session": "Session",
       "merged": "Merged",
@@ -1167,21 +1162,27 @@
       "mergeButton": {
         "merge": "Merge",
         "confirm": "Confirm merge",
-        "cancel": "Cancel merge"
-      }
+        "cancel": "Cancel merge",
+        "confirmTitle": "Squash and merge into the base branch"
+      },
+      "repository": "Repository",
+      "allRepositories": "All repositories",
+      "noRepository": "No repository matches.",
+      "difficulty": "Difficulty",
+      "any": "Any",
+      "anyTime": "Any time",
+      "waits": {
+        "hour": "Under 1h",
+        "day": "1h – 1 day",
+        "older": "Over 1 day"
+      },
+      "noFilterMatch": "No pull request matches these filters.",
+      "configureWatched": "Configure watched repositories"
     },
     "lanes": {
       "deep": "Deep",
       "medium": "Medium",
       "quick": "Quick"
-    },
-    "laneReason": {
-      "risky_path": "Touches {{path}}, where a careful read pays.",
-      "large_change": "{{lines}} changed lines.",
-      "docs_tests_config": "Only docs, tests and configuration.",
-      "small_change": "A small change: {{lines}} lines in {{files}} files.",
-      "medium_change": "{{lines}} lines in {{files}} files.",
-      "files_unread": "GitHub did not give its files, so the lane is from its size alone ({{lines}} lines)."
     },
     "checks": {
       "passing": "Passing",
@@ -1212,13 +1213,14 @@
       "none": "No repositories to watch yet",
       "unwatch": "Stop watching {{name}}",
       "private": "Private",
-      "failed": "Could not update the watched repositories."
+      "failed": "Could not update the watched repositories.",
+      "empty": "Add a repository to start tracking its pull requests.",
+      "loadFailed": "Could not load the watched repositories."
     },
     "detail": {
       "back": "Back to the queue",
       "viewLabel": "View",
       "views": {
-        "briefing": "Briefing",
         "description": "Description",
         "changes": "Changes"
       },
@@ -1231,57 +1233,11 @@
         "draft": "Draft"
       },
       "into": "into",
-      "size": "Size",
-      "files": "Files",
-      "inFolders_one": "in {{count}} folder",
-      "inFolders_other": "in {{count}} folders",
-      "inFolders_many": "in {{count}} folders",
-      "checks": "Checks",
-      "conflicts": "Conflicts",
-      "mergesCleanly": "Merges cleanly into {{base}}",
-      "withBase": "With {{base}} · rebase before merging",
-      "noneWord": "None",
-      "pathToMerge": "Path to merge",
-      "gatesDone": "{{done}} of {{total}} done",
-      "gates": {
-        "checks": "Checks",
-        "conflicts": "Conflicts",
-        "review": "Review",
-        "merge": "Merge"
-      },
-      "gateMeta": {
-        "checks": {
-          "done": "All passing",
-          "failed": "{{failed}} failing",
-          "pending": "{{pending}} running"
-        },
-        "conflicts": {
-          "done": "Merges cleanly",
-          "failed": "Rebase on {{base}}",
-          "pending": "GitHub is checking"
-        },
-        "review": {
-          "done": "Approved",
-          "failed": "Changes requested",
-          "pending": "Waiting for review"
-        },
-        "merge": {
-          "done": "Merged",
-          "pending": "Squash into {{base}}"
-        }
-      },
-      "mergeNote": "Squash and merge into {{base}} as @{{login}}.",
-      "mergeNoteNoLogin": "Connect GitHub again so the merge is made in your name.",
-      "mergedInto": "Merged into {{base}}.",
-      "reviewChanges": "Review changes",
-      "brief": "Brief",
       "noDescription": "No description.",
       "copyCode": "Copy code",
       "codeCopied": "Copied",
-      "whatChanges": "What changes",
-      "risk": "Lane",
-      "where": "Mostly {{folders}}",
-      "reviewers": "Reviewers",
+      "editOnGithub": "Edit on GitHub",
+      "checks": "Checks",
       "noReviewers": "Nobody has reviewed it yet.",
       "reviewer": {
         "approved": "Approved",
@@ -1289,9 +1245,7 @@
         "commented": "Commented",
         "requested": "Requested"
       },
-      "opened": "{{author}} wants to merge {{head}} into {{base}}",
       "reviewsUnread": "GitHub did not return the reviews on this read.",
-      "filesUnread": "GitHub did not return the files on this read.",
       "rail": {
         "mergeStatus": "Merge status",
         "canMerge": "Can merge without conflicts",
@@ -1305,31 +1259,8 @@
         "noComments": "No comments",
         "commentCount_one": "{{count}} comment",
         "commentCount_other": "{{count}} comments",
-        "commentCount_many": "{{count}} comments"
-      },
-      "editOnGithub": "Edit on GitHub",
-      "activity": {
-        "title": "Activity",
-        "empty": "Nothing has happened here yet.",
-        "loadFailed": "Could not load the activity.",
-        "commits_one": "{{count}} commit",
-        "commits_other": "{{count}} commits",
-        "commits_many": "{{count}} commits",
-        "review": {
-          "approved": "{{author}} approved these changes",
-          "changes_requested": "{{author}} requested changes",
-          "commented": "{{author}} reviewed",
-          "dismissed": "{{author}}’s review was dismissed"
-        },
-        "event": {
-          "review_requested": "{{author}} requested a review from {{subject}}",
-          "merged": "{{author}} merged this pull request",
-          "closed": "{{author}} closed this pull request",
-          "reopened": "{{author}} reopened this pull request",
-          "ready_for_review": "{{author}} marked this ready for review",
-          "convert_to_draft": "{{author}} converted this to a draft",
-          "head_ref_force_pushed": "{{author}} force-pushed the branch"
-        }
+        "commentCount_many": "{{count}} comments",
+        "commentsFailed": "Could not load the comments."
       }
     },
     "review": {
@@ -1341,8 +1272,12 @@
           "description": "Post your comments without a verdict."
         },
         "approve": {
+          "label": "Approve",
+          "description": "Approves as you. You merge it later."
+        },
+        "approve_and_merge": {
           "label": "Approve and merge",
-          "description": "Approves as you and merges once GitHub allows it."
+          "description": "Approves as you and merges once required checks pass."
         },
         "request_changes": {
           "label": "Request changes",
@@ -1740,7 +1675,8 @@
       "account": "Account",
       "workspace": "Workspace",
       "profile": "Profile",
-      "hosts": "Hosts"
+      "hosts": "Hosts",
+      "repositories": "Watched repositories"
     },
     "profile": {
       "title": "Profile",
@@ -1829,6 +1765,10 @@
       "empty": "No hosts yet",
       "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
       "failed": "The hosts could not be loaded."
+    },
+    "repositories": {
+      "title": "Watched repositories",
+      "description": "Open pull requests from these repositories show up in the Watching tab of the PR queue, even when nobody asked for your review."
     }
   },
   "nav": {
@@ -2135,7 +2075,9 @@
     "reviewSubmitted": "Review submitted.",
     "reviewApprovedMerged": "Approved and merged.",
     "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
-    "reviewCommentPosted": "Comment posted."
+    "reviewCommentPosted": "Comment posted.",
+    "reviewApproved": "Approved.",
+    "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass."
   },
   "emails": {
     "common": {

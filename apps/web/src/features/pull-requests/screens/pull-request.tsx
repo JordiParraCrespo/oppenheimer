@@ -4,14 +4,13 @@ import { PaneBar } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { type PullRequestView, pullRequestSearch } from '../lib/pull-request-search';
-import { PullRequestBriefing } from '../sections/pull-request-briefing';
 import { PullRequestChanges } from '../sections/pull-request-changes';
 import { PullRequestDescription } from '../sections/pull-request-description';
 import { PullRequestToolbar } from '../sections/pull-request-toolbar';
 import { ReviewPopover } from '../sections/review-popover';
 
 /**
- * A pull request: the bar and one of its three views. The review's pending
+ * A pull request: the bar and one of its two views, Description and Changes. The review's pending
  * line comments are shared by two of them — written on Changes, posted from
  * Submit review — and the diff's layout is switched in the bar and drawn on
  * Changes, so both live here.
@@ -30,7 +29,10 @@ export function PullRequestScreen({
   const navigate = useNavigate();
   const [pending, setPending] = useState<LineCommentInput[]>([]);
   const [layout, setLayout] = useState<DiffLayout>('unified');
-  const setView = (next: PullRequestView) => navigate({ to: '.', search: pullRequestSearch(next) });
+  // A view is the same page read another way: it keeps the queue the pull
+  // request was opened from, so Back still returns to it.
+  const setView = (next: PullRequestView) =>
+    navigate({ to: '.', search: pullRequestSearch(next), state: (previous) => previous });
 
   return (
     <>
@@ -54,9 +56,6 @@ export function PullRequestScreen({
       {
         {
           description: <PullRequestDescription address={address} />,
-          briefing: (
-            <PullRequestBriefing address={address} onReviewChanges={() => setView('changes')} />
-          ),
           changes: (
             <PullRequestChanges
               address={address}

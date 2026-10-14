@@ -422,3 +422,18 @@ earlier note:
   and show a Connection list: Runner installed, then Host connected. The
   export's Tools on PATH row waits for the wire to carry a host's tools.
   Settings' Add a host page keeps the panel with both forms.
+- `next-steps/0.2-pull-requests.md` (version 1 scope, 2026-10-05) put a
+  summary agent's brief on every pull request, and the 2026-10-05 frames
+  opened one on a Briefing with a lane switcher and a review session. On
+  2026-10-13 the owner took the 2026-10-13 frames without their chat,
+  review agent or Employees: a pull request is **Description and
+  Changes**, the description is the author's own beside the rail (merge
+  status, comments, reviews, checks), and there is no generated summary
+  until the chat comes (0.7). The frame's status strip above the
+  description was built and dropped the next day for the rail. The queue filters by repository,
+  Difficulty, Checks and Waiting in a fixed order (Deep first, then the
+  longest wait); Submit review splits **Approve** from **Approve and
+  merge**, which turns on GitHub's auto-merge when it cannot merge yet;
+  the activity timeline, the Briefing and the Merge confidence
+  score are gone; watched repositories are set in Settings only
+  (`next-steps/0.2-pull-requests.md`, "The screens as built").

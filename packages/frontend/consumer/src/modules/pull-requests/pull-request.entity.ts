@@ -128,7 +128,7 @@ export interface PullRequestQueue {
   viewerLogin: string | null;
 }
 
-export type MergeGateId = 'checks' | 'conflicts' | 'review' | 'merge';
+export type MergeGateId = 'checks' | 'conflicts' | 'merge';
 export type MergeGateState = 'done' | 'failed' | 'pending';
 
 export interface PullRequestReviewer {
@@ -235,6 +235,13 @@ export interface ReviewInput {
   verdict: ReviewVerdict;
   body?: string;
   comments: LineCommentInput[];
+}
+
+/** What submitting a review did to the merge. */
+export interface ReviewOutcome {
+  merged: boolean;
+  /** GitHub merges it once its required checks pass. */
+  autoMerge: boolean;
 }
 
 export interface WatchedRepository {

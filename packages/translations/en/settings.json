@@ -4,7 +4,8 @@
     "account": "Account",
     "workspace": "Workspace",
     "profile": "Profile",
-    "hosts": "Hosts"
+    "hosts": "Hosts",
+    "repositories": "Watched repositories"
   },
   "profile": {
     "title": "Profile",
@@ -93,5 +94,9 @@
     "empty": "No hosts yet",
     "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
     "failed": "The hosts could not be loaded."
+  },
+  "repositories": {
+    "title": "Watched repositories",
+    "description": "Open pull requests from these repositories show up in the Watching tab of the PR queue, even when nobody asked for your review."
   }
 }

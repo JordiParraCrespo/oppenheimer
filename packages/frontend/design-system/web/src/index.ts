@@ -196,7 +196,6 @@ export type { DiffAnnotation, DiffLayout } from './components/diff-view';
 export {
   DiffComment,
   DiffCommentDraft,
-  DiffCommentLink,
   DiffFile,
   DiffFileHeader,
   DiffView,
@@ -456,7 +455,7 @@ export { Skeleton } from './components/skeleton';
 export type { SlugStatus } from './components/slug-input';
 export { SlugInput } from './components/slug-input';
 export { Toaster, toast } from './components/sonner';
-export { FactGrid, FactTile, StatBar, StatCard, StatDelta } from './components/stat-card';
+export { StatBar, StatCard, StatDelta } from './components/stat-card';
 export type { StatusState } from './components/status-dot';
 export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
 export { StepHeader } from './components/step-header';

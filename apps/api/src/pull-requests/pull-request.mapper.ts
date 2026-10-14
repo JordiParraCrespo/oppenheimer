@@ -97,9 +97,7 @@ export class PullRequestMapper {
     viewerLogin: string | null,
     reads: RepositoryPulls<PullRequestSnapshot>[],
   ): PullRequestQueueResponseDto {
-    const items = rows
-      .filter((row) => row.scope === scope)
-      .sort((a, b) => b.waitingSeconds - a.waitingSeconds);
+    const items = rows.filter((row) => row.scope === scope).sort(queueOrder);
     const count = (predicate: (row: PullRequestRowDto) => boolean) =>
       items.filter(predicate).length;
     return {
@@ -116,7 +114,9 @@ export class PullRequestMapper {
       },
       readyToMerge: count((row) => row.blocker === null),
       withConflicts: count((row) => row.blocker === 'conflicts'),
-      oldestWaitingSeconds: items[0]?.waitingSeconds ?? null,
+      oldestWaitingSeconds: items.length
+        ? Math.max(...items.map((row) => row.waitingSeconds))
+        : null,
       viewerLogin,
       // This read left pull requests for the next one, so there are more rows
       // to come: the client polls while that holds (#247).
@@ -164,7 +164,7 @@ export class PullRequestMapper {
         failed: 0,
         pending: 0,
       },
-      gates: (['checks', 'conflicts', 'review', 'merge'] as const).map((id) => ({
+      gates: (['checks', 'conflicts', 'merge'] as const).map((id) => ({
         id,
         state: gates[id],
       })),
@@ -384,6 +384,11 @@ export class PullRequestMapper {
 }
 
 /** Top-level directories, most-touched first; a file at the root counts as `/`. */
+/** The queue's one order: the deepest reading first, and within a lane the longest wait. */
+function queueOrder(a: PullRequestRowDto, b: PullRequestRowDto): number {
+  return LANES.indexOf(a.lane) - LANES.indexOf(b.lane) || b.waitingSeconds - a.waitingSeconds;
+}
+
 function foldersOf(paths: readonly string[]): string[] {
   const counts = new Map<string, number>();
   for (const path of paths) {

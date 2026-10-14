@@ -75,7 +75,9 @@ multi-line, so a grep for `export` misses most of them.
 | A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
 | The bar over a session's terminal | `SessionPaneHeader` (and `SessionPaneBack` from a task) | a row of spans over the `Terminal` |
 | The pull requests waiting on someone | `PullRequestTable` with `PullRequestRow`s (the lane a `Badge` `strong` / `soft`, checks and conflicts as `StatusDot` gate states, `MergeButton`) | a `RoutineTable`, a hand-built grid, a badge per lane |
-| A pull request's opening, numbers and way to merge | `PullRequestHeader`, `StatCard` (+ `StatBar`, `StatDelta`), `MergePath`, `Panel` | a `Card` of `div`s, a second step rail beside `Stepper` |
+| A pull request's opening | `PullRequestHeader` | a `Card` of `div`s |
+| Gates as one strip (the diff stat and files in `leading`, the gates, their actions) | `MergePath` | a `Card` of `div`s, a `Stepper` of gates |
+| A review period's numbers | `StatCard` (+ `StatBar`, `StatDelta`), `Panel` | a `Card` of `div`s |
 | Whether something may go ahead (checks, conflicts, a gate) | `StatusDot` with `passing` / `blocked` / `waiting` | a new state union, a coloured `Badge` |
 | One of a few described options (a review's verdict) | `RadioGroup` + `RadioGroupItem` | a list of `Button`s, a `SegmentedControl` |
 | Submitting a review | `ReviewDecision` in a `Popover` from `SubmitReviewButton` | a `Dialog`, a `DropdownMenu` of verdicts |

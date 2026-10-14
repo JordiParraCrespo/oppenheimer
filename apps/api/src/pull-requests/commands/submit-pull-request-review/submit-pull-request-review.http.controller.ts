@@ -48,7 +48,7 @@ export class SubmitPullRequestReviewHttpController {
   @ApiOperation({
     summary: 'Submit a review',
     description:
-      'Posted to GitHub in the caller’s own name with its line comments: comment, request changes, or approve — which then merges when GitHub allows it, and otherwise leaves the pull request waiting.',
+      'Posted to GitHub in the caller’s own name with its line comments: comment, request changes, approve, or approve and merge — which merges now when GitHub allows it, and otherwise turns on auto-merge so it merges once the required checks pass.',
   })
   @ApiBody({ type: SubmitPullRequestReviewRequest })
   @ApiResponse({ status: 200, type: ReviewSubmittedResponseDto })

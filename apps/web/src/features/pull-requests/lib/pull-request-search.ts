@@ -1,11 +1,20 @@
+import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { z } from 'zod';
 
-export const PULL_REQUEST_VIEWS = ['description', 'briefing', 'changes'] as const;
+export const PULL_REQUEST_VIEWS = ['description', 'changes'] as const;
 export type PullRequestView = (typeof PULL_REQUEST_VIEWS)[number];
 
-/** Absent `view` is the description. */
+/**
+ * Absent `view` is the description. `briefing` was a view of its own until the
+ * description took its place; a link that still names it opens the
+ * description.
+ */
 export const pullRequestSearchSchema = z.object({
-  view: z.enum(PULL_REQUEST_VIEWS).optional().catch(undefined),
+  view: z
+    .enum([...PULL_REQUEST_VIEWS, 'briefing'])
+    .optional()
+    .catch(undefined)
+    .transform((view) => (view === 'briefing' ? undefined : view)),
 });
 
 /** The view a pull request opens on, and the one its address leaves out. */
@@ -20,18 +29,30 @@ export function pullRequestSearch(view: PullRequestView): { view?: PullRequestVi
   return view === DEFAULT_PULL_REQUEST_VIEW ? {} : { view };
 }
 
+/** Where a pull request opens, on `view`: the route, its params and its search. */
+export function pullRequestLink(address: PullRequestAddress, view: PullRequestView) {
+  return {
+    to: '/pulls/$installationId/$githubRepoId/$number',
+    params: {
+      installationId: address.installationId,
+      githubRepoId: String(address.githubRepoId),
+      number: String(address.number),
+    },
+    search: pullRequestSearch(view),
+  } as const;
+}
+
 /**
- * The page each view is: the description an article with its rail, the
- * briefing a page of cards, the changes a diff as wide and as tall as the
- * pane. The route declares it from its search, so the shell frames every view
- * and the bar stays above them.
+ * The page each view is: the description an article with its rail at the
+ * board's measure, the changes a diff as wide and as tall as the pane. The route
+ * declares it from its search, so the shell frames every view and the bar
+ * stays above them.
  */
 const PANE = {
   description: 'board',
-  briefing: 'wide',
   changes: 'fluid',
-} as const satisfies Record<PullRequestView, 'wide' | 'board' | 'fluid'>;
+} as const satisfies Record<PullRequestView, 'board' | 'fluid'>;
 
-export function pullRequestPane(view: PullRequestView | undefined): 'wide' | 'board' | 'fluid' {
+export function pullRequestPane(view: PullRequestView | undefined): 'board' | 'fluid' {
   return PANE[resolvePullRequestView(view)];
 }

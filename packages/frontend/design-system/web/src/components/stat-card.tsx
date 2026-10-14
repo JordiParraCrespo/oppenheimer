@@ -18,9 +18,6 @@ import { Card } from './card';
  * - `StatDelta`: a change against the period before, green when it is the
  *   good direction and red when not — the caller says which, since a wait
  *   going down is good and a count going down may not be.
- * - `FactTile` / `FactGrid`: a small label over a value on the hover wash,
- *   in a grid of 220px or more ("What changes · Mostly runner/"); `dot`
- *   leads the label with a tone, `mono` sets the value in mono.
  *
  * Tones are the data tones the charts use, so a series is named once.
  */
@@ -124,39 +121,4 @@ function StatDelta({
   );
 }
 
-function FactGrid({ className, ...props }: React.ComponentProps<'ul'>) {
-  return (
-    <ul
-      data-slot="fact-grid"
-      className={cn('m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-2.5 p-0', className)}
-      {...props}
-    />
-  );
-}
-
-function FactTile({
-  label,
-  dot,
-  mono = false,
-  className,
-  children,
-  ...props
-}: Omit<React.ComponentProps<'li'>, 'children'> & {
-  label: React.ReactNode;
-  /** A tone for the dot before the label (a prep step that passed, failed, runs). */
-  dot?: DataTone;
-  mono?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <li data-slot="fact-tile" className={cn('flex min-w-0 flex-col gap-1 rounded-md bg-hover-surface px-3.5 py-3', className)} {...props}>
-      <span className="flex items-center gap-1.5 text-xs text-fg-muted">
-        {dot ? <span aria-hidden className={cn('size-1.5 shrink-0 rounded-pill', TONE_BG[dot])} /> : null}
-        {label}
-      </span>
-      <span className={cn('text-[13.5px] leading-[1.45] text-pretty text-fg', mono && 'figures truncate text-sm')}>{children}</span>
-    </li>
-  );
-}
-
-export { FactGrid, FactTile, StatBar, StatCard, StatDelta };
+export { StatBar, StatCard, StatDelta };

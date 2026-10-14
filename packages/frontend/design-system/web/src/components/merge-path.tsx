@@ -1,44 +1,56 @@
 import type * as React from 'react';
 
-import { Panel } from './panel';
-import { type Step, Stepper } from './stepper';
+import { cn } from '../lib/utils';
+import { Card } from './card';
+import type { Step, StepState } from './stepper';
 
 /**
- * MergePath — what stands between a pull request and main: a `Panel` around
- * a horizontal `Stepper` of its gates (Checks, Conflicts, Review, Merge), a
- * gate met `done`, not met `failed`, still to come `pending`, each with its
- * word and one line of why. The title row counts what is done ("2 of 4
- * done"); under a hairline, `note` says what happens next ("Squash and
- * merge into main as @jordiparra", or what to fix first) beside `actions`
- * (Review changes, a `MergeButton`).
+ * MergePath — what stands between a pull request and main, as the one card
+ * row that opens its page. `leading` (the diff stat, "12 files in 3
+ * folders") on the left; then its gates (Checks, Conflicts, Merge), each a
+ * dot in its state's colour — met `done`, not met `failed`, held `running`,
+ * still to come `pending` — with its label and its word ("All passing",
+ * "Rebase on main", "Squash into main"); and `actions` on the right (Review
+ * changes, a `MergeButton`). It wraps on a narrow pane.
  */
 function MergePath({
-  title,
-  summary,
   steps,
-  note,
+  leading,
   actions,
   className,
 }: {
-  title: React.ReactNode;
-  /** "2 of 4 done". */
-  summary?: React.ReactNode;
   steps: readonly Step[];
-  note?: React.ReactNode;
+  leading?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <Panel title={title} meta={summary} className={className}>
-      <Stepper orientation="horizontal" steps={steps} />
-      {note || actions ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3.5">
-          <span className="min-w-45 flex-1 text-xs text-pretty text-fg-muted">{note}</span>
-          {actions}
-        </div>
-      ) : null}
-    </Panel>
+    <Card
+      data-slot="merge-path"
+      className={cn('min-w-0 flex-row flex-wrap items-center gap-x-5 gap-y-3 px-5 py-3.5', className)}
+    >
+      <div className="flex min-w-0 flex-[1_1_260px] flex-wrap items-center gap-x-5 gap-y-2 text-xs text-fg-muted">
+        {leading ? <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">{leading}</div> : null}
+        <ol className="m-0 ml-auto flex list-none flex-wrap items-center gap-x-3.5 gap-y-1.5 p-0">
+          {steps.map((step) => (
+            <li key={step.id} data-state={step.state} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <span aria-hidden className={cn('size-1.75 shrink-0 rounded-pill', DOT[step.state])} />
+              <span className="text-fg">{step.label}</span>
+              {step.meta ? <span>{step.meta}</span> : null}
+            </li>
+          ))}
+        </ol>
+      </div>
+      {actions ? <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div> : null}
+    </Card>
   );
 }
+
+const DOT: Record<StepState, string> = {
+  done: 'bg-success',
+  failed: 'bg-danger',
+  running: 'bg-warning',
+  pending: 'bg-fg-subtle',
+};
 
 export { MergePath };
