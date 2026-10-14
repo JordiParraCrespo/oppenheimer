@@ -258,9 +258,9 @@ and two channels naming the same file must agree on its bytes.
 
 After the swap it sets `RUNNER_INSTALL_SHA256` in `api.env` to the new
 installer's digest (and `RUNNER_RELEASE_BASE_URL` and `RUNNER_INSTALL_URL`
-when they are empty) and, when that changed it, recreates the API and then
-`web`, because the API reads `api.env` when it starts and nginx resolves
-`api` only when it starts. If they do not come back healthy, it renames
+when they are empty) and, when that changed it, replaces the API the way a
+deploy does, because the API reads `api.env` when it starts. If it does not
+come back healthy, it renames
 `public/releases` back onto the previous set and restores the previous
 `api.env`, so nothing changed. Only then are older sets pruned; the three
 newest are kept.
@@ -287,7 +287,7 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 | `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow |
 | `oppctl psql` | psql as the app's role |
 | `oppctl rollback` | Run the previous release's images and config again |
-| `oppctl reload` | Recreate api, web and cloudflared from the current release so a change to `config/` takes effect |
+| `oppctl reload` | Replace api, web and cloudflared from the current release, without downtime, so a change to `config/` takes effect |
 | `oppctl backup daily` | Dump and upload outside the schedule |
 | `oppctl doctor` | Checks config, keys, remotes, timers and Docker, and says when a reboot is due |
 
@@ -304,11 +304,11 @@ and `docker restart` keeps the environment it was created with. Run
 sudo -u deploy oppctl reload
 ```
 
-Under the deploy lock, it recreates from the current release, in order and
-each only once the one before is healthy: `api`; then `web`, whose nginx
-resolves `api` once, when it starts; then `cloudflared`, whose origins are
-`web` and `api`. Postgres and Redis are not touched. It ends with the checks
-a deploy ends with.
+Under the deploy lock, it replaces `api`, `web` and `cloudflared` from the
+current release, in that order and the way a deploy does (below): each new
+container starts beside the old one, which keeps serving until the new one is
+healthy. Postgres and Redis are not touched. It ends with the checks a deploy
+ends with.
 
 A variable added to `config/api.env.example` later reaches an existing
 server only when it is copied into `api.env` by hand: `setup` writes the file
@@ -341,10 +341,10 @@ a change to `DEV_HOSTNAME` or `TUNNEL_ID` needs a deploy, not a reload.
      and Redis only on `data`
    - takes an encrypted dump and uploads it, or stops (not on the first deploy,
      which has no database yet)
-   - starts the new release and waits for each healthcheck: the API, nginx,
-     a `GET /api/v1/ready` through nginx to the database and Redis, and
-     cloudflared's `/ready`, which passes only once the tunnel is connected
-     to Cloudflare
+   - starts the new release without downtime (below) and waits for each
+     healthcheck: the API, nginx, a `GET /api/v1/ready` through nginx to the
+     database and Redis, and cloudflared's `/ready`, which passes only once
+     the tunnel is connected to Cloudflare
 4. If anything fails, it starts the previous release again (on a first
    deploy, it stops the new one), sends a notification, and the workflow goes
    red. A failed check, an error and a signal all take that same path. When
@@ -364,6 +364,41 @@ deploy again or run `oppctl rollback`.
 back the old images, not the old schema. If the old API refuses the new
 schema, restore the pre-deploy dump (below). Prefer expand-then-contract
 migrations, and see `deploy-api`'s `references/migrations.md`.
+
+### Deploys without downtime
+
+A deploy, a rollback and a reload replace `api`, then `web`, then
+`cloudflared`, one at a time and never with a gap:
+
+1. The new container starts beside the running one (`compose up --no-recreate
+   --scale <service>=2`). Both answer to the service's name.
+2. Once the new one is healthy, the old one is stopped and removed. If the new
+   one is not healthy, it is removed instead, the old one keeps serving, and
+   the services after it are not touched; a deploy then rolls back.
+3. A service already on the release's config is left alone, so a deploy that
+   changes only the API does not touch the tunnel.
+
+Traffic follows by name. The console's nginx proxies `/api` through Docker's
+DNS, looked up again every five seconds, and retries a request on the other
+API when one refuses the connection. cloudflared dials `web` by name and moves
+to the next address when one refuses. Postgres, Redis and the `releases`
+server are started by compose as before, and they change rarely.
+
+What this does not cover:
+
+- **Old and new API run side by side for a few seconds**, against one schema
+  that the new one has just migrated. A migration must leave the schema
+  readable by the previous release: add, then drop in a later release
+  (expand, then contract). A rename or a drop in one step breaks the old API
+  for those seconds, and breaks a rollback for good.
+- **WebSockets reconnect once.** The runners' links and an open terminal hang
+  up when their container stops, and come back on the new one.
+- **A request in flight on the old API when it is killed fails.** The API does
+  not drain on `SIGTERM`, so `docker stop` kills it after ten seconds.
+
+Containers keep a number that grows with each replacement
+(`oppenheimer-dev-api-3`); `oppctl logs` and `status` go through compose and
+do not care.
 
 ## Backups
 
