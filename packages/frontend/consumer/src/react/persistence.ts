@@ -22,7 +22,7 @@ import { tasksKeys } from './tasks.queries';
  * The review period's numbers are the one read of that feature which is kept:
  * counts, medians, a lane mix and dates, naming no repository and holding no
  * code. It opts in where it is defined, with `meta: PERSIST_META` on
- * `usePullRequestAnalytics`, so this list stays one entry per feature and the
+ * `useSuspensePullRequestAnalytics`, so this list stays one entry per feature and the
  * default for anything new stays "not stored".
  */
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [

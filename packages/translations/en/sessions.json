@@ -415,5 +415,8 @@
       "title": "This session is stopped",
       "body": "Its terminal isn’t running. Whoever shared it can restart it, and this page will open it again."
     }
+  },
+  "screen": {
+    "loadFailed": "Couldn’t refresh this session."
   }
 }

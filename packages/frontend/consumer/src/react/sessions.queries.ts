@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
@@ -23,7 +28,9 @@ import {
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
+import { useHostListQuery } from './hosts.queries';
 import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
+import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
 
 /**
@@ -134,10 +141,40 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
 export function useSessions<TData = SessionEntity[]>(
   options?: Omit<UseQueryOptions<SessionEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
+  return useQuery<SessionEntity[], Error, TData>({
+    ...useSessionListQuery(),
+    ...options,
+    ...useSessionListPoll(),
+  });
+}
+
+/**
+ * The sidebar's three reads under a Suspense `QueryState`: the sessions, the
+ * projects they are grouped under and the hosts a facet names. They fetch side
+ * by side and the sidebar suspends until all three have answered; `error` is
+ * the first refetch that failed over data already drawn.
+ */
+export function useSuspenseSessionsProjectsHosts() {
+  const [sessions, projects, hosts] = useSuspenseQueries({
+    queries: [
+      { ...useSessionListQuery(), ...useSessionListPoll() },
+      useProjectListQuery(),
+      useHostListQuery(),
+    ],
+  });
+  return {
+    sessions: sessions.data,
+    projects: projects.data,
+    hosts: hosts.data,
+    error: sessions.error ?? projects.error ?? hosts.error,
+  };
+}
+
+/** The sessions read, for both hooks over it: the key, and a fetch that fills each detail. */
+export function useSessionListQuery() {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-
-  return useQuery<SessionEntity[], Error, TData>({
+  return {
     queryKey: sessionsKeys.list(),
     queryFn: async () => {
       const askedAt = Date.now();
@@ -150,45 +187,87 @@ export function useSessions<TData = SessionEntity[]>(
       }
       return unresolved.filter((session) => !closing.has(session.id));
     },
-    ...options,
-    // Over the query's own rows, before any caller's `select`. Stands down
-    // while the workspace event stream carries every change to these rows.
-    ...usePollWhile<SessionEntity[]>(
-      'sessionStarting',
-      sessionsKeys.list(),
-      (rows) =>
-        closesOf(queryClient).size > 0 ||
-        (rows?.some((session) => session.isProvisioning) ?? false),
-    ),
+  };
+}
+
+/**
+ * Over the query's own rows, before any caller's `select`. Stands down while
+ * the workspace event stream carries every change to these rows.
+ */
+export function useSessionListPoll() {
+  const queryClient = useQueryClient();
+  return usePollWhile<SessionEntity[]>(
+    'sessionStarting',
+    sessionsKeys.list(),
+    (rows) =>
+      closesOf(queryClient).size > 0 || (rows?.some((session) => session.isProvisioning) ?? false),
+  );
+}
+
+/**
+ * One session under a Suspense `QueryState`, polling while it is being
+ * prepared or a restart is watched; `data` is always the session. A 404 is
+ * the boundary's first failure, which the screen says as "not found".
+ */
+export function useSuspenseSession(id: string) {
+  return useSuspenseQuery<SessionEntity, Error>({
+    ...useSessionDetailQuery(id),
+    ...useSessionPoll(id),
   });
 }
 
-export function useSession(
-  id: string | undefined,
-  options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
-) {
+/**
+ * The share dialog's three reads under a Suspense `QueryState`: the session
+ * (its name and host), its share, and the hosts its host is named from,
+ * fetched side by side. `error` is the first refetch that failed over data
+ * already drawn.
+ */
+export function useSuspenseSessionAndShare(sessionId: string) {
+  const [session, share, hosts] = useSuspenseQueries({
+    queries: [
+      { ...useSessionDetailQuery(sessionId), ...useSessionPoll(sessionId) },
+      useSessionShareQuery(sessionId),
+      useHostListQuery(),
+    ],
+  });
+  return {
+    session: session.data,
+    share: share.data,
+    hosts: hosts.data,
+    error: session.error ?? share.error ?? hosts.error,
+  };
+}
+
+/** One session's read, for the Suspense hooks over it: the key and the fetch, once. */
+function useSessionDetailQuery(id: string) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-
-  return useQuery({
+  return {
     queryKey: sessionsKeys.detail(id),
-    queryFn: id
-      ? async () => {
-          const session = await app.sessions.findById(id);
-          // The host answered: the terminal is back, or the session is gone
-          // from its host and was closed instead. Either way, stop watching.
-          if (session.isLive || session.isResolved) unwatchRestart(queryClient, id);
-          return session;
-        }
-      : skipToken,
-    ...options,
-    ...usePollWhile<SessionEntity>(
-      'sessionOpening',
-      sessionsKeys.detail(id),
-      (session) =>
-        (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
-    ),
-  });
+    queryFn: () => findSession(app, queryClient, id),
+  };
+}
+
+async function findSession(
+  app: ReturnType<typeof useConsumerApp>,
+  queryClient: QueryClient,
+  id: string,
+) {
+  const session = await app.sessions.findById(id);
+  // The host answered: the terminal is back, or the session is gone from its
+  // host and was closed instead. Either way, stop watching.
+  if (session.isLive || session.isResolved) unwatchRestart(queryClient, id);
+  return session;
+}
+
+/** A session polls while it is being prepared, or while a restart is being watched. */
+function useSessionPoll(id: string) {
+  const queryClient = useQueryClient();
+  return usePollWhile<SessionEntity>(
+    'sessionOpening',
+    sessionsKeys.detail(id),
+    (session) => (session?.isProvisioning ?? false) || restartsOf(queryClient).has(id),
+  );
 }
 
 /**
@@ -458,11 +537,16 @@ export function usePasteSessionFile(
 
 /** How a session is shared, or `null`, for the people who may manage it. */
 export function useSessionShare(sessionId: string) {
+  return useQuery(useSessionShareQuery(sessionId));
+}
+
+/** A session's share read, for both hooks over it: the key and the fetch, once. */
+function useSessionShareQuery(sessionId: string) {
   const app = useConsumerApp();
-  return useQuery({
+  return {
     queryKey: sessionsKeys.share(sessionId),
     queryFn: () => app.sessions.findShare(sessionId),
-  });
+  };
 }
 
 /** Seeds a session's share with what a write answered, or clears it. */
@@ -525,14 +609,10 @@ export function useStopSessionShare(
 }
 
 /** What a share's address opens for whoever is signed in, or why it does not. */
-export function useSharedSession(
-  slug: string | undefined,
-  options?: Omit<UseQueryOptions<SharedSession, Error>, 'queryKey' | 'queryFn'>,
-) {
+export function useSuspenseSharedSession(slug: string) {
   const app = useConsumerApp();
-  return useQuery({
+  return useSuspenseQuery<SharedSession, Error>({
     queryKey: sessionsKeys.shared(slug),
-    queryFn: slug ? () => app.sessions.findSharedSession(slug) : skipToken,
-    ...options,
+    queryFn: () => app.sessions.findSharedSession(slug),
   });
 }

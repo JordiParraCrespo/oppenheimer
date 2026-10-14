@@ -100,11 +100,11 @@ export async function startServer(command, argv, { cwd, url, timeoutMs = 60_000 
  * collect page errors and console errors. Returns the failures so the
  * caller can exit non-zero.
  */
-export async function shootAll(browser, names, fn, { viewport = { width: 1440, height: 900 }, themes = ['light', 'dark'] } = {}) {
+export async function shootAll(browser, names, fn, { viewport = { width: 1440, height: 900 }, scale = 1, themes = ['light', 'dark'] } = {}) {
   const failures = [];
   for (const name of names) {
     for (const theme of themes) {
-      const page = await browser.newPage({ viewport, ignoreHTTPSErrors: true });
+      const page = await browser.newPage({ viewport, deviceScaleFactor: scale, ignoreHTTPSErrors: true });
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
       // Failed requests are reported with their URL from the response event;

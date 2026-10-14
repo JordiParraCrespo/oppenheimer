@@ -17,7 +17,15 @@ export function AutomationsOverviewScreen() {
   return (
     <>
       <OverviewTop />
-      <RunHistoryCard onOpenRuns={() => navigate({ to: '/automations/runs' })} />
+      <QueryState>
+        <QueryState.Pending>
+          <Skeleton shape="lg" className="h-47.5 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('automations.history.loadFailed')} />
+        <QueryState.Data>
+          <RunHistoryCard onOpenRuns={() => navigate({ to: '/automations/runs' })} />
+        </QueryState.Data>
+      </QueryState>
       <QueryState>
         <QueryState.Pending>
           <RoutineTable>

@@ -1,28 +1,15 @@
 import {
-  Callout,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  FieldDescription,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { shortName } from '@oppenheimer/frontend-consumer';
-import {
-  useHostPresence,
-  useProjects,
-  useStartTaskSession,
-  useTasks,
-} from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { combineQueries, notifySuccess, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StartSessionForm } from '../forms/start-session-form';
-import { startDefaults, toStartSession } from '../lib/start-session';
+import { StartSessionDraft } from '../sections/start-session-draft';
 
 const board = getRouteApi('/_authenticated/plan/');
 
@@ -30,40 +17,14 @@ const board = getRouteApi('/_authenticated/plan/');
  * Start session for a task (`18-plan-product.md` §4), open while the address
  * says `?start=<task>`. The session is New session's, filed under the task's
  * project and linked to it; the task moves to In progress unless it moved
- * since the click. The idempotency key is the dialog's, so a retried submit
- * does not start two sessions.
+ * since the click. The form reads what it needs under Suspense; this draws
+ * the dialog, its placeholder and a first failure.
  */
 export function StartSessionDialog() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const { start } = board.useSearch();
   const navigate = board.useNavigate();
   const close = () => navigate({ search: (previous) => ({ ...previous, start: undefined }) });
-  // `null`, not `undefined`, for a row that is gone: `undefined` is a read
-  // that has not answered yet.
-  const tasks = useTasks({ select: (rows) => rows.find((row) => row.id === start) ?? null });
-  const task = tasks.data;
-  const projects = useProjects({
-    select: (rows) => rows.find((row) => row.id === task?.projectId) ?? null,
-  });
-  const hosts = useHostPresence();
-  // The form needs all three reads; a task or project that is gone is `null`.
-  const draft = combineQueries(
-    combineQueries(tasks, projects, (found, project) =>
-      found && project ? { task: found, project } : null,
-    ),
-    hosts,
-    (found, rows) => (found ? { ...found, hosts: rows } : null),
-  );
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
-  const launch = useStartTaskSession({
-    onSuccess: (started) => {
-      notifySuccess(
-        started.hints.includes('host_offline') ? 'taskSessionQueued' : 'taskSessionStarted',
-      );
-      close();
-    },
-  });
   if (!start) return null;
 
   return (
@@ -71,74 +32,16 @@ export function StartSessionDialog() {
       <DialogContent size="lg" closeLabel={t('common.close')}>
         <DialogHeader>
           <DialogTitle>{t('tasks.start.title')}</DialogTitle>
-          {task ? (
-            <DialogDescription>{t('tasks.start.for', { title: task.title })}</DialogDescription>
-          ) : null}
         </DialogHeader>
         <DialogBody>
           <div className="pb-6">
-            <QueryState query={draft} isEmpty={(found) => found === null}>
+            <QueryState>
               <QueryState.Pending>
                 <Skeleton className="h-40 w-full" />
               </QueryState.Pending>
               <QueryState.Error fallback={t('tasks.start.loadFailed')} />
-              <QueryState.Empty>
-                <FieldDescription>{t('tasks.dialog.gone')}</FieldDescription>
-              </QueryState.Empty>
-              <QueryState.Data of={draft}>
-                {(found) =>
-                  found ? (
-                    <StartSessionForm
-                      values={startDefaults(found.task, found.project, found.hosts)}
-                      repositories={found.project.repositories.map((row) => ({
-                        value: row.id,
-                        label: shortName(row.fullName),
-                        description: `${row.fullName} · ${row.baseBranch}`,
-                        mono: true,
-                      }))}
-                      hosts={found.hosts.map((host) => ({
-                        value: host.id,
-                        label: host.name,
-                        description: host.online ? host.summary : t('tasks.start.offlineShort'),
-                      }))}
-                      offline={(hostId) => {
-                        const host = found.hosts.find((row) => row.id === hostId);
-                        if (!host || host.online) return null;
-                        return (
-                          <Callout tone="warning">
-                            {host.lastSeenAt ? (
-                              <RelativeTime date={host.lastSeenAt}>
-                                {(when) =>
-                                  t('tasks.start.offlineSince', {
-                                    host: host.name,
-                                    when: when ?? '',
-                                  })
-                                }
-                              </RelativeTime>
-                            ) : (
-                              t('tasks.start.offline', { host: host.name })
-                            )}
-                          </Callout>
-                        );
-                      }}
-                      pending={launch.isPending}
-                      error={
-                        launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null
-                      }
-                      onCancel={close}
-                      onSubmit={(values) => {
-                        const session = toStartSession(values, found.project);
-                        if (session)
-                          launch.mutate({
-                            id: found.task.id,
-                            session,
-                            seenStatus: found.task.status,
-                            idempotencyKey,
-                          });
-                      }}
-                    />
-                  ) : null
-                }
+              <QueryState.Data>
+                <StartSessionDraft />
               </QueryState.Data>
             </QueryState>
           </div>

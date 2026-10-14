@@ -23,11 +23,10 @@ names the concern and what to reach for first.
 - **shell** — `AppShell`, the authenticated frame (sidebar, top bar, user
   menu and command palette are its parts).
 - **auth** — `AuthLayout`, the split screen around sign-in and onboarding.
-- **layout** — `QueryState`, a read's failed, loading, empty and loaded
-  states as composed slots (`QueryState.Pending`, `.Error`, `.Empty`,
-  `.Data of={query}`, which types the data from the query), and with no
-  `query` the boundary of a Suspense read; `ConfirmDialog` for the
-  destructive confirm.
+- **layout** — `QueryState`, the boundary of a Suspense read, its loading,
+  failed and loaded states as composed slots (`QueryState.Pending`, `.Error`
+  with Try again, `.Data` around the section that reads); `ConfirmDialog`
+  for the destructive confirm.
 - **forms** — `ErrorAlert` for an inline failure and `notifySuccess(key)` for
   a success toast (a `toasts.*` key, so its copy lives in one place; when to
   toast is `.agents/rules/frontend-ui.md`). `useErrorMessage` itself comes

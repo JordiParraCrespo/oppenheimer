@@ -7,6 +7,7 @@ import {
   type UseSuspenseQueryResult,
   useQueries as useTanstackQueries,
   useQuery as useTanstackQuery,
+  useSuspenseQueries as useTanstackSuspenseQueries,
   useSuspenseQuery as useTanstackSuspenseQuery,
 } from '@tanstack/react-query';
 import { shareEntities } from './share-entities';
@@ -56,3 +57,15 @@ export function useSuspenseQuery<
 ): UseSuspenseQueryResult<TData, TError> {
   return useTanstackSuspenseQuery({ structuralSharing: shareEntities, ...options });
 }
+
+/**
+ * TanStack Query's `useSuspenseQueries`, each entry sharing entities as
+ * {@link useQuery} does. For a section that draws several reads at once: the
+ * entries fetch side by side and the section suspends until every one has
+ * answered, where two `useSuspenseQuery` calls would fetch one after the other.
+ */
+export const useSuspenseQueries = ((options: { queries: readonly object[] }) =>
+  useTanstackSuspenseQueries({
+    ...options,
+    queries: options.queries.map((query) => ({ structuralSharing: shareEntities, ...query })),
+  } as never)) as typeof useTanstackSuspenseQueries;

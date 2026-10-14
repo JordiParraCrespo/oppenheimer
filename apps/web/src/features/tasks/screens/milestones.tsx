@@ -1,5 +1,7 @@
-import type { MilestoneTimelineControls } from '@oppenheimer/design-system-web';
+import { type MilestoneTimelineControls, Skeleton } from '@oppenheimer/design-system-web';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MilestoneDialog } from '../dialogs/milestone';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { MilestonesHeader } from '../sections/milestones-header';
@@ -13,6 +15,7 @@ import { PlanFilters } from '../sections/plan-filters';
  * two share: the timeline's handle and which milestone the dialog is for.
  */
 export function MilestonesScreen() {
+  const { t } = useTranslation();
   const { projectId } = useScopeProject();
   const timeline = useRef<MilestoneTimelineControls>(null);
   const [editing, setEditing] = useState<string | 'new' | null>(null);
@@ -26,11 +29,19 @@ export function MilestonesScreen() {
         onNew={() => setEditing('new')}
       />
       <PlanFilters />
-      <MilestonesTimeline
-        controls={timeline}
-        onEdit={(id) => setEditing(id)}
-        onNew={() => setEditing('new')}
-      />
+      <QueryState>
+        <QueryState.Pending>
+          <Skeleton className="h-60 w-full" />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('tasks.milestones.loadFailed')} />
+        <QueryState.Data>
+          <MilestonesTimeline
+            controls={timeline}
+            onEdit={(id) => setEditing(id)}
+            onNew={() => setEditing('new')}
+          />
+        </QueryState.Data>
+      </QueryState>
       {editing ? (
         <MilestoneDialog
           milestoneId={editing === 'new' ? undefined : editing}

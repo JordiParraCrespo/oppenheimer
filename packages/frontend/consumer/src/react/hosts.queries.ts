@@ -112,15 +112,16 @@ export function useSuspenseHostPresence() {
 /**
  * What `GET /v1/hosts` is, for every read of it: the key and the fetch, once.
  * {@link useHostList} and the Suspense reads all spread it, so they cannot
- * drift from one another.
+ * drift from one another. Not in the barrel: the combined Suspense reads in
+ * other files spread it too.
  */
-function useHostListQuery() {
+export function useHostListQuery() {
   const app = useConsumerApp();
   return { queryKey: hostsKeys.list(), queryFn: () => app.hosts.findAll() };
 }
 
 /** The presence poll over the hosts list, while `active` holds. */
-function useHostPresencePoll(active: boolean) {
+export function useHostPresencePoll(active: boolean) {
   return usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), active);
 }
 
