@@ -23,7 +23,7 @@ export const VISUAL = [
   /^apps\/web\/index\.html$/,
   /^packages\/frontend\/web\/src\//,
   /^packages\/frontend\/design-system\/web\/src\//,
-  /^packages\/translations\/.+\.json$/,
+  /^packages\/translations\/(?!scripts\/)/,
   // oppenheimer:end web
 ];
 /** Beside them, but never on screen: tests, stories, docs. */

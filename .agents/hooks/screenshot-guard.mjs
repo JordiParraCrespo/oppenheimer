@@ -18,7 +18,7 @@
 // `.agents/hooks/screenshot-guard.test.mjs`.
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { visualChange } from './visual-change.mjs';
@@ -35,6 +35,8 @@ function recorded(path) {
 
 /** The message that holds the stop, or null when the branch is covered. */
 export function verdict(root, options) {
+  // A checkout pruned of the camera (`/starter-init` without e2e) has nothing to ask for.
+  if (!existsSync(join(root, 'scripts/stack/screens.mjs'))) return null;
   const change = visualChange(root, options);
   if (!change) return null;
   const answers = ['manifest.json', 'not-visual.md'].map((name) =>

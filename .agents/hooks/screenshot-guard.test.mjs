@@ -25,6 +25,7 @@ describe('isVisual', () => {
     'packages/frontend/design-system/web/src/components/badge.tsx',
     'packages/frontend/design-system/web/src/styles/globals.css',
     'packages/translations/en/index.json',
+    'packages/translations/locales.ts',
   ])
     it(`counts ${path}`, () => assert.equal(isVisual(path), true));
 
@@ -38,6 +39,7 @@ describe('isVisual', () => {
     'packages/frontend/consumer/src/modules/hosts/hooks/use-hosts.ts',
     'packages/shared/src/schemas/hosts.schema.ts',
     'docs/screens.md',
+    'packages/translations/scripts/assemble.mjs',
   ])
     it(`skips ${path}`, () => assert.equal(isVisual(path), false));
 });
@@ -70,6 +72,10 @@ describe('the hook', () => {
   git('commit', '-q', '-m', 'init');
   git('update-ref', 'refs/remotes/origin/main', 'HEAD');
   git('checkout', '-q', '-b', 'feature');
+  // The camera's presence is what turns the guard on.
+  write('scripts/stack/screens.mjs', '');
+  git('add', 'scripts/stack/screens.mjs');
+  git('commit', '-q', '-m', 'camera');
 
   it('lets a branch with no visual change stop', () => {
     write('apps/api/src/x.ts');
@@ -121,6 +127,21 @@ describe('the hook', () => {
   it('is answered by a not-visual note for the code as it is', () => {
     write('.screenshots/not-visual.md', `renamed a prop\n\nfingerprint: ${current()}\n`);
     assert.equal(stop(), null);
+  });
+
+  it('holds an uncommitted deletion of a visual file', () => {
+    git('add', '-A', 'apps');
+    git('commit', '-q', '-m', 'list');
+    write('.screenshots/manifest.json', JSON.stringify({ fingerprint: current() }));
+    assert.equal(stop(), null);
+    rmSync(join(root, 'apps/web/src/features/hosts/sections/list.tsx'));
+    assert.equal(stop()?.decision, 'block');
+  });
+
+  it('stays out of a checkout with no camera', () => {
+    rmSync(join(root, 'scripts/stack/screens.mjs'));
+    assert.equal(stop(), null);
+    git('checkout', '-q', '--', 'scripts/stack/screens.mjs');
   });
 
   it('compares against main when origin/main is older than it', () => {

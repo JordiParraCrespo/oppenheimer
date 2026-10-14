@@ -116,7 +116,7 @@ test('photographs the screens a change touches', async ({ browser }) => {
     `${JSON.stringify(
       {
         commit: git('rev-parse', 'HEAD'),
-        dirty: git('status', '--porcelain', '--untracked-files=no') !== '',
+        dirty: git('status', '--porcelain') !== '',
         takenAt: new Date().toISOString(),
         files,
       },

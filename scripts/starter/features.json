@@ -100,7 +100,7 @@
       "summary": "e2e/ — Playwright suites against the running API and web app",
       "identifiers": ["@oppenheimer/e2e", "e2e/"],
       "paths": ["e2e", "scripts/stack", ".agents/skills/local-stack"],
-      "scripts": ["test:e2e"]
+      "scripts": ["test:e2e", "screens"]
     }
   },
   "shared": {
