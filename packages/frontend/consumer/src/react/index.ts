@@ -46,6 +46,7 @@ export {
   useSuspenseBotsAndGroups,
   useUpdateBot,
   useUpdateBotFact,
+  useUpdateBotOptimistically,
 } from './bots.queries';
 export {
   type UpdateCalendarEventVariables,

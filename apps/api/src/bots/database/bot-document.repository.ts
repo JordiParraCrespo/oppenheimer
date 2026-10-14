@@ -7,7 +7,7 @@ import {
 } from '@oppenheimer/backend-authz';
 import type { BotDocumentName } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, type EntityManager, Repository } from 'typeorm';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotResource } from '../bots.resource';
 import type { BotDocumentRevision } from '../domain/bot.types';
@@ -22,9 +22,6 @@ import { BotDocumentRevisionOrmEntity } from './bot-document-revision.orm-entity
 
 const UNIQUE_VIOLATION = '23505';
 const INT4_MAX = 2_147_483_647;
-
-/** The row no longer holds the revision the writer read; thrown to roll the write back. */
-class RevisionConflict extends Error {}
 
 @Injectable()
 export class BotDocumentRepository
@@ -68,41 +65,51 @@ export class BotDocumentRepository
   async save(document: BotDocumentEntity): Promise<BotDocumentWriteOutcome> {
     const revision = document.pendingRevision;
     if (!revision) return 'saved';
+    let outcome: BotDocumentWriteOutcome;
     try {
-      await this.dataSource.transaction(async (manager) => {
-        const result = await manager
-          .createQueryBuilder()
-          .update(BotDocumentOrmEntity)
-          .set({
-            content: document.content,
-            revision: document.revision,
-            updatedBy: document.updatedBy,
-            updatedByUserId: document.updatedByUserId,
-          })
-          .where('"organizationId" = :organizationId AND "botId" = :botId AND name = :name', {
-            organizationId: document.organizationId,
-            botId: document.botId,
-            name: document.name,
-          })
-          .andWhere('revision = :expected', { expected: document.expectedRevision })
-          .execute();
-        if (result.affected !== 1) throw new RevisionConflict();
-        await manager
-          .getRepository(BotDocumentRevisionOrmEntity)
-          .insert(this.mapper.revisionToRecord(revision));
-      });
+      outcome = await this.dataSource.transaction((manager) =>
+        this.writeOverExpected(manager, document, revision),
+      );
     } catch (error) {
-      // A second writer that read the same revision loses on the conditional
-      // update; one that slipped past it would lose on UQ_bot_document_revision.
-      if (
-        error instanceof RevisionConflict ||
-        violated(error, UNIQUE_VIOLATION, 'UQ_bot_document_revision')
-      ) {
-        return 'conflict';
-      }
+      // A writer that slipped past the conditional update loses on
+      // UQ_bot_document_revision, and the throw rolls its update back.
+      if (violated(error, UNIQUE_VIOLATION, 'UQ_bot_document_revision')) return 'conflict';
       throw error;
     }
-    document.written();
+    if (outcome === 'saved') document.written();
+    return outcome;
+  }
+
+  /**
+   * The document over the revision its writer read, then its history row. The
+   * conditional update goes first and the insert runs only when it won, so a
+   * writer that lost has written nothing and answers `conflict`.
+   */
+  private async writeOverExpected(
+    manager: EntityManager,
+    document: BotDocumentEntity,
+    revision: BotDocumentRevision,
+  ): Promise<BotDocumentWriteOutcome> {
+    const result = await manager
+      .createQueryBuilder()
+      .update(BotDocumentOrmEntity)
+      .set({
+        content: document.content,
+        revision: document.revision,
+        updatedBy: document.updatedBy,
+        updatedByUserId: document.updatedByUserId,
+      })
+      .where('"organizationId" = :organizationId AND "botId" = :botId AND name = :name', {
+        organizationId: document.organizationId,
+        botId: document.botId,
+        name: document.name,
+      })
+      .andWhere('revision = :expected', { expected: document.expectedRevision })
+      .execute();
+    if (result.affected !== 1) return 'conflict';
+    await manager
+      .getRepository(BotDocumentRevisionOrmEntity)
+      .insert(this.mapper.revisionToRecord(revision));
     return 'saved';
   }
 

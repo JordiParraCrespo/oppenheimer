@@ -186,14 +186,21 @@ export class BotEntity extends AggregateRoot<BotProps> {
       props.model = changes.model;
       edited.add('model');
     }
-    if (changes.model !== undefined || changes.effort !== undefined) {
-      // An effort the (new) model does not offer is recorded as none: the CLI's default runs.
-      const effort = changes.effort !== undefined ? changes.effort : props.effort;
-      props.effort = botEffortFor(props.model, effort);
-      edited.add('effort');
-    }
+    if (changes.effort !== undefined) props.effort = changes.effort;
+    if (changes.model !== undefined || changes.effort !== undefined) this.settleEffort();
     this.setUpdatedAt(new Date());
     this.validate();
+  }
+
+  /**
+   * The model/effort rule ({@link botEffortFor}): the effort recorded is one the
+   * model offers, else none, and the CLI's default runs. Applied whenever the
+   * model or the effort changes, and the effort is then written either way,
+   * because a new model alone can unset it.
+   */
+  private settleEffort(): void {
+    this.props.effort = botEffortFor(this.props.model, this.props.effort);
+    this.edited.add('effort');
   }
 
   /**

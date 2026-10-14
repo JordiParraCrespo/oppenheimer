@@ -1,6 +1,6 @@
 import { BotAvatar, ChatHeader, IconButton, useSidebar } from '@oppenheimer/design-system-web';
 import { PanelLeft } from '@oppenheimer/design-system-web/icons';
-import { useSuspenseBot, useUpdateBot } from '@oppenheimer/frontend-consumer/react';
+import { useSuspenseBot, useUpdateBotOptimistically } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -22,21 +22,17 @@ import { BotHello } from './bot-hello';
  * draw this one bot, so it is read here once.
  *
  * The chips are made here, not in the composer, so the draft the composer
- * owns never re-renders them; and this section owns their save, so a picked
- * value shows at once and a refused one says why above the box.
+ * owns never re-renders them; and this section owns their save. The save
+ * writes the pick into the bot it reads, so a picked value shows at once, a
+ * refused one snaps back and says why above the box.
  */
 export function BotChat({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
   const { data: bot, error } = useSuspenseBot(botId);
-  const update = useUpdateBot();
+  const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
-  // While a pick is saving, it is what the chips show.
-  const picked = update.isPending ? update.variables.input : {};
-  const model = 'model' in picked ? (picked.model ?? null) : bot.model;
-  const effort = picked.effort ?? bot.effort;
-  const permission = picked.permission ?? bot.permission;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -66,7 +62,7 @@ export function BotChat({ botId }: { botId: string }) {
       />
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 pb-10">
         <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-        <BotHello botId={bot.id} name={bot.name} modelLabel={botModelLabel(model)} />
+        <BotHello botId={bot.id} name={bot.name} modelLabel={botModelLabel(bot.model)} />
       </div>
       <div className="px-5 pb-5">
         <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
@@ -79,14 +75,14 @@ export function BotChat({ botId }: { botId: string }) {
             name={bot.name}
             tools={
               <BotPermissionChip
-                value={permission}
+                value={bot.permission}
                 onValueChange={(next) => update.mutate({ id: bot.id, input: { permission: next } })}
               />
             }
             engine={
               <BotEngineChips
-                model={model}
-                effort={effort}
+                model={bot.model}
+                effort={bot.effort}
                 onModelChange={(next) => update.mutate({ id: bot.id, input: { model: next } })}
                 onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
               />

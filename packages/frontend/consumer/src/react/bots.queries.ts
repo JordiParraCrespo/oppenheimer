@@ -15,14 +15,14 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import type {
-  BotDocumentEntity,
-  BotDocumentRevisionEntity,
+import {
+  type BotDocumentEntity,
+  type BotDocumentRevisionEntity,
   BotEntity,
-  BotGroupEntity,
-  BotMemoryFactEntity,
-  SaveBotDocumentInput,
-  UpdateBotInput,
+  type BotGroupEntity,
+  type BotMemoryFactEntity,
+  type SaveBotDocumentInput,
+  type UpdateBotInput,
 } from '../modules/bots/bot.entity';
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
@@ -163,6 +163,16 @@ export function useSuspenseBotMemory(id: string) {
   });
 }
 
+/** A row's place in a list, written over by the row the server answered with. */
+function replaced<TRow extends { id: string }>(saved: TRow) {
+  return (rows: TRow[]) => rows.map((row) => (row.id === saved.id ? saved : row));
+}
+
+/** A list without the row that is gone. */
+function without<TRow extends { id: string }>(id: string) {
+  return (rows: TRow[]) => rows.filter((row) => row.id !== id);
+}
+
 /**
  * A bot the server answered with: its detail, and its row in the list. A
  * move between groups or a new position reorders the others, so the list is
@@ -175,6 +185,46 @@ async function settleBot(queryClient: QueryClient, saved: BotEntity, reorders: b
     rows?.map((row) => (row.id === saved.id ? shareEntities(row, saved) : row)),
   );
   if (reorders) await queryClient.invalidateQueries({ queryKey: botsKeys.lists() });
+}
+
+/**
+ * A bot that is gone: its reads are dropped rather than left stale, so nothing
+ * asks the API again for it, and its row leaves the list.
+ */
+function dropBot(queryClient: QueryClient, id: string) {
+  queryClient.removeQueries({ queryKey: botsKeys.detail(id) });
+  queryClient.setQueryData<BotEntity[]>(
+    botsKeys.list(),
+    (rows) => rows && without<BotEntity>(id)(rows),
+  );
+}
+
+/** The sidebar's groups, written in place; nothing when they were never read. */
+function settleGroups(
+  queryClient: QueryClient,
+  update: (rows: BotGroupEntity[]) => BotGroupEntity[],
+) {
+  queryClient.setQueryData<BotGroupEntity[]>(botsKeys.groupList(), (rows) => rows && update(rows));
+}
+
+/** A document the server answered with, written into the pair, and its history read again. */
+async function settleDocument(queryClient: QueryClient, id: string, saved: BotDocumentEntity) {
+  queryClient.setQueryData<BotDocumentEntity[]>(botsKeys.documentList(id), (rows) =>
+    rows?.map((row) => (row.name === saved.name ? saved : row)),
+  );
+  await queryClient.invalidateQueries({ queryKey: botsKeys.revisions(id, saved.name) });
+}
+
+/** What a bot remembers, written in place; nothing when it was never read. */
+function settleFacts(
+  queryClient: QueryClient,
+  id: string,
+  update: (rows: BotMemoryFactEntity[]) => BotMemoryFactEntity[],
+) {
+  queryClient.setQueryData<BotMemoryFactEntity[]>(
+    botsKeys.memoryList(id),
+    (rows) => rows && update(rows),
+  );
 }
 
 /** A blank bot ("New Bot"), ungrouped. Open its chat with the answer. */
@@ -192,6 +242,11 @@ export interface UpdateBotVariables {
   input: UpdateBotInput;
 }
 
+/** Whether an update moves the bot among the others, so the list's order changes. */
+function reorders(input: UpdateBotInput): boolean {
+  return 'groupId' in input || 'position' in input;
+}
+
 /** Profile, the sidebar group, the home host, and the composer's model, effort and approval. */
 export function useUpdateBot(options?: UseMutationOptions<BotEntity, Error, UpdateBotVariables>) {
   const app = useConsumerApp();
@@ -199,40 +254,87 @@ export function useUpdateBot(options?: UseMutationOptions<BotEntity, Error, Upda
   return useMutation({
     mutationFn: ({ id, input }: UpdateBotVariables) => app.bots.update(id, input),
     ...withCacheOnSuccess(options, (saved, { input }) =>
-      settleBot(queryClient, saved, 'groupId' in input || 'position' in input),
+      settleBot(queryClient, saved, reorders(input)),
     ),
   });
 }
 
+/** `bot` with the fields `input` sets; a field it leaves out keeps the bot's. */
+function withInput(bot: BotEntity, input: UpdateBotInput): BotEntity {
+  const set = Object.entries(input).filter(([, value]) => value !== undefined);
+  return Object.assign(Object.create(BotEntity.prototype), bot, Object.fromEntries(set));
+}
+
+/** What `bot` holds in each field `input` sets: the input that puts them back. */
+function inputRestoring(bot: BotEntity, input: UpdateBotInput): UpdateBotInput {
+  return Object.fromEntries(
+    Object.keys(input).map((key) => [key, bot[key as keyof UpdateBotInput]]),
+  );
+}
+
+interface UpdateBotContext {
+  previous?: BotEntity;
+}
+
 /**
- * Delete: the bot, its documents and its memory. Its reads are dropped rather
- * than left stale, so nothing asks the API again for a bot that is gone.
+ * {@link useUpdateBot} for a pick that shows at once (the composer's chips):
+ * the bot's detail takes the picked fields before the request goes. A refusal
+ * puts back the fields this pick set, and only those, so a later pick still on
+ * its way keeps showing; the server's answer replaces the guess either way.
  */
+export function useUpdateBotOptimistically(
+  options?: Omit<
+    UseMutationOptions<BotEntity, Error, UpdateBotVariables, UpdateBotContext>,
+    'onMutate'
+  >,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: UpdateBotVariables) => app.bots.update(id, input),
+    ...withCacheOnSuccess(options, (saved, { input }) =>
+      settleBot(queryClient, saved, reorders(input)),
+    ),
+    onMutate: async ({ id, input }: UpdateBotVariables): Promise<UpdateBotContext> => {
+      // Written before anything is awaited; cancelling first reverts a read on
+      // its way, so it cannot land over the pick.
+      const cancelled = queryClient.cancelQueries({ queryKey: botsKeys.detail(id), exact: true });
+      const previous = queryClient.getQueryData<BotEntity>(botsKeys.detail(id));
+      if (previous) queryClient.setQueryData(botsKeys.detail(id), withInput(previous, input));
+      await cancelled;
+      return { previous };
+    },
+    onError: (error, variables, context, mutation) => {
+      const previous = context?.previous;
+      if (previous) {
+        queryClient.setQueryData<BotEntity>(
+          botsKeys.detail(variables.id),
+          (current) => current && withInput(current, inputRestoring(previous, variables.input)),
+        );
+      }
+      return options?.onError?.(error, variables, context, mutation);
+    },
+  });
+}
+
+/** Delete: the bot, its documents and its memory. */
 export function useDeleteBot(options?: UseMutationOptions<void, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.bots.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => {
-      queryClient.removeQueries({ queryKey: botsKeys.detail(id) });
-      queryClient.setQueryData<BotEntity[]>(botsKeys.list(), (rows) =>
-        rows?.filter((row) => row.id !== id),
-      );
-    }),
+    ...withCacheOnSuccess(options, (_data, id) => dropBot(queryClient, id)),
   });
 }
 
-/** A new group, last in the sidebar. */
+/** A new group, first in the sidebar's list, as the API lists them. */
 export function useCreateBotGroup(options?: UseMutationOptions<BotGroupEntity, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => app.bots.createGroup(name),
     ...withCacheOnSuccess(options, (added) =>
-      queryClient.setQueryData<BotGroupEntity[]>(botsKeys.groupList(), (rows) =>
-        // Newest first, as the API lists them.
-        rows ? [added, ...rows] : rows,
-      ),
+      settleGroups(queryClient, (rows) => [added, ...rows]),
     ),
   });
 }
@@ -249,11 +351,7 @@ export function useRenameBotGroup(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, name }: RenameBotGroupVariables) => app.bots.renameGroup(id, name),
-    ...withCacheOnSuccess(options, (saved) =>
-      queryClient.setQueryData<BotGroupEntity[]>(botsKeys.groupList(), (rows) =>
-        rows?.map((row) => (row.id === saved.id ? saved : row)),
-      ),
-    ),
+    ...withCacheOnSuccess(options, (saved) => settleGroups(queryClient, replaced(saved))),
   });
 }
 
@@ -264,21 +362,11 @@ export function useDeleteBotGroup(options?: UseMutationOptions<void, Error, stri
   return useMutation({
     mutationFn: (id: string) => app.bots.removeGroup(id),
     ...withCacheOnSuccess(options, async (_data, id) => {
-      queryClient.setQueryData<BotGroupEntity[]>(botsKeys.groupList(), (rows) =>
-        rows?.filter((row) => row.id !== id),
-      );
+      settleGroups(queryClient, without(id));
       await queryClient.invalidateQueries({ queryKey: botsKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: botsKeys.details() });
     }),
   });
-}
-
-/** A document the server answered with, written into the pair, and its history read again. */
-async function settleDocument(queryClient: QueryClient, id: string, saved: BotDocumentEntity) {
-  queryClient.setQueryData<BotDocumentEntity[]>(botsKeys.documentList(id), (rows) =>
-    rows?.map((row) => (row.name === saved.name ? saved : row)),
-  );
-  await queryClient.invalidateQueries({ queryKey: botsKeys.revisions(id, saved.name) });
 }
 
 export interface SaveBotDocumentVariables {
@@ -341,9 +429,7 @@ export function useAddBotFact(
   return useMutation({
     mutationFn: ({ id, content }: AddBotFactVariables) => app.bots.addFact(id, content),
     ...withCacheOnSuccess(options, (added, { id }) =>
-      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), (rows) =>
-        rows ? [...rows, added] : rows,
-      ),
+      settleFacts(queryClient, id, (rows) => [...rows, added]),
     ),
   });
 }
@@ -363,9 +449,7 @@ export function useUpdateBotFact(
     mutationFn: ({ id, factId, content }: UpdateBotFactVariables) =>
       app.bots.updateFact(id, factId, content),
     ...withCacheOnSuccess(options, (saved, { id }) =>
-      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), (rows) =>
-        rows?.map((row) => (row.id === saved.id ? saved : row)),
-      ),
+      settleFacts(queryClient, id, replaced(saved)),
     ),
   });
 }
@@ -383,9 +467,7 @@ export function useDeleteBotFact(
   return useMutation({
     mutationFn: ({ id, factId }: DeleteBotFactVariables) => app.bots.removeFact(id, factId),
     ...withCacheOnSuccess(options, (_data, { id, factId }) =>
-      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), (rows) =>
-        rows?.filter((row) => row.id !== factId),
-      ),
+      settleFacts(queryClient, id, without(factId)),
     ),
   });
 }
