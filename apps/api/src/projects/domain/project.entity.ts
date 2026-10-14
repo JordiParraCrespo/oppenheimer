@@ -217,9 +217,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
     }
-    // An empty list is an Unassigned project's that nobody has given repositories;
-    // anything non-empty must be a list a project can hold.
-    if (this.props.repositories.length > 0) assertHoldable(this.props.repositories);
+    assertHoldable(this.props.repositories);
   }
 
   /**

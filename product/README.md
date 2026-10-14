@@ -437,3 +437,10 @@ earlier note:
   the activity timeline, the Briefing and the Merge confidence
   score are gone; watched repositories are set in Settings only
   (`next-steps/0.2-pull-requests.md`, "The screens as built").
+- `versions/mvp/10-api-modules-and-data-model.md` held a project to at
+  least one repository, and the console would not save one without (the
+  2026-09-26 line above). On 2026-10-14 the owner allowed a project with
+  no repository: it is a place for tasks, milestones, memory and sessions,
+  and folder and terminal sessions need none. A project that holds
+  repositories still offers a default among them (`PROJECTS_006`). The
+  Unassigned project keeps that name.

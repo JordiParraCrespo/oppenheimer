@@ -81,10 +81,11 @@ describe('a project’s repositories and defaults', () => {
     expect(project.createdByUserId).toBeNull();
   });
 
-  it('refuses to be created holding no repository, or none offered by default', () => {
-    expect(() => ProjectEntity.createNew({ ...VALID, repositories: [] })).toThrow(
-      ArgumentInvalidException,
-    );
+  it('is created holding no repository', () => {
+    expect(ProjectEntity.createNew({ ...VALID, repositories: [] }).repositories).toEqual([]);
+  });
+
+  it('refuses repositories with none offered by default', () => {
     expect(() => ProjectEntity.createNew({ ...VALID, repositories: [repo('1')] })).toThrow(
       ArgumentInvalidException,
     );

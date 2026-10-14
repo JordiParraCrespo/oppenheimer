@@ -157,7 +157,7 @@
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
       "PROJECTS_004": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
       "PROJECTS_005": "Ese proyecto todavía tiene sesiones sin cerrar.",
-      "PROJECTS_006": "Un proyecto necesita al menos un repositorio, y al menos uno de ellos ofrecido por defecto.",
+      "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",

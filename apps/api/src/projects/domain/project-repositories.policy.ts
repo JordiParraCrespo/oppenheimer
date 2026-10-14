@@ -23,17 +23,13 @@ export interface ProjectRepositoryProps {
   isDefault: boolean;
 }
 
-export type ProjectRepositoriesProblem =
-  | 'empty'
-  | 'no-default'
-  | 'duplicate'
-  | 'too-many'
-  | 'blank-base';
+export type ProjectRepositoriesProblem = 'no-default' | 'duplicate' | 'too-many' | 'blank-base';
 
 export function projectRepositoriesProblem(
   repositories: readonly ProjectRepositoryProps[],
 ): ProjectRepositoriesProblem | null {
-  if (repositories.length === 0) return 'empty';
+  // No repository is a project that holds none yet, not a problem.
+  if (repositories.length === 0) return null;
   if (repositories.length > MAX_PROJECT_REPOSITORIES) return 'too-many';
   if (
     new Set(repositories.map((repository) => repository.githubRepoId)).size !== repositories.length
