@@ -48,7 +48,9 @@ Version not set; the first open question below is where it lands.
 ## How it works
 
 The pipeline has three steps. Only the first is new technology; the
-other two are prompts over the existing LLM seam.
+other two are prompts over the existing LLM seam. The voice module owns
+the first two and knows nothing about sessions. The third belongs to
+the sessions module and takes any text, typed or dictated.
 
 ```
 browser                       control plane (apps/api)                  providers
@@ -57,8 +59,10 @@ hold key / tap mic
 MediaRecorder (webm/opus) ──▶ POST /v1/voice/transcriptions ─────────▶ speech-to-text
 VoiceRecorderBar levels         1. transcribe   (audio in memory only)    (Whisper-class)
                                 2. polish       LlmService ────────────▶ LLM
-                                3. intent?      LlmService ────────────▶ LLM
-text / form proposal  ◀──────── { text, proposal? }
+text into the prompt  ◀──────── { text, raw }
+new-session form ─────────────▶ POST /v1/sessions/proposals
+                                3. intent       LlmService ────────────▶ LLM
+suggested setup       ◀──────── { proposal }
 user reviews ── send ─────────▶ POST /v1/sessions (unchanged)
 ```
 
@@ -77,10 +81,12 @@ user reviews ── send ─────────▶ POST /v1/sessions (uncha
    vocabulary. It must not add content or answer the prompt. It is
    skipped when the raw transcript is already clean and short, and a
    "raw" toggle keeps the unpolished text one click away.
-3. **Intent (voice setup).** Only on the new-session screen, and only
-   when the user asked for it (the mic in the form header, not the one
-   in the composer): a structured-output LLM call reads the polished
-   text with the caller's own hosts, projects, repositories, base
+3. **Intent (setup from the prompt).** There is one mic, the
+   composer's, and it always dictates into the prompt. On the
+   new-session screen, once the prompt holds text that names a setup
+   (dictated or typed), the form calls `POST /v1/sessions/proposals`
+   with it. A structured-output LLM call in the sessions module reads
+   the text with the caller's own hosts, projects, repositories, base
    branches and agents as closed lists, and returns a
    `VoiceSessionProposal`, a Zod schema in `packages/shared` shaped like
    the composer's draft rather than the wire:
@@ -96,7 +102,8 @@ user reviews ── send ─────────▶ POST /v1/sessions (uncha
    repository picker stays empty and is flagged, and the send button
    stays disabled exactly as it does for a typed draft. The console
    fills the fields it is sure of, highlights the ones it guessed, and
-   leaves the rest for you. It never starts the
+   leaves the rest for you. The suggestions only fill fields still at
+   their default, and one click undoes them. It never starts the
    session on its own: **you always press send.** "Start it" spoken at
    the end can focus the send button, nothing more.
 
@@ -105,9 +112,9 @@ user reviews ── send ─────────▶ POST /v1/sessions (uncha
 A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 
 - `POST /v1/voice/transcriptions`: multipart audio (60 s and 10 MB
-  cap), `mode: 'dictate' | 'session-setup'`, optional `surface`
-  (`new-session`, `task`, `terminal`), and `projectId` to narrow the
-  vocabulary. It returns `{ text, raw, proposal? }`. It needs a new
+  cap) and an optional `projectId` to narrow the vocabulary. It
+  returns `{ text, raw }`, audio in and text out, whatever screen asked.
+  It needs a new
   `voice:transcribe` scope in the scope catalog, the feature flag below
   (`@RequireFlag`), Swagger decorators, and a per-user rate limit.
 - A port `SpeechToTextPort` with adapters on the pluggable pattern
@@ -135,6 +142,12 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 - Env: `VOICE_STT_PROVIDER`, `VOICE_STT_BASE_URL`, `VOICE_STT_API_KEY`,
   `VOICE_STT_MODEL` and `VOICE_POLISH_MODEL` in the root `.env.example`,
   each with a note.
+- The intent step is not in this module: it is
+  `POST /v1/sessions/proposals` (text in, `{ proposal }` out,
+  `sessions:write`) in `apps/api/src/sessions/`, which already knows the
+  caller's hosts, projects, repositories and agents. It is useful
+  without voice too: for a typed prompt, and later for Slack (0.4) and
+  the MCP server (0.6).
 - No new table for the first slice. A per-user dictionary (step 3)
   would be one small table, designed with `/design-database`.
 
@@ -154,8 +167,8 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
   focus, the way Wispr Flow uses Fn. The browser cannot see Fn, so the
   candidate is holding `Alt`+`Space`; the exact chord is an open
   question.
-- **Targets, in order:** the new-session composer, the form-level
-  "Set up by voice" mic, the task start-session dialog and the board's
+- **Targets, in order:** the new-session composer (with the setup
+  suggestions it triggers), the task start-session dialog and the board's
   task composer, then the running-session terminal (a bracketed paste
   through `SessionStream.send`, never on read-only shared panes).
 - **Plumbing:** `apps/web/nginx.conf` changes to `microphone=(self)`
@@ -199,7 +212,7 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 |---|-------|-------|-----------|
 | 0 | Spike (1–2 days) | `microphone=(self)`; record in Chrome, Safari and Firefox; the OpenAI-compatible adapter behind a hidden endpoint; measured latency for a 15 s clip on Groq vs OpenAI vs self-hosted; 20 real prompts scored raw vs polished | The provider is chosen with numbers, and stop-to-text is under ~1.5 s at p50 |
 | 1 | Dictate the prompt | The `voice` module (transcribe and polish), `useDictation`, `DictateButton` in the new-session composer, the flag, the scope, the error codes, screenshots | You can speak a prompt into a new session and send it |
-| 2 | Set up by voice | `mode: 'session-setup'`, the intent extraction with closed lists, the form prefilled with guesses highlighted | Most fields come out right on a set of spoken setups (the eval below) |
+| 2 | Set up from the prompt | `POST /v1/sessions/proposals` in the sessions module, the intent extraction with closed lists, the form prefilled with guesses highlighted | Most fields come out right on a set of spoken setups (the eval below) |
 | 3 | Dictate everywhere | Task dialog, task composer, terminal paste, the hold-to-talk hotkey, a personal dictionary (words and replacements) | Talking to a running agent works the way the composer does |
 | 4 | Later | Streaming partials; mobile/PWA (0.5) where voice beats a phone keyboard; Slack voice notes (0.4); a runner-side `whisper.cpp` so audio never leaves your host | — |
 
@@ -228,10 +241,8 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
    (best accuracy on code words), or a self-hosted `faster-whisper` on
    the dev server (private, ~€0)? Slice 0 decides with numbers, but
    which matters most to you?
-3. Is "set up by voice" a separate mic, or does every dictation on the
-   new-session screen try to fill the form?
-4. Languages: English only, or Spanish and Catalan as well? Whisper
+3. Languages: English only, or Spanish and Catalan as well? Whisper
    handles all three, but the polish prompt and the eval need each one.
-5. Should it ever start the session without a click (say, hold the
+4. Should it ever start the session without a click (say, hold the
    hotkey and finish with "go")? This note says no for now.
-6. Bring your own key per workspace, or one deployment-wide key?
+5. Bring your own key per workspace, or one deployment-wide key?

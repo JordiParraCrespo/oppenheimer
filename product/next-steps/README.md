@@ -69,3 +69,7 @@ where these land is the first open question below.
 - 2026-10-14: voice added, version not yet set: dictation into the
   composers and the terminal, and a spoken session setup that fills the
   new-session form (never starts it on its own).
+- 2026-10-14: voice has one mic, the composer's, which always dictates.
+  Setting up a session from what was said is the sessions module's
+  `POST /v1/sessions/proposals`, which takes any text, so the voice
+  endpoint stays audio in and text out.
