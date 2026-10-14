@@ -1,7 +1,7 @@
 import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
@@ -11,9 +11,9 @@ import {
   useCreateSession,
   useRenameSession,
   useRestartSession,
-  useSession,
   useSessionOpening,
   useSessions,
+  useSuspenseSession,
 } from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
@@ -52,18 +52,23 @@ function setup(
       </QueryClientProvider>
     );
   }
-  return { wrapper, queryClient };
+  // A Suspense read renders nothing until it answers: `result.current` is
+  // null until then.
+  function suspended({ children }: { children: ReactNode }) {
+    return wrapper({ children: <Suspense>{children}</Suspense> });
+  }
+  return { wrapper, suspended, queryClient };
 }
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-describe('useSession', () => {
+describe('useSuspenseSession', () => {
   it('reads a starting session again until the host has opened it, then stops', async () => {
     const findById = vi.fn().mockResolvedValueOnce(starting).mockResolvedValue(open);
-    const { wrapper } = setup({ findById });
-    const { result } = renderHook(() => useSession('s-1'), { wrapper });
+    const { suspended } = setup({ findById });
+    const { result } = renderHook(() => useSuspenseSession('s-1'), { wrapper: suspended });
 
-    await waitFor(() => expect(result.current.data?.isProvisioning).toBe(false), {
+    await waitFor(() => expect(result.current?.data.isProvisioning).toBe(false), {
       timeout: 5_000,
     });
     const reads = findById.mock.calls.length;
@@ -81,8 +86,8 @@ describe('useSession', () => {
     focusManager.setFocused(false);
     try {
       const findById = vi.fn().mockResolvedValue(starting);
-      const { wrapper } = setup({ findById });
-      renderHook(() => useSession('s-1'), { wrapper });
+      const { suspended } = setup({ findById });
+      renderHook(() => useSuspenseSession('s-1'), { wrapper: suspended });
 
       await waitFor(() => expect(findById.mock.calls.length).toBeGreaterThanOrEqual(2), {
         timeout: 5_000,
@@ -94,10 +99,10 @@ describe('useSession', () => {
 
   it('does not poll a session that was never starting', async () => {
     const findById = vi.fn().mockResolvedValue(open);
-    const { wrapper } = setup({ findById });
-    const { result } = renderHook(() => useSession('s-1'), { wrapper });
+    const { suspended } = setup({ findById });
+    const { result } = renderHook(() => useSuspenseSession('s-1'), { wrapper: suspended });
 
-    await waitFor(() => expect(result.current.data).toBe(open));
+    await waitFor(() => expect(result.current?.data).toBe(open));
     await pause(2_500);
     expect(findById).toHaveBeenCalledTimes(1);
   }, 10_000);
@@ -332,14 +337,14 @@ describe('session detail from the list', () => {
 
   it('opens on the list row with no read while the list is fresh', async () => {
     const findById = vi.fn().mockResolvedValue(read);
-    const { wrapper } = setup(
+    const { wrapper, suspended } = setup(
       { findAll: vi.fn().mockResolvedValue([listed]), findById },
       consoleDefaults,
     );
     const list = renderHook(() => useSessions(), { wrapper });
     await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
 
-    const { result } = renderHook(() => useSession('s-1'), { wrapper });
+    const { result } = renderHook(() => useSuspenseSession('s-1'), { wrapper: suspended });
 
     expect(result.current.data).toBe(listed);
     expect(findById).not.toHaveBeenCalled();
@@ -349,7 +354,7 @@ describe('session detail from the list', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       const findById = vi.fn().mockResolvedValue(read);
-      const { wrapper } = setup(
+      const { wrapper, suspended } = setup(
         { findAll: vi.fn().mockResolvedValue([listed]), findById },
         consoleDefaults,
       );
@@ -357,10 +362,10 @@ describe('session detail from the list', () => {
       await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
       vi.setSystemTime(Date.now() + 120_000);
 
-      const { result } = renderHook(() => useSession('s-1'), { wrapper });
+      const { result } = renderHook(() => useSuspenseSession('s-1'), { wrapper: suspended });
 
       expect(result.current.data).toBe(listed);
-      await waitFor(() => expect(result.current.data?.name).toBe(read.name));
+      await waitFor(() => expect(result.current.data.name).toBe(read.name));
       expect(findById).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();

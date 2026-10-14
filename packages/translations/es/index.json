@@ -802,6 +802,9 @@
         "title": "Esta sesión está parada",
         "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y esta página la volverá a abrir."
       }
+    },
+    "screen": {
+      "loadFailed": "No se ha podido actualizar esta sesión."
     }
   },
   "automations": {
@@ -977,6 +980,7 @@
       "failed": "Fallidas",
       "runs_one": "{{count}} ejecución",
       "runs_other": "{{count}} ejecuciones",
+      "loadFailed": "No se ha podido cargar el historial de ejecuciones.",
       "runs_many": "{{count}} ejecuciones"
     },
     "runs": {
@@ -1018,6 +1022,7 @@
       "loadFailed": "No se pudo cargar esta automatización."
     },
     "editor": {
+      "loadFailed": "No se han podido cargar tus proyectos y hosts.",
       "newTitle": "Nueva automatización",
       "editTitle": "Editar automatización",
       "steps": {

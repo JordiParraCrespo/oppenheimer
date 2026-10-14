@@ -37,7 +37,7 @@ export {
   defaultQueryClientOptions,
   type QueryPersistConfig,
 } from './persistence';
-export { useQueries, useQuery, useSuspenseQuery } from './query';
+export { useQueries, useQuery, useSuspenseQueries, useSuspenseQuery } from './query';
 export {
   createQueryClient,
   type SessionExpiryTarget,

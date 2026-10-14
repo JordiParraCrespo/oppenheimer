@@ -58,11 +58,10 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 const PROJECTS = [{ id: 'project-1', name: 'Web', isUnassigned: false }] as ProjectEntity[];
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useAutomations: () => {
+  useSuspenseAutomationsAndProjects: () => {
     const automations = useSyncExternalStore(world.subscribe, () => world.get().automations);
-    return { data: automations, isPending: false, error: null };
+    return { automations, projects: PROJECTS, error: null };
   },
-  useProjects: () => ({ data: PROJECTS, isPending: false, error: null }),
 }));
 
 vi.mock('@tanstack/react-router', () => ({

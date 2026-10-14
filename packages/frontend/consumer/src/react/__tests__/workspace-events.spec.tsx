@@ -2,7 +2,7 @@ import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
 import { type Query, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { WorkspaceStreamStatus } from '../../modules/organizations';
@@ -12,9 +12,9 @@ import { hostsKeys, useHostPresence } from '../hosts.queries';
 import { LIVE_POLL } from '../live-poll';
 import {
   sessionsKeys,
-  useSession,
   useSessionStartProgress,
   useSessions,
+  useSuspenseSession,
 } from '../sessions.queries';
 import { useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
@@ -160,7 +160,7 @@ describe('useWorkspaceEvents', () => {
       read: 'a session',
       queryKey: sessionsKeys.detail('s-1'),
       interval: LIVE_POLL.sessionOpening.openingInterval,
-      use: () => useSession('s-1'),
+      use: () => useSuspenseSession('s-1'),
     },
     {
       read: "a session's start log",
@@ -182,9 +182,10 @@ describe('useWorkspaceEvents', () => {
           useWorkspaceEvents('org-1');
           return use();
         },
-        { wrapper },
+        // The session's read suspends until it answers.
+        { wrapper: ({ children }) => wrapper({ children: <Suspense>{children}</Suspense> }) },
       );
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      await waitFor(() => expect(result.current?.isSuccess).toBe(true));
       expect(pollInterval(queryClient, queryKey)).toBe(interval);
 
       await status('live');

@@ -69,13 +69,11 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useSessions: () => {
-    const sessions = useSyncExternalStore(world.subscribe, () => world.get().sessions);
-    return { data: sessions, isPending: false };
-  },
-  useHosts: () => ({ data: [] }),
   // No project holds these rows, so they all sit under the one unfiled group.
-  useProjects: () => ({ data: [], isPending: false }),
+  useSuspenseSessionsProjectsHosts: () => {
+    const sessions = useSyncExternalStore(world.subscribe, () => world.get().sessions);
+    return { sessions, projects: [], hosts: [], error: null };
+  },
   useProjectsSnapshot: () => () => [],
   useRenameSession: () => ({ mutate: vi.fn(), error: null }),
   useMoveSession: () => ({ mutate: vi.fn(), error: null }),
@@ -105,7 +103,7 @@ vi.mock('@tanstack/react-router', () => ({
 // does in the app; its menus are not what this budgets.
 vi.mock('../components/sessions-filter-menu', () => ({ SessionsFilterMenu: () => null }));
 vi.mock('../components/session-filter-chips', () => ({ SessionFilterChips: () => null }));
-vi.mock('./new-session-button', () => ({ NewSessionButton: () => null }));
+vi.mock('../sections/new-session-button', () => ({ NewSessionButton: () => null }));
 vi.mock('../components/session-row-menu', () => ({ SessionRowMenu: () => null }));
 
 const MINUTE = 60_000;

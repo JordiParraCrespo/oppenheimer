@@ -47,9 +47,9 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  usePullRequestQueue: () => {
+  useSuspensePullRequestQueue: () => {
     const data = useSyncExternalStore(world.subscribe, world.get);
-    return { data, isPending: false, isError: false, error: null, status: 'success' };
+    return { data, error: null };
   },
   useMergePullRequest: () => ({ isSuccess: false, isPending: false, mutate: vi.fn() }),
 }));

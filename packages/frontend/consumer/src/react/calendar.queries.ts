@@ -37,12 +37,33 @@ export function useCalendarEvents<TData = CalendarEventEntity[]>(
   range: CalendarRange,
   options?: Omit<UseQueryOptions<CalendarEventEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
   return useQuery<CalendarEventEntity[], Error, TData>({
-    queryKey: calendarKeys.eventRange(range),
-    queryFn: () => app.calendar.findEvents(range),
+    ...useCalendarEventsQuery(range),
     ...options,
   });
+}
+
+/**
+ * {@link useCalendarEvents} under a Suspense `QueryState`; `select` for one
+ * of them, as there.
+ */
+export function useSuspenseCalendarEvents<TData = CalendarEventEntity[]>(
+  range: CalendarRange,
+  select?: (rows: CalendarEventEntity[]) => TData,
+) {
+  return useSuspenseQuery<CalendarEventEntity[], Error, TData>({
+    ...useCalendarEventsQuery(range),
+    ...(select ? { select } : {}),
+  });
+}
+
+/** The month's events read, for both hooks over it: the key and the fetch, once. */
+function useCalendarEventsQuery(range: CalendarRange) {
+  const app = useConsumerApp();
+  return {
+    queryKey: calendarKeys.eventRange(range),
+    queryFn: () => app.calendar.findEvents(range),
+  };
 }
 
 /** The viewer's Google accounts, oldest first; `select` for one of them or a count. */

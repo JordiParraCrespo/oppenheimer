@@ -76,6 +76,25 @@ export const pullRequestsKeys = {
  * scope and lane controls show. The previous scope stays on screen while the
  * next loads.
  */
+/**
+ * {@link usePullRequestQueue} under a Suspense `QueryState`, polling while
+ * the answer is still filling. A new scope is a new key, which suspends: the
+ * table reads its scope through `useDeferredValue`, so the rows on screen stay
+ * until the next scope has answered.
+ */
+export function useSuspensePullRequestQueue(scope: PullRequestScope) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PullRequestQueue, Error>({
+    queryKey: pullRequestsKeys.queue(scope),
+    queryFn: () => app.pullRequests.queue(scope),
+    ...usePollWhile<PullRequestQueue>(
+      'pullRequestsFilling',
+      pullRequestsKeys.queue(scope),
+      (data) => data?.filling === true,
+    ),
+  });
+}
+
 export function usePullRequestQueue<TData = PullRequestQueue>(
   scope: PullRequestScope,
   options?: Omit<UseQueryOptions<PullRequestQueue, Error, TData>, 'queryKey' | 'queryFn'>,
@@ -197,12 +216,11 @@ function useRepositoriesQuery() {
  * counts, medians, a lane mix and dates that name nothing. Reading them from
  * storage is what spares the page a skeleton on every visit.
  */
-export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
+export function useSuspensePullRequestAnalytics(range: PullRequestAnalyticsRange) {
   const app = useConsumerApp();
-  return useQuery<PullRequestAnalytics, Error>({
+  return useSuspenseQuery<PullRequestAnalytics, Error>({
     queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
-    placeholderData: keepPreviousData,
     meta: PERSIST_META,
   });
 }

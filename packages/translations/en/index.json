@@ -800,6 +800,9 @@
         "title": "This session is stopped",
         "body": "Its terminal isn’t running. Whoever shared it can restart it, and this page will open it again."
       }
+    },
+    "screen": {
+      "loadFailed": "Couldn’t refresh this session."
     }
   },
   "automations": {
@@ -974,7 +977,8 @@
       "succeeded": "Succeeded",
       "failed": "Failed",
       "runs_one": "{{count}} run",
-      "runs_other": "{{count}} runs"
+      "runs_other": "{{count}} runs",
+      "loadFailed": "Couldn’t load the run history."
     },
     "runs": {
       "all": "All",
@@ -1015,6 +1019,7 @@
       "loadFailed": "This automation could not be loaded."
     },
     "editor": {
+      "loadFailed": "Couldn’t load your projects and hosts.",
       "newTitle": "New automation",
       "editTitle": "Edit automation",
       "steps": {
