@@ -21,9 +21,10 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
           <Skeleton className="h-32 w-full" />
         </div>
       </QueryState.Pending>
-      {/* Only a 404 is "not found"; any other failure is a failure, and says so. */}
+      {/* Only a 404 is "not found"; any other failure is a failure, says so, and
+          tries again through the boundary. */}
       <QueryState.Error>
-        {(error) =>
+        {(error, retry) =>
           error instanceof AppError && error.status === 404 ? (
             <EmptyState>
               <EmptyState.Header>
@@ -31,7 +32,7 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
               </EmptyState.Header>
             </EmptyState>
           ) : (
-            <RouteError error={error} />
+            <RouteError error={error} onRetry={retry} />
           )
         }
       </QueryState.Error>

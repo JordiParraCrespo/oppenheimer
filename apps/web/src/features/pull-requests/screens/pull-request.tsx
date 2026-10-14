@@ -58,8 +58,10 @@ export function PullRequestScreen({
       </PaneBar>
       {
         {
+          // Keyed per view: a failure caught on one view must not stay on screen
+          // in place of the other.
           description: (
-            <QueryState>
+            <QueryState key="description">
               <QueryState.Pending>
                 <Skeleton className="h-96 w-full" />
               </QueryState.Pending>
@@ -70,7 +72,7 @@ export function PullRequestScreen({
             </QueryState>
           ),
           changes: (
-            <QueryState>
+            <QueryState key="changes">
               <QueryState.Pending>
                 <Skeleton className="min-h-0 w-full flex-1" />
               </QueryState.Pending>

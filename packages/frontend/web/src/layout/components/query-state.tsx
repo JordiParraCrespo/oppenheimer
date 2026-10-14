@@ -171,12 +171,17 @@ function QueryStatePending({ children }: { children: ReactNode }) {
  * The failure: `ErrorAlert` with the section's already-translated `fallback`
  * for a code with no sentence of its own, or `children` to say it another way
  * (a screen's `RouteError`, a 404 said as "not found"). Under a Suspense root
- * the alert carries Try again.
+ * the alert carries Try again, and a function child is handed the same
+ * `retry`: only it resets the boundary, so another way of saying the failure
+ * must wire its own button to it.
  */
 function QueryStateError(
   props:
     | { fallback: string; className?: string; children?: never }
-    | { children: (error: unknown) => ReactNode },
+    | {
+        /** `retry` is set under a Suspense root: it resets the boundary so the read fetches again. */
+        children: (error: unknown, retry: (() => void) | undefined) => ReactNode;
+      },
 ) {
   const { t } = useTranslation();
   const { failure, retry } = useRung('Error');
@@ -196,7 +201,7 @@ function QueryStateError(
         }
       />
     );
-  return props.children(failure.error);
+  return props.children(failure.error, retry);
 }
 
 /** What an answer the root's `isEmpty` calls empty shows. */
