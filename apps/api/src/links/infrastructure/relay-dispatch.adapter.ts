@@ -18,6 +18,7 @@ import type {
   SessionLaunchSpec,
   SessionPrepareSpec,
 } from '../../sessions/application/session-dispatch.port';
+import { runnerTakesPlace } from '../../sessions/domain/runner-refusal.policy';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
@@ -57,11 +58,9 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   ): Promise<SessionDispatchOutcome> {
     return this.withLink(session, (link) => {
       // A runner that predates folder sessions would refuse a create with no
-      // checkouts. The row stays `starting`, so the hello of an updated runner
-      // is sent it.
-      if (session.place === 'folder' && !link.capabilities.includes('session.folder')) {
-        return NOT_SUPPORTED;
-      }
+      // checkouts: the same rule the create refuses by (`runnerRefusal`). The
+      // row stays `starting`, so the hello of an updated runner is sent it.
+      if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
       // A runner that cannot take these files at launch would drop them or
       // refuse them, and start the task without them. The ids stay in the
       // log, so the hello of an updated runner is sent them.
@@ -167,7 +166,6 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     return this.deliver(link, {
       type: 'repository.prepare',
       commandId: randomUUID(),
-      accountId: spec.accountId,
       workspaceId: spec.workspaceId,
       githubRepoId: spec.githubRepoId,
       repositoryFullName: spec.repositoryFullName,
@@ -210,7 +208,6 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     commandId: randomUUID(),
     sessionId: session.id,
     organizationSlug: spec.organizationSlug,
-    accountId: spec.accountId,
     workspaceId: spec.workspaceId,
     sessionSlug: session.slug,
     agent: session.agent,

@@ -205,6 +205,68 @@ func TestAStoreIsBareAndARenamedRepositoryKeepsIt(t *testing.T) {
 	}
 }
 
+// A repository renamed away leaves its store under the old name; another
+// repository that later takes that name gets a store of its own, never the
+// first one's, and the first still finds its store by id.
+func TestAStoreUnderAReusedNameIsNotTakenByTheNewRepository(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	first := layout.Store(repo)
+
+	// Repository 42 was renamed; repository 7 took its old full name.
+	taker := domain.Repository{Tenant: tenant, FullName: repo.FullName, GithubID: 7}
+	if c.Has(taker) {
+		t.Fatal("the new repository counted the old one's store as its own")
+	}
+	if err := c.Ensure(ctx, taker, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	second := strings.TrimSuffix(first, ".git") + "-7.git"
+	if got := strings.TrimSpace(git(t, second, "config", "oppenheimer.repo-id")); got != "7" {
+		t.Fatalf("the new repository's store at %s records id %q, want 7", second, got)
+	}
+	if got := strings.TrimSpace(git(t, first, "config", "oppenheimer.repo-id")); got != "42" {
+		t.Fatalf("the old store now records id %q, want 42", got)
+	}
+	if !c.Has(taker) {
+		t.Fatal("the new repository's own store is not found again")
+	}
+
+	renamed := domain.Repository{Tenant: tenant, FullName: "jordi/renamed", GithubID: 42}
+	path := checkout(layout, "renamed")
+	if err := c.Add(ctx, renamed, path, "oppenheimer/renamed", "main", true); err != nil {
+		t.Fatalf("add on the renamed repository: %v", err)
+	}
+}
+
+// A store reused after a rename fetches from the remote the caller names now,
+// not the one it was made with.
+func TestAReusedStoreFetchesFromTheRemoteItIsGiven(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	moved := filepath.Join(t.TempDir(), "renamed.git")
+	if err := os.Rename(remote, moved); err != nil {
+		t.Fatal(err)
+	}
+
+	renamed := domain.Repository{Tenant: tenant, FullName: "jordi/renamed", GithubID: 42}
+	if err := c.Ensure(ctx, renamed, moved, "main"); err != nil {
+		t.Fatalf("a fetch from the remote the store was not made with: %v", err)
+	}
+	store := layout.Store(repo)
+	if got := strings.TrimSpace(git(t, store, "remote", "get-url", "origin")); got != moved {
+		t.Fatalf("origin = %q, want %q", got, moved)
+	}
+}
+
 // Has is what tells a first session's download from a later one's fetch, and
 // a clone that failed half-way must not count as the repository being here.
 func TestHasIsTrueOnlyOnceAWholeCloneIsInPlace(t *testing.T) {

@@ -20,9 +20,8 @@ import { RelayDispatchAdapter } from '../infrastructure/relay-dispatch.adapter';
 const ORG = 'b8a4c2d0-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
 const PROJECT = 'c9b5d3e1-2f30-4b4c-9d5e-6f708192a3b4';
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
-const OWNER = 'e1d7f503-4152-4d6e-9f70-8192a3b4c5d6';
-/** What the launch factory reads off the workspace and the host. */
-const NAMES = { organizationSlug: 'jordi', accountId: OWNER, workspaceId: ORG };
+/** What the launch factory reads off the workspace. */
+const NAMES = { organizationSlug: 'jordi', workspaceId: ORG };
 
 function session(agent: 'claude-code' | 'shell' = 'claude-code'): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
@@ -95,10 +94,10 @@ describe('RelayDispatchAdapter', () => {
     const parsed = sessionCreateSchema.parse(message);
     expect(parsed.sessionId).toBe(entity.id);
     expect(parsed.organizationSlug).toBe('jordi');
-    // The work folder's levels on the host: the account it is paired with,
-    // then the session's workspace (24 §2).
-    expect(parsed.accountId).toBe(OWNER);
+    // The work folder's level under the account the host is paired with
+    // (24 §2); the account itself is the pairing's, never the frame's.
     expect(parsed.workspaceId).toBe(ORG);
+    expect(message).not.toHaveProperty('accountId');
     expect(parsed.sessionSlug).toBe('bold-otter-3f9a7k');
     expect(parsed.branch).toBe('oppenheimer/xrp-mobile/bold-otter-3f9a7k');
     expect(parsed.folder).toBeUndefined();
@@ -133,7 +132,6 @@ describe('RelayDispatchAdapter', () => {
       const parsed = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
       expect(parsed).toMatchObject({
         sessionId: entity.id,
-        accountId: OWNER,
         workspaceId: ORG,
         folder: '/home/jordi/notes',
         checkouts: [],
@@ -155,11 +153,10 @@ describe('RelayDispatchAdapter', () => {
     });
   });
 
-  it('names the account and workspace on a prepare', () => {
+  it('names the workspace on a prepare', () => {
     const { adapter, link } = harness(true, ['repository.prepare']);
 
     const outcome = adapter.prepare(HOST, {
-      accountId: OWNER,
       workspaceId: ORG,
       githubRepoId: 42,
       repositoryFullName: 'acme/xrp-mobile',
@@ -170,7 +167,7 @@ describe('RelayDispatchAdapter', () => {
 
     expect(outcome).toEqual({ delivered: true, hints: [] });
     const sent = repositoryPrepareSchema.strict().parse(vi.mocked(link.send).mock.calls[0]?.[0]);
-    expect(sent).toMatchObject({ accountId: OWNER, workspaceId: ORG, githubRepoId: 42 });
+    expect(sent).toMatchObject({ workspaceId: ORG, githubRepoId: 42 });
   });
 
   it('sends a blank terminal with no permission level', async () => {

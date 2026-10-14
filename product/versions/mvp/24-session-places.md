@@ -49,7 +49,11 @@ the OS's application-support directory, its worktrees under
 - **The account level** is the pairing: a runner paired with one
   Oppenheimer account writes under that account's folder. Several
   accounts on one machine are several runners, each with its own home
-  and its own account folder in the same work folder.
+  and its own account folder in the same work folder. The folder is
+  named by the account id the runner receives at pairing:
+  `POST /hosts/register` answers it beside the host id, the runner keeps
+  it in its identity, and no later command repeats it. An identity paired
+  before that answer existed names the level by its host id.
 - **There is no project level.** A project is metadata (10); a session's
   folder never moves when it moves to another project.
 - **`.oppenheimer/` is the one hidden name** a managed folder carries, a
@@ -94,7 +98,9 @@ away in between.
 
 - **Protocol.** `session.create` carries the place: checkouts for a
   worktree session, an absolute `folder` path for a folder session (never
-  both). `fs.list` lists a directory. A runner says it understands both
+  both), and the workspace id; the account is not on the frame, it is
+  the pairing's (§2). `repository.prepare` carries the workspace the
+  same way. `fs.list` lists a directory. A runner says it understands both
   in its `hello` capabilities; the API sends neither to a runner that does
   not.
 - **API.** `work_session` records the place (`worktree` | `folder`) and,
@@ -127,3 +133,6 @@ after that, as the other chips do (05, changed 2026-10-14).
 - 2026-10-14: the permission level opens on `auto` and is remembered.
 - 2026-10-14: not production, so no migration: a runner on this layout
   ignores the old one.
+- 2026-10-14: the account folder is named by the account id the runner
+  receives at pairing (`POST /hosts/register`), not by a field on every
+  command: the frames carry the workspace only.

@@ -20,15 +20,14 @@ export interface SessionDispatchOutcome {
 /**
  * What the host is told to make. Every path segment is an id or a
  * unique-constrained column, so the runner derives
- * `<accountId>/<workspaceId>/sessions/<sessionSlug>/` without asking
- * (`product/versions/mvp/24-session-places.md` §2) — and only the names it
- * cannot read off the session travel here.
+ * `<account>/<workspaceId>/sessions/<sessionSlug>/` without asking
+ * (`product/versions/mvp/24-session-places.md` §2) — the account being the one
+ * it was paired with — and only the names it cannot read off the session
+ * travel here.
  */
 export interface SessionLaunchSpec {
   /** The workspace's slug, read through `WORKSPACE_LOOKUP`. */
   organizationSlug: string;
-  /** The account the host is paired with: the host's owner, the work folder's top level. */
-  accountId: string;
   /** The workspace the session is in: the session's organization. */
   workspaceId: string;
   /**
@@ -70,8 +69,7 @@ export interface SessionCloseSpec {
  * cloned or fetched and a spare worktree made at `baseBranch` (02 §5).
  */
 export interface SessionPrepareSpec {
-  /** Whose stores to warm: the host's owner and the caller's workspace (24 §2). */
-  accountId: string;
+  /** Whose stores to warm: the caller's workspace, under the host's account (24 §2). */
   workspaceId: string;
   githubRepoId: number;
   repositoryFullName: string;

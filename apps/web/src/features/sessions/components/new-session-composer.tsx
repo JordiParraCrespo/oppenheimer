@@ -129,7 +129,8 @@ export function NewSessionComposer({
         engine={engine}
         onSubmit={(text) => {
           const task = text.trim();
-          if (!task && !taskOptional) return;
+          // A file rides a written task: the text is optional only with none held.
+          if (!task && (!taskOptional || files.length > 0)) return;
           onSubmit(
             task,
             files.map(({ file }) => file),

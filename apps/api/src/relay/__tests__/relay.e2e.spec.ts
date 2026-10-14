@@ -113,6 +113,8 @@ async function boot(): Promise<World> {
       controlPlaneUrl: origin,
       fingerprint: CP_FINGERPRINT,
       publicKey: keys.publicBase64,
+      // The account the pairing answered: the work folder's top level.
+      accountId: USER,
       channel: 'stable',
       registeredAt: new Date().toISOString(),
     }),
@@ -284,7 +286,6 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       commandId: randomUUID(),
       sessionId: SESSION,
       organizationSlug: 'jordi',
-      accountId: USER,
       workspaceId: ORG,
       sessionSlug: 'bold-otter-3f9a7k',
       agent: 'claude-code',

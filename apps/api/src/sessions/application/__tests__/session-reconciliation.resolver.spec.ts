@@ -35,15 +35,11 @@ function harness(rows: HostSessionRow[]) {
   const dispatch = {
     create: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
   } as unknown as SessionDispatchPort;
-  const launches = new SessionLaunchSpecFactory(
-    {
-      slugOf: vi.fn().mockResolvedValue('jordi'),
-      isMember: vi.fn(),
-      ownedBy: vi.fn().mockResolvedValue([]),
-    },
-    // The host's owner, whoever started the session: a runner is one account's.
-    { ownerOf: vi.fn().mockResolvedValue('owner') },
-  );
+  const launches = new SessionLaunchSpecFactory({
+    slugOf: vi.fn().mockResolvedValue('jordi'),
+    isMember: vi.fn(),
+    ownedBy: vi.fn().mockResolvedValue([]),
+  });
   return {
     sessions,
     dispatch,
@@ -59,7 +55,6 @@ describe('SessionReconciliationResolver', () => {
     expect(outcome).toEqual({ redispatched: [owed.id], stopped: [] });
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
-      accountId: 'owner',
       workspaceId: 'org',
       branch: 'oppenheimer/bold-otter-3f9a7k',
       prompt: 'fix it',
@@ -77,7 +72,6 @@ describe('SessionReconciliationResolver', () => {
 
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
-      accountId: 'owner',
       workspaceId: 'org',
     });
   });

@@ -58,14 +58,11 @@ function project() {
 }
 
 function launches(): SessionLaunchSpecFactory {
-  return new SessionLaunchSpecFactory(
-    {
-      slugOf: vi.fn().mockResolvedValue('jordi'),
-      isMember: vi.fn(),
-      ownedBy: vi.fn().mockResolvedValue([]),
-    },
-    { ownerOf: vi.fn().mockResolvedValue('owner-1') },
-  );
+  return new SessionLaunchSpecFactory({
+    slugOf: vi.fn().mockResolvedValue('jordi'),
+    isMember: vi.fn(),
+    ownedBy: vi.fn().mockResolvedValue([]),
+  });
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
@@ -125,7 +122,7 @@ describe('CreateSessionCommandHandler', () => {
       })),
     } as unknown as WorkSessionRepositoryPort;
     hosts = {
-      assertUsable: vi.fn().mockResolvedValue({ ownerUserId: 'owner-1', probedTools: null }),
+      assertUsable: vi.fn().mockResolvedValue({ probedTools: null }),
     };
     dispatch = {
       create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
@@ -291,7 +288,6 @@ describe('CreateSessionCommandHandler', () => {
     // A runner from before Grok probes no `grok`, and would fail the launch as an
     // unknown agent after the session was recorded.
     hosts.assertUsable.mockResolvedValue({
-      ownerUserId: 'owner-1',
       probedTools: ['git', 'tmux', 'claude', 'codex', 'opencode'],
     });
     const grok = command({ input: { ...INPUT, agent: 'grok' } });
@@ -329,7 +325,6 @@ describe('CreateSessionCommandHandler', () => {
       const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
       expect(spec).toEqual({
         organizationSlug: 'jordi',
-        accountId: 'owner-1',
         workspaceId: 'org-acme',
       });
     });
@@ -359,7 +354,6 @@ describe('CreateSessionCommandHandler', () => {
     const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
     expect(spec).toMatchObject({
       organizationSlug: 'jordi',
-      accountId: 'owner-1',
       workspaceId: 'org-acme',
       branch: expect.stringMatching(/^oppenheimer\//),
     });

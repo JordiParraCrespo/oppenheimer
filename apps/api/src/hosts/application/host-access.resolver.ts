@@ -24,10 +24,6 @@ export class HostAccessResolver implements HostAccessPort {
     if (found.isNone() || found.unwrap().isUnpaired) {
       throw new AppError(HostErrors.NOT_FOUND, { detail: `No usable host with id ${hostId}` });
     }
-    const host = found.unwrap();
-    return {
-      ownerUserId: host.ownerUserId,
-      probedTools: this.mapper.toProbedTools(host.capabilities),
-    };
+    return { probedTools: this.mapper.toProbedTools(found.unwrap().capabilities) };
   }
 }

@@ -45,7 +45,7 @@ export class PrepareSessionCommandHandler
     const { scope, input } = command;
     // The stores are warmed under the workspace the session will be in.
     if (!scope.organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
-    const host = await this.hosts.assertUsable(scope, input.hostId);
+    await this.hosts.assertUsable(scope, input.hostId);
     // Asked before a token is minted: a host that cannot take one gets none.
     const refusal = this.dispatch.prepareRefusal(input.hostId);
     if (refusal) return { hints: [refusal] };
@@ -65,7 +65,6 @@ export class PrepareSessionCommandHandler
       const sealed = await this.keys.sealFor(input.hostId, Buffer.from(minted.token, 'utf8'));
       if (!sealed) return { hints: ['host_offline'] };
       const outcome = this.dispatch.prepare(input.hostId, {
-        accountId: host.ownerUserId,
         workspaceId: scope.organizationId,
         githubRepoId: checkout.githubRepoId,
         repositoryFullName: repository.fullName,

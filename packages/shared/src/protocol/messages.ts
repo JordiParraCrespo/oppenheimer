@@ -225,9 +225,10 @@ export type EventsAckMessage = z.infer<typeof eventsAckSchema>;
  * Launch a session: the directories to make, the repositories to check out, and
  * where the agent starts.
  *
- * Every path segment is a unique-constrained column, so the runner derives
- * `workspaces/<organizationSlug>/sessions/<sessionSlug>/` without asking. No
- * project travels: a project is metadata, and nothing on a host is named after
+ * Every path segment is an id or a unique-constrained column, so the runner
+ * derives `<account>/<workspace>/sessions/<sessionSlug>/` without asking: the
+ * account is the one it was paired with (`POST /hosts/register` answers it),
+ * and the workspace travels here (24 §2). No project travels: a project is metadata, and nothing on a host is named after
  * it. `branch` is always the session's own — `oppenheimer/<session>`, or the
  * name its checkouts already recorded — created from each checkout's base and
  * never the base itself.
@@ -239,12 +240,11 @@ export const sessionCreateSchema = z
     sessionId: sessionIdSchema,
     organizationSlug: gitRefSchema,
     /**
-     * The account the host's pairing belongs to and the workspace the session
-     * is in. The runner names the work folder's levels by them,
-     * `<account>/<workspace>/sessions/<sessionSlug>/` (24 §2): ids, because a
-     * path never changes after it is made and a slug can be edited.
+     * The workspace the session is in. The runner names the work folder's
+     * level under its account by it, `<account>/<workspace>/sessions/<sessionSlug>/`
+     * (24 §2): an id, because a path never changes after it is made and a slug
+     * can be edited. The account is not here: it is the pairing's.
      */
-    accountId: z.uuid(),
     workspaceId: z.uuid(),
     sessionSlug: gitRefSchema,
     agent: protocolAgentSchema,
@@ -520,8 +520,10 @@ export type HostPreflightMessage = z.infer<typeof hostPreflightSchema>;
 export const repositoryPrepareSchema = z.object({
   type: z.literal('repository.prepare'),
   commandId: commandIdSchema,
-  /** Whose stores to warm: the work folder's `<account>/<workspace>/repos/` (24 §2). */
-  accountId: z.uuid(),
+  /**
+   * Whose stores to warm: the work folder's `<account>/<workspace>/repos/`
+   * (24 §2), the account being the one the runner was paired with.
+   */
   workspaceId: z.uuid(),
   githubRepoId: githubRepoIdSchema,
   repositoryFullName: gitRefSchema,

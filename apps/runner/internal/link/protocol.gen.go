@@ -316,7 +316,6 @@ type SessionCreate struct {
 	CommandID        string                `json:"commandId"`
 	SessionID        string                `json:"sessionId"`
 	OrganizationSlug string                `json:"organizationSlug"`
-	AccountID        string                `json:"accountId"`
 	WorkspaceID      string                `json:"workspaceId"`
 	SessionSlug      string                `json:"sessionSlug"`
 	Agent            string                `json:"agent"`
@@ -483,7 +482,6 @@ type CredentialsRevoke struct {
 type RepositoryPrepare struct {
 	Type               string    `json:"type"`
 	CommandID          string    `json:"commandId"`
-	AccountID          string    `json:"accountId"`
 	WorkspaceID        string    `json:"workspaceId"`
 	GithubRepoID       int64     `json:"githubRepoId"`
 	RepositoryFullName string    `json:"repositoryFullName"`

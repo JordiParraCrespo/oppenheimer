@@ -63,18 +63,12 @@ describe('HostAccessResolver', () => {
     );
 
     await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({
-      ownerUserId: 'jordi',
       probedTools: ['git', 'grok'],
     });
   });
 
-  it('admits a host the caller can reach, and says whose it is', async () => {
-    // The owner is the account its runner is paired with: what names the top
-    // of the host's work folder, whoever is starting the work.
-    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({
-      ownerUserId: 'jordi',
-      probedTools: null,
-    });
+  it('admits a host the caller can reach', async () => {
+    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({ probedTools: null });
     expect(hosts.findOneById).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'jordi' }),
       'host-1',

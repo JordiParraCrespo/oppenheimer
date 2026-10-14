@@ -453,4 +453,7 @@ earlier note:
   2026-10-14 the owner made the place a choice, a new worktree or a folder
   already on the host, and moved the runner's work to `~/oppenheimer/`
   as `<account>/<workspace>/{repos, agents, sessions}`
-  (`versions/mvp/24-session-places.md`).
+  (`versions/mvp/24-session-places.md`). The same day the account level's
+  name was settled as the id the runner receives when it is paired
+  (`POST /hosts/register` answers it), so `session.create` and
+  `repository.prepare` carry the workspace only (24 §2, §5).

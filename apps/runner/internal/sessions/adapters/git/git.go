@@ -122,33 +122,50 @@ func (c *Client) lock(store string) func() {
 	return m.Unlock
 }
 
-// storeOf finds a repository's store: under its own name first, else, among
-// the workspace's stores, the one that records the repository's GitHub id —
-// a repository renamed on GitHub keeps the store it already has. Neither
-// found, it is the path a new store is made at.
+// storeOf finds a repository's store. Under its own name first, when that
+// store records this repository's GitHub id (or records none, as a store the
+// CLI made does not); else, among the workspace's stores, the one that records
+// the id — a repository renamed on GitHub keeps the store it already has.
+// Neither found, it is the path a new store is made at: the repository's own
+// name, or, when another repository's store already holds that name (it was
+// renamed away and this one took its old name), the name with the id after it.
 func (c *Client) storeOf(repo domain.Repository) string {
 	named := c.layout.Store(repo)
-	if repo.GithubID == 0 || whole(named) {
-		return named
-	}
-	repos := c.layout.Repos(repo.Tenant)
-	entries, err := os.ReadDir(repos)
-	if err != nil {
+	if repo.GithubID == 0 {
 		return named
 	}
 	want := strconv.FormatInt(repo.GithubID, 10)
-	for _, entry := range entries {
-		if !entry.IsDir() || !strings.HasSuffix(entry.Name(), ".git") || strings.HasPrefix(entry.Name(), ".") {
-			continue
-		}
-		store := filepath.Join(repos, entry.Name())
-		out, err := c.run(context.Background(), command{timeout: quickTimeout},
-			"config", "--file", filepath.Join(store, "config"), "--get", repoIDKey)
-		if err == nil && strings.TrimSpace(out) == want {
-			return store
+	if whole(named) {
+		if id := c.repoIDOf(named); id == "" || id == want {
+			return named
 		}
 	}
-	return named
+	repos := c.layout.Repos(repo.Tenant)
+	if entries, err := os.ReadDir(repos); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() || !strings.HasSuffix(entry.Name(), ".git") || strings.HasPrefix(entry.Name(), ".") {
+				continue
+			}
+			store := filepath.Join(repos, entry.Name())
+			if store != named && c.repoIDOf(store) == want {
+				return store
+			}
+		}
+	}
+	if !whole(named) {
+		return named
+	}
+	return strings.TrimSuffix(named, ".git") + "-" + want + ".git"
+}
+
+// repoIDOf is the GitHub id a store records, empty when it records none.
+func (c *Client) repoIDOf(store string) string {
+	out, err := c.run(context.Background(), command{timeout: quickTimeout},
+		"config", "--file", filepath.Join(store, "config"), "--get", repoIDKey)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
 }
 
 // whole reports a store that is all there. A store is made beside its place
@@ -185,6 +202,13 @@ func (c *Client) Ensure(ctx context.Context, repo domain.Repository, remote, ref
 	store := c.storeOf(repo)
 	defer c.lock(store)()
 	if whole(store) {
+		// The store may have been made under the repository's old name, or
+		// from another remote: what is fetched is what the caller names now.
+		if remote != "" {
+			if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "remote", "set-url", "origin", remote); err != nil {
+				return err
+			}
+		}
 		if landed := c.deepeningOf(store); landed != nil {
 			// A deepen is fetching every branch right now, from a clone made
 			// moments ago: a ref the clone brought is current, and a second

@@ -17,7 +17,7 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	in, checkout, err := createInput(m)
+	in, checkout, err := createInput(m, h.account())
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
@@ -59,8 +59,9 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 // createInput reads a `session.create` into what the sessions service takes:
 // a folder session when it names a folder, else a worktree session on its one
 // checkout, under the account's and workspace's levels of the work folder
-// (24 §2, §3). checkout is the frame's checkout, nil for a folder session.
-func createInput(m link.SessionCreate) (sessionsapp.CreateInput, *link.Checkout, error) {
+// (24 §2, §3). account is the pairing's (linkHandler.account). checkout is the
+// frame's checkout, nil for a folder session.
+func createInput(m link.SessionCreate, account string) (sessionsapp.CreateInput, *link.Checkout, error) {
 	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
 	if !ok {
 		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent)
@@ -95,7 +96,7 @@ func createInput(m link.SessionCreate) (sessionsapp.CreateInput, *link.Checkout,
 		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
 			"the agent is to start in checkout %q, which the frame does not carry", *m.CwdCheckoutID)
 	}
-	in.Tenant = sessionsdomain.Tenant{Account: m.AccountID, Workspace: m.WorkspaceID}
+	in.Tenant = sessionsdomain.Tenant{Account: account, Workspace: m.WorkspaceID}
 	in.WorkspaceSlug = m.OrganizationSlug
 	in.Slug = m.SessionSlug
 	in.Directory = first.DirectoryName
@@ -105,6 +106,17 @@ func createInput(m link.SessionCreate) (sessionsapp.CreateInput, *link.Checkout,
 	in.Branch = m.Branch
 	in.CheckoutID, in.GithubRepoID = first.CheckoutID, first.GithubRepoID
 	return in, &first, nil
+}
+
+// account is the work folder's top level for everything the link sends: the
+// account this host was paired with (24 §2), which no frame repeats. An
+// identity paired before registration answered one names its folder by the
+// host's own id, which is as stable.
+func (h *linkHandler) account() string {
+	if h.identity.AccountID != "" {
+		return h.identity.AccountID
+	}
+	return h.identity.HostID
 }
 
 // lifecycleCommand is what lifecycle reads of stop, restart, close,
@@ -212,7 +224,7 @@ func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPr
 		return
 	}
 	repo := sessionsdomain.Repository{
-		Tenant:   sessionsdomain.Tenant{Account: m.AccountID, Workspace: m.WorkspaceID},
+		Tenant:   sessionsdomain.Tenant{Account: h.account(), Workspace: m.WorkspaceID},
 		FullName: m.RepositoryFullName, GithubID: m.GithubRepoID,
 	}
 	if err := repo.Validate(); err != nil {

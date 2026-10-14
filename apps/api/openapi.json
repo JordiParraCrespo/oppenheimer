@@ -17423,6 +17423,11 @@
             "format": "uuid",
             "description": "The host this machine now is."
           },
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the host is paired with, its owner. The runner names the top level of its work folder by it."
+          },
           "fingerprint": {
             "type": "string",
             "description": "SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it."
@@ -17438,7 +17443,7 @@
             "example": "https://releases.oppenheimer.dev"
           }
         },
-        "required": ["hostId", "fingerprint"]
+        "required": ["hostId", "accountId", "fingerprint"]
       },
       "HostTimelineEntryResponseDto": {
         "type": "object",

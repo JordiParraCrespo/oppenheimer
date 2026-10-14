@@ -13,7 +13,6 @@ import { HostAccountErasure } from './application/host-account-erasure.resolver'
 import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
 import { HostKeyResolver } from './application/host-key.resolver';
-import { HostOwnerResolver } from './application/host-owner.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
 import type { HostUsagePort } from './application/host-usage.port';
 import { HostUsageRegistry } from './application/host-usage.registry';
@@ -49,7 +48,6 @@ import {
   HOST_ASSERTION,
   HOST_KEY,
   HOST_METADATA_REPOSITORY,
-  HOST_OWNER,
   HOST_PAIRING_TOKEN_REPOSITORY,
   HOST_PRESENCE,
   HOST_REPOSITORY,
@@ -132,7 +130,6 @@ const resolvers: Provider[] = [
   { provide: HOST_PRESENCE, useClass: HostPresenceResolver },
   { provide: HOST_VITALS, useClass: HostVitalsResolver },
   { provide: HOST_KEY, useClass: HostKeyResolver },
-  { provide: HOST_OWNER, useClass: HostOwnerResolver },
 ];
 
 /**
@@ -187,15 +184,7 @@ const resolvers: Provider[] = [
   //
   // `HostUsageRegistry` is the other half of that surface: what runs on a host
   // is contributed into it by the module that owns the work.
-  exports: [
-    HOST_ASSERTION,
-    HOST_ACCESS,
-    HOST_PRESENCE,
-    HOST_VITALS,
-    HOST_KEY,
-    HOST_OWNER,
-    HostUsageRegistry,
-  ],
+  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_VITALS, HOST_KEY, HostUsageRegistry],
 })
 export class HostsModule {
   /**

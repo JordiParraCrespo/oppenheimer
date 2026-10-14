@@ -89,17 +89,14 @@ describe('where a session runs', () => {
     expect(work.checkouts).toEqual([]);
   });
 
-  it('refuses a stored row whose path does not match its place', () => {
+  it('reads its place off the stored folder, so the two cannot disagree', () => {
     const props = session().getProps();
-    expect(() =>
-      WorkSessionEntity.create({
-        id: 'session-1',
-        props: { ...props, place: 'folder', folderPath: null },
-      }),
-    ).toThrow(/folder exactly when/);
-    expect(() =>
-      WorkSessionEntity.create({ id: 'session-1', props: { ...props, folderPath: '/srv' } }),
-    ).toThrow(/folder exactly when/);
+    const stored = WorkSessionEntity.create({
+      id: 'session-1',
+      props: { ...props, folderPath: '/srv' },
+    });
+    expect(stored.place).toBe('folder');
+    expect(WorkSessionEntity.create({ id: 'session-2', props }).place).toBe('worktree');
   });
 });
 

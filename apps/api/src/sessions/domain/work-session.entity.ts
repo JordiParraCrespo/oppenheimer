@@ -47,11 +47,12 @@ export interface WorkSessionProps extends SessionFold {
   slug: string;
   agent: SessionAgent;
   /**
-   * Where it runs: a `worktree` per checkout, or a `folder` already on the host
-   * (`product/versions/mvp/24-session-places.md`). Immutable, like the agent.
+   * The folder already on the host the session runs in, absolute; null for a
+   * session that runs in a worktree per checkout
+   * (`product/versions/mvp/24-session-places.md`). The one stored fact the
+   * place is read from (`place`), so the two cannot disagree. Immutable, like
+   * the agent.
    */
-  place: SessionPlace;
-  /** A folder session's absolute path on the host; null exactly for a worktree session. */
   folderPath: string | null;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
@@ -136,7 +137,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: props.hostId,
         slug: props.slug,
         agent: props.agent,
-        place: props.folder ? 'folder' : 'worktree',
         folderPath: props.folder || null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
@@ -227,8 +227,9 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agent;
   }
 
+  /** Where it runs, read off `folderPath`: a folder on the host, or a worktree per checkout. */
   get place(): SessionPlace {
-    return this.props.place;
+    return this.props.folderPath === null ? 'worktree' : 'folder';
   }
 
   /** The folder a folder session runs in; null for a worktree session. */
@@ -417,7 +418,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    */
   attachCheckout(checkout: SessionCheckoutEntity): void {
     // A folder is the person's: nothing is cloned into it, so it holds no checkout.
-    if (this.props.place === 'folder') {
+    if (this.place === 'folder') {
       throw new ArgumentInvalidException('A session in a folder on the host has no checkouts');
     }
     if (this.props.checkouts.some((existing) => existing.id === checkout.id)) return;
@@ -465,11 +466,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     }
     if (!this.props.hostId?.trim()) {
       throw new ArgumentNotProvidedException('A session must name a host');
-    }
-    if ((this.props.place === 'folder') !== Boolean(this.props.folderPath)) {
-      throw new ArgumentInvalidException(
-        'A session has a folder exactly when it runs in a folder on the host',
-      );
     }
     if (!SESSION_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(

@@ -23,7 +23,7 @@ const SCOPE = {
 
 function harness() {
   const hosts: HostAccessPort = {
-    assertUsable: vi.fn().mockResolvedValue({ ownerUserId: 'owner-1', probedTools: null }),
+    assertUsable: vi.fn().mockResolvedValue({ probedTools: null }),
   };
   const keys: HostKeyPort = {
     publicKeyOf: vi.fn().mockResolvedValue('key'),
@@ -58,7 +58,7 @@ const command = (scope = SCOPE) =>
   });
 
 describe('PrepareSessionCommandHandler', () => {
-  it('names the host’s owner and the caller’s workspace on what it sends', async () => {
+  it('names the caller’s workspace on what it sends, and no account: that is the pairing’s', async () => {
     const h = harness();
 
     await expect(h.handler.execute(command())).resolves.toEqual({ hints: [] });
@@ -66,7 +66,6 @@ describe('PrepareSessionCommandHandler', () => {
     expect(h.dispatch.prepare).toHaveBeenCalledWith(
       'host-1',
       expect.objectContaining({
-        accountId: 'owner-1',
         workspaceId: 'org-acme',
         githubRepoId: 42,
         baseBranch: 'main',

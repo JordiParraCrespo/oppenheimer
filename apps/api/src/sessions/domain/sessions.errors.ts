@@ -88,7 +88,7 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * An agent the host's runner was built without (`runnerCanStart`). Refused
+   * An agent the host's runner was built without (`runnerRefusal`). Refused
    * before a row is written, rather than recorded and then failed by the host.
    */
   AGENT_UNSUPPORTED_BY_RUNNER: {

@@ -957,6 +957,10 @@ export type HostRegistrationResponseDto = {
      */
     hostId: string;
     /**
+     * The account the host is paired with, its owner. The runner names the top level of its work folder by it.
+     */
+    accountId: string;
+    /**
      * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
      */
     fingerprint: string;

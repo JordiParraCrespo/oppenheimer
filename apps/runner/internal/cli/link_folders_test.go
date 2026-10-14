@@ -15,6 +15,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
+	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/fake"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -22,7 +23,8 @@ import (
 )
 
 // placesHarness is a handler on a link that is up, over in-memory tmux, git
-// and places, with the host's real folder listing rooted at home.
+// and places, with the host's real folder listing rooted at home, for a host
+// paired with account (empty: an identity from before pairing named one).
 type placesHarness struct {
 	h         *linkHandler
 	sent      *capturedLink
@@ -32,7 +34,7 @@ type placesHarness struct {
 	terminals *fake.Terminals
 }
 
-func newPlacesHarness(t *testing.T, home string) *placesHarness {
+func newPlacesHarness(t *testing.T, home, account string) *placesHarness {
 	t.Helper()
 	terminals, worktrees, places := fake.NewTerminals(), fake.NewWorktrees(), fake.NewPlaces()
 	svc, err := sessionsapp.New(sessionsapp.Options{
@@ -51,7 +53,8 @@ func newPlacesHarness(t *testing.T, home string) *placesHarness {
 			Sessions: svc,
 			Host:     hostapp.New(hostapp.Options{Prober: prober, Directories: folders.Disk{}}),
 		},
-		logger: logger, client: sent, reporter: link.NewReporter("run-test", sent, logger),
+		identity: pairdomain.Identity{HostID: "host-1", AccountID: account},
+		logger:   logger, client: sent, reporter: link.NewReporter("run-test", sent, logger),
 		attachments: map[uint32]*attachment{}, decided: map[string]bool{},
 		life: context.Background(), lanes: newLanes(),
 	}
@@ -76,12 +79,12 @@ func (p *placesHarness) events(sessionID string) []link.Event {
 // A folder session from the console (24 §3): nothing cloned, no checkout to
 // report, and the steps the console shows are the host and the agent only.
 func TestALinkedFolderSessionStartsWithNoCheckouts(t *testing.T) {
-	p := newPlacesHarness(t, t.TempDir())
+	p := newPlacesHarness(t, t.TempDir(), "acct")
 	p.places.SetFolder("/home/jordi/code/site", true)
 
 	p.h.Message(context.Background(), message(t, "session.create", map[string]any{
 		"commandId": "11111111-1111-4111-8111-111111111111", "sessionId": sessionUnderTest, "agent": "shell",
-		"accountId": "acct", "workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "site",
+		"workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "site",
 		"folder": "/home/jordi/code/site", "checkouts": []any{}, "cwdCheckoutId": nil,
 	}))
 	session := waitForState(t, p.svc, sessionsdomain.StateStarting)
@@ -114,14 +117,15 @@ func TestALinkedFolderSessionStartsWithNoCheckouts(t *testing.T) {
 	}
 }
 
-// A worktree session lands under the frame's account and workspace, in a
-// folder named by its slug, its checkout named by the frame (24 §2).
+// A worktree session lands under the account the host was paired with and
+// the frame's workspace, in a folder named by its slug, its checkout named by
+// the frame (24 §2).
 func TestALinkedWorktreeSessionLandsInItsWorkspace(t *testing.T) {
-	p := newPlacesHarness(t, t.TempDir())
+	p := newPlacesHarness(t, t.TempDir(), "acct")
 
 	p.h.Message(context.Background(), message(t, "session.create", map[string]any{
 		"commandId": "11111111-1111-4111-8111-111111111111", "sessionId": sessionUnderTest, "agent": "shell",
-		"accountId": "acct", "workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "bright-lark",
+		"workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "bright-lark",
 		"branch": "oppenheimer/bright-lark", "cwdCheckoutId": "c-1",
 		"checkouts": []map[string]any{{
 			"checkoutId": "c-1", "githubRepoId": 42, "repositoryFullName": "acme-labs/xrp-mobile",
@@ -142,15 +146,36 @@ func TestALinkedWorktreeSessionLandsInItsWorkspace(t *testing.T) {
 	}
 }
 
+// An identity paired before registration answered an account names the work
+// folder's top level by the host's own id, which never changes either.
+func TestALinkedSessionFromAnIdentityWithNoAccountLandsUnderTheHost(t *testing.T) {
+	p := newPlacesHarness(t, t.TempDir(), "")
+
+	p.h.Message(context.Background(), message(t, "session.create", map[string]any{
+		"commandId": "11111111-1111-4111-8111-111111111111", "sessionId": sessionUnderTest, "agent": "shell",
+		"workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "bright-lark",
+		"branch": "oppenheimer/bright-lark", "cwdCheckoutId": "c-1",
+		"checkouts": []map[string]any{{
+			"checkoutId": "c-1", "githubRepoId": 42, "repositoryFullName": "acme-labs/xrp-mobile",
+			"directoryName": "mobile", "baseBranch": "develop",
+		}},
+	}))
+	session := waitForState(t, p.svc, sessionsdomain.StateStarting)
+
+	if want := "/home/jordi/oppenheimer/host-1/ws/sessions/bright-lark"; session.Dir != want {
+		t.Fatalf("dir %q, want %q", session.Dir, want)
+	}
+}
+
 // A folder that went away between the picker and the create is refused with
 // its own code, and nothing is started.
 func TestALinkedFolderSessionWhoseFolderIsGoneIsRefused(t *testing.T) {
-	p := newPlacesHarness(t, t.TempDir())
+	p := newPlacesHarness(t, t.TempDir(), "acct")
 	const commandID = "11111111-1111-4111-8111-111111111111"
 
 	p.h.Message(context.Background(), message(t, "session.create", map[string]any{
 		"commandId": commandID, "sessionId": sessionUnderTest, "agent": "shell",
-		"accountId": "acct", "workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "site",
+		"workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "site",
 		"folder": "/home/jordi/gone", "checkouts": []any{}, "cwdCheckoutId": nil,
 	}))
 
@@ -176,7 +201,7 @@ func TestFsListIsAnsweredWithTheListing(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(home, "notes.txt"), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	p := newPlacesHarness(t, home)
+	p := newPlacesHarness(t, home, "acct")
 	const commandID = "44444444-4444-4444-8444-444444444444"
 
 	p.h.Message(context.Background(), message(t, link.TypeFsList, map[string]any{"commandId": commandID}))
@@ -195,7 +220,7 @@ func TestFsListIsAnsweredWithTheListing(t *testing.T) {
 }
 
 func TestFsListOfAMissingFolderFailsWithFS001(t *testing.T) {
-	p := newPlacesHarness(t, t.TempDir())
+	p := newPlacesHarness(t, t.TempDir(), "acct")
 	const commandID = "55555555-5555-4555-8555-555555555555"
 
 	p.h.Message(context.Background(), message(t, link.TypeFsList, map[string]any{

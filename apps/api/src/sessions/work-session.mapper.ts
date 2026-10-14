@@ -130,8 +130,9 @@ export class WorkSessionMapper
         hostId: record.hostId,
         slug: record.slug,
         agent: record.agent as SessionAgent,
-        place: record.place === 'folder' ? 'folder' : 'worktree',
-        folderPath: record.place === 'folder' ? record.folderPath : null,
+        // The place is read off the folder; the row's `place` column and its
+        // CHECK are the store's own guard that the two agree.
+        folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
         origin: record.origin === 'automation' ? 'automation' : 'person',

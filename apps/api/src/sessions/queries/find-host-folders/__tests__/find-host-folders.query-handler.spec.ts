@@ -37,7 +37,7 @@ const RECENT = [{ path: '/home/jordi/notes', lastUsedAt: new Date('2026-10-14T10
 
 function harness(outcome: HostFoldersOutcome) {
   const hosts: HostAccessPort = {
-    assertUsable: vi.fn().mockResolvedValue({ ownerUserId: 'user-1', probedTools: null }),
+    assertUsable: vi.fn().mockResolvedValue({ probedTools: null }),
   };
   const folders: HostFoldersPort = { list: vi.fn().mockResolvedValue(outcome) };
   const sessions: Pick<WorkSessionRepositoryPort, 'findRecentFolders'> = {

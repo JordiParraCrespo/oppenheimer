@@ -126,7 +126,6 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     commandId,
     sessionId,
     organizationSlug: 'jordi',
-    accountId: '6c1f0b7e-2d3a-4f5b-8e9c-0a1b2c3d4e5f',
     workspaceId: '7d2e1c8f-3e4b-4a6c-9f0d-1b2c3d4e5f6a',
     sessionSlug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
@@ -184,7 +183,6 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'repository.prepare': {
     type: 'repository.prepare',
     commandId,
-    accountId: '6c1f0b7e-2d3a-4f5b-8e9c-0a1b2c3d4e5f',
     workspaceId: '7d2e1c8f-3e4b-4a6c-9f0d-1b2c3d4e5f6a',
     githubRepoId: 821374923,
     repositoryFullName: 'acme-labs/xrp-mobile',

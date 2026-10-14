@@ -53,6 +53,11 @@ func TestRegisterStoresTheIdentityAndPinsTheFingerprint(t *testing.T) {
 	if identity.HostID != "host_01HZ" || identity.Fingerprint == "" {
 		t.Fatalf("identity = %+v", identity)
 	}
+	// The account the pairing answered is kept: the work folder's top level
+	// is named by it, and no later command repeats it (24 §2).
+	if identity.AccountID != "acct_01HZ" {
+		t.Fatalf("account = %q, want the one registration answered", identity.AccountID)
+	}
 	if identity.Channel != domain.ChannelStable {
 		t.Fatalf("channel = %q, want the default stable", identity.Channel)
 	}
