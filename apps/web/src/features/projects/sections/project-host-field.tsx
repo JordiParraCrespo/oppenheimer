@@ -19,7 +19,7 @@ export function ProjectHostField({ control }: { control: Control<ProjectFormValu
       <div className="flex flex-wrap gap-1.5">
         <QueryState query={hosts} isEmpty={(rows) => rows.length === 0}>
           <QueryState.Pending>
-            <Skeleton className="h-7 w-24" />
+            <Skeleton className="h-(--control-h-md) w-24" />
           </QueryState.Pending>
           <QueryState.Error fallback={t('sessions.new.host.failed')} />
           <QueryState.Empty>
@@ -30,6 +30,7 @@ export function ProjectHostField({ control }: { control: Control<ProjectFormValu
               rows.map((host) => (
                 <Chip
                   key={host.id}
+                  size="md"
                   selected={field.value === host.id}
                   onClick={() => field.onChange(field.value === host.id ? null : host.id)}
                 >

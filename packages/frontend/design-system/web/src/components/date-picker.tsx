@@ -5,16 +5,17 @@ import * as React from 'react';
 
 import { dateFormat, dateOf, type IsoDate, shiftMonth } from '../internal/month';
 import { DayNumber, MonthGrid } from '../internal/month-grid';
+import { FIELD_SIZE, type FieldSize } from '../internal/control-size';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { Chip } from './chip';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
-/** The trigger on each rung of the control ramp, padded and set as `Input`'s. */
-const TRIGGER_SIZE = {
-  sm: 'h-(--control-h-sm) px-2.5 text-sm [&_svg]:size-3.5',
-  md: 'h-(--control-h-md) px-3 text-operate [&_svg]:size-4',
-  lg: 'h-(--control-h-lg) px-3.5 text-lg [&_svg]:size-[18px]',
+/** The glyphs on each rung, as `Input`'s and `Button`'s. */
+const GLYPH_SIZE = {
+  sm: '[&_svg]:size-3.5',
+  md: '[&_svg]:size-4',
+  lg: '[&_svg]:size-[18px]',
 } as const;
 
 /**
@@ -49,7 +50,7 @@ function DatePicker({
   quick?: readonly { label: string; value: IsoDate }[];
   labels?: { choose?: string; previous?: string; next?: string; clear?: string };
   /** The rung of the control ramp, as an `Input`'s `size`. */
-  size?: 'sm' | 'md' | 'lg';
+  size?: FieldSize;
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -83,7 +84,8 @@ function DatePicker({
         data-slot="date-picker"
         className={cn(
           'flex min-w-[184px] items-center gap-2 rounded-sm border border-field-border bg-field text-left text-fg outline-none transition-[border-color,box-shadow] duration-fast ease-standard hover:border-border-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring [&_svg]:shrink-0',
-          TRIGGER_SIZE[size],
+          FIELD_SIZE[size],
+          GLYPH_SIZE[size],
           className,
         )}
       >

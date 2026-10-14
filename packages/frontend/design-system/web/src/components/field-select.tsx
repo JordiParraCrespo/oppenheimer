@@ -3,6 +3,7 @@
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { FIELD_SIZE, type FieldSize } from '../internal/control-size';
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
@@ -14,13 +15,6 @@ const TRIGGER = [
   'data-[variant=field]:w-full data-[variant=field]:gap-2 data-[variant=field]:rounded-sm data-[variant=field]:border data-[variant=field]:border-field-border data-[variant=field]:bg-field data-[variant=field]:hover:border-border-strong data-[variant=field]:focus-visible:border-primary data-[variant=field]:focus-visible:ring-3 data-[variant=field]:focus-visible:ring-ring data-[variant=field]:data-popup-open:border-primary data-[variant=field]:data-popup-open:ring-3 data-[variant=field]:data-popup-open:ring-ring',
   'data-[variant=quiet]:h-8 data-[variant=quiet]:w-auto data-[variant=quiet]:border data-[variant=quiet]:border-transparent data-[variant=quiet]:max-w-full data-[variant=quiet]:gap-1.5 data-[variant=quiet]:rounded-pill data-[variant=quiet]:pr-2 data-[variant=quiet]:pl-3 data-[variant=quiet]:text-[13.5px] data-[variant=quiet]:hover:bg-hover-surface data-[variant=quiet]:focus-visible:ring-3 data-[variant=quiet]:focus-visible:ring-ring data-[variant=quiet]:data-popup-open:bg-hover-surface',
 ].join(' ');
-
-/** The field look on each rung of the control ramp, padded and set as `Input`'s. */
-const FIELD_SIZE = {
-  sm: 'h-(--control-h-sm) px-2.5 text-sm',
-  md: 'h-(--control-h-md) px-3 text-operate',
-  lg: 'h-(--control-h-lg) px-3.5 text-operate',
-} as const;
 
 /** A quiet trigger is only as wide as its value, so its list takes a floor of its own. */
 const QUIET_POPUP_MIN_WIDTH = 280;
@@ -52,7 +46,7 @@ type FieldSelectProps = {
   width?: number;
   variant?: 'field' | 'quiet';
   /** The field look's rung of the control ramp, as an `Input`'s `size`; the quiet pill has one height. */
-  size?: 'sm' | 'md' | 'lg';
+  size?: FieldSize;
 } & (
   | { multiple?: false; value: string | null; onValueChange: (value: string) => void }
   | { multiple: true; value: string[]; onValueChange: (value: string[]) => void }
