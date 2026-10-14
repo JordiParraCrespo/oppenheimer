@@ -108,10 +108,8 @@ export function useAutomation(
   id: string | undefined,
   options?: Omit<UseQueryOptions<AutomationEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
-  const app = useConsumerApp();
   return useQuery<AutomationEntity, Error>({
-    queryKey: automationsKeys.detail(id),
-    queryFn: id ? () => app.automations.findById(id) : skipToken,
+    ...useAutomationQuery(id),
     ...options,
     ...useAutomationPoll(id),
   });
@@ -122,12 +120,34 @@ export function useAutomation(
  * is known, so nothing is switched off, and `data` is always the automation.
  */
 export function useSuspenseAutomation(id: string) {
-  const app = useConsumerApp();
   return useSuspenseQuery<AutomationEntity, Error>({
-    queryKey: automationsKeys.detail(id),
-    queryFn: () => app.automations.findById(id),
+    ...useAutomationQuery(id),
     ...useAutomationPoll(id),
   });
+}
+
+/**
+ * An automation's read, for both hooks over it: the key and the fetch, once.
+ * With no id yet there is nothing to fetch (`skipToken`); the Suspense read
+ * always has one.
+ */
+function useAutomationQuery(id: string): {
+  queryKey: QueryKey;
+  queryFn: () => Promise<AutomationEntity>;
+};
+function useAutomationQuery(id: string | undefined): {
+  queryKey: QueryKey;
+  queryFn: (() => Promise<AutomationEntity>) | typeof skipToken;
+};
+function useAutomationQuery(id: string | undefined): {
+  queryKey: QueryKey;
+  queryFn: (() => Promise<AutomationEntity>) | typeof skipToken;
+} {
+  const app = useConsumerApp();
+  return {
+    queryKey: automationsKeys.detail(id),
+    queryFn: id ? () => app.automations.findById(id) : skipToken,
+  };
 }
 
 /** An automation polls while one of its runs is going. */

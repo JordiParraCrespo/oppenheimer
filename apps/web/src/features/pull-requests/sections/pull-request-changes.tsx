@@ -37,56 +37,50 @@ export function PullRequestChanges({
   const [selected, setSelected] = useState<string | undefined>(undefined);
   const pendingOn = pendingByPath(pending);
 
-  if (rows.length === 0)
-    return (
-      <>
-        <ErrorAlert
-          error={error}
-          fallback={t('pullRequests.changes.loadFailed')}
-          className="mx-8 mt-4"
-        />
-        <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
-      </>
-    );
-
   return (
-    <div className="flex min-h-0 flex-1 bg-card">
-      <div className="min-w-0 flex-1 overflow-y-auto">
-        <ErrorAlert
-          error={error}
-          fallback={t('pullRequests.changes.loadFailed')}
-          className="mx-8 mt-4"
-        />
-        {rows.map((file) => (
-          <ChangesFile
-            key={file.path}
-            address={address}
-            file={file}
-            layout={layout}
-            pending={pendingOn.get(file.path) ?? NO_PENDING}
-            onAddPending={onAddPending}
-            onDiscardPending={onDiscardPending}
-          />
-        ))}
-      </div>
-      <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border-subtle lg:flex">
-        <DiffFileTree
-          files={rows}
-          selected={selected}
-          onSelect={(path) => {
-            setSelected(path);
-            document
-              .getElementById(`file-${path}`)
-              ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-          }}
-          labels={{
-            title: t('pullRequests.changes.files'),
-            filter: t('pullRequests.changes.filter'),
-            viewed: (done, total) => t('pullRequests.changes.viewed', { done, total }),
-          }}
-          className="w-full"
-        />
-      </aside>
-    </div>
+    <>
+      <ErrorAlert
+        error={error}
+        fallback={t('pullRequests.changes.loadFailed')}
+        className="mx-8 mt-4"
+      />
+      {rows.length === 0 ? (
+        <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
+      ) : (
+        <div className="flex min-h-0 flex-1 bg-card">
+          <div className="min-w-0 flex-1 overflow-y-auto">
+            {rows.map((file) => (
+              <ChangesFile
+                key={file.path}
+                address={address}
+                file={file}
+                layout={layout}
+                pending={pendingOn.get(file.path) ?? NO_PENDING}
+                onAddPending={onAddPending}
+                onDiscardPending={onDiscardPending}
+              />
+            ))}
+          </div>
+          <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border-subtle lg:flex">
+            <DiffFileTree
+              files={rows}
+              selected={selected}
+              onSelect={(path) => {
+                setSelected(path);
+                document
+                  .getElementById(`file-${path}`)
+                  ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+              }}
+              labels={{
+                title: t('pullRequests.changes.files'),
+                filter: t('pullRequests.changes.filter'),
+                viewed: (done, total) => t('pullRequests.changes.viewed', { done, total }),
+              }}
+              className="w-full"
+            />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

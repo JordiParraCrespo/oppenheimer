@@ -8,6 +8,7 @@ import {
 } from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
+  type QueryKey,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -96,24 +97,41 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
 }
 
 export function usePullRequest(address: PullRequestAddress | undefined) {
-  const app = useConsumerApp();
-  return useQuery<PullRequestDetailEntity, Error>({
-    queryKey: pullRequestsKeys.detail(address),
-    queryFn: address ? () => app.pullRequests.find(address) : skipToken,
-  });
+  return useQuery<PullRequestDetailEntity, Error>(usePullRequestQuery(address));
 }
 
 /**
  * {@link usePullRequest} for a section under a Suspense `QueryState`: the
  * address is known, so nothing is switched off, and `data` is always the pull
- * request. Same key and fetch, so the toolbar's `usePullRequest` shares it.
+ * request. One definition with {@link usePullRequest}, so the toolbar shares
+ * the entry.
  */
 export function useSuspensePullRequest(address: PullRequestAddress) {
+  return useSuspenseQuery<PullRequestDetailEntity, Error>(usePullRequestQuery(address));
+}
+
+/**
+ * A pull request's read, for both hooks over it: the key and the fetch, once.
+ * With no address yet there is nothing to fetch (`skipToken`); the Suspense
+ * read always has one.
+ */
+function usePullRequestQuery(address: PullRequestAddress): {
+  queryKey: QueryKey;
+  queryFn: () => Promise<PullRequestDetailEntity>;
+};
+function usePullRequestQuery(address: PullRequestAddress | undefined): {
+  queryKey: QueryKey;
+  queryFn: (() => Promise<PullRequestDetailEntity>) | typeof skipToken;
+};
+function usePullRequestQuery(address: PullRequestAddress | undefined): {
+  queryKey: QueryKey;
+  queryFn: (() => Promise<PullRequestDetailEntity>) | typeof skipToken;
+} {
   const app = useConsumerApp();
-  return useSuspenseQuery<PullRequestDetailEntity, Error>({
+  return {
     queryKey: pullRequestsKeys.detail(address),
-    queryFn: () => app.pullRequests.find(address),
-  });
+    queryFn: address ? () => app.pullRequests.find(address) : skipToken,
+  };
 }
 
 /** The diff, file by file: the Changes view, read under a Suspense `QueryState`. */
