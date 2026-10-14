@@ -31,6 +31,8 @@ export interface GithubPullRequestSummary {
 }
 
 export interface GithubPullRequestDetail extends GithubPullRequestSummary {
+  /** GitHub's global node id, which its GraphQL API names a pull request by. */
+  nodeId: string;
   body: string;
   additions: number;
   deletions: number;
@@ -186,4 +188,15 @@ export interface GithubPullsPort {
     method: 'squash' | 'merge' | 'rebase',
     sha: string,
   ): Promise<void>;
+  /**
+   * Turns on GitHub's auto-merge at `sha`, so the pull request merges itself
+   * once its required checks and reviews pass. False when GitHub would not:
+   * the repository does not allow auto-merge, or nothing is left to wait for.
+   */
+  enableAutoMerge(
+    credential: GithubCredential,
+    nodeId: string,
+    method: 'squash' | 'merge' | 'rebase',
+    sha: string,
+  ): Promise<boolean>;
 }

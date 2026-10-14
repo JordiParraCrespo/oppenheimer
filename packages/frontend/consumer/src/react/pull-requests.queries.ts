@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { PERSIST_META, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
   skipToken,
@@ -22,6 +22,7 @@ import type {
   PullRequestQueue,
   PullRequestScope,
   ReviewInput,
+  ReviewOutcome,
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
@@ -115,7 +116,7 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
   });
 }
 
-/** Its conversation: comments, commits, reviews and events, drawn under the description. */
+/** Its conversation: comments, commits, reviews and events, read for the rail's comments. */
 export function usePullRequestActivity(address: PullRequestAddress | undefined) {
   const app = useConsumerApp();
   return useQuery<PullRequestActivityItem[], Error>({
@@ -149,7 +150,7 @@ export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
     queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
     placeholderData: keepPreviousData,
-    meta: { persist: true },
+    meta: PERSIST_META,
   });
 }
 
@@ -183,9 +184,9 @@ export interface SubmitReviewVariables {
   review: ReviewInput;
 }
 
-/** A review in the caller's name; approving also merges when GitHub allows it. */
+/** A review in the caller's name; approve and merge also merges, now or once checks pass. */
 export function useSubmitPullRequestReview(
-  options?: UseMutationOptions<{ merged: boolean }, Error, SubmitReviewVariables>,
+  options?: UseMutationOptions<ReviewOutcome, Error, SubmitReviewVariables>,
 ) {
   const app = useConsumerApp();
   const invalidate = useInvalidatePullRequests();

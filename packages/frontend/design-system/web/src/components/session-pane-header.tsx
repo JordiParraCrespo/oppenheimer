@@ -12,7 +12,9 @@ import { StatusDot, type StatusState } from './status-dot';
  * in small mono. It sits above the terminal and in the console's palette;
  * the terminal's own `TerminalStatusBar` is the band along its bottom. When the session was opened from a task, `back`
  * leads the bar with a `SessionPaneBack` link to that task and a slash, so
- * the reader can return to Plan the way they came.
+ * the reader can return to Plan the way they came. `actions` closes the bar
+ * on the right, after the meta: a shared session's guest sees what the share
+ * lets them do, how long it lasts and Leave there.
  */
 function SessionPaneHeader({
   state,
@@ -20,6 +22,7 @@ function SessionPaneHeader({
   stateLabel,
   meta,
   back,
+  actions,
   className,
   ...props
 }: React.ComponentProps<'div'> & {
@@ -31,6 +34,8 @@ function SessionPaneHeader({
   meta?: React.ReactNode;
   /** A `SessionPaneBack`, when the session was opened from a task. */
   back?: React.ReactNode;
+  /** Badges and buttons at the right end, after `meta`. */
+  actions?: React.ReactNode;
 }) {
   return (
     <div
@@ -56,6 +61,7 @@ function SessionPaneHeader({
       </StatusDot>
       <span className="flex-1" />
       {meta ? <span className="min-w-0 truncate font-mono text-micro text-fg-subtle">{meta}</span> : null}
+      {actions ? <span className="flex shrink-0 items-center gap-2">{actions}</span> : null}
     </div>
   );
 }

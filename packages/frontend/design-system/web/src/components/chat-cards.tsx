@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, ChevronDownIcon, ExternalLinkIcon, FileTextIcon, HelpCircleIcon, LoaderIcon } from 'lucide-react';
+import { ArrowRightIcon, CheckIcon, ChevronDownIcon, ExternalLinkIcon, FileTextIcon, HelpCircleIcon, LoaderIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
@@ -14,7 +14,8 @@ import { IconButton } from './icon-button';
 /**
  * The cards a turn leaves in the transcript (Chat Components, Cards):
  * what it changed, what it proposes, who it launched, what it asked, and
- * the objects it made or was given.
+ * the objects it made or was given, what it said to another bot, and the
+ * instructions it proposes for itself.
  */
 
 /* ── Changed files ───────────────────────────────────────────────────────── */
@@ -375,6 +376,157 @@ function AnsweredQuestions({
   );
 }
 
+/* ── Bot to bot ──────────────────────────────────────────────────────────── */
+
+/**
+ * BotExchange — what one bot said to another, in the transcript: a hairline
+ * card at 13.5px, one `BotExchangeTurn` per message. The first turn is the
+ * message (out: "Sent to **Plan Bot**", in: "From **Quota Bot**", with its
+ * time in mono); the answer under it is a `BotExchangeTurn reply`, on the
+ * hover wash under a hairline. The arrow points the way the words went.
+ *
+ * ```tsx
+ * <BotExchange>
+ *   <BotExchangeTurn direction="out" time="10:42" lead={<>Sent to <strong>Plan Bot</strong></>}>…</BotExchangeTurn>
+ *   <BotExchangeTurn direction="in" reply lead="Plan Bot replied">…</BotExchangeTurn>
+ * </BotExchange>
+ * ```
+ */
+function BotExchange({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="bot-exchange"
+      className={cn('flex flex-col overflow-hidden rounded-md border border-border-subtle text-[13.5px]', className)}
+      {...props}
+    />
+  );
+}
+
+function BotExchangeTurn({
+  direction,
+  reply = false,
+  lead,
+  time,
+  className,
+  children,
+}: {
+  /** `out`: this bot wrote it; `in`: the other one did. */
+  direction: 'out' | 'in';
+  /** The answer under the message: on the hover wash, under a hairline. */
+  reply?: boolean;
+  /** Who and which way, in muted ink; the bot's name in a `strong` takes full ink. */
+  lead: React.ReactNode;
+  time?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="bot-exchange-turn"
+      data-direction={direction}
+      data-reply={reply || undefined}
+      className={cn(
+        'group/turn flex items-start gap-2.5 px-3 py-2.5 data-reply:border-t data-reply:border-border-subtle data-reply:bg-hover-surface',
+        className,
+      )}
+    >
+      <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.75">
+        <span className="flex items-baseline gap-2">
+          <span className="min-w-0 flex-1 text-fg-muted [&_strong]:font-medium [&_strong]:text-fg">{lead}</span>
+          {time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null}
+        </span>
+        <span className="leading-normal text-pretty text-fg">{children}</span>
+      </span>
+    </div>
+  );
+}
+
+/* ── Proposed instructions ───────────────────────────────────────────────── */
+
+/**
+ * ProposedFile — a file a bot proposes for itself (its INSTRUCTIONS.md), on
+ * an 18px card: the file's glyph and mono name, a "Proposed by" pill, the
+ * added lines in green mono, then what can be done about it. While it waits
+ * that is `actions`: quiet `ProposedFileAction`s (Review in settings,
+ * Reject) and the caller's Accept. Once decided it is `outcome`, in muted
+ * words ("Accepted"), and the proposal fades back. The proposal follows
+ * under a hairline, one `ProposedFileLine` each, the added ones in green.
+ */
+function ProposedFile({
+  file,
+  by,
+  additions,
+  actions,
+  outcome,
+  className,
+  children,
+}: {
+  file: React.ReactNode;
+  /** The pill: "Proposed by Plan Bot". */
+  by?: React.ReactNode;
+  additions?: number;
+  /** While it waits: `ProposedFileAction`s, then the one that accepts. */
+  actions?: React.ReactNode;
+  /** Once decided: the outcome in words. Present, it replaces `actions`. */
+  outcome?: React.ReactNode;
+  className?: string;
+  /** `ProposedFileLine`s. */
+  children: React.ReactNode;
+}) {
+  const settled = outcome !== undefined && outcome !== null;
+  return (
+    <div
+      data-slot="proposed-file"
+      data-settled={settled || undefined}
+      className={cn('group/file flex flex-col overflow-hidden rounded-lg bg-card', className)}
+    >
+      <div className="flex flex-wrap items-center gap-2 py-2.5 pr-2.5 pl-4">
+        <FileTextIcon aria-hidden className="size-4 shrink-0 text-fg-muted" />
+        <span className="font-mono text-[12.5px] text-fg">{file}</span>
+        {by ? (
+          <span className="inline-flex h-5 items-center rounded-pill bg-hover-surface px-2 text-[12px] text-fg-muted">{by}</span>
+        ) : null}
+        {additions !== undefined ? (
+          <span className="figures font-mono text-[12px] text-success">+{additions}</span>
+        ) : null}
+        <span className="flex-1" />
+        {settled ? (
+          <span role="status" className="flex min-h-7 items-center pr-1.5 text-[12.5px] text-fg-muted">
+            {outcome}
+          </span>
+        ) : actions ? (
+          <span className="flex min-h-7 items-center gap-0.5">{actions}</span>
+        ) : null}
+      </div>
+      <pre className="m-0 border-t border-border-subtle px-4 pt-2.5 pb-3.5 font-mono text-[12.5px] leading-[1.65] break-words whitespace-pre-wrap transition-opacity duration-base group-data-settled/file:opacity-55">
+        {children}
+      </pre>
+    </div>
+  );
+}
+
+/** A quiet choice on a `ProposedFile` (Review in settings, Reject): muted ink, full ink on hover. */
+function ProposedFileAction({ className, ...props }: React.ComponentProps<typeof Button>) {
+  return (
+    <Button
+      data-slot="proposed-file-action"
+      variant="ghost"
+      size="sm"
+      className={cn('font-normal text-fg-muted hover:text-fg', className)}
+      {...props}
+    />
+  );
+}
+
+function ProposedFileLine({ added = false, children }: { added?: boolean; children?: React.ReactNode }) {
+  return (
+    <span data-slot="proposed-file-line" data-added={added || undefined} className="block min-h-[1.65em] text-fg data-added:text-success">
+      {children}
+    </span>
+  );
+}
+
 /* ── Context cards ───────────────────────────────────────────────────────── */
 
 /**
@@ -414,9 +566,14 @@ function ContextCard({
 
 export {
   AnsweredQuestions,
+  BotExchange,
+  BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
   ContextCard,
+  ProposedFile,
+  ProposedFileAction,
+  ProposedFileLine,
   ProposedPlanCard,
   QuestionsPill,
   SubagentRow,

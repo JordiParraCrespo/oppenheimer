@@ -48,11 +48,6 @@ export function deltaOf(
   return { value: `${change > 0 ? '+' : '−'}${Math.abs(change)}%`, tone: better ? 'good' : 'bad' };
 }
 
-/** `apps/` and `web/` → `apps/, web/`: the folders a briefing names, at most three. */
-export function folderList(folders: readonly string[]): string {
-  return folders.slice(0, 3).join(', ');
-}
-
 /** GitHub's hunks for one file, under the headers a patch reader needs to know which file they are. */
 export function patchOf(file: {
   path: string;

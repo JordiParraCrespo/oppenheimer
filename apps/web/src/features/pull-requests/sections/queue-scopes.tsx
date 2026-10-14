@@ -2,11 +2,15 @@ import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-syst
 import type { PullRequestScope } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { PULL_REQUEST_SCOPES } from '@oppenheimer/shared/schemas/pull-request';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useQueueSearch } from '../hooks/use-queue-search';
-import { WatchedRepositories } from './watched-repositories';
 
-/** Whose pull requests: mine, review requests, watching, each with its count, and what the scope means. */
+/**
+ * Whose pull requests: mine, review requests, watching, each with its count,
+ * and what the scope means. Which repositories are watched is set in
+ * Settings, which Watching links to.
+ */
 export function QueueScopes() {
   const { t } = useTranslation();
   const { scope, setScope } = useQueueSearch();
@@ -27,8 +31,17 @@ export function QueueScopes() {
           </SegmentedControlItem>
         ))}
       </SegmentedControl>
-      <p className="m-0 text-sm text-fg-muted">{t(`pullRequests.queue.scopeHint.${scope}`)}</p>
-      {scope === 'watching' ? <WatchedRepositories /> : null}
+      <p className="m-0 text-sm text-fg-muted">
+        {t(`pullRequests.queue.scopeHint.${scope}`)}
+        {scope === 'watching' ? (
+          <>
+            {' '}
+            <Link to="/settings/repositories" className="text-link">
+              {t('pullRequests.queue.configureWatched')}
+            </Link>
+          </>
+        ) : null}
+      </p>
     </div>
   );
 }

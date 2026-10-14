@@ -41,10 +41,10 @@
     },
     "host": {
       "title": "Añade tu primer host",
-      "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
+      "description": "Pega esta instrucción en el agente de código de la máquina donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Instala el runner y lo conecta. Nada queda expuesto a internet.",
       "defaultName": "Mi primer host",
       "skip": "Saltar por ahora",
-      "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
+      "skipNote": "Puedes añadir un host más tarde desde cualquier sesión nueva."
     },
     "ready": {
       "title": "Todo listo",

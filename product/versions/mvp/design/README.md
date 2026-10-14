@@ -25,7 +25,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the agent prompt comes first, the install command folds behind "Install manually instead", and a Connection list follows the install |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer |
-| [`ShareSession`](version1/ShareSession.dc.html) | Share a session — the Share dialog (who, permission, for how long), the link and who has access, and the session as a guest sees it |
+| [`ShareSession`](version1/ShareSession.dc.html) | A shared session as the person it was shared with sees it — a View only or Can edit badge, and Leave; the Share dialog, the link and who has access are still in the frame |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
 | [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge, and a merge manager chat |
@@ -126,6 +126,23 @@ as `AddHost (command-first).dc.html`. A Settings host card shows disk
 used. The wordmark loses its "Console" suffix on every frame, the kept
 `(pages)` and `(cards)` ones included.
 
+The 2026-10-13 evening export changes five frames. `Bots` opens empty
+("No bots yet") on templates to start from, shows a bot proposing its own
+`INSTRUCTIONS.md` to accept or reject, and lists two built-in bots,
+Project manager and Merge manager; a bot can ask for input and for
+approval in its chat. `BotSettings` follows: a built-in bot keeps its
+name, memory is read per project rather than shared with chosen projects,
+repositories follow from projects, and Groups become Group chats.
+`version1/catalog.js`, which `Bots` loads, holds the models, approval
+modes and bot templates its composer names. `Chat Components` adds the
+bot-to-bot message and the proposed-instructions card, and says its rows
+are inspired by Synara's chat rather than mapped from it, with no code
+ported until the licence is checked. `ShareSession` loses its owner
+header, the switch between prototype screens and the Share button, so it
+is the guest's view of a session; "Can write" reads "Can edit", and a
+typed address is added on submit. In `Tasks` the project manager chat's
+title links to that bot's settings.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
@@ -206,6 +223,15 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Watched repositories and the merge verdict are pull-request policy, owned
   by `../../../next-steps/0.2-pull-requests.md`; the Settings section and
   the Merge confidence score are visuals of it, not decisions.
+- `PullRequests` as of the 2026-10-13 export is built without its merge
+  manager chat, the Chat tab and the review agent ("The screens as built"
+  in `../../../next-steps/0.2-pull-requests.md`). Departures from the
+  frame: Description keeps the console's rail (merge status, comments,
+  reviews, checks) in place of the frame's status strip, by the owner's
+  call on 2026-10-14; the queue row keeps one Review button, which opens Changes; the
+  verdict pill in the bar is not drawn (the toast says what the review
+  did); and the Settings policy under Watched repositories (Track, Starts
+  in lane, Notify) is not built.
 - Two edits made here on 2026-10-10 are not in the 2026-10-13 export and
   were merged back over it: `PullRequests` has no watched-repositories
   view of its own and counts a waiting pull request as blocked, and the
@@ -228,8 +254,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `../19-plan-tasks-and-goals.md`, which still says goals and has no
   statistics; `../23-plan-milestones-stats-accounts.md` plans the
   backend for them and for several Google accounts. The agent-first Add a host and its
-  Skip run ahead of `../05-screens.md`, which has the command and prompt
-  side by side behind the Inspect fold.
+  Skip are in the console since 2026-10-13, onboarding and the dialog
+  both, without the Tools on PATH row, which waits for the wire to carry
+  a host's tools.
 - Left out of the 2026-10-13 export: `version1/assets/scientists/`
   (portraits no frame references), `github.md` and `assets/prod/` (the
   canvas's import log and two screenshots of Synara's README), and again
@@ -247,7 +274,14 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   of real people, so the showcase draws initials and the product will ship
   photos of its own. The changes to existing components the frames also
   ask for (a chat density for `Composer`, a card layout for `RadioGroup`,
-  `HostCard`'s disk meter, the agent-first Add a host, `MergePath` inline,
+  `HostCard`'s disk meter, `MergePath` inline,
   the 560px `form` dialog) are not in that port.
+- The 2026-10-13 evening export's additions are in the design system too:
+  `BotExchange` (the bot-to-bot message), `ProposedFile` (the proposed
+  instructions), `ComposerApproval` fused onto `Composer`'s new `above`,
+  `BotItem`'s `needsInput`, `SidebarProjectHeader`'s eyebrow tone and
+  `marker`, `SidebarEmptyCard`, and a centred `ChatEmptyState` over
+  `TemplateTiles`. The chat's rows were written for the system, not ported
+  from Synara, so its licence does not bear on them.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

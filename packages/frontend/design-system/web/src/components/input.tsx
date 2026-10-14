@@ -2,6 +2,7 @@ import { Input as InputPrimitive } from '@base-ui/react/input';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type * as React from 'react';
 
+import { FIELD_SIZE } from '../internal/control-size';
 import { cn } from '../lib/utils';
 
 const inputVariants = cva(
@@ -9,11 +10,11 @@ const inputVariants = cva(
   {
     variants: {
       size: {
-        sm: 'h-(--control-h-sm) px-2.5 text-sm',
-        md: 'h-(--control-h-md) px-3 text-operate',
-        lg: 'h-(--control-h-lg) px-3.5 text-lg',
+        sm: FIELD_SIZE.sm,
+        md: FIELD_SIZE.md,
+        lg: FIELD_SIZE.lg,
         // Legacy alias.
-        default: 'h-(--control-h-md) px-3 text-operate',
+        default: FIELD_SIZE.md,
       },
       pill: {
         true: 'rounded-pill px-3.5',

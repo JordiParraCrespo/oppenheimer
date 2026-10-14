@@ -12,7 +12,6 @@ import {
   type MilestoneEntity,
   type MilestoneInput,
   TaskEntity,
-  type TaskFilter,
   type TaskInput,
   type TaskMove,
 } from '../modules/tasks/task.entity';
@@ -20,16 +19,18 @@ import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks
 import { useConsumerApp } from './context';
 import { sessionsKeys } from './sessions.queries';
 
+/**
+ * One list, the whole board: every column, count and card reads it, and a
+ * session's tasks are a `select` over it. A filtered read would be a second
+ * leaf with its own segment, not an object `{}` would fuzzy-match.
+ */
 export const tasksKeys = {
   all: ['tasks'] as const,
   lists: () => [...tasksKeys.all, 'list'] as const,
-  list: (filter: TaskFilter) => [...tasksKeys.lists(), filter] as const,
+  list: () => [...tasksKeys.lists()] as const,
   milestones: () => [...tasksKeys.all, 'milestones'] as const,
   milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
 };
-
-/** The whole board, which every column, count and card reads. */
-const BOARD: TaskFilter = {};
 
 /**
  * Every task on the board, in board order. One read serves the columns, the
@@ -40,8 +41,8 @@ export function useTasks<TData = TaskEntity[]>(
 ) {
   const app = useConsumerApp();
   return useQuery<TaskEntity[], Error, TData>({
-    queryKey: tasksKeys.list(BOARD),
-    queryFn: () => app.tasks.findAll(BOARD),
+    queryKey: tasksKeys.list(),
+    queryFn: () => app.tasks.findAll(),
     ...options,
   });
 }
@@ -78,13 +79,11 @@ async function settleTask(
   queryClient: QueryClient,
   id: string,
   task: TaskEntity | null,
-  previous = queryClient
-    .getQueryData<TaskEntity[]>(tasksKeys.list(BOARD))
-    ?.find((row) => row.id === id),
+  previous = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list())?.find((row) => row.id === id),
 ) {
-  const boardKnown = queryClient.getQueryData(tasksKeys.list(BOARD)) !== undefined;
-  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD), exact: true });
-  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
+  const boardKnown = queryClient.getQueryData(tasksKeys.list()) !== undefined;
+  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(), exact: true });
+  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) => {
     if (!rows) return rows;
     const rest = rows.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
@@ -152,10 +151,10 @@ export function useMoveTask(
       // Written before anything is awaited: the board lets go of its drag order in the
       // drop's own handler, and a read that lands later shows the card back home for a
       // frame. Cancelling first reverts a read on its way now, so it cannot undo this.
-      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
-      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
+      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list() });
+      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list());
       const previous = rows?.find((row) => row.id === move.id);
-      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) =>
+      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (current) =>
         current?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, current) : row)),
       );
       await cancelled;
@@ -164,11 +163,11 @@ export function useMoveTask(
     onError: (error, move, context, mutation) => {
       const previous = context?.previous;
       if (previous) {
-        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
+        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) =>
           rows?.map((row) => (row.id === previous.id ? previous : row)),
         );
       }
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.list(BOARD) });
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.list() });
       return options?.onError?.(error, move, context, mutation);
     },
   });

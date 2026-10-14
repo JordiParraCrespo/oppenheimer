@@ -27,10 +27,10 @@ export function useSessionStream(sessionId: string, window = 0): () => SessionSt
 }
 
 /**
- * {@link useSessionStream} through a share link: each ticket minted with its
- * secret, always for the agent's window, the one a link opens.
+ * {@link useSessionStream} through a share: each ticket minted at its
+ * address, always for the agent's window, the one a share opens.
  */
-export function useSharedSessionStream(token: string): () => SessionStream {
+export function useSharedSessionStream(slug: string): () => SessionStream {
   const app = useConsumerApp();
-  return useCallback(() => app.sessions.openSharedStream(token), [app, token]);
+  return useCallback(() => app.sessions.openSharedStream(slug), [app, slug]);
 }

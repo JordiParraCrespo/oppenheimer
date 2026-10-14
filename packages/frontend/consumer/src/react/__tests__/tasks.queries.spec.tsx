@@ -277,7 +277,9 @@ describe('useSessionTasks', () => {
 
     await waitFor(() => expect(result.current.mine.data?.map((row) => row.id)).toEqual(['a']));
     expect(findAll).toHaveBeenCalledTimes(1);
-    expect(findAll).toHaveBeenCalledWith({});
+    expect(findAll).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: expect.anything() }),
+    );
   });
 });
 

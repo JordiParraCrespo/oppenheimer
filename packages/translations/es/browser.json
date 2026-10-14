@@ -7,7 +7,6 @@
     "copy": "Copiar",
     "loading": "Cargando...",
     "or": "o",
-    "product": "Consola",
     "relative": {
       "day": "{{count}}d",
       "hour": "{{count}}h",
@@ -253,9 +252,9 @@
       "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
       "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido.",
       "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar.",
-      "SESSIONS_021": "Ese enlace no abre nada. Puede que haya caducado o se haya revocado.",
-      "SESSIONS_022": "Inicia sesión para abrir este enlace.",
-      "SESSIONS_023": "Este enlace no está compartido contigo.",
+      "SESSIONS_021": "Esa sesión no está compartida, o ya no. Pide a quien la compartió que vuelva a compartirla.",
+      "SESSIONS_022": "Inicia sesión para abrir esta sesión compartida.",
+      "SESSIONS_023": "Esta sesión no está compartida contigo.",
       "SESSIONS_024": "Esta sesión ya tiene todos los enlaces que admite. Revoca uno e inténtalo de nuevo."
     },
     "notFound": {
@@ -673,93 +672,135 @@
       "name": "Nombre"
     },
     "share": {
-      "title": "Compartir «{{name}}»",
-      "description": "Un enlace que abre el terminal de esta sesión a alguien de fuera de tu espacio de trabajo, mientras tú puedas abrirla, hasta que caduque o lo revoques. Verán todo lo que muestre el terminal, secretos y rutas incluidos, y revocarlo no borra lo que ya hayan visto.",
-      "access": "Pueden",
-      "read": "Mirar",
-      "readHint": "Ver el terminal en directo. Nada de lo que escriban le llega.",
-      "write": "Escribir",
-      "writeHint": "Escribir en el terminal: una shell en tu máquina, como tú.",
-      "readBadge": "Solo mirar",
-      "writeBadge": "Puede escribir",
-      "audience": "Quién puede abrirlo",
-      "people": "Solo las personas que indique",
-      "peopleHint": "Entran con uno de estos correos verificados.",
-      "accounts": "Cualquiera con sesión iniciada",
-      "accountsHint": "Cualquiera con el enlace y una cuenta de Oppenheimer.",
-      "anyone": "Cualquiera con el enlace",
-      "anyoneHint": "Sin iniciar sesión. Quien tenga el enlace tiene el terminal.",
-      "emails": "Correos",
-      "emailsPlaceholder": "ada@example.com, grace@example.com",
-      "emailsHint": "Sepáralos con comas, espacios o saltos de línea.",
-      "peopleInvalid": "Escribe al menos un correo, y solo correos.",
-      "lifetime": "Caduca",
-      "lifetimes": {
-        "1h": "En 1 hora",
-        "1d": "En 1 día",
-        "7d": "En 7 días",
-        "30d": "En 30 días",
-        "never": "Nunca"
-      },
-      "lifetimeSearch": "Buscar una caducidad",
-      "lifetimeNone": "No hay esa caducidad",
-      "lifetimeCapped": "Los enlaces que permiten escribir a cualquiera caducan en 7 días como máximo.",
-      "lifetimeTooLong": "Un enlace que permite escribir a cualquiera debe caducar en 7 días como máximo.",
-      "writeWarning": "Quien abra este enlace podrá ejecutar comandos en tu máquina como tú. Mejor indicar las personas y una caducidad corta.",
-      "writeNote": "Las personas que indiques podrán ejecutar comandos en tu máquina como tú.",
-      "create": "Crear enlace",
-      "creating": "Creando…",
-      "failed": "No se pudo crear el enlace.",
-      "linkTitle": "Enlace para compartir",
-      "onceOnly": "Cópialo ahora: solo se muestra una vez. Si se pierde, revócalo y crea otro.",
-      "another": "Otro enlace",
-      "live": "Enlaces activos",
-      "none": "No hay enlaces activos.",
-      "listFailed": "No se pudieron cargar los enlaces.",
-      "revoke": "Revocar",
-      "revoking": "Revocando…",
-      "revokeFailed": "No se pudo revocar el enlace.",
-      "until": "Hasta el {{date}}",
-      "noExpiry": "Sin caducidad",
+      "title": "Compartir sesión",
+      "managing": "Compartida",
+      "on": "en {{host}}",
+      "thisHost": "este host",
+      "loadFailed": "No se pudo cargar cómo se comparte esta sesión.",
+      "who": "Con quién",
       "audiences": {
-        "anyone": "Cualquiera con el enlace",
-        "accounts": "Cualquiera con sesión iniciada"
-      }
+        "people": "Personas concretas",
+        "link": "Cualquiera con el enlace"
+      },
+      "peoplePlaceholder": "Nombre o correo",
+      "peopleLabel": "Personas con quien compartir",
+      "invite": "Invitar a {{email}}",
+      "inviteHint": "Fuera de este espacio · inician sesión para abrirla",
+      "inviteEmpty": "Escribe un correo completo para invitar a alguien de fuera del espacio.",
+      "outside": "fuera del espacio",
+      "removePerson": "Quitar a {{name}}",
+      "peopleRequired": "Añade al menos una persona.",
+      "linkHint": "Quien abra el enlace e inicie sesión podrá mirar. El acceso por enlace es siempre de solo lectura.",
+      "permission": "Permiso",
+      "access": {
+        "read": {
+          "label": "Puede ver",
+          "hint": "Ve el terminal en directo. No puede escribir ni parar la sesión."
+        },
+        "write": {
+          "label": "Puede escribir",
+          "hint": "Envía prompts y comandos. Se ejecutan como tú."
+        }
+      },
+      "writeLocked": "El acceso de escritura necesita personas concretas. Cambia a «Personas concretas» para darlo.",
+      "writeWarningTitle": "{{who}} actuará como tú en {{host}}",
+      "writeWarningCount_one": "{{count}} persona",
+      "writeWarningCount_other": "{{count}} personas",
+      "writeWarningBody": "Todo lo que envíen se ejecuta con tus credenciales y tu token de GitHub. Pueden hacer push, borrar archivos y gastar tu cuota.",
+      "writeAck": "Entiendo que actúan como yo en este host",
+      "ackRequired": "Confirma que lo entiendes antes de dar acceso de escritura.",
+      "duration": "Durante cuánto tiempo",
+      "lifetimes": {
+        "1h": "1 hora",
+        "8h": "8 horas",
+        "24h": "24 horas",
+        "7d": "7 días",
+        "never": "No caduca"
+      },
+      "endsRead": "Termina el {{date}}. Puedes dejar de compartir cuando quieras.",
+      "endsWrite": "Termina el {{date}}. El acceso de escritura dura 24 horas como máximo.",
+      "neverHint": "No caduca. El acceso sigue hasta que dejes de compartir.",
+      "submit": {
+        "people": "Compartir",
+        "link": "Crear enlace",
+        "write": "Dar acceso de escritura"
+      },
+      "submitting": "Compartiendo…",
+      "failed": "No se pudo compartir la sesión.",
+      "link": "Enlace",
+      "copyLink": "Copiar enlace",
+      "copied": "Copiado",
+      "linkHintLink": "Quien inicie sesión puede mirar. Nunca muestra controles de escritura.",
+      "linkHintPeople": "Solo las personas de abajo pueden abrirla. El resto ve «No tienes acceso».",
+      "whoHasAccess": "Quién tiene acceso",
+      "you": "{{email}} · tú",
+      "roles": {
+        "owner": "Propietario",
+        "read": "Puede ver",
+        "write": "Puede escribir"
+      },
+      "anyoneRow": "Cualquiera con el enlace",
+      "anyoneRowHint": "Debe iniciar sesión para abrirla",
+      "removeAccess": "Quitar acceso",
+      "expired": "terminado",
+      "never": "nunca",
+      "stop": "Dejar de compartir",
+      "stopping": "Dejando de compartir…",
+      "addPeople": "Añadir personas",
+      "addTitle": "Añadir personas",
+      "addSubmit": "Añadir",
+      "addHint": "Tendrán el mismo acceso que quienes ya están: {{role}}, hasta que termine.",
+      "done": "Hecho",
+      "updateFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+      "status": {
+        "share": "Compartir",
+        "read": "Compartida · solo ver",
+        "write": "Compartida · puede escribir",
+        "link": "enlace"
+      },
+      "statusTitle": "Compartir esta sesión"
     },
     "shared": {
-      "watching": "Mirando",
-      "typing": "Puedes escribir",
+      "viewOnly": "Solo ver",
+      "canWrite": "Puede editar",
+      "endsIn": "Termina en {{time}}",
+      "leave": "Salir",
       "sharedBy": "Compartida por {{name}}",
+      "viewOnlyBy": "Solo ver · compartida por {{name}}",
+      "state": {
+        "live": "En marcha",
+        "stopped": "Parada"
+      },
       "status": {
         "connecting": "Conectando…",
         "live": "En directo",
-        "offline": "Máquina desconectada",
+        "offline": "Host desconectado",
         "closed": "Desconectado"
       },
       "ended": {
-        "stopped": "La sesión se detuvo.",
+        "stopped": "La sesión se paró.",
         "resolved": "La sesión se cerró.",
         "missing": "La sesión ya no existe.",
-        "unauthorized": "Este enlace ya no abre la sesión.",
-        "forbidden": "Este enlace ya no abre la sesión.",
-        "refused": "La máquina rechazó el terminal."
+        "unauthorized": "Esta sesión ya no está compartida contigo.",
+        "forbidden": "Esta sesión ya no está compartida contigo.",
+        "refused": "El host rechazó el terminal."
       },
       "gone": {
-        "title": "Este enlace no abre nada",
-        "body": "Puede que haya caducado o se haya revocado, o que la sesión se cerrara. Pide uno nuevo a quien lo compartió."
+        "title": "Esta sesión no está compartida",
+        "body": "Puede que haya caducado, que quien la compartió dejara de compartirla o que la sesión se cerrara. Pídele que la vuelva a compartir."
       },
       "signIn": {
         "title": "Inicia sesión para abrir esta sesión",
-        "body": "Este enlace está compartido con cuentas de Oppenheimer.",
+        "body": "Las sesiones compartidas se abren con una cuenta de Oppenheimer.",
         "action": "Iniciar sesión"
       },
       "notInvited": {
-        "title": "Este enlace no está compartido contigo",
-        "body": "Solo se abre para las personas que indica, por un correo verificado. Pide a quien lo compartió que añada el tuyo."
+        "title": "No tienes acceso",
+        "body": "Esta sesión está compartida con personas concretas, por un correo verificado. Pide a quien la compartió que añada el tuyo."
       },
       "stopped": {
-        "title": "Esta sesión está detenida",
-        "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y este enlace volverá a abrirla."
+        "title": "Esta sesión está parada",
+        "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y esta página la volverá a abrir."
       }
     }
   },
@@ -1077,10 +1118,7 @@
       "title": "Pull requests",
       "views": "Vistas",
       "queue": "Cola de PR",
-      "analytics": "Analítica",
-      "repositories": "Repositorios",
-      "allRepositories": "Todos los repositorios",
-      "noRepositories": "Aún no sigues ningún repositorio."
+      "analytics": "Analítica"
     },
     "queue": {
       "title": "Cola de PR",
@@ -1101,19 +1139,17 @@
       },
       "search": "Busca por título, repositorio, #número o autor",
       "clearSearch": "Borrar la búsqueda",
-      "laneLabel": "Carril",
       "all": "Todas",
       "noMatch": "Ninguna pull request coincide con «{{query}}».",
       "emptyTitle": "No hay nada en esta vista",
       "emptyHint": "Las pull requests que abren tus sesiones o tus compañeros llegan aquí con el carril ya elegido.",
       "emptyWatchingTitle": "No sigues ningún repositorio",
-      "emptyWatchingHint": "Busca repositorios en Seguir repositorios. Sus pull requests abiertas aparecen aquí.",
+      "emptyWatchingHint": "Elige en Ajustes los repositorios que quieres observar. Sus pull requests abiertas aparecen aquí.",
       "loadFailed": "No se pudieron cargar las pull requests.",
       "notConnectedTitle": "Conecta GitHub para ver pull requests",
       "notConnectedHint": "Instala la app de GitHub en la cuenta que tiene tus repositorios.",
       "connect": "Conectar GitHub",
       "range": "{{first}}–{{last}} de {{total}}",
-      "openChanges": "Abrir cambios",
       "review": "Revisar",
       "session": "Sesión",
       "merged": "Fusionada",
@@ -1131,21 +1167,27 @@
       "mergeButton": {
         "merge": "Fusionar",
         "confirm": "Confirmar la fusión",
-        "cancel": "Cancelar la fusión"
-      }
+        "cancel": "Cancelar la fusión",
+        "confirmTitle": "Squash y merge en la rama base"
+      },
+      "repository": "Repositorio",
+      "allRepositories": "Todos los repositorios",
+      "noRepository": "Ningún repositorio coincide.",
+      "difficulty": "Dificultad",
+      "any": "Cualquiera",
+      "anyTime": "Cualquier espera",
+      "waits": {
+        "hour": "Menos de 1 h",
+        "day": "1 h – 1 día",
+        "older": "Más de 1 día"
+      },
+      "noFilterMatch": "Ninguna pull request coincide con estos filtros.",
+      "configureWatched": "Configurar repositorios observados"
     },
     "lanes": {
       "deep": "A fondo",
       "medium": "Media",
       "quick": "Rápida"
-    },
-    "laneReason": {
-      "risky_path": "Toca {{path}}, donde conviene leer con calma.",
-      "large_change": "{{lines}} líneas cambiadas.",
-      "docs_tests_config": "Solo documentación, tests y configuración.",
-      "small_change": "Un cambio pequeño: {{lines}} líneas en {{files}} archivos.",
-      "medium_change": "{{lines}} líneas en {{files}} archivos.",
-      "files_unread": "GitHub no devolvió sus archivos, así que el carril sale solo de su tamaño ({{lines}} líneas)."
     },
     "checks": {
       "passing": "Pasan",
@@ -1176,13 +1218,14 @@
       "none": "Aún no hay repositorios que seguir",
       "unwatch": "Dejar de seguir {{name}}",
       "private": "Privado",
-      "failed": "No se pudieron actualizar los repositorios seguidos."
+      "failed": "No se pudieron actualizar los repositorios seguidos.",
+      "empty": "Añade un repositorio para seguir sus pull requests.",
+      "loadFailed": "No se pudieron cargar los repositorios observados."
     },
     "detail": {
       "back": "Volver a la cola",
       "viewLabel": "Vista",
       "views": {
-        "briefing": "Resumen",
         "description": "Descripción",
         "changes": "Cambios"
       },
@@ -1195,57 +1238,11 @@
         "draft": "Borrador"
       },
       "into": "en",
-      "size": "Tamaño",
-      "files": "Archivos",
-      "inFolders_one": "en {{count}} carpeta",
-      "inFolders_other": "en {{count}} carpetas",
-      "inFolders_many": "en {{count}} carpetas",
-      "checks": "Checks",
-      "conflicts": "Conflictos",
-      "mergesCleanly": "Se fusiona sin conflictos en {{base}}",
-      "withBase": "Con {{base}} · haz rebase antes de fusionar",
-      "noneWord": "Ninguno",
-      "pathToMerge": "Camino a la fusión",
-      "gatesDone": "{{done}} de {{total}} hechos",
-      "gates": {
-        "checks": "Checks",
-        "conflicts": "Conflictos",
-        "review": "Revisión",
-        "merge": "Fusión"
-      },
-      "gateMeta": {
-        "checks": {
-          "done": "Todos pasan",
-          "failed": "{{failed}} fallan",
-          "pending": "{{pending}} en curso"
-        },
-        "conflicts": {
-          "done": "Sin conflictos",
-          "failed": "Rebase sobre {{base}}",
-          "pending": "GitHub lo está comprobando"
-        },
-        "review": {
-          "done": "Aprobada",
-          "failed": "Se pidieron cambios",
-          "pending": "Espera revisión"
-        },
-        "merge": {
-          "done": "Fusionada",
-          "pending": "Squash en {{base}}"
-        }
-      },
-      "mergeNote": "Squash y fusión en {{base}} como @{{login}}.",
-      "mergeNoteNoLogin": "Vuelve a conectar GitHub para que la fusión se haga en tu nombre.",
-      "mergedInto": "Fusionada en {{base}}.",
-      "reviewChanges": "Revisar los cambios",
-      "brief": "Resumen",
       "noDescription": "Sin descripción.",
       "copyCode": "Copiar código",
       "codeCopied": "Copiado",
-      "whatChanges": "Qué cambia",
-      "risk": "Carril",
-      "where": "Sobre todo {{folders}}",
-      "reviewers": "Revisores",
+      "editOnGithub": "Editar en GitHub",
+      "checks": "Checks",
       "noReviewers": "Nadie la ha revisado todavía.",
       "reviewer": {
         "approved": "Aprobada",
@@ -1253,9 +1250,7 @@
         "commented": "Comentó",
         "requested": "Pedida"
       },
-      "opened": "{{author}} quiere fusionar {{head}} en {{base}}",
       "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
-      "filesUnread": "GitHub no devolvió los archivos en esta lectura.",
       "rail": {
         "mergeStatus": "Estado de la fusión",
         "canMerge": "Se puede fusionar sin conflictos",
@@ -1269,31 +1264,8 @@
         "noComments": "Sin comentarios",
         "commentCount_one": "{{count}} comentario",
         "commentCount_other": "{{count}} comentarios",
-        "commentCount_many": "{{count}} comentarios"
-      },
-      "editOnGithub": "Editar en GitHub",
-      "activity": {
-        "title": "Actividad",
-        "empty": "Aún no ha pasado nada aquí.",
-        "loadFailed": "No se pudo cargar la actividad.",
-        "commits_one": "{{count}} commit",
-        "commits_other": "{{count}} commits",
-        "commits_many": "{{count}} commits",
-        "review": {
-          "approved": "{{author}} aprobó estos cambios",
-          "changes_requested": "{{author}} pidió cambios",
-          "commented": "{{author}} revisó",
-          "dismissed": "Se descartó la revisión de {{author}}"
-        },
-        "event": {
-          "review_requested": "{{author}} pidió una revisión a {{subject}}",
-          "merged": "{{author}} fusionó esta pull request",
-          "closed": "{{author}} cerró esta pull request",
-          "reopened": "{{author}} reabrió esta pull request",
-          "ready_for_review": "{{author}} la marcó como lista para revisar",
-          "convert_to_draft": "{{author}} la convirtió en borrador",
-          "head_ref_force_pushed": "{{author}} hizo force-push de la rama"
-        }
+        "commentCount_many": "{{count}} comentarios",
+        "commentsFailed": "No se pudieron cargar los comentarios."
       }
     },
     "review": {
@@ -1305,8 +1277,12 @@
           "description": "Publica tus comentarios sin veredicto."
         },
         "approve": {
-          "label": "Aprobar y fusionar",
-          "description": "Aprueba como tú y fusiona en cuanto GitHub lo permita."
+          "label": "Aprobar",
+          "description": "Aprueba en tu nombre. El merge lo haces tú después."
+        },
+        "approve_and_merge": {
+          "label": "Aprobar y hacer merge",
+          "description": "Aprueba en tu nombre y hace merge cuando pasen los checks obligatorios."
         },
         "request_changes": {
           "label": "Pedir cambios",
@@ -1637,12 +1613,16 @@
       "online": "Runner conectado",
       "mintFailed": "No hemos podido crear un token de registro.",
       "installerDigest": "SHA-256 del instalador: {{digest}}",
-      "copyCommand": "Copiar comando de instalación",
-      "copyPrompt": "Copiar instrucción para el agente",
-      "inspect": "Ver comando e instrucción",
+      "copyPrompt": "Copiar instrucción",
       "format": "Formato de instalación",
       "command": "Comando",
-      "agentPrompt": "Instrucción para el agente"
+      "agentPrompt": "Instrucción para el agente",
+      "manualLead": "Ejecuta esto tú mismo en la máquina:",
+      "connection": "Conexión",
+      "installWaiting": "Esperando a que el agente ejecute la instalación",
+      "installed": "Runner instalado",
+      "connected": "Host conectado",
+      "manual": "Instalar a mano"
     },
     "add": {
       "title": "Añadir un host",
@@ -1661,7 +1641,7 @@
       },
       "crumbHosts": "Hosts",
       "done": "Listo",
-      "description": "Ejecuta un comando en la máquina donde quieras las sesiones. Nada de ella queda expuesto a internet."
+      "description": "Pega esta instrucción en el agente de código de la máquina donde quieras las sesiones. Instala el runner y lo conecta. Nada queda expuesto a internet."
     },
     "settings": {
       "state": {
@@ -1702,7 +1682,8 @@
       "account": "Cuenta",
       "workspace": "Espacio de trabajo",
       "profile": "Perfil",
-      "hosts": "Hosts"
+      "hosts": "Hosts",
+      "repositories": "Repositorios observados"
     },
     "profile": {
       "title": "Perfil",
@@ -1791,6 +1772,10 @@
       "empty": "Todavía no hay hosts",
       "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
       "failed": "No se pudieron cargar los hosts."
+    },
+    "repositories": {
+      "title": "Repositorios observados",
+      "description": "Las pull requests abiertas de estos repositorios aparecen en la pestaña Observando de la cola de PR, aunque nadie haya pedido tu revisión."
     }
   },
   "nav": {
@@ -1882,10 +1867,10 @@
       },
       "host": {
         "title": "Añade tu primer host",
-        "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
+        "description": "Pega esta instrucción en el agente de código de la máquina donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Instala el runner y lo conecta. Nada queda expuesto a internet.",
         "defaultName": "Mi primer host",
         "skip": "Saltar por ahora",
-        "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
+        "skipNote": "Puedes añadir un host más tarde desde cualquier sesión nueva."
       },
       "ready": {
         "title": "Todo listo",
@@ -2097,6 +2082,8 @@
     "reviewSubmitted": "Revisión enviada.",
     "reviewApprovedMerged": "Aprobada y fusionada.",
     "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
-    "reviewCommentPosted": "Comentario publicado."
+    "reviewCommentPosted": "Comentario publicado.",
+    "reviewApproved": "Aprobada.",
+    "reviewApprovedAutoMerge": "Aprobada. Se hará merge cuando pasen los checks obligatorios."
   }
 }

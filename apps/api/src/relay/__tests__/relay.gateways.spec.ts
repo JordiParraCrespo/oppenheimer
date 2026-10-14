@@ -141,7 +141,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     findAttachTarget: vi.fn(async (id) =>
       id === SESSION ? { id, organizationId: ORG, hostId: HOST, state: 'live' as const } : null,
     ),
-    shareLinkAdmits: vi.fn().mockResolvedValue(false),
+    shareAdmits: vi.fn().mockResolvedValue(false),
     findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
   const tickets = new Map<string, AttachTicket>();
@@ -1439,25 +1439,25 @@ describe('browser attach socket', () => {
     });
   });
 
-  describe('through a share link', () => {
-    const LINK = 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b';
+  describe('through a share', () => {
+    const SHARE = 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b';
     const VIEWER = 'f0e1d2c3-b4a5-4697-8a9b-cadbecfd0e1f';
 
-    function shareTicket(readOnly: boolean, viewerUserId: string | null = null): string {
+    function shareTicket(readOnly: boolean, viewerUserId: string = VIEWER): string {
       const ticket = `s-${Math.random().toString(36).slice(2)}`;
       h.tickets.set(`attach:${ticket}`, {
         sessionId: SESSION,
         organizationId: ORG,
         window: 0,
         userId: USER,
-        share: { linkId: LINK, readOnly, viewerUserId },
+        share: { shareId: SHARE, readOnly, viewerUserId },
       });
       return ticket;
     }
 
-    /** What the link's own judgment answers: still open for this holder, or not. */
-    function linkIs(admits: boolean) {
-      vi.mocked(h.lookup.shareLinkAdmits).mockResolvedValue(admits);
+    /** What the share's own judgment answers: still open for this guest, or not. */
+    function shareIs(admits: boolean) {
+      vi.mocked(h.lookup.shareAdmits).mockResolvedValue(admits);
     }
 
     async function attachedThrough(ticket: string) {
@@ -1474,8 +1474,8 @@ describe('browser attach socket', () => {
       return { runner, browser, attach: message };
     }
 
-    it('never offers a direct path through a share link, whatever the flag says', async () => {
-      linkIs(true);
+    it('never offers a direct path through a share, whatever the flag says', async () => {
+      shareIs(true);
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
       const runner = await runnerUp(h, { capabilities: ['attachment.direct'] });
       sockets.push(runner);
@@ -1487,21 +1487,21 @@ describe('browser attach socket', () => {
       expect((await attached).text).toEqual({ type: 'attached', window: 0 });
     });
 
-    it('attaches a read link read-only and never forwards its keystrokes', async () => {
-      linkIs(true);
+    it('attaches a read share read-only and never forwards its keystrokes', async () => {
+      shareIs(true);
       const { runner, browser, attach } = await attachedThrough(shareTicket(true));
       expect(attach).toMatchObject({ type: 'session.attach', readOnly: true });
 
       // Regression guard: a watcher's typing reaching the PTY is a shell for
-      // anyone holding a read link. The resize after it is what arrives.
+      // anyone a session is shared with to watch. The resize after it is what arrives.
       const next = nextMessage(runner);
       browser.send(Buffer.from('rm -rf ~\r'), { binary: true });
       browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
       expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
     });
 
-    it('forwards a write link’s keystrokes, judged as the person who shared it', async () => {
-      linkIs(true);
+    it('forwards a write share’s keystrokes, judged as the person who shared it', async () => {
+      shareIs(true);
       const { runner, browser, attach } = await attachedThrough(shareTicket(false));
       expect(attach).not.toHaveProperty('readOnly');
       expect(h.workspaces.isMember).toHaveBeenCalledWith(ORG, USER);
@@ -1511,8 +1511,8 @@ describe('browser attach socket', () => {
       expect(((await input).bytes as Buffer).subarray(4).toString()).toBe('ls\r');
     });
 
-    it('refuses a link that was revoked or expired before the socket opened', async () => {
-      linkIs(false);
+    it('refuses a share that was stopped or expired before the socket opened', async () => {
+      shareIs(false);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(false)]);
       sockets.push(browser);
       const gone = closed(browser);
@@ -1521,27 +1521,33 @@ describe('browser attach socket', () => {
 
       expect((await why).text).toEqual({ type: 'closed', reason: 'unauthorized' });
       await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
-      expect(h.lookup.shareLinkAdmits).toHaveBeenCalledWith(LINK, SESSION, null);
+      expect(h.lookup.shareAdmits).toHaveBeenCalledWith(
+        SHARE,
+        SESSION,
+        USER,
+        expect.any(Object),
+        false,
+      );
     });
 
-    it('closes a terminal open through a link once a re-check finds it revoked', async () => {
-      linkIs(true);
+    it('closes a terminal open through a share once a re-check finds it stopped', async () => {
+      shareIs(true);
       h.browsers.reauthorizeIntervalMs = 25;
       const { browser } = await attachedThrough(shareTicket(false));
       const gone = closed(browser);
-      linkIs(false);
+      shareIs(false);
 
       await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
     });
 
     it('closes once the person who shared it may no longer update the session', async () => {
-      linkIs(true);
+      shareIs(true);
       h.browsers.reauthorizeIntervalMs = 25;
       const { browser } = await attachedThrough(shareTicket(false));
       const gone = closed(browser);
       // Still a member, still on the host: only the role that let them open
       // a terminal was taken away. Their own ticket was judged on it at mint;
-      // a link mints with nobody signed in as them, so the relay asks.
+      // a share mints with nobody signed in as them, so the relay asks.
       vi.mocked(h.abilities.forRequest).mockResolvedValue(
         defineAbilitiesFromPermissions([
           { action: 'read', subject: 'Session', conditions: { organizationId: ORG } },
@@ -1555,8 +1561,8 @@ describe('browser attach socket', () => {
       });
     });
 
-    it('asks the link about the signed-in holder as their account is now', async () => {
-      linkIs(true);
+    it('asks the share about the guest as their account is now', async () => {
+      shareIs(true);
       vi.mocked(h.owners.findActiveOwner).mockImplementation(async (id) =>
         id === VIEWER
           ? ({ id, email: 'ada@example.com', emailVerified: true } as never)
@@ -1564,17 +1570,19 @@ describe('browser attach socket', () => {
       );
       await attachedThrough(shareTicket(true, VIEWER));
 
-      // A `people` link's list is matched against this, so an address
+      // A `people` share's list is matched against this, so an address
       // changed since mint is judged as the one the account has now.
-      expect(h.lookup.shareLinkAdmits).toHaveBeenCalledWith(LINK, SESSION, {
-        userId: VIEWER,
-        email: 'ada@example.com',
-        emailVerified: true,
-      });
+      expect(h.lookup.shareAdmits).toHaveBeenCalledWith(
+        SHARE,
+        SESSION,
+        USER,
+        { userId: VIEWER, email: 'ada@example.com', emailVerified: true },
+        true,
+      );
     });
 
-    it('closes when the signed-in holder’s own account may no longer act', async () => {
-      linkIs(true);
+    it('closes when the guest’s own account may no longer act', async () => {
+      shareIs(true);
       vi.mocked(h.owners.findActiveOwner).mockImplementation(async (id) =>
         id === VIEWER ? null : ({ id } as never),
       );

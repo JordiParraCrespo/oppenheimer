@@ -4,7 +4,8 @@
     "account": "Cuenta",
     "workspace": "Espacio de trabajo",
     "profile": "Perfil",
-    "hosts": "Hosts"
+    "hosts": "Hosts",
+    "repositories": "Repositorios observados"
   },
   "profile": {
     "title": "Perfil",
@@ -93,5 +94,9 @@
     "empty": "Todavía no hay hosts",
     "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
     "failed": "No se pudieron cargar los hosts."
+  },
+  "repositories": {
+    "title": "Repositorios observados",
+    "description": "Las pull requests abiertas de estos repositorios aparecen en la pestaña Observando de la cola de PR, aunque nadie haya pedido tu revisión."
   }
 }

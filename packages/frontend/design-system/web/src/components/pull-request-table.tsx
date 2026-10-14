@@ -22,8 +22,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
  * button, stretched over the row, so the actions beside it are never inside
  * it.
  *
- * The table reads its own width: from 880px it shows Size, Checks and
- * Conflicts as columns; narrower, they fold into one line under the title.
+ * The table reads its own width, in three steps: from 1080px it shows Size,
+ * Checks and Conflicts as columns; from 720px they fold into one line under
+ * the title, which wraps, and the actions keep their column; narrower, the
+ * actions wrap onto a line of their own under the title.
  *
  * - `PullRequestTable` / `PullRequestTableHead` / `PullRequestRow`: the card,
  *   its column heads, a row. The filter row (search and lanes) goes above
@@ -35,7 +37,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
  */
 
 const COLUMNS =
-  'grid-cols-[84px_minmax(0,1fr)_72px_auto] @[880px]/prq:grid-cols-[80px_minmax(0,1fr)_88px_88px_108px_68px_auto]';
+  'grid-cols-[72px_minmax(0,1fr)_64px] @[720px]/prq:grid-cols-[84px_minmax(0,1fr)_72px_auto] @[1080px]/prq:grid-cols-[80px_minmax(0,1fr)_88px_88px_108px_68px_auto]';
+
+/** A column only the widest table shows. */
+const WIDE = 'hidden @[1080px]/prq:block';
 
 function PullRequestTable({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -64,19 +69,19 @@ function PullRequestTableHead({
     >
       <span role="columnheader">{labels.lane ?? 'Lane'}</span>
       <span role="columnheader">{labels.title ?? 'Pull request'}</span>
-      <span role="columnheader" className="hidden text-right @[880px]/prq:block">
+      <span role="columnheader" className={cn(WIDE, 'text-right')}>
         {labels.size ?? 'Size'}
       </span>
-      <span role="columnheader" className="hidden @[880px]/prq:block">
+      <span role="columnheader" className={WIDE}>
         {labels.checks ?? 'Checks'}
       </span>
-      <span role="columnheader" className="hidden @[880px]/prq:block">
+      <span role="columnheader" className={WIDE}>
         {labels.conflicts ?? 'Conflicts'}
       </span>
       <span role="columnheader" className="text-right">
         {labels.waiting ?? 'Waiting'}
       </span>
-      <span role="columnheader" aria-hidden />
+      <span role="columnheader" aria-hidden className="hidden @[720px]/prq:block" />
     </div>
   );
 }
@@ -183,25 +188,28 @@ function PullRequestRow({
             </>
           ) : null}
         </span>
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 @[880px]/prq:hidden">
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 @[1080px]/prq:hidden">
           <Signal state={checks}>{checksLabel}</Signal>
           <Signal state={conflicts}>{conflictsLabel}</Signal>
           <DiffStat additions={additions} deletions={deletions} />
         </span>
       </div>
-      <span role="cell" className="hidden justify-self-end @[880px]/prq:block">
+      <span role="cell" className={cn(WIDE, 'justify-self-end')}>
         <DiffStat additions={additions} deletions={deletions} />
       </span>
-      <span role="cell" className="hidden @[880px]/prq:block">
+      <span role="cell" className={WIDE}>
         <Signal state={checks}>{checksLabel}</Signal>
       </span>
-      <span role="cell" className="hidden @[880px]/prq:block">
+      <span role="cell" className={WIDE}>
         <Signal state={conflicts}>{conflictsLabel}</Signal>
       </span>
       <span role="cell" className={cn('figures text-right text-xs', waitingTone === 'late' ? 'text-fg' : 'text-fg-muted')}>
         {waiting}
       </span>
-      <div role="cell" className="relative flex items-center justify-end gap-0.5">
+      <div
+        role="cell"
+        className="relative col-span-2 col-start-2 flex items-center justify-start gap-0.5 @[720px]/prq:col-span-1 @[720px]/prq:col-start-auto @[720px]/prq:justify-end"
+      >
         {actions}
       </div>
     </div>

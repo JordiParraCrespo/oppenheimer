@@ -33,5 +33,7 @@
   "reviewSubmitted": "Revisión enviada.",
   "reviewApprovedMerged": "Aprobada y fusionada.",
   "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
-  "reviewCommentPosted": "Comentario publicado."
+  "reviewCommentPosted": "Comentario publicado.",
+  "reviewApproved": "Aprobada.",
+  "reviewApprovedAutoMerge": "Aprobada. Se hará merge cuando pasen los checks obligatorios."
 }

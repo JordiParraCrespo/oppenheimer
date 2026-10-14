@@ -14,7 +14,7 @@ export function PullRequestCommentsSummary({ address }: { address: PullRequestAd
       <QueryState.Pending>
         <Skeleton className="h-5 w-32" />
       </QueryState.Pending>
-      <QueryState.Error fallback={t('pullRequests.detail.activity.loadFailed')} />
+      <QueryState.Error fallback={t('pullRequests.detail.rail.commentsFailed')} />
       <QueryState.Data of={activity}>
         {(items) => {
           const people = commenters(items);

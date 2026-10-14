@@ -8353,7 +8353,7 @@
     },
     "/api/v1/shared-sessions/lookup": {
       "post": {
-        "description": "The session’s name and state, and what the link lets the caller do. Works signed out for a link shared with anyone.",
+        "description": "The session’s name and state, what the share lets the caller do and until when, and who shared it.",
         "operationId": "findSharedSession",
         "parameters": [],
         "requestBody": {
@@ -8398,7 +8398,7 @@
             }
           },
           "404": {
-            "description": "SESSIONS_021 — Share link not found",
+            "description": "SESSIONS_021 — Not shared",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8418,13 +8418,13 @@
             }
           }
         },
-        "summary": "What a share link opens",
+        "summary": "What a shared session’s address opens",
         "tags": ["Shared sessions"]
       }
     },
     "/api/v1/shared-sessions/attach-ticket": {
       "post": {
-        "description": "Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.",
+        "description": "Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the share, and that whoever shared it may still open the session, at redemption and every minute after.",
         "operationId": "issueSharedAttachTicket",
         "parameters": [],
         "requestBody": {
@@ -8469,7 +8469,7 @@
             }
           },
           "404": {
-            "description": "SESSIONS_021 — Share link not found",
+            "description": "SESSIONS_021 — Not shared",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8499,7 +8499,7 @@
             }
           }
         },
-        "summary": "Mint a terminal ticket through a share link",
+        "summary": "Mint a terminal ticket for a shared session",
         "tags": ["Shared sessions"]
       }
     },
@@ -9046,10 +9046,85 @@
         "tags": ["Sessions"]
       }
     },
-    "/api/v1/sessions/{id}/share-links": {
+    "/api/v1/sessions/{id}/share/people": {
+      "patch": {
+        "description": "The people a share for specific people names, nothing else changed. To remove the last one, stop sharing.",
+        "operationId": "setSessionSharePeople",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSessionSharePeopleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionShareResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_021 — Not shared\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set who a session is shared with",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/share": {
       "get": {
-        "description": "Live and revoked or expired, newest first. Never the secrets.",
-        "operationId": "findShareLinks",
+        "description": "Its address, who may open it, what they may do and until when; `null` if it is not shared.",
+        "operationId": "findSessionShare",
         "parameters": [
           {
             "name": "id",
@@ -9066,10 +9141,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ShareLinkResponseDto"
-                  }
+                  "$ref": "#/components/schemas/SessionShareStateResponseDto"
                 }
               }
             }
@@ -9110,12 +9182,12 @@
             "bearer": []
           }
         ],
-        "summary": "The session’s share links",
+        "summary": "How this session is shared",
         "tags": ["Sessions"]
       },
-      "post": {
-        "description": "The answer carries the link’s secret, once. `read` links watch; `write` links type, as you. The audience is anyone with the link, any signed-in account, or the accounts whose emails you list. Revoking, the session closing, or your losing the host ends the link.",
-        "operationId": "createShareLink",
+      "put": {
+        "description": "Named people, or anyone signed in with the address. `read` watches; `write` types, as you, for named people only and for 24 hours at most. Sharing again replaces the settings and keeps the address.",
+        "operationId": "putSessionShare",
         "parameters": [
           {
             "name": "id",
@@ -9131,18 +9203,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateShareLinkRequest"
+                "$ref": "#/components/schemas/PutSessionShareRequest"
               }
             }
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreatedShareLinkResponseDto"
+                  "$ref": "#/components/schemas/SessionShareResponseDto"
                 }
               }
             }
@@ -9178,7 +9250,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_024 — Too many share links\n\nSESSIONS_005 — That session is closed",
+            "description": "SESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9193,25 +9265,15 @@
             "bearer": []
           }
         ],
-        "summary": "Share this session’s terminal with a link",
+        "summary": "Share this session’s terminal",
         "tags": ["Sessions"]
-      }
-    },
-    "/api/v1/sessions/{id}/share-links/{linkId}": {
+      },
       "delete": {
-        "description": "Nothing opens through it again. A terminal already open through it closes within a minute.",
-        "operationId": "revokeShareLink",
+        "description": "Its address opens nothing again, and a terminal already open through it closes within a minute. Sharing again makes a new address.",
+        "operationId": "stopSessionShare",
         "parameters": [
           {
             "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "linkId",
             "required": true,
             "in": "path",
             "schema": {
@@ -9244,7 +9306,7 @@
             }
           },
           "404": {
-            "description": "SESSIONS_021 — Share link not found\n\nSESSIONS_001 — Session not found",
+            "description": "SESSIONS_001 — Session not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9259,7 +9321,7 @@
             "bearer": []
           }
         ],
-        "summary": "Revoke a share link",
+        "summary": "Stop sharing this session",
         "tags": ["Sessions"]
       }
     },
@@ -14151,7 +14213,7 @@
     },
     "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/reviews": {
       "post": {
-        "description": "Posted to GitHub in the caller’s own name with its line comments: comment, request changes, or approve — which then merges when GitHub allows it, and otherwise leaves the pull request waiting.",
+        "description": "Posted to GitHub in the caller’s own name with its line comments: comment, request changes, approve, or approve and merge — which merges now when GitHub allows it, and otherwise turns on auto-merge so it merges once the required checks pass.",
         "operationId": "submitPullRequestReview",
         "parameters": [
           {
@@ -18430,12 +18492,12 @@
       "FindSharedSessionRequest": {
         "type": "object",
         "properties": {
-          "token": {
+          "slug": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9_-]{43}$"
+            "pattern": "^[A-Za-z0-9_-]{22}$"
           }
         },
-        "required": ["token"]
+        "required": ["slug"]
       },
       "SharedSessionResponseDto": {
         "type": "object",
@@ -18469,12 +18531,12 @@
       "IssueSharedAttachTicketRequest": {
         "type": "object",
         "properties": {
-          "token": {
+          "slug": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9_-]{43}$"
+            "pattern": "^[A-Za-z0-9_-]{22}$"
           }
         },
-        "required": ["token"]
+        "required": ["slug"]
       },
       "AttachTicketResponseDto": {
         "type": "object",
@@ -18942,7 +19004,41 @@
           }
         }
       },
-      "ShareLinkResponseDto": {
+      "SetSessionSharePeopleRequest": {
+        "type": "object",
+        "properties": {
+          "people": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 320
+            }
+          }
+        },
+        "required": ["people"]
+      },
+      "SessionShareOwnerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ada Lovelace"
+          },
+          "email": {
+            "type": "string",
+            "example": "ada@example.com"
+          }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "SessionShareResponseDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -18953,15 +19049,19 @@
             "type": "string",
             "format": "uuid"
           },
+          "slug": {
+            "type": "string",
+            "description": "The share’s address, `/s/<slug>`. It opens nothing on its own: a guest signs in, and is on `people` unless `audience` is `link`."
+          },
+          "audience": {
+            "type": "string",
+            "enum": ["people", "link"],
+            "description": "`people`, only the accounts on `people`; `link`, anyone signed in with the address."
+          },
           "access": {
             "type": "string",
             "enum": ["read", "write"],
             "description": "`read` watches the terminal; `write` types into it, as the person who shared it."
-          },
-          "audience": {
-            "type": "string",
-            "enum": ["anyone", "accounts", "people"],
-            "description": "`anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`."
           },
           "people": {
             "description": "Emails; empty unless `audience` is `people`.",
@@ -18970,41 +19070,53 @@
               "type": "string"
             }
           },
-          "label": {
-            "type": "string",
-            "nullable": true
-          },
           "expiresAt": {
             "format": "date-time",
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "No expiry when `null`."
           },
-          "revokedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
+          "sharedBy": {
+            "nullable": true,
+            "description": "Who shared it, while their account is active.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionShareOwnerResponseDto"
+              }
+            ]
           },
-          "live": {
-            "type": "boolean",
-            "description": "Neither revoked nor expired."
-          },
-          "createdAt": {
+          "updatedAt": {
             "format": "date-time",
             "type": "string"
           }
         },
-        "required": ["id", "sessionId", "access", "audience", "people", "live", "createdAt"]
+        "required": ["id", "sessionId", "slug", "audience", "access", "people", "updatedAt"]
       },
-      "CreateShareLinkRequest": {
+      "SessionShareStateResponseDto": {
         "type": "object",
         "properties": {
+          "share": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionShareResponseDto"
+              }
+            ]
+          }
+        }
+      },
+      "PutSessionShareRequest": {
+        "type": "object",
+        "properties": {
+          "audience": {
+            "type": "string",
+            "enum": ["people", "link"]
+          },
           "access": {
             "type": "string",
             "enum": ["read", "write"]
-          },
-          "audience": {
-            "type": "string",
-            "enum": ["anyone", "accounts", "people"]
           },
           "people": {
             "type": "array",
@@ -19017,81 +19129,11 @@
           },
           "lifetime": {
             "type": "string",
-            "enum": ["1h", "1d", "7d", "30d", null],
+            "enum": ["1h", "8h", "24h", "7d", null],
             "nullable": true
-          },
-          "label": {
-            "type": "string",
-            "maxLength": 80
           }
         },
-        "required": ["access", "audience"]
-      },
-      "CreatedShareLinkResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "sessionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "access": {
-            "type": "string",
-            "enum": ["read", "write"],
-            "description": "`read` watches the terminal; `write` types into it, as the person who shared it."
-          },
-          "audience": {
-            "type": "string",
-            "enum": ["anyone", "accounts", "people"],
-            "description": "`anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`."
-          },
-          "people": {
-            "description": "Emails; empty unless `audience` is `people`.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "label": {
-            "type": "string",
-            "nullable": true
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "revokedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "live": {
-            "type": "boolean",
-            "description": "Neither revoked nor expired."
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "token": {
-            "type": "string",
-            "description": "The link’s secret. Shown once and never again: only its digest is stored. The console puts it in the URL fragment, `/shared#<token>`."
-          }
-        },
-        "required": [
-          "id",
-          "sessionId",
-          "access",
-          "audience",
-          "people",
-          "live",
-          "createdAt",
-          "token"
-        ]
+        "required": ["audience", "access", "lifetime"]
       },
       "PrepareSessionRequest": {
         "type": "object",
@@ -21871,7 +21913,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "enum": ["checks", "conflicts", "review", "merge"]
+            "enum": ["checks", "conflicts", "merge"]
           },
           "state": {
             "type": "string",
@@ -22181,7 +22223,7 @@
         "properties": {
           "verdict": {
             "type": "string",
-            "enum": ["comment", "approve", "request_changes"]
+            "enum": ["comment", "approve", "approve_and_merge", "request_changes"]
           },
           "body": {
             "type": "string",
@@ -22226,10 +22268,14 @@
         "properties": {
           "merged": {
             "type": "boolean",
-            "description": "Merged now; false for a comment, a change request, or an approval GitHub would not merge yet."
+            "description": "Merged now; false for a comment, a change request, an approval alone, or an approve-and-merge GitHub would not merge yet."
+          },
+          "autoMerge": {
+            "type": "boolean",
+            "description": "Approve and merge only: GitHub will merge it once its required checks pass. False when the repository does not allow auto-merge, so it waits."
           }
         },
-        "required": ["merged"]
+        "required": ["merged", "autoMerge"]
       },
       "AddPullRequestCommentRequest": {
         "type": "object",

@@ -1,4 +1,3 @@
-export { useRegister } from './auth.queries';
 export {
   type PauseAutomationVariables,
   type RunAutomationVariables,
@@ -95,29 +94,32 @@ export {
   useSubmitPullRequestReview,
   useWatchedRepositories,
 } from './pull-requests.queries';
+export { useRegister } from './register.queries';
 export {
   type CloseSessionVariables,
   type CreateSessionVariables,
-  type CreateShareLinkVariables,
   type MoveSessionVariables,
+  type PutSessionShareVariables,
   type RenameSessionVariables,
-  type RevokeShareLinkVariables,
+  type SetSessionSharePeopleVariables,
+  type StopSessionShareVariables,
   useCloseSession,
   useCreateSession,
-  useCreateShareLink,
   useInvalidateSession,
   useMoveSession,
   usePasteSessionFile,
   usePrepareSession,
+  usePutSessionShare,
   useRenameSession,
   useRestartSession,
-  useRevokeShareLink,
   useSession,
   useSessionOpening,
+  useSessionShare,
   useSessionStartProgress,
   useSessions,
+  useSetSessionSharePeople,
   useSharedSession,
-  useShareLinks,
+  useStopSessionShare,
   useUploadSessionAttachment,
 } from './sessions.queries';
 export { useSessionStream, useSharedSessionStream } from './sessions.stream';

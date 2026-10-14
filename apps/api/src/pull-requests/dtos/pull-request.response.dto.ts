@@ -229,8 +229,8 @@ export class PullRequestQueueResponseDto {
 }
 
 export class PullRequestGateDto {
-  @ApiProperty({ enum: ['checks', 'conflicts', 'review', 'merge'] })
-  id!: 'checks' | 'conflicts' | 'review' | 'merge';
+  @ApiProperty({ enum: ['checks', 'conflicts', 'merge'] })
+  id!: 'checks' | 'conflicts' | 'merge';
 
   @ApiProperty({ enum: GATE_STATES })
   state!: (typeof GATE_STATES)[number];

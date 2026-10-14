@@ -23,6 +23,7 @@ export {
   type PullRequestScope,
   type ReadRefusal,
   type ReviewInput,
+  type ReviewOutcome,
   type ReviewVerdict,
   type UnreadableRepository,
   type WatchedRepository,
