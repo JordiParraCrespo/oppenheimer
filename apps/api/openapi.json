@@ -18370,7 +18370,7 @@
           },
           "isUnassigned": {
             "type": "boolean",
-            "description": "The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository."
+            "description": "The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived."
           },
           "createdAt": {
             "format": "date-time",
@@ -18402,7 +18402,6 @@
           },
           "repositories": {
             "type": "array",
-            "minItems": 1,
             "maxItems": 20,
             "items": {
               "type": "object",
@@ -18451,7 +18450,6 @@
           },
           "repositories": {
             "type": "array",
-            "minItems": 1,
             "maxItems": 20,
             "items": {
               "type": "object",

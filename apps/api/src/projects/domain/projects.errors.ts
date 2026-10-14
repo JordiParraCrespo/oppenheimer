@@ -36,14 +36,14 @@ export const ProjectErrors = {
     httpStatus: 409,
   },
   /**
-   * A repository list a project cannot hold: none at all, none offered by default,
-   * one repository twice, more than twenty, or a blank base branch. The detail
+   * A repository list a project cannot hold: repositories with none offered by
+   * default, one repository twice, more than twenty, or a blank base branch. The detail
    * names which. The shared schema refuses the same bodies earlier; this is the
    * aggregate holding its invariants whatever the caller.
    */
   INVALID_REPOSITORIES: {
     code: 'PROJECTS_006',
-    message: 'A project needs at least one repository, one of them a default',
+    message: 'A project’s repositories need a default, no repeats and a base branch each',
     httpStatus: 400,
   },
   /**

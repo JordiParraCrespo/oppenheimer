@@ -1320,7 +1320,7 @@ export type ProjectResponseDto = {
      */
     defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
     /**
-     * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.
+     * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
     isUnassigned: boolean;
     createdAt: string;

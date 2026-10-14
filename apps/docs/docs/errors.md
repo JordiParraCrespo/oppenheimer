@@ -415,7 +415,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
-| `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
 
@@ -427,10 +427,11 @@ project" is a question only the module that owns sessions can answer, asked over
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
 
-`PROJECTS_006` is a repository list a project cannot hold: none, none offered by
-default, one repository twice, more than twenty, or a blank base branch. The
+`PROJECTS_006` is a repository list a project cannot hold: repositories with none
+offered by default, one repository twice, more than twenty, or a blank base branch. The
 `detail` names which. The request schema refuses the same bodies earlier; this is the
-project holding its own invariants whatever the caller.
+project holding its own invariants whatever the caller. An empty list is not
+one of them: a project may hold no repository.
 
 `PROJECTS_007` should never be seen: the last slug a new project tries carries part
 of its own id. It is reported rather than retried.
