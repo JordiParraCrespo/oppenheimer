@@ -16,13 +16,14 @@
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
+<a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
 <button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations<span class="op-nav__count">{{ routineTotal }}</span></span></button>
 <a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
 </nav>
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
 <div class="op-sidebar__head">
-<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<span class="op-wordmark" style="font-size:18px">Oppenheimer</span>
 </div>
 <sc-if value="{{ inSessions }}" hint-placeholder-val="{{ true }}">
 <div style="padding:0 12px 10px">
@@ -202,7 +203,7 @@
 
 <sc-if value="{{ projPageOpen }}">
 <div class="op-scrim" onClick="{{ closeProj }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="proj-title" onClick="{{ stop }}" style="max-width:540px;overflow:visible">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="proj-title" onClick="{{ stop }}" style="max-width:560px;overflow:visible">
 <div class="op-dialog__head"><h2 class="op-dialog__title" id="proj-title" style="margin:0">{{ projDlgTitle }}</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeProj }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
 <div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px">
 <label class="op-field"><span class="op-label">Name</span><span class="op-input op-input--md"><input class="op-input__el" type="text" autoFocus="{{ true }}" placeholder="Name your project" value="{{ projName }}" onChange="{{ setProjName }}"></span></label>
@@ -279,71 +280,46 @@
 
 <sc-if value="{{ hostPageOpen }}">
 <div class="op-scrim" onClick="{{ closeAddHost }}" style="z-index:210">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="host-title" onClick="{{ stop }}" style="max-width:520px">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="host-title" onClick="{{ stop }}" style="max-width:560px">
 <div class="op-dialog__head"><h2 class="op-dialog__title" id="host-title" style="margin:0">Add a host</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAddHost }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
-<p class="op-dialog__desc" style="margin:0;text-wrap:pretty">Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.</p>
+<p class="op-dialog__desc" style="margin:0;text-wrap:pretty">Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet.</p>
 <div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
-<div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ copyCmdOnly }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="14" hint-size="14px,14px"></x-import>{{ hostCmdLabel }}</button>
-<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ copyPromptOnly }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="14" hint-size="14px,14px"></x-import>{{ hostPromptLabel }}</button>
+<div style="display:flex;flex-direction:column;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 14px">
+<button type="button" aria-expanded="{{ hostPromptExpanded }}" onClick="{{ toggleHostPrompt }}" style="display:flex;align-items:center;gap:6px;padding:0;border:0;background:none;font:inherit;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle);cursor:pointer">Agent prompt · {{ hostPromptToggleLabel }}<span style="display:flex;transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ hostPromptRot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ copyPromptOnly }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="13" hint-size="13px,13px"></x-import>{{ hostPromptLabel }}</button>
 </div>
-<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--fg-subtle)"><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span><a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a></div>
+<sc-if value="{{ hostPromptOpen }}">
+<pre style="margin:0;padding:12px 14px;max-height:180px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;border-top:1px solid var(--border-subtle);font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">{{ hostPromptText }}</pre>
+</sc-if>
+</div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:-8px">
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span><a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a></div>
+<a href="#" onClick="{{ toggleHostManual }}" style="font-size:12px">{{ hostManualLabel }}</a>
+</div>
+<sc-if value="{{ hostManualOpen }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;color:var(--fg-muted)">Run this on the machine yourself instead:</span>
+<div style="display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border-subtle)">
+<code style="flex:1;min-width:0;font-family:var(--font-mono);font-size:12px;color:var(--fg);overflow-x:auto;white-space:nowrap">{{ hostCmdText }}</code>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyCmdOnly }}" style="flex:none">{{ hostCmdLabel }}</button>
+</div>
+</div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Connection</span>
+<sc-if value="{{ hostWaiting }}" hint-placeholder-val="{{ true }}"><a href="#" onClick="{{ simulateHost }}" style="font-size:12px;color:var(--fg-subtle)">Simulate</a></sc-if>
 </div>
 <div style="display:flex;flex-direction:column">
-<button type="button" aria-expanded="{{ hostInspectOpenS }}" onClick="{{ toggleHostInspect }}" style="display:flex;align-items:center;gap:8px;width:100%;padding:0;border:0;background:none;font:inherit;color:var(--fg);cursor:pointer;text-align:left"><span style="font-size:13px;color:var(--fg-muted)">Inspect command and prompt</span><span style="flex:1"></span><span style="display:flex;color:var(--fg-subtle);transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ hostInspectRot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="15" hint-size="15px,15px"></x-import></span></button>
-<sc-if value="{{ hostInspectOpen }}"><div style="margin-top:10px">
-<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
-<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
-<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
-<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
+<sc-for list="{{ hostSteps }}" as="st" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:7px minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:8px 0">
+<span style="width:7px;height:7px;border-radius:980px;background:{{ st.dot }};animation:{{ st.anim }}"></span>
+<span style="font-size:13px;color:{{ st.fg }}">{{ st.label }}</span>
+<span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);font-variant-numeric:tabular-nums">{{ st.detail }}</span>
 </div>
-<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
-<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
-<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
-</button>
+</sc-for>
 </div>
-<div style="position:relative">
-<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
-  | sh -s -- --token opk_7f3a9c</pre>
-</sc-if>
-<sc-if value="{{ showingPrompt }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
-
-1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
-2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
-3. Install the runner:
-   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
-4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
-5. Verify the service is running:
-   oppenheimer-runner status
-6. Run the preflight and paste its full output:
-   oppenheimer-runner preflight
-7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
-8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
-
-Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
-</sc-if>
-</div>
-</div>
-</div></sc-if>
-</div>
-<div style="min-height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;border:1px solid var(--border-subtle);border-radius:14px">
-<sc-if value="{{ hostWaiting }}" hint-placeholder-val="{{ true }}">
-<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
-Waiting for the host to connect…
-</div>
-</sc-if>
-<sc-if value="{{ hostRegistered }}">
-<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
-<span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
-<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · git, tmux, claude ready</span>
-</div>
-</sc-if>
 </div>
 </div>
 <div class="op-dialog__foot">
@@ -356,7 +332,7 @@ Waiting for the host to connect…
 
 <sc-if value="{{ rDlgOpen }}">
 <div class="op-scrim" onClick="{{ closeRDlg }}">
-<div class="op-dialog op-dialog--lg" role="dialog" aria-modal="true" aria-labelledby="r-title" onClick="{{ stopR }}" style="overflow:visible">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="r-title" onClick="{{ stopR }}" style="max-width:560px;overflow:visible">
 <div class="op-dialog__head"><h2 class="op-dialog__title" id="r-title" style="margin:0">{{ rDlgTitle }}</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeRDlg }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
 <div role="tablist" aria-label="Automation steps" style="display:flex;gap:2px;margin:18px 28px 0;padding:3px;border-radius:980px;background:var(--hover-surface)">
 <button type="button" role="tab" aria-selected="{{ rTab0S }}" onClick="{{ goRStep0 }}" disabled="{{ rTab0Off }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;cursor:pointer;transition:background 80ms,color 80ms,opacity 80ms;background:{{ rTab0Bg }};color:{{ rTab0Fg }}"><span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:980px;font-family:var(--font-mono);font-size:10.5px;font-variant-numeric:tabular-nums;background:{{ rTab0NumBg }};color:{{ rTab0NumFg }}"><sc-if value="{{ rTab0Done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if><sc-if value="{{ rTab0Todo }}" hint-placeholder-val="{{ true }}">1</sc-if></span>Task</button>
@@ -367,7 +343,7 @@ Waiting for the host to connect…
 <sc-if value="{{ rStep0 }}" hint-placeholder-val="{{ true }}">
 <label class="op-field"><span class="op-label">Name</span><span class="op-input op-input--md"><input class="op-input__el" type="text" autoFocus="{{ rCreating }}" placeholder="Name this automation" value="{{ rName }}" onChange="{{ setRName }}"></span></label>
 <label class="op-field"><span class="op-label">What should the agent do?</span>
-<textarea class="op-textarea" aria-label="Instructions" placeholder="Describe the work for every run…" value="{{ rPrompt }}" onChange="{{ setRPrompt }}" style="min-height:112px;resize:vertical"></textarea>
+<textarea class="op-textarea" aria-label="Instructions" placeholder="Describe the work for every run…" value="{{ rPrompt }}" onChange="{{ setRPrompt }}" style="min-height:112px;resize:none"></textarea>
 <span class="op-hint">The pull request, issue or commit that fired the run is passed in as context.</span>
 </label>
 </sc-if>
@@ -967,6 +943,12 @@ Waiting for the host to connect…
 </div>
 </sc-if>
 
+<sc-if value="{{ recording }}">
+<span style="display:flex;align-items:center;gap:6px;margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--danger);font-variant-numeric:tabular-nums"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>{{ recordingTime }}</span>
+</sc-if>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ micLabel }}" aria-pressed="{{ micPressed }}" title="{{ micLabel }}" onClick="{{ toggleMic }}" style="flex:none;color:{{ micFg }}">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="16" hint-size="16px,16px"></x-import>
+</button>
 <button class="op-composer__send" type="button" aria-label="Start session" title="{{ sendTitle }}" disabled="{{ sendOff }}" onClick="{{ startSession }}" style="opacity:{{ sendOpacity }}">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
 </button>
@@ -1130,7 +1112,7 @@ Waiting for the host to connect…
 
 <sc-if value="{{ deleting }}">
 <div class="op-scrim" onClick="{{ cancelDelete }}">
-<div class="op-dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title" onClick="{{ stop }}" style="max-width:420px">
+<div class="op-dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title" onClick="{{ stop }}" style="max-width:440px">
 <div class="op-dialog__head"><h2 class="op-dialog__title" id="del-title" style="margin:0">Delete “{{ deleting }}”?</h2></div>
 <div class="op-dialog__body"><p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.</p></div>
 <div class="op-dialog__foot"><button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ cancelDelete }}">Cancel</button><button class="op-btn op-btn--danger op-btn--md" type="button" onClick="{{ confirmDelete }}">Delete session</button></div>
@@ -1140,7 +1122,7 @@ Waiting for the host to connect…
 
 <sc-if value="{{ movingName }}">
 <div class="op-scrim" onClick="{{ cancelMove }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="move-title" onClick="{{ stop }}" style="max-width:420px">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="move-title" onClick="{{ stop }}" style="max-width:440px">
 <div class="op-dialog__head"><div style="flex:1;display:flex;flex-direction:column;gap:6px">
 <h2 class="op-dialog__title" id="move-title" style="flex:none;margin:0">Move “{{ movingName }}”</h2>
 <p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Only projects that include <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--fg)">{{ movingRepo }}</span> can hold it. Its branch and worktree stay where they are.</p>
@@ -2152,11 +2134,19 @@ class Component extends DCLogic {
   };
 
   openAddHost() {
-    this.setState({ addHost: true, hostAdded: false, hostSecs: 3581, open: null, query: '', hostTab: 'cmd', hostCopied: null, hostInspect: false });
+    this.setState({ addHost: true, hostAdded: false, hostSecs: 3581, open: null, query: '', hostTab: 'cmd', hostCopied: null, hostInspect: false, hostStage: 0, hostPrompt: false, hostManual: false });
     clearInterval(this._hostTick);
     clearTimeout(this._hostReg);
     this._hostTick = setInterval(() => this.setState(st => ({ hostSecs: Math.max(0, st.hostSecs - 1) })), 1000);
-    this._hostReg = setTimeout(() => this.setState({ hostAdded: true }), 6000);
+    this._hostReg = setTimeout(() => this.hostAdvance(), 6000);
+  }
+
+  // 0 waiting · 1 runner installed · 2 host connected · 3 tools checked — same steps as onboarding
+  hostAdvance() {
+    clearTimeout(this._hostReg);
+    const n = Math.min(3, (this.state.hostStage || 0) + 1);
+    this.setState({ hostStage: n, hostAdded: n >= 3 });
+    if (n < 3) this._hostReg = setTimeout(() => this.hostAdvance(), 1400);
   }
 
   closeAddHost() {
@@ -2170,10 +2160,16 @@ class Component extends DCLogic {
     const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
     if (which === 'cmd') return cmd;
     return [
-      'Install the oppenheimer runner on this machine.',
-      'Run: ' + cmd,
-      'Then confirm it is running with: oppenheimer-runner status',
-      'Report the hostname and OS version back to me.',
+      'Connect this machine to Oppenheimer as a host.',
+      '1. Run: ' + cmd,
+      '2. Confirm the runner is up: oppenheimer-runner status',
+      '3. Check git, tmux and claude are on PATH; install any that are missing.',
+      '4. If the runner fails to start, read ~/.oppenheimer/runner.log and fix the cause before retrying.',
+      '5. Do not open any inbound ports; the runner only makes outbound connections.',
+      '6. Do not change shell profiles beyond adding the runner to PATH.',
+      '7. Report the hostname, OS version and runner version back to me.',
+      '',
+      'The token above is single use and expires in one hour.'
     ].join('\n');
   }
 
@@ -2773,7 +2769,25 @@ class Component extends DCLogic {
     if (hostOn) Object.assign(out, {
       hostInspectOpen: st.hostInspect ? 'true' : undefined, hostInspectOpenS: st.hostInspect ? 'true' : 'false', hostInspectRot: st.hostInspect ? '180deg' : '0deg',
       toggleHostInspect: e => { if (e) e.stopPropagation(); this.setState(x => ({ hostInspect: !x.hostInspect })); },
-      hostCmdLabel: st.hostCopied === 'cmd' ? 'Copied' : 'Copy command', hostPromptLabel: st.hostCopied === 'prompt' ? 'Copied' : 'Copy agent prompt',
+      hostCmdLabel: st.hostCopied === 'cmd' ? 'Copied' : 'Copy', hostPromptLabel: st.hostCopied === 'prompt' ? 'Copied' : 'Copy prompt',
+      hostPromptText: this.installText('prompt'), hostCmdText: this.installText('cmd'),
+      hostPromptOpen: st.hostPrompt ? 'true' : undefined, hostPromptExpanded: st.hostPrompt ? 'true' : 'false',
+      hostPromptToggleLabel: st.hostPrompt ? 'Hide' : 'Show', hostPromptRot: st.hostPrompt ? '180deg' : '0deg',
+      toggleHostPrompt: e => { if (e) e.stopPropagation(); this.setState(x => ({ hostPrompt: !x.hostPrompt })); },
+      hostManualOpen: st.hostManual ? 'true' : undefined, hostManualLabel: st.hostManual ? 'Hide manual install' : 'Install manually instead',
+      toggleHostManual: e => { e.preventDefault(); e.stopPropagation(); this.setState(x => ({ hostManual: !x.hostManual })); },
+      simulateHost: e => { e.preventDefault(); e.stopPropagation(); this.hostAdvance(); },
+      hostSteps: [
+        { pending: 'Waiting for the agent to run the install', done: 'Runner installed', detail: 'v0.9.2' },
+        { pending: 'Host connected', done: 'Host connected', detail: 'mac-studio · macOS 15' },
+        { pending: 'Tools on PATH', done: 'Tools on PATH', detail: 'git · tmux · claude' }
+      ].map((x, i) => {
+        const g = st.hostStage || 0, done = g > i, cur = g === i;
+        return { label: done ? x.done : x.pending, detail: done ? x.detail : '',
+          dot: done ? 'var(--success)' : cur ? 'var(--fg-subtle)' : 'var(--border)',
+          anim: cur ? 'op-pulse-dot 1.4s ease-in-out infinite' : 'none',
+          fg: done ? 'var(--fg)' : cur ? 'var(--fg-muted)' : 'var(--fg-subtle)' };
+      }),
       copyCmdOnly: this.copyInstall('cmd'), copyPromptOnly: this.copyInstall('prompt'),
       hostS1Done: st.hostAdded ? 'true' : 'false', hostS1Sum: st.hostAdded ? 'Installed' : '',
       hostS2Done: st.hostAdded ? 'true' : 'false', hostS2Sum: st.hostAdded ? 'mac-studio · macOS 15' : '',
@@ -3257,6 +3271,9 @@ class Component extends DCLogic {
       recording: this.state.recording ? 'true' : undefined,
       recordingTime: fmt(this.state.seconds),
       toggleMic: this.toggleMic,
+      micLabel: this.state.recording ? 'Stop dictation' : 'Dictate',
+      micPressed: this.state.recording ? 'true' : 'false',
+      micFg: this.state.recording ? 'var(--danger)' : 'var(--fg-muted)',
 
       // The bottom bar reads left to right as scope of action, then engine:
       // what it may touch, then who drives it and how hard it thinks.

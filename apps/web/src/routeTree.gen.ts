@@ -38,6 +38,7 @@ import { Route as AuthenticatedAutomationsAutomationIdRouteImport } from './rout
 import { Route as AuthenticatedAutomationsRunsRouteImport } from './routes/_authenticated/automations/runs'
 import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authenticated/plan/index'
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
+import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -199,6 +200,12 @@ const AuthenticatedPlanCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanMilestonesRoute =
+  AuthenticatedPlanMilestonesRouteImport.update({
+    id: '/milestones',
+    path: '/milestones',
+    getParentRoute: () => AuthenticatedPlanRoute,
+  } as any)
 const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -295,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -330,6 +338,7 @@ export interface FileRoutesByTo {
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -374,6 +383,7 @@ export interface FileRoutesById {
   '/_authenticated/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/automations/$automationId'
     | '/automations/runs'
     | '/plan/calendar'
+    | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -451,6 +462,7 @@ export interface FileRouteTypes {
     | '/automations/$automationId'
     | '/automations/runs'
     | '/plan/calendar'
+    | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -494,6 +506,7 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/$automationId'
     | '/_authenticated/automations/runs'
     | '/_authenticated/plan/calendar'
+    | '/_authenticated/plan/milestones'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -727,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanCalendarRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/milestones': {
+      id: '/_authenticated/plan/milestones'
+      path: '/milestones'
+      fullPath: '/plan/milestones'
+      preLoaderRoute: typeof AuthenticatedPlanMilestonesRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/pulls/': {
       id: '/_authenticated/pulls/'
       path: '/'
@@ -885,12 +905,14 @@ const AuthenticatedAutomationsRouteWithChildren =
 
 interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
+  AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
 }
 
 const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
+  AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
 }

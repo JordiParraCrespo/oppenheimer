@@ -3,14 +3,14 @@ import { z } from 'zod';
 
 /**
  * The board's address (`product/versions/mvp/18-plan-product.md` §1): the
- * project it is filtered to (its slug, or `unassigned`), the goal, which task's
+ * project it is filtered to (its slug, or `unassigned`), the milestone, which task's
  * dialog is open (`new` for New task) and which task the Start session dialog
  * is for. Each one is a link someone can send; the session header's "Back to
  * task" is `?task=`.
  */
 export const boardSearchSchema = z.object({
   project: searchText,
-  goal: searchText,
+  milestone: searchText,
   task: searchText,
   start: searchText,
 });

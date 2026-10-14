@@ -2097,7 +2097,7 @@ export type TaskResponseDto = {
      * Always set: a task with no project is filed under the Unassigned one.
      */
     projectId: string;
-    goalId?: string | null;
+    milestoneId?: string | null;
     status: 'later' | 'todo' | 'doing' | 'done';
     /**
      * Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.
@@ -2115,6 +2115,15 @@ export type TaskResponseDto = {
     dueTime?: string | null;
     completedAt?: string | null;
     /**
+     * Why the task waits on a person; null when it does not. Done clears it.
+     */
+    blockedReason?: string | null;
+    blockedAt?: string | null;
+    /**
+     * Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.
+     */
+    version: number;
+    /**
      * Oldest first.
      */
     sessions: Array<TaskSessionLinkResponseDto>;
@@ -2127,7 +2136,7 @@ export type CreateTaskRequest = {
     notes?: string;
     status?: 'later' | 'todo' | 'doing' | 'done';
     projectId?: string;
-    goalId?: string | null;
+    milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
 };
@@ -2136,14 +2145,17 @@ export type UpdateTaskRequest = {
     title?: string;
     notes?: string;
     projectId?: string;
-    goalId?: string | null;
+    milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    blockedReason?: string | null;
+    expectedVersion?: number;
 };
 
 export type MoveTaskRequest = {
     status: 'later' | 'todo' | 'doing' | 'done';
     afterTaskId: string | null;
+    expectedVersion?: number;
 };
 
 export type StartTaskSessionRequest = {
@@ -2184,7 +2196,7 @@ export type LinkTaskSessionRequest = {
     seenStatus: 'later' | 'todo' | 'doing' | 'done';
 };
 
-export type GoalResponseDto = {
+export type MilestoneResponseDto = {
     id: string;
     projectId: string;
     name: string;
@@ -2197,19 +2209,110 @@ export type GoalResponseDto = {
      * All its tasks.
      */
     totalCount: number;
+    /**
+     * Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.
+     */
+    version: number;
     createdAt: string;
 };
 
-export type CreateGoalRequest = {
+export type CreateMilestoneRequest = {
     name: string;
     projectId: string;
     targetDate?: string | null;
 };
 
-export type UpdateGoalRequest = {
+export type UpdateMilestoneRequest = {
     name?: string;
     projectId?: string;
     targetDate?: string | null;
+    expectedVersion?: number;
+};
+
+export type PlanStatsModelTokensDto = {
+    /**
+     * The model the turns ran on; null when the agent did not say.
+     */
+    model?: string | null;
+    /**
+     * Input plus output tokens over the period.
+     */
+    total: number;
+    /**
+     * Per week, in the order of `weeks`.
+     */
+    byWeek: Array<number>;
+};
+
+export type PlanStatsPeriodDto = {
+    tasksCompleted: number;
+    tasksCreated: number;
+    /**
+     * Input plus output tokens of the turns that reported usage; null when none did.
+     */
+    tokens?: number | null;
+    /**
+     * What the agents reported the turns cost, in US dollars; null when none did.
+     */
+    costUsd?: number | null;
+    /**
+     * Pull requests merged; null while pull requests are not counted on Plan.
+     */
+    pullRequestsMerged?: number | null;
+    completedByWeek: Array<number>;
+    createdByWeek: Array<number>;
+    tokensByModel?: Array<PlanStatsModelTokensDto> | null;
+    costByWeek?: Array<number> | null;
+};
+
+export type PlanStatsTotalsDto = {
+    tasksCompleted: number;
+    tasksCreated: number;
+    /**
+     * Input plus output tokens of the turns that reported usage; null when none did.
+     */
+    tokens?: number | null;
+    /**
+     * What the agents reported the turns cost, in US dollars; null when none did.
+     */
+    costUsd?: number | null;
+    /**
+     * Pull requests merged; null while pull requests are not counted on Plan.
+     */
+    pullRequestsMerged?: number | null;
+};
+
+export type PlanStatsProjectDto = {
+    projectId: string;
+    tasksCompleted: number;
+    tokens?: number | null;
+    costUsd?: number | null;
+    pullRequestsMerged?: number | null;
+};
+
+export type PlanStatsResponseDto = {
+    from: string;
+    to: string;
+    timeZone: string;
+    /**
+     * The Mondays of the weeks the period touches, oldest first; every series follows them.
+     */
+    weeks: Array<string>;
+    current: PlanStatsPeriodDto;
+    /**
+     * The period of the same length just before `from`; null without `compare`.
+     */
+    previous?: PlanStatsTotalsDto | null;
+    previousFrom?: string | null;
+    previousTo?: string | null;
+    /**
+     * Projects with any activity in the period.
+     */
+    projects: Array<PlanStatsProjectDto>;
+    /**
+     * `headless`: tokens and cost count the turns that report usage (headless ones); interactive turns in a terminal report none yet.
+     */
+    tokensMeasured: 'headless' | 'none';
 };
 
 export type CalendarEventResponseDto = {
@@ -2258,15 +2361,24 @@ export type UpdateCalendarEventRequest = {
 };
 
 export type GoogleCalendarConnectionResponseDto = {
+    id: string;
+    accountEmail: string;
     /**
-     * Whether the caller has connected, revoked or not.
+     * `revoked` when Google dropped the grant: the account offers Reconnect.
      */
-    connected: boolean;
-    accountEmail?: string | null;
+    status: 'active' | 'revoked';
     /**
-     * `revoked` when Google dropped the grant: the card offers Reconnect.
+     * The account’s colour on the month: the lowest free one when it was connected, never reassigned.
      */
-    status?: 'active' | 'revoked';
+    colorIndex: number;
+    /**
+     * When it was first connected.
+     */
+    connectedAt: string;
+};
+
+export type StartGoogleCalendarConnectionRequest = {
+    connectionId?: string;
 };
 
 export type GoogleCalendarConnectStartResponseDto = {
@@ -2280,6 +2392,54 @@ export type GoogleCalendarConnectStartResponseDto = {
 export type ConnectGoogleCalendarRequest = {
     code: string;
     state: string;
+};
+
+export type GoogleCalendarEventResponseDto = {
+    /**
+     * Ours a uuid; Google’s its own id, with the day for an all-day event spanning several.
+     */
+    id: string;
+    source: 'personal' | 'google';
+    title: string;
+    /**
+     * Empty for Google’s events, which are read-only here.
+     */
+    notes: string;
+    date: string;
+    allDay: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    /**
+     * Busy, or free time drawn muted.
+     */
+    busy: boolean;
+    /**
+     * Where a Google event opens in Google Calendar; null for a personal one.
+     */
+    url?: string | null;
+    /**
+     * The connection it was read from; the first one read when two accounts share it.
+     */
+    connectionId: string;
+};
+
+export type GoogleCalendarAccountReadResponseDto = {
+    /**
+     * The connection.
+     */
+    id: string;
+    /**
+     * `revoked`: Google dropped the grant, reconnect it. `error`: Google did not answer for it this time.
+     */
+    status: 'ok' | 'revoked' | 'error';
+};
+
+export type GoogleCalendarEventsResponseDto = {
+    events: Array<GoogleCalendarEventResponseDto>;
+    /**
+     * One per connection: one account failing marks only itself.
+     */
+    accounts: Array<GoogleCalendarAccountReadResponseDto>;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -8212,9 +8372,9 @@ export type FindTasksData = {
          */
         sessionId?: string;
         /**
-         * Only this goal’s tasks.
+         * Only this milestone’s tasks.
          */
-        goalId?: string;
+        milestoneId?: string;
         /**
          * Only this project’s tasks.
          */
@@ -8244,6 +8404,12 @@ export type FindTasksResponse = FindTasksResponses[keyof FindTasksResponses];
 
 export type CreateTaskData = {
     body: CreateTaskRequest;
+    headers?: {
+        /**
+         * Up to 128 characters. A retried request with the same key answers the row the first one made.
+         */
+        'Idempotency-Key'?: string;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/tasks';
@@ -8259,11 +8425,11 @@ export type CreateTaskErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
     /**
-     * TASKS_007 — Goal of another project
+     * TASKS_007 — Milestone of another project
      *
      * TASKS_004 — Project archived or missing
      */
@@ -8280,6 +8446,12 @@ export type CreateTaskResponse = CreateTaskResponses[keyof CreateTaskResponses];
 
 export type DeleteTaskData = {
     body?: never;
+    headers?: {
+        /**
+         * The version you read; the delete is refused (`TASKS_008`) when it is no longer current.
+         */
+        'If-Match'?: string;
+    };
     path: {
         id: string;
     };
@@ -8300,6 +8472,10 @@ export type DeleteTaskErrors = {
      * TASKS_001 — Task not found
      */
     404: ProblemDetailsDto;
+    /**
+     * TASKS_008 — Changed since it was read
+     */
+    409: ProblemDetailsDto;
 };
 
 export type DeleteTaskError = DeleteTaskErrors[keyof DeleteTaskErrors];
@@ -8361,13 +8537,15 @@ export type UpdateTaskErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      *
      * TASKS_001 — Task not found
      */
     404: ProblemDetailsDto;
     /**
-     * TASKS_007 — Goal of another project
+     * TASKS_008 — Changed since it was read
+     *
+     * TASKS_007 — Milestone of another project
      *
      * TASKS_004 — Project archived or missing
      */
@@ -8405,6 +8583,8 @@ export type MoveTaskErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * TASKS_008 — Changed since it was read
+     *
      * TASKS_006 — Stale position
      */
     409: ProblemDetailsDto;
@@ -8534,19 +8714,19 @@ export type LinkTaskSessionResponses = {
 
 export type LinkTaskSessionResponse = LinkTaskSessionResponses[keyof LinkTaskSessionResponses];
 
-export type FindGoalsData = {
+export type FindMilestonesData = {
     body?: never;
     path?: never;
     query?: {
         /**
-         * Only this project’s goals.
+         * Only this project’s milestones.
          */
         projectId?: string;
     };
-    url: '/api/v1/goals';
+    url: '/api/v1/milestones';
 };
 
-export type FindGoalsErrors = {
+export type FindMilestonesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8557,22 +8737,28 @@ export type FindGoalsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindGoalsError = FindGoalsErrors[keyof FindGoalsErrors];
+export type FindMilestonesError = FindMilestonesErrors[keyof FindMilestonesErrors];
 
-export type FindGoalsResponses = {
-    200: Array<GoalResponseDto>;
+export type FindMilestonesResponses = {
+    200: Array<MilestoneResponseDto>;
 };
 
-export type FindGoalsResponse = FindGoalsResponses[keyof FindGoalsResponses];
+export type FindMilestonesResponse = FindMilestonesResponses[keyof FindMilestonesResponses];
 
-export type CreateGoalData = {
-    body: CreateGoalRequest;
+export type CreateMilestoneData = {
+    body: CreateMilestoneRequest;
+    headers?: {
+        /**
+         * Up to 128 characters. A retried request with the same key answers the row the first one made.
+         */
+        'Idempotency-Key'?: string;
+    };
     path?: never;
     query?: never;
-    url: '/api/v1/goals';
+    url: '/api/v1/milestones';
 };
 
-export type CreateGoalErrors = {
+export type CreateMilestoneErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8587,24 +8773,30 @@ export type CreateGoalErrors = {
     409: ProblemDetailsDto;
 };
 
-export type CreateGoalError = CreateGoalErrors[keyof CreateGoalErrors];
+export type CreateMilestoneError = CreateMilestoneErrors[keyof CreateMilestoneErrors];
 
-export type CreateGoalResponses = {
-    201: GoalResponseDto;
+export type CreateMilestoneResponses = {
+    201: MilestoneResponseDto;
 };
 
-export type CreateGoalResponse = CreateGoalResponses[keyof CreateGoalResponses];
+export type CreateMilestoneResponse = CreateMilestoneResponses[keyof CreateMilestoneResponses];
 
-export type DeleteGoalData = {
+export type DeleteMilestoneData = {
     body?: never;
+    headers?: {
+        /**
+         * The version you read; the delete is refused (`TASKS_008`) when it is no longer current.
+         */
+        'If-Match'?: string;
+    };
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/goals/{id}';
+    url: '/api/v1/milestones/{id}';
 };
 
-export type DeleteGoalErrors = {
+export type DeleteMilestoneErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8614,29 +8806,33 @@ export type DeleteGoalErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
+    /**
+     * TASKS_008 — Changed since it was read
+     */
+    409: ProblemDetailsDto;
 };
 
-export type DeleteGoalError = DeleteGoalErrors[keyof DeleteGoalErrors];
+export type DeleteMilestoneError = DeleteMilestoneErrors[keyof DeleteMilestoneErrors];
 
-export type DeleteGoalResponses = {
+export type DeleteMilestoneResponses = {
     204: void;
 };
 
-export type DeleteGoalResponse = DeleteGoalResponses[keyof DeleteGoalResponses];
+export type DeleteMilestoneResponse = DeleteMilestoneResponses[keyof DeleteMilestoneResponses];
 
-export type UpdateGoalData = {
-    body: UpdateGoalRequest;
+export type UpdateMilestoneData = {
+    body: UpdateMilestoneRequest;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/goals/{id}';
+    url: '/api/v1/milestones/{id}';
 };
 
-export type UpdateGoalErrors = {
+export type UpdateMilestoneErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8646,22 +8842,60 @@ export type UpdateGoalErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * TASKS_002 — Goal not found
+     * TASKS_002 — Milestone not found
      */
     404: ProblemDetailsDto;
     /**
+     * TASKS_008 — Changed since it was read
+     *
      * TASKS_004 — Project archived or missing
      */
     409: ProblemDetailsDto;
 };
 
-export type UpdateGoalError = UpdateGoalErrors[keyof UpdateGoalErrors];
+export type UpdateMilestoneError = UpdateMilestoneErrors[keyof UpdateMilestoneErrors];
 
-export type UpdateGoalResponses = {
-    200: GoalResponseDto;
+export type UpdateMilestoneResponses = {
+    200: MilestoneResponseDto;
 };
 
-export type UpdateGoalResponse = UpdateGoalResponses[keyof UpdateGoalResponses];
+export type UpdateMilestoneResponse = UpdateMilestoneResponses[keyof UpdateMilestoneResponses];
+
+export type FindPlanStatsData = {
+    body?: never;
+    path?: never;
+    query: {
+        compare?: 'true' | 'false';
+        projectId?: string;
+        timeZone: string;
+        to: string;
+        from: string;
+    };
+    url: '/api/v1/plan/stats';
+};
+
+export type FindPlanStatsErrors = {
+    /**
+     * TASKS_003 — No active organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindPlanStatsError = FindPlanStatsErrors[keyof FindPlanStatsErrors];
+
+export type FindPlanStatsResponses = {
+    200: PlanStatsResponseDto;
+};
+
+export type FindPlanStatsResponse = FindPlanStatsResponses[keyof FindPlanStatsResponses];
 
 export type FindCalendarEventsData = {
     body?: never;
@@ -8796,14 +9030,14 @@ export type UpdateCalendarEventResponses = {
 
 export type UpdateCalendarEventResponse = UpdateCalendarEventResponses[keyof UpdateCalendarEventResponses];
 
-export type DisconnectGoogleCalendarData = {
+export type FindGoogleCalendarConnectionsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/calendar/google/connection';
+    url: '/api/v1/calendar/google/connections';
 };
 
-export type DisconnectGoogleCalendarErrors = {
+export type FindGoogleCalendarConnectionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8814,22 +9048,22 @@ export type DisconnectGoogleCalendarErrors = {
     403: ProblemDetailsDto;
 };
 
-export type DisconnectGoogleCalendarError = DisconnectGoogleCalendarErrors[keyof DisconnectGoogleCalendarErrors];
+export type FindGoogleCalendarConnectionsError = FindGoogleCalendarConnectionsErrors[keyof FindGoogleCalendarConnectionsErrors];
 
-export type DisconnectGoogleCalendarResponses = {
-    204: void;
+export type FindGoogleCalendarConnectionsResponses = {
+    200: Array<GoogleCalendarConnectionResponseDto>;
 };
 
-export type DisconnectGoogleCalendarResponse = DisconnectGoogleCalendarResponses[keyof DisconnectGoogleCalendarResponses];
+export type FindGoogleCalendarConnectionsResponse = FindGoogleCalendarConnectionsResponses[keyof FindGoogleCalendarConnectionsResponses];
 
-export type FindGoogleCalendarConnectionData = {
-    body?: never;
+export type StartGoogleCalendarConnectionData = {
+    body: StartGoogleCalendarConnectionRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/calendar/google/connection';
+    url: '/api/v1/calendar/google/connections';
 };
 
-export type FindGoogleCalendarConnectionErrors = {
+export type StartGoogleCalendarConnectionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8838,15 +9072,23 @@ export type FindGoogleCalendarConnectionErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
+    /**
+     * CALENDAR_011 / CALENDAR_007 — Five accounts already connected, or no such connection of the caller’s to reconnect
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
 };
 
-export type FindGoogleCalendarConnectionError = FindGoogleCalendarConnectionErrors[keyof FindGoogleCalendarConnectionErrors];
+export type StartGoogleCalendarConnectionError = StartGoogleCalendarConnectionErrors[keyof StartGoogleCalendarConnectionErrors];
 
-export type FindGoogleCalendarConnectionResponses = {
-    200: GoogleCalendarConnectionResponseDto;
+export type StartGoogleCalendarConnectionResponses = {
+    200: GoogleCalendarConnectStartResponseDto;
 };
 
-export type FindGoogleCalendarConnectionResponse = FindGoogleCalendarConnectionResponses[keyof FindGoogleCalendarConnectionResponses];
+export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectionResponses[keyof StartGoogleCalendarConnectionResponses];
 
 export type ConnectGoogleCalendarData = {
     body: ConnectGoogleCalendarRequest;
@@ -8871,6 +9113,10 @@ export type ConnectGoogleCalendarErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * CALENDAR_011 — Five accounts already connected
+     */
+    409: ProblemDetailsDto;
+    /**
      * CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
@@ -8888,14 +9134,19 @@ export type ConnectGoogleCalendarResponses = {
 
 export type ConnectGoogleCalendarResponse = ConnectGoogleCalendarResponses[keyof ConnectGoogleCalendarResponses];
 
-export type StartGoogleCalendarConnectionData = {
+export type RemoveGoogleCalendarConnectionData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * The connection.
+         */
+        id: string;
+    };
     query?: never;
-    url: '/api/v1/calendar/google/connection/start';
+    url: '/api/v1/calendar/google/connections/{id}';
 };
 
-export type StartGoogleCalendarConnectionErrors = {
+export type RemoveGoogleCalendarConnectionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -8904,19 +9155,15 @@ export type StartGoogleCalendarConnectionErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
-    /**
-     * CALENDAR_004 — Not configured
-     */
-    503: ProblemDetailsDto;
 };
 
-export type StartGoogleCalendarConnectionError = StartGoogleCalendarConnectionErrors[keyof StartGoogleCalendarConnectionErrors];
+export type RemoveGoogleCalendarConnectionError = RemoveGoogleCalendarConnectionErrors[keyof RemoveGoogleCalendarConnectionErrors];
 
-export type StartGoogleCalendarConnectionResponses = {
-    200: GoogleCalendarConnectStartResponseDto;
+export type RemoveGoogleCalendarConnectionResponses = {
+    204: void;
 };
 
-export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectionResponses[keyof StartGoogleCalendarConnectionResponses];
+export type RemoveGoogleCalendarConnectionResponse = RemoveGoogleCalendarConnectionResponses[keyof RemoveGoogleCalendarConnectionResponses];
 
 export type FindGoogleCalendarEventsData = {
     body?: never;
@@ -8952,17 +9199,9 @@ export type FindGoogleCalendarEventsErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * CALENDAR_007 — Not connected
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After
+     * CALENDAR_010 — Google Calendar's rate limit stopped every account; try again after Retry-After
      */
     429: ProblemDetailsDto;
-    /**
-     * CALENDAR_008 — Google did not answer
-     */
-    502: ProblemDetailsDto;
     /**
      * CALENDAR_004 — Not configured
      */
@@ -8972,7 +9211,7 @@ export type FindGoogleCalendarEventsErrors = {
 export type FindGoogleCalendarEventsError = FindGoogleCalendarEventsErrors[keyof FindGoogleCalendarEventsErrors];
 
 export type FindGoogleCalendarEventsResponses = {
-    200: Array<CalendarEventResponseDto>;
+    200: GoogleCalendarEventsResponseDto;
 };
 
 export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];

@@ -38,26 +38,35 @@ export function RunHistoryCard({
   });
 
   return (
-    <QueryState
-      query={history}
-      pending={<Skeleton shape="lg" className="h-47.5 w-full" />}
-      errorFallback={t('automations.history.loadFailed')}
-    >
-      {(data) => (
-        <RunHistory
-          title={t('automations.history.title')}
-          range={t('automations.history.range')}
-          succeededLabel={t('automations.history.succeeded')}
-          failedLabel={t('automations.history.failed')}
-          days={data.days.map((day) => ({ date: day.date, ok: day.succeeded, failed: day.failed }))}
-          link={
-            onOpenRuns
-              ? { label: t('automations.history.runs', { count: data.total }), onClick: onOpenRuns }
-              : undefined
-          }
-          axis={[dayLabel(data.days[0]?.date, locale), dayLabel(data.days.at(-1)?.date, locale)]}
-        />
-      )}
+    <QueryState query={history}>
+      <QueryState.Pending>
+        <Skeleton shape="lg" className="h-47.5 w-full" />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('automations.history.loadFailed')} />
+      <QueryState.Data of={history}>
+        {(data) => (
+          <RunHistory
+            title={t('automations.history.title')}
+            range={t('automations.history.range')}
+            succeededLabel={t('automations.history.succeeded')}
+            failedLabel={t('automations.history.failed')}
+            days={data.days.map((day) => ({
+              date: day.date,
+              ok: day.succeeded,
+              failed: day.failed,
+            }))}
+            link={
+              onOpenRuns
+                ? {
+                    label: t('automations.history.runs', { count: data.total }),
+                    onClick: onOpenRuns,
+                  }
+                : undefined
+            }
+            axis={[dayLabel(data.days[0]?.date, locale), dayLabel(data.days.at(-1)?.date, locale)]}
+          />
+        )}
+      </QueryState.Data>
     </QueryState>
   );
 }

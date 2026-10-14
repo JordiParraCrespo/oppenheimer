@@ -57,7 +57,15 @@ predictive echo hides whatever distance is left for what is typed most.
   host confirms its first guess**, so a prompt that does not echo (a
   password) is never drawn. The cursor is the terminal's where the program
   shows it (a shell, Codex) and the one inverse cell where it is hidden
-  (Claude Code, like every Ink program). It draws only above 30 ms of
+  (Claude Code, like every Ink program). While a guess is drawn the
+  terminal's own cursor is hidden, so the reader sees one cursor, the
+  predicted one, and not the host's trailing a few keys behind it. A
+  Backspace or Left never reaches into the prompt, a mark and a space
+  (`❯ `, `> `, `$ `), where the space may be any horizontal space, a
+  no-break one included. At the start of the text the guess is that the
+  key does nothing, which is what a line editor does there. Whether a guess ever moves when its echo
+  lands, or springs back after it, is photographed in Chromium by the e2e
+  `terminal` project (`e2e/tests/terminal/`). It draws only above 30 ms of
   measured round trip, and the `terminal_typeahead` ops flag (on by
   default) switches it off without a deploy.
 

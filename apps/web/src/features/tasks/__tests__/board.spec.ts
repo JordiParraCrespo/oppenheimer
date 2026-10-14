@@ -11,7 +11,7 @@ function task(
     status: TaskStatus;
     rank: string;
     projectId: string;
-    goalId: string | null;
+    milestoneId: string | null;
     dueDate: string | null;
     dueTime: string | null;
   }> = {},
@@ -19,7 +19,7 @@ function task(
   return new TaskEntity(
     id,
     overrides.projectId ?? 'p-1',
-    overrides.goalId ?? null,
+    overrides.milestoneId ?? null,
     overrides.status ?? 'todo',
     overrides.rank ?? id,
     `Task ${id}`,
@@ -52,7 +52,7 @@ describe('the board', () => {
     expect(columnOf(rows, 'todo', {}).map((row) => row.id)).toEqual(['Z', 'a', 'o', 'b']);
   });
 
-  it('narrows a column to the project and goal it is filtered to', () => {
+  it('narrows a column to the project and milestone it is filtered to', () => {
     expect(columnOf(rows, 'todo', { projectId: 'p-2' }).map((row) => row.id)).toEqual(['o']);
   });
 
@@ -83,7 +83,7 @@ describe('a card', () => {
     filter: {},
     today: '2026-10-05',
     projectName: () => 'Mobile',
-    goalName: () => 'Ship 2.0',
+    milestoneName: () => 'Ship 2.0',
     dayLabel: (iso: string) =>
       dueDayLabel(
         iso,
@@ -95,14 +95,14 @@ describe('a card', () => {
 
   it('says when it is due, and how soon', () => {
     const view = cardView(
-      task('1', { dueDate: '2026-10-06', dueTime: '09:00', goalId: 'g' }),
+      task('1', { dueDate: '2026-10-06', dueTime: '09:00', milestoneId: 'g' }),
       context,
     );
     expect(view).toMatchObject({
       due: 'Tomorrow · 09:00',
       dueTone: 'soon',
       projectName: 'Mobile',
-      goalName: 'Ship 2.0',
+      milestoneName: 'Ship 2.0',
     });
     expect(cardView(task('2', { dueDate: '2026-10-01' }), context).dueTone).toBe('overdue');
     expect(cardView(task('3', { dueDate: '2026-10-20' }), context)).toMatchObject({
@@ -111,13 +111,13 @@ describe('a card', () => {
     });
   });
 
-  it('drops the due date once done, and the project and goal the board is filtered to', () => {
+  it('drops the due date once done, and the project and milestone the board is filtered to', () => {
     expect(cardView(task('1', { status: 'done', dueDate: '2026-10-01' }), context).due).toBeNull();
-    const filtered = cardView(task('2', { goalId: 'g' }), {
+    const filtered = cardView(task('2', { milestoneId: 'g' }), {
       ...context,
-      filter: { projectId: 'p-1', goalId: 'g' },
+      filter: { projectId: 'p-1', milestoneId: 'g' },
     });
-    expect(filtered).toMatchObject({ projectName: null, goalName: null });
+    expect(filtered).toMatchObject({ projectName: null, milestoneName: null });
   });
 });
 
@@ -125,7 +125,7 @@ describe('boardSearchSchema', () => {
   it('reads an empty value as absent, so a bare /plan is All projects', () => {
     expect(boardSearchSchema.parse({ project: '', task: 'new', stray: 'x' })).toEqual({
       project: undefined,
-      goal: undefined,
+      milestone: undefined,
       task: 'new',
       start: undefined,
     });

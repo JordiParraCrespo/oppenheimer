@@ -21,22 +21,23 @@ export function HostList() {
   const hosts = useHostPresence();
 
   return (
-    <QueryState
-      query={hosts}
-      pending={<Skeleton className="h-18 w-full" />}
-      errorFallback={t('settings.hosts.failed')}
-      empty={{
-        when: (rows) => rows.length === 0,
-        show: <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />,
-      }}
-    >
-      {(rows) => (
-        <div className="flex flex-col gap-2.5">
-          {rows.map((host) => (
-            <HostRow key={host.id} host={host} />
-          ))}
-        </div>
-      )}
+    <QueryState query={hosts} isEmpty={(rows) => rows.length === 0}>
+      <QueryState.Pending>
+        <Skeleton className="h-18 w-full" />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('settings.hosts.failed')} />
+      <QueryState.Empty>
+        <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />
+      </QueryState.Empty>
+      <QueryState.Data of={hosts}>
+        {(rows) => (
+          <div className="flex flex-col gap-2.5">
+            {rows.map((host) => (
+              <HostRow key={host.id} host={host} />
+            ))}
+          </div>
+        )}
+      </QueryState.Data>
     </QueryState>
   );
 }

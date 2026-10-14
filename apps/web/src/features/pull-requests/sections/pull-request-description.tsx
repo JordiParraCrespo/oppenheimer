@@ -23,59 +23,61 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
   const { t } = useTranslation();
   const detail = usePullRequest(address);
   return (
-    <QueryState
-      query={detail}
-      pending={<Skeleton className="h-96 w-full" />}
-      errorFallback={t('pullRequests.detail.loadFailed')}
-    >
-      {(pull) => {
-        const state = pullState(pull);
-        return (
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-14">
-            <div className="flex min-w-0 flex-1 flex-col gap-6">
-              <PullRequestHeader
-                state={state.state}
-                stateLabel={t(`pullRequests.detail.state.${state.key}`)}
-                lane={<LaneBadge lane={pull.lane} />}
-                reference={pull.reference}
-                title={pull.title}
-                author={pull.author}
-                authorKind={pull.authorKind}
-                head={pull.headRef}
-                base={pull.baseRef}
-                labels={{ into: t('pullRequests.detail.into') }}
+    <QueryState query={detail}>
+      <QueryState.Pending>
+        <Skeleton className="h-96 w-full" />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('pullRequests.detail.loadFailed')} />
+      <QueryState.Data of={detail}>
+        {(pull) => {
+          const state = pullState(pull);
+          return (
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-14">
+              <div className="flex min-w-0 flex-1 flex-col gap-6">
+                <PullRequestHeader
+                  state={state.state}
+                  stateLabel={t(`pullRequests.detail.state.${state.key}`)}
+                  lane={<LaneBadge lane={pull.lane} />}
+                  reference={pull.reference}
+                  title={pull.title}
+                  author={pull.author}
+                  authorKind={pull.authorKind}
+                  head={pull.headRef}
+                  base={pull.baseRef}
+                  labels={{ into: t('pullRequests.detail.into') }}
+                />
+                <Card>
+                  <CardContent>
+                    {pull.body.trim() ? (
+                      <MarkdownBody source={pull.body} base={pull.htmlUrl} />
+                    ) : (
+                      <p className="m-0 text-body text-fg-muted">
+                        {t('pullRequests.detail.noDescription')}
+                      </p>
+                    )}
+                  </CardContent>
+                  <CardFooter className="justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      nativeButton={false}
+                      render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
+                    >
+                      <PencilIcon />
+                      {t('pullRequests.detail.editOnGithub')}
+                    </Button>
+                  </CardFooter>
+                </Card>
+                <PullRequestActivity address={address} base={pull.htmlUrl} />
+              </div>
+              <PullRequestRail
+                pull={pull}
+                comments={<PullRequestCommentsSummary address={address} />}
               />
-              <Card>
-                <CardContent>
-                  {pull.body.trim() ? (
-                    <MarkdownBody source={pull.body} base={pull.htmlUrl} />
-                  ) : (
-                    <p className="m-0 text-body text-fg-muted">
-                      {t('pullRequests.detail.noDescription')}
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter className="justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    nativeButton={false}
-                    render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
-                  >
-                    <PencilIcon />
-                    {t('pullRequests.detail.editOnGithub')}
-                  </Button>
-                </CardFooter>
-              </Card>
-              <PullRequestActivity address={address} base={pull.htmlUrl} />
             </div>
-            <PullRequestRail
-              pull={pull}
-              comments={<PullRequestCommentsSummary address={address} />}
-            />
-          </div>
-        );
-      }}
+          );
+        }}
+      </QueryState.Data>
     </QueryState>
   );
 }

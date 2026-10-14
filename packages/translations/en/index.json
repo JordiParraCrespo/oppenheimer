@@ -219,12 +219,13 @@
       "AUTOMATIONS_007": "That project can't hold automations.",
       "AUTOMATIONS_008": "That run doesn't exist.",
       "TASKS_001": "That task doesn't exist, or it was deleted.",
-      "TASKS_002": "That goal doesn't exist, or it was deleted.",
+      "TASKS_002": "That milestone doesn't exist, or it was deleted.",
       "TASKS_003": "Choose a workspace before working with tasks.",
       "TASKS_004": "That project can't take tasks. It may have been archived.",
       "TASKS_005": "That session doesn't exist, or it is in another workspace.",
       "TASKS_006": "The board changed while you were moving that task. It has been reloaded; try again.",
-      "TASKS_007": "That goal belongs to another project.",
+      "TASKS_007": "That milestone belongs to another project.",
+      "TASKS_008": "Someone changed this since you opened it. Reload and try again.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -235,6 +236,7 @@
       "CALENDAR_008": "Google Calendar didn't answer. Try again in a moment.",
       "CALENDAR_009": "An event has to end after it starts.",
       "CALENDAR_010": "Google Calendar asked us to slow down. Try again in a minute.",
+      "CALENDAR_011": "You've connected five Google accounts, the most the calendar takes. Remove one to add another.",
       "INBOUND_001": "That event source isn't known.",
       "INBOUND_002": "The delivery carries no delivery id.",
       "SESS_001": "The host has no record of that session.",
@@ -1390,14 +1392,11 @@
     "nav": {
       "label": "Plan",
       "tasks": "Tasks",
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "milestones": "Milestones"
     },
     "sidebar": {
-      "projects": "Projects",
-      "all": "All projects",
-      "unassigned": "Unassigned",
-      "newProject": "New project",
-      "loadFailed": "Couldn’t load your projects."
+      "unassigned": "Unassigned"
     },
     "board": {
       "title": "Tasks",
@@ -1447,29 +1446,35 @@
       "endOfMonth": "End of month",
       "inThreeMonths": "In 3 months"
     },
-    "goals": {
-      "label": "Goals",
-      "title": "Goals",
-      "new": "New goal",
-      "empty": "Goals group tasks and track how many are done.",
+    "milestones": {
+      "label": "Milestones",
+      "title": "Milestones",
+      "new": "New milestone",
+      "empty": "Milestones split a project into stages with a target date. Progress is the share of their tasks that are done.",
       "noTarget": "No target",
       "progress": "{{done}} / {{total}} tasks",
       "edit": "Edit {{name}}",
-      "loadFailed": "Couldn’t load your goals.",
-      "emptyTitle": "No goals yet"
+      "loadFailed": "Couldn’t load your milestones.",
+      "emptyTitle": "No milestones for this project",
+      "ofTasks_one": "of {{count}} task",
+      "ofTasks_other": "of {{count}} tasks",
+      "today": "Today",
+      "earlier": "Earlier",
+      "later": "Later",
+      "clickToEdit": "Click to edit"
     },
-    "goal": {
-      "newTitle": "New goal",
-      "editTitle": "Edit goal",
-      "name": "Goal",
+    "milestone": {
+      "newTitle": "New milestone",
+      "editTitle": "Edit milestone",
+      "name": "Milestone",
       "namePlaceholder": "What are you aiming for?",
       "target": "Target",
-      "add": "Add goal",
-      "delete": "Delete goal",
-      "deleteTitle": "Delete this goal?",
-      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a goal.",
-      "saveFailed": "Couldn’t save the goal.",
-      "deleteFailed": "Couldn’t delete the goal."
+      "add": "Add milestone",
+      "delete": "Delete milestone",
+      "deleteTitle": "Delete this milestone?",
+      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+      "saveFailed": "Couldn’t save the milestone.",
+      "deleteFailed": "Couldn’t delete the milestone."
     },
     "dialog": {
       "newTitle": "New task",
@@ -1480,7 +1485,7 @@
       "notesPlaceholder": "Add notes",
       "status": "Status",
       "project": "Project",
-      "goal": "Goal",
+      "milestone": "Milestone",
       "none": "None",
       "due": "Due",
       "sessions": "Sessions",
@@ -1526,24 +1531,37 @@
       "offlineSince": "{{host}} has been offline since {{when}}. The session waits as Queued and starts when its runner reconnects.",
       "start": "Start session",
       "queue": "Queue session",
-      "failed": "Couldn’t start the session."
+      "failed": "Couldn’t start the session.",
+      "loadFailed": "Couldn’t load the task, its project or the hosts."
+    },
+    "filters": {
+      "milestone": "Milestone",
+      "anyMilestone": "Any milestone",
+      "project": "Project",
+      "allProjects": "All projects",
+      "noProject": "No project",
+      "allMilestones": "All milestones",
+      "clear": "Clear"
     }
   },
   "calendar": {
     "sidebar": {
-      "layers": "Show"
+      "layers": "Calendars"
     },
     "layers": {
-      "events": "My events",
+      "events": "Personal",
       "google": "Google Calendar",
-      "tasks": "Tasks due",
-      "automations": "Automation runs"
+      "tasks": "Task due dates",
+      "automations": "Automations"
     },
     "header": {
       "previous": "Previous month",
       "next": "Next month",
       "today": "Today",
-      "newEvent": "New event"
+      "newEvent": "New event",
+      "meetings": "meetings",
+      "tasksDue": "tasks due",
+      "runs": "automation runs"
     },
     "grid": {
       "more_one": "{{count}} more",
@@ -1570,22 +1588,38 @@
     },
     "google": {
       "title": "Google Calendar",
+      "accounts": "Google accounts",
       "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
       "connect": "Connect Google Calendar",
+      "add": "Add account",
+      "atLimit": "You can connect up to {{count}} Google accounts.",
       "reconnect": "Reconnect",
-      "revoked": "Google no longer lets us read this calendar. Reconnect to show it again.",
-      "connectedAs": "Connected as {{email}}",
-      "disconnect": "Disconnect",
-      "disconnectTitle": "Disconnect Google Calendar?",
-      "disconnectDescription": "Its events leave the calendar. You can connect it again at any time.",
-      "disconnectFailed": "Couldn’t disconnect Google Calendar.",
+      "connected": "Connected",
+      "updatedNow": "Updated just now",
+      "updated": "Updated {{age}} ago",
+      "needsReconnect": "Needs reconnecting",
+      "readFailed": "Couldn’t read it just now",
+      "remove": "Remove",
+      "removeLabel": "Remove {{email}}",
+      "removeTitle": "Remove this Google account?",
+      "removeDescription": "{{email}} leaves the calendar, and its events with it. You can connect it again at any time.",
+      "removeFailed": "Couldn’t remove the Google account.",
       "startFailed": "Couldn’t reach Google. Try again.",
-      "loadFailed": "Couldn’t check the Google Calendar connection.",
+      "loadFailed": "Couldn’t check your Google accounts.",
       "connecting": "Connecting Google Calendar…",
       "connectFailed": "Couldn’t connect Google Calendar.",
       "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-      "back": "Back to the calendar",
-      "readOnly": "Read-only"
+      "back": "Back to the calendar"
+    },
+    "googleEvent": {
+      "untitled": "(No title)",
+      "when": "When",
+      "account": "Account",
+      "shows": "Shows as",
+      "busy": "Busy",
+      "free": "Free",
+      "readOnly": "Read-only here: change it in Google Calendar.",
+      "open": "Open in Google Calendar"
     }
   },
   "hosts": {
@@ -2044,7 +2078,7 @@
     "passwordChanged": "Password changed. Other devices are signed out.",
     "taskAdded": "Task added.",
     "taskDeleted": "Task deleted.",
-    "goalAdded": "Goal added.",
+    "milestoneAdded": "Milestone added.",
     "taskSessionStarted": "Session started.",
     "taskSessionQueued": "Session queued. It starts when its host reconnects.",
     "pullRequestsSlowedDown": "GitHub asked us to slow down, so some rows are missing a part. They fill on the next read.",

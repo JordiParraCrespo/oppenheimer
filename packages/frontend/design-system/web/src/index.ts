@@ -1,3 +1,4 @@
+export { AccessList, AccessRow } from './components/access-list';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
@@ -19,14 +20,22 @@ export {
   AvatarGroupCount,
   AvatarImage,
 } from './components/avatar';
+export type { AvatarOption } from './components/avatar-picker';
+export { AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
+export { BotItem, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system (product/versions/mvp/design) ───────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
 export { BrandMark } from './components/brand-mark';
 export type { ButtonProps } from './components/button';
 export { Button, buttonVariants } from './components/button';
-export { CalendarLayerItem, CalendarSourceCard } from './components/calendar-source';
+export {
+  CalendarAccountAdd,
+  CalendarAccountList,
+  CalendarAccountRow,
+  CalendarLayerItem,
+} from './components/calendar-source';
 export type { CalloutTone } from './components/callout';
 export { Callout } from './components/callout';
 export {
@@ -40,6 +49,7 @@ export {
 } from './components/card';
 export type { BarDatum, ChartSeries, DataTone, LinePoint } from './components/charts';
 export {
+  AreaChart,
   BarChart,
   BarList,
   ChartHero,
@@ -48,6 +58,71 @@ export {
   LineChart,
   RingChart,
 } from './components/charts';
+export type { ProposedPlanLabels, SubagentState } from './components/chat-cards';
+export {
+  AnsweredQuestions,
+  ChangedFileRow,
+  ChangedFilesCard,
+  ContextCard,
+  ProposedPlanCard,
+  QuestionsPill,
+  SubagentRow,
+  SubagentRunCard,
+} from './components/chat-cards';
+export {
+  ComposerContextMeter,
+  ComposerMenu,
+  ComposerMenuGroup,
+  ComposerMenuItem,
+  VoiceRecorderBar,
+} from './components/chat-composer-extras';
+export type { ComposerTask } from './components/chat-composer-stack';
+export {
+  ComposerNotice,
+  ComposerStack,
+  ComposerStackAction,
+  ComposerStackRow,
+  ComposerTaskList,
+} from './components/chat-composer-stack';
+export type { Choice, QuestionLabels } from './components/chat-decisions';
+export {
+  ApprovalApp,
+  ApprovalCommand,
+  ApprovalFile,
+  ApprovalPanel,
+  ChoiceRow,
+  QuestionPanel,
+} from './components/chat-decisions';
+export type { ThreadFindLabels } from './components/chat-header';
+export {
+  ChatEmptyState,
+  ChatHeader,
+  ChatHeaderTag,
+  ChatTab,
+  ChatTabStrip,
+  ChatTrayButton,
+  ThreadFindBar,
+} from './components/chat-header';
+export type { ChatErrorLabels } from './components/chat-status';
+export {
+  ChatErrorAction,
+  ChatErrorBanner,
+  ChatNotice,
+  FloatingChip,
+  TranscriptDivider,
+} from './components/chat-status';
+export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
+export {
+  ChatAttachment,
+  ChatMention,
+  ChatReply,
+  ChatTranscript,
+  ChatUserMessage,
+  MessageTrail,
+  StreamingCaret,
+  TurnHeader,
+} from './components/chat-transcript';
+export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
@@ -87,6 +162,12 @@ export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
 export { DatePicker } from './components/date-picker';
+export type {
+  DateRange,
+  DateRangePickerLabels,
+  DateRangePreset,
+} from './components/date-range-picker';
+export { DateRangePicker } from './components/date-range-picker';
 export {
   Dialog,
   DialogBody,
@@ -167,6 +248,8 @@ export {
 export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
+export type { FacetOption } from './components/facet-select';
+export { FacetSelect } from './components/facet-select';
 export {
   Field,
   FieldAction,
@@ -184,7 +267,6 @@ export {
 export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export { FileIcon } from './components/file-icon';
-export { GoalCard, GoalEmpty, GoalGrid } from './components/goal-card';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
 export { HostCard } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
@@ -207,8 +289,20 @@ export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
-export type { CalendarEntryData, CalendarEntryKind } from './components/month-calendar';
+export { MilestoneCard, MilestoneEmpty, MilestoneGrid } from './components/milestone-card';
+export type {
+  MilestoneTimelineControls,
+  TimelineMilestone,
+  TimelineRow,
+} from './components/milestone-timeline';
+export { MilestoneGlyph, MilestoneTimeline } from './components/milestone-timeline';
+export type {
+  CalendarAccent,
+  CalendarEntryData,
+  CalendarEntryKind,
+} from './components/month-calendar';
 export { CalendarEntry, MonthCalendar } from './components/month-calendar';
+export { NumberStepper } from './components/number-stepper';
 export {
   PageHeader,
   PageHeaderCrumbs,
@@ -222,8 +316,11 @@ export {
 } from './components/page-header';
 export { Panel, PanelGrid } from './components/panel';
 export { PasswordInput } from './components/password-input';
+export type { PeoplePickerLabels, Person } from './components/people-picker';
+export { PeoplePicker, PersonChip } from './components/people-picker';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';
 export { PermissionMenu } from './components/permission-menu';
+export { PillGroup, PillGroupItem } from './components/pill-group';
 export type { PillTabsSize } from './components/pill-tabs';
 export { PillTab, PillTabs } from './components/pill-tabs';
 export {
@@ -260,6 +357,8 @@ export type {
 export { RepositorySelect } from './components/repository-select';
 export type { ReviewVerdict } from './components/review-decision';
 export { ReviewDecision, SubmitReviewButton } from './components/review-decision';
+export type { RoutineCardLabels } from './components/routine-card';
+export { RoutineCard } from './components/routine-card';
 export type { RoutineRunState } from './components/routine-item';
 export {
   RoutineItem,
@@ -291,9 +390,11 @@ export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList, SortableSessionItem } from './components/session-item';
 export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
+  SettingsAddRow,
   SettingsForm,
   SettingsGroup,
   SettingsHeading,
+  SettingsListRow,
   SettingsRow,
   SettingsSaveRow,
 } from './components/settings-group';
@@ -308,6 +409,7 @@ export {
   SettingsMain,
   SettingsShell,
   SettingsTitle,
+  SettingsTopBar,
 } from './components/settings-shell';
 export {
   Sidebar,
@@ -355,6 +457,7 @@ export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
+export { Switch } from './components/switch';
 export type { TaskDueTone, TaskStatus } from './components/task-board';
 export {
   TASK_STATUS_STATE,

@@ -20,6 +20,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { queryStateSlotProblems } from './query-state-slots.mjs';
 
 // `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
@@ -542,6 +543,24 @@ for (const file of polling) {
     fail(
       `${relative(root, file)}: sets refetchInterval — polling is LIVE_POLL's (packages/frontend/consumer/src/react/live-poll.ts): a package hook spreads pollWhile(), and an app asks the package for the hook that polls`,
     );
+  }
+}
+
+// A read's states are `QueryState`'s slots, and a slot left out draws
+// nothing; `query-state-slots.mjs` holds each use to the slots it needs.
+// The kit's own spec composes the slots conditionally, so specs are not read.
+const queryStateFiles = [
+  ...APPS.flatMap(({ app }) =>
+    existsSync(join(root, app, 'src')) ? sources(join(root, app, 'src')) : [],
+  ),
+  ...readdirSync(join(root, 'packages/frontend')).flatMap((pkg) => {
+    const dir = join(root, 'packages/frontend', pkg, 'src');
+    return existsSync(dir) ? sources(dir) : [];
+  }),
+];
+for (const file of queryStateFiles) {
+  for (const { line, message } of queryStateSlotProblems(readFileSync(file, 'utf8'))) {
+    fail(`${relative(root, file)}:${line}: ${message}`);
   }
 }
 

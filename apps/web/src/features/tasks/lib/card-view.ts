@@ -12,14 +12,14 @@ export interface TaskCardView {
   /** Under All projects only: the project the card is filed under. */
   projectName: string | null;
   /** Unless the board is filtered to it. */
-  goalName: string | null;
+  milestoneName: string | null;
   /** `Tomorrow · 09:00`, or null with no due date or once done. */
   due: string | null;
   dueTone: TaskDueTone;
 }
 
 /**
- * A task as its card draws it: the project only under All projects, the goal
+ * A task as its card draws it: the project only under All projects, the milestone
  * unless the board is filtered to it, the due date in words, and none of the
  * three extras once it is done (`18-plan-product.md` §2).
  */
@@ -29,7 +29,7 @@ export function cardView(
     filter: BoardFilter;
     today: string;
     projectName: (id: string) => string | null;
-    goalName: (id: string) => string | null;
+    milestoneName: (id: string) => string | null;
     dayLabel: (iso: string) => string;
   },
 ): TaskCardView {
@@ -42,7 +42,10 @@ export function cardView(
     notes: task.notes,
     done: task.isDone,
     projectName: filter.projectId ? null : context.projectName(task.projectId),
-    goalName: task.goalId && task.goalId !== filter.goalId ? context.goalName(task.goalId) : null,
+    milestoneName:
+      task.milestoneId && task.milestoneId !== filter.milestoneId
+        ? context.milestoneName(task.milestoneId)
+        : null,
     due: due ? [context.dayLabel(due), task.dueTime].filter(Boolean).join(' · ') : null,
     dueTone: away === null ? 'default' : away < 0 ? 'overdue' : away <= 1 ? 'soon' : 'default',
   };

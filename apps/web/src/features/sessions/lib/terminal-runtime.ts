@@ -9,7 +9,7 @@ import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
-import { bindTerminalRenderer } from './terminal-renderer';
+import { bindTerminalRenderer, type TerminalRendererKind } from './terminal-renderer';
 import {
   readTerminalTheme,
   readUserTurnColors,
@@ -120,9 +120,12 @@ export function mountSessionTerminal(
   if (options.snapshot) term.write(options.snapshot, () => term.scrollToBottom());
 
   // Every byte the reader sends goes through here: timed, and predicted.
+  // The DOM renderer draws until WebGL attaches (`bindTerminalRenderer`).
+  let renderer: TerminalRendererKind = 'dom';
   const echo = bindTerminalEcho(term, (data) => stream.send(data), {
     readOnly: options.readOnly ?? false,
     typeahead: options.typeahead ?? (() => false),
+    renderer: () => renderer,
     onPath: stream.onPath?.bind(stream),
   });
   const send = echo.send;
@@ -247,7 +250,8 @@ export function mountSessionTerminal(
 
   // WebGL and the DOM renderer measure cells differently, and a face arriving
   // changes them too: each refits, and the echo redraws on the new cells.
-  const unbindRenderer = bindTerminalRenderer(term, () => {
+  const unbindRenderer = bindTerminalRenderer(term, (next) => {
+    renderer = next;
     echo.repaint();
     nextFrame();
   });
