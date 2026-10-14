@@ -48,6 +48,8 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
  *
  * - Sessions: the list, each detail and its start log. Every write that lands
  *   a start step raises `session.changed`, so the stepper moves on it too.
+ *   A session's share and a shared view are not its row and are not
+ *   announced, so they sit beside `details()` and outside this table.
  * - Pairing lists: `pairing.spent` is the token being spent.
  * - The host list catches up but keeps its poll: presence is a heartbeat the
  *   stream does not carry.
@@ -57,7 +59,8 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
  *   `milestone.changed`, an agent's included, so the board's poll stands down.
  */
 const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
-  { key: sessionsKeys.all, pollStandsDown: true },
+  { key: sessionsKeys.lists(), pollStandsDown: true },
+  { key: sessionsKeys.details(), pollStandsDown: true },
   { key: hostsKeys.pairingLists(), pollStandsDown: true },
   { key: hostsKeys.lists(), pollStandsDown: false },
   { key: automationsKeys.lists(), pollStandsDown: false },

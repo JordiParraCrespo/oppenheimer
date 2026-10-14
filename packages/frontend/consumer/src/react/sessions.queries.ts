@@ -26,6 +26,11 @@ import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
 import { seedDetails } from './seed-details';
 
+/**
+ * A session's share sits beside `details()`, not under `detail(id)`: sharing
+ * raises no `session.changed`, so a row's every change would refetch it for
+ * nothing.
+ */
 export const sessionsKeys = {
   all: ['sessions'] as const,
   lists: () => [...sessionsKeys.all, 'list'] as const,
@@ -34,7 +39,7 @@ export const sessionsKeys = {
   detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
   start: (id: string | undefined, failed: boolean) =>
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
-  share: (id: string) => [...sessionsKeys.detail(id), 'share'] as const,
+  share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
   shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
 };
 

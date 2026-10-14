@@ -3,7 +3,11 @@ import { type UseQueryOptions } from '@tanstack/react-query';
 import type { UserSettingsEntity } from '../modules/user-settings/user-settings.entity';
 import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
-import { userSettingsKeys } from './query-keys';
+
+export const userSettingsKeys = {
+  all: ['userSettings'] as const,
+  me: () => [...userSettingsKeys.all, 'me'] as const,
+};
 
 export function useUserSettings(
   options?: Omit<UseQueryOptions<UserSettingsEntity, Error>, 'queryKey' | 'queryFn'>,

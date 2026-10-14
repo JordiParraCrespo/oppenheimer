@@ -1,4 +1,3 @@
-export { useRegister } from './auth.queries';
 export {
   type PauseAutomationVariables,
   type RunAutomationVariables,
@@ -94,6 +93,7 @@ export {
   useSubmitPullRequestReview,
   useWatchedRepositories,
 } from './pull-requests.queries';
+export { useRegister } from './register.queries';
 export {
   type CloseSessionVariables,
   type CreateSessionVariables,
