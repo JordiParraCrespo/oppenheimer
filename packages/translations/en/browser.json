@@ -255,7 +255,14 @@
       "SESSIONS_021": "That session isn’t shared, or not anymore. Ask whoever shared it to share it again.",
       "SESSIONS_022": "Sign in to open this shared session.",
       "SESSIONS_023": "This session isn’t shared with you.",
-      "SESSIONS_024": "This session has as many share links as it can hold. Revoke one, then try again."
+      "SESSIONS_024": "This session has as many share links as it can hold. Revoke one, then try again.",
+      "SESSIONS_025": "This host’s runner can’t start a session in a folder. Update the runner on that host, then try again.",
+      "SESSIONS_026": "This host’s runner can’t list its folders. Update the runner on that host to pick a folder.",
+      "SESSIONS_027": "The host is offline, so its folders can’t be listed. Bring it back online and try again.",
+      "SESSIONS_028": "That folder doesn’t exist on the host.",
+      "SESSIONS_029": "That path is a file, not a folder.",
+      "SESSIONS_030": "That folder can’t be read on the host.",
+      "SESSIONS_031": "The host didn’t answer in time. Try again."
     },
     "notFound": {
       "title": "That page does not exist",

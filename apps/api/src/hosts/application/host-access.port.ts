@@ -19,6 +19,8 @@ export interface HostAccessPort {
 
 /** What a caller that may use a host learns about it. */
 export interface UsableHost {
+  /** The account the host is paired with: the work folder's top level on it (24 §2). */
+  ownerUserId: string;
   /**
    * The tool names the runner's last inventory probed, found or not; null until
    * it has reported one. A runner probes the command of every agent it can

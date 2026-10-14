@@ -190,4 +190,52 @@ export const SessionErrors = {
     message: 'This session is not shared with you',
     httpStatus: 403,
   },
+  /**
+   * A folder session for a host whose live runner did not say it takes one
+   * (`session.folder`): it would refuse a create with no checkouts. Updating
+   * the runner fixes it. An offline host is not refused: its next hello is
+   * sent the session, and a runner that still cannot take it leaves it
+   * starting.
+   */
+  FOLDER_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_025',
+    message: "This host's runner cannot start a session in a folder",
+    httpStatus: 409,
+  },
+  /** The folder picker asked a host whose runner does not list folders (`fs.list`). */
+  FOLDERS_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_026',
+    message: "This host's runner cannot list its folders",
+    httpStatus: 409,
+  },
+  /** The folder picker asked a host that holds no link: nothing is cached to answer from. */
+  FOLDERS_HOST_OFFLINE: {
+    code: 'SESSIONS_027',
+    message: 'The host is offline, so its folders cannot be listed',
+    httpStatus: 503,
+  },
+  /** The runner found nothing at that path (`FS_001`). */
+  FOLDER_NOT_FOUND: {
+    code: 'SESSIONS_028',
+    message: 'That folder does not exist on the host',
+    httpStatus: 404,
+  },
+  /** The path names a file, not a directory (`FS_002`). */
+  NOT_A_FOLDER: {
+    code: 'SESSIONS_029',
+    message: 'That path is not a folder',
+    httpStatus: 422,
+  },
+  /** The user the runner runs as may not read that folder (`FS_003`), or it failed otherwise. */
+  FOLDER_NOT_READABLE: {
+    code: 'SESSIONS_030',
+    message: 'That folder cannot be read on the host',
+    httpStatus: 403,
+  },
+  /** The runner did not answer the listing in time. */
+  FOLDERS_TIMED_OUT: {
+    code: 'SESSIONS_031',
+    message: 'The host did not answer in time',
+    httpStatus: 504,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

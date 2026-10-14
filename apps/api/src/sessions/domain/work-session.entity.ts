@@ -6,7 +6,7 @@ import {
   type CreateEntityProps,
   type ErrorDefinition,
 } from '@oppenheimer/backend-ddd';
-import type { SessionGroup, SessionState } from '@oppenheimer/shared';
+import type { SessionGroup, SessionPlace, SessionState } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
@@ -46,6 +46,13 @@ export interface WorkSessionProps extends SessionFold {
   hostId: string;
   slug: string;
   agent: SessionAgent;
+  /**
+   * Where it runs: a `worktree` per checkout, or a `folder` already on the host
+   * (`product/versions/mvp/24-session-places.md`). Immutable, like the agent.
+   */
+  place: SessionPlace;
+  /** A folder session's absolute path on the host; null exactly for a worktree session. */
+  folderPath: string | null;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
@@ -67,6 +74,11 @@ export interface CreateWorkSessionProps {
   hostId: string;
   slug: string;
   agent: SessionAgent;
+  /**
+   * A folder already on the host to run in. Absent is a worktree session, whose
+   * checkouts are attached after the request.
+   */
+  folder?: string | null;
   name?: string;
   idempotencyKey?: string | null;
   /** Absent is a person's session. */
@@ -124,6 +136,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: props.hostId,
         slug: props.slug,
         agent: props.agent,
+        place: props.folder ? 'folder' : 'worktree',
+        folderPath: props.folder || null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
         origin: props.origin ?? 'person',
@@ -211,6 +225,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get agent(): SessionAgent {
     return this.props.agent;
+  }
+
+  get place(): SessionPlace {
+    return this.props.place;
+  }
+
+  /** The folder a folder session runs in; null for a worktree session. */
+  get folderPath(): string | null {
+    return this.props.folderPath;
   }
 
   get cwdCheckoutId(): string | null {
@@ -393,6 +416,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * which is.
    */
   attachCheckout(checkout: SessionCheckoutEntity): void {
+    // A folder is the person's: nothing is cloned into it, so it holds no checkout.
+    if (this.props.place === 'folder') {
+      throw new ArgumentInvalidException('A session in a folder on the host has no checkouts');
+    }
     if (this.props.checkouts.some((existing) => existing.id === checkout.id)) return;
     this.props.checkouts.push(checkout);
     this.setUpdatedAt(new Date());
@@ -438,6 +465,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     }
     if (!this.props.hostId?.trim()) {
       throw new ArgumentNotProvidedException('A session must name a host');
+    }
+    if ((this.props.place === 'folder') !== Boolean(this.props.folderPath)) {
+      throw new ArgumentInvalidException(
+        'A session has a folder exactly when it runs in a folder on the host',
+      );
     }
     if (!SESSION_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(

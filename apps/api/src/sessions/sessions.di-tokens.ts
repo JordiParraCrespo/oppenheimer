@@ -9,6 +9,8 @@
  */
 export const WORK_SESSION_REPOSITORY = Symbol('WORK_SESSION_REPOSITORY');
 export const SESSION_DISPATCH = Symbol('SESSION_DISPATCH');
+/** The folder picker's listing of a host's directories; bound by `links/` like `SESSION_DISPATCH`. */
+export const HOST_FOLDERS = Symbol('HOST_FOLDERS');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');
 export const SESSION_LOOKUP = Symbol('SESSION_LOOKUP');
 export const SESSION_RECONCILIATION = Symbol('SESSION_RECONCILIATION');

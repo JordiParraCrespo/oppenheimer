@@ -23,6 +23,7 @@ import type { HostPresencePort } from '../../hosts/application/host-presence.por
 import type { HostRepositoryPort } from '../../hosts/database/host.repository.port';
 import { HostEntity } from '../../hosts/domain/host.entity';
 import { keyFingerprint } from '../../hosts/infrastructure/host-assertion.util';
+import { InProcessLinkReplies } from '../../links/infrastructure/in-process-link-replies.adapter';
 import { InProcessLinkRegistry } from '../../links/infrastructure/link-registry.adapter';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import type {
@@ -205,6 +206,7 @@ async function boot(): Promise<World> {
       owners,
     ),
     config,
+    new InProcessLinkReplies(),
   );
   const browsers = new BrowserAttachGateway(
     cache,
@@ -282,6 +284,8 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       commandId: randomUUID(),
       sessionId: SESSION,
       organizationSlug: 'jordi',
+      accountId: USER,
+      workspaceId: ORG,
       sessionSlug: 'bold-otter-3f9a7k',
       agent: 'claude-code',
       launch: { model: 'claude-opus-5-5', permission: 'ask', effort: 'xhigh' },

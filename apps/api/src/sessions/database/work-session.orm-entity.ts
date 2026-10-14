@@ -1,6 +1,12 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import type { SessionEffortDto, SessionPermissionDto, SessionState } from '@oppenheimer/shared';
+import type {
+  SessionEffortDto,
+  SessionPermissionDto,
+  SessionPlace,
+  SessionState,
+} from '@oppenheimer/shared';
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -30,9 +36,15 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * (`product/versions/mvp/03-control-plane.md`).
  */
 @Entity('work_session')
+@Check('CHK_work_session_place', `place IN ('worktree', 'folder')`)
+@Check('CHK_work_session_folder_path', `(place = 'folder') = ("folderPath" IS NOT NULL)`)
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
 @Index('IDX_work_session_host_state', ['hostId', 'state'])
 @Index('IDX_work_session_created_by', ['createdByUserId'])
+// The folder picker's recent folders: this person's folder sessions on this host.
+@Index('IDX_work_session_recent_folders', ['hostId', 'createdByUserId', 'createdAt'], {
+  where: `place = 'folder'`,
+})
 @Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
@@ -74,6 +86,18 @@ export class WorkSessionOrmEntity {
   /** The coding agent, from the closed catalog in `@oppenheimer/shared`. */
   @Column({ type: 'varchar' })
   agent!: string;
+
+  /**
+   * Where the session runs (`product/versions/mvp/24-session-places.md`): a
+   * `worktree` the runner made per checkout, or a `folder` already on the host.
+   * Immutable, like `agent`.
+   */
+  @Column({ type: 'varchar', length: 16, default: 'worktree' })
+  place!: SessionPlace;
+
+  /** A folder session's absolute path on the host; null exactly for a worktree session. */
+  @Column({ type: 'text', nullable: true })
+  folderPath!: string | null;
 
   /**
    * The client's `Idempotency-Key`, so a retry after a lost response returns the

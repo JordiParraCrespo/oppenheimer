@@ -58,11 +58,14 @@ function project() {
 }
 
 function launches(): SessionLaunchSpecFactory {
-  return new SessionLaunchSpecFactory({
-    slugOf: vi.fn().mockResolvedValue('jordi'),
-    isMember: vi.fn(),
-    ownedBy: vi.fn().mockResolvedValue([]),
-  });
+  return new SessionLaunchSpecFactory(
+    {
+      slugOf: vi.fn().mockResolvedValue('jordi'),
+      isMember: vi.fn(),
+      ownedBy: vi.fn().mockResolvedValue([]),
+    },
+    { ownerOf: vi.fn().mockResolvedValue('owner-1') },
+  );
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
@@ -121,7 +124,9 @@ describe('CreateSessionCommandHandler', () => {
         refused: null,
       })),
     } as unknown as WorkSessionRepositoryPort;
-    hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
+    hosts = {
+      assertUsable: vi.fn().mockResolvedValue({ ownerUserId: 'owner-1', probedTools: null }),
+    };
     dispatch = {
       create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
     } as unknown as SessionDispatchPort;
@@ -150,6 +155,7 @@ describe('CreateSessionCommandHandler', () => {
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
       new SessionAttachmentsResolver(store, links),
+      links,
     );
   }
 
@@ -285,6 +291,7 @@ describe('CreateSessionCommandHandler', () => {
     // A runner from before Grok probes no `grok`, and would fail the launch as an
     // unknown agent after the session was recorded.
     hosts.assertUsable.mockResolvedValue({
+      ownerUserId: 'owner-1',
       probedTools: ['git', 'tmux', 'claude', 'codex', 'opencode'],
     });
     const grok = command({ input: { ...INPUT, agent: 'grok' } });
@@ -292,6 +299,70 @@ describe('CreateSessionCommandHandler', () => {
     await expect(handler.execute(grok)).rejects.toMatchObject({ code: 'SESSIONS_011' });
     expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
     expect(dispatch.create).not.toHaveBeenCalled();
+  });
+
+  describe('a session in a folder on the host', () => {
+    const inFolder = () =>
+      command({
+        input: {
+          hostId: 'host-1',
+          agent: 'claude-code',
+          checkouts: [],
+          folder: '/home/jordi/notes',
+        },
+      });
+
+    it('records the folder, attaches no checkout and sets no cwd, then dispatches it', async () => {
+      links = linksWith(['session.folder']);
+      handler = rebuild();
+
+      await handler.execute(inFolder());
+
+      const [session, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+      expect(session.place).toBe('folder');
+      expect(session.folderPath).toBe('/home/jordi/notes');
+      expect(session.checkouts).toEqual([]);
+      expect(plan.attachCheckout).not.toHaveBeenCalled();
+      // No checkout to work in, so no `session.cwd_set`: the log says where.
+      expect(events.map((event) => event.kind)).toEqual(['session.requested']);
+      expect(events[0].payload).toMatchObject({ place: 'folder', folder: '/home/jordi/notes' });
+      const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+      expect(spec).toEqual({
+        organizationSlug: 'jordi',
+        accountId: 'owner-1',
+        workspaceId: 'org-acme',
+      });
+    });
+
+    it('refuses a host whose live runner cannot start one with SESSIONS_025, before writing anything', async () => {
+      links = linksWith(['session.image']);
+      handler = rebuild();
+
+      await expect(handler.execute(inFolder())).rejects.toMatchObject({ code: 'SESSIONS_025' });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+      expect(dispatch.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts one for an offline host: its next hello is sent it', async () => {
+      links = linksWith(null);
+      handler = rebuild();
+      vi.mocked(dispatch.create).mockResolvedValue({ delivered: false, hints: ['host_offline'] });
+
+      await expect(handler.execute(inFolder())).resolves.toMatchObject({ hints: ['host_offline'] });
+      expect(sessions.createIfUnclaimed).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('sends a worktree session with its branch and the ids its work folder is named by', async () => {
+    await handler.execute(command());
+
+    const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+    expect(spec).toMatchObject({
+      organizationSlug: 'jordi',
+      accountId: 'owner-1',
+      workspaceId: 'org-acme',
+      branch: expect.stringMatching(/^oppenheimer\//),
+    });
   });
 
   describe('attached images', () => {

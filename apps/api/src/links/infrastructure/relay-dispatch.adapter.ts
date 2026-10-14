@@ -56,6 +56,12 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
     return this.withLink(session, (link) => {
+      // A runner that predates folder sessions would refuse a create with no
+      // checkouts. The row stays `starting`, so the hello of an updated runner
+      // is sent it.
+      if (session.place === 'folder' && !link.capabilities.includes('session.folder')) {
+        return NOT_SUPPORTED;
+      }
       // A runner that cannot take these files at launch would drop them or
       // refuse them, and start the task without them. The ids stay in the
       // log, so the hello of an updated runner is sent them.
@@ -161,6 +167,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     return this.deliver(link, {
       type: 'repository.prepare',
       commandId: randomUUID(),
+      accountId: spec.accountId,
+      workspaceId: spec.workspaceId,
       githubRepoId: spec.githubRepoId,
       repositoryFullName: spec.repositoryFullName,
       baseBranch: spec.baseBranch,
@@ -191,12 +199,19 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   }
 }
 
+/**
+ * The launch frame. A session runs in its checkouts, on its own branch, or in a
+ * folder already on the host, with neither (`product/versions/mvp/24-session-places.md`):
+ * the schema refuses a frame with both or with none.
+ */
 function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): SessionCreateMessage {
   return {
     type: 'session.create',
     commandId: randomUUID(),
     sessionId: session.id,
     organizationSlug: spec.organizationSlug,
+    accountId: spec.accountId,
+    workspaceId: spec.workspaceId,
     sessionSlug: session.slug,
     agent: session.agent,
     launch: {
@@ -217,7 +232,19 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),
-    branch: spec.branch,
+    ...placeOf(session, spec),
+  };
+}
+
+function placeOf(
+  session: WorkSessionEntity,
+  spec: SessionLaunchSpec,
+): Pick<SessionCreateMessage, 'branch' | 'folder' | 'checkouts' | 'cwdCheckoutId'> {
+  if (session.place === 'folder' && session.folderPath) {
+    return { folder: session.folderPath, checkouts: [], cwdCheckoutId: null };
+  }
+  return {
+    ...(spec.branch ? { branch: spec.branch } : {}),
     checkouts: session.liveCheckouts.map((checkout) => ({
       checkoutId: checkout.id,
       githubRepoId: Number(checkout.githubRepoId),

@@ -1,10 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { nullableEnum, PaginatedResponseDto } from '@oppenheimer/backend-core';
-import type { SessionEffortDto, SessionPermissionDto } from '@oppenheimer/shared';
+import type { SessionEffortDto, SessionPermissionDto, SessionPlace } from '@oppenheimer/shared';
 import {
   SESSION_EFFORTS,
   SESSION_GROUPS,
   SESSION_PERMISSIONS,
+  SESSION_PLACES,
   SESSION_STATES,
 } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
@@ -131,6 +132,23 @@ export class SessionResponseDto {
     example: 'claude-code',
   })
   agent!: CodingAgentId;
+
+  @ApiProperty({
+    enum: SESSION_PLACES,
+    description:
+      'Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).',
+    example: 'worktree',
+  })
+  place!: SessionPlace;
+
+  @ApiPropertyOptional({
+    description:
+      'The absolute path on the host a folder session runs in. Null for a worktree session.',
+    nullable: true,
+    type: String,
+    example: '/home/jordi/notes',
+  })
+  folderPath!: string | null;
 
   @ApiProperty({ type: SessionLaunchResponseDto })
   launch!: SessionLaunchResponseDto;

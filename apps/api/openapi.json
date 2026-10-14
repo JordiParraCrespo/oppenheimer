@@ -8633,7 +8633,7 @@
         "tags": ["Sessions"]
       },
       "post": {
-        "description": "Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).",
+        "description": "A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/versions/mvp/24-session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).",
         "operationId": "createSession",
         "parameters": [
           {
@@ -8706,7 +8706,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_017 — The host’s runner takes no images\n\nSESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
+            "description": "SESSIONS_017 — The host’s runner takes no images\n\nSESSIONS_011 / SESSIONS_025 — The host's runner is older than the agent, or than folder sessions\n\nSESSIONS_006 — That project is archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9566,6 +9566,16 @@
               }
             }
           },
+          "400": {
+            "description": "SESSIONS_002 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
             "content": {
@@ -10162,6 +10172,120 @@
         ],
         "summary": "List a session under another project",
         "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/hosts/{id}/folders": {
+      "get": {
+        "description": "The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/versions/mvp/24-session-places.md`).",
+        "operationId": "findHostFolders",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "required": false,
+            "in": "query",
+            "description": "An absolute path on the host. Omit for the home directory.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostFoldersResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSIONS_030 — Not readable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 / SESSIONS_028 — Host or folder not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_026 — Runner cannot list",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SESSIONS_029 — Not a folder",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_027 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a folder on a host",
+        "tags": ["Hosts"]
       }
     },
     "/api/v1/automations": {
@@ -18679,6 +18803,18 @@
             "description": "The coding agent this session runs.",
             "example": "claude-code"
           },
+          "place": {
+            "type": "string",
+            "enum": ["worktree", "folder"],
+            "description": "Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).",
+            "example": "worktree"
+          },
+          "folderPath": {
+            "type": "string",
+            "description": "The absolute path on the host a folder session runs in. Null for a worktree session.",
+            "nullable": true,
+            "example": "/home/jordi/notes"
+          },
           "launch": {
             "$ref": "#/components/schemas/SessionLaunchResponseDto"
           },
@@ -18751,6 +18887,7 @@
           "name",
           "slug",
           "agent",
+          "place",
           "launch",
           "state",
           "lifecycle",
@@ -18828,7 +18965,6 @@
           },
           "checkouts": {
             "type": "array",
-            "minItems": 1,
             "maxItems": 1,
             "items": {
               "type": "object",
@@ -18849,7 +18985,14 @@
                 }
               },
               "required": ["installationId", "githubRepoId"]
-            }
+            },
+            "default": []
+          },
+          "folder": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "pattern": "^\\/[^\\0]*$"
           },
           "cwdGithubRepoId": {
             "type": "integer",
@@ -18888,7 +19031,7 @@
             }
           }
         },
-        "required": ["hostId", "agent", "checkouts"]
+        "required": ["hostId", "agent"]
       },
       "SessionAttachmentResponseDto": {
         "type": "object",
@@ -19222,6 +19365,88 @@
           }
         },
         "required": ["projectId"]
+      },
+      "HostFolderEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The directory’s name.",
+            "example": "xrp-mobile"
+          },
+          "path": {
+            "type": "string",
+            "description": "Its absolute path on the host: the listed folder joined with the name.",
+            "example": "/home/jordi/code/xrp-mobile"
+          },
+          "branch": {
+            "type": "string",
+            "description": "The branch its checkout is on, when it is a git repository.",
+            "nullable": true,
+            "example": "main"
+          }
+        },
+        "required": ["name", "path"]
+      },
+      "HostRecentFolderResponseDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Its absolute path on the host.",
+            "example": "/home/jordi/notes"
+          },
+          "lastUsedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the caller last started a session in it."
+          }
+        },
+        "required": ["path", "lastUsedAt"]
+      },
+      "HostFoldersResponseDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The directory listed, absolute and cleaned.",
+            "example": "/home/jordi/code"
+          },
+          "parent": {
+            "type": "string",
+            "description": "Its parent; null at the root.",
+            "nullable": true,
+            "example": "/home/jordi"
+          },
+          "home": {
+            "type": "string",
+            "description": "The home directory of the user the runner runs as, so a client can show `~`.",
+            "example": "/home/jordi"
+          },
+          "branch": {
+            "type": "string",
+            "description": "The listed directory’s own branch, when it is a git repository.",
+            "nullable": true
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostFolderEntryResponseDto"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "More directories were there than `entries` carries."
+          },
+          "recent": {
+            "description": "The folders of the caller’s own folder sessions on this host, newest first, at most eight.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostRecentFolderResponseDto"
+            }
+          }
+        },
+        "required": ["path", "home", "entries", "truncated", "recent"]
       },
       "AutomationRepositoryResponseDto": {
         "type": "object",
@@ -20744,7 +20969,6 @@
               },
               "checkouts": {
                 "type": "array",
-                "minItems": 1,
                 "maxItems": 1,
                 "items": {
                   "type": "object",
@@ -20765,7 +20989,14 @@
                     }
                   },
                   "required": ["installationId", "githubRepoId"]
-                }
+                },
+                "default": []
+              },
+              "folder": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096,
+                "pattern": "^\\/[^\\0]*$"
               },
               "cwdGithubRepoId": {
                 "type": "integer",
@@ -20804,7 +21035,7 @@
                 }
               }
             },
-            "required": ["hostId", "agent", "checkouts"]
+            "required": ["hostId", "agent"]
           },
           "seenStatus": {
             "type": "string",

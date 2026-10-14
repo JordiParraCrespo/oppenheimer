@@ -18,16 +18,24 @@ export interface SessionDispatchOutcome {
 }
 
 /**
- * What the host is told to make. Every path segment is a unique-constrained
- * column, so the runner derives `workspaces/<organizationSlug>/sessions/<sessionSlug>/`
- * without asking — and only the names it cannot read off the session travel
- * here.
+ * What the host is told to make. Every path segment is an id or a
+ * unique-constrained column, so the runner derives
+ * `<accountId>/<workspaceId>/sessions/<sessionSlug>/` without asking
+ * (`product/versions/mvp/24-session-places.md` §2) — and only the names it
+ * cannot read off the session travel here.
  */
 export interface SessionLaunchSpec {
-  /** The workspace's slug: a path segment on the host, read through `WORKSPACE_LOOKUP`. */
+  /** The workspace's slug, read through `WORKSPACE_LOOKUP`. */
   organizationSlug: string;
-  /** Always the session's own branch, created from each checkout's base. */
-  branch: string;
+  /** The account the host is paired with: the host's owner, the work folder's top level. */
+  accountId: string;
+  /** The workspace the session is in: the session's organization. */
+  workspaceId: string;
+  /**
+   * The session's own branch, created from each checkout's base. Absent for a
+   * folder session, which runs on whatever branch the folder is on.
+   */
+  branch?: string;
   /**
    * The first task, to be given to the agent once the host has it up.
    *
@@ -62,6 +70,9 @@ export interface SessionCloseSpec {
  * cloned or fetched and a spare worktree made at `baseBranch` (02 §5).
  */
 export interface SessionPrepareSpec {
+  /** Whose stores to warm: the host's owner and the caller's workspace (24 §2). */
+  accountId: string;
+  workspaceId: string;
   githubRepoId: number;
   repositoryFullName: string;
   baseBranch: string;
@@ -91,7 +102,11 @@ export interface SessionFileSpec {
  * also appended would split one click across two transactions.
  */
 export interface SessionDispatchPort {
-  /** Make the directories, the checkouts and window 0, then launch the agent. */
+  /**
+   * Make the directories, the checkouts and window 0, then launch the agent — or,
+   * for a folder session, only window 0 in that folder. A runner that does not
+   * take folder sessions is sent nothing and answered `not_supported`.
+   */
   create(session: WorkSessionEntity, spec: SessionLaunchSpec): Promise<SessionDispatchOutcome>;
   /** End the agent and the tmux session. Every checkout stays on disk. */
   stop(session: WorkSessionEntity): Promise<SessionDispatchOutcome>;

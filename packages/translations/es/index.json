@@ -255,7 +255,14 @@
       "SESSIONS_021": "Esa sesión no está compartida, o ya no. Pide a quien la compartió que vuelva a compartirla.",
       "SESSIONS_022": "Inicia sesión para abrir esta sesión compartida.",
       "SESSIONS_023": "Esta sesión no está compartida contigo.",
-      "SESSIONS_024": "Esta sesión ya tiene todos los enlaces que admite. Revoca uno e inténtalo de nuevo."
+      "SESSIONS_024": "Esta sesión ya tiene todos los enlaces que admite. Revoca uno e inténtalo de nuevo.",
+      "SESSIONS_025": "El runner de este equipo no puede iniciar una sesión en una carpeta. Actualiza el runner de ese equipo e inténtalo de nuevo.",
+      "SESSIONS_026": "El runner de este equipo no puede listar sus carpetas. Actualiza el runner de ese equipo para elegir una carpeta.",
+      "SESSIONS_027": "El equipo está desconectado, así que no se pueden listar sus carpetas. Vuelve a conectarlo e inténtalo de nuevo.",
+      "SESSIONS_028": "Esa carpeta no existe en el equipo.",
+      "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
+      "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
     },
     "notFound": {
       "title": "Esta página no existe",

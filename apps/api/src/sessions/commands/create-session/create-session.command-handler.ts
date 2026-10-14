@@ -3,6 +3,8 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
+import type { LinkRegistryPort } from '../../../links/application/link-registry.port';
+import { LINK_REGISTRY } from '../../../links/links.di-tokens';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
 import { SessionAttachmentsResolver } from '../../application/session-attachments.resolver';
 import { throwIfRefused } from '../../application/session-create-refusal.policy';
@@ -27,7 +29,8 @@ import { CreateSessionCommand } from './create-session.command';
  * no composite key can scope (a host is a person's, with no workspace column), so a
  * foreign host is refused before anything is written; then the project, the
  * checkouts and the attached images. The row, its checkouts and its log commit
- * together, and only a session genuinely created is dispatched.
+ * together, and only a session genuinely created is dispatched. A folder session
+ * (24) attaches no checkout: its folder is already on the host, and the person's.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
@@ -45,6 +48,8 @@ export class CreateSessionCommandHandler
     private readonly naming: SessionNamingResolver,
     private readonly mapper: WorkSessionMapper,
     private readonly attachments: SessionAttachmentsResolver,
+    @Inject(LINK_REGISTRY)
+    private readonly links: LinkRegistryPort,
   ) {}
 
   async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
@@ -58,7 +63,7 @@ export class CreateSessionCommandHandler
       if (existing.isSome()) return { sessionId: existing.unwrap().id, hints: [] };
     }
 
-    await requireLaunchableHost(this.hosts, scope, input.hostId, input.agent);
+    await requireLaunchableHost(this.hosts, this.links, scope, input);
     const project = await this.plan.resolveProject(scope, input);
 
     const session = WorkSessionEntity.request({
@@ -68,6 +73,7 @@ export class CreateSessionCommandHandler
       hostId: input.hostId,
       slug: mintSessionSlug(),
       agent: input.agent,
+      folder: input.folder,
       name: input.name,
       idempotencyKey: command.idempotencyKey,
       origin: command.origin,

@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
@@ -9,12 +10,14 @@ import {
 } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
+import type { HostFolderListing } from './application/host-folders.port';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import type { SessionUsageWeek } from './database/session-usage.repository.port';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import type {
   NewSessionEvent,
+  RecentFolder,
   SessionListCursor,
   SessionListPage,
 } from './database/work-session.repository.port';
@@ -39,6 +42,7 @@ import {
 } from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
+import { HostFoldersResponseDto } from './dtos/host-folders.response.dto';
 import {
   SessionCheckoutResponseDto,
   SessionPageMetaDto,
@@ -91,6 +95,8 @@ export class WorkSessionMapper
     record.nameSource = entity.nameSource;
     record.slug = entity.slug;
     record.agent = entity.agent;
+    record.place = entity.place;
+    record.folderPath = entity.folderPath;
     record.idempotencyKey = entity.idempotencyKey;
     record.origin = entity.origin;
     const fold = entity.fold;
@@ -124,6 +130,8 @@ export class WorkSessionMapper
         hostId: record.hostId,
         slug: record.slug,
         agent: record.agent as SessionAgent,
+        place: record.place === 'folder' ? 'folder' : 'worktree',
+        folderPath: record.place === 'folder' ? record.folderPath : null,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
         origin: record.origin === 'automation' ? 'automation' : 'person',
@@ -136,6 +144,38 @@ export class WorkSessionMapper
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /** One row of the recent-folders aggregate; the driver returns the `max` as a `Date`. */
+  recentFolderOf(row: unknown): RecentFolder {
+    const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+    const at = record.lastUsedAt;
+    return {
+      path: String(record.path),
+      lastUsedAt: at instanceof Date ? at : new Date(String(at)),
+    };
+  }
+
+  /**
+   * The folder picker's answer: the runner's listing with each entry's path
+   * joined on the host's own separator, and the caller's recent folders. Absent
+   * branches and an absent `truncated` are spelled out, so a client never has to
+   * tell "no" from "not said".
+   */
+  toFoldersResponse(listing: HostFolderListing, recent: RecentFolder[]): HostFoldersResponseDto {
+    const dto = new HostFoldersResponseDto();
+    dto.path = listing.path;
+    dto.parent = listing.parent;
+    dto.home = listing.home;
+    dto.branch = listing.branch ?? null;
+    dto.entries = listing.entries.map((entry) => ({
+      name: entry.name,
+      path: posix.join(listing.path, entry.name),
+      branch: entry.branch ?? null,
+    }));
+    dto.truncated = listing.truncated ?? false;
+    dto.recent = recent.map((folder) => ({ path: folder.path, lastUsedAt: folder.lastUsedAt }));
+    return dto;
   }
 
   /** A stored turn as the fold reads it. Values outside the unions read as their safest member. */
@@ -251,9 +291,11 @@ export class WorkSessionMapper
    * building them beside the persistence shape keeps the two saying the same thing.
    *
    * At most three. `session.requested` states the launch, which the launch columns
-   * project. `session.cwd_set` is an entry, not a column write, because a later "work
-   * in this checkout instead" is the same entry. `prompt.first` carries the
-   * composer's task, and is absent rather than empty when there was none.
+   * project, and for a folder session the folder. `session.cwd_set` is an entry,
+   * not a column write, because a later "work in this checkout instead" is the same
+   * entry; a folder session has no checkout to work in, so it gets none.
+   * `prompt.first` carries the composer's task, and is absent rather than empty
+   * when there was none.
    */
   toRequestEvents(props: {
     commandId: string;
@@ -275,17 +317,20 @@ export class WorkSessionMapper
           agent: input.agent,
           hostId: input.hostId,
           checkouts: props.checkouts,
+          ...(input.folder ? { place: 'folder', folder: input.folder } : { place: 'worktree' }),
           requestedByUserId: props.userId,
           launch: this.toLaunch(input.agent, input.launch),
         },
       },
-      {
+    ];
+    if (!input.folder) {
+      events.push({
         idempotencyKey: key(SESSION_EVENT_KINDS.CWD_SET),
         source: 'api',
         kind: SESSION_EVENT_KINDS.CWD_SET,
         payload: { checkoutId: props.cwdCheckoutId },
-      },
-    ];
+      });
+    }
     if (input.prompt) {
       events.push({
         idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
@@ -540,6 +585,8 @@ export class WorkSessionMapper
     dto.name = entity.name;
     dto.slug = entity.slug;
     dto.agent = entity.agent;
+    dto.place = entity.place;
+    dto.folderPath = entity.folderPath;
     dto.launch = {
       model: entity.launch.model,
       permission: entity.launch.permission,

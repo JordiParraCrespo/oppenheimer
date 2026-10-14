@@ -63,6 +63,8 @@ import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import { FindHostFoldersHttpController } from './queries/find-host-folders/find-host-folders.http.controller';
+import { FindHostFoldersQueryHandler } from './queries/find-host-folders/find-host-folders.query-handler';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
@@ -113,6 +115,8 @@ const httpControllers = [
   RenameSessionHttpController,
   MoveSessionHttpController,
   CloseSessionHttpController,
+  // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
+  FindHostFoldersHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -141,6 +145,7 @@ const queryHandlers: Provider[] = [
   FindSessionEventsQueryHandler,
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
+  FindHostFoldersQueryHandler,
 ];
 
 const adapters: Provider[] = [
@@ -170,7 +175,8 @@ const adapters: Provider[] = [
     ProjectsModule,
     HostsModule,
     GithubModule,
-    // `SESSION_DISPATCH` is bound there: the dispatcher over the runner link.
+    // `SESSION_DISPATCH` and `HOST_FOLDERS` are bound there: the dispatcher and
+    // the folder lister over the runner link.
     // Importing it is what makes the port's implementation the relay's rather
     // than this module's, without this module knowing a socket exists.
     LinksModule,
