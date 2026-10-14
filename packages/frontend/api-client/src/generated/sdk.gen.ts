@@ -2071,7 +2071,7 @@ export const findWatchedRepositories = <ThrowOnError extends boolean = false>(op
 /**
  * The caller’s review sessions
  *
- * Every review session the caller started and has not closed, newest first, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.
+ * The 100 newest review sessions the caller started and has not closed, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.
  */
 export const findReviewSessions = <ThrowOnError extends boolean = false>(options?: Options<FindReviewSessionsData, ThrowOnError>): RequestResult<FindReviewSessionsResponses, FindReviewSessionsErrors, ThrowOnError> => (options?.client ?? client).get<FindReviewSessionsResponses, FindReviewSessionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

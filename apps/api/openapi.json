@@ -13546,7 +13546,7 @@
     },
     "/api/v1/pulls/review-sessions": {
       "get": {
-        "description": "Every review session the caller started and has not closed, newest first, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.",
+        "description": "The 100 newest review sessions the caller started and has not closed, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.",
         "operationId": "findReviewSessions",
         "parameters": [],
         "responses": {
