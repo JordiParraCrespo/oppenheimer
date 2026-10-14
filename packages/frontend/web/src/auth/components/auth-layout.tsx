@@ -29,8 +29,6 @@ declare module '@tanstack/react-router' {
 }
 
 export interface AuthLayoutProps {
-  /** The wordmark's product suffix; defaults to `common.product`. */
-  product?: string;
   /**
    * What fills the right half above 900px: the console's photograph carousel,
    * or nothing for an app that has no atmosphere to sell.
@@ -58,7 +56,7 @@ const WIDTHS = {
  * `legalNoteKey` is found with `in`, not truthiness, because `null` is a
  * legal-note answer, not an absence.
  */
-export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
+export function AuthLayout({ panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();
   const { legalNoteKey, width } = useMatches({
     select: (matches) => {
@@ -87,7 +85,7 @@ export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
       }
     >
       <div className="relative flex w-full flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
-        <BrandLogo product={product} />
+        <BrandLogo />
 
         <div
           className={`mx-auto flex w-full ${WIDTHS[width]} flex-1 flex-col justify-center py-10`}
