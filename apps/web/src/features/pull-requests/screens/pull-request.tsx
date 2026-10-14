@@ -55,9 +55,7 @@ export function PullRequestScreen({
       </PaneBar>
       {
         {
-          description: (
-            <PullRequestDescription address={address} onReviewChanges={() => setView('changes')} />
-          ),
+          description: <PullRequestDescription address={address} />,
           changes: (
             <PullRequestChanges
               address={address}

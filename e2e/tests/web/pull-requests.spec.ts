@@ -86,9 +86,10 @@ test.describe('Pull requests', () => {
     ).toBeChecked();
     await expect(page.getByRole('cell', { name: 'Spinner' })).toBeVisible();
     await expect(page.getByText('What did you change')).toHaveCount(0);
-    // Above it, the status strip: the gates and the way to the diff.
-    await expect(page.getByRole('button', { name: 'Review changes' })).toBeVisible();
-    await expect(page.getByText('Conflicts', { exact: true })).toBeVisible();
+    // Beside it, the rail: whether it merges cleanly, who commented, who reviews it, its checks.
+    await expect(page.getByText('Merge status')).toBeVisible();
+    await expect(page.getByText('Can merge without conflicts')).toBeVisible();
+    await expect(page.getByText('@ana-dev').first()).toBeVisible();
     // Two views only, and a link that still names the retired Briefing opens the description.
     await expect(page.getByRole('button', { name: 'Briefing' })).toHaveCount(0);
     await page.goto(`${page.url()}?view=briefing`);
@@ -120,7 +121,7 @@ test.describe('Pull requests', () => {
     await page.getByRole('radio', { name: /^Approve Approves as you/ }).click();
     await page.getByRole('button', { name: 'Approve', exact: true }).click();
     await expect(page.getByText('Approved.', { exact: true })).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole('button', { name: 'Merge', exact: true })).toBeVisible();
+    await expect(page.getByText('Open', { exact: true })).toBeVisible();
 
     // ── Merge from the queue ─────────────────────────────────────────────────
     await page.goto('/pulls');

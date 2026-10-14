@@ -1196,38 +1196,35 @@
         "draft": "Borrador"
       },
       "into": "en",
-      "inFolders_one": "en {{count}} carpeta",
-      "inFolders_other": "en {{count}} carpetas",
-      "inFolders_many": "en {{count}} carpetas",
-      "gates": {
-        "checks": "Checks",
-        "conflicts": "Conflictos",
-        "merge": "Fusión"
-      },
-      "gateMeta": {
-        "checks": {
-          "done": "Todos pasan",
-          "failed": "{{failed}} fallan",
-          "pending": "{{pending}} en curso"
-        },
-        "conflicts": {
-          "done": "Sin conflictos",
-          "failed": "Rebase sobre {{base}}",
-          "pending": "GitHub lo está comprobando"
-        },
-        "merge": {
-          "done": "Fusionada",
-          "pending": "Squash en {{base}}"
-        }
-      },
-      "reviewChanges": "Revisar los cambios",
       "noDescription": "Sin descripción.",
       "copyCode": "Copiar código",
       "codeCopied": "Copiado",
       "editOnGithub": "Editar en GitHub",
-      "filesIn_one": "{{count}} archivo {{folders}}",
-      "filesIn_other": "{{count}} archivos {{folders}}",
-      "filesIn_many": "{{count}} archivos {{folders}}"
+      "checks": "Checks",
+      "noReviewers": "Nadie la ha revisado todavía.",
+      "reviewer": {
+        "approved": "Aprobada",
+        "changes_requested": "Pidió cambios",
+        "commented": "Comentó",
+        "requested": "Pedida"
+      },
+      "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
+      "rail": {
+        "mergeStatus": "Estado de la fusión",
+        "canMerge": "Se puede fusionar sin conflictos",
+        "conflicts": "Tiene conflictos con {{base}}",
+        "merged": "Fusionada en {{base}}",
+        "closed": "Cerrada sin fusionar",
+        "reviews": "Revisiones",
+        "checksSummary": "{{passed}} de {{total}} correctas",
+        "noChecks": "Sin comprobaciones",
+        "comments": "Comentarios",
+        "noComments": "Sin comentarios",
+        "commentCount_one": "{{count}} comentario",
+        "commentCount_other": "{{count}} comentarios",
+        "commentCount_many": "{{count}} comentarios",
+        "commentsFailed": "No se pudieron cargar los comentarios."
+      }
     },
     "review": {
       "submit": "Enviar revisión",

@@ -226,7 +226,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - `PullRequests` as of the 2026-10-13 export is built without its merge
   manager chat, the Chat tab and the review agent ("The screens as built"
   in `../../../next-steps/0.2-pull-requests.md`). Departures from the
-  frame: the queue row keeps one Review button, which opens Changes; the
+  frame: Description keeps the console's rail (merge status, comments,
+  reviews, checks) in place of the frame's status strip, by the owner's
+  call on 2026-10-14; the queue row keeps one Review button, which opens Changes; the
   verdict pill in the bar is not drawn (the toast says what the review
   did); and the Settings policy under Watched repositories (Track, Starts
   in lane, Notify) is not built.

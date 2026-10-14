@@ -43,16 +43,16 @@ export function pullRequestLink(address: PullRequestAddress, view: PullRequestVi
 }
 
 /**
- * The page each view is: the description a page of cards at the board's
- * measure, the changes a diff as wide and as tall as the pane. The route
+ * The page each view is: the description an article with its rail at the
+ * board's measure, the changes a diff as wide and as tall as the pane. The route
  * declares it from its search, so the shell frames every view and the bar
  * stays above them.
  */
 const PANE = {
-  description: 'wide',
+  description: 'board',
   changes: 'fluid',
-} as const satisfies Record<PullRequestView, 'wide' | 'fluid'>;
+} as const satisfies Record<PullRequestView, 'board' | 'fluid'>;
 
-export function pullRequestPane(view: PullRequestView | undefined): 'wide' | 'fluid' {
+export function pullRequestPane(view: PullRequestView | undefined): 'board' | 'fluid' {
   return PANE[resolvePullRequestView(view)];
 }

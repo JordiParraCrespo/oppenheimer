@@ -1192,38 +1192,35 @@
         "draft": "Draft"
       },
       "into": "into",
-      "inFolders_one": "in {{count}} folder",
-      "inFolders_other": "in {{count}} folders",
-      "inFolders_many": "in {{count}} folders",
-      "gates": {
-        "checks": "Checks",
-        "conflicts": "Conflicts",
-        "merge": "Merge"
-      },
-      "gateMeta": {
-        "checks": {
-          "done": "All passing",
-          "failed": "{{failed}} failing",
-          "pending": "{{pending}} running"
-        },
-        "conflicts": {
-          "done": "Merges cleanly",
-          "failed": "Rebase on {{base}}",
-          "pending": "GitHub is checking"
-        },
-        "merge": {
-          "done": "Merged",
-          "pending": "Squash into {{base}}"
-        }
-      },
-      "reviewChanges": "Review changes",
       "noDescription": "No description.",
       "copyCode": "Copy code",
       "codeCopied": "Copied",
       "editOnGithub": "Edit on GitHub",
-      "filesIn_one": "{{count}} file {{folders}}",
-      "filesIn_other": "{{count}} files {{folders}}",
-      "filesIn_many": "{{count}} files {{folders}}"
+      "checks": "Checks",
+      "noReviewers": "Nobody has reviewed it yet.",
+      "reviewer": {
+        "approved": "Approved",
+        "changes_requested": "Changes requested",
+        "commented": "Commented",
+        "requested": "Requested"
+      },
+      "reviewsUnread": "GitHub did not return the reviews on this read.",
+      "rail": {
+        "mergeStatus": "Merge status",
+        "canMerge": "Can merge without conflicts",
+        "conflicts": "Has conflicts with {{base}}",
+        "merged": "Merged into {{base}}",
+        "closed": "Closed without merging",
+        "reviews": "Reviews",
+        "checksSummary": "{{passed}} of {{total}} passing",
+        "noChecks": "No checks",
+        "comments": "Comments",
+        "noComments": "No comments",
+        "commentCount_one": "{{count}} comment",
+        "commentCount_other": "{{count}} comments",
+        "commentCount_many": "{{count}} comments",
+        "commentsFailed": "Could not load the comments."
+      }
     },
     "review": {
       "submit": "Submit review",
