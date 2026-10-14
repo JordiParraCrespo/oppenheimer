@@ -13,16 +13,17 @@ import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
- * The project chip, first in the scope band because picking a project
- * prefills the host, the repository and the agent
- * (`product/versions/mvp/05-screens.md`). The hosts are read only at pick
+ * The project chip, first in a new worktree's scope band because picking a
+ * project prefills the host, the repository and the agent
+ * (`product/versions/mvp/05-screens.md`); last and optional for a folder
+ * session, which it only files (24). The hosts are read only at pick
  * time, so a host refetch does not re-render it; it subscribes only to whether
  * that list has answered, because a pick before then would drop the project's
  * default host as if it were gone.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
-  const { control, setValue } = useNewSessionDraft();
+  const { control, setValue, getValues } = useNewSessionDraft();
   const { field } = useController({ control, name: 'projectId' });
   const dialogs = useConsoleDialog();
   const [created, setCreated] = useState<string | undefined>();
@@ -46,6 +47,9 @@ export function NewSessionProject() {
 
   function pick(next: ProjectEntity) {
     field.onChange(next.id);
+    // A folder session only files itself under the project: it clones none of
+    // its repositories, and its host and agent are already the folder's.
+    if (getValues('where') === 'folder') return;
     const prefill = projectPrefill(
       next,
       (hosts() ?? []).map((host) => host.id),

@@ -37,6 +37,7 @@ export function NewSessionComposer({
   onSubmit,
   busy,
   disabled,
+  taskOptional,
   scope,
   tools,
   engine,
@@ -44,6 +45,8 @@ export function NewSessionComposer({
   onSubmit: (text: string, files: File[]) => void;
   busy?: boolean;
   disabled?: boolean;
+  /** The session starts on no task (the blank terminal): send is on with the field empty. */
+  taskOptional?: boolean;
   scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
@@ -102,7 +105,12 @@ export function NewSessionComposer({
         onValueChange={setDraft}
         busy={busy}
         disabled={disabled}
-        placeholder={t('sessions.new.composer.placeholder')}
+        allowEmpty={taskOptional}
+        placeholder={t(
+          taskOptional
+            ? 'sessions.new.composer.placeholderOptional'
+            : 'sessions.new.composer.placeholder',
+        )}
         labels={{
           send: t('sessions.new.composer.send'),
           stop: t('sessions.new.composer.stop'),
@@ -121,7 +129,7 @@ export function NewSessionComposer({
         engine={engine}
         onSubmit={(text) => {
           const task = text.trim();
-          if (!task) return;
+          if (!task && !taskOptional) return;
           onSubmit(
             task,
             files.map(({ file }) => file),

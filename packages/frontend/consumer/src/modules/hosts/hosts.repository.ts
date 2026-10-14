@@ -1,7 +1,12 @@
 import { type HostResponseDto, heyApiSdk } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { HostEntity, type HostPairing, type HostPairingToken } from './host.entity';
+import {
+  HostEntity,
+  type HostFolders,
+  type HostPairing,
+  type HostPairingToken,
+} from './host.entity';
 import { HostsErrors } from './hosts.errors';
 
 /** The wire shapes are the generated client's, never mirrored here. */
@@ -83,6 +88,36 @@ export class HostsRepository {
       HostsErrors.RENAME_FAILED,
     );
     return toEntity(data);
+  }
+
+  /**
+   * One directory of the host, through its runner: `path` absolute, or absent
+   * for the home directory. The failure keeps the API's code (`SESSIONS_026`
+   * to `SESSIONS_031`), which is how the picker tells "no such folder" from
+   * "the host is away".
+   */
+  @MapApiError(HostsErrors.FETCH_FOLDERS_FAILED)
+  async findFolders(id: string, path?: string): Promise<HostFolders> {
+    const data = await unwrapBody(
+      heyApiSdk.findHostFolders({ path: { id }, query: path ? { path } : {} }),
+      HostsErrors.FETCH_FOLDERS_FAILED,
+    );
+    return {
+      path: data.path,
+      parent: data.parent ?? null,
+      home: data.home,
+      branch: data.branch ?? null,
+      entries: data.entries.map((entry) => ({
+        name: entry.name,
+        path: entry.path,
+        branch: entry.branch ?? null,
+      })),
+      truncated: data.truncated,
+      recent: data.recent.map((folder) => ({
+        path: folder.path,
+        lastUsedAt: new Date(folder.lastUsedAt),
+      })),
+    };
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)

@@ -322,10 +322,10 @@ export const sessionCreateSchema = z
     cwdCheckoutId: checkoutIdSchema.nullable(),
   })
   /** A session is in a folder or in its checkouts, never both and never neither. */
-  .refine((message) => (message.folder === undefined) === (message.checkouts.length > 0), {
+  .refine((message) => (message.folder === undefined) === message.checkouts.length > 0, {
     path: ['folder'],
   })
-  .refine((message) => (message.branch !== undefined) === (message.checkouts.length > 0), {
+  .refine((message) => (message.branch !== undefined) === message.checkouts.length > 0, {
     path: ['branch'],
   })
   .refine(

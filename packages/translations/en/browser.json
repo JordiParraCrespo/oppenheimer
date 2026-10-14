@@ -458,10 +458,16 @@
           "label": "Check out the branch",
           "doing": "Creating the worktree…"
         },
+        "open": {
+          "label": "Open {{path}}",
+          "doing": "Resolving the path…",
+          "done": "Directory found"
+        },
         "agent": {
           "label": "Start {{agent}}",
           "doing": "Launching in tmux…",
-          "done": "Ready"
+          "done": "Ready",
+          "shell": "Start shell"
         }
       },
       "progressFailed": "Could not load how the start is going.",
@@ -476,7 +482,8 @@
       "descriptionNoBranch": "This session has stopped. Restarting brings the terminal back where it left off.",
       "restart": "Restart",
       "restarting": "Restarting",
-      "restartFailed": "The session could not be restarted."
+      "restartFailed": "The session could not be restarted.",
+      "deletedFolder": "This session was deleted. Its terminal ended, and the folder stays on the host as it is."
     },
     "new": {
       "title": "New session",
@@ -485,6 +492,7 @@
       "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
       "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
       "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
+      "subtitleFolder": "Opens a folder on the host as it is. Nothing is cloned and no branch is made.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -494,6 +502,17 @@
         "add": "Add host…",
         "offline": "Offline",
         "failed": "Could not load your hosts."
+      },
+      "where": {
+        "label": "Where the session runs",
+        "worktree": {
+          "label": "New worktree",
+          "description": "Clone a project repository onto a fresh branch"
+        },
+        "folder": {
+          "label": "Folder on host",
+          "description": "Open an existing directory as it is · nothing is cloned"
+        }
       },
       "project": {
         "label": "Project",
@@ -526,6 +545,27 @@
         "empty": "No branch matches.",
         "loading": "Loading branches…",
         "default": "Default"
+      },
+      "folder": {
+        "label": "Folder",
+        "placeholder": "Folder",
+        "input": "Folder path",
+        "inputPlaceholder": "~/path/to/folder",
+        "homeHint": "~ = {{home}}",
+        "loading": "Listing folders…",
+        "recent": "Recent on {{host}}",
+        "up": "Parent folder",
+        "crumbs": "Path",
+        "emptyMissing": "No folder at {{dir}} on {{host}}.",
+        "emptyFiltered": "No folder in {{dir}} starts with “{{fragment}}”.",
+        "emptyNone": "No subfolders. Use this one, or go back up.",
+        "footMissing": "Pick an existing folder. Nothing is created.",
+        "footRepository": "Git repository on {{branch}}. Opened as it is, no new branch.",
+        "footFolder": "Opened as it is. Nothing is cloned.",
+        "use": "Use {{name}}",
+        "useNone": "Use folder",
+        "noHost": "Pick a host first, then one of its folders.",
+        "failed": "Could not list the folders on this host."
       },
       "agent": {
         "label": "Agent and model",
@@ -569,7 +609,8 @@
         "removeAttachment": "Remove {{name}}",
         "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
         "attachTooMany": "A first task carries at most {{max}} files.",
-        "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file."
+        "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
+        "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
       "failed": "The session could not be created."
     },
@@ -653,7 +694,8 @@
       "deleting": "Deleting…",
       "failed": "The session could not be deleted.",
       "discard": "Also discard work that is not pushed",
-      "keeps": "Deleting stops if the session has work that is not pushed."
+      "keeps": "Deleting stops if the session has work that is not pushed.",
+      "descriptionFolder": "Ends the terminal. The folder stays as it is."
     },
     "filters": {
       "label": "Filter sessions",
@@ -1675,7 +1717,9 @@
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
       "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
-      "removeFailed": "Could not remove this host. Try again."
+      "removeFailed": "Could not remove this host. Try again.",
+      "openTerminal": "Open terminal",
+      "openTerminalTitle": "Blank terminal in ~ on {{host}}"
     }
   },
   "settings": {

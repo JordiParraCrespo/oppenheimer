@@ -158,7 +158,7 @@ const createSessionFields = z.object({
  */
 export const createSessionSchema = createSessionFields
   /** A session runs in its checkouts or in a folder: exactly one of the two. */
-  .refine((value) => (value.folder === undefined) === (value.checkouts.length > 0), {
+  .refine((value) => (value.folder === undefined) === value.checkouts.length > 0, {
     path: ['folder'],
   })
   .refine(

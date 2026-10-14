@@ -25,7 +25,8 @@ export function SessionClosed({
   restarting,
 }: {
   name: string;
-  copy: 'sessions.closed.description' | 'sessions.closed.deleted';
+  /** A deleted folder session's copy says the folder stays: it never had a worktree. */
+  copy: 'sessions.closed.description' | 'sessions.closed.deleted' | 'sessions.closed.deletedFolder';
   /** The session's branch, when it still has one to point at. */
   branch?: string | null;
   newSession: ReactElement;

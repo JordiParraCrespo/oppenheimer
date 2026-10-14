@@ -210,7 +210,11 @@ describe('createSessionSchema', () => {
   });
 
   it('takes a folder on the host instead of checkouts', () => {
-    const parsed = createSessionSchema.parse({ hostId: uuid, agent: 'shell', folder: '/home/jordi/notes' });
+    const parsed = createSessionSchema.parse({
+      hostId: uuid,
+      agent: 'shell',
+      folder: '/home/jordi/notes',
+    });
     expect(parsed.folder).toBe('/home/jordi/notes');
     expect(parsed.checkouts).toEqual([]);
   });
@@ -218,11 +222,12 @@ describe('createSessionSchema', () => {
   it('refuses a folder with checkouts, and a folder that is not absolute', () => {
     const checkouts = [{ installationId: uuid, githubRepoId: 42 }];
     expect(
-      createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', folder: '/srv', checkouts }).success,
+      createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', folder: '/srv', checkouts })
+        .success,
     ).toBe(false);
-    expect(createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', folder: 'notes' }).success).toBe(
-      false,
-    );
+    expect(
+      createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', folder: 'notes' }).success,
+    ).toBe(false);
   });
 
   it('takes no branch: the working branch is always the session’s own', () => {

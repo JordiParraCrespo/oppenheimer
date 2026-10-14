@@ -102,7 +102,13 @@ export function SessionScreen({
     return (
       <SessionClosed
         name={session.name}
-        copy={session.isResolved ? 'sessions.closed.deleted' : 'sessions.closed.description'}
+        copy={
+          session.isResolved
+            ? session.isFolder
+              ? 'sessions.closed.deletedFolder'
+              : 'sessions.closed.deleted'
+            : 'sessions.closed.description'
+        }
         branch={branch}
         newSession={<Link to="/sessions/new" />}
         {...(session.isResolved

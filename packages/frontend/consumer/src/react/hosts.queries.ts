@@ -7,7 +7,12 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { HostEntity, HostPairing, HostPairingToken } from '../modules/hosts/host.entity';
+import type {
+  HostEntity,
+  HostFolders,
+  HostPairing,
+  HostPairingToken,
+} from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
 import { type Poll, type PollKeys, usePollWhile } from './live-poll';
 
@@ -22,6 +27,10 @@ import { type Poll, type PollKeys, usePollWhile } from './live-poll';
  * ['hosts', 'pairing', 'list']                pairingLists() → pairingList()   the tokens Add host polls
  * ['hosts', 'pairing', 'detail']              pairingDetails()
  * ['hosts', 'pairing', 'detail', name]        pairingDetail(name)              the token Add host shows
+ * ['hosts', 'detail']                         details()
+ * ['hosts', 'detail', id]                     detail(id)
+ * ['hosts', 'detail', id, 'folders']          folderLists(id)
+ * ['hosts', 'detail', id, 'folders', path]    folders(id, path)                one directory; null is home
  * ```
  *
  * A pairing detail's `queryFn` mints: refetching it issues a new token under
@@ -37,6 +46,10 @@ export const hostsKeys = {
   pairingList: () => [...hostsKeys.pairingLists()] as const,
   pairingDetails: () => [...hostsKeys.pairings(), 'detail'] as const,
   pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
+  details: () => [...hostsKeys.all, 'detail'] as const,
+  detail: (id: string) => [...hostsKeys.details(), id] as const,
+  folderLists: (id: string) => [...hostsKeys.detail(id), 'folders'] as const,
+  folders: (id: string, path: string | null) => [...hostsKeys.folderLists(id), path] as const,
 };
 
 /**
@@ -140,6 +153,33 @@ export function useHostList<TData = HostEntity[]>(
 export function useHostsSnapshot(): () => HostEntity[] | undefined {
   const queryClient = useQueryClient();
   return () => queryClient.getQueryData<HostEntity[]>(hostsKeys.list());
+}
+
+/**
+ * One directory of a host, as its runner lists it now: New session's folder
+ * picker. `path` is absolute, or null for the home directory, whose answer
+ * carries `home` — so the picker can turn `~` into a path.
+ *
+ * The API caches nothing and neither does this beyond the visit: a folder
+ * made a minute ago must show. A refusal is the answer (no such folder, the
+ * host is away, the runner cannot list), so it is not retried. Mount the
+ * reader only while there is a host to ask: the picker's open popup.
+ */
+export function useHostFolders<TData = HostFolders>(
+  hostId: string,
+  path: string | null,
+  options?: Omit<UseQueryOptions<HostFolders, Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery<HostFolders, Error, TData>({
+    queryKey: hostsKeys.folders(hostId, path),
+    queryFn: () => app.hosts.findFolders(hostId, path ?? undefined),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...options,
+  });
 }
 
 /**
