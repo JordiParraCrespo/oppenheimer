@@ -75,9 +75,12 @@ One incident is a bug fix, not a class.
 Fix one class per run by default, in its own commit; a sweep the operator
 asked for fixes the most frequent classes, one commit each.
 
-Prove each new check fails on a real past mistake: check out the commit that
-made it (`git worktree add <scratch> <sha>`), run the check there, and paste
-the failure. A check that has never failed on real code proves nothing.
+Prove each new check fails on a real past mistake. That commit predates the
+check, so bring the two together: replay the mistake onto the current tree
+(`git show <sha> -- <paths> | git apply`, or revert the fix that undid it),
+or check the commit out (`git worktree add <scratch> <sha>`) and copy the new
+check and its config into it. Run the check, paste the failure, then drop the
+replay. A check that has never failed on real code proves nothing.
 
 Run the same command locally and in CI. CI is local here, so a new check is a
 step in `scripts/ci/local.mjs` and nowhere else, behind the root
