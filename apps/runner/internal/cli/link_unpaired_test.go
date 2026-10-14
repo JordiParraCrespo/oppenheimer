@@ -88,7 +88,7 @@ func TestAnUnpairedHostKeepsTryingToStopASessionItCouldNot(t *testing.T) {
 	terminals := &flakyKill{Terminals: fake.NewTerminals(), fails: 2}
 	svc, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
-		Layout: sessionsdomain.Layout{Root: t.TempDir()},
+		Places: fake.NewPlaces(), Layout: sessionsdomain.Layout{Root: t.TempDir()},
 	})
 	if err != nil {
 		t.Fatal(err)

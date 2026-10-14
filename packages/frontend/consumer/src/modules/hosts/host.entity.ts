@@ -107,3 +107,32 @@ export interface HostPairing {
   expiresAt: Date;
   redeemedHostId: string | null;
 }
+
+/** One sub-directory of a listed folder: its name, its path, and its branch when it is a repository. */
+export interface HostFolderEntry {
+  name: string;
+  /** Absolute, on the host. */
+  path: string;
+  branch: string | null;
+}
+
+/**
+ * One directory of a host, listed by its runner now (`GET /hosts/{id}/folders`,
+ * `product/versions/mvp/24-session-places.md` §4): folder names only, never
+ * files, and nothing cached by the API.
+ */
+export interface HostFolders {
+  /** The directory listed, absolute and cleaned. */
+  path: string;
+  /** Null at the root. */
+  parent: string | null;
+  /** The runner's home directory, so a path under it can be shown as `~/…`. */
+  home: string;
+  /** The listed directory's own branch, when it is a repository. */
+  branch: string | null;
+  entries: HostFolderEntry[];
+  /** More directories were there than `entries` carries. */
+  truncated: boolean;
+  /** The caller's own earlier folder sessions on this host, newest first. */
+  recent: { path: string; lastUsedAt: Date }[];
+}

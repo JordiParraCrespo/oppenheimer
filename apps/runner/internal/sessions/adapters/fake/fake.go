@@ -21,6 +21,7 @@ import (
 var (
 	_ app.Terminals = (*Terminals)(nil)
 	_ app.Worktrees = (*Worktrees)(nil)
+	_ app.Places    = (*Places)(nil)
 )
 
 // Terminals is an in-memory tmux server.
@@ -360,8 +361,12 @@ func (a *attachment) Close() error {
 // Worktrees is an in-memory git.
 type Worktrees struct {
 	mu sync.Mutex
-	// Mirrors records the repositories that have been cloned or fetched.
+	// Mirrors records the repositories whose stores have been made or
+	// fetched, by full name.
 	Mirrors map[string]int
+	// Stores records the same by account, workspace and name,
+	// `<account>/<workspace>/<owner>/<repo>`.
+	Stores map[string]int
 	// Paths records the worktrees that exist.
 	Paths map[string]string
 	// DirtyPaths makes Dirty answer true for a worktree.
@@ -370,8 +375,6 @@ type Worktrees struct {
 	PushErr error
 	// EnsureErr, when set, is what Ensure returns: a clone that failed.
 	EnsureErr error
-	// Prepared records the repositories a terminal's directory was asked for.
-	Prepared []string
 	// Pushed records the branches that reached the remote.
 	Pushed []string
 	// PushedFor records the session each push was done for (domain.SessionOf),
@@ -390,12 +393,19 @@ func (w *Worktrees) FetchedRefs() []string {
 
 // NewWorktrees returns an empty git.
 func NewWorktrees() *Worktrees {
-	return &Worktrees{Mirrors: map[string]int{}, Paths: map[string]string{}, DirtyPaths: map[string]bool{}}
+	return &Worktrees{
+		Mirrors: map[string]int{}, Stores: map[string]int{},
+		Paths: map[string]string{}, DirtyPaths: map[string]bool{},
+	}
+}
+
+func storeKey(repo domain.Repository) string {
+	return repo.Tenant.Account + "/" + repo.Tenant.Workspace + "/" + repo.FullName
 }
 
 // Ensure implements app.Worktrees.
-func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
-	if err := domain.ValidateRepo(repo); err != nil {
+func (w *Worktrees) Ensure(_ context.Context, repo domain.Repository, _, ref string) error {
+	if err := repo.Validate(); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
 	w.mu.Lock()
@@ -403,29 +413,22 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	if w.EnsureErr != nil {
 		return w.EnsureErr
 	}
-	w.Mirrors[repo]++
+	w.Mirrors[repo.FullName]++
+	w.Stores[storeKey(repo)]++
 	w.Fetched = append(w.Fetched, ref)
 	return nil
 }
 
-// Has implements app.Worktrees: a repository is on the host once Ensure ran for it.
-func (w *Worktrees) Has(repo string) bool {
+// Has implements app.Worktrees: a repository is on the host once Ensure ran
+// for it in the same workspace.
+func (w *Worktrees) Has(repo domain.Repository) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.Mirrors[repo] > 0
-}
-
-// Prepare implements app.Worktrees. Nothing is made on disk: a fake session's
-// terminal is a fake too, and the directory is only somewhere to start it.
-func (w *Worktrees) Prepare(_ context.Context, repo string) (string, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.Prepared = append(w.Prepared, repo)
-	return "/" + repo + "/worktrees", nil
+	return w.Stores[storeKey(repo)] > 0
 }
 
 // Add implements app.Worktrees.
-func (w *Worktrees) Add(_ context.Context, _, path, branch, _ string, _ bool) error {
+func (w *Worktrees) Add(_ context.Context, _ domain.Repository, path, branch, _ string, _ bool) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if _, exists := w.Paths[path]; exists {
@@ -436,7 +439,7 @@ func (w *Worktrees) Add(_ context.Context, _, path, branch, _ string, _ bool) er
 }
 
 // Remove implements app.Worktrees.
-func (w *Worktrees) Remove(_ context.Context, _, path string, force bool) error {
+func (w *Worktrees) Remove(_ context.Context, _ domain.Repository, path string, force bool) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.DirtyPaths[path] && !force {
@@ -471,6 +474,91 @@ func (w *Worktrees) Push(ctx context.Context, _, branch string) (bool, error) {
 	w.Pushed = append(w.Pushed, branch)
 	w.PushedFor = append(w.PushedFor, domain.SessionOf(ctx))
 	return true, nil
+}
+
+// Places is app.Places in memory: session folders and their markers, and
+// the folders on the "host" a folder session may run in.
+type Places struct {
+	mu sync.Mutex
+	// Sessions is each session folder made, by path, with the session id its
+	// marker names.
+	Sessions map[string]string
+	// Removed is every session folder removed, in order.
+	Removed []string
+	// Folders is what CheckFolder finds: true for a directory, false for a
+	// file. A path missing here does not exist.
+	Folders map[string]bool
+	// Slugs is the workspace slug each made session folder recorded.
+	Slugs map[string]string
+}
+
+// NewPlaces returns a host with no folders on it.
+func NewPlaces() *Places {
+	return &Places{Sessions: map[string]string{}, Folders: map[string]bool{}, Slugs: map[string]string{}}
+}
+
+// MakeSession implements app.Places.
+func (p *Places) MakeSession(folder domain.SessionFolder) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if owner, ok := p.Sessions[folder.Dir]; ok && owner != folder.SessionID {
+		return domain.ErrSessionExists.WithDetail("%s is session %s's", folder.Dir, owner)
+	}
+	p.Sessions[folder.Dir] = folder.SessionID
+	p.Slugs[folder.Dir] = folder.WorkspaceSlug
+	return nil
+}
+
+// RemoveSession implements app.Places.
+func (p *Places) RemoveSession(dir, sessionID string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	owner, ok := p.Sessions[dir]
+	if !ok {
+		return nil
+	}
+	if owner != sessionID {
+		return domain.ErrNotOurs
+	}
+	delete(p.Sessions, dir)
+	p.Removed = append(p.Removed, dir)
+	return nil
+}
+
+// CheckFolder implements app.Places.
+func (p *Places) CheckFolder(path string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	dir, ok := p.Folders[path]
+	switch {
+	case !ok:
+		return domain.ErrNoSuchFolder
+	case !dir:
+		return domain.ErrNotADirectory
+	}
+	return nil
+}
+
+// Has reports a session folder still there, under the lock.
+func (p *Places) Has(dir string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	_, ok := p.Sessions[dir]
+	return ok
+}
+
+// SetFolder puts a folder (dir true), or a file, at path.
+func (p *Places) SetFolder(path string, dir bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.Folders[path] = dir
+}
+
+// DeleteFolder takes path off the host.
+func (p *Places) DeleteFolder(path string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	delete(p.Folders, path)
 }
 
 func splitTarget(target string) (string, int, error) {

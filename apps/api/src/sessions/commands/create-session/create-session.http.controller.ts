@@ -50,7 +50,7 @@ export class CreateSessionHttpController {
   @ApiOperation({
     summary: 'Start a session',
     description:
-      'Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).',
+      'A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/versions/mvp/24-session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
@@ -72,8 +72,8 @@ export class CreateSessionHttpController {
   })
   @ApiProblemResponse({
     status: 409,
-    description: "The host's runner is older than the agent picked",
-    code: 'SESSIONS_011',
+    description: "The host's runner is older than the agent, or than folder sessions",
+    code: ['SESSIONS_011', 'SESSIONS_025'],
   })
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
   @ApiProblemResponse({

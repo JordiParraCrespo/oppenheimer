@@ -17,7 +17,8 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
 import { HOST_ASSERTION } from '../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
-import { LINK_REGISTRY } from '../../links/links.di-tokens';
+import type { LinkRepliesPort } from '../../links/application/link-replies.port';
+import { LINK_REGISTRY, LINK_REPLIES } from '../../links/links.di-tokens';
 import { clientAddressOf } from './client-address.util';
 import { CredentialsProcessor } from './credentials.processor';
 import { decodeFrame } from './frame.util';
@@ -113,6 +114,8 @@ export class RunnerLinkGateway {
     private readonly events: RelayEventsProcessor,
     private readonly credentials: CredentialsProcessor,
     private readonly configService: ConfigService,
+    @Inject(LINK_REPLIES)
+    private readonly replies: LinkRepliesPort,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -365,7 +368,19 @@ export class RunnerLinkGateway {
       case 'events.append':
         // Queued in `onControl`; never dispatched one by one.
         return;
+      case 'fs.listing':
+        // Only ever an answer to a request this process is waiting on; a late
+        // one (past its timeout) has nobody left to read it.
+        if (!this.replies.settle(link.hostId, message)) {
+          this.logger.warn({
+            message: 'a listing arrived that nobody is waiting for',
+            hostId: link.hostId,
+          });
+        }
+        return;
       case 'command.failed': {
+        // A refusal of a request someone is waiting on is that waiter's, first.
+        if (this.replies.settle(link.hostId, message)) return;
         // An attach's refusal is its browser's; any other is the session's.
         const sink = link.attachmentByCommand(message.commandId);
         if (sink) {

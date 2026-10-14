@@ -256,13 +256,14 @@
   control), and each agent's catalog entry says what they mean to its
   CLI. Effort is the model's own levels, under its CLI's names; a model
   that has no notion of effort hides the control. **Chips remember the
-  last choice, except the permission level**: New session opens on
-  `full`, the level is not remembered, and a narrower pick holds for
-  that session only. The console always sends the level; a request that
+  last choice, the permission level included**: New session opens on
+  `auto` ("Approve for me", Claude Code's accept-edits mode) the first
+  time and on the last level picked after that (changed 2026-10-14; it
+  opened on `full` and never remembered the level). The console always sends the level; a request that
   names none (an API token, an automation) is launched on `ask`, the
   API's reading of "unspecified" (`launchPermissionFor`), so omission
   never escalates. The memory is the browser's — the host, the agent, the
-  model and each agent's effort, in `localStorage`, on the device that chose
+  model, the permission level and each agent's effort, in `localStorage`, on the device that chose
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
   next visit's. The project a visit starts on outranks the memory where it

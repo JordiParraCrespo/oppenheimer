@@ -22,6 +22,7 @@ type fakeHarness struct {
 	events    *recorder
 	store     *memoryStore
 	files     *fake.Files
+	places    *fake.Places
 }
 
 type memoryStore struct {
@@ -40,11 +41,11 @@ func (m *memoryStore) Save(sessions []domain.Session) error {
 func newFakeHarness(t *testing.T) *fakeHarness {
 	t.Helper()
 	terminals, worktrees := fake.NewTerminals(), fake.NewWorktrees()
-	events, store, files := &recorder{}, &memoryStore{}, fake.NewFiles()
+	events, store, files, places := &recorder{}, &memoryStore{}, fake.NewFiles(), fake.NewPlaces()
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
 		Store: store, Publisher: events, Files: files,
-		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+		Places: places, Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
 		},
@@ -52,7 +53,7 @@ func newFakeHarness(t *testing.T) *fakeHarness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, files: files}
+	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, files: files, places: places}
 }
 
 func (h *fakeHarness) open(t *testing.T) domain.Session {
@@ -67,7 +68,7 @@ func (h *fakeHarness) open(t *testing.T) domain.Session {
 	return session
 }
 
-func TestCreateFetchesTheMirrorAddsAWorktreeAndStartsTheAgent(t *testing.T) {
+func TestCreateFetchesTheStoreAddsAWorktreeAndStartsTheAgent(t *testing.T) {
 	h := newFakeHarness(t)
 
 	session := h.open(t)
@@ -81,8 +82,8 @@ func TestCreateFetchesTheMirrorAddsAWorktreeAndStartsTheAgent(t *testing.T) {
 	// The pane is made before the worktree is, so it starts in the directory
 	// the worktree will be in, and the agent is launched in the worktree once
 	// there is one: started in place, not typed into the shell.
-	if dir := h.terminals.Dir(session.TmuxName()); dir == session.Worktree {
-		t.Fatalf("the tmux session waited for the worktree to exist: %q", dir)
+	if dir := h.terminals.Dir(session.TmuxName()); dir != session.Dir || dir == session.Worktree {
+		t.Fatalf("the tmux session started in %q, want the session's folder %q", dir, session.Dir)
 	}
 	launched := h.terminals.Launches[session.Target(0)]
 	if launched.Dir != session.Worktree || launched.Command == "" {
@@ -786,7 +787,7 @@ func TestCreateAndRestartWaitOnTheAgentsUpdate(t *testing.T) {
 	svc, err := app.New(app.Options{
 		Terminals: h.terminals, Worktrees: h.worktrees, Classifier: manifest.New(manifest.Options{}),
 		Store: &memoryStore{}, Publisher: h.events, Files: h.files,
-		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"}, Gate: gate,
+		Places: fake.NewPlaces(), Layout: domain.Layout{Root: "/home/jordi/oppenheimer"}, Gate: gate,
 	})
 	if err != nil {
 		t.Fatal(err)

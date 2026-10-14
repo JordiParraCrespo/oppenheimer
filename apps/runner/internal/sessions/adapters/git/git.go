@@ -1,8 +1,14 @@
-// Package git keeps the fixed workspace layout: one mirror per repository,
-// one worktree per session.
+// Package git keeps the work folder's stores and the worktrees cut from them
+// (24 §2): one bare store per repository and workspace, one worktree per
+// session, in the session's own folder.
 //
-//	~/oppenheimer-ai/workspaces/<owner>/<repo>/main            the fetch source, never edited
-//	~/oppenheimer-ai/workspaces/<owner>/<repo>/worktrees/<slug>  one per session
+//	<work folder>/<account>/<workspace>/repos/<owner>--<repo>.git        the bare store, never edited
+//	<work folder>/<account>/<workspace>/repos/.spares/<owner>--<repo>    the next create's worktree
+//	<work folder>/<account>/<workspace>/sessions/<slug>/<directory>      one per session
+//
+// A store records the GitHub id of the repository it caches
+// (`oppenheimer.repo-id`), so a repository renamed on GitHub is found under
+// the name its store was made with.
 //
 // Credentials never reach this package: git asks the runner's credential
 // helper over the local socket when it needs one, so nothing is written to
@@ -19,6 +25,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,10 +51,14 @@ const (
 // git command this package runs on a session's behalf carries it here.
 const SessionEnv = "OPPENHEIMER_SESSION"
 
-// partialPrefix names a clone in progress, beside the mirror it will become.
-// A clone lands under this name and is renamed into place only once it is
-// whole, so a clone cut short never leaves a mirror that looks usable.
-const partialPrefix = ".partial-main-"
+// partialPrefix names a store being made, beside the store it will become.
+// A first fetch lands under this name and is renamed into place only once it
+// is whole, so a download cut short never leaves a store that looks usable.
+const partialPrefix = ".partial-"
+
+// repoIDKey is the store's config entry naming the GitHub repository it
+// caches, by id.
+const repoIDKey = "oppenheimer.repo-id"
 
 // Client runs git.
 type Client struct {
@@ -57,20 +68,22 @@ type Client struct {
 	// It is the runner's own `credential-helper` subcommand.
 	credentialHelper string
 
-	// repos serialises the work on one mirror. Creates run side by side, and
-	// two sessions on a repository this host has never seen would otherwise
-	// both clone it, or cut worktrees while the other is fetching.
-	mu    sync.Mutex
-	repos map[string]*sync.Mutex
+	// stores serialises the work on one store, keyed by its path. Creates run
+	// side by side, and two sessions on a repository this host has never
+	// seen would otherwise both download it, or cut worktrees while the
+	// other is fetching.
+	mu     sync.Mutex
+	stores map[string]*sync.Mutex
 
-	// prewarm keeps a spare worktree per repository (spares.go), held in
-	// spares under mu; warming counts the ones being made.
+	// prewarm keeps a spare worktree per store (spares.go), held in spares
+	// under mu and keyed by the store's path; warming counts the ones being
+	// made.
 	prewarm bool
 	spares  map[string]*spare
 	warming sync.WaitGroup
 
-	// deepening holds, under mu, the mirrors cloned shallow whose history is
-	// still being fetched (deepen); the channel closes when it lands.
+	// deepening holds, under mu, the stores fetched shallow whose history is
+	// still being fetched (deepen), by path; the channel closes when it lands.
 	deepening map[string]chan struct{}
 }
 
@@ -79,7 +92,7 @@ type Options struct {
 	Layout           domain.Layout
 	Binary           string
 	CredentialHelper string
-	// Spares keeps one worktree per repository checked out ahead of the next
+	// Spares keeps one worktree per store checked out ahead of the next
 	// create.
 	Spares bool
 }
@@ -92,41 +105,103 @@ func New(opts Options) *Client {
 	}
 	return &Client{
 		layout: opts.Layout, binary: binary, credentialHelper: opts.CredentialHelper,
-		repos: map[string]*sync.Mutex{}, prewarm: opts.Spares, spares: map[string]*spare{},
+		stores: map[string]*sync.Mutex{}, prewarm: opts.Spares, spares: map[string]*spare{},
 		deepening: map[string]chan struct{}{},
 	}
 }
 
-func (c *Client) lock(repo string) func() {
+func (c *Client) lock(store string) func() {
 	c.mu.Lock()
-	m, ok := c.repos[repo]
+	m, ok := c.stores[store]
 	if !ok {
 		m = &sync.Mutex{}
-		c.repos[repo] = m
+		c.stores[store] = m
 	}
 	c.mu.Unlock()
 	m.Lock()
 	return m.Unlock
 }
 
-// Has implements app.Worktrees. A clone is made beside the mirror and renamed
-// into place once whole, so a mirror with a `.git` is never half a download.
-func (c *Client) Has(repo string) bool {
-	if domain.ValidateRepo(repo) != nil {
-		return false
+// storeOf finds a repository's store. Under its own name first, when that
+// store records this repository's GitHub id (or records none, as a store the
+// CLI made does not); else, among the workspace's stores, the one that records
+// the id — a repository renamed on GitHub keeps the store it already has.
+// Neither found, it is the path a new store is made at: the repository's own
+// name, or, when another repository's store already holds that name (it was
+// renamed away and this one took its old name), the name with the id after it.
+func (c *Client) storeOf(repo domain.Repository) string {
+	named := c.layout.Store(repo)
+	if repo.GithubID == 0 {
+		return named
 	}
-	_, err := os.Stat(filepath.Join(c.layout.Mirror(repo), ".git"))
+	want := strconv.FormatInt(repo.GithubID, 10)
+	if whole(named) {
+		if id := c.repoIDOf(named); id == "" || id == want {
+			return named
+		}
+	}
+	repos := c.layout.Repos(repo.Tenant)
+	if entries, err := os.ReadDir(repos); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() || !strings.HasSuffix(entry.Name(), ".git") || strings.HasPrefix(entry.Name(), ".") {
+				continue
+			}
+			store := filepath.Join(repos, entry.Name())
+			if store != named && c.repoIDOf(store) == want {
+				return store
+			}
+		}
+	}
+	if !whole(named) {
+		return named
+	}
+	return strings.TrimSuffix(named, ".git") + "-" + want + ".git"
+}
+
+// repoIDOf is the GitHub id a store records, empty when it records none.
+func (c *Client) repoIDOf(store string) string {
+	out, err := c.run(context.Background(), command{timeout: quickTimeout},
+		"config", "--file", filepath.Join(store, "config"), "--get", repoIDKey)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
+}
+
+// originOf is the URL a store fetches from, empty when it records none.
+func (c *Client) originOf(store string) string {
+	out, err := c.run(context.Background(), command{timeout: quickTimeout},
+		"config", "--file", filepath.Join(store, "config"), "--get", "remote.origin.url")
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
+}
+
+// whole reports a store that is all there. A store is made beside its place
+// and renamed into it once its first fetch has landed, so a store with a
+// HEAD is never half a download.
+func whole(store string) bool {
+	_, err := os.Stat(filepath.Join(store, "HEAD"))
 	return err == nil
 }
 
+// Has implements app.Worktrees.
+func (c *Client) Has(repo domain.Repository) bool {
+	if repo.Validate() != nil {
+		return false
+	}
+	return whole(c.storeOf(repo))
+}
+
 // Ensure makes sure the repository's store exists and that ref is fresh in
-// it; an empty ref fetches every branch. The first call clones; later ones
-// fetch. The store is blobless and has no working tree
-// (02-runner §5): a file's contents arrive when a checkout or a command first
-// reads them, through the same credential helper. A first clone is shallow at
-// ref and gets its history in the background (deepen).
-func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
-	if err := domain.ValidateRepo(repo); err != nil {
+// it; an empty ref fetches every branch. The first call makes the store;
+// later ones fetch. The store is bare and blobless (02-runner §5, 24 §2): a
+// file's contents arrive when a checkout or a command first reads them,
+// through the same credential helper. A first fetch is shallow at ref and the
+// history follows in the background (deepen).
+func (c *Client) Ensure(ctx context.Context, repo domain.Repository, remote, ref string) error {
+	if err := repo.Validate(); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
 	if ref != "" {
@@ -134,14 +209,24 @@ func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 			return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 		}
 	}
-	defer c.lock(repo)()
-	mirror := c.layout.Mirror(repo)
-	if _, err := os.Stat(filepath.Join(mirror, ".git")); err == nil {
-		if landed := c.deepeningOf(repo); landed != nil {
+	store := c.storeOf(repo)
+	defer c.lock(store)()
+	if whole(store) {
+		// The store may have been made under the repository's old name, or
+		// from another remote: what is fetched is what the caller names now.
+		// Written only when it differs: a deepen may be fetching into this
+		// store in the background, holding its config lock, and a second
+		// session on the same repository must not fail on a no-op write.
+		if remote != "" && c.originOf(store) != remote {
+			if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "remote", "set-url", "origin", remote); err != nil {
+				return err
+			}
+		}
+		if landed := c.deepeningOf(store); landed != nil {
 			// A deepen is fetching every branch right now, from a clone made
 			// moments ago: a ref the clone brought is current, and a second
 			// fetch beside the deepen would contend for the same refs.
-			if ref == "" || c.hasRemoteBranch(ctx, mirror, ref) {
+			if ref == "" || c.hasRemoteBranch(ctx, store, ref) {
 				return nil
 			}
 			select {
@@ -150,81 +235,94 @@ func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 				return ctx.Err()
 			}
 		}
-		if err := c.fetch(ctx, repo, mirror, ref); err != nil {
+		if err := c.fetch(ctx, repo.FullName, store, ref); err != nil {
 			return err
 		}
-		// A shallow mirror whose deepen was cut short (a runner restart)
+		// A shallow store whose deepen was cut short (a runner restart)
 		// gets its history now.
-		c.deepen(ctx, repo, mirror)
+		c.deepen(ctx, repo.FullName, store)
 		return nil
 	}
 	if remote == "" {
 		return domain.ErrWorktree.WithDetail(
-			"%s has never been cloned on this host and no remote was given", repo)
+			"%s has never been fetched on this host and no remote was given", repo.FullName)
 	}
-	parent := filepath.Dir(mirror)
+	parent := filepath.Dir(store)
 	if err := os.MkdirAll(parent, 0o700); err != nil {
 		return domain.ErrWorktree.WithDetail("create %s: %v", parent, err).WithCause(err)
 	}
-	// A mirror directory with no .git is what an older runner's cut-short
-	// clone left. Empty, it is nothing and goes; with anything in it, it is
-	// not ours to delete.
-	if err := os.Remove(mirror); err != nil && !os.IsNotExist(err) {
+	// A store directory with no HEAD is not one this runner finished. Empty,
+	// it is nothing and goes; with anything in it, it is not ours to delete.
+	if err := os.Remove(store); err != nil && !os.IsNotExist(err) {
 		return domain.ErrWorktree.WithDetail(
-			"%s exists but is not a clone of %s; move it aside and start the session again", mirror, repo)
+			"%s exists but is not a store of %s; move it aside and start the session again", store, repo.FullName)
 	}
 	sweepPartials(parent)
 
 	partial, err := os.MkdirTemp(parent, partialPrefix)
 	if err != nil {
-		return domain.ErrWorktree.WithDetail("create a directory to clone into: %v", err).WithCause(err)
+		return domain.ErrWorktree.WithDetail("create a directory to fetch into: %v", err).WithCause(err)
 	}
-	// Shallow first: the base's one commit with its files is what a worktree
-	// needs, and on a large repository it is a third of the time a blobless
-	// clone of the whole history takes (14). The history follows in the
-	// background (deepen), leaving the store blobless as it always was. A
-	// local path ignores --depth, so a test's clone is whole from the start.
-	clone := append(append([]string{}, noMaintenance...), "clone", "--depth=1", "--no-checkout")
-	if ref != "" {
-		clone = append(clone, "--branch", ref)
-	}
-	clone = append(clone, remote, partial)
-	if _, err := c.run(ctx, command{timeout: fetchTimeout, repo: repo}, clone...); err != nil {
+	if err := c.makeStore(ctx, repo, remote, ref, partial); err != nil {
 		_ = os.RemoveAll(partial)
 		return err
 	}
-	// Every branch, and the tags: the refspec is what a bare `git fetch` in
-	// the session's shell uses afterwards, and a shallow clone narrows it to
-	// the one branch it fetched.
-	if _, err := c.run(ctx, command{timeout: quickTimeout, dir: partial},
-		"config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"); err != nil {
+	if err := os.Rename(partial, store); err != nil {
 		_ = os.RemoveAll(partial)
-		return err
+		return domain.ErrWorktree.WithDetail("move the store into %s: %v", store, err).WithCause(err)
 	}
-	if err := os.Rename(partial, mirror); err != nil {
-		_ = os.RemoveAll(partial)
-		return domain.ErrWorktree.WithDetail("move the clone into %s: %v", mirror, err).WithCause(err)
-	}
-	c.deepen(ctx, repo, mirror)
+	c.deepen(ctx, repo.FullName, store)
 	return nil
 }
 
-// deepen fetches, in the background, the history a shallow mirror was cloned
+// makeStore makes a bare store at dir and fetches ref into it. Bare, so that
+// nobody's `git status` in it sees a checkout and no editor walks into one
+// (24 §2); its branches are origin's, as a clone's would be, under
+// refs/remotes/origin.
+//
+// Shallow first: the base's one commit with its files is what a worktree
+// needs, and on a large repository it is a third of the time a blobless clone
+// of the whole history takes (14). The history follows in the background
+// (deepen), leaving the store blobless as it always was.
+func (c *Client) makeStore(ctx context.Context, repo domain.Repository, remote, ref, dir string) error {
+	quick := command{timeout: quickTimeout, dir: dir}
+	if _, err := c.run(ctx, command{timeout: quickTimeout}, "init", "--bare", "--quiet", dir); err != nil {
+		return err
+	}
+	// `remote add` writes the refspec every branch is fetched by, which is
+	// what a bare `git fetch` in the session's shell uses afterwards.
+	if _, err := c.run(ctx, quick, "remote", "add", "origin", remote); err != nil {
+		return err
+	}
+	if repo.GithubID != 0 {
+		if _, err := c.run(ctx, quick, "config", repoIDKey, strconv.FormatInt(repo.GithubID, 10)); err != nil {
+			return err
+		}
+	}
+	args := append(append([]string{}, noMaintenance...), "fetch", "--depth=1", "--no-tags", "origin")
+	if ref != "" {
+		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
+	}
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: dir, repo: repo.FullName}, args...)
+	return err
+}
+
+// deepen fetches, in the background, the history a shallow store was made
 // without: every branch's commits and trees, the blobs left to arrive when
 // read, as a blobless clone would have had them. It takes no lock, so creates
 // go on beside it; Ensure leaves the fetching to it while it runs. ctx's
 // session rides along for the token; its end does not.
-func (c *Client) deepen(ctx context.Context, repo, mirror string) {
-	if _, err := os.Stat(filepath.Join(mirror, ".git", "shallow")); err != nil {
+func (c *Client) deepen(ctx context.Context, repo, store string) {
+	if _, err := os.Stat(filepath.Join(store, "shallow")); err != nil {
 		return
 	}
 	c.mu.Lock()
-	if _, running := c.deepening[repo]; running {
+	if _, running := c.deepening[store]; running {
 		c.mu.Unlock()
 		return
 	}
 	landed := make(chan struct{})
-	c.deepening[repo] = landed
+	c.deepening[store] = landed
 	c.mu.Unlock()
 
 	c.warming.Add(1)
@@ -232,12 +330,12 @@ func (c *Client) deepen(ctx context.Context, repo, mirror string) {
 		defer c.warming.Done()
 		defer func() {
 			c.mu.Lock()
-			delete(c.deepening, repo)
+			delete(c.deepening, store)
 			c.mu.Unlock()
 			close(landed)
 		}()
 		ctx := context.WithoutCancel(ctx)
-		quick := command{timeout: quickTimeout, dir: mirror}
+		quick := command{timeout: quickTimeout, dir: store}
 		// Promised objects are what a blobless clone records: the blobs of
 		// older commits stay on the remote until something reads them.
 		if _, err := c.run(ctx, quick, "config", "remote.origin.promisor", "true"); err != nil {
@@ -247,35 +345,36 @@ func (c *Client) deepen(ctx context.Context, repo, mirror string) {
 			return
 		}
 		args := append(append([]string{}, noMaintenance...), "fetch", "--unshallow", "--filter=blob:none", "origin")
-		_, _ = c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo}, args...)
+		_, _ = c.run(ctx, command{timeout: fetchTimeout, dir: store, repo: repo}, args...)
 	}()
 }
 
-// deepeningOf is the channel a running deepen of repo closes, or nil.
-func (c *Client) deepeningOf(repo string) chan struct{} {
+// deepeningOf is the channel a running deepen of store closes, or nil.
+func (c *Client) deepeningOf(store string) chan struct{} {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.deepening[repo]
+	return c.deepening[store]
 }
 
-// hasRemoteBranch reports origin/<branch> in mirror.
-func (c *Client) hasRemoteBranch(ctx context.Context, mirror, branch string) bool {
-	_, err := c.run(ctx, command{timeout: quickTimeout, dir: mirror},
+// hasRemoteBranch reports origin/<branch> in store.
+func (c *Client) hasRemoteBranch(ctx context.Context, store, branch string) bool {
+	_, err := c.run(ctx, command{timeout: quickTimeout, dir: store},
 		"rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+branch)
 	return err == nil
 }
 
 // PrepareRepository gets repo ready for a create that has not been asked for
-// yet: its mirror cloned or base fetched, and a spare worktree at base made
-// and checked out. It returns once those are done and a first clone's history
+// yet: its store made or base fetched, and a spare worktree at base made and
+// checked out. It returns once those are done and a first clone's history
 // has landed, so the caller's context (the token its git rides on) is live for
 // all of it; a create takes the spare as soon as it is ready. A spare already
 // there, or being made, is kept.
-func (c *Client) PrepareRepository(ctx context.Context, repo, remote, base string) error {
+func (c *Client) PrepareRepository(ctx context.Context, repo domain.Repository, remote, base string) error {
 	if err := c.Ensure(ctx, repo, remote, base); err != nil {
 		return err
 	}
-	if s := c.warm(ctx, repo, base); s != nil {
+	store := c.storeOf(repo)
+	if s := c.warm(ctx, store, base); s != nil {
 		select {
 		case <-s.done:
 		case <-ctx.Done():
@@ -285,7 +384,7 @@ func (c *Client) PrepareRepository(ctx context.Context, repo, remote, base strin
 	// The history a shallow clone left out is fetched under this context's
 	// identity too: the caller's token must outlive it. A create meanwhile
 	// takes the spare and goes on without it.
-	if landed := c.deepeningOf(repo); landed != nil {
+	if landed := c.deepeningOf(store); landed != nil {
 		select {
 		case <-landed:
 		case <-ctx.Done():
@@ -302,20 +401,20 @@ var noMaintenance = []string{"-c", "maintenance.auto=false", "-c", "gc.auto=0"}
 
 // fetch is the one fetch a create waits on: the ref its worktree is made from,
 // or every branch when it names none.
-func (c *Client) fetch(ctx context.Context, repo, mirror, ref string) error {
+func (c *Client) fetch(ctx context.Context, repo, store, ref string) error {
 	args := append(append([]string{}, noMaintenance...), "fetch", "--no-tags", "origin")
 	if ref == "" {
 		args = append(args, "--prune")
 	} else {
 		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
 	}
-	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo}, args...)
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: store, repo: repo}, args...)
 	return err
 }
 
-// sweepPartials removes clones in progress that no clone is still writing:
-// ones older than the longest a clone may take, left by a runner that was
-// killed half-way. A younger one may belong to another process cloning the
+// sweepPartials removes stores in the making that nothing is still writing:
+// ones older than the longest a fetch may take, left by a runner that was
+// killed half-way. A younger one may belong to another process fetching the
 // same repository, and is left alone.
 func sweepPartials(parent string) {
 	entries, err := os.ReadDir(parent)
@@ -335,21 +434,24 @@ func sweepPartials(parent string) {
 }
 
 // Add creates a worktree. A new branch is cut from the base branch as the
-// mirror last saw it; an existing branch is checked out as it is.
+// store last saw it; an existing branch is checked out as it is.
 //
 // A path is derived from its session's id, so what is already there is that
 // session's own, left by an attempt cut short, and a redelivered create takes
 // it over rather than refusing it (recovery.go).
-func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error {
-	if newBranch {
-		c.awaitSpare(ctx, repo)
+func (c *Client) Add(ctx context.Context, repo domain.Repository, path, branch, base string, newBranch bool) error {
+	if err := repo.Validate(); err != nil {
+		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
-	defer c.lock(repo)()
-	mirror := c.layout.Mirror(repo)
+	store := c.storeOf(repo)
+	if newBranch {
+		c.awaitSpare(ctx, store)
+	}
+	defer c.lock(store)()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
 	}
-	found, err := c.inspect(ctx, mirror, path, branch)
+	found, err := c.inspect(ctx, store, path, branch)
 	if err != nil {
 		return err
 	}
@@ -357,24 +459,24 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 	case refuse:
 		return domain.ErrSessionExists.WithDetail("%s", found.reason)
 	case adopt:
-		return c.adopt(ctx, mirror, path, found)
+		return c.adopt(ctx, store, path, found)
 	case claimed:
 		if !newBranch {
 			return domain.ErrSessionExists.WithDetail("%s already exists, on a detached HEAD", path)
 		}
-		if err := c.checkoutSession(ctx, mirror, path, branch, base); err != nil {
+		if err := c.checkoutSession(ctx, store, path, branch, base); err != nil {
 			return err
 		}
-		c.warm(ctx, repo, base)
+		c.warm(ctx, store, base)
 		return nil
 	case recreate:
-		if err := c.clear(ctx, mirror, path, found); err != nil {
+		if err := c.clear(ctx, store, path, found); err != nil {
 			return err
 		}
 	case vacant:
 	}
-	if newBranch && c.claim(ctx, repo, mirror, path, branch, base) {
-		c.warm(ctx, repo, base)
+	if newBranch && c.claim(ctx, store, path, branch, base) {
+		c.warm(ctx, store, base)
 		return nil
 	}
 
@@ -385,38 +487,24 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 	// --no-track: a session's branch is pushed to a branch of its own
 	// (push --set-upstream), never pulled from its base, and git's guess at
 	// tracking the base fails outright when two refspecs map onto it.
-	case c.leftoverBranch(ctx, mirror, branch, startPoint(base)):
+	case c.leftoverBranch(ctx, store, branch, startPoint(base)):
 		args = append(args, "--no-track", "-B", branch, path, startPoint(base))
 	default:
 		args = append(args, "--no-track", "-b", branch, path, startPoint(base))
 	}
-	if _, err = c.run(ctx, command{timeout: fetchTimeout, dir: mirror}, args...); err != nil {
+	if _, err = c.run(ctx, command{timeout: fetchTimeout, dir: store}, args...); err != nil {
 		return err
 	}
-	c.warm(ctx, repo, base)
+	c.warm(ctx, store, base)
 	return nil
-}
-
-// Prepare makes the directory this repository's worktrees are created in and
-// answers it. The session's terminal is started there before the worktree
-// exists, so the reader is in the pane while the clone is still running.
-func (c *Client) Prepare(ctx context.Context, repo string) (string, error) {
-	if err := domain.ValidateRepo(repo); err != nil {
-		return "", domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
-	}
-	dir := filepath.Dir(c.layout.Worktree(repo, "x"))
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", domain.ErrWorktree.WithDetail("create %s: %v", dir, err).WithCause(err)
-	}
-	return dir, nil
 }
 
 // Remove deletes a worktree and prunes git's record of it. A worktree someone
 // already deleted by hand is only pruned: `worktree remove` refuses a path
 // that is not there, and what is left to do is forget it.
-func (c *Client) Remove(ctx context.Context, repo, path string, force bool) error {
-	mirror := c.layout.Mirror(repo)
-	quick := command{timeout: quickTimeout, dir: mirror}
+func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string, force bool) error {
+	store := c.storeOf(repo)
+	quick := command{timeout: quickTimeout, dir: store}
 	if !c.Exists(path) {
 		_, err := c.run(ctx, quick, "worktree", "prune")
 		return err
@@ -594,7 +682,7 @@ func credentialRefused(verb, repo, session string) *problem.Error {
 		verb, subject, session, subject)
 }
 
-// startPoint prefers the mirror's view of the base branch, so a session is
+// startPoint prefers the store's view of the base branch, so a session is
 // cut from what was just fetched rather than from a stale local ref.
 func startPoint(base string) string {
 	if strings.Contains(base, "/") {

@@ -70,6 +70,21 @@ describe('hostsKeys', () => {
     expect(invalidated(client, hostsKeys.list())).toBe(true);
     expect(invalidated(client, hostsKeys.pairingList())).toBe(false);
   });
+
+  /** A host's folders are read through its runner: a presence poll must not ask it again. */
+  it('keeps a host’s folders out of the host list, and one host’s from another’s', async () => {
+    const home = hostsKeys.folders('h-1', null);
+    const theirs = hostsKeys.folders('h-2', null);
+    const client = cacheWith(hostsKeys.list(), home, hostsKeys.folders('h-1', '/srv'), theirs);
+
+    await client.invalidateQueries({ queryKey: hostsKeys.lists() });
+    expect(invalidated(client, home)).toBe(false);
+
+    await client.invalidateQueries({ queryKey: hostsKeys.folderLists('h-1') });
+    expect(invalidated(client, home)).toBe(true);
+    expect(invalidated(client, hostsKeys.folders('h-1', '/srv'))).toBe(true);
+    expect(invalidated(client, theirs)).toBe(false);
+  });
 });
 
 describe('tasksKeys', () => {

@@ -1,14 +1,11 @@
+import { useSearch } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { NewSessionFormContext, useNewSessionForm } from '../hooks/use-new-session-form';
 import { NewSessionAgent } from './new-session-agent';
-import { NewSessionBranch } from './new-session-branch';
 import { NewSessionEffort } from './new-session-effort';
-import { NewSessionHost } from './new-session-host';
 import { NewSessionPermission } from './new-session-permission';
 import { NewSessionPrepare } from './new-session-prepare';
-import { NewSessionProject } from './new-session-project';
-import { NewSessionRepositories } from './new-session-repositories';
+import { NewSessionScope } from './new-session-scope';
 import { NewSessionSend } from './new-session-send';
 import { NewSessionSubtitle } from './new-session-subtitle';
 
@@ -22,14 +19,19 @@ import { NewSessionSubtitle } from './new-session-subtitle';
  * leave them still; the shape does not lean on the React Compiler, and
  * `new-session-form-render.spec.tsx` holds it.
  *
- * The chips sit in the composer's `scope` band (the 2026-09-26 export):
- * project first, because picking one prefills the rest
- * (`product/versions/mvp/05-screens.md`), then host, repository, and the
- * branch while exactly one repository is selected.
+ * The chips sit in the composer's `scope` band (the 2026-09-26 export), in
+ * the order where the session runs reads (`NewSessionScope`). The address can
+ * seed the draft (`new-session-search.ts`): it is read once, for the store's
+ * first values.
  */
 export function NewSessionForm({ heading }: { heading?: ReactNode }) {
-  const { t } = useTranslation();
-  const form = useNewSessionForm();
+  const search = useSearch({ from: '/_authenticated/sessions/new' });
+  const form = useNewSessionForm({
+    where: search.where,
+    hostId: search.host,
+    agent: search.agent,
+    path: search.path,
+  });
 
   return (
     <NewSessionFormContext.Provider value={form}>
@@ -41,20 +43,10 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
         </div>
       ) : null}
       <NewSessionSend
-        scope={
-          // A fieldset rather than a div with `role="group"`: the chips are
-          // one decision — where this session runs — and a screen reader
-          // announces the group's label once for all of them. Pending is `loading`,
-          // settled-and-empty is the empty line plus the chip's own foot
-          // action, and `disabled` is only for a chip this screen forbids —
-          // which none of these are.
-          <fieldset aria-label={t('sessions.new.title')} className="contents">
-            <NewSessionProject />
-            <NewSessionHost />
-            <NewSessionRepositories />
-            <NewSessionBranch />
-          </fieldset>
-        }
+        // Pending is `loading`, settled-and-empty is the empty line plus the
+        // chip's own foot action, and `disabled` is only for a chip this
+        // screen forbids — which none of these are.
+        scope={<NewSessionScope />}
         tools={<NewSessionPermission />}
         engine={
           <>

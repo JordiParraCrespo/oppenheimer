@@ -117,7 +117,7 @@ func newAttachHarness(t *testing.T, pty *heldPTY, gate chan struct{}) (*linkHand
 	terminals := &heldAttach{Terminals: fake.NewTerminals(), pty: pty, gate: gate, entered: make(chan struct{}, 4)}
 	svc, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
-		Layout: sessionsdomain.Layout{Root: t.TempDir()},
+		Places: fake.NewPlaces(), Layout: sessionsdomain.Layout{Root: t.TempDir()},
 	})
 	if err != nil {
 		t.Fatal(err)

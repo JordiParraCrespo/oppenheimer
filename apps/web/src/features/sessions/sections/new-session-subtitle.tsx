@@ -8,21 +8,25 @@ import { useNewSessionDraft } from '../hooks/use-new-session-form';
  * The line under New session's title (the frame's `newSub`). With a project
  * picked it says what sending will do: "In XRP Mobile · cloning 1 of 1
  * repository, each on its own opp/ branch." With none, or the workspace's
- * Unassigned project, it asks for the scope.
+ * Unassigned project, it asks for the scope. For a folder session it says that
+ * the folder opens as it is.
  *
- * Its own section, subscribed to the two fields it reads, so a pick redraws
+ * Its own section, subscribed to the fields it reads, so a pick redraws
  * this line and the chip that was picked, not the form.
  */
 export function NewSessionSubtitle() {
   const { t } = useTranslation();
   const { control } = useNewSessionDraft();
-  const [projectId, scope] = useWatch({ control, name: ['projectId', 'scope'] });
+  const [where, projectId, scope] = useWatch({ control, name: ['where', 'projectId', 'scope'] });
   // The entity itself, which the query keeps by reference, so a refetch that
   // changes nothing redraws nothing.
   const { data: project } = useProjects({
     select: (projects) => projects.find((row) => row.id === projectId) ?? null,
   });
 
+  if (where === 'folder') {
+    return <p className="mt-1.5 text-base text-fg-muted">{t('sessions.new.subtitleFolder')}</p>;
+  }
   if (!project || project.isUnassigned) {
     return <p className="mt-1.5 text-base text-fg-muted">{t('sessions.new.subtitle')}</p>;
   }

@@ -200,6 +200,12 @@ by knowledge owned is what rules them out.
 
 ### The layout on a host
 
+**Replaced 2026-10-14 by 24 §2:** the work folder is `~/oppenheimer/`
+(chosen at install) and holds `<account-id>/<workspace-id>/{repos,
+agents, sessions}`, every level named by an id rather than a slug; the
+marker is a `.oppenheimer/` folder. The tree below is the 2026-09-26
+shape, kept for history.
+
 ```
 ~/oppenheimer-ai/
 │

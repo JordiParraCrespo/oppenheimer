@@ -33,7 +33,7 @@ test('removing a host stops its sessions on the machine', async ({ page }) => {
   // This session's worktree, the only one on this host: the branch it is on.
   const worktree = () =>
     box.host.exec(
-      'for d in ~/oppenheimer-ai/workspaces/*/*/.worktrees/*/; do git -C "$d" branch --show-current; done 2>/dev/null || true',
+      'for d in ~/oppenheimer/*/*/sessions/*/*/; do git -C "$d" branch --show-current; done 2>/dev/null || true',
     );
   // The row opens with the pane, before the clone: the worktree follows.
   await expect.poll(worktree, { timeout: 60_000 }).toBe(checkouts[0]?.branch);

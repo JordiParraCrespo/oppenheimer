@@ -479,6 +479,13 @@ are never reissued.
 | `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this shared session             | 401  |
 | `SESSIONS_023` <a id="sessions_023" /> | This session is not shared with you             | 403  |
 | `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold (no longer raised) | 409 |
+| `SESSIONS_025` <a id="sessions_025" /> | This host's runner cannot start a session in a folder | 409 |
+| `SESSIONS_026` <a id="sessions_026" /> | This host's runner cannot list its folders      | 409  |
+| `SESSIONS_027` <a id="sessions_027" /> | The host is offline, so its folders cannot be listed | 503 |
+| `SESSIONS_028` <a id="sessions_028" /> | That folder does not exist on the host          | 404  |
+| `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
+| `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
+| `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -492,6 +499,17 @@ for it to be shared again either way. `SESSIONS_023` is apart because its next s
 is its own — ask to be named; a list of people matches a verified email only.
 `SESSIONS_024` was twenty live share links on one session; since 2026-10-13 a
 session has one share, and the code stays reserved so it is never reused.
+
+`SESSIONS_025`–`SESSIONS_031` belong to sessions in a folder already on the host
+(`product/versions/mvp/24-session-places.md`). `025` is a create with a `folder` for a
+host whose live runner did not announce `session.folder`: it would refuse a session with
+no checkouts, and updating the runner is the fix. A host with no link right now is not
+refused: the session is recorded and its next hello is sent it. `026`–`031` answer the
+folder picker, `GET /hosts/{id}/folders`, which asks the host's runner live and caches
+nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to the host,
+`031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
+`FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
+a runner gives reads as `030`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -674,7 +692,7 @@ Neither reaches a person. `INBOUND_002` is a webhook delivery without GitHub's
 The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
-`HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
+`HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
@@ -701,6 +719,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
+| `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
+| `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -726,6 +747,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
+| `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
+| `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

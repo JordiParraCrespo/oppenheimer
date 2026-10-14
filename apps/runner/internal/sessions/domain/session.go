@@ -1,5 +1,6 @@
-// Package domain is what a session is: a git worktree, a tmux session in it,
-// and the windows a browser opens onto that tmux session. It holds the state
+// Package domain is what a session is: a place to run (a git worktree this
+// runner made, or a folder already on the host), a tmux session in it, and
+// the windows a browser opens onto that tmux session. It holds the state
 // machine and the invariants; the tmux server, git and the screen classifier
 // are all somewhere else.
 package domain
@@ -9,7 +10,6 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -32,7 +32,7 @@ type State string
 // screen manifest; `creating`, `starting`, `stopped` and `closed` are
 // lifecycle.
 const (
-	// StateCreating is a session whose create is still running: its mirror,
+	// StateCreating is a session whose create is still running: its store,
 	// worktree or tmux session may not exist yet. It is only ever held in
 	// memory, never saved and never reported, so a runner that dies
 	// mid-create leaves no record claiming a session it never finished.
@@ -46,7 +46,8 @@ const (
 	// StateStopped is a session whose tmux session is gone — after a host
 	// reboot, say. Its worktree is intact and Restart recreates window 0.
 	StateStopped State = "stopped"
-	// StateClosed is a session whose worktree has been removed.
+	// StateClosed is a session that is over: its worktree removed, or, for a
+	// folder session, its terminal ended.
 	StateClosed State = "closed"
 )
 
@@ -136,13 +137,31 @@ type Window struct {
 type Session struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-	// Repo is `owner/name`, which is also its directory under workspaces.
-	Repo string `json:"repo"`
+	// Place is where the session runs: a worktree this runner made, or a
+	// folder that was already on the host (24 §3).
+	Place Place `json:"place"`
+	// AccountID and WorkspaceID are the work folder's two levels the
+	// session's folder and its stores sit under (24 §2): the control plane's
+	// ids, or `local` for a session the CLI made. Empty for a folder session,
+	// which owns nothing in the work folder.
+	AccountID   string `json:"accountId,omitempty"`
+	WorkspaceID string `json:"workspaceId,omitempty"`
+	// Dir is a worktree session's own folder,
+	// `<work folder>/<account>/<workspace>/sessions/<slug>`, which holds its
+	// marker and its checkout. Empty for a folder session.
+	Dir string `json:"dir,omitempty"`
+	// Folder is a folder session's folder: the person's, never written to and
+	// never deleted.
+	Folder string `json:"folder,omitempty"`
+	// Repo is `owner/name`. Empty for a folder session.
+	Repo string `json:"repo,omitempty"`
 	// BaseBranch is what the session's branch was cut from.
-	BaseBranch string `json:"baseBranch"`
-	Branch     string `json:"branch"`
-	// Worktree is the absolute path the tmux session runs in.
-	Worktree string `json:"worktree"`
+	BaseBranch string `json:"baseBranch,omitempty"`
+	Branch     string `json:"branch,omitempty"`
+	// Worktree is the absolute path of a worktree session's checkout,
+	// `<Dir>/<directory name>`: where its agent runs. Empty for a folder
+	// session.
+	Worktree string `json:"worktree,omitempty"`
 	Agent    Agent  `json:"agent"`
 	// Launch is how window 0 was started, kept so Restart reproduces it.
 	Launch Launch `json:"launch,omitzero"`
@@ -171,6 +190,23 @@ var (
 	ErrClosed       = errors.New("session is closed")
 	ErrNoSuchWindow = errors.New("no such window")
 )
+
+// Cwd is where the session's agent and its tabs run: the checkout of a
+// worktree session, the folder of a folder session.
+func (s Session) Cwd() string {
+	if s.Place == PlaceFolder {
+		return s.Folder
+	}
+	return s.Worktree
+}
+
+// Repository names the store a worktree session's checkout was made from.
+func (s Session) Repository() Repository {
+	return Repository{
+		Tenant:   Tenant{Account: s.AccountID, Workspace: s.WorkspaceID},
+		FullName: s.Repo, GithubID: s.GithubRepoID,
+	}
+}
 
 // TmuxName is the tmux session name: the id, prefixed.
 func (s Session) TmuxName() string { return Prefix + s.ID }
@@ -284,36 +320,6 @@ func Slug(branch, id string) string {
 	default:
 		return flat + "-" + id
 	}
-}
-
-// Layout is where a repository's clone and worktrees live on a host. It is
-// the fixed layout from the scope note, and the only place that decides it.
-type Layout struct{ Root string }
-
-// Mirror is `<root>/<repo>/main`: the fetch source, never edited.
-func (l Layout) Mirror(repo string) string {
-	return filepath.Join(l.Root, filepath.FromSlash(repo), "main")
-}
-
-// Worktree is `<root>/<repo>/.worktrees/<slug>`.
-//
-// **The leading dot is load-bearing on macOS.** Spotlight does not descend into
-// a hidden directory, and a session's worktree is a whole checkout written in
-// one go: left visible, the indexer walks it while the agent is starting and
-// every file the agent reads queues behind that scan. Measured with a bare
-// `tmux` and agent, no runner involved, two worktrees of the same commit in the
-// same parent directory and run interleaved: `wt` 30.2s, `.wt` 5.7s, `wt2`
-// 31.5s to the agent's first token. The same split held across thirteen runs at
-// machine loads from 14 to 59, which is how it was told apart from load.
-//
-// (`.metadata_never_index` was already present at the workspaces root and does
-// not work there — `mdls` still returns indexed metadata for files underneath
-// it. The dot is what Spotlight actually honours.)
-//
-// A session created before this carries its own absolute path and is
-// unaffected; only new worktrees land here.
-func (l Layout) Worktree(repo, slug string) string {
-	return filepath.Join(l.Root, filepath.FromSlash(repo), ".worktrees", slug)
 }
 
 // DefaultBranchName is what a session's own branch is called when the user

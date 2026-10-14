@@ -17,68 +17,106 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	// `first` is read by the started reporter below, so the checkout is
-	// resolved before the steps are.
-	if len(m.Checkouts) != 1 {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail(
-			"this runner makes sessions with exactly one checkout; the frame carried %d", len(m.Checkouts)))
+	in, checkout, err := createInput(m, h.account())
+	if err != nil {
+		h.fail(m.CommandID, err)
 		return
 	}
-	first := m.Checkouts[0]
 	steps := newStartSteps(
 		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
-		// The terminal exists, so the session can be attached to: the worktree's
-		// path is known from the start, so the checkout this reports is true
-		// before it is on disk.
+		// The terminal exists, so the session can be attached to: the
+		// checkout's path is known from the start, so the checkout this
+		// reports is true before it is on disk. A folder session has none.
 		func(session sessionsdomain.Session) {
-			h.reporter.Append(session.ID, "session.started", map[string]any{
-				"checkouts": []map[string]any{{
-					"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
-				}},
-			})
+			checkouts := []map[string]any{}
+			if checkout != nil {
+				checkouts = append(checkouts, map[string]any{
+					"checkoutId": checkout.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
+				})
+			}
+			h.reporter.Append(session.ID, "session.started", map[string]any{"checkouts": checkouts})
 		},
 		time.Now,
 	)
-	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
-	if !ok {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
-		return
-	}
 	// A create sent again for a session this host already holds (a redelivery,
 	// a reconnect) makes nothing new, so it pulls nothing: its files were
 	// pulled once, and a parked file is handed over only once.
-	var files []sessionsapp.CreateFile
-	var err error
 	if _, notHeld := h.app.Sessions.Get(m.SessionID); notHeld != nil {
-		files, err = h.pullCreateFiles(ctx, m.Images)
+		in.Files, err = h.pullCreateFiles(ctx, m.Images)
 	}
 	if err != nil {
 		h.fail(m.CommandID, err)
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
 		return
 	}
-	_, err = h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
-		ID:         m.SessionID,
-		Repo:       first.RepositoryFullName,
-		Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
-		BaseBranch: first.BaseBranch,
-		Branch:     m.Branch,
-		Name:       m.SessionSlug,
-		Agent:      agent,
+	in.Progress = steps.stage
+	if _, err = h.app.Sessions.Create(ctx, in); err != nil {
+		h.fail(m.CommandID, err)
+		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
+	}
+}
+
+// createInput reads a `session.create` into what the sessions service takes:
+// a folder session when it names a folder, else a worktree session on its one
+// checkout, under the account's and workspace's levels of the work folder
+// (24 §2, §3). account is the pairing's (linkHandler.account). checkout is the
+// frame's checkout, nil for a folder session.
+func createInput(m link.SessionCreate, account string) (sessionsapp.CreateInput, *link.Checkout, error) {
+	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
+	if !ok {
+		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent)
+	}
+	in := sessionsapp.CreateInput{
+		ID:    m.SessionID,
+		Name:  m.SessionSlug,
+		Agent: agent,
 		Launch: sessionsdomain.Launch{
 			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
 			// The name the agent's conversation takes, so what it says can be
 			// reopened after the session stops.
 			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
 		},
-		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
-		Files:    files,
-		Progress: steps.stage,
-	})
-	if err != nil {
-		h.fail(m.CommandID, err)
-		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
 	}
+	if m.Folder != "" {
+		if len(m.Checkouts) > 0 || m.Branch != "" {
+			return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
+				"a session runs in a folder or in checkouts, never both")
+		}
+		in.Folder = m.Folder
+		return in, nil, nil
+	}
+	// One checkout per session is what this runner makes; the wire allows
+	// more, for a later runner.
+	if len(m.Checkouts) != 1 {
+		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
+			"this runner makes sessions with exactly one checkout; the frame carried %d", len(m.Checkouts))
+	}
+	first := m.Checkouts[0]
+	if m.CwdCheckoutID != nil && *m.CwdCheckoutID != first.CheckoutID {
+		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
+			"the agent is to start in checkout %q, which the frame does not carry", *m.CwdCheckoutID)
+	}
+	in.Tenant = sessionsdomain.Tenant{Account: account, Workspace: m.WorkspaceID}
+	in.WorkspaceSlug = m.OrganizationSlug
+	in.Slug = m.SessionSlug
+	in.Directory = first.DirectoryName
+	in.Repo = first.RepositoryFullName
+	in.Remote = "https://github.com/" + first.RepositoryFullName + ".git"
+	in.BaseBranch = first.BaseBranch
+	in.Branch = m.Branch
+	in.CheckoutID, in.GithubRepoID = first.CheckoutID, first.GithubRepoID
+	return in, &first, nil
+}
+
+// account is the work folder's top level for everything the link sends: the
+// account this host was paired with (24 §2), which no frame repeats. An
+// identity paired before registration answered one names its folder by the
+// host's own id, which is as stable.
+func (h *linkHandler) account() string {
+	if h.identity.AccountID != "" {
+		return h.identity.AccountID
+	}
+	return h.identity.HostID
 }
 
 // lifecycleCommand is what lifecycle reads of stop, restart, close,
@@ -171,8 +209,8 @@ func (h *linkHandler) preflight(ctx context.Context, commandID string) {
 }
 
 // prepareRepository gets a repository ready for the create a person is about
-// to send: the mirror cloned or fetched and a spare worktree checked out
-// (02 §5). Its git runs as `prepare:<command id>`, an identity the broker
+// to send: its store in the workspace's `repos/` made or fetched and a spare
+// worktree checked out (02 §5, 24 §2). Its git runs as `prepare:<command id>`, an identity the broker
 // holds this command's own token for: there is no session to ask one for.
 func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPrepare) {
 	sealed, err := base64.StdEncoding.DecodeString(m.Sealed)
@@ -185,13 +223,27 @@ func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPr
 		h.fail(m.CommandID, err)
 		return
 	}
+	repo := sessionsdomain.Repository{
+		Tenant:   sessionsdomain.Tenant{Account: h.account(), Workspace: m.WorkspaceID},
+		FullName: m.RepositoryFullName, GithubID: m.GithubRepoID,
+	}
+	if err := repo.Validate(); err != nil {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("%v", err).WithCause(err))
+		return
+	}
+	if h.app.WorkFolder != nil {
+		if err := h.app.WorkFolder.MakeWorkspace(repo.Tenant, ""); err != nil {
+			h.fail(m.CommandID, err)
+			return
+		}
+	}
 	id := preparePrefix + m.CommandID
 	h.credentials.Hold(id, string(token), m.ExpiresAt)
 	defer h.credentials.Forget(id)
 
 	ctx = sessionsdomain.WithSession(ctx, id)
 	remote := "https://github.com/" + m.RepositoryFullName + ".git"
-	if err := h.app.Worktrees.PrepareRepository(ctx, m.RepositoryFullName, remote, m.BaseBranch); err != nil {
+	if err := h.app.Worktrees.PrepareRepository(ctx, repo, remote, m.BaseBranch); err != nil {
 		h.fail(m.CommandID, err)
 	}
 }

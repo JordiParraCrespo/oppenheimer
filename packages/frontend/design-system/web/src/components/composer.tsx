@@ -68,6 +68,7 @@ function Composer({
   busy = false,
   disabled = false,
   sendBlockedReason,
+  allowEmpty = false,
   placeholder = 'Describe a task or ask a question',
   attachments,
   onRemoveAttachment,
@@ -91,6 +92,12 @@ function Composer({
   disabled?: boolean;
   /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
   sendBlockedReason?: string;
+  /**
+   * Send with nothing written: what is sent needs no text (a blank terminal).
+   * Holds only while no file is attached: a file rides a written task, so the
+   * text is required again as soon as one is.
+   */
+  allowEmpty?: boolean;
   placeholder?: string;
   attachments?: ComposerAttachment[];
   onRemoveAttachment?: (id: string) => void;
@@ -113,7 +120,8 @@ function Composer({
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
   const blocked = !busy && sendBlockedReason !== undefined;
-  const canSend = value.trim().length > 0 && !disabled && !blocked;
+  const emptyAllowed = allowEmpty && !attachments?.length;
+  const canSend = (emptyAllowed || value.trim().length > 0) && !disabled && !blocked;
   const reasonId = React.useId();
 
   function submit() {

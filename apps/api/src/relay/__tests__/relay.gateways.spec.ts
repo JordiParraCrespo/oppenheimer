@@ -26,6 +26,7 @@ import type { HostAssertionPort } from '../../hosts/application/host-assertion.p
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
 import { HostErrors } from '../../hosts/domain/hosts.errors';
+import { InProcessLinkReplies } from '../../links/infrastructure/in-process-link-replies.adapter';
 import { InProcessLinkRegistry } from '../../links/infrastructure/link-registry.adapter';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import type {
@@ -106,6 +107,7 @@ interface Harness {
   abilities: AbilityPort;
   flags: FlagEvaluatorPort;
   registry: InProcessLinkRegistry;
+  replies: InProcessLinkReplies;
   browsers: BrowserAttachGateway;
   close(): Promise<void>;
 }
@@ -204,7 +206,15 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     { publicKeyOf: vi.fn().mockResolvedValue(null) } as unknown as HostKeyPort,
     owners,
   );
-  const runners = new RunnerLinkGateway(assertions, registry, processor, credentials, config);
+  const replies = new InProcessLinkReplies();
+  const runners = new RunnerLinkGateway(
+    assertions,
+    registry,
+    processor,
+    credentials,
+    config,
+    replies,
+  );
   const browsers = new BrowserAttachGateway(
     cache,
     lookup,
@@ -237,6 +247,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     abilities,
     flags,
     registry,
+    replies,
     browsers,
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
@@ -605,6 +616,7 @@ describe('runner link', () => {
         processor,
         {} as CredentialsProcessor,
         { get: () => FINGERPRINT } as unknown as ConfigService,
+        new InProcessLinkReplies(),
       );
       const socket = new FakeSocket();
       await (
@@ -750,6 +762,37 @@ describe('runner link', () => {
           events: [expect.objectContaining({ kind: 'command.failed' })],
         }),
       ),
+    );
+  });
+
+  it('hands a listing and a refusal to the request waiting on them, before any other routing', async () => {
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const listedId = 'c0ffee00-0000-4000-8000-000000000010';
+    const refusedId = 'c0ffee00-0000-4000-8000-000000000011';
+    const listed = h.replies.expect(HOST, listedId, 5_000);
+    const refused = h.replies.expect(HOST, refusedId, 5_000);
+
+    runner.send(
+      JSON.stringify({
+        type: 'fs.listing',
+        commandId: listedId,
+        path: '/home/jordi',
+        parent: '/home',
+        home: '/home/jordi',
+        entries: [{ name: 'code' }],
+      }),
+    );
+    runner.send(JSON.stringify({ type: 'command.failed', commandId: refusedId, code: 'FS_003' }));
+
+    await expect(listed.reply).resolves.toMatchObject({
+      type: 'fs.listing',
+      entries: [{ name: 'code' }],
+    });
+    await expect(refused.reply).resolves.toMatchObject({ type: 'command.failed', code: 'FS_003' });
+    // The refusal was the waiter's: no session's log heard of it.
+    expect(h.events.record).not.toHaveBeenCalledWith(
+      expect.objectContaining({ events: [expect.objectContaining({ kind: 'command.failed' })] }),
     );
   });
 

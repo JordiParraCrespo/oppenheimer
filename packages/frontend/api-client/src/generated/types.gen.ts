@@ -957,6 +957,10 @@ export type HostRegistrationResponseDto = {
      */
     hostId: string;
     /**
+     * The account the host is paired with, its owner. The runner names the top level of its work folder by it.
+     */
+    accountId: string;
+    /**
      * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
      */
     fingerprint: string;
@@ -1460,6 +1464,14 @@ export type SessionResponseDto = {
      * The coding agent this session runs.
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    /**
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).
+     */
+    place: 'worktree' | 'folder';
+    /**
+     * The absolute path on the host a folder session runs in. Null for a worktree session.
+     */
+    folderPath?: string | null;
     launch: SessionLaunchResponseDto;
     /**
      * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
@@ -1521,13 +1533,12 @@ export type CreateSessionRequest = {
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
-    checkouts: [
-        {
-            installationId: string;
-            githubRepoId: number;
-            baseBranch?: string;
-        }
-    ];
+    checkouts?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
+    folder?: string;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -1677,6 +1688,60 @@ export type RenameSessionRequest = {
 
 export type MoveSessionRequest = {
     projectId: string;
+};
+
+export type HostFolderEntryResponseDto = {
+    /**
+     * The directory’s name.
+     */
+    name: string;
+    /**
+     * Its absolute path on the host: the listed folder joined with the name.
+     */
+    path: string;
+    /**
+     * The branch its checkout is on, when it is a git repository.
+     */
+    branch?: string | null;
+};
+
+export type HostRecentFolderResponseDto = {
+    /**
+     * Its absolute path on the host.
+     */
+    path: string;
+    /**
+     * When the caller last started a session in it.
+     */
+    lastUsedAt: string;
+};
+
+export type HostFoldersResponseDto = {
+    /**
+     * The directory listed, absolute and cleaned.
+     */
+    path: string;
+    /**
+     * Its parent; null at the root.
+     */
+    parent?: string | null;
+    /**
+     * The home directory of the user the runner runs as, so a client can show `~`.
+     */
+    home: string;
+    /**
+     * The listed directory’s own branch, when it is a git repository.
+     */
+    branch?: string | null;
+    entries: Array<HostFolderEntryResponseDto>;
+    /**
+     * More directories were there than `entries` carries.
+     */
+    truncated: boolean;
+    /**
+     * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
+     */
+    recent: Array<HostRecentFolderResponseDto>;
 };
 
 export type AutomationRepositoryResponseDto = {
@@ -2153,13 +2218,12 @@ export type StartTaskSessionRequest = {
         agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
         projectId?: string;
         name?: string;
-        checkouts: [
-            {
-                installationId: string;
-                githubRepoId: number;
-                baseBranch?: string;
-            }
-        ];
+        checkouts?: Array<{
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }>;
+        folder?: string;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -7138,7 +7202,7 @@ export type CreateSessionErrors = {
     /**
      * SESSIONS_017 — The host’s runner takes no images
      *
-     * SESSIONS_011 — The host's runner is older than the agent picked
+     * SESSIONS_011 / SESSIONS_025 — The host's runner is older than the agent, or than folder sessions
      *
      * SESSIONS_006 — That project is archived
      */
@@ -7546,6 +7610,10 @@ export type PrepareSessionData = {
 
 export type PrepareSessionErrors = {
     /**
+     * SESSIONS_002 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -7834,6 +7902,59 @@ export type MoveSessionResponses = {
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
+
+export type FindHostFoldersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * An absolute path on the host. Omit for the home directory.
+         */
+        path?: string;
+    };
+    url: '/api/v1/hosts/{id}/folders';
+};
+
+export type FindHostFoldersErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * SESSIONS_030 — Not readable
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 / SESSIONS_028 — Host or folder not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_026 — Runner cannot list
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_029 — Not a folder
+     */
+    422: ProblemDetailsDto;
+    /**
+     * SESSIONS_027 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindHostFoldersError = FindHostFoldersErrors[keyof FindHostFoldersErrors];
+
+export type FindHostFoldersResponses = {
+    200: HostFoldersResponseDto;
+};
+
+export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
 
 export type FindAutomationsData = {
     body?: never;

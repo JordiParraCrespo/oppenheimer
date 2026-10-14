@@ -52,8 +52,8 @@ type worktreeRecord struct {
 }
 
 // inspect decides what is at path for a worktree on branch.
-func (c *Client) inspect(ctx context.Context, mirror, path, branch string) (found, error) {
-	record, err := c.recordAt(ctx, mirror, path)
+func (c *Client) inspect(ctx context.Context, store, path, branch string) (found, error) {
+	record, err := c.recordAt(ctx, store, path)
 	if err != nil {
 		return found{}, err
 	}
@@ -82,11 +82,11 @@ func (c *Client) inspect(ctx context.Context, mirror, path, branch string) (foun
 // "initializing" was killed during `worktree add`, possibly before its
 // checkout finished: the lock goes and the checkout is completed, which is
 // exactly what the killed add would have done next.
-func (c *Client) adopt(ctx context.Context, mirror, path string, at found) error {
+func (c *Client) adopt(ctx context.Context, store, path string, at found) error {
 	if !at.record.locked || at.record.lockReason != lockInitializing {
 		return nil
 	}
-	if _, err := c.run(ctx, command{timeout: quickTimeout, dir: mirror}, "worktree", "unlock", path); err != nil {
+	if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "worktree", "unlock", path); err != nil {
 		return err
 	}
 	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: path}, "reset", "--hard", "--quiet")
@@ -96,14 +96,14 @@ func (c *Client) adopt(ctx context.Context, mirror, path string, at found) error
 // clear removes what is in the way of a fresh add: git's record of a
 // directory that is gone (its lock first, since prune keeps locked ones), or
 // an empty directory git never registered.
-func (c *Client) clear(ctx context.Context, mirror, path string, at found) error {
+func (c *Client) clear(ctx context.Context, store, path string, at found) error {
 	if at.record == nil {
 		if err := os.Remove(path); err != nil {
 			return domain.ErrWorktree.WithDetail("remove the empty %s: %v", path, err).WithCause(err)
 		}
 		return nil
 	}
-	quick := command{timeout: quickTimeout, dir: mirror}
+	quick := command{timeout: quickTimeout, dir: store}
 	if at.record.locked {
 		_, _ = c.run(ctx, quick, "worktree", "unlock", path)
 	}
@@ -114,13 +114,13 @@ func (c *Client) clear(ctx context.Context, mirror, path string, at found) error
 // leftoverBranch reports a branch an earlier attempt cut and then died before
 // its worktree existed: it exists, is checked out nowhere, and holds nothing
 // the start point does not — so resetting it to the start point loses nothing.
-func (c *Client) leftoverBranch(ctx context.Context, mirror, branch, start string) bool {
-	quick := command{timeout: quickTimeout, dir: mirror}
+func (c *Client) leftoverBranch(ctx context.Context, store, branch, start string) bool {
+	quick := command{timeout: quickTimeout, dir: store}
 	ref := "refs/heads/" + branch
 	if _, err := c.run(ctx, quick, "rev-parse", "--verify", "--quiet", ref); err != nil {
 		return false
 	}
-	records, err := c.records(ctx, mirror)
+	records, err := c.records(ctx, store)
 	if err != nil {
 		return false
 	}
@@ -133,9 +133,9 @@ func (c *Client) leftoverBranch(ctx context.Context, mirror, branch, start strin
 	return err == nil
 }
 
-// records lists what git has registered for the mirror.
-func (c *Client) records(ctx context.Context, mirror string) ([]worktreeRecord, error) {
-	out, err := c.run(ctx, command{timeout: quickTimeout, dir: mirror}, "worktree", "list", "--porcelain")
+// records lists what git has registered for the store.
+func (c *Client) records(ctx context.Context, store string) ([]worktreeRecord, error) {
+	out, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "worktree", "list", "--porcelain")
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,8 @@ func parseWorktreeList(out string) []worktreeRecord {
 }
 
 // recordAt is git's record of the worktree at path, or nil.
-func (c *Client) recordAt(ctx context.Context, mirror, path string) (*worktreeRecord, error) {
-	records, err := c.records(ctx, mirror)
+func (c *Client) recordAt(ctx context.Context, store, path string) (*worktreeRecord, error) {
+	records, err := c.records(ctx, store)
 	if err != nil {
 		return nil, err
 	}

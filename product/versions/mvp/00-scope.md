@@ -21,7 +21,9 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   carries a one-hour registration token; it generates a keypair, dials
   out to the control plane, and stays connected. Linux and macOS.
 - **A session is a worktree plus a terminal on a host.** No VM, no
-  container. The runner creates a git worktree under the fixed layout,
+  container. **Changed 2026-10-14 (24):** a session runs in a new
+  worktree or in a folder already on the host, and the layout below is
+  replaced by 24's work folder. The runner creates a git worktree under the fixed layout,
   starts a tmux session in it, launches the agent, and streams the PTY
   to the browser. **Changed again 2026-09-26 (10):** a session checks
   out several repositories, usually one, chosen freely rather than from
@@ -43,7 +45,7 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   **Unassigned** project when it names none. A project is metadata: a
   session can be moved between any two projects and nothing on a host
   moves (10, 2026-09-26).
-- **Fixed layout on every host:**
+- **Fixed layout on every host** (replaced 2026-10-14 by 24 §2):
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
   (one per session). Nothing else under `~/oppenheimer-ai` yet; agent

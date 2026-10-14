@@ -87,23 +87,21 @@ type Attachment interface {
 	Redraw() error
 }
 
-// Worktrees is git, at the granularity a session needs.
+// Worktrees is git, at the granularity a session needs. A repository's store
+// is bare and lives in its workspace's `repos/` (domain.Layout); a session's
+// checkout is a worktree of it.
 type Worktrees interface {
 	// Ensure makes sure the repository's store exists on this host and that
 	// ref, the branch a worktree is about to be made from, is fresh in it.
-	Ensure(ctx context.Context, repo, remote, ref string) error
+	Ensure(ctx context.Context, repo domain.Repository, remote, ref string) error
 	// Has reports whether the repository's store is on this host, whole: the
 	// difference between an Ensure that fetches and one that downloads it.
-	Has(repo string) bool
+	Has(repo domain.Repository) bool
 	// Add creates a worktree at path, on branch, cut from base.
-	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
-	// Prepare makes the directory this repository's worktrees are created in
-	// and answers it, so a terminal can be started there before the worktree
-	// itself exists. Add makes it too; this is for the pane that comes first.
-	Prepare(ctx context.Context, repo string) (string, error)
+	Add(ctx context.Context, repo domain.Repository, path, branch, base string, newBranch bool) error
 	// Remove deletes a worktree and prunes the record. A worktree already gone
 	// from disk is only pruned.
-	Remove(ctx context.Context, repo, path string, force bool) error
+	Remove(ctx context.Context, repo domain.Repository, path string, force bool) error
 	// Exists reports whether a worktree is still on disk. Someone on the host
 	// may have deleted it by hand, and then the session cannot be pushed,
 	// kept or restarted, only closed.
@@ -113,6 +111,27 @@ type Worktrees interface {
 	// Push publishes the branch, and reports whether there was anything to
 	// push at all.
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)
+}
+
+// Places is the work folder's own bookkeeping and the folders a session runs
+// in (24 §2, §3): what is made, checked and removed around a session, as
+// opposed to the git inside it.
+type Places interface {
+	// MakeSession makes a worktree session's folder (folder.Dir), with its marker
+	// (`.oppenheimer/meta.json`) written before anything else goes in, and
+	// the account and workspace folders above it with theirs when they are
+	// new. A folder this session's marker already names (an earlier attempt
+	// at the same create) is taken over; anything else at dir is refused.
+	MakeSession(folder domain.SessionFolder) error
+	// RemoveSession deletes a session's folder and everything in it, but
+	// only when its marker names this session: anything else answers
+	// domain.ErrNotOurs and is left as it is. A folder already gone is
+	// nothing to do.
+	RemoveSession(dir, sessionID string) error
+	// CheckFolder reports whether a folder session's folder is usable: an
+	// existing directory (domain.ErrNoSuchFolder, domain.ErrNotADirectory).
+	// It looks and writes nothing.
+	CheckFolder(path string) error
 }
 
 // Files is where a session's pasted files are kept on this host: under the

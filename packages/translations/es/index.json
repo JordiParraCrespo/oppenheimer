@@ -255,7 +255,14 @@
       "SESSIONS_021": "Esa sesión no está compartida, o ya no. Pide a quien la compartió que vuelva a compartirla.",
       "SESSIONS_022": "Inicia sesión para abrir esta sesión compartida.",
       "SESSIONS_023": "Esta sesión no está compartida contigo.",
-      "SESSIONS_024": "Esta sesión ya tiene todos los enlaces que admite. Revoca uno e inténtalo de nuevo."
+      "SESSIONS_024": "Esta sesión ya tiene todos los enlaces que admite. Revoca uno e inténtalo de nuevo.",
+      "SESSIONS_025": "El runner de este equipo no puede iniciar una sesión en una carpeta. Actualiza el runner de ese equipo e inténtalo de nuevo.",
+      "SESSIONS_026": "El runner de este equipo no puede listar sus carpetas. Actualiza el runner de ese equipo para elegir una carpeta.",
+      "SESSIONS_027": "El equipo está desconectado, así que no se pueden listar sus carpetas. Vuelve a conectarlo e inténtalo de nuevo.",
+      "SESSIONS_028": "Esa carpeta no existe en el equipo.",
+      "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
+      "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -453,10 +460,16 @@
           "label": "Crear el worktree",
           "doing": "Creando el worktree…"
         },
+        "open": {
+          "label": "Abrir {{path}}",
+          "doing": "Resolviendo la ruta…",
+          "done": "Directorio encontrado"
+        },
         "agent": {
           "label": "Iniciar {{agent}}",
           "doing": "Lanzando en tmux…",
-          "done": "Listo"
+          "done": "Listo",
+          "shell": "Iniciar shell"
         }
       },
       "progressFailed": "No se pudo cargar el progreso del inicio.",
@@ -471,7 +484,8 @@
       "descriptionNoBranch": "Esta sesión se ha detenido. Al reiniciarla el terminal vuelve donde lo dejó.",
       "restart": "Reiniciar",
       "restarting": "Reiniciando",
-      "restartFailed": "No se ha podido reiniciar la sesión."
+      "restartFailed": "No se ha podido reiniciar la sesión.",
+      "deletedFolder": "Esta sesión se eliminó. Su terminal terminó y la carpeta sigue en el host tal como estaba."
     },
     "new": {
       "title": "Nueva sesión",
@@ -480,6 +494,7 @@
       "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
       "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
       "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
+      "subtitleFolder": "Abre una carpeta del host tal como está. No se clona nada ni se crea ninguna rama.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -489,6 +504,17 @@
         "add": "Añadir host…",
         "offline": "Desconectado",
         "failed": "No se han podido cargar tus hosts."
+      },
+      "where": {
+        "label": "Dónde se ejecuta la sesión",
+        "worktree": {
+          "label": "Worktree nuevo",
+          "description": "Clona un repositorio del proyecto en una rama nueva"
+        },
+        "folder": {
+          "label": "Carpeta del host",
+          "description": "Abre un directorio existente tal como está · no se clona nada"
+        }
       },
       "project": {
         "label": "Proyecto",
@@ -521,6 +547,27 @@
         "empty": "Ninguna rama coincide.",
         "loading": "Cargando ramas…",
         "default": "Por defecto"
+      },
+      "folder": {
+        "label": "Carpeta",
+        "placeholder": "Carpeta",
+        "input": "Ruta de la carpeta",
+        "inputPlaceholder": "~/ruta/a/la/carpeta",
+        "homeHint": "~ = {{home}}",
+        "loading": "Listando carpetas…",
+        "recent": "Recientes en {{host}}",
+        "up": "Carpeta superior",
+        "crumbs": "Ruta",
+        "emptyMissing": "No hay ninguna carpeta en {{dir}} en {{host}}.",
+        "emptyFiltered": "Ninguna carpeta de {{dir}} empieza por “{{fragment}}”.",
+        "emptyNone": "No hay subcarpetas. Usa esta o vuelve atrás.",
+        "footMissing": "Elige una carpeta que exista. No se crea nada.",
+        "footRepository": "Repositorio git en {{branch}}. Se abre tal como está, sin rama nueva.",
+        "footFolder": "Se abre tal como está. No se clona nada.",
+        "use": "Usar {{name}}",
+        "useNone": "Usar carpeta",
+        "noHost": "Elige primero un host y luego una de sus carpetas.",
+        "failed": "No se han podido listar las carpetas de este host."
       },
       "agent": {
         "label": "Agente y modelo",
@@ -564,7 +611,8 @@
         "removeAttachment": "Quitar {{name}}",
         "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
         "attachTooMany": "Una primera tarea lleva como mucho {{max}} archivos.",
-        "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto."
+        "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
+        "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
       },
       "failed": "No se pudo crear la sesión."
     },
@@ -648,7 +696,8 @@
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la sesión.",
       "discard": "Descartar también el trabajo sin enviar",
-      "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar."
+      "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
+      "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
     },
     "filters": {
       "label": "Filtrar sesiones",
@@ -1679,7 +1728,9 @@
       "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
       "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
       "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
-      "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
+      "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+      "openTerminal": "Abrir terminal",
+      "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
   },
   "settings": {

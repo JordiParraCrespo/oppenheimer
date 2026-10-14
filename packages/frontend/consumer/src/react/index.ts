@@ -36,6 +36,7 @@ export {
 // this token spent?".
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
+  useHostFolders,
   useHostPresence,
   useHosts,
   useHostsSnapshot,
