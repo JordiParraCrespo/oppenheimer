@@ -174,6 +174,23 @@ wait_healthy() {
   wait_container_healthy "$id" "$2"
 }
 
+# Start one more container of a service beside the running ones (`old`, one
+# id per line) and print its id. Exactly one may appear: any other count is
+# removed and refused, so `roll` only ever waits on, and removes, one.
+start_beside() {
+  local rel="$1" svc="$2" old="$3" new count
+  compose "$rel" up -d --no-deps --no-recreate --scale "$svc=$(($(wc -l <<< "$old") + 1))" "$svc" >&2 || return 1
+  new="$(compose "$rel" ps -q "$svc" | grep -vxF -f <(printf '%s\n' "$old") || true)"
+  count="$(grep -c . <<< "$new" || true)"
+  if [ "$count" -ne 1 ]; then
+    warn "expected one new $svc container, found $count"
+    # shellcheck disable=SC2086 # one id per word
+    [ -z "$new" ] || docker rm -f $new >/dev/null || true
+    return 1
+  fi
+  printf '%s' "$new"
+}
+
 # Replace one service without a gap: start the new container beside the
 # running one, and stop the old only once the new is healthy. Both answer to
 # the service's name meanwhile; web's nginx and cloudflared look it up again
@@ -182,7 +199,7 @@ wait_healthy() {
 # container is created). A new container that is not healthy is removed, so
 # the old one keeps serving and the caller stops before the next service.
 roll() {
-  local rel="$1" svc="$2" force="${3:-}" old n want have new
+  local rel="$1" svc="$2" force="${3:-}" old want have new
   old="$(compose "$rel" ps -q "$svc")"
   if [ -z "$old" ]; then
     log "starting $svc"
@@ -195,11 +212,8 @@ roll() {
     have="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.config-hash"}}' $old | sort -u)"
     [ "$have" = "$want" ] && { ok "$svc is already on this release"; return 0; }
   fi
-  n="$(wc -l <<< "$old")"
   log "rolling $svc: starting the new container beside the running one"
-  compose "$rel" up -d --no-deps --no-recreate --scale "$svc=$((n + 1))" "$svc" || return 1
-  new="$(compose "$rel" ps -q "$svc" | grep -vxF -f <(printf '%s\n' "$old") || true)"
-  [ -n "$new" ] || { warn "no new $svc container appeared"; return 1; }
+  new="$(start_beside "$rel" "$svc" "$old")" || return 1
   if ! wait_container_healthy "$new" "$svc"; then
     docker logs --tail 80 "$new" || true
     warn "removing the new $svc; the running one keeps serving"
@@ -211,14 +225,24 @@ roll() {
   docker stop $old >/dev/null && docker rm $old >/dev/null
 }
 
-# Bring a release up. What is not rolled (Postgres, Redis, the releases
-# server, the one-shot uploads-perms) goes first, and the API does not start
-# before Postgres and Redis are healthy; then each of ROLLED, in order.
+# The release's services compose starts as they are: every one ROLLED does
+# not name (Postgres, Redis, the releases server, the one-shot uploads-perms).
+# Compose leaves one already on the release's config alone.
+compose_managed() {
+  local svc
+  for svc in $(compose "$1" config --services); do
+    [[ " ${ROLLED[*]} " == *" $svc "* ]] || printf '%s\n' "$svc"
+  done
+}
+
+# Bring a release up: the compose-managed services first, the API only once
+# Postgres and Redis are healthy, then each of ROLLED, in order.
 start_release() {
-  local rel="$1" svc others
-  others="$(compose "$rel" config --services | grep -vxF -f <(printf '%s\n' "${ROLLED[@]}") || true)"
+  local rel="$1" svc managed
+  managed="$(compose_managed "$rel")"
+  [ -n "$managed" ] || return 1
   # shellcheck disable=SC2086 # one service per word
-  compose "$rel" up -d --remove-orphans $others || return 1
+  compose "$rel" up -d --remove-orphans $managed || return 1
   wait_healthy "$rel" postgres && wait_healthy "$rel" redis || return 1
   for svc in "${ROLLED[@]}"; do
     roll "$rel" "$svc" || { warn "$svc did not roll out; nothing after it was touched"; return 1; }
