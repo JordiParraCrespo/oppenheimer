@@ -414,3 +414,11 @@ earlier note:
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
+- `versions/mvp/05-screens.md` had onboarding's Add a host step and the
+  console's Add a host dialog lead with Copy install command and Copy
+  agent prompt, the instruction behind an Inspect fold and one status
+  line. Since 2026-10-13 both lead with the agent prompt (Copy prompt, the
+  text behind a fold), fold the command behind "Install manually instead"
+  and show a Connection list: Runner installed, then Host connected. The
+  export's Tools on PATH row waits for the wire to carry a host's tools.
+  Settings' Add a host page keeps the panel with both forms.

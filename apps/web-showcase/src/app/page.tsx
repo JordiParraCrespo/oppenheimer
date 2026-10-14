@@ -842,7 +842,7 @@ export default function Page() {
         id="disclosure"
         title="Disclosure"
         meta="disclosure.tsx"
-        desc="A fold inside a dialog or a step: one row that reads as a label, an optional word beside it, a summary on the right while closed, and a chevron that turns over 140ms. Add a host folds the install command and the agent prompt behind Inspect command and prompt, in the muted tone; the project dialog folds its Defaults with the summary of what is set."
+        desc="A fold inside a dialog or a step: one row that reads as a label, an optional word beside it, a summary on the right while closed, and a chevron that turns over 140ms. Add a host folds the agent prompt and the manual install, in the muted tone; the project dialog folds its Defaults with the summary of what is set."
         code={`<Disclosure><DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">Defaults</DisclosureTrigger><DisclosurePanel>…</DisclosurePanel></Disclosure>`}
       >
         <DisclosureDemo />
@@ -1010,7 +1010,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, Copy install command and Copy agent prompt, the token line, the command and the prompt behind an Inspect fold, and a status box that resolves in place. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, the agent prompt in a card with Copy prompt and its text behind a fold, the token line with Install manually instead across from it, and Connection rows that resolve in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />

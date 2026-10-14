@@ -1,15 +1,6 @@
-import {
-  Button,
-  CodeBlock,
-  Disclosure,
-  DisclosurePanel,
-  DisclosureTrigger,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
-import { Bot, Copy } from '@oppenheimer/design-system-web/icons';
+import { CodeBlock, Skeleton } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCopied } from '../hooks/use-copied';
 
 /** The two ways to read one instruction, and the key each reads its label by. */
 const FORMATS = ['command', 'agentPrompt'] as const;
@@ -31,74 +22,19 @@ export interface PairingCommands {
 }
 
 /**
- * The way in (`design/version1/AddHost.dc.html`, `SessionsConsole.dc.html`):
- * a person copies the instruction rather than reading it. Two buttons —
- * Copy install command, the secondary, and Copy agent prompt, ghost — each
- * reading Copied for a moment after it is pressed. `size` is the surface's:
- * the onboarding step draws them large, the console's dialog at the medium
- * height.
+ * The instruction itself, outright: a `CodeBlock` panel with the Command /
+ * Agent prompt tabs on its band, the installer's digest under the command
+ * form when the deployment published one. Settings' Install step
+ * (`design/version1/Settings.dc.html`); the onboarding step and the console's
+ * dialog lead with the prompt instead (`PairingChrome`).
  */
-export function PairingCopyButtons({
-  pairing,
-  size = 'md',
-}: {
-  /** Absent while the token is being minted; the buttons wait, disabled. */
-  pairing: PairingCommands | null;
-  size?: 'md' | 'lg';
-}) {
-  const { t } = useTranslation();
-  const { copied, copy } = useCopied();
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        type="button"
-        variant="secondary"
-        size={size}
-        disabled={!pairing}
-        onClick={() => pairing && copy('command', pairing.installCommand)}
-      >
-        <Copy />
-        {copied === 'command' ? t('common.copied') : t('hosts.pairing.copyCommand')}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size={size}
-        disabled={!pairing}
-        onClick={() => pairing && copy('agentPrompt', pairing.agentPrompt)}
-      >
-        <Bot />
-        {copied === 'agentPrompt' ? t('common.copied') : t('hosts.pairing.copyPrompt')}
-      </Button>
-    </div>
-  );
-}
-
-/**
- * The instruction itself, the one place it is drawn: a `CodeBlock` panel
- * with the Command / Agent prompt tabs on its band, the installer's digest
- * under the command form when the deployment published one.
- *
- * `layout="panel"` shows it outright, which is Settings' Install step
- * (`design/version1/Settings.dc.html`). `layout="fold"` puts it behind
- * "Inspect command and prompt", closed by default, which is the onboarding
- * step and the console's dialog: there the copy buttons are the way in and
- * the text is for the person who wants to see it first.
- */
-export function PairingInstruction({
-  pairing,
-  layout = 'fold',
-}: {
-  pairing: PairingCommands | null;
-  layout?: 'panel' | 'fold';
-}) {
+export function PairingInstruction({ pairing }: { pairing: PairingCommands | null }) {
   const { t } = useTranslation();
   // Which way the same instruction is being read. This is the lowest
   // component that reads it, and the switch changes nothing else on screen.
   const [format, setFormat] = useState<PairingFormat>('command');
 
-  const panel = pairing ? (
+  return pairing ? (
     <CodeBlock
       layout="panel"
       tabs={FORMATS.map((option) => ({
@@ -123,14 +59,5 @@ export function PairingInstruction({
     />
   ) : (
     <Skeleton className="h-48 w-full" />
-  );
-
-  if (layout === 'panel') return panel;
-
-  return (
-    <Disclosure>
-      <DisclosureTrigger tone="muted">{t('hosts.pairing.inspect')}</DisclosureTrigger>
-      <DisclosurePanel className="mt-2.5">{panel}</DisclosurePanel>
-    </Disclosure>
   );
 }

@@ -691,3 +691,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   1h, 8h, 24h, 7d or never. Share opens from a row's menu and the status
   line; the guest page is one bar and the terminal. Presence is not built.
   Existing links were dropped, and `SESSIONS_024` is retired.
+- 2026-10-13: **Add a host is agent first**, in onboarding and in the
+  console's dialog, as the 2026-10-13 export draws it: the agent prompt
+  with Copy prompt, the command behind "Install manually instead", and a
+  Connection list (Runner installed, Host connected) in place of the one
+  status line. Tools on PATH waits for the wire to carry a host's tools.
+  Settings keeps its page with both forms in one panel (05).
