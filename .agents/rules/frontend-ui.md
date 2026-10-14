@@ -326,6 +326,17 @@ A screen wired to the API needs a spec in `e2e/tests/web/`. Conventions are in
 [`apps/web/AGENTS.md`](../../apps/web/AGENTS.md) and
 [`e2e/README.md`](../../e2e/README.md).
 
+## Every visual change is photographed
+
+A change that alters what the console shows is taken light and dark on the
+local stack, looked at, shown to the user and listed under `## Screenshots`
+in its pull request: the `local-stack` skill's "Show a visual change" step
+(`pnpm screens <route>...`). A component in the design system
+or the kit is photographed on a console route that renders it. The Stop
+hook `.agents/hooks/screenshot-guard.mjs` holds a task's end until the
+pictures are of the code as it is (`.agents/hooks/visual-change.mjs`
+defines what counts).
+
 ## Dead code
 
 Biome's `noUnusedImports` cannot see an exported component nothing imports.

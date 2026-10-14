@@ -1,6 +1,6 @@
 ---
 name: local-stack
-description: Verify a change end to end against the real API, a real runner and, when it matters, the console. Use when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
+description: Verify a change end to end against the real API, a real runner and the console, and photograph the console for a pull request. Use it on every change that alters what the console shows (apps/web, packages/frontend/web, the web design system, the translations), before the change is committed for a pull request, to take and show light and dark screenshots of each screen it touches. Use it also when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
 ---
 
 # Verify a change end to end
@@ -12,7 +12,13 @@ node scripts/stack/stack.mjs up          # add --web when the console is involve
 ```
 
 It is the "Running it" steps of `e2e/README.md` in one command, and it
-leaves the checkout's `.env` and any running Postgres and Redis alone. The
+leaves the checkout's `.env` and any running Postgres and Redis alone. It
+does not need Docker: it uses a Postgres and a Redis already listening on
+5432 and 6379, and starts them with Docker only when nothing is. On a
+machine with neither (a cloud sandbox), start the local ones first —
+`service postgresql start && service redis-server start`, with an
+`oppenheimer` role and database matching `.env.example`'s `DB_*` — and run
+it. Try it before deciding the stack cannot run here. The
 API's log is `.stack/api.log`, which is where the suites read it by default.
 
 ## 2. Run what the change touches
@@ -32,10 +38,61 @@ drop the variable and the same suite runs every host in a container.
 In an environment that ships its own Chromium, point Playwright at it with
 `PLAYWRIGHT_CHROMIUM_PATH`.
 
-## 3. Report and tear down
+## 3. Show a visual change
 
-Report which rows you ran, what they printed, and what you did not run and
-why. Then:
+Every change that alters what the console shows gets screenshots, taken
+here and shown to the user, before its pull request is opened or updated.
+What counts is defined once, in `.agents/hooks/visual-change.mjs`: the
+console, the platform kit, the design system and the translations, not
+their tests, stories or docs. The Stop hook
+`.agents/hooks/screenshot-guard.mjs` holds the end of a task on such a
+branch until `.screenshots/` is of the code as it is: `pnpm screens`
+records a fingerprint of the change's files, and an edit to one of them
+after the pictures means taking them again.
+
+1. Bring the stack up with the console: `node scripts/stack/stack.mjs up --web`.
+   It serves this checkout's source through Vite, so later edits show
+   without a restart.
+2. Name the routes the change shows on and photograph them:
+
+   ```bash
+   pnpm screens /sessions /settings/profile
+   ```
+
+   Each route is taken light and dark, signed in as a fresh account that
+   owns a workspace, into `.screenshots/` (git-ignored) with a
+   `manifest.json` naming the commit. `anon:/login` takes a signed-out
+   route; `--github` connects a stub GitHub installation first, so the
+   composer and project screens have repositories; `--phone` adds a 390px
+   width, which a layout change needs. The stack commands, `pnpm screens`,
+   and reading or writing `.screenshots/` are allowed in
+   `.claude/settings.json`, so none of this asks the user for permission;
+   keep to those spellings. A component in the design system or the kit is photographed
+   on a console route that renders it. A state an empty account cannot reach
+   (a dialog open, a row's menu, a host online) is a few lines in a
+   throwaway spec beside `e2e/tests/screens/screens.spec.ts` that reaches it
+   and calls `page.screenshot` into `.screenshots/`; do not commit it.
+3. Look at every picture yourself (read the PNG). The change has to be
+   visible in it and nothing else has to look broken: clipped text, an
+   overflow, a dark-mode colour that vanishes. Fix what you find and take
+   them again.
+4. Show them to the user: send the files (`SendUserFile`, or the session's
+   way of attaching a file) with a line on what each one shows. Where no
+   such tool exists, list the paths.
+5. Give the pull request a `## Screenshots` section: the routes, the
+   widths and themes, the commit from `manifest.json`, and what a reviewer
+   should look at in each. The images stay in the session; they are not
+   committed or uploaded.
+
+A change in those paths that does not show on screen (a renamed prop, a
+hook's internals) skips this: say why with
+`pnpm screens --not-visual "<why>"`, which records it with the same
+fingerprint, and put the same line under `## Screenshots`.
+
+## 4. Report and tear down
+
+Report which rows you ran, what they printed, which screenshots you took,
+and what you did not run and why. Then:
 
 ```bash
 node scripts/stack/stack.mjs down
