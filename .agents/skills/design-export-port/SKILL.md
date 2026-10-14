@@ -65,16 +65,17 @@ the questions that change the work before writing a line:
    ones the screens no longer need (keep compiling, or rebuild the
    screens first)?
 
-**Autonomous:** there is no plan to confirm. Run
-`node .agents/skills/design-export-port/scripts/export-delta.mjs`: from
+**Autonomous:** there is no plan to confirm. Start the session's branch
+from a fresh `origin/main`, then run
+`node .agents/skills/design-export-port/scripts/export-delta.mjs`, which
+fetches and reads `origin/main` whatever branch you are on: from
 `last-port.json` (the export sync the package last caught up with) it
 prints the frames new, changed or gone since, each frame's props, the
 README's own note on the delta, and any commit that changed the frames
 under a subject that is not a sync's. "Up to date" ends the run in one
 line. No `last-port.json` means a first port, which is never autonomous.
 The questions above take these answers: the artboards win; only what the
-screens use; the package's vocabulary; callers keep compiling. Start from
-`origin/main` on the session's branch.
+screens use; the package's vocabulary; callers keep compiling.
 
 ## 1. Read the export
 

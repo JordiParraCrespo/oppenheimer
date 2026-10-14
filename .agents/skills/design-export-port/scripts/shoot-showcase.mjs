@@ -113,12 +113,16 @@ async function take(page, theme, shot) {
   await page.waitForTimeout(400);
   if (!shot.target) return page.screenshot({ path });
 
+  // An element may only exist once its steps have run (a menu, a dialog),
+  // so it is required after them; a section or a state's section, before.
   const target = page.locator(shot.target).first();
-  if ((await target.count()) === 0) throw new Error(`${label}: nothing matches ${shot.target}`);
-  await target.scrollIntoViewIfNeeded();
+  const missing = async () => (await target.count()) === 0;
+  if (shot.kind !== 'element' && (await missing())) throw new Error(`${label}: nothing matches ${shot.target}`);
+  if (!(await missing())) await target.scrollIntoViewIfNeeded();
   if (shot.kind === 'section') await target.evaluate((el) => el.scrollIntoView({ block: 'start' }));
   const override = await runSteps(page, shot.kind === 'state' ? target : page, shot.steps, label);
   await page.waitForTimeout(400);
+  if (await missing()) throw new Error(`${label}: nothing matches ${shot.target} after its steps`);
 
   if (override === 'viewport' || shot.kind === 'section') return page.screenshot({ path });
   if (shot.kind === 'state') return target.screenshot({ path });

@@ -2,17 +2,17 @@
 /**
  * What changed in the design export since the last port: the first step of
  * an autonomous run. Reads `last-port.json` beside this skill (the export
- * sync commit the design system last caught up with), finds the sync
- * commits on HEAD after it, and prints, as Markdown, the frames that are
+ * sync commit the design system last caught up with), fetches `--ref`
+ * (`origin/main`), finds the sync commits on it after that one, and prints, as Markdown, the frames that are
  * new, changed or gone between the two, with each changed frame's line
  * count and the names of its Claude Design props (the states to render),
  * and the lines the sync commits added to the export's README (its own note
  * on the delta).
  *
- *   node export-delta.mjs [--design product/versions/mvp/design] [--version version1] [--json]
+ *   node export-delta.mjs [--ref origin/main] [--design product/versions/mvp/design] [--version version1] [--json]
  *
  * Exits 0 and prints "Up to date" when no sync landed since the last port.
- * It reads git only; it writes nothing. The port's pull request updates
+ * It writes nothing but the fetch; the branch you are on does not matter. The port's pull request updates
  * `last-port.json` to the sync commit it ported.
  *
  * The contract it relies on, and fails loudly when broken:
@@ -36,13 +36,18 @@ const a = args({
   design: { default: 'product/versions/mvp/design' },
   version: { default: 'version1' },
   json: { type: 'boolean', default: false },
+  ref: { default: 'origin/main' },
 });
 const git = (...argv) => execFileSync('git', argv, { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 << 20 }).trim();
 const state = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'last-port.json'), 'utf8'));
 const frames = `${a.design}/${a.version}`;
+
+// The branch may predate the latest sync; the delta is against the base.
+const [remote, ...branch] = a.ref.split('/');
+if (branch.length) git('fetch', '--quiet', remote, branch.join('/'));
 const SYNC_SUBJECT = /^docs\(design\): sync the .+ export of /;
 
-const commits = git('log', '--format=%H%x09%ad%x09%s', '--date=short', `${state.export}..HEAD`, '--', frames)
+const commits = git('log', '--format=%H%x09%ad%x09%s', '--date=short', `${state.export}..${a.ref}`, '--', frames)
   .split('\n')
   .filter(Boolean)
   .map((line) => line.split('\t'))
