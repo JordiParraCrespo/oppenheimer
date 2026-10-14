@@ -57,7 +57,7 @@ test('three machines pair, and each session runs on the machine it names', async
   // The checkout is a real clone on that machine, and the session works on a
   // branch of its own — whatever the directory layout of the day is.
   const branches = hosts[0].host.exec(
-    'find ~/oppenheimer-ai -name README.md -execdir git rev-parse --abbrev-ref HEAD \\;',
+    'find ~/oppenheimer -name README.md -execdir git rev-parse --abbrev-ref HEAD \\;',
   );
   const { checkouts } = await waitForLifecycle(api, sessions[0], 'open');
   expect(branches.split('\n').map((branch) => branch.trim())).toContain(checkouts[0].branch);

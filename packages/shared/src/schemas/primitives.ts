@@ -175,7 +175,7 @@ export const hostFactsSchema = z.object({
     .array(hostToolSchema)
     .nullable()
     .transform((tools) => tools ?? []),
-  /** Where `~/oppenheimer-ai` lives on this host. May be empty before it is chosen. */
+  /** Where the work folder (`~/oppenheimer` by default) lives on this host. May be empty before it is chosen. */
   workspacePath: z.string(),
   /** Free bytes on the workspace filesystem. A JSON number; `uint64` in Go. */
   diskFreeBytes: z.number().int().min(0),

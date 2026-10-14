@@ -14,7 +14,7 @@ import (
 )
 
 func service(p *fake.Prober) *app.Service {
-	return app.New(app.Options{Prober: p, WorkspaceRoot: "/home/jordi/oppenheimer-ai/workspaces", Version: "1.2.3"})
+	return app.New(app.Options{Prober: p, WorkspaceRoot: "/home/jordi/oppenheimer", Version: "1.2.3"})
 }
 
 func TestCollectReportsTheInventory(t *testing.T) {

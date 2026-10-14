@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"path/filepath"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -18,19 +19,23 @@ type Options struct {
 	Version string
 	// Updater runs the agents' own updaters. Nil disables UpdateAgents.
 	Updater Updater
+	// Directories lists the host's folders for the folder picker. Nil
+	// refuses ListFolders.
+	Directories Directories
 }
 
 // Service collects the host inventory.
 type Service struct {
 	prober    Prober
 	updater   Updater
+	dirs      Directories
 	workspace string
 	version   string
 }
 
 // New builds the service.
 func New(opts Options) *Service {
-	return &Service{prober: opts.Prober, updater: opts.Updater, workspace: opts.WorkspaceRoot, version: opts.Version}
+	return &Service{prober: opts.Prober, updater: opts.Updater, dirs: opts.Directories, workspace: opts.WorkspaceRoot, version: opts.Version}
 }
 
 // Collect inspects the machine. It answers with whatever it could learn even
@@ -158,6 +163,47 @@ func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
 		results = append(results, result)
 	}
 	return results
+}
+
+// ListFolders lists one directory's sub-directories for the folder picker
+// (`fs.list`, 24 §4): path, or the runner account's home when it is empty.
+// Hidden directories are left out, the rest sorted without regard to case and
+// capped at domain.MaxFolderEntries, and each one that is a git checkout
+// carries its branch.
+func (s *Service) ListFolders(path string) (domain.FolderListing, error) {
+	if s.dirs == nil {
+		return domain.FolderListing{}, domain.ErrFolderUnreadable.WithDetail("this runner lists no folders")
+	}
+	_, home, _, _ := s.prober.Identity()
+	if path == "" {
+		path = home
+	}
+	if !filepath.IsAbs(path) {
+		return domain.FolderListing{}, domain.ErrFolderNotFound.WithDetail("%q is not an absolute path", path)
+	}
+	path = filepath.Clean(path)
+	names, err := s.dirs.Subdirectories(path)
+	switch {
+	case err == nil:
+	case errors.Is(err, fs.ErrNotExist):
+		return domain.FolderListing{}, domain.ErrFolderNotFound.WithDetail("%s does not exist", path).WithCause(err)
+	case errors.Is(err, domain.ErrNotADirectory):
+		return domain.FolderListing{}, domain.ErrFolderNotDir.WithDetail("%s is not a directory", path).WithCause(err)
+	default:
+		return domain.FolderListing{}, domain.ErrFolderUnreadable.WithDetail("%s cannot be read: %v", path, err).WithCause(err)
+	}
+	kept, truncated := domain.Listable(names)
+	listing := domain.FolderListing{
+		Path: path, Home: home, Branch: s.dirs.Branch(path),
+		Entries: make([]domain.FolderEntry, 0, len(kept)), Truncated: truncated,
+	}
+	if parent := filepath.Dir(path); parent != path {
+		listing.Parent = parent
+	}
+	for _, name := range kept {
+		listing.Entries = append(listing.Entries, domain.FolderEntry{Name: name, Branch: s.dirs.Branch(filepath.Join(path, name))})
+	}
+	return listing, nil
 }
 
 func required(name string) bool {

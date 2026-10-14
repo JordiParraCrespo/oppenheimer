@@ -95,28 +95,45 @@ func TestOnlyLiveStatesExpectATmuxSession(t *testing.T) {
 	}
 }
 
-// A session's worktree lives in a **hidden** directory, and that is a
-// performance decision rather than a tidiness one: Spotlight does not descend
-// into a dotted directory, and a visible worktree is indexed while the agent is
-// starting, which measured 30s to the agent's first token against 5.7s for the
-// same checkout one dot away. Tidying the dot out would quietly make every
-// session start five times slower on macOS, with nothing else to show for it —
-// so the layout says so here.
-func TestAWorktreeLivesInAHiddenDirectorySoSpotlightLeavesItAlone(t *testing.T) {
-	layout := domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"}
+// The work folder is named by ids that never change (24 §2): an agent keys its
+// own history on its working directory, so a path that moved when a slug was
+// edited would strand every conversation the session had. A store is bare and
+// named `<owner>--<repo>.git` beside the sessions, and its spare beside it.
+func TestTheWorkFolderIsNamedByAccountWorkspaceAndSession(t *testing.T) {
+	layout := domain.Layout{Root: "/home/jordi/oppenheimer"}
+	tenant := domain.Tenant{Account: "acct-1", Workspace: "ws-1"}
+	repo := domain.Repository{Tenant: tenant, FullName: "acme-labs/xrp-mobile", GithubID: 42}
 
-	worktree := layout.Worktree("acme-labs/xrp-mobile", "oppenheimer-amber-delta")
+	for got, want := range map[string]string{
+		layout.Workspace(tenant):            "/home/jordi/oppenheimer/acct-1/ws-1",
+		layout.Store(repo):                  "/home/jordi/oppenheimer/acct-1/ws-1/repos/acme-labs--xrp-mobile.git",
+		layout.Spare(layout.Store(repo)):    "/home/jordi/oppenheimer/acct-1/ws-1/repos/.spares/acme-labs--xrp-mobile",
+		layout.Session(tenant, "fix-login"): "/home/jordi/oppenheimer/acct-1/ws-1/sessions/fix-login",
+	} {
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+	if domain.DirectoryOf("acme-labs/xrp-mobile") != "xrp-mobile" {
+		t.Fatalf("a checkout with no name of its own is named after its repository")
+	}
+}
 
-	want := "/home/jordi/oppenheimer-ai/workspaces/acme-labs/xrp-mobile/.worktrees/oppenheimer-amber-delta"
-	if worktree != want {
-		t.Fatalf("worktree = %q, want %q", worktree, want)
+// Every level of the work folder is joined from something the control plane
+// sent; one that could climb out of its parent would let a frame name a
+// folder the runner later deletes.
+func TestAWorkFolderNameNeverLeavesItsParent(t *testing.T) {
+	for _, bad := range []string{"", ".", "..", "../x", "a/b", ".hidden", "a..b", "-x", strings.Repeat("a", 129)} {
+		if domain.ValidateName(bad) == nil {
+			t.Errorf("%q was accepted as a folder name", bad)
+		}
 	}
-	if !strings.Contains(worktree, "/.worktrees/") {
-		t.Fatalf("worktree %q is not in a hidden directory; Spotlight will index it", worktree)
+	for _, good := range []string{"local", "fix-login", "3f1c9a2e-0b6d-4a51-9d1e-7c0b5d2a9e11", "repo.js"} {
+		if err := domain.ValidateName(good); err != nil {
+			t.Errorf("%q: %v", good, err)
+		}
 	}
-	// The mirror is not a worktree: nothing is launched in it, so it is not
-	// part of this decision and stays where it is.
-	if mirror := layout.Mirror("acme-labs/xrp-mobile"); strings.Contains(mirror, "/.") {
-		t.Fatalf("mirror = %q; only the worktrees are hidden", mirror)
+	if (domain.Tenant{Account: "local", Workspace: "../etc"}).Validate() == nil {
+		t.Fatal("a workspace id that climbs out was accepted")
 	}
 }

@@ -18,7 +18,7 @@ function removeOnHost(host: FleetHost, sessionId: string, branch: string): void 
   // named by the runner, not by anything the API reports.
   const worktree = host
     .exec(
-      `for d in $(find "$HOME" -type d -path '*/.worktrees/*' -prune 2>/dev/null); do ` +
+      `for d in $(find "$HOME/oppenheimer" -mindepth 5 -maxdepth 5 -type d -path '*/sessions/*' 2>/dev/null); do ` +
         `[ "$(git -C "$d" rev-parse --abbrev-ref HEAD 2>/dev/null)" = '${branch}' ] && echo "$d"; done; true`,
     )
     .trim();

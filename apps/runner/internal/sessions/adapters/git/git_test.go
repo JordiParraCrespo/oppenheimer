@@ -84,7 +84,17 @@ func client(t *testing.T) (*gitadapter.Client, domain.Layout) {
 	return c, layout
 }
 
-const repo = "jordi/oppenheimer"
+// tenant is the account and workspace the tests' stores and sessions sit
+// under.
+var tenant = domain.Tenant{Account: "acct", Workspace: "ws"}
+
+var repo = domain.Repository{Tenant: tenant, FullName: "jordi/oppenheimer", GithubID: 42}
+
+// checkout is where a session's checkout of repo goes: its folder in the
+// workspace's sessions, named after the repository.
+func checkout(layout domain.Layout, slug string) string {
+	return filepath.Join(layout.Session(tenant, slug), "oppenheimer")
+}
 
 // advance lands a commit on branch in the origin, from a scratch clone.
 func advance(t *testing.T, remote, branch string) {
@@ -120,12 +130,12 @@ func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 	if err := c.Ensure(ctx, repo, "file://"+bare, "main"); err != nil {
 		t.Fatalf("ensure: %v", err)
 	}
-	mirror := layout.Mirror(repo)
+	mirror := layout.Store(repo)
 	if _, err := os.Stat(filepath.Join(mirror, "README.md")); !os.IsNotExist(err) {
 		t.Fatalf("the mirror has a working tree: %v", err)
 	}
 	// A worktree can be cut at once, deepened or not.
-	worktree := layout.Worktree(repo, "shallow")
+	worktree := checkout(layout, "shallow")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/shallow", "main", true); err != nil {
 		t.Fatalf("add: %v", err)
 	}
@@ -135,7 +145,7 @@ func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 
 	deadline := time.Now().Add(30 * time.Second)
 	for {
-		_, err := os.Stat(filepath.Join(mirror, ".git", "shallow"))
+		_, err := os.Stat(filepath.Join(mirror, "shallow"))
 		if os.IsNotExist(err) {
 			break
 		}
@@ -152,6 +162,46 @@ func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 	}
 	if remoteRef(t, mirror, "next") == "" {
 		t.Fatal("the deepen did not fetch every branch")
+	}
+}
+
+// A store is bare, so nobody's `git status` in it sees a checkout (24 §2), and
+// it records the GitHub id of the repository it caches: a repository renamed
+// on GitHub keeps its store, and its history, instead of being downloaded
+// again under the new name. Each workspace has stores of its own.
+func TestAStoreIsBareAndARenamedRepositoryKeepsIt(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	store := layout.Store(repo)
+	if got := strings.TrimSpace(git(t, store, "rev-parse", "--is-bare-repository")); got != "true" {
+		t.Fatalf("the store at %s is not bare", store)
+	}
+	if got := strings.TrimSpace(git(t, store, "config", "oppenheimer.repo-id")); got != "42" {
+		t.Fatalf("oppenheimer.repo-id = %q, want 42", got)
+	}
+
+	renamed := domain.Repository{Tenant: tenant, FullName: "jordi/renamed", GithubID: 42}
+	if !c.Has(renamed) {
+		t.Fatal("the renamed repository's store was not found by its id")
+	}
+	path := checkout(layout, "renamed")
+	if err := c.Add(ctx, renamed, path, "oppenheimer/renamed", "main", true); err != nil {
+		t.Fatalf("add on the renamed repository: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(path, "README.md")); err != nil {
+		t.Fatalf("the checkout has no files: %v", err)
+	}
+	if _, err := os.Stat(layout.Store(renamed)); !os.IsNotExist(err) {
+		t.Fatalf("a second store was made for the renamed repository: %v", err)
+	}
+
+	other := domain.Repository{Tenant: domain.Tenant{Account: "acct", Workspace: "other"}, FullName: repo.FullName, GithubID: 42}
+	if c.Has(other) {
+		t.Fatal("one workspace's store counted for another's")
 	}
 }
 
@@ -185,7 +235,7 @@ func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	mirror := layout.Mirror(repo)
+	mirror := layout.Store(repo)
 	before := remoteRef(t, mirror, "main")
 	advance(t, remote, "main")
 	advance(t, remote, "elsewhere")
@@ -218,7 +268,7 @@ func TestEnsureFailsWhenTheRefIsNotABranchOnTheRemote(t *testing.T) {
 		t.Fatalf("err = %v, want %s", err, domain.ErrGitCommand.Code)
 	}
 	// One fetch, not a second one of everything.
-	if remoteRef(t, layout.Mirror(repo), "elsewhere") != "" {
+	if remoteRef(t, layout.Store(repo), "elsewhere") != "" {
 		t.Fatal("a failed fetch went on to fetch every branch")
 	}
 }
@@ -238,8 +288,14 @@ func TestEnsureRefusesARepositoryNameThatWouldEscapeTheLayout(t *testing.T) {
 	c, _ := client(t)
 
 	for _, name := range []string{"../../etc", "owner/../../etc", "not-a-repo"} {
-		if err := c.Ensure(context.Background(), name, "https://example.test/x.git", "main"); err == nil {
+		bad := domain.Repository{Tenant: tenant, FullName: name}
+		if err := c.Ensure(context.Background(), bad, "https://example.test/x.git", "main"); err == nil {
 			t.Fatalf("%q must not be accepted as a repository name", name)
+		}
+	}
+	for _, bad := range []domain.Tenant{{Account: "..", Workspace: "ws"}, {Account: "acct", Workspace: "../x"}, {}} {
+		if err := c.Ensure(context.Background(), domain.Repository{Tenant: bad, FullName: repo.FullName}, "https://example.test/x.git", "main"); err == nil {
+			t.Fatalf("%+v must not be accepted as a workspace", bad)
 		}
 	}
 }
@@ -251,7 +307,7 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "session-abc")
+	worktree := checkout(layout, "session-abc")
 
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/abc", "main", true); err != nil {
 		t.Fatalf("add: %v", err)
@@ -280,7 +336,7 @@ func TestAddRefusesToReuseAPathThatExists(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "taken")
+	worktree := checkout(layout, "taken")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/one", "main", true); err != nil {
 		t.Fatal(err)
 	}
@@ -300,7 +356,7 @@ func TestDirtyAndPush(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "session-push")
+	worktree := checkout(layout, "session-push")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/push", "main", true); err != nil {
 		t.Fatal(err)
 	}
