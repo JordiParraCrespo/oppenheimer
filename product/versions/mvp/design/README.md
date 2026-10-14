@@ -25,6 +25,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the agent prompt comes first, the install command folds behind "Install manually instead", and a Connection list follows the install |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer |
+| [`SessionsConsole (where)`](version1/SessionsConsole%20(where).dc.html) | The console with where a session runs as a choice: a new worktree, a folder on the host, or a blank terminal; projects that hold folder sessions only |
 | [`ShareSession`](version1/ShareSession.dc.html) | A shared session as the person it was shared with sees it — a View only or Can edit badge, and Leave; the Share dialog, the link and who has access are still in the frame |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
@@ -32,6 +33,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Bots`](version1/Bots.dc.html) | Employees — the rail's second item: bots in sidebar groups, each a chat with a model, effort and approval mode, slash commands and a collapsible trace |
 | [`BotSettings`](version1/BotSettings.dc.html) | A bot's settings — identity and photo, instructions with revisions, memory, projects and repositories, tools and connectors, limits, host, bot-to-bot messages, routines and notifications |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace, watched repositories and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
+| [`Settings (where)`](version1/Settings%20(where).dc.html) | `Settings` as `SessionsConsole (where)` links to it: Back to console, and Open terminal on a host |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 | [`Chat Components`](version1/Chat%20Components.dc.html) | Inventory of the agent chat — transcript, work and tools, cards, dividers and status, the composer and what sits above it, decisions, header, find and empty state |
@@ -143,6 +145,19 @@ is the guest's view of a session; "Can write" reads "Can edit", and a
 typed address is added on submit. In `Tasks` the project manager chat's
 title links to that bot's settings.
 
+The 2026-10-14 export adds `SessionsConsole (where)` and its
+`Settings (where)`. A new session picks where it runs: New worktree
+(clone a project repository onto a fresh branch), Folder on host (open an
+existing directory as it is, nothing cloned, browsed from Host folders)
+or Blank terminal (no agent, just a shell); a project's repositories
+become optional, and a project without any holds folder sessions only.
+`PullRequests` rebuilds its Description view after the console as built:
+header pills, the description as a markdown card with Edit on GitHub, and
+a rail of Merge status, Comments, Reviews and Checks. `Tasks` creates a
+project from the task editor, with `version1/assets/icons/trash-2.svg`.
+The repository picker in `SessionsConsole` widens and drops the mono
+face, and Plan's rail icon becomes `layers` on every console frame.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
@@ -237,7 +252,11 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   view of its own and counts a waiting pull request as blocked, and the
   Settings policy reads "These apply to every watched repository."
   `explore-oppenheimer-agent.dc.html` is not in that export either and
-  stays as it was.
+  stays as it was. The 2026-10-14 export still lacks all three, and was
+  merged the same way.
+- Folder sessions in `SessionsConsole (where)`, and projects without
+  repositories, are in no note: every session in the notes is a git
+  worktree, the blank terminal included (`../00-scope.md`).
 - Employees (`Bots`, `BotSettings`, the rail item) are in no note. The
   nearest is the product's own agent, 0.6
   (`../../../next-steps/0.6-mcp-cli-and-agent.md`); the frames decide none

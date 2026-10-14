@@ -407,7 +407,10 @@ pnpm changeset          # Create a changeset for versioning
   export's values go onto the token vocabulary in `globals.css` and the
   component rules in `packages/frontend/design-system/AGENTS.md` and
   `.agents/rules/frontend-ui.md`; it does not replace them. Fonts are system
-  stacks. The MVP export is `product/versions/mvp/design/`
+  stacks. The MVP export is `product/versions/mvp/design/`. Run with no
+  arguments, the skill ports every export sync since the last port
+  (`last-port.json` in the skill) end to end, captures and pull request
+  included
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
