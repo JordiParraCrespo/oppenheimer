@@ -520,6 +520,9 @@ export type HostPreflightMessage = z.infer<typeof hostPreflightSchema>;
 export const repositoryPrepareSchema = z.object({
   type: z.literal('repository.prepare'),
   commandId: commandIdSchema,
+  /** Whose stores to warm: the work folder's `<account>/<workspace>/repos/` (24 §2). */
+  accountId: z.uuid(),
+  workspaceId: z.uuid(),
   githubRepoId: githubRepoIdSchema,
   repositoryFullName: gitRefSchema,
   baseBranch: gitRefSchema,

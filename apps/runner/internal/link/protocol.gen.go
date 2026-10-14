@@ -483,6 +483,8 @@ type CredentialsRevoke struct {
 type RepositoryPrepare struct {
 	Type               string    `json:"type"`
 	CommandID          string    `json:"commandId"`
+	AccountID          string    `json:"accountId"`
+	WorkspaceID        string    `json:"workspaceId"`
 	GithubRepoID       int64     `json:"githubRepoId"`
 	RepositoryFullName string    `json:"repositoryFullName"`
 	BaseBranch         string    `json:"baseBranch"`
