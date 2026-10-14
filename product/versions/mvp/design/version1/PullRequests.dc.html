@@ -27,7 +27,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Pull requests"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests<span class="op-nav__count">{{ queueN }}</span></span></button>
 <a class="op-rail__btn" href="./Routines.dc.html" aria-label="Automations" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></a>
-<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
 </nav>
 
 <nav class="op-sidebar" style="width:264px;min-width:264px;overflow:hidden">
@@ -689,44 +689,39 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 
 <sc-if value="{{ isSummary }}">
 <div style="flex:1;min-height:0;overflow-y:auto">
-<div style="max-width:980px;min-width:0;margin:0 auto;padding:32px 32px 80px;display:flex;flex-direction:column;gap:16px">
-
-<div style="display:flex;flex-direction:column;gap:10px;padding-bottom:8px">
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:980px;background:var(--card);color:var(--fg);font-size:12.5px;font-weight:500"><span style="width:7px;height:7px;border-radius:980px;background:{{ d.stateDot }}"></span>{{ d.state }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">{{ d.ref }}</span></div>
-<h1 style="margin:0;font-family:var(--font-display);font-size:30px;font-weight:600;letter-spacing:-0.022em;line-height:1.18;text-wrap:pretty">{{ d.title }}</h1>
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ d.authorIcon }}" size="13" hint-size="13px,13px"></x-import></span><span style="color:var(--fg)">{{ d.author }}</span><span style="color:var(--fg-subtle)">·</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">{{ d.branch }}</span><span style="color:var(--fg-subtle)">→</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px">main</span></div>
-</div>
-
-<div style="background:var(--card);border-radius:18px;padding:14px 20px;display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap">
-<div style="flex:1 1 260px;min-width:0;display:flex;align-items:center;gap:8px 20px;flex-wrap:wrap;font-size:12.5px;color:var(--fg-muted)">
-<span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="color:var(--success)">+{{ d.add }}</span><span style="color:var(--danger)">−{{ d.del }}</span></span>
-<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ d.fileN }}</span> files in {{ bv.dirN }}</span>
-<span style="flex:1"></span>
-<div style="display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap">
-<sc-for list="{{ bv.steps }}" as="x" hint-placeholder-count="4"><span title="{{ x.sub }}" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:7px;height:7px;border-radius:980px;background:{{ x.fg }}"></span><span style="color:var(--fg)">{{ x.label }}</span><span>{{ x.sub }}</span></span></sc-for>
-</div>
-</div>
-<sc-if value="{{ bv.merged }}"><span style="display:inline-flex;align-items:center;gap:6px;height:34px;font-size:13px;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--success)"></span>Merged into main</span></sc-if>
-<sc-if value="{{ bv.notMerged }}">
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ ses.go }}" title="{{ ses.goLabel }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="15" hint-size="15px,15px"></x-import>Review session</button>
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ bv.review }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="eye" size="15" hint-size="15px,15px"></x-import>Review changes</button>
-<sc-if value="{{ bv.showMerge }}"><button class="op-btn op-btn--secondary op-btn--md" type="button" disabled="{{ bv.mergeDis }}" title="{{ bv.mergeTip }}" onClick="{{ bv.merge }}" style="gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="15" hint-size="15px,15px"></x-import>Merge</button></sc-if>
-<sc-if value="{{ bv.confirming }}"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ bv.cancelMerge }}">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ bv.confirmMerge }}" style="gap:8px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="15" hint-size="15px,15px"></x-import>Confirm merge</button></sc-if>
-</div>
-</sc-if>
-</div>
-<div style="background:var(--card);border-radius:18px;padding:20px 24px;display:flex;flex-direction:column;gap:18px;min-width:0">
-<span style="font-size:15px;font-weight:500">Description</span>
-<sc-for list="{{ desc.sections }}" as="sec" hint-placeholder-count="3">
-<section style="display:flex;flex-direction:column;gap:8px">
-<h3 style="margin:0;font-size:13px;font-weight:500;color:var(--fg-muted)">{{ sec.title }}</h3>
-<sc-if value="{{ sec.body }}"><p style="margin:0;max-width:72ch;font-size:14.5px;line-height:1.6;text-wrap:pretty">{{ sec.body }}</p></sc-if>
-<sc-if value="{{ sec.items }}"><ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.55"><sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="3"><li style="font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere">{{ it }}</li></sc-for></ul></sc-if>
-<sc-if value="{{ sec.code }}"><pre style="margin:0;padding:12px 14px;border-radius:10px;background:var(--canvas);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;line-height:1.6;white-space:pre-wrap">{{ sec.code }}</pre></sc-if>
-</section>
+<div style="max-width:1240px;min-width:0;margin:0 auto;padding:32px 32px 80px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:32px 56px">
+<div style="flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:24px">
+<header style="display:flex;flex-direction:column;gap:10px;padding-bottom:8px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:980px;border:1px solid var(--border-subtle);background:var(--card);color:var(--fg);font-size:12px;font-weight:500"><span style="width:7px;height:7px;border-radius:980px;background:{{ d.stateDot }}"></span>{{ d.state }}</span><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Badge" hint-size="auto,22px">{{ desc.lane }}</x-import><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px">{{ d.ref }}</span></div>
+<h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;text-wrap:pretty">{{ d.title }}</h1>
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ d.authorIcon }}" size="13" hint-size="13px,13px"></x-import></span><span style="color:var(--fg)">{{ d.author }}</span><span style="color:var(--fg-subtle)">·</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px">{{ d.branch }}</span><span style="display:flex;color:var(--fg-subtle)" aria-label="into"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="12" hint-size="12px,12px"></x-import></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px">main</span></div>
+</header>
+<div style="background:var(--card);border-radius:18px;display:flex;flex-direction:column;min-width:0">
+<div style="padding:24px 28px;display:flex;flex-direction:column;gap:16px;min-width:0;font-size:15px;line-height:1.65">
+<sc-for list="{{ desc.blocks }}" as="b" hint-placeholder-count="4">
+<sc-if value="{{ b.isH }}"><h2 style="margin:12px 0 0;font-size:21px;font-weight:600;letter-spacing:-0.012em;line-height:1.3">{{ b.text }}</h2></sc-if>
+<sc-if value="{{ b.isP }}"><p style="margin:0;text-wrap:pretty"><sc-for list="{{ b.segs }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.txt }}"><span>{{ g.t }}</span></sc-if><sc-if value="{{ g.code }}"><code style="font-family:var(--font-mono);font-size:0.86em;padding:1px 6px;border-radius:6px;background:var(--hover-surface);overflow-wrap:anywhere">{{ g.t }}</code></sc-if></sc-for></p></sc-if>
+<sc-if value="{{ b.isUl }}"><ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px"><sc-for list="{{ b.items }}" as="li" hint-placeholder-count="2"><li style="text-wrap:pretty"><sc-for list="{{ li.segs }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.txt }}"><span>{{ g.t }}</span></sc-if><sc-if value="{{ g.code }}"><code style="font-family:var(--font-mono);font-size:0.86em;padding:1px 6px;border-radius:6px;background:var(--hover-surface);overflow-wrap:anywhere">{{ g.t }}</code></sc-if></sc-for></li></sc-for></ul></sc-if>
+<sc-if value="{{ b.isPre }}"><pre style="margin:0;padding:12px 14px;border-radius:10px;background:var(--background);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12.5px;line-height:1.6;white-space:pre-wrap;overflow-x:auto">{{ b.code }}</pre></sc-if>
 </sc-for>
 </div>
+<div style="display:flex;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--border-subtle)"><a class="op-btn op-btn--ghost op-btn--sm" href="https://github.com" target="_blank" rel="noreferrer" style="gap:6px;text-decoration:none"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import>Edit on GitHub</a></div>
+</div>
+</div>
+<aside style="flex:0 1 288px;min-width:240px;display:flex;flex-direction:column;margin-top:-16px">
+<section style="display:flex;flex-direction:column;gap:12px;padding:16px 0;border-bottom:1px solid var(--border-subtle);">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--fg-muted)"><h2 style="margin:0;font-size:13px;font-weight:400;color:var(--fg-muted)">Merge status</h2></div><p style="margin:0;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--fg)"><span style="display:flex;color:{{ desc.merge.fg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ desc.merge.icon }}" size="16" hint-size="16px,16px"></x-import></span>{{ desc.merge.text }}</p>
+</section>
+<section style="display:flex;flex-direction:column;gap:12px;padding:16px 0;border-bottom:1px solid var(--border-subtle);">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--fg-muted)"><h2 style="margin:0;font-size:13px;font-weight:400;color:var(--fg-muted)">Comments</h2></div><sc-for list="{{ desc.comments }}" as="c" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:10px;font-size:14px"><span aria-hidden="true" style="flex:none;width:24px;height:24px;border-radius:980px;background:var(--hover-surface);color:var(--fg-muted);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500">{{ c.ini }}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.login }}</span><span style="font-size:13px;color:var(--fg-muted);white-space:nowrap">{{ c.n }}</span></div></sc-for><sc-if value="{{ desc.noComments }}"><p style="margin:0;font-size:13px;color:var(--fg-muted)">No comments yet</p></sc-if>
+</section>
+<section style="display:flex;flex-direction:column;gap:12px;padding:16px 0;border-bottom:1px solid var(--border-subtle);">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--fg-muted)"><h2 style="margin:0;font-size:13px;font-weight:400;color:var(--fg-muted)">Reviews</h2></div><sc-for list="{{ desc.reviews }}" as="r" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:10px;font-size:14px"><span aria-hidden="true" style="flex:none;width:24px;height:24px;border-radius:980px;background:var(--hover-surface);color:var(--fg-muted);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500">{{ r.ini }}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.login }}</span><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:980px;background:{{ r.dot }}"></span>{{ r.word }}</span></div></sc-for><sc-if value="{{ desc.noReviews }}"><p style="margin:0;font-size:13px;color:var(--fg-muted)">No reviewers</p></sc-if>
+</section>
+<section style="display:flex;flex-direction:column;gap:12px;padding:16px 0;">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--fg-muted)"><h2 style="margin:0;font-size:13px;font-weight:400;color:var(--fg-muted)">Checks</h2><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px"><sc-if value="{{ desc.checkDot }}"><span style="width:6px;height:6px;border-radius:980px;background:{{ desc.checkDot }}"></span></sc-if><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ desc.checks }}</span></span></div>
+</section>
+</aside>
 </div>
 </div>
 </sc-if>
@@ -1201,13 +1196,27 @@ class Component extends DCLogic {
       status: [p.branch, loc, ENVS[envI], notes.length + ' pending'],
     };
     const ageH = p.wait || 1;
+    const segs = str => String(str).split('`').map((t, i) => ({ t, code: i % 2 ? 'true' : undefined, txt: i % 2 ? undefined : 'true' })).filter(g => g.t);
+    const P = str => ({ isP: 'true', segs: segs(str) }), H = text => ({ isH: 'true', text }), UL = arr => ({ isUl: 'true', items: arr.map(x => ({ segs: segs(x) })) }), PRE = code => ({ isPre: 'true', code });
+    const fnd = p.findings || [];
+    const ac = (p.prep || []).find(x => /checks/i.test(x[0]));
+    const reviews = (fnd.length ? [{ ini: 'RA', login: '@review-agent', word: 'Commented', dot: 'var(--fg-subtle)' }] : [])
+      .concat((p.others || []).map(o => ({ ini: o[0], login: '@' + o[1].split(' · ')[0].toLowerCase().replace(/\s+/g, '-'), word: o[2], dot: o[2] === 'Requested' ? 'var(--warning)' : 'var(--success)' })));
+    const comments = fnd.length ? [{ ini: 'RA', login: '@review-agent', n: fnd.length + (fnd.length === 1 ? ' comment' : ' comments') }] : [];
     const desc = { opened: ageH < 1 ? Math.round(ageH * 60) + 'm ago' : ageH < 24 ? Math.round(ageH) + 'h ago' : Math.round(ageH / 24) + 'd ago',
-      sections: [
-        { title: 'Summary', body: p.brief },
-        { title: 'Changes', items: files.slice(0, 6).map(f => (f.tag === 'New' ? 'Add ' : 'Update ') + f.path) },
-        { title: 'How to test', code: (p.repo === 'runner' ? 'go test ./...' : 'pnpm test') + (files.some(f => /\.go$/.test(f.path)) && p.repo !== 'runner' ? '\ngo test ./runner/...' : '') },
-        { title: 'Notes', body: p.agent ? 'Opened by the ' + p.author.replace('Session · ', '') + ' session. Changes requested here are sent back to the session.' : p.why },
-      ] };
+      lane: this.laneOf(p),
+      blocks: [
+        P(p.brief + ' Opened from `' + p.branch + '` against `main`.'),
+        ...(p.bp ? [H('Changes'), UL(p.bp)] : []),
+        ...(files.length ? [H('Files'), UL(files.slice(0, 6).map(f => '`' + f.path + '`' + (f.tag ? ' ' + f.tag.toLowerCase() : '')))] : []),
+        H('How to test'), PRE((p.repo === 'runner' ? 'go test ./...' : 'pnpm test') + (files.some(f => /\.go$/.test(f.path)) && p.repo !== 'runner' ? '\ngo test ./runner/...' : '')),
+        H('Notes'), P(p.agent ? 'Opened by the ' + p.author.replace('Session · ', '') + ' session. Changes requested here are sent back to the session.' : p.why),
+      ],
+      merge: p.view === 'auto' ? { icon: 'check-circle', fg: 'var(--success)', text: 'Merged into main' } : p.conflict ? { icon: 'alert-circle', fg: 'var(--danger)', text: 'Conflicts with main' } : { icon: 'check-circle', fg: 'var(--success)', text: 'Can merge without conflicts' },
+      comments, noComments: comments.length ? undefined : 'true',
+      reviews, noReviews: reviews.length ? undefined : 'true',
+      checks: ac ? ac[1] : 'No checks', checkDot: ac ? (ac[2] === 'ok' ? 'var(--success)' : ac[2] === 'fail' ? 'var(--danger)' : 'var(--warning)') : undefined,
+    };
     const chatVals = { term, desc,
       chat, chatTyping: s.typing === p.id ? 'true' : undefined, chatEmpty: !chat.length && s.typing !== p.id ? 'true' : undefined,
       chatSuggest: sst === 'ready' && !((s.thread || {})[p.id] || []).length ? 'true' : undefined,
