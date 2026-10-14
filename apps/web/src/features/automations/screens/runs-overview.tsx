@@ -1,6 +1,7 @@
-import { RunsList, Skeleton } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { RunHistorySkeleton } from '../components/run-history-skeleton';
+import { RunsSkeleton } from '../components/runs-skeleton';
 import { OverviewTop } from '../sections/overview-top';
 import { RunHistoryCard } from '../sections/run-history-card';
 import { RunsTable } from '../sections/runs-table';
@@ -13,7 +14,7 @@ export function RunsOverviewScreen() {
       <OverviewTop />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-47.5 w-full" />
+          <RunHistorySkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.history.loadFailed')} />
         <QueryState.Data>
@@ -22,13 +23,7 @@ export function RunsOverviewScreen() {
       </QueryState>
       <QueryState>
         <QueryState.Pending>
-          <RunsList>
-            <div className="flex flex-col gap-1 p-1.5">
-              <Skeleton className="h-11 w-full" />
-              <Skeleton className="h-11 w-full" />
-              <Skeleton className="h-11 w-full" />
-            </div>
-          </RunsList>
+          <RunsSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.runs.loadFailed')} />
         <QueryState.Data>

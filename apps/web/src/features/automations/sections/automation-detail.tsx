@@ -1,8 +1,10 @@
-import { EditorPageBack, RunsList, Skeleton } from '@oppenheimer/design-system-web';
+import { EditorPageBack } from '@oppenheimer/design-system-web';
 import { useSuspenseAutomation } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { RunHistorySkeleton } from '../components/run-history-skeleton';
+import { RunsSkeleton } from '../components/runs-skeleton';
 import { AutomationHeader } from './automation-header';
 import { RunHistoryCard } from './run-history-card';
 import { RunsTable } from './runs-table';
@@ -26,7 +28,7 @@ export function AutomationDetail({ automationId }: { automationId: string }) {
       <AutomationHeader automation={automation} />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-47.5 w-full" />
+          <RunHistorySkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.history.loadFailed')} />
         <QueryState.Data>
@@ -35,13 +37,7 @@ export function AutomationDetail({ automationId }: { automationId: string }) {
       </QueryState>
       <QueryState>
         <QueryState.Pending>
-          <RunsList>
-            <div className="flex flex-col gap-1 p-1.5">
-              <Skeleton className="h-11 w-full" />
-              <Skeleton className="h-11 w-full" />
-              <Skeleton className="h-11 w-full" />
-            </div>
-          </RunsList>
+          <RunsSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.runs.loadFailed')} />
         <QueryState.Data>

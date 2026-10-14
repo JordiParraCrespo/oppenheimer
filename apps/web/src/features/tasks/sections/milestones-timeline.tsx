@@ -1,5 +1,5 @@
 import { MilestoneTimeline, type MilestoneTimelineControls } from '@oppenheimer/design-system-web';
-import { useSuspenseTasksProjectsMilestones } from '@oppenheimer/frontend-consumer/react';
+import { useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import type { Ref } from 'react';
@@ -31,7 +31,7 @@ export function MilestonesTimeline({
   const today = useToday();
   const navigate = useNavigate();
   const { projectId } = useScopeProject();
-  const { projects, milestones, tasks, error } = useSuspenseTasksProjectsMilestones();
+  const { projects, milestones, tasks, error } = useSuspensePlan();
   const alert = <ErrorAlert error={error} fallback={t('tasks.milestones.loadFailed')} />;
 
   const named = projects.map((row) => ({

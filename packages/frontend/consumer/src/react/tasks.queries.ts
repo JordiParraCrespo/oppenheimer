@@ -50,7 +50,7 @@ export function useTasks<TData = TaskEntity[]>(
  * open. They fetch side by side; `error` is the first refetch that failed
  * over data already drawn.
  */
-export function useSuspenseTasksProjectsHosts() {
+export function useSuspenseStartSession() {
   const [tasks, projects, hosts] = useSuspenseQueries({
     queries: [
       useTaskListQuery(),
@@ -94,7 +94,7 @@ export function useMilestones<TData = MilestoneEntity[]>(
  * milestones, fetched side by side. `error` is the first refetch that failed
  * over data already drawn.
  */
-export function useSuspenseTasksProjectsMilestones() {
+export function useSuspensePlan() {
   const [tasks, projects, milestones] = useSuspenseQueries({
     queries: [useTaskListQuery(), useProjectListQuery(), useMilestoneListQuery()],
   });
