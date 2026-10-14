@@ -2,6 +2,7 @@ import { Button, ChipSelect, EmptyState } from '@oppenheimer/design-system-web';
 import { Cpu, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReviewSession } from '../hooks/use-review-session';
@@ -48,6 +49,7 @@ export function ReviewSessionStart({ pull }: { pull: PullRequestDetailEntity }) 
               : t('pullRequests.reviewSession.description', { branch: pull.headRef })}
         </EmptyState.Description>
       </EmptyState.Header>
+      <ErrorAlert error={review.error} fallback={t('pullRequests.reviewSession.failed')} />
       {pull.fromFork ? null : (
         <EmptyState.Content className="flex-row justify-center">
           {list.length > 0 ? (

@@ -1,9 +1,6 @@
-import { toast } from '@oppenheimer/design-system-web';
 import type { PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
 import { usePrepareSession, useStartReviewSession } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { reviewCheckout } from '../lib/review-session';
 
 /**
@@ -18,8 +15,6 @@ import { reviewCheckout } from '../lib/review-session';
  * and a press on another host is a new one.
  */
 export function useReviewSession(pull: PullRequestDetailEntity) {
-  const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const warmed = useRef(new Set<string>());
   const attempt = useRef<{ hostId: string; key: string } | null>(null);
   const prepare = usePrepareSession();
@@ -27,16 +22,17 @@ export function useReviewSession(pull: PullRequestDetailEntity) {
     onSuccess: () => {
       attempt.current = null;
     },
-    onError: (error) => {
+    onError: () => {
       // A start the API refused closed whatever it had made, so the next press
       // is a new attempt with a key of its own.
       attempt.current = null;
-      toast.error(resolveError(error, t('pullRequests.reviewSession.failed')).message);
     },
   });
 
   return {
     pending: start.isPending,
+    /** The last start's failure, drawn beside the button until the next press. */
+    error: start.error,
     warm: (hostId: string) => {
       if (warmed.current.has(hostId)) return;
       warmed.current.add(hostId);

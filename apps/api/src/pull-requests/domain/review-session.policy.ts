@@ -35,8 +35,8 @@ export function reviewPrompt(pull: ReviewedPullRequest): string {
 /**
  * The session a review asks for: Claude Code on its default model, in a
  * worktree cut from the head branch on the picked host, on the review prompt.
- * Edits are approved for it (`auto`) so reading the diff asks nothing; the
- * prompt rules them out, and anything else still asks.
+ * It asks before every edit and command (`ask`): a pull request's own text
+ * reaches the agent, and the worktree must stay the pull request as submitted.
  */
 export function reviewSessionInput(pull: ReviewedPullRequest, hostId: string): CreateSessionDto {
   const models = CODING_AGENTS[REVIEW_AGENT].models;
@@ -53,7 +53,7 @@ export function reviewSessionInput(pull: ReviewedPullRequest, hostId: string): C
       },
     ],
     cwdGithubRepoId: pull.githubRepoId,
-    launch: { model, permission: 'auto' },
+    launch: { model, permission: 'ask' },
     prompt: reviewPrompt(pull),
   };
 }

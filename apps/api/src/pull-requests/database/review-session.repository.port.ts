@@ -23,6 +23,6 @@ export interface ReviewSessionRow extends ReviewSessionLink {
 export interface ReviewSessionRepositoryPort {
   /** Idempotent on the session: a retried start finds its link in place. */
   link(scope: AccessScope, link: ReviewSessionLink): Promise<void>;
-  /** The ones not closed, newest first. */
+  /** The ones not closed, newest first: the 100 newest (`OPEN_LIMIT`), a person's working set. */
   findOpen(scope: AccessScope): Promise<ReviewSessionRow[]>;
 }

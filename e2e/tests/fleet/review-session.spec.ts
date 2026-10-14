@@ -71,11 +71,11 @@ test('a pull request’s Chat tab starts a review session on its head branch', a
     page.getByRole('listitem').filter({ hasText: '#14 Fix the empty state' }),
   ).toBeVisible();
 
-  // Claude Code starts on the review prompt, edits approved, in the worktree
+  // Claude Code starts on the review prompt, asking before any edit, in the worktree
   // of the head branch.
   const terminal = await attach(api, sessionId);
   const screen = await terminal.waitFor('CLAUDE-SHIM argv=', 120_000);
-  expect(screen).toContain('--permission-mode acceptEdits');
+  expect(screen).toContain('--permission-mode manual');
   expect(screen).toContain('Help me review pull request #14 in acme-labs/xrp-mobile');
   // The typed line holds `$((1+1))`, never the `2`, so only the answer matches.
   terminal.send(

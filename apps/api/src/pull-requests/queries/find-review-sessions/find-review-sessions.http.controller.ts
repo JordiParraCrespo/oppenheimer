@@ -30,7 +30,7 @@ export class FindReviewSessionsHttpController {
   @ApiOperation({
     summary: 'The caller’s review sessions',
     description:
-      'Every review session the caller started and has not closed, newest first, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.',
+      'The 100 newest review sessions the caller started and has not closed, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.',
   })
   @ApiResponse({ status: 200, type: [ReviewSessionDto] })
   async list(@CurrentAccessScope() scope: AccessScope): Promise<ReviewSessionDto[]> {

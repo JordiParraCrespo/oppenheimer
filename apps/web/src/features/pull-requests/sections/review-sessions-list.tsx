@@ -8,7 +8,7 @@ import {
 import { GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import { useReviewSessions } from '@oppenheimer/frontend-consumer/react';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { formatAge } from '@oppenheimer/frontend-web';
+import { ErrorAlert, formatAge } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +20,7 @@ import { reviewGroups } from '../lib/review-session';
  * each row the pull request it reviews and opening its Chat tab. They are
  * listed here and never under Sessions. The search filters in the browser:
  * the list arrives whole. One clock for every row's age. Nothing is drawn
- * until there is a review session.
+ * until there is a review session, unless the list could not be read.
  */
 export function ReviewSessionsList() {
   const { t } = useTranslation();
@@ -28,8 +28,14 @@ export function ReviewSessionsList() {
   const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
-  const { data: sessions = [] } = useReviewSessions();
-  if (sessions.length === 0) return null;
+  const { data: sessions = [], error } = useReviewSessions();
+  // A list that could not be read says so; one with nothing in it draws nothing.
+  if (sessions.length === 0)
+    return error ? (
+      <div className="px-3 pt-2">
+        <ErrorAlert error={error} fallback={t('pullRequests.reviewSession.listFailed')} />
+      </div>
+    ) : null;
   const groups = reviewGroups(sessions, query);
 
   return (

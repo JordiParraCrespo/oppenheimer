@@ -1441,7 +1441,8 @@
       "bar": "revisión · {{repository}} #{{number}}",
       "close": "Mostrar el pull request",
       "loadFailed": "No se pudo cargar la sesión de revisión.",
-      "composer": "Pregunta al agente de revisión o ejecuta un comando"
+      "composer": "Pregunta al agente de revisión o ejecuta un comando",
+      "listFailed": "No se pudieron cargar tus sesiones de revisión."
     }
   },
   "tasks": {

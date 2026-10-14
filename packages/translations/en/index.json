@@ -1437,7 +1437,8 @@
       "bar": "review · {{repository}} #{{number}}",
       "close": "Show the pull request",
       "loadFailed": "Could not load the review session.",
-      "composer": "Ask the review agent, or run a command"
+      "composer": "Ask the review agent, or run a command",
+      "listFailed": "Could not load your review sessions."
     }
   },
   "tasks": {
