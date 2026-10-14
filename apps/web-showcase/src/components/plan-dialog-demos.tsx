@@ -99,7 +99,7 @@ export function PlanDialogsDemo() {
               <dt className="col-span-1 text-fg-muted">Status</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
                 {COLUMNS.map((c) => (
-                  <Chip key={c.id} variant="solid" selected={status === c.id} onClick={() => setStatus(c.id)} icon={<span className={dotVariants({ state: TASK_STATUS_STATE[c.id] })} />}>
+                  <Chip key={c.id} variant="solid" size="md" selected={status === c.id} onClick={() => setStatus(c.id)} icon={<span className={dotVariants({ state: TASK_STATUS_STATE[c.id] })} />}>
                     {c.label}
                   </Chip>
                 ))}
@@ -168,7 +168,7 @@ export function PlanDialogsDemo() {
               <dt className="col-span-1 text-fg-muted">Agent</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
                 {['Claude Code', 'Codex', 'OpenCode'].map((a) => (
-                  <Chip key={a} variant="solid" selected={agent === a} onClick={() => setAgent(a)}>
+                  <Chip key={a} variant="solid" size="md" selected={agent === a} onClick={() => setAgent(a)}>
                     {a}
                   </Chip>
                 ))}
@@ -177,7 +177,7 @@ export function PlanDialogsDemo() {
               <dd className="col-span-3 m-0 flex flex-col gap-1.5">
                 <span className="flex flex-wrap gap-1.5">
                   {['Opus 4.6', 'Sonnet 4.6', 'Haiku 4.5'].map((m) => (
-                    <Chip key={m} variant="solid" selected={model === m} onClick={() => setModel(m)}>
+                    <Chip key={m} variant="solid" size="md" selected={model === m} onClick={() => setModel(m)}>
                       {m}
                     </Chip>
                   ))}
