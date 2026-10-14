@@ -21,7 +21,10 @@ matches what it opened, and nothing fails when the agent skips it.
 
 ## Find the mistake classes
 
-With an argument, start from that correction. Without one, mine:
+Start narrow. With an argument, the class is that correction. Without one,
+take the "Open" rows of `.agents/enforcement.md`, once it exists, and pick
+the one that has cost the most. Mine wider only when neither gives a class,
+or when the operator asks for a sweep:
 
 - `git log origin/main` for `revert` commits and for `fix` commits that
   undo something an agent wrote earlier;
@@ -30,8 +33,8 @@ With an argument, start from that correction. Without one, mine:
   issues;
 - the comments in the code that explain a workaround, and the rules in
   `.agents/rules/` and every `AGENTS.md` that say *never* or *always*;
-- `.agents/enforcement.md`, once it exists: every row whose enforcer is
-  "rule text only" is a candidate.
+- every row of `.agents/enforcement.md` whose enforcer is "rule text
+  only".
 
 Group what you find into classes. A class counts once it has happened twice.
 One incident is a bug fix, not a class.
@@ -69,7 +72,8 @@ One incident is a bug fix, not a class.
 
 ## Fix and prove
 
-Fix the most frequent classes now, one commit each.
+Fix one class per run by default, in its own commit; a sweep the operator
+asked for fixes the most frequent classes, one commit each.
 
 Prove each new check fails on a real past mistake: check out the commit that
 made it (`git worktree add <scratch> <sha>`), run the check there, and paste
@@ -101,6 +105,9 @@ it:
 - a row whose enforcer is claimed but runs nowhere is the worst kind, because
   it reads as safe; fix the claim or the enforcer;
 - drop a row's prose once its mistake cannot happen.
+
+Nothing checks the table yet, so a row this run finds stale or missing is
+this run's to fix, in the same change.
 
 **Reply:** each class with its evidence (commits, comments, counts), the level
 you picked and why a higher level did not work, the past mistake each new
