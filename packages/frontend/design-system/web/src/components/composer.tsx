@@ -55,6 +55,10 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * fill, 18px top radii, inset 18px each side). With a band the field is the
  * taller one, 128px at 15px, because the sentence above has already said where
  * the work happens.
+ *
+ * `above` fuses something the run is waiting on to the field's top edge (a
+ * `ComposerApproval`): it brings its own top radius and hairline, and the
+ * field squares its top to meet it, so the two read as one box.
  */
 function Composer({
   value,
@@ -73,6 +77,7 @@ function Composer({
   tools,
   engine,
   scope,
+  above,
   minRows = 3,
   labels,
   className,
@@ -100,6 +105,8 @@ function Composer({
   engine?: React.ReactNode;
   /** The scope chips, in the band fused to the top of the field (`ChipSelectTrigger variant="tab"`). */
   scope?: React.ReactNode;
+  /** What the run waits on, fused to the field's top edge (`ComposerApproval`). */
+  above?: React.ReactNode;
   minRows?: number;
   /** The icon buttons' accessible names; any left out stay in English. */
   labels?: Partial<ComposerLabels>;
@@ -126,8 +133,9 @@ function Composer({
       data-slot="composer"
       data-disabled={disabled || undefined}
       data-tabbed={scope ? '' : undefined}
+      data-above={above ? '' : undefined}
       className={cn(
-        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
+        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
         className,
       )}
       {...props}
@@ -225,15 +233,18 @@ function Composer({
     </div>
   );
 
-  if (!scope) return field;
+  if (!above && !scope) return field;
   return (
     <div data-slot="composer-stack" className="flex flex-col">
-      <div
-        data-slot="composer-scope"
-        className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
-      >
-        {scope}
-      </div>
+      {above}
+      {scope ? (
+        <div
+          data-slot="composer-scope"
+          className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
+        >
+          {scope}
+        </div>
+      ) : null}
       {field}
     </div>
   );
