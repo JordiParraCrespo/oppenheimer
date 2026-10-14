@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type PullRequestView, pullRequestLink } from '../lib/pull-request-search';
 import type { QueueSearch } from '../lib/queue-search';
 
-declare module '@tanstack/history' {
+declare module '@tanstack/react-router' {
   interface HistoryState {
     /** The queue's search a pull request was opened from: what its Back returns to. */
     pullsQueue?: QueueSearch;
