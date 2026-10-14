@@ -254,8 +254,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `../19-plan-tasks-and-goals.md`, which still says goals and has no
   statistics; `../23-plan-milestones-stats-accounts.md` plans the
   backend for them and for several Google accounts. The agent-first Add a host and its
-  Skip run ahead of `../05-screens.md`, which has the command and prompt
-  side by side behind the Inspect fold.
+  Skip are in the console since 2026-10-13, onboarding and the dialog
+  both, without the Tools on PATH row, which waits for the wire to carry
+  a host's tools.
 - Left out of the 2026-10-13 export: `version1/assets/scientists/`
   (portraits no frame references), `github.md` and `assets/prod/` (the
   canvas's import log and two screenshots of Synara's README), and again
@@ -273,7 +274,14 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   of real people, so the showcase draws initials and the product will ship
   photos of its own. The changes to existing components the frames also
   ask for (a chat density for `Composer`, a card layout for `RadioGroup`,
-  `HostCard`'s disk meter, the agent-first Add a host, `MergePath` inline,
+  `HostCard`'s disk meter, `MergePath` inline,
   the 560px `form` dialog) are not in that port.
+- The 2026-10-13 evening export's additions are in the design system too:
+  `BotExchange` (the bot-to-bot message), `ProposedFile` (the proposed
+  instructions), `ComposerApproval` fused onto `Composer`'s new `above`,
+  `BotItem`'s `needsInput`, `SidebarProjectHeader`'s eyebrow tone and
+  `marker`, `SidebarEmptyCard`, and a centred `ChatEmptyState` over
+  `TemplateTiles`. The chat's rows were written for the system, not ported
+  from Synara, so its licence does not bear on them.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

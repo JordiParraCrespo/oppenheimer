@@ -375,6 +375,12 @@ earlier note:
   link, to watch or to type, for anyone, any account or named people
   (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
   as its creator's, so it opens nothing they could not.
+- `versions/mvp/21-session-share-links.md` built sharing on 2026-10-08 as
+  bearer links (anyone signed out, any account, or named people; the
+  secret shown once). On 2026-10-13 it was rebuilt to the `ShareSession`
+  design: one share per session at one address, named people or anyone
+  signed in, write for named people for a day at most. The note keeps the
+  links under Superseded.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06
@@ -408,6 +414,14 @@ earlier note:
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
+- `versions/mvp/05-screens.md` had onboarding's Add a host step and the
+  console's Add a host dialog lead with Copy install command and Copy
+  agent prompt, the instruction behind an Inspect fold and one status
+  line. Since 2026-10-13 both lead with the agent prompt (Copy prompt, the
+  text behind a fold), fold the command behind "Install manually instead"
+  and show a Connection list: Runner installed, then Host connected. The
+  export's Tools on PATH row waits for the wire to carry a host's tools.
+  Settings' Add a host page keeps the panel with both forms.
 - `next-steps/0.2-pull-requests.md` (version 1 scope, 2026-10-05) put a
   summary agent's brief on every pull request, and the 2026-10-05 frames
   opened one on a Briefing with a lane switcher and a review session. On

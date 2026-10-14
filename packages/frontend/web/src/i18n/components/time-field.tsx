@@ -15,7 +15,8 @@ const MINUTES = ['00', '15', '30', '45'];
 /**
  * A time of day, `HH:MM` on a quarter-hour grid: the hour, then the minute, in
  * one popover the way the automation editor's time token picks one. `after`
- * disables every time at or before it (an event's end after its start).
+ * disables every time at or before it (an event's end after its start). The
+ * trigger stands at the field height, level with the `DatePicker` beside it.
  */
 export function TimeField({
   value,
@@ -49,7 +50,7 @@ export function TimeField({
             id={id}
             type="button"
             variant="secondary"
-            size="sm"
+            size="md"
             className="justify-start gap-2"
           />
         }

@@ -9,7 +9,7 @@ import { PairingChrome } from './pairing-chrome';
  *
  * The tick lives in `TokenCountdown`: handed down as `secondsLeft`, it would
  * re-render the whole surface above it (the Add host dialog, the onboarding
- * step, both code blocks) every second it was open. Runs without the React
+ * step, the prompt card and the Connection list) every second it was open. Runs without the React
  * Compiler.
  */
 
@@ -40,15 +40,15 @@ const clock = vi.hoisted(() => {
   };
 });
 
-/** Renders of the status row, the chrome's other half. */
-const statusRenders = vi.hoisted(() => ({ count: 0 }));
+/** Renders of the chrome's buttons: the prompt's Copy, above the token line. */
+const buttonRenders = vi.hoisted(() => ({ count: 0 }));
 
 vi.mock('@oppenheimer/design-system-web', async (original) => ({
   ...(await original<typeof import('@oppenheimer/design-system-web')>()),
   useNow: () => useSyncExternalStore(clock.subscribe, clock.get),
-  StatusDot: ({ children }: { children?: React.ReactNode }) => {
-    statusRenders.count += 1;
-    return <span>{children}</span>;
+  Button: ({ children }: { children?: React.ReactNode }) => {
+    buttonRenders.count += 1;
+    return <button type="button">{children}</button>;
   },
 }));
 
@@ -69,11 +69,11 @@ describe('PairingChrome', () => {
       />,
     );
     expect(screen.getByText('hosts.pairing.tokenExpires 10:00')).toBeDefined();
-    statusRenders.count = 0;
+    buttonRenders.count = 0;
 
     act(() => clock.set(START + 1000));
 
     expect(screen.getByText('hosts.pairing.tokenExpires 9:59')).toBeDefined();
-    expect(statusRenders.count).toBe(0);
+    expect(buttonRenders.count).toBe(0);
   });
 });

@@ -8,7 +8,7 @@ import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator
 import { OptionalApiAuthGuard } from '../../../auth/guards/optional-api-auth.guard';
 import type { IssuedAttachTicket } from '../../application/attach-ticket.factory';
 import { CurrentShareViewer } from '../../decorators/current-share-viewer.decorator';
-import type { ShareLinkViewer } from '../../domain/session-share-link.entity';
+import type { SessionShareViewer } from '../../domain/session-share.entity';
 import { AttachTicketResponseDto } from '../../dtos/session.response.dto';
 import { IssueSharedAttachTicketCommand } from './issue-shared-attach-ticket.command';
 import { IssueSharedAttachTicketRequest } from './issue-shared-attach-ticket.request.dto';
@@ -21,17 +21,17 @@ export class IssueSharedAttachTicketHttpController {
 
   @Post('attach-ticket')
   @Version('1')
-  @NoPolicy('the share link’s secret is the authorization; signed out callers use it too')
+  @NoPolicy('the share judges the caller itself, and tells a signed-out caller to sign in')
   @RequireScopes('sessions:write')
   // Every reconnect mints one, as on a member's terminal.
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({
-    summary: 'Mint a terminal ticket through a share link',
+    summary: 'Mint a terminal ticket for a shared session',
     description:
-      'Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the link, and that its creator may still open the session, at redemption and every minute after.',
+      'Single use, 60 seconds, the agent’s window (0) only, as `POST /sessions/{id}/attach-ticket`. The relay re-checks the share, and that whoever shared it may still open the session, at redemption and every minute after.',
   })
   @ApiResponse({ status: 201, type: AttachTicketResponseDto })
-  @ApiProblemResponse({ status: 404, description: 'Share link not found', code: 'SESSIONS_021' })
+  @ApiProblemResponse({ status: 404, description: 'Not shared', code: 'SESSIONS_021' })
   @ApiProblemResponse({ status: 401, description: 'Sign in to open it', code: 'SESSIONS_022' })
   @ApiProblemResponse({ status: 403, description: 'Not shared with you', code: 'SESSIONS_023' })
   @ApiProblemResponse({
@@ -42,10 +42,8 @@ export class IssueSharedAttachTicketHttpController {
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   issue(
     @Body() body: IssueSharedAttachTicketRequest,
-    @CurrentShareViewer() viewer: ShareLinkViewer | null,
+    @CurrentShareViewer() viewer: SessionShareViewer | null,
   ): Promise<IssuedAttachTicket> {
-    return this.commandBus.execute(
-      new IssueSharedAttachTicketCommand({ token: body.token, viewer }),
-    );
+    return this.commandBus.execute(new IssueSharedAttachTicketCommand({ slug: body.slug, viewer }));
   }
 }

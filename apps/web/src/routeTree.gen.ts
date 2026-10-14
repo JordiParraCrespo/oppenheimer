@@ -14,7 +14,6 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as SharedRouteImport } from './routes/shared'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
@@ -24,6 +23,7 @@ import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/p
 import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
+import { Route as SSlugRouteImport } from './routes/s/$slug'
 import { Route as AuthPublicForgotPasswordRouteImport } from './routes/_auth/_public/forgot-password'
 import { Route as AuthPublicLoginRouteImport } from './routes/_auth/_public/login'
 import { Route as AuthPublicRegisterRouteImport } from './routes/_auth/_public/register'
@@ -76,11 +76,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SharedRoute = SharedRouteImport.update({
-  id: '/shared',
-  path: '/shared',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -124,6 +119,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SSlugRoute = SSlugRouteImport.update({
+  id: '/s/$slug',
+  path: '/s/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthPublicForgotPasswordRoute =
@@ -289,7 +289,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
-  '/shared': typeof SharedRoute
   '/terms': typeof TermsRoute
   '/onboarding': typeof AuthOnboardingRouteWithChildren
   '/$': typeof AuthenticatedSplatRoute
@@ -298,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
+  '/s/$slug': typeof SSlugRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/login': typeof AuthPublicLoginRoute
   '/register': typeof AuthPublicRegisterRoute
@@ -331,10 +331,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
-  '/shared': typeof SharedRoute
   '/terms': typeof TermsRoute
   '/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/s/$slug': typeof SSlugRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/login': typeof AuthPublicLoginRoute
   '/register': typeof AuthPublicRegisterRoute
@@ -371,7 +371,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
-  '/shared': typeof SharedRoute
   '/terms': typeof TermsRoute
   '/_auth/_public': typeof AuthPublicRouteWithChildren
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
@@ -381,6 +380,7 @@ export interface FileRoutesById {
   '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
+  '/s/$slug': typeof SSlugRoute
   '/_auth/_public/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/_auth/_public/login': typeof AuthPublicLoginRoute
   '/_auth/_public/register': typeof AuthPublicRegisterRoute
@@ -416,7 +416,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/privacy'
-    | '/shared'
     | '/terms'
     | '/onboarding'
     | '/$'
@@ -425,6 +424,7 @@ export interface FileRouteTypes {
     | '/pulls'
     | '/settings'
     | '/oauth/consent'
+    | '/s/$slug'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -458,10 +458,10 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/privacy'
-    | '/shared'
     | '/terms'
     | '/$'
     | '/oauth/consent'
+    | '/s/$slug'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -497,7 +497,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/privacy'
-    | '/shared'
     | '/terms'
     | '/_auth/_public'
     | '/_auth/onboarding'
@@ -507,6 +506,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pulls'
     | '/_authenticated/settings'
     | '/oauth/consent'
+    | '/s/$slug'
     | '/_auth/_public/forgot-password'
     | '/_auth/_public/login'
     | '/_auth/_public/register'
@@ -543,9 +543,9 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
   PrivacyRoute: typeof PrivacyRoute
-  SharedRoute: typeof SharedRoute
   TermsRoute: typeof TermsRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  SSlugRoute: typeof SSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -583,13 +583,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/shared': {
-      id: '/shared'
-      path: '/shared'
-      fullPath: '/shared'
-      preLoaderRoute: typeof SharedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -653,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/oauth/consent'
       fullPath: '/oauth/consent'
       preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$slug': {
+      id: '/s/$slug'
+      path: '/s/$slug'
+      fullPath: '/s/$slug'
+      preLoaderRoute: typeof SSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/_public/forgot-password': {
@@ -1013,9 +1013,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
   PrivacyRoute: PrivacyRoute,
-  SharedRoute: SharedRoute,
   TermsRoute: TermsRoute,
   OauthConsentRoute: OauthConsentRoute,
+  SSlugRoute: SSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
