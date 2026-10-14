@@ -5,9 +5,14 @@ import * as React from 'react';
 import { Button } from '@oppenheimer/design-system-web/button';
 import {
   AnsweredQuestions,
+  BotExchange,
+  BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
   ContextCard,
+  ProposedFile,
+  ProposedFileAction,
+  ProposedFileLine,
   ProposedPlanCard,
   QuestionsPill,
   SubagentRow,
@@ -32,8 +37,10 @@ import {
   ApprovalCommand,
   ApprovalFile,
   ApprovalPanel,
+  ComposerApproval,
   QuestionPanel,
 } from '@oppenheimer/design-system-web/chat-decisions';
+import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
   ChatHeader,
@@ -74,6 +81,7 @@ import {
   BotIcon,
   BoxesIcon,
   CheckCircleIcon,
+  CheckIcon,
   ChevronDownIcon,
   ClockIcon,
   CopyIcon,
@@ -105,6 +113,7 @@ import {
   ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
+import { TemplateTile, TemplateTiles } from '@oppenheimer/design-system-web/template-grid';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
 import { GroupHead, Spec } from './page-shell';
@@ -292,6 +301,38 @@ function ChatCardsBody() {
         />
       </div>
       <div className="flex flex-col gap-2">
+        <BotExchange>
+          <BotExchangeTurn
+            direction="out"
+            time="10:42"
+            lead={
+              <>
+                Sent to <strong>Plan Bot</strong>
+              </>
+            }
+          >
+            Is the cancel path on this week’s milestone, or can it wait for 0.9?
+          </BotExchangeTurn>
+          <BotExchangeTurn direction="in" reply lead="Plan Bot replied">
+            It is on Friday’s milestone, as the second of three tasks. Ship it this week.
+          </BotExchangeTurn>
+        </BotExchange>
+        <BotExchange>
+          <BotExchangeTurn
+            direction="in"
+            time="09:15"
+            lead={
+              <>
+                From <strong>Quota Bot</strong>
+              </>
+            }
+          >
+            acme-web is at 91% of its monthly runner minutes.
+          </BotExchangeTurn>
+        </BotExchange>
+      </div>
+      <ProposedInstructions />
+      <div className="flex flex-col gap-2">
         <ContextCard
           icon={<GitPullRequestIcon />}
           tone="success"
@@ -323,6 +364,43 @@ function ChatCardsBody() {
         />
       </div>
     </div>
+  );
+}
+
+const INSTRUCTIONS: [string, boolean][] = [
+  ['# Release Bot', false],
+  ['', false],
+  ['Cut the release branch every Thursday at 16:00.', false],
+  ['- Hold the cut while main is red, and say why in #releases.', true],
+  ['- Ask before tagging a release with more than 40 commits.', true],
+  ['- Draft the changelog from merged pull request titles.', true],
+];
+
+function ProposedInstructions() {
+  const [outcome, setOutcome] = React.useState<'Accepted' | 'Rejected' | null>(null);
+  return (
+    <ProposedFile
+      file="INSTRUCTIONS.md"
+      by="Proposed by Release Bot"
+      additions={3}
+      outcome={outcome ?? undefined}
+      actions={
+        <>
+          <ProposedFileAction>Review in settings</ProposedFileAction>
+          <ProposedFileAction onClick={() => setOutcome('Rejected')}>Reject</ProposedFileAction>
+          <Button variant="secondary" size="sm" onClick={() => setOutcome('Accepted')}>
+            <CheckIcon />
+            Accept
+          </Button>
+        </>
+      }
+    >
+      {INSTRUCTIONS.map(([text, added]) => (
+        <ProposedFileLine key={text} added={added}>
+          {text}
+        </ProposedFileLine>
+      ))}
+    </ProposedFile>
   );
 }
 
@@ -538,6 +616,7 @@ function ChatDecisionsBody() {
           onChoose={() => {}}
         />
       </div>
+      <ComposerApprovalDemo />
       <QuestionPanel
         question="Which branch should the pull request target?"
         index={0}
@@ -561,6 +640,33 @@ function ChatDecisionsBody() {
         }
       />
     </div>
+  );
+}
+
+function ComposerApprovalDemo() {
+  const [draft, setDraft] = React.useState('');
+  return (
+    <Composer
+      value={draft}
+      onValueChange={setDraft}
+      onSubmit={() => setDraft('')}
+      minRows={1}
+      placeholder="Or tell Release Bot what to do instead"
+      above={
+        <ComposerApproval
+          reason="Ask for approval is on"
+          title="Tag v0.9.0 and push it?"
+          tool="Bash"
+          detail={<ApprovalCommand>git tag v0.9.0 && git push origin v0.9.0</ApprovalCommand>}
+          choices={[
+            { label: 'Approve', description: 'Run it this once' },
+            { label: 'Always allow', description: 'Tags on release branches, for this bot' },
+            { label: 'Deny', description: 'Stop, keep the tag local' },
+          ]}
+          onChoose={() => {}}
+        />
+      }
+    />
   );
 }
 
@@ -699,6 +805,17 @@ function ChatChromeBody() {
       >
         <FakeField placeholder="Describe the task, or type / for commands" />
       </ChatEmptyState>
+      <div className="flex justify-center py-6">
+        <ChatEmptyState align="center" title="Make your first bot." className="max-w-160">
+          <TemplateTiles>
+            <TemplateTile icon={<BotIcon />} name="Blank" description="Starts empty and proposes its own instructions" />
+            <TemplateTile icon={<GitPullRequestIcon />} name="GitHub" description="Reviews and lands pull requests" />
+            <TemplateTile icon={<TerminalIcon />} name="Sessions" description="Runs and watches agent sessions" />
+            <TemplateTile icon={<CheckCircleIcon />} name="Plan" description="Keeps milestones and tasks moving" />
+          </TemplateTiles>
+          <p className="m-0 text-center text-sm text-fg-muted">Or type below. A new bot starts blank and proposes its own instructions.</p>
+        </ChatEmptyState>
+      </div>
     </div>
   );
 }
@@ -797,7 +914,7 @@ export function ChatSection() {
         id="chatcards"
         title="Cards"
         meta="chat-cards.tsx"
-        desc="What a turn leaves in the transcript. ChangedFilesCard closes a turn that edited files, a row per file that opens its diff. ProposedPlanCard is plan mode's answer on the 28px card, folding past ten lines, with Refine and the split Implement. SubagentRunCard lists the subagents a turn launched, live or finished, with Stop all. QuestionsPill folds questions asked without stopping; AnsweredQuestions keeps the record. ContextCard is an object made or given, one row that opens it."
+        desc="What a turn leaves in the transcript. ChangedFilesCard closes a turn that edited files, a row per file that opens its diff. BotExchange is what one bot said to another and the reply, the arrow pointing the way the words went. ProposedFile is the instructions a bot proposes for itself: the added lines in green, quiet ProposedFileActions and Accept while it waits, the outcome once decided. ProposedPlanCard is plan mode's answer on the 28px card, folding past ten lines, with Refine and the split Implement. SubagentRunCard lists the subagents a turn launched, live or finished, with Stop all. QuestionsPill folds questions asked without stopping; AnsweredQuestions keeps the record. ContextCard is an object made or given, one row that opens it."
         code={`<ChangedFilesCard title="3 files changed" additions={80} deletions={12} actions={…}><ChangedFileRow path="runner/step.ts" additions={42} deletions={8} /></ChangedFilesCard>`}
       >
         <ChatCardsDemo />
@@ -827,7 +944,7 @@ export function ChatSection() {
         id="chatdecisions"
         title="Decisions"
         meta="chat-decisions.tsx"
-        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. The number keys pick a row, only while focus is inside the card."
+        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card."
         code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
       >
         <ChatDecisionsDemo />
@@ -847,7 +964,7 @@ export function ChatSection() {
         id="chatchrome"
         title="Header, find, empty"
         meta="chat-header.tsx"
-        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open threads sit over it as ChatTabs, the current one on the canvas with its close. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use."
+        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open threads sit over it as ChatTabs, the current one on the canvas with its close. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use. Centred, it opens a new bot's chat over the TemplateTiles it can start from."
         code={`<ChatHeader title="Wire run cancel" meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>} status={<StatusDot state="running" pulse density="compact">Running</StatusDot>} actions={…} />`}
       >
         <ChatChromeDemo />

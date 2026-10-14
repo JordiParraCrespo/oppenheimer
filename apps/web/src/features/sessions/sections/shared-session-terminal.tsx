@@ -11,17 +11,30 @@ import { useTranslation } from 'react-i18next';
 import { useTerminal } from '../hooks/use-terminal';
 
 /**
- * A session's terminal as a share link's holder sees it: the same grid and
- * socket as a member's, with each ticket minted through the link. A `read`
- * link's grid takes no input. No host banner and no files: the host is not
- * the holder's, and nothing they drop would be theirs to send.
+ * A session's terminal as a guest sees it: the same grid and socket as a
+ * member's, with each ticket minted through the share. A `read` share's grid
+ * takes no input. No host banner and no files: the host is not the guest's,
+ * and nothing they drop would be theirs to send. The status line says the
+ * link's state and who shared it, and nothing else. `onEnd` is told when
+ * the relay closes the terminal, so the page can ask what the share is now.
  */
-export function SharedSessionTerminal({ token, readOnly }: { token: string; readOnly: boolean }) {
+export function SharedSessionTerminal({
+  slug,
+  readOnly,
+  sharedBy,
+  onEnd,
+}: {
+  slug: string;
+  readOnly: boolean;
+  sharedBy: string | null;
+  onEnd: () => void;
+}) {
   const { t } = useTranslation();
-  const createStream = useSharedSessionStream(token);
+  const createStream = useSharedSessionStream(slug);
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     agentWindow: true,
     readOnly,
+    onEnd,
   });
 
   return (
@@ -53,10 +66,14 @@ export function SharedSessionTerminal({ token, readOnly }: { token: string; read
       ) : null}
 
       <TerminalStatusBar>
-        <TerminalStatusItem>
-          {readOnly ? t('sessions.shared.watching') : t('sessions.shared.typing')}
-        </TerminalStatusItem>
         <TerminalStatusItem>{t(`sessions.shared.status.${status}`)}</TerminalStatusItem>
+        {sharedBy ? (
+          <TerminalStatusItem>
+            {readOnly
+              ? t('sessions.shared.viewOnlyBy', { name: sharedBy })
+              : t('sessions.shared.sharedBy', { name: sharedBy })}
+          </TerminalStatusItem>
+        ) : null}
       </TerminalStatusBar>
     </Terminal>
   );

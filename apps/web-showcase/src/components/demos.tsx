@@ -178,7 +178,7 @@ import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
 import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
-import { RadioGroup, RadioGroupItem } from '@oppenheimer/design-system-web/radio-group';
+import { RadioGroup, RadioGroupCard, RadioGroupItem } from '@oppenheimer/design-system-web/radio-group';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ArrowUpRightIcon,
@@ -186,6 +186,7 @@ import {
   ClockIcon,
   CpuIcon,
   EllipsisIcon,
+  EyeIcon,
   FileTextIcon,
   GitBranchIcon,
   CircleCheckIcon,
@@ -752,6 +753,16 @@ export function RadioGroupDemo() {
   );
 }
 
+export function RadioGroupCardDemo() {
+  const [access, setAccess] = React.useState('read');
+  return (
+    <RadioGroup value={access} onValueChange={setAccess} aria-label="Permission" columns={2} className="w-full max-w-130">
+      <RadioGroupCard value="read" icon={<EyeIcon />} label="Can view" description="Watch the terminal live. Can’t type or stop the session." />
+      <RadioGroupCard value="write" tone="danger" icon={<TerminalIcon />} label="Can write" description="Send prompts and commands. They run as you." />
+    </RadioGroup>
+  );
+}
+
 /* ── Composer ────────────────────────────────────────────────────────────── */
 
 export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: string }) {
@@ -964,7 +975,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
         <SortableRail items={order.rail ?? []} sessions={total} />
         <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
           <div className="flex h-14 items-center px-4">
-            <Wordmark product="Console" />
+            <Wordmark />
           </div>
           <div className="px-3">
             <Button variant={empty ? 'secondary' : 'primary'} size="md" block>

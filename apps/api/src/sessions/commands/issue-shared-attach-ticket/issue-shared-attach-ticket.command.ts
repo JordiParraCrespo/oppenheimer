@@ -1,13 +1,13 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { ShareLinkViewer } from '../../domain/session-share-link.entity';
+import type { SessionShareViewer } from '../../domain/session-share.entity';
 
 export class IssueSharedAttachTicketCommand extends CommandBase {
-  readonly token: string;
-  readonly viewer: ShareLinkViewer | null;
+  readonly slug: string;
+  readonly viewer: SessionShareViewer | null;
 
   constructor(props: CommandProps<IssueSharedAttachTicketCommand>) {
     super(props);
-    this.token = props.token;
+    this.slug = props.slug;
     this.viewer = props.viewer;
   }
 }

@@ -267,5 +267,12 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   ask for (a chat density for `Composer`, a card layout for `RadioGroup`,
   `HostCard`'s disk meter, `MergePath` inline,
   the 560px `form` dialog) are not in that port.
+- The 2026-10-13 evening export's additions are in the design system too:
+  `BotExchange` (the bot-to-bot message), `ProposedFile` (the proposed
+  instructions), `ComposerApproval` fused onto `Composer`'s new `above`,
+  `BotItem`'s `needsInput`, `SidebarProjectHeader`'s eyebrow tone and
+  `marker`, `SidebarEmptyCard`, and a centred `ChatEmptyState` over
+  `TemplateTiles`. The chat's rows were written for the system, not ported
+  from Synara, so its licence does not bear on them.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

@@ -31,6 +31,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   (SF Mono on Apple platforms), tabular (`figures` utility). Nothing is
   vendored: the fonts are the reader's own.
 - **One control ramp**: 28 / 34 / 42px for Button, IconButton, Input, ChipSelect.
+  **A form's fields stand at 34px**: `Input`, `DatePicker` and
+  `FieldSelect`'s field look default to the `md` rung, and a `Chip` that is a
+  field takes `size="md"`, so a label column of mixed controls reads as one
+  height. The three share one size map (`internal/control-size.ts`).
+  A smaller or larger field is a `size` the caller asks for, never a height
+  of the component's own.
 - **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
   press a pill, read inside an 18.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
@@ -211,8 +217,14 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `CalendarAccountList`.
 - **An employee reads like a conversation.** `BotItem` is a photo, the
   name, the age and the last message, unread in full ink with the blue
-  dot; its photo is picked with `AvatarPicker`. The photos are the
-  product's own: the export's portraits are of real people and never ship.
+  dot, waiting on the reader (`needsInput`) the same with the amber one.
+  Its groups head with `SidebarProjectHeader tone="eyebrow"`, the Built-in
+  group with a lock `marker`; before the first bot the list is a
+  `SidebarEmptyCard`, and the chat a centred `ChatEmptyState` over
+  `TemplateTiles`. A bot's message to another is a `BotExchange`, and the
+  instructions it proposes for itself a `ProposedFile`. Its photo is
+  picked with `AvatarPicker`. The photos are the product's own: the
+  export's portraits are of real people and never ship.
   A bot's routine is a `RoutineCard`, read and edited in place
   (`RoutineItem` is the workspace's, in the sidebar); records in a settings
   card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`
@@ -225,7 +237,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   (`animate-caret`), both behind `motion-safe:`. Panels on the composer
   fuse onto its top (`ComposerStack`, `ComposerNotice`); a blocking
   request takes the composer's place (`ApprovalPanel`, `QuestionPanel`),
-  and its number keys pick only while focus is inside it.
+  and its number keys pick only while focus is inside it. In a bot's chat
+  the request fuses onto the composer instead (`ComposerApproval` in
+  `Composer`'s `above`, under a Needs input line), so it can be answered
+  in words.
 
 ## Conventions
 

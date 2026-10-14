@@ -61,9 +61,14 @@ export {
 export type { ProposedPlanLabels, SubagentState } from './components/chat-cards';
 export {
   AnsweredQuestions,
+  BotExchange,
+  BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
   ContextCard,
+  ProposedFile,
+  ProposedFileAction,
+  ProposedFileLine,
   ProposedPlanCard,
   QuestionsPill,
   SubagentRow,
@@ -91,6 +96,7 @@ export {
   ApprovalFile,
   ApprovalPanel,
   ChoiceRow,
+  ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
 export type { ThreadFindLabels } from './components/chat-header';
@@ -339,7 +345,7 @@ export {
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';
-export { RadioGroup, RadioGroupItem } from './components/radio-group';
+export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
 export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
@@ -414,6 +420,7 @@ export {
 export {
   Sidebar,
   SidebarContent,
+  SidebarEmptyCard,
   SidebarEmptyRow,
   SidebarFooter,
   SidebarGroup,
@@ -468,7 +475,12 @@ export {
   TaskComposer,
   TaskSessionChip,
 } from './components/task-board';
-export { TemplateGrid, TemplateItem } from './components/template-grid';
+export {
+  TemplateGrid,
+  TemplateItem,
+  TemplateTile,
+  TemplateTiles,
+} from './components/template-grid';
 export type { TerminalHostLink, TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,

@@ -81,6 +81,7 @@ import {
   AddHostDialogDemo,
   DestructiveDialogDemo,
   CheckboxDemo,
+  RadioGroupCardDemo,
   RadioGroupDemo,
   SegmentedDemo,
   SlugFieldDemo,
@@ -214,18 +215,18 @@ export default function Page() {
         id="wordmark"
         title="Wordmark · BrandMark"
         meta="wordmark.tsx · brand-mark.tsx"
-        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em. The product suffix is the one place uppercase is allowed."
-        code={`<Wordmark product="Console" />`}
+        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em."
+        code={`<Wordmark />`}
       >
-        <Swatch label="18px, console">
-          <Wordmark product="Console" />
+        <Swatch label="18px">
+          <Wordmark />
         </Swatch>
         <Swatch label="28px">
           <Wordmark size={28} />
         </Swatch>
         <Swatch label="dark">
           <div className="dark rounded-md bg-canvas px-5 py-3">
-            <Wordmark product="Console" />
+            <Wordmark />
           </div>
         </Swatch>
         <Swatch label="BrandMark, the auth chrome's glyph">
@@ -798,10 +799,13 @@ export default function Page() {
         id="radiogroup"
         title="RadioGroup"
         meta="radio-group.tsx"
-        desc="One value out of a few, each a row that says what it does: the 16px ring filling with the action blue's dot, the label, an optional line under it. The whole row picks and the chosen one rests on the selected wash. A review's verdict in ReviewDecision. Two or three ways to read one pane are a SegmentedControl; a pick inside a menu is DropdownMenuRadioGroup."
+        desc="One value out of a few, each a row that says what it does: the 16px ring filling with the action blue's dot, the label, an optional line under it. The whole row picks and the chosen one rests on the selected wash. A review's verdict in ReviewDecision. RadioGroupCard draws the same pick as cards side by side (columns on the group), for two or three choices that each change what follows (a share's Can view / Can write): an icon, the label and a line, the chosen card on the action blue's border and the selected wash, tone danger turning the chosen card red for the one choice that hands a machine to somebody else. Two or three ways to read one pane are a SegmentedControl; a pick inside a menu is DropdownMenuRadioGroup."
         code={`<RadioGroup value={verdict} onValueChange={setVerdict} aria-label="Verdict"><RadioGroupItem value="approve" label="Approve" description="…" /></RadioGroup>`}
       >
-        <RadioGroupDemo />
+        <div className="flex w-full flex-col gap-6">
+          <RadioGroupDemo />
+          <RadioGroupCardDemo />
+        </div>
       </Spec>
 
       <Spec
@@ -1180,7 +1184,7 @@ export default function Page() {
         id="sessionpane"
         title="SessionPaneHeader"
         meta="session-pane-header.tsx"
-        desc="The bar over a session's terminal, on the pane's card with a hairline under it: the session in mono, its run state on StatusDot, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash, no glyph. TerminalStatusBar is the terminal's own band along its bottom."
+        desc="The bar over a session's terminal, on the pane's card with a hairline under it: the session in mono, its run state on StatusDot, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash, no glyph. actions closes the bar on the right: a shared session's guest sees the access the share gives them and Leave there, with the wordmark leading. TerminalStatusBar is the terminal's own band along its bottom."
         code={`<SessionPaneHeader
   state="needs-input"
   name="biometric-unlock"

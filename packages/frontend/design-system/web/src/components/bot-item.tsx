@@ -19,7 +19,10 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
  * working; the name at 14px and the age in mono on the first line; the last
  * message at 12.5px muted on the second ("You: …" when it was yours). An
  * unread chat sets the name at 600, the preview in full ink and a 7px blue
- * dot at the end. 52px, 14px radius, rows 2px apart in a `BotList`.
+ * dot at the end; one waiting on the person (`needsInput`: an approval, a
+ * question) reads the same with an amber dot instead: both set
+ * `data-attention`, which carries the weight. 52px, 14px radius, rows 2px
+ * apart in a `BotList`.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
  * hiding the age while it shows.
@@ -32,6 +35,7 @@ function BotItem({
   age,
   live = false,
   unread = false,
+  needsInput = false,
   active,
   action,
   menuOpen,
@@ -51,6 +55,8 @@ function BotItem({
   /** The bot is working: the green dot on the photo. */
   live?: boolean;
   unread?: boolean;
+  /** The bot is waiting on the person (an approval, a question): the amber dot in place of the blue. */
+  needsInput?: boolean;
   active?: boolean;
   action?: React.ReactNode;
   menuOpen?: boolean;
@@ -64,6 +70,8 @@ function BotItem({
       data-slot="bot-item"
       data-active={active || undefined}
       data-unread={unread || undefined}
+      data-needs-input={needsInput || undefined}
+      data-attention={unread || needsInput || undefined}
       role={inRow ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       render={render}
@@ -86,7 +94,7 @@ function BotItem({
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-[14px] font-medium tracking-[-0.009em] group-data-unread/bot:font-semibold">
+          <span className="min-w-0 flex-1 truncate text-[14px] font-medium tracking-[-0.009em] group-data-attention/bot:font-semibold">
             {name}
           </span>
           {age ? (
@@ -97,10 +105,14 @@ function BotItem({
         </span>
         {preview ? (
           <span className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted group-data-unread/bot:text-fg">
+            <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted group-data-attention/bot:text-fg">
               {preview}
             </span>
-            {unread ? <span aria-label="Unread" className="size-1.75 shrink-0 rounded-pill bg-primary" /> : null}
+            {needsInput ? (
+              <span aria-label="Needs input" className="size-1.75 shrink-0 rounded-pill bg-warning" />
+            ) : unread ? (
+              <span aria-label="Unread" className="size-1.75 shrink-0 rounded-pill bg-primary" />
+            ) : null}
           </span>
         ) : null}
       </span>
