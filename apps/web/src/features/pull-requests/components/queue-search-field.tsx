@@ -26,7 +26,7 @@ export function QueueSearchField({
   };
 
   return (
-    <label className="flex h-8.5 w-65 max-w-full items-center gap-2 rounded-pill bg-hover-surface px-3 text-fg-subtle">
+    <label className="flex h-8.5 w-60 max-w-full items-center gap-2 rounded-pill bg-hover-surface px-3 text-fg-subtle">
       <Search className="size-3.5" aria-hidden />
       <input
         ref={inputRef}

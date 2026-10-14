@@ -148,52 +148,57 @@ export function QueueTable() {
                   searchPlaceholder={t('pullRequests.watch.search')}
                   emptyText={t('pullRequests.queue.noRepository')}
                 />
-                <span className="flex-1" />
-                <FacetSelect
-                  label={t('pullRequests.queue.difficulty')}
-                  value={filters.lane ?? 'all'}
-                  onValueChange={(next) =>
-                    narrow(() => setLane(next === 'all' ? undefined : (next as PullRequestLane)))
-                  }
-                  options={[
-                    { value: 'all', label: t('pullRequests.queue.all'), count: lanes.all ?? 0 },
-                    ...PULL_REQUEST_LANES.map((value) => ({
-                      value,
-                      label: t(`pullRequests.lanes.${value}`),
-                      count: lanes[value] ?? 0,
-                    })),
-                  ]}
-                />
-                <FacetSelect
-                  label={t('pullRequests.queue.columns.checks')}
-                  value={filters.checks ?? 'all'}
-                  onValueChange={(next) =>
-                    narrow(() => setChecks(next === 'all' ? undefined : (next as QueueChecks)))
-                  }
-                  options={[
-                    { value: 'all', label: t('pullRequests.queue.any'), count: checks.all ?? 0 },
-                    ...QUEUE_CHECKS.map((value) => ({
-                      value,
-                      label: t(`pullRequests.checks.${value}`),
-                      count: checks[value] ?? 0,
-                    })),
-                  ]}
-                />
-                <FacetSelect
-                  label={t('pullRequests.queue.columns.waiting')}
-                  value={filters.wait ?? 'all'}
-                  onValueChange={(next) =>
-                    narrow(() => setWait(next === 'all' ? undefined : (next as QueueWait)))
-                  }
-                  options={[
-                    { value: 'all', label: t('pullRequests.queue.anyTime'), count: waits.all ?? 0 },
-                    ...QUEUE_WAITS.map((value) => ({
-                      value,
-                      label: t(`pullRequests.queue.waits.${value}`),
-                      count: waits[value] ?? 0,
-                    })),
-                  ]}
-                />
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <FacetSelect
+                    label={t('pullRequests.queue.difficulty')}
+                    value={filters.lane ?? 'all'}
+                    onValueChange={(next) =>
+                      narrow(() => setLane(next === 'all' ? undefined : (next as PullRequestLane)))
+                    }
+                    options={[
+                      { value: 'all', label: t('pullRequests.queue.all'), count: lanes.all ?? 0 },
+                      ...PULL_REQUEST_LANES.map((value) => ({
+                        value,
+                        label: t(`pullRequests.lanes.${value}`),
+                        count: lanes[value] ?? 0,
+                      })),
+                    ]}
+                  />
+                  <FacetSelect
+                    label={t('pullRequests.queue.columns.checks')}
+                    value={filters.checks ?? 'all'}
+                    onValueChange={(next) =>
+                      narrow(() => setChecks(next === 'all' ? undefined : (next as QueueChecks)))
+                    }
+                    options={[
+                      { value: 'all', label: t('pullRequests.queue.any'), count: checks.all ?? 0 },
+                      ...QUEUE_CHECKS.map((value) => ({
+                        value,
+                        label: t(`pullRequests.checks.${value}`),
+                        count: checks[value] ?? 0,
+                      })),
+                    ]}
+                  />
+                  <FacetSelect
+                    label={t('pullRequests.queue.columns.waiting')}
+                    value={filters.wait ?? 'all'}
+                    onValueChange={(next) =>
+                      narrow(() => setWait(next === 'all' ? undefined : (next as QueueWait)))
+                    }
+                    options={[
+                      {
+                        value: 'all',
+                        label: t('pullRequests.queue.anyTime'),
+                        count: waits.all ?? 0,
+                      },
+                      ...QUEUE_WAITS.map((value) => ({
+                        value,
+                        label: t(`pullRequests.queue.waits.${value}`),
+                        count: waits[value] ?? 0,
+                      })),
+                    ]}
+                  />
+                </div>
               </div>
               <PullRequestTableHead
                 labels={{
