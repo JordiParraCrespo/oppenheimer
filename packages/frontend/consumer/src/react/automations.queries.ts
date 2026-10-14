@@ -3,6 +3,7 @@
 import {
   shareEntities,
   useQuery,
+  useSuspenseQueries,
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
@@ -31,6 +32,7 @@ import type {
 } from '../modules/automations/automation.entity';
 import { useConsumerApp } from './context';
 import { type PollKeys, usePollWhile } from './live-poll';
+import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
 
 /** Query key factory for the `automations` feature. What each write refreshes is {@link settleAutomation}. */
@@ -78,6 +80,22 @@ export function useSuspenseAutomations() {
     ...useAutomationListQuery(),
     ...useAutomationListPoll(),
   });
+}
+
+/**
+ * The automations sidebar's two reads under a Suspense `QueryState`: the
+ * projects it groups by and the automations in them, fetched side by side.
+ * `error` is the first refetch that failed over data already drawn.
+ */
+export function useSuspenseAutomationsAndProjects() {
+  const [automations, projects] = useSuspenseQueries({
+    queries: [{ ...useAutomationListQuery(), ...useAutomationListPoll() }, useProjectListQuery()],
+  });
+  return {
+    automations: automations.data,
+    projects: projects.data,
+    error: automations.error ?? projects.error,
+  };
 }
 
 /** The automations read, for both hooks over it: the key, and a fetch that fills each detail. */
@@ -164,12 +182,17 @@ function useAutomationPoll(id: string | undefined) {
  * The previous page stays on screen while the next loads, so paging and a
  * status pill never flash the list empty.
  */
-export function useAutomationRuns(filter: RunsFilter) {
+/**
+ * A page of runs under a Suspense `QueryState`, polling while one is live.
+ * A new filter is a new key, which suspends: the list reads its filter
+ * through `useDeferredValue`, so the page on screen stays until the next one
+ * has answered.
+ */
+export function useSuspenseAutomationRuns(filter: RunsFilter) {
   const app = useConsumerApp();
-  return useQuery<RunPage, Error>({
+  return useSuspenseQuery<RunPage, Error>({
     queryKey: automationsKeys.runList(filter),
     queryFn: () => app.automations.findRuns(filter),
-    placeholderData: keepPreviousData,
     ...usePollWhile<RunPage>(
       'liveRun',
       automationsKeys.runList(filter),

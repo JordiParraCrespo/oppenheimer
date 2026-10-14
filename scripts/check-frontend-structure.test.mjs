@@ -374,9 +374,9 @@ test('a QueryState missing a rung is reported with its file and line', () => {
   const { report } = check({
     'src/features/things/sections/no-error.tsx': `export function ThingList({ things }: { things: Source }) {
   return (
-    <QueryState query={things}>
+    <QueryState>
       <QueryState.Pending>loading</QueryState.Pending>
-      <QueryState.Data of={things}>{(rows) => rows.join()}</QueryState.Data>
+      <QueryState.Data><ThingRows /></QueryState.Data>
     </QueryState>
   );
 }

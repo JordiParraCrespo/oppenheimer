@@ -3,7 +3,6 @@ export {
   type RunAutomationVariables,
   type UpdateAutomationVariables,
   useAutomation,
-  useAutomationRuns,
   useAutomations,
   useCreateAutomation,
   useDeleteAutomation,
@@ -12,7 +11,9 @@ export {
   useRunHistory,
   useSetAutomationPaused,
   useSuspenseAutomation,
+  useSuspenseAutomationRuns,
   useSuspenseAutomations,
+  useSuspenseAutomationsAndProjects,
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
@@ -27,6 +28,7 @@ export {
   useLatestGoogleCalendarRead,
   useRemoveGoogleCalendarConnection,
   useStartGoogleCalendarConnection,
+  useSuspenseCalendarEvents,
   useSuspenseGoogleCalendarConnections,
   useUpdateCalendarEvent,
 } from './calendar.queries';
@@ -90,14 +92,15 @@ export {
   useAddPullRequestComment,
   useMergePullRequest,
   usePullRequest,
-  usePullRequestAnalytics,
   usePullRequestComments,
   usePullRequestQueue,
   useSetRepositoryWatch,
   useSubmitPullRequestReview,
   useSuspensePullRequest,
   useSuspensePullRequestActivity,
+  useSuspensePullRequestAnalytics,
   useSuspensePullRequestFiles,
+  useSuspensePullRequestQueue,
   useSuspenseWatchedRepositories,
   useWatchedRepositories,
 } from './pull-requests.queries';
@@ -127,6 +130,7 @@ export {
   useSetSessionSharePeople,
   useSharedSession,
   useStopSessionShare,
+  useSuspenseSessionsProjectsHosts,
   useUploadSessionAttachment,
 } from './sessions.queries';
 export { useSessionStream, useSharedSessionStream } from './sessions.stream';
@@ -145,6 +149,7 @@ export {
   useMoveTask,
   useSessionTasks,
   useStartTaskSession,
+  useSuspenseTasksProjectsHosts,
   useTasks,
   useUnlinkTaskSession,
   useUpdateMilestone,

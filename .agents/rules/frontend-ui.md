@@ -22,8 +22,7 @@ multi-line, so a grep for `export` misses most of them.
 | A failure inside a screen that still draws its chrome (a form, a section, a dialog) | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
 | A failure that is the whole screen (the app cannot start, a route threw) | the kit's `ScreenFailure` | an `ErrorAlert` alone on an empty canvas, a hand-built `EmptyState` |
 | A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
-| A section that draws a read's failed, loading and loaded states, the read's key fixed while the section is mounted (a list, an id from the route) — the default | the kit's `QueryState` with no `query`: `Pending`, `Error`, and a `Data` whose child is the section that calls the product package's `useSuspense…` hook, whose `data` is never `undefined`; an empty answer is the section's own branch. A first failure lands on `Error`, with Try again; a later one is the hook's `error`, drawn by the section as an `ErrorAlert` beside the data, with no retry (`pnpm check:structure` fails a Suspense read with no `ErrorAlert`). The boundary sits in the parent that already renders the section, so no prop is threaded through a wrapper | a hand-written ternary ladder, a `<Suspense>` or an `ErrorBoundary` of the feature's own, `isEmpty` or `Empty` on a Suspense root, a second retry in the rows |
-| A section whose read cannot suspend: its key moves under a page already drawn (a filter, a range or a page from the URL, `keepPreviousData`), it combines reads that would fetch one after the other under Suspense, or it lives beside a field's live state (a sidebar's search, a dialog that picks its row from the URL) | the kit's `QueryState` with a `query`, its `Pending`, `Error`, `Empty` and `Data` slots (`Data of={query}` draws the root's own query, typed; `isEmpty` on the root for what counts as empty, `combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, an `Error` with a function child for a 404 said as "not found"). A new key under Suspense drops the page back to its placeholder | a hand-written ternary ladder, a forged `{ isPending, error, data }`, a Suspense read whose key the URL moves |
+| A section that draws a read — every read the console makes | the kit's `QueryState` around it: `Pending`, `Error`, and a `Data` whose child is the section that calls the product package's `useSuspense…` hook, whose `data` is never `undefined`; an empty answer is the section's own branch. A first failure lands on `Error`, with Try again (a function child takes `(error, retry)` and wires its own button to `retry`); a later one is the hook's `error`, drawn by the section as an `ErrorAlert` beside the data, with no retry (`pnpm check:structure` fails a Suspense read with no `ErrorAlert`). The boundary sits in the parent that already renders the section, so no prop is threaded through a wrapper; two swapped by a URL view take a `key` each. A key the URL moves (a scope, a range, a filter, a page) is read through `useDeferredValue` (`useMemo` it in its `hooks/` file when it is an object), so the page on screen stays while the next one loads; several reads one section draws are one `useSuspenseQueries` hook in the product package, so they fetch side by side | a hand-written ternary ladder, `useQuery` with its own `isPending` branch, a `<Suspense>` or an `ErrorBoundary` of the feature's own, a second retry in the rows, two `useSuspense…` calls in one component (they fetch one after the other) |
 | A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
 | "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
 | A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
@@ -126,7 +125,7 @@ grows a prop for each part it might draw, or a boolean for each way it might
 look, is the shape this rule forbids.
 
 - **A part the caller draws is a child or a compound part.** A header, an
-  empty state, a placeholder, a row of actions: `<QueryState.Empty>…</…>`,
+  empty state, a placeholder, a row of actions: `<QueryState.Pending>…</…>`,
   never `empty={{ when, show }}`, `header={{ title, action }}` or a
   `renderFooter={() => …}` that receives nothing.
 - **A boolean that changes what a component is, is a second component or a
@@ -136,16 +135,15 @@ look, is the shape this rule forbids.
   boolean that reports the state of the same thing (`pending`, `disabled`,
   `open`, `active`) is not a mode, and stays a prop.
 - **A function child hands down data the caller does not have.**
-  `QueryState.Data` gets the rows, `QueryState.Error` the failure,
-  `RelativeTime` the words, `DiffView`'s `renderAnnotation` the annotation.
+  `QueryState.Error` gets the failure and its retry, `RelativeTime` the
+  words, `DiffView`'s `renderAnnotation` the annotation.
   A render prop with nothing to hand down is a slot, and a slot is a child.
 - **A read that can be switched off is a section rendered conditionally.**
   A query waiting on an input that may not exist yet (`skipToken`, a caller's
   `enabled`) is drawn by a section the parent renders only once the input
   does: `{id ? <AutomationDetail id={id} /> : <PickOne />}`, with `id: string`
-  all the way down. Never hand `QueryState` a switched-off query: it reads as
-  still loading, and its skeleton never goes away. Suspense asks for the same
-  shape, so a section written this way moves to it unchanged.
+  all the way down. A Suspense read cannot be switched off: its section is
+  the one the parent renders once the input exists.
 - **A compound's parts meet through the root's context**, never through props
   the caller threads from one part to the next. `QueryState`'s root decides
   the rung once and each slot reads it. In the kit and the design system the

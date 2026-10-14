@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
@@ -23,7 +23,9 @@ import {
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
+import { useHostListQuery } from './hosts.queries';
 import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
+import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
 
 /**
@@ -134,10 +136,40 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
 export function useSessions<TData = SessionEntity[]>(
   options?: Omit<UseQueryOptions<SessionEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
+  return useQuery<SessionEntity[], Error, TData>({
+    ...useSessionListQuery(),
+    ...options,
+    ...useSessionListPoll(),
+  });
+}
+
+/**
+ * The sidebar's three reads under a Suspense `QueryState`: the sessions, the
+ * projects they are grouped under and the hosts a facet names. They fetch side
+ * by side and the sidebar suspends until all three have answered; `error` is
+ * the first refetch that failed over data already drawn.
+ */
+export function useSuspenseSessionsProjectsHosts() {
+  const [sessions, projects, hosts] = useSuspenseQueries({
+    queries: [
+      { ...useSessionListQuery(), ...useSessionListPoll() },
+      useProjectListQuery(),
+      useHostListQuery(),
+    ],
+  });
+  return {
+    sessions: sessions.data,
+    projects: projects.data,
+    hosts: hosts.data,
+    error: sessions.error ?? projects.error ?? hosts.error,
+  };
+}
+
+/** The sessions read, for both hooks over it: the key, and a fetch that fills each detail. */
+function useSessionListQuery() {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-
-  return useQuery<SessionEntity[], Error, TData>({
+  return {
     queryKey: sessionsKeys.list(),
     queryFn: async () => {
       const askedAt = Date.now();
@@ -150,17 +182,21 @@ export function useSessions<TData = SessionEntity[]>(
       }
       return unresolved.filter((session) => !closing.has(session.id));
     },
-    ...options,
-    // Over the query's own rows, before any caller's `select`. Stands down
-    // while the workspace event stream carries every change to these rows.
-    ...usePollWhile<SessionEntity[]>(
-      'sessionStarting',
-      sessionsKeys.list(),
-      (rows) =>
-        closesOf(queryClient).size > 0 ||
-        (rows?.some((session) => session.isProvisioning) ?? false),
-    ),
-  });
+  };
+}
+
+/**
+ * Over the query's own rows, before any caller's `select`. Stands down while
+ * the workspace event stream carries every change to these rows.
+ */
+function useSessionListPoll() {
+  const queryClient = useQueryClient();
+  return usePollWhile<SessionEntity[]>(
+    'sessionStarting',
+    sessionsKeys.list(),
+    (rows) =>
+      closesOf(queryClient).size > 0 || (rows?.some((session) => session.isProvisioning) ?? false),
+  );
 }
 
 export function useSession(

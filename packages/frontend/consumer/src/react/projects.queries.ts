@@ -32,13 +32,16 @@ export const projectsKeys = {
 export function useProjects<TData = ProjectEntity[]>(
   options?: Omit<UseQueryOptions<ProjectEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
+  return useQuery<ProjectEntity[], Error, TData>({ ...useProjectListQuery(), ...options });
+}
 
-  return useQuery<ProjectEntity[], Error, TData>({
-    queryKey: projectsKeys.list(),
-    queryFn: () => app.projects.findAll(),
-    ...options,
-  });
+/**
+ * The projects read, for every hook over it: the key and the fetch, once.
+ * Not in the barrel; the sidebars' combined Suspense reads spread it.
+ */
+export function useProjectListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: projectsKeys.list(), queryFn: () => app.projects.findAll() };
 }
 
 /**

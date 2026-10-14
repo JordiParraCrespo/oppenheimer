@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -17,6 +17,8 @@ import {
 } from '../modules/tasks/task.entity';
 import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks/tasks.repository';
 import { useConsumerApp } from './context';
+import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
+import { useProjectListQuery } from './projects.queries';
 import { sessionsKeys } from './sessions.queries';
 
 /**
@@ -39,12 +41,35 @@ export const tasksKeys = {
 export function useTasks<TData = TaskEntity[]>(
   options?: Omit<UseQueryOptions<TaskEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
-  return useQuery<TaskEntity[], Error, TData>({
-    queryKey: tasksKeys.list(),
-    queryFn: () => app.tasks.findAll(),
-    ...options,
+  return useQuery<TaskEntity[], Error, TData>({ ...useTaskListQuery(), ...options });
+}
+
+/**
+ * Start session's three reads under a Suspense `QueryState`: the tasks, the
+ * projects and the hosts with their presence, polled while the dialog is
+ * open. They fetch side by side; `error` is the first refetch that failed
+ * over data already drawn.
+ */
+export function useSuspenseTasksProjectsHosts() {
+  const [tasks, projects, hosts] = useSuspenseQueries({
+    queries: [
+      useTaskListQuery(),
+      useProjectListQuery(),
+      { ...useHostListQuery(), ...useHostPresencePoll(true) },
+    ],
   });
+  return {
+    tasks: tasks.data,
+    projects: projects.data,
+    hosts: hosts.data,
+    error: tasks.error ?? projects.error ?? hosts.error,
+  };
+}
+
+/** The tasks read, for both hooks over it: the key and the fetch, once. */
+function useTaskListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: tasksKeys.list(), queryFn: () => app.tasks.findAll() };
 }
 
 /** The tasks a session is on: the session header's "Back to task", derived from the board. */
