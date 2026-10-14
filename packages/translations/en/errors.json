@@ -92,7 +92,7 @@
     "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
     "PROJECTS_004": "That project is archived, so no new work can go in it.",
     "PROJECTS_005": "That project still has sessions nobody has closed.",
-    "PROJECTS_006": "A project needs at least one repository, and at least one of them offered by default.",
+    "PROJECTS_006": "When a project holds repositories, at least one of them must be offered by default, none twice, each with a base branch.",
     "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
     "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
     "PULLS_001": "Choose a workspace before working with pull requests.",

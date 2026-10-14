@@ -34,9 +34,9 @@ export interface ProjectProps {
   /** Who created the project. Audit only; null once that account is gone. */
   createdByUserId: string | null;
   /**
-   * The repositories the project holds, in the order a person put them. Empty
-   * only for an Unassigned project nobody has given any; every write leaves at
-   * least one.
+   * The repositories the project holds, in the order a person put them. It may
+   * be empty for any project; a list that is not holds a default, no repository
+   * twice, at most twenty, each with a base (`projectRepositoriesProblem`).
    */
   repositories: ProjectRepositoryProps[];
   /**
@@ -48,8 +48,7 @@ export interface ProjectProps {
   defaultAgent: string | null;
   /**
    * The workspace's Unassigned project: where a session that names no project
-   * is listed. One per workspace; never renamed, never archived, and it may hold
-   * no repository.
+   * is listed. One per workspace; never renamed, never archived.
    */
   isUnassigned: boolean;
 }
@@ -58,7 +57,7 @@ export interface CreateProjectProps {
   organizationId: string;
   name: string;
   slug: string;
-  /** At least one, and at least one of them a default. */
+  /** May be empty; a list that is not holds a default among them. */
   repositories: ProjectRepositoryProps[];
   /** The id to create the row under, when the slug was derived from it. */
   id?: string;
