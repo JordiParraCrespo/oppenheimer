@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # `oppctl publish-release`: put a signed runner release where hosts install and
 # update from. Sourced by oppctl, which owns the helpers it uses (die, ok,
-# lock, compose, wait_healthy, verify_release, current_release), and installed
+# lock, compose, roll, verify_release, current_release), and installed
 # beside it by `oppctl setup` with scripts/runner/sign-release.sh, the one
 # signature and key check on the publishing side.
 #
@@ -188,10 +188,7 @@ publish_unwind() {
   warn "the API did not come back healthy; putting the previous release and api.env back"
   if [ -n "$previous" ]; then point_releases "$previous"; else rm -f "$PUBLIC/releases"; fi
   mv -f "$CONFIG/api.env.before-publish" "$CONFIG/api.env"
-  compose "$rel" up -d --no-deps --force-recreate api || true
-  # oppenheimer:begin web
-  compose "$rel" up -d --no-deps --force-recreate web || true
-  # oppenheimer:end web
+  roll "$rel" api force || true
   die "nothing changed: /releases and /install.sh serve ${previous:-nothing} again; see 'oppctl logs api', then publish again"
 }
 
@@ -292,14 +289,11 @@ cmd_publish_release() {
   if [ -z "$rel" ]; then
     warn "nothing is deployed yet; the API reads api.env on its first deploy"
   elif [ "$api_changed" = 1 ]; then
-    # nginx in web resolves `api` once, when it starts, so it follows the
-    # API's new container. Any failure from here puts both things back.
-    log "RUNNER_INSTALL_SHA256=$digest; recreating the API (and the console's nginx) so it reads api.env"
+    # The API is replaced without a gap, and the console's nginx follows it
+    # by name. Any failure from here puts both things back.
+    log "RUNNER_INSTALL_SHA256=$digest; replacing the API so it reads api.env"
     compose "$rel" up -d releases || publish_unwind "$rel" "$previous"
-    compose "$rel" up -d --no-deps --force-recreate api || publish_unwind "$rel" "$previous"
-    # oppenheimer:begin web
-    { wait_healthy "$rel" api && compose "$rel" up -d --no-deps --force-recreate web; } || publish_unwind "$rel" "$previous"
-    # oppenheimer:end web
+    roll "$rel" api force || publish_unwind "$rel" "$previous"
     verify_release "$rel" || publish_unwind "$rel" "$previous"
   fi
   rm -f "$CONFIG/api.env.before-publish"
