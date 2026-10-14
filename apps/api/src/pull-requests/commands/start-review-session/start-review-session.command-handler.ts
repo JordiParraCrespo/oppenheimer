@@ -3,6 +3,7 @@ import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
 import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
 import type { ReviewSessionRepositoryPort } from '../../database/review-session.repository.port';
@@ -17,9 +18,11 @@ import { StartReviewSessionCommand } from './start-review-session.command';
  * command New session sends, with the origin `review` so the Sessions list
  * leaves it out; then the link that files it under the pull request.
  *
- * There is no transaction across the two modules. The session's idempotency
- * key is derived from the pull request and the caller's key, so a retry after
- * the session was made gets it back, and the link is idempotent on the session.
+ * There is no transaction across the two modules, so a link that fails closes
+ * the session it would have filed: an unlinked review session would run where
+ * no list shows it. The session's idempotency key is derived from the pull
+ * request and the caller's key, so a retry after a lost answer gets the same
+ * session back, and the link is idempotent on the session.
  */
 @CommandHandler(StartReviewSessionCommand)
 export class StartReviewSessionCommandHandler
@@ -62,9 +65,18 @@ export class StartReviewSessionCommandHandler
       }),
     );
 
-    // The session exists whatever happens next; a link that fails is retried
-    // with the same key and finds it.
-    await this.reviews.link(scope, { sessionId: String(result.sessionId), ...reviewed });
+    const sessionId = String(result.sessionId);
+    try {
+      await this.reviews.link(scope, { sessionId, ...reviewed });
+    } catch (error) {
+      // An unlinked review session is listed nowhere: not under Sessions (its
+      // origin) and not under For review (no link). Close it rather than leave
+      // it running unseen; a retry with the same key starts afresh.
+      await this.commandBus
+        .execute(new CloseSessionCommand({ scope, sessionId, acceptUnpushedWork: true }))
+        .catch(() => undefined);
+      throw error;
+    }
     return result;
   }
 }

@@ -13,8 +13,9 @@ import { reviewCheckout } from '../lib/review-session';
  * `warm` asks the host to fetch the head branch and make a spare worktree
  * from it, once per host, when the reader reaches for the button, so the start
  * that follows cuts its branch from a checkout that already exists. The
- * idempotency key belongs to one host's attempt: a second press after a lost
- * answer is the same session, a press on another host is a new one.
+ * idempotency key belongs to one host's attempt and an answer spends it: a
+ * start that failed closed what it had made, so the next press starts afresh,
+ * and a press on another host is a new one.
  */
 export function useReviewSession(pull: PullRequestDetailEntity) {
   const { t } = useTranslation();
@@ -26,8 +27,12 @@ export function useReviewSession(pull: PullRequestDetailEntity) {
     onSuccess: () => {
       attempt.current = null;
     },
-    onError: (error) =>
-      toast.error(resolveError(error, t('pullRequests.reviewSession.failed')).message),
+    onError: (error) => {
+      // A start the API refused closed whatever it had made, so the next press
+      // is a new attempt with a key of its own.
+      attempt.current = null;
+      toast.error(resolveError(error, t('pullRequests.reviewSession.failed')).message);
+    },
   });
 
   return {

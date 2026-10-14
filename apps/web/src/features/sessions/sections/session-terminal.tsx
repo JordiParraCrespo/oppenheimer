@@ -18,14 +18,12 @@ import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
+import { submitLine } from '../lib/terminal-submit';
 import { HostLinkFix } from './host-link-fix';
 import { SessionShareButton } from './session-share-button';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
-
-/** How long a composed line waits before its Enter, so the agent reads it as typed, not pasted. */
-const SUBMIT_AFTER_MS = 40;
 
 /**
  * The session's terminal: the scrollback and the status band. No window
@@ -153,15 +151,7 @@ export function SessionTerminal({
         ) : null}
 
         {composer ? (
-          <TerminalComposer
-            placeholder={composer}
-            onSubmit={(text) => {
-              // The text, then Enter on its own write: sent together, an agent's
-              // input box reads the pair as a paste and keeps the newline.
-              send(text);
-              setTimeout(() => send('\r'), SUBMIT_AFTER_MS);
-            }}
-          />
+          <TerminalComposer placeholder={composer} onSubmit={(text) => submitLine(send, text)} />
         ) : null}
 
         {phase ? (

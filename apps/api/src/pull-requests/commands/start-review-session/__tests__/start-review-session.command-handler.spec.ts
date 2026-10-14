@@ -8,7 +8,8 @@ import { StartReviewSessionCommandHandler } from '../start-review-session.comman
 /**
  * Starting a review session: the session New session would make, on the
  * pull request's head branch with the review prompt and the origin `review`,
- * then the link that files it under the pull request. A fork's head is
+ * then the link that files it under the pull request; a link that fails
+ * closes the session rather than leave it running unlisted. A fork's head is
  * refused before anything is made. The session's own creation is the sessions
  * module's, covered there.
  */
@@ -84,6 +85,17 @@ describe('starting a review session', () => {
       title: 'Fix the empty state',
       headRef: 'fix/empty',
       baseRef: 'main',
+    });
+  });
+
+  it('closes the session it made when the link cannot be written, and fails', async () => {
+    const { run, reviews, commandBus } = setup();
+    reviews.link.mockRejectedValueOnce(new Error('database down'));
+    await expect(run()).rejects.toThrow('database down');
+    expect(commandBus.execute).toHaveBeenCalledTimes(2);
+    expect(commandBus.execute.mock.calls[1]?.[0]).toMatchObject({
+      sessionId: 'session-1',
+      acceptUnpushedWork: true,
     });
   });
 
