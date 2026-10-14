@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { PERSIST_META, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
   skipToken,
@@ -150,7 +150,7 @@ export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
     queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
     placeholderData: keepPreviousData,
-    meta: { persist: true },
+    meta: PERSIST_META,
   });
 }
 

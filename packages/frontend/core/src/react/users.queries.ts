@@ -4,6 +4,7 @@ import type { PermissionDefinition } from '@oppenheimer/shared';
 import { type UseQueryOptions } from '@tanstack/react-query';
 import type { UserEntity } from '../modules/users/user.entity';
 import { useOppenheimerApp } from './context';
+import { PERSIST_META } from './persist-meta';
 import { useQuery } from './query';
 
 /**
@@ -31,7 +32,7 @@ export function useMyPermissions(
   return useQuery({
     queryKey: usersKeys.permissions(),
     queryFn: () => app.users.myPermissions(),
-    meta: { persist: true },
+    meta: PERSIST_META,
     ...options,
   });
 }

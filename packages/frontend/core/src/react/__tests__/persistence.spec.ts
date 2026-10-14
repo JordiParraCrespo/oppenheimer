@@ -5,6 +5,7 @@ import { authKeys } from '../auth.queries';
 /** A product query key: any feature the kernel does not know about persists by default. */
 const organizationsList = ['organizations', 'list'] as const;
 
+import { PERSIST_META } from '../persist-meta';
 import {
   cacheOwnerKey,
   createQueryPersistOptions,
@@ -43,7 +44,7 @@ describe('shouldDehydrateQuery', () => {
   // while the permissions the nav reads on a warm start opt back in.
   it('keeps the signed-in user out of storage but not their permissions', () => {
     expect(shouldDehydrateQuery(query(usersKeys.me()))).toBe(false);
-    expect(shouldDehydrateQuery(query(usersKeys.permissions(), 'success', { persist: true }))).toBe(
+    expect(shouldDehydrateQuery(query(usersKeys.permissions(), 'success', PERSIST_META))).toBe(
       true,
     );
   });

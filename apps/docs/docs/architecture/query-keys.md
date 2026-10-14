@@ -264,8 +264,9 @@ What that policy encodes:
     run — the app would render as signed in with no session behind it.
   - `users` is never persisted either: the signed-in user's record carries
     their email and name. `useMyPermissions` opts its read back in with
-    `meta: { persist: true }`, which `shouldDehydrateQuery` honours inside a
-    denied feature: it names no one, and the nav reads it on a warm start.
+    `meta: PERSIST_META` (`@oppenheimer/frontend-core/react`, the one typed
+    opt-in), which `shouldDehydrateQuery` honours inside a denied feature: it
+    names no one, and the nav reads it on a warm start.
   - The consumer's own records (`sessions`, `hosts`, `projects`, `profile`…)
     are never persisted — the product names them in
     `CONSUMER_NON_PERSISTED_FEATURES`. They name machines, repositories and
