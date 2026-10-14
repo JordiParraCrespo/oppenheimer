@@ -38,7 +38,7 @@ export class CreateOrganizationHttpController {
   async create(
     @Req() req: Request,
     @Body() body: CreateOrganizationRequest,
-    @CurrentUser('id') creatorId: string | undefined,
+    @CurrentUser('id') creatorId: string,
   ): Promise<OrganizationResponseDto> {
     const id = await this.commandBus.execute<CreateOrganizationCommand, AggregateID>(
       new CreateOrganizationCommand({ headers: req.headers, input: body, creatorId }),

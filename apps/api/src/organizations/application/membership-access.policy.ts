@@ -45,33 +45,41 @@ export class MembershipAccessPolicy {
    * organization cannot be granted after it (the system role is missing, the
    * store failed), `undo` reverts the roster and the original error is raised.
    * Every Better Auth door into an organization goes through here: creating it,
-   * adding a member, changing their role, accepting an invitation.
+   * adding a member, accepting an invitation. A role change is {@link reassign}.
    */
   async admit<Entry extends RosterEntry>(
     write: () => Promise<Entry>,
     undo: (entry: Entry) => Promise<unknown>,
   ): Promise<Entry> {
     const entry = await write();
-    try {
-      await this.grant(entry);
-    } catch (error) {
-      try {
-        await undo(entry);
-      } catch (undoError) {
-        // The caller must see why they were refused, not an error about the
-        // cleanup; the half-made membership is what this log is for.
-        this.logger.error(
-          {
-            message: 'Could not undo a roster change whose application role failed',
-            userId: entry.userId,
-            organizationId: entry.organizationId,
-          },
-          undoError instanceof Error ? undoError.stack : String(undoError),
-        );
-      }
-      throw error;
-    }
+    await this.compensating(
+      () => this.grant(entry),
+      () => undo(entry),
+      'Could not undo a roster change whose application role failed',
+      entry,
+    );
     return entry;
+  }
+
+  /**
+   * Change a member's organization role and the application role that stands
+   * for it, or neither, in the opposite order to {@link admit}. The new
+   * application role is granted first and Better Auth's write follows; if that
+   * write is refused, the application roles the member held in this
+   * organization before are put back. Undoing Better Auth's write instead
+   * would need the caller's permission to change roles, which a caller
+   * demoting themselves has just given up; putting back rows in the app's own
+   * store needs none.
+   */
+  async reassign<T>(entry: RosterEntry, write: () => Promise<T>): Promise<T> {
+    const before = await this.userRoles.findScopedRoleIds(entry.userId, entry.organizationId);
+    await this.grant(entry);
+    return this.compensating(
+      write,
+      () => this.userRoles.setRolesForUser(entry.userId, before, entry.organizationId),
+      'Could not restore the application roles of a refused role change',
+      entry,
+    );
   }
 
   /**
@@ -96,5 +104,32 @@ export class MembershipAccessPolicy {
     const found = await this.roles.findOneByName(roleName, null);
     if (found.isNone()) throw missingSystemRole(roleName);
     await this.userRoles.replaceMembershipRole(userId, organizationId, found.unwrap().id);
+  }
+
+  /**
+   * Run `action`; when it fails, run `cleanup` and raise the action's own error.
+   * The caller must see why they were refused, not an error about the
+   * cleanup; a cleanup that fails is logged with the half-changed membership
+   * it leaves.
+   */
+  private async compensating<T>(
+    action: () => Promise<T>,
+    cleanup: () => Promise<unknown>,
+    message: string,
+    entry: RosterEntry,
+  ): Promise<T> {
+    try {
+      return await action();
+    } catch (error) {
+      try {
+        await cleanup();
+      } catch (cleanupError) {
+        this.logger.error(
+          { message, userId: entry.userId, organizationId: entry.organizationId },
+          cleanupError instanceof Error ? cleanupError.stack : String(cleanupError),
+        );
+      }
+      throw error;
+    }
   }
 }

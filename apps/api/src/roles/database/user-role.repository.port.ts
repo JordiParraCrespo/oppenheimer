@@ -13,6 +13,12 @@ import type { RoleEntity } from '../domain/role.entity';
  */
 export interface UserRoleRepositoryPort {
   findRoleIdsForUser(userId: string, organizationId?: string | null): Promise<string[]>;
+  /**
+   * The roles assigned in exactly `organizationId`, global assignments left
+   * out even when the same role is also held globally: that scoped row is its
+   * own grant (`replaceMembershipRole`).
+   */
+  findScopedRoleIds(userId: string, organizationId: string): Promise<string[]>;
   findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]>;
   /**
    * Replace the user's role assignments **within one scope**. With `manager`

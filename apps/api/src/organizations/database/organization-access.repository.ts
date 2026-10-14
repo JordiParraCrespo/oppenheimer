@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Not } from 'typeorm';
 import { Session } from '../../auth/database/session.orm-entity';
 import { AccessGrantOrmEntity } from '../../authz/database/access-grant.orm-entity';
 import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repository.port';
@@ -33,10 +33,10 @@ export class OrganizationAccessRepository implements OrganizationAccessRepositor
         principalId: userId,
       });
 
-      // Better Auth has already removed this membership, so every row left is
-      // an organization the person is still in — and so may still act in.
+      // An organization the person is still in, and so may still act in: never
+      // the one they are leaving, whether or not its row is gone yet.
       const fallback = await manager.findOne(MemberOrmEntity, {
-        where: { userId },
+        where: { userId, organizationId: Not(organizationId) },
         order: { createdAt: 'ASC' },
       });
       await manager.update(

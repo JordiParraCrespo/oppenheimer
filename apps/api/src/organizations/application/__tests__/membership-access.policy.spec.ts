@@ -8,6 +8,7 @@ describe('MembershipAccessPolicy', () => {
   const roles = { findOneByName: vi.fn() };
   const userRoles = {
     setRolesForUser: vi.fn().mockResolvedValue(undefined),
+    findScopedRoleIds: vi.fn(),
     replaceMembershipRole: vi.fn().mockResolvedValue(undefined),
   };
   const access = { revokeFor: vi.fn().mockResolvedValue(undefined) };
@@ -18,6 +19,8 @@ describe('MembershipAccessPolicy', () => {
     vi.clearAllMocks();
     roles.findOneByName.mockImplementation(async (name: string) => Some({ id: `${name}-role` }));
     userRoles.replaceMembershipRole.mockResolvedValue(undefined);
+    userRoles.setRolesForUser.mockResolvedValue(undefined);
+    userRoles.findScopedRoleIds.mockResolvedValue([]);
     policy = new MembershipAccessPolicy(
       roles as never,
       userRoles as never,
@@ -86,6 +89,59 @@ describe('MembershipAccessPolicy', () => {
       );
       expect(userRoles.replaceMembershipRole).not.toHaveBeenCalled();
       expect(undo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reassign', () => {
+    it('grants the new application role first, then makes the Better Auth write', async () => {
+      const write = vi.fn().mockResolvedValue({ id: 'm1' });
+
+      expect(await policy.reassign(entry('admin'), write)).toEqual({ id: 'm1' });
+
+      expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'owner-role');
+      expect(userRoles.replaceMembershipRole.mock.invocationCallOrder[0]).toBeLessThan(
+        write.mock.invocationCallOrder[0],
+      );
+      expect(userRoles.setRolesForUser).not.toHaveBeenCalled();
+    });
+
+    // The caller may have just demoted themselves: undoing Better Auth's write
+    // would need the permission they gave up, so only the app's own store moves.
+    // A role also held globally is its own scoped grant: restoring the scope must
+    // not drop it.
+    it('puts back the roles held in this organization when Better Auth refuses', async () => {
+      userRoles.findScopedRoleIds.mockResolvedValue(['user-role', 'owner-role', 'custom-role']);
+      const refusal = new Error('forbidden');
+
+      await expect(policy.reassign(entry('member'), () => Promise.reject(refusal))).rejects.toBe(
+        refusal,
+      );
+
+      expect(userRoles.setRolesForUser).toHaveBeenCalledWith(
+        'u1',
+        ['user-role', 'owner-role', 'custom-role'],
+        'org1',
+      );
+    });
+
+    it('reports the refusal even when restoring the roles fails too', async () => {
+      userRoles.setRolesForUser.mockRejectedValue(new Error('restore failed'));
+      const refusal = new Error('forbidden');
+
+      await expect(policy.reassign(entry('member'), () => Promise.reject(refusal))).rejects.toBe(
+        refusal,
+      );
+    });
+
+    it('does not call Better Auth when the new role cannot be granted', async () => {
+      roles.findOneByName.mockResolvedValue(None);
+      const write = vi.fn();
+
+      await expect(policy.reassign(entry('member'), write)).rejects.toMatchObject({
+        code: 'ROLE_007',
+      });
+      expect(write).not.toHaveBeenCalled();
+      expect(userRoles.setRolesForUser).not.toHaveBeenCalled();
     });
   });
 

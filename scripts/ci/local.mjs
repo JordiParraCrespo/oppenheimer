@@ -17,7 +17,7 @@
  *                React singletons (one installed copy each),
  *                compiler bail-outs, unused code, eval anchors, starter manifest
  *   go           vet, golangci-lint, tests, the runner for every target
- *   test         build, generated files committed, unit tests, bundle budget
+ *   test         build, backend public API, generated files committed, unit tests, bundle budget
  *   integration  the API's suite (Testcontainers, so Docker)
  *   e2e          the API suite against the stack
  *
@@ -235,6 +235,15 @@ if (goTouched) {
 if (any) {
   job('test', [
     ['turbo build', 'pnpm', ['turbo', 'run', 'build', ...filters]],
+    // The backend packages must compile against their dependencies' built
+    // declarations, and every one is checked whatever the diff touched, so
+    // they are built here (Turborepo's cache makes that free after the build
+    // above).
+    [
+      'Backend public API',
+      'sh',
+      ['-c', "pnpm turbo run build --filter='./packages/backend/*' && pnpm check:public-api"],
+    ],
     // oppenheimer:begin runner
     ...(touches(packages, '@oppenheimer/shared') || touches(packages, '@oppenheimer/runner')
       ? [
