@@ -1,6 +1,7 @@
-// The screenshot guard's policy: which paths count as a visual change, and
-// when a branch is held for its screenshots. The last block runs the hook as
-// Claude Code does, on a throwaway repository with an `origin/main`.
+// The screenshot guard's policy: which paths count as a visual change
+// (`visual-change.mjs`), and when a branch is held for its screenshots. The
+// last block runs the hook as Claude Code does, on a throwaway repository
+// with an `origin/main`.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
@@ -8,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { isVisual } from './screenshot-guard.mjs';
+import { isVisual, visualChange } from './visual-change.mjs';
 
 const HOOK = fileURLToPath(new URL('./screenshot-guard.mjs', import.meta.url));
 
@@ -49,10 +50,9 @@ describe('the hook', () => {
       cwd: root,
       encoding: 'utf8',
     });
-  const write = (path, body = 'x', at) => {
+  const write = (path, body = 'x') => {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), body);
-    if (at) utimesSync(join(root, path), at, at);
   };
   const stop = (input = {}) => {
     const result = spawnSync('node', [HOOK], {
@@ -95,32 +95,38 @@ describe('the hook', () => {
     assert.equal(stop()?.decision, 'block');
   });
 
-  it('is answered by screenshots newer than the change', () => {
-    write('.screenshots/manifest.json', '{}', new Date(Date.now() + 5_000));
-    assert.equal(stop(), null);
-  });
+  const current = () => visualChange(root, { fetch: false }).fingerprint;
 
-  it('is not staled by committing after the screenshots', () => {
-    git('commit', '-q', '--allow-empty', '-m', 'later commit');
-    git('commit', '-q', '-am', 'nothing new', '--allow-empty');
-    assert.equal(stop(), null);
-  });
-
-  it('holds again once the change moves past them', () => {
-    write('.screenshots/manifest.json', '{}', new Date(Date.now() - 60_000));
-    write('apps/web/src/features/hosts/sections/list.tsx', 'y', new Date());
+  it('is not answered by screenshots of other code', () => {
+    write('.screenshots/manifest.json', JSON.stringify({ fingerprint: '0123456789abcdef' }));
     assert.equal(stop()?.decision, 'block');
   });
 
-  it('is answered by a not-visual note newer than the change', () => {
-    write('.screenshots/not-visual.md', 'renamed a prop', new Date(Date.now() + 5_000));
+  it('is answered by screenshots of the code as it is', () => {
+    write('.screenshots/manifest.json', JSON.stringify({ fingerprint: current() }, null, 2));
+    assert.equal(stop(), null);
+  });
+
+  it('stays answered by a commit, a touch or a checkout that changes no content', () => {
+    git('commit', '-q', '--allow-empty', '-m', 'later commit');
+    utimesSync(join(root, 'apps/web/src/features/hosts/sections/list.tsx'), new Date(), new Date());
+    assert.equal(stop(), null);
+  });
+
+  it('holds again once a visual file changes', () => {
+    write('apps/web/src/features/hosts/sections/list.tsx', 'y');
+    assert.equal(stop()?.decision, 'block');
+  });
+
+  it('is answered by a not-visual note for the code as it is', () => {
+    write('.screenshots/not-visual.md', `renamed a prop\n\nfingerprint: ${current()}\n`);
     assert.equal(stop(), null);
   });
 
   it('compares against main when origin/main is older than it', () => {
     git('checkout', '-q', '-f', 'main');
     git('clean', '-fdq');
-    write('apps/web/src/on-main.tsx', 'main', new Date(Date.now() + 60_000));
+    write('apps/web/src/on-main.tsx', 'main');
     git('add', 'apps/web/src/on-main.tsx');
     git('commit', '-q', '-m', 'main moved on');
     git('checkout', '-q', '-b', 'fresh');

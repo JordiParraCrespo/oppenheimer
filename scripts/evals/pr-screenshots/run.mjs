@@ -10,8 +10,8 @@
 // transcript:
 //
 //   stack     it ran `stack.mjs up --web`
-//   shots     it left PNGs of the console, light and dark, newer than its
-//             last visual change
+//   shots     it left PNGs of the console, light and dark, of the code as
+//             it ended (the manifest's fingerprint matches its change)
 //   looked    it read at least one of them
 //   section   PR.md has a `## Screenshots` section
 //   skill     it invoked the local-stack skill (reported, not required)
@@ -46,7 +46,11 @@ const STRIP_ENV = [
   'CLAUDE_CODE_CHILD_SESSION',
   'CLAUDE_PID',
 ];
-const { isVisual } = await import(pathToFileURL(join(ROOT, '.agents/hooks/screenshot-guard.mjs')));
+// The guard's own definition of a visual change and its fingerprint, from this
+// checkout, so the grader and the hook cannot disagree about either.
+const { visualChange } = await import(
+  pathToFileURL(join(ROOT, '.agents/hooks/visual-change.mjs')).href
+);
 
 function parseArgs(argv) {
   const args = { model: 'claude-sonnet-5-5', timeout: 45, trials: 1, ref: 'HEAD', keep: false };
@@ -217,32 +221,23 @@ function pngsSince(dir, since) {
   return found;
 }
 
-/** When the agent last edited a visual file: its mtime, which a commit does not move. */
-function lastVisualChange(dir, base) {
-  const committed = git(dir, 'diff', '--name-only', `${base}..HEAD`).split('\n').filter(isVisual);
-  const pending = git(dir, 'status', '--porcelain', '--untracked-files=all')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => line.slice(3).split(' -> ').at(-1))
-    .filter(isVisual);
-  const files = [...new Set([...committed, ...pending])];
-  const at = Math.max(
-    0,
-    ...files.map((file) => (existsSync(join(dir, file)) ? statSync(join(dir, file)).mtimeMs : 0)),
-  );
-  return { files, at };
-}
-
 function observe(dir, base, agent) {
   const pngs = pngsSince(dir, agent.startedAt);
-  const change = lastVisualChange(dir, base);
-  const fresh = pngs.filter((png) => png.at >= change.at);
+  // The clone's origin/main is the task's start, so this is the agent's change.
+  const change = visualChange(dir, { fetch: false });
+  const manifestPath = join(dir, '.screenshots/manifest.json');
+  const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : null;
   const prPath = join(dir, 'PR.md');
   const pr = existsSync(prPath) ? readFileSync(prPath, 'utf8') : null;
   return {
     pngs: pngs.map((png) => png.file),
-    freshPngs: fresh.map((png) => png.file),
-    visualFiles: change.files,
+    visualFiles: change?.files ?? [],
+    fingerprint: change?.fingerprint ?? null,
+    manifestFingerprint: manifest?.fingerprint ?? null,
+    // Pictures from the camera say which code they are of; pictures taken any
+    // other way (the rules before `pnpm screens` had none) cannot, and count
+    // as of the final code.
+    ofThisCode: manifest ? manifest.fingerprint === change?.fingerprint : pngs.length > 0,
     commits: Number(git(dir, 'rev-list', '--count', `${base}..HEAD`)),
     pr,
   };
@@ -260,8 +255,9 @@ function grade(testCase, agent, seen) {
     ),
     stack: bash.some((cmd) => /stack\.mjs\s+up\b[^\n]*--web/.test(cmd)),
     shots:
-      seen.freshPngs.some((file) => /light/i.test(file)) &&
-      seen.freshPngs.some((file) => /dark/i.test(file)),
+      seen.ofThisCode &&
+      seen.pngs.some((file) => /light/i.test(file)) &&
+      seen.pngs.some((file) => /dark/i.test(file)),
     anyShots: seen.pngs.length > 0,
     looked: agent.tools.some(
       (t) => t.name === 'Read' && /\.png$/i.test(String(t.input?.file_path ?? '')),

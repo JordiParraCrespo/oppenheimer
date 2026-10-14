@@ -42,11 +42,13 @@ In an environment that ships its own Chromium, point Playwright at it with
 
 Every change that alters what the console shows gets screenshots, taken
 here and shown to the user, before its pull request is opened or updated.
-That is any change to `apps/web/src`, `apps/web/public`,
-`packages/frontend/web/src`, `packages/frontend/design-system/web/src` or
-`packages/translations` other than tests, stories and docs. The Stop hook
+What counts is defined once, in `.agents/hooks/visual-change.mjs`: the
+console, the platform kit, the design system and the translations, not
+their tests, stories or docs. The Stop hook
 `.agents/hooks/screenshot-guard.mjs` holds the end of a task on such a
-branch until `.screenshots/` is newer than the change.
+branch until `.screenshots/` is of the code as it is: `pnpm screens`
+records a fingerprint of the change's files, and an edit to one of them
+after the pictures means taking them again.
 
 1. Bring the stack up with the console: `node scripts/stack/stack.mjs up --web`.
    It serves this checkout's source through Vite, so later edits show
@@ -83,8 +85,9 @@ branch until `.screenshots/` is newer than the change.
    committed or uploaded.
 
 A change in those paths that does not show on screen (a renamed prop, a
-hook's internals) skips this: write one line saying why to
-`.screenshots/not-visual.md` and put the same line under `## Screenshots`.
+hook's internals) skips this: say why with
+`pnpm screens --not-visual "<why>"`, which records it with the same
+fingerprint, and put the same line under `## Screenshots`.
 
 ## 4. Report and tear down
 

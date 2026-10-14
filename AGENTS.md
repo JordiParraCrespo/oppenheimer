@@ -400,16 +400,16 @@ pnpm changeset          # Create a changeset for versioning
 - UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
 - **A change to what the console shows gets screenshots, every time.**
-  Anything under `apps/web/src`, `apps/web/public`,
-  `packages/frontend/web/src`, `packages/frontend/design-system/web/src` or
-  `packages/translations` that is not a test, story or doc: before the pull
-  request is opened or updated, run the `/local-stack` skill's "Show a
-  visual change" step: stack up `--web`, `pnpm screens <route>...` on each
-  route the change shows on, light and dark (both pre-approved, no prompt). Look at every
+  What counts as one (the console, the platform kit, the design system,
+  the translations; not their tests, stories or docs) is defined once, in
+  `.agents/hooks/visual-change.mjs`. Before the pull request is opened or
+  updated, run the `/local-stack` skill's "Show a visual change" step:
+  stack up `--web`, `pnpm screens <route>...` on each route the change
+  shows on, light and dark (both pre-approved, no prompt). Look at every
   picture, send them to the user, and give the pull request a
   `## Screenshots` section (`/steward`). The screenshot guard holds the end
-  of a task until `.screenshots/` is newer than the change; a change there
-  that is not visual writes why to `.screenshots/not-visual.md`
+  of a task until the screenshots are of the code as it is; a change there
+  that is not visual records why with `pnpm screens --not-visual "<why>"`
 - Routes in `apps/web` — a new URL, a guard, a layout
   route, search params, or anything that regenerates `routeTree.gen.ts` — is
   the `/tanstack-routing` skill (`.agents/skills/tanstack-routing/`). A route

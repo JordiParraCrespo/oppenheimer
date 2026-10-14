@@ -24,6 +24,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  *
  * It writes `manifest.json` beside the pictures: the commit and whether the
  * tree was dirty, so a reader knows which code the pictures are of.
+ * `pnpm screens` adds the fingerprint the screenshot guard checks, so run it
+ * through that, not `pnpm --filter @oppenheimer/e2e screens` directly.
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -81,26 +83,31 @@ test('photographs the screens a change touches', async ({ browser }) => {
 
   const files: { route: string; signedIn: boolean; width: number; theme: string; file: string }[] =
     [];
+  // One context per width, theme and signed-in-ness: a signed-out shot never
+  // shares cookies with a signed-in one, and each context signs in once.
+  const groups = [true, false]
+    .map((signedIn) => list.filter((shot) => shot.signedIn === signedIn))
+    .filter((group) => group.length > 0);
   for (const width of WIDTHS) {
     for (const theme of THEMES) {
-      const context = await browser.newContext({
-        viewport: { width, height: width < 768 ? 844 : 900 },
-        colorScheme: theme,
-      });
-      const page = await context.newPage();
-      if (owner) await signInAs(page, owner.user);
-      for (const shot of list) {
-        if (!shot.signedIn) await context.clearCookies();
-        await page.goto(shot.route);
-        await settle(page);
-        // The console follows the OS appearance unless the account chose one.
-        await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`));
-        const file = join(OUT, `${slug(shot)}-${width}-${theme}.png`);
-        await page.screenshot({ path: file, fullPage: true });
-        files.push({ ...shot, width, theme, file: relative(ROOT, file) });
-        if (!shot.signedIn && owner) await signInAs(page, owner.user);
+      for (const group of groups) {
+        const context = await browser.newContext({
+          viewport: { width, height: width < 768 ? 844 : 900 },
+          colorScheme: theme,
+        });
+        const page = await context.newPage();
+        if (owner && group[0].signedIn) await signInAs(page, owner.user);
+        for (const shot of group) {
+          await page.goto(shot.route);
+          await settle(page);
+          // The console follows the OS appearance unless the account chose one.
+          await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`));
+          const file = join(OUT, `${slug(shot)}-${width}-${theme}.png`);
+          await page.screenshot({ path: file, fullPage: true });
+          files.push({ ...shot, width, theme, file: relative(ROOT, file) });
+        }
+        await context.close();
       }
-      await context.close();
     }
   }
 

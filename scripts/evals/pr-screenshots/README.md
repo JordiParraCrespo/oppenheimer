@@ -34,7 +34,7 @@ Grading reads the clone and the agent's transcript:
 | Signal | Means |
 | --- | --- |
 | `stack` | it ran `stack.mjs up --web` |
-| `shots` | PNGs it left in the clone, light and dark, are newer than its last visual change |
+| `shots` | PNGs it left in the clone, light and dark, are of the code it ended with: the manifest's fingerprint matches its change (`.agents/hooks/visual-change.mjs`, the guard's own) |
 | `looked` | it read at least one PNG |
 | `section` | `PR.md` has a `## Screenshots` section |
 | `committed` | it committed the change |

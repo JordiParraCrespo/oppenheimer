@@ -25,10 +25,8 @@ scheduled run is what catches a report that was wrong.
    `## Local CI` heading. Replace it after each push, so the report always
    names the head commit.
 
-4. If the branch changes what the console shows (`apps/web/src`,
-   `apps/web/public`, `packages/frontend/web/src`,
-   `packages/frontend/design-system/web/src`, `packages/translations`;
-   not tests, stories or docs), take its screenshots with the `local-stack`
+4. If the branch changes what the console shows (as
+   `.agents/hooks/visual-change.mjs` defines it), take its screenshots with the `local-stack`
    skill ("Show a visual change") before you push: light and dark, every
    route the change shows on. Look at each one, send them to the user, and
    give the description a `## Screenshots` section naming the routes,
