@@ -117,8 +117,7 @@ When you add a file that mentions an optional app (CI, compose,
   ESLint/oxlint plugin: `pnpm lint:design` runs it through oxlint with oxlint's
   own rules switched off, so it enforces design-system rules and nothing Biome
   already covers — see `.agents/rules/frontend-ui.md`
-- Conventional commits, configured in `commitlint.config.js`; nothing runs
-  it yet (see the open rows in `.agents/enforcement.md`)
+- Conventional commits enforced via commitlint
 - Independent versioning per package via Changesets
 - No git hooks, and no CI on pull requests: **CI is local**. The pipeline is
   `scripts/ci/local.mjs`: lint, Go, build and test, and, behind
@@ -153,13 +152,6 @@ When you add a file that mentions an optional app (CI, compose,
   files by path. The
   same file formats every edit with Biome and runs the architecture check
   (`.agents/hooks/arch-check.sh`) before a task ends
-- `.agents/enforcement.md` pairs every rule with what fails when it is
-  broken, and lists the rules nothing enforces yet. When the operator
-  corrects an agent, `/correct` (`.agents/skills/correct/`) fixes the mistake
-  at the highest level that works (architecture, then types, then a check
-  whose error names the fix, then a test, an agent rule last) and updates
-  that table. A correction for a rule the table marks "rule text only" is a
-  repeat, and gets an enforcer in the same change
 
 ### Backend (`apps/api` + `packages/backend/*`)
 

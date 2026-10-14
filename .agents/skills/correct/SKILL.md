@@ -1,6 +1,6 @@
 ---
 name: correct
-description: "Find the mistakes agents keep repeating in this repo and make each one impossible: architecture first, then types, then a check whose error names the fix, then a test, and an agent rule last. Proves each new check fails on a real past mistake and keeps `.agents/enforcement.md`, the table pairing every rule with what enforces it, current. Use for /correct, or when the operator corrects an agent for a mistake the repo already has a rule about."
+description: "Find the mistakes agents keep repeating in this repo and make each one impossible: architecture first, then types, then a check whose error names the fix, then a test, and an agent rule last. Proves each new check fails on a real past mistake and keeps `.agents/enforcement.md`, the table pairing every rule with what enforces it, current (creating it on the first run). Use for /correct, or when the operator corrects an agent for a mistake the repo already has a rule about."
 disable-model-invocation: true
 argument-hint: "[a correction, a mistake class, or nothing to mine history]"
 ---
@@ -30,8 +30,8 @@ With an argument, start from that correction. Without one, mine:
   issues;
 - the comments in the code that explain a workaround, and the rules in
   `.agents/rules/` and every `AGENTS.md` that say *never* or *always*;
-- `.agents/enforcement.md` itself: every row whose enforcer is "rule text
-  only" is a candidate.
+- `.agents/enforcement.md`, once it exists: every row whose enforcer is
+  "rule text only" is a candidate.
 
 Group what you find into classes. A class counts once it has happened twice.
 One incident is a bug fix, not a class.
@@ -86,8 +86,13 @@ approved it.
 
 ## Keep the rule table
 
-`.agents/enforcement.md` pairs every rule with what enforces it. Each
-correction updates it:
+`.agents/enforcement.md` pairs every rule with what enforces it: the rule,
+where it is written, what fails when it is broken, and where that runs (the
+shell hook, the Stop hook, a `ci:local` step). Rules nothing enforces sit
+first, under an "Open" heading. If the file does not exist yet, create it,
+starting with the rules this run touched, and point at it from the
+agent-guardrails paragraph of the root `AGENTS.md`. Each correction updates
+it:
 
 - a new rule gets a row naming its enforcer and the command that runs it;
 - if the rule was already there and its row says "rule text only", the
