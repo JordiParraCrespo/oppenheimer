@@ -8,8 +8,8 @@
 // A change is visual when the branch, against `origin/main`, touches the
 // console's source, its static files, the platform kit, the design system or
 // the translations; tests, stories and docs beside them are not. The newest
-// such change is the later of its last commit on the branch and the mtime of
-// any file still uncommitted. Two files answer it, when newer:
+// such change is the latest mtime among those files (a deleted one counts
+// at its commit), so committing after the screenshots does not stale them. Two files answer it, when newer:
 //
 // - `.screenshots/manifest.json`, which the camera writes after each run;
 // - `.screenshots/not-visual.md`, a line saying why a change that matches is
@@ -99,11 +99,15 @@ export function visualChange(root, { fetch = true } = {}) {
   const pendingVisual = pending.filter(isVisual);
   const files = [...new Set([...committedVisual, ...pendingVisual])];
   if (files.length === 0) return null;
-  const lastCommit = committedVisual.length
-    ? Number(git(root, 'log', '-1', '--format=%ct', `${mergeBase}..HEAD`, '--', ...committedVisual))
+  // When a file was last edited, not when it was committed: screenshots of
+  // an edit are of that code whether the commit came before them or after.
+  // A file the branch deleted has no mtime, so its commit stands in.
+  const deleted = files.filter((file) => mtime(join(root, file)) === 0);
+  const deletedAt = deleted.length
+    ? Number(git(root, 'log', '-1', '--format=%ct', `${mergeBase}..HEAD`, '--', ...deleted))
     : 0;
-  const lastEdit = Math.max(0, ...pendingVisual.map((file) => mtime(join(root, file))));
-  return { files, changedAt: Math.max(lastCommit, lastEdit) };
+  const editedAt = Math.max(0, ...files.map((file) => mtime(join(root, file))));
+  return { files, changedAt: Math.max(deletedAt, editedAt) };
 }
 
 /** The message that holds the stop, or null when the branch is covered. */

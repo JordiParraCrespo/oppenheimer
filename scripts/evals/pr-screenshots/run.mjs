@@ -217,7 +217,7 @@ function pngsSince(dir, since) {
   return found;
 }
 
-/** When the agent last changed a visual file: its commits and its working tree. */
+/** When the agent last edited a visual file: its mtime, which a commit does not move. */
 function lastVisualChange(dir, base) {
   const committed = git(dir, 'diff', '--name-only', `${base}..HEAD`).split('\n').filter(isVisual);
   const pending = git(dir, 'status', '--porcelain', '--untracked-files=all')
@@ -225,19 +225,18 @@ function lastVisualChange(dir, base) {
     .filter(Boolean)
     .map((line) => line.slice(3).split(' -> ').at(-1))
     .filter(isVisual);
-  const commitAt = committed.length
-    ? Number(git(dir, 'log', '-1', '--format=%ct', `${base}..HEAD`, '--', ...committed)) * 1000
-    : 0;
-  const editAt = Math.max(0, ...pending.map((file) => statSync(join(dir, file)).mtimeMs));
-  return { files: [...new Set([...committed, ...pending])], at: Math.max(commitAt, editAt) };
+  const files = [...new Set([...committed, ...pending])];
+  const at = Math.max(
+    0,
+    ...files.map((file) => (existsSync(join(dir, file)) ? statSync(join(dir, file)).mtimeMs : 0)),
+  );
+  return { files, at };
 }
 
 function observe(dir, base, agent) {
   const pngs = pngsSince(dir, agent.startedAt);
   const change = lastVisualChange(dir, base);
-  // A commit's time has a one-second grain; a picture taken in the same
-  // second as the commit after it is still of that code.
-  const fresh = pngs.filter((png) => png.at >= change.at - 1000);
+  const fresh = pngs.filter((png) => png.at >= change.at);
   const prPath = join(dir, 'PR.md');
   const pr = existsSync(prPath) ? readFileSync(prPath, 'utf8') : null;
   return {

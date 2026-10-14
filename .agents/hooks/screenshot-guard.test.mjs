@@ -100,6 +100,12 @@ describe('the hook', () => {
     assert.equal(stop(), null);
   });
 
+  it('is not staled by committing after the screenshots', () => {
+    git('commit', '-q', '--allow-empty', '-m', 'later commit');
+    git('commit', '-q', '-am', 'nothing new', '--allow-empty');
+    assert.equal(stop(), null);
+  });
+
   it('holds again once the change moves past them', () => {
     write('.screenshots/manifest.json', '{}', new Date(Date.now() - 60_000));
     write('apps/web/src/features/hosts/sections/list.tsx', 'y', new Date());
