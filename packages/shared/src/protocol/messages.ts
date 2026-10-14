@@ -7,6 +7,7 @@ import {
   githubRepoIdSchema,
   gitRefSchema,
   hostFactsSchema,
+  hostPathSchema,
   launchOptionsSchema,
   promptTextSchema,
   protocolAgentSchema,
@@ -51,6 +52,14 @@ export const RUNNER_CAPABILITIES = [
    * Named only by a runner that drops a read-only attachment's input itself.
    */
   'attachment.direct',
+  /**
+   * Takes a `session.create` with a `folder` instead of checkouts: a session in
+   * a folder already on the host, nothing cloned and nothing written
+   * (`product/versions/mvp/24-session-places.md`).
+   */
+  'session.folder',
+  /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
+  'fs.list',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -229,6 +238,14 @@ export const sessionCreateSchema = z
     commandId: commandIdSchema,
     sessionId: sessionIdSchema,
     organizationSlug: gitRefSchema,
+    /**
+     * The account the host's pairing belongs to and the workspace the session
+     * is in. The runner names the work folder's levels by them,
+     * `<account>/<workspace>/sessions/<sessionSlug>/` (24 §2): ids, because a
+     * path never changes after it is made and a slug can be edited.
+     */
+    accountId: z.uuid(),
+    workspaceId: z.uuid(),
     sessionSlug: gitRefSchema,
     agent: protocolAgentSchema,
     /**
@@ -278,7 +295,15 @@ export const sessionCreateSchema = z
       )
       .max(SESSION_CREATE_MAX_FILES)
       .optional(),
-    branch: gitRefSchema,
+    /** The session's own branch. Present exactly when there are checkouts. */
+    branch: gitRefSchema.optional(),
+    /**
+     * A folder session: the agent starts in this folder, which must already
+     * exist on the host. Nothing is cloned, nothing written, and closing the
+     * session only ends its terminal. Never with checkouts, and sent only to a
+     * runner whose `hello` named `session.folder`.
+     */
+    folder: hostPathSchema.optional(),
     checkouts: z.array(
       z.object({
         checkoutId: checkoutIdSchema,
@@ -295,6 +320,13 @@ export const sessionCreateSchema = z
      * every checkout a peer.
      */
     cwdCheckoutId: checkoutIdSchema.nullable(),
+  })
+  /** A session is in a folder or in its checkouts, never both and never neither. */
+  .refine((message) => (message.folder === undefined) === (message.checkouts.length > 0), {
+    path: ['folder'],
+  })
+  .refine((message) => (message.branch !== undefined) === (message.checkouts.length > 0), {
+    path: ['branch'],
   })
   .refine(
     (message) =>
@@ -497,6 +529,54 @@ export const repositoryPrepareSchema = z.object({
 });
 
 export type RepositoryPrepareMessage = z.infer<typeof repositoryPrepareSchema>;
+
+/**
+ * List one directory on the host, for the folder picker (24 §4). Absent `path`
+ * is the home directory of the user the runner runs as. Sent only to a runner
+ * whose `hello` named `fs.list`; answered by `fs.listing` with the same
+ * `commandId`, or by `command.failed` (`FS_001` not found, `FS_002` not a
+ * directory, `FS_003` not readable).
+ */
+export const fsListSchema = z.object({
+  type: z.literal('fs.list'),
+  commandId: commandIdSchema,
+  path: hostPathSchema.optional(),
+});
+
+export type FsListMessage = z.infer<typeof fsListSchema>;
+
+/** How many directories one `fs.listing` names at most. */
+export const FS_LISTING_MAX_ENTRIES = 500;
+
+/**
+ * A directory's sub-directories: names only, never files and never contents.
+ * Hidden ones are left out. A sub-directory that is a git repository carries
+ * the branch its checkout is on.
+ */
+export const fsListingSchema = z.object({
+  type: z.literal('fs.listing'),
+  commandId: commandIdSchema,
+  /** The directory listed, absolute and cleaned. */
+  path: hostPathSchema,
+  /** Its parent, or null at the root. */
+  parent: hostPathSchema.nullable(),
+  /** The home directory, so the picker can show `~`. */
+  home: hostPathSchema,
+  /** The listed directory's own branch, when it is a repository. */
+  branch: z.string().min(1).max(255).optional(),
+  entries: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(255),
+        branch: z.string().min(1).max(255).optional(),
+      }),
+    )
+    .max(FS_LISTING_MAX_ENTRIES),
+  /** More directories were there than `entries` carries. */
+  truncated: z.boolean().optional(),
+});
+
+export type FsListingMessage = z.infer<typeof fsListingSchema>;
 
 /**
  * Install a release. The runner still fetches and verifies the signed manifest
@@ -731,6 +811,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   credentialsGrantSchema,
   credentialsRevokeSchema,
   repositoryPrepareSchema,
+  fsListSchema,
+  fsListingSchema,
   attachmentDirectOfferSchema,
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,

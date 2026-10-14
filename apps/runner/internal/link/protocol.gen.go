@@ -59,6 +59,8 @@ const (
 	CapabilitySessionFiles        = "session.files"
 	CapabilityRepositoryPrepare   = "repository.prepare"
 	CapabilityAttachmentDirect    = "attachment.direct"
+	CapabilitySessionFolder       = "session.folder"
+	CapabilityFsList              = "fs.list"
 )
 
 // The `type` of every message on the link.
@@ -89,6 +91,8 @@ const (
 	TypeCredentialsGrant        = "credentials.grant"
 	TypeCredentialsRevoke       = "credentials.revoke"
 	TypeRepositoryPrepare       = "repository.prepare"
+	TypeFsList                  = "fs.list"
+	TypeFsListing               = "fs.listing"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -123,6 +127,8 @@ var MessageTypes = []string{
 	TypeCredentialsGrant,
 	TypeCredentialsRevoke,
 	TypeRepositoryPrepare,
+	TypeFsList,
+	TypeFsListing,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -185,6 +191,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(CredentialsRevoke), true
 	case TypeRepositoryPrepare:
 		return new(RepositoryPrepare), true
+	case TypeFsList:
+		return new(FsList), true
+	case TypeFsListing:
+		return new(FsListing), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -306,12 +316,15 @@ type SessionCreate struct {
 	CommandID        string                `json:"commandId"`
 	SessionID        string                `json:"sessionId"`
 	OrganizationSlug string                `json:"organizationSlug"`
+	AccountID        string                `json:"accountId"`
+	WorkspaceID      string                `json:"workspaceId"`
 	SessionSlug      string                `json:"sessionSlug"`
 	Agent            string                `json:"agent"`
 	Launch           LaunchOptions         `json:"launch"`
 	Prompt           string                `json:"prompt,omitempty"`
 	Images           []SessionCreateImages `json:"images,omitempty"`
-	Branch           string                `json:"branch"`
+	Branch           string                `json:"branch,omitempty"`
+	Folder           string                `json:"folder,omitempty"`
 	Checkouts        []Checkout            `json:"checkouts"`
 	CwdCheckoutID    *string               `json:"cwdCheckoutId"`
 }
@@ -475,6 +488,31 @@ type RepositoryPrepare struct {
 	BaseBranch         string    `json:"baseBranch"`
 	Sealed             string    `json:"sealed"`
 	ExpiresAt          time.Time `json:"expiresAt"`
+}
+
+// FsList is the `fs.list` message.
+type FsList struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Path      string `json:"path,omitempty"`
+}
+
+// FsListing is the `fs.listing` message.
+type FsListing struct {
+	Type      string             `json:"type"`
+	CommandID string             `json:"commandId"`
+	Path      string             `json:"path"`
+	Parent    *string            `json:"parent"`
+	Home      string             `json:"home"`
+	Branch    string             `json:"branch,omitempty"`
+	Entries   []FsListingEntries `json:"entries"`
+	Truncated bool               `json:"truncated,omitempty"`
+}
+
+// FsListingEntries is FsListing.Entries.
+type FsListingEntries struct {
+	Name   string `json:"name"`
+	Branch string `json:"branch,omitempty"`
 }
 
 // AttachmentDirectOffer is the `attachment.direct.offer` message.

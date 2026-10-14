@@ -198,7 +198,7 @@ describe('createSessionSchema', () => {
     if (!result.success) expect(result.error.issues[0].path).toEqual(['checkouts']);
   });
 
-  it('refuses no checkouts at all: a runner makes a session from one repository', () => {
+  it('refuses a session with neither checkouts nor a folder: it would run nowhere', () => {
     const result = createSessionSchema.safeParse({
       hostId: uuid,
       projectId: uuid,
@@ -206,7 +206,23 @@ describe('createSessionSchema', () => {
       checkouts: [],
     });
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.error.issues[0].path).toEqual(['checkouts']);
+    if (!result.success) expect(result.error.issues[0].path).toEqual(['folder']);
+  });
+
+  it('takes a folder on the host instead of checkouts', () => {
+    const parsed = createSessionSchema.parse({ hostId: uuid, agent: 'shell', folder: '/home/jordi/notes' });
+    expect(parsed.folder).toBe('/home/jordi/notes');
+    expect(parsed.checkouts).toEqual([]);
+  });
+
+  it('refuses a folder with checkouts, and a folder that is not absolute', () => {
+    const checkouts = [{ installationId: uuid, githubRepoId: 42 }];
+    expect(
+      createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', folder: '/srv', checkouts }).success,
+    ).toBe(false);
+    expect(createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', folder: 'notes' }).success).toBe(
+      false,
+    );
   });
 
   it('takes no branch: the working branch is always the session’s own', () => {
