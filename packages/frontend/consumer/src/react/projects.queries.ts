@@ -59,7 +59,7 @@ export function useSuspenseProjects<TData = ProjectEntity[]>(
  * side: what New automation prefills its draft from. `error` is the first
  * refetch that failed over data already drawn.
  */
-export function useSuspenseProjectsAndHosts() {
+export function useSuspenseNewAutomation() {
   const [projects, hosts] = useSuspenseQueries({
     queries: [useProjectListQuery(), useHostListQuery()],
   });

@@ -154,7 +154,7 @@ export function useSessions<TData = SessionEntity[]>(
  * by side and the sidebar suspends until all three have answered; `error` is
  * the first refetch that failed over data already drawn.
  */
-export function useSuspenseSessionsProjectsHosts() {
+export function useSuspenseSessionsSidebar() {
   const [sessions, projects, hosts] = useSuspenseQueries({
     queries: [
       { ...useSessionListQuery(), ...useSessionListPoll() },
@@ -222,7 +222,7 @@ export function useSuspenseSession(id: string) {
  * fetched side by side. `error` is the first refetch that failed over data
  * already drawn.
  */
-export function useSuspenseSessionAndShare(sessionId: string) {
+export function useSuspenseSessionShare(sessionId: string) {
   const [session, share, hosts] = useSuspenseQueries({
     queries: [
       { ...useSessionDetailQuery(sessionId), ...useSessionPoll(sessionId) },

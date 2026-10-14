@@ -145,8 +145,9 @@ services:
     image: ${WEB_IMAGE:?release.env names the web image}
     restart: unless-stopped
     networks: [edge]
-    # nginx resolves `api` once, when it starts, and proxies /api (WebSockets
-    # included) to it; the console and the API share one origin.
+    # nginx proxies /api (WebSockets included) to `api`, looking the name up
+    # again every few seconds, so it follows a rolling deploy's new API; the
+    # console and the API share one origin.
     depends_on:
       api:
         condition: service_healthy

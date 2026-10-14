@@ -1,3 +1,4 @@
+import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useRestartSession,
   useSessionOpening,
@@ -9,7 +10,6 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionClosed } from '../components/session-closed';
 import { SessionProvisioning } from './session-provisioning';
-import { SessionTerminal } from './session-terminal';
 
 /**
  * One session once it has answered, in `SessionScreen`'s `QueryState.Data`:
@@ -23,18 +23,14 @@ import { SessionTerminal } from './session-terminal';
 export function SessionPane({
   sessionId,
   closed,
-  statusItem,
-  composer,
+  terminal,
 }: {
   sessionId: string;
-  /** An input row under the terminal, with this placeholder (`SessionTerminal`). */
-  composer?: string;
   /**
-   * A chip at the head of the terminal's status bar: the task this session is
-   * on ("Back to task", `18-plan-product.md` §4). The route composes it, since
-   * the task is the tasks feature's.
+   * The live terminal, once the session has one: the screen composes it, with
+   * whatever its status bar carries.
    */
-  statusItem?: ReactNode;
+  terminal: (session: SessionEntity) => ReactNode;
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -127,12 +123,7 @@ export function SessionPane({
        surface in dark mode. */
     <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        <SessionTerminal
-          sessionId={session.id}
-          hostId={session.hostId}
-          statusItem={statusItem}
-          composer={composer}
-        />
+        {terminal(session)}
       </div>
     </div>
   );

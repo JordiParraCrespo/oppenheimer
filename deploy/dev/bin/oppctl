@@ -5,7 +5,7 @@
 #   oppctl doctor                                 is this server ready to deploy?
 #   oppctl deploy <sha> <bundle-dir>              what the CI deploy gate runs
 #   oppctl rollback                               back to the previous release
-#   oppctl reload                                 recreate api, web, cloudflared to apply config/
+#   oppctl reload                                 replace api, web, cloudflared to apply config/
 #   oppctl status | logs [service…] | psql
 #   oppctl backup {daily|weekly|check}            dump → encrypt → R2 (weekly: B2)
 #   oppctl restore                                plaintext pg_dump -Fc on stdin
@@ -42,6 +42,16 @@ APPS=(
   web
   # oppenheimer:end web
   backup
+)
+# The services a deploy, a rollback and a reload swap without a gap, in this
+# order (README, "Deploys without downtime"). Everything else is started by
+# compose, which leaves a container already on the release's config alone.
+ROLLED=(
+  api
+  # oppenheimer:begin web
+  web
+  # oppenheimer:end web
+  cloudflared
 )
 
 # The header above: its title and the command list, up to the second bare `#`.
@@ -140,24 +150,103 @@ check_config() {
 
 container_of() { compose "$1" ps -q "$2" 2>/dev/null | head -1; }
 
-wait_healthy() {
-  local rel="$1" svc="$2" deadline=$((SECONDS + HEALTH_TIMEOUT)) id state
+wait_container_healthy() {
+  local id="$1" svc="$2" deadline=$((SECONDS + HEALTH_TIMEOUT)) state
   while [ "$SECONDS" -lt "$deadline" ]; do
-    id="$(container_of "$rel" "$svc")"
-    if [ -n "$id" ]; then
-      # Healthy means its healthcheck passed. A service the release checks
-      # without one is a mistake in compose.yml, not a pass.
-      state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$id")"
-      case "$state" in
-        healthy) ok "$svc is healthy"; return 0 ;;
-        unhealthy) warn "$svc is unhealthy"; return 1 ;;
-        none) warn "$svc has no healthcheck"; return 1 ;;
-      esac
-    fi
+    # Healthy means its healthcheck passed. A service the release checks
+    # without one is a mistake in compose.yml, not a pass.
+    state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$id" 2>/dev/null || echo gone)"
+    case "$state" in
+      healthy) ok "$svc is healthy"; return 0 ;;
+      unhealthy) warn "$svc is unhealthy"; return 1 ;;
+      none) warn "$svc has no healthcheck"; return 1 ;;
+      gone) warn "$svc's container is gone"; return 1 ;;
+    esac
     sleep 3
   done
   warn "$svc not healthy after ${HEALTH_TIMEOUT}s"
   return 1
+}
+
+wait_healthy() {
+  local id; id="$(container_of "$1" "$2")"
+  [ -n "$id" ] || { warn "$2 is not running"; return 1; }
+  wait_container_healthy "$id" "$2"
+}
+
+# Start one more container of a service beside the running ones (`old`, one
+# id per line) and print its id. Exactly one may appear: any other count is
+# removed and refused, so `roll` only ever waits on, and removes, one.
+start_beside() {
+  local rel="$1" svc="$2" old="$3" new count
+  compose "$rel" up -d --no-deps --no-recreate --scale "$svc=$(($(wc -l <<< "$old") + 1))" "$svc" >&2 || return 1
+  new="$(compose "$rel" ps -q "$svc" | grep -vxF -f <(printf '%s\n' "$old") || true)"
+  count="$(grep -c . <<< "$new" || true)"
+  if [ "$count" -ne 1 ]; then
+    warn "expected one new $svc container, found $count"
+    # shellcheck disable=SC2086 # one id per word
+    [ -z "$new" ] || docker rm -f $new >/dev/null || true
+    return 1
+  fi
+  printf '%s' "$new"
+}
+
+# Replace one service without a gap: start the new container beside the
+# running one, and stop the old only once the new is healthy. Both answer to
+# the service's name meanwhile; web's nginx and cloudflared look it up again
+# as they connect, so traffic follows. A service already on this release's
+# config is left alone unless `force` (a reload: env_file is read only when a
+# container is created). A new container that is not healthy is removed, so
+# the old one keeps serving and the caller stops before the next service.
+roll() {
+  local rel="$1" svc="$2" force="${3:-}" old want have new
+  old="$(compose "$rel" ps -q "$svc")"
+  if [ -z "$old" ]; then
+    log "starting $svc"
+    compose "$rel" up -d --no-deps "$svc" && wait_healthy "$rel" "$svc"
+    return
+  fi
+  if [ -z "$force" ]; then
+    want="$(compose "$rel" config --hash "$svc" | awk '{print $2}')"
+    # shellcheck disable=SC2086 # one id per word
+    have="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.config-hash"}}' $old | sort -u)"
+    [ "$have" = "$want" ] && { ok "$svc is already on this release"; return 0; }
+  fi
+  log "rolling $svc: starting the new container beside the running one"
+  new="$(start_beside "$rel" "$svc" "$old")" || return 1
+  if ! wait_container_healthy "$new" "$svc"; then
+    docker logs --tail 80 "$new" || true
+    warn "removing the new $svc; the running one keeps serving"
+    docker rm -f "$new" >/dev/null || true
+    return 1
+  fi
+  log "stopping the previous $svc"
+  # shellcheck disable=SC2086
+  docker stop $old >/dev/null && docker rm $old >/dev/null
+}
+
+# The release's services compose starts as they are: every one ROLLED does
+# not name (Postgres, Redis, the releases server, the one-shot uploads-perms).
+# Compose leaves one already on the release's config alone.
+compose_managed() {
+  local svc
+  for svc in $(compose "$1" config --services); do
+    [[ " ${ROLLED[*]} " == *" $svc "* ]] || printf '%s\n' "$svc"
+  done
+}
+
+# Bring a release up: the compose-managed services first, the API only once
+# Postgres and Redis are healthy, then each of ROLLED, in order.
+start_release() {
+  local rel="$1" svc managed
+  managed="$(compose_managed "$rel")"
+  [ -n "$managed" ] || return 1
+  # shellcheck disable=SC2086 # one service per word
+  compose "$rel" up -d --remove-orphans $managed || return 1
+  wait_healthy "$rel" postgres && wait_healthy "$rel" redis || return 1
+  for svc in "${ROLLED[@]}"; do
+    roll "$rel" "$svc" || { warn "$svc did not roll out; nothing after it was touched"; return 1; }
+  done
 }
 
 # Healthy containers, then one request through the same path a browser takes
@@ -247,7 +336,7 @@ deploy_unwind() {
     compose "$DEPLOY_REL" logs --tail 80 api || true
     if [ -n "$DEPLOY_PREV" ]; then
       warn "rolling back to $(basename "$DEPLOY_PREV")"
-      compose "$DEPLOY_PREV" up -d --remove-orphans || true
+      start_release "$DEPLOY_PREV" || true
       verify_release "$DEPLOY_PREV" || warn "the previous release is not healthy either"
       warn "migrations that ran are NOT undone; if the previous API refuses the schema, restore the pre-deploy dump (README: Restore)"
     else
@@ -299,7 +388,7 @@ cmd_deploy() {
 
   ln -sfn "$DEPLOY_REL" "$INFLIGHT"
   DEPLOY_STARTED=1
-  compose "$DEPLOY_REL" up -d --remove-orphans || die "compose up failed"
+  start_release "$DEPLOY_REL" || die "the new release did not start"
   verify_release "$DEPLOY_REL" || die "the new release is not healthy"
 
   swap_links "$DEPLOY_REL"
@@ -319,7 +408,7 @@ cmd_rollback() {
   [ -n "$target" ] && [ -d "$target" ] || die "no previous release to roll back to"
   log "rolling back $(basename "$cur") → $(basename "$target")"
   warn "migrations are not reverted; the previous API must accept the current schema"
-  compose "$target" up -d --remove-orphans
+  start_release "$target" || die "the previous release did not start"
   verify_release "$target" || die "the previous release did not come up healthy"
   ln -sfn "$cur" "$PREVIOUS.tmp" && mv -Tf "$PREVIOUS.tmp" "$PREVIOUS"
   ln -sfn "$target" "$CURRENT.tmp" && mv -Tf "$CURRENT.tmp" "$CURRENT"
@@ -328,10 +417,8 @@ cmd_rollback() {
 
 # Apply a change to config/ (api.env above all) to the running release.
 # `docker restart` is not enough: a container keeps the environment it was
-# created with, and env_file is read only when it is created. One fixed
-# sequence, each step only once the one before is healthy: the API, then
-# web (its nginx resolves `api` once, at start), then cloudflared (its
-# origins are web and api). Nothing upstream is recreated (--no-deps).
+# created with, and env_file is read only when it is created. Each of
+# ROLLED is replaced in order, without a gap, and nothing upstream is touched.
 #
 # api.env is not part of a release, so `oppctl rollback` cannot bring the
 # previous one back: a reload that ends healthy keeps a copy as
@@ -342,19 +429,10 @@ cmd_reload() {
   load_host_env
   lock
   local rel svc
-  local -a order=(
-    api
-    # oppenheimer:begin web
-    web
-    # oppenheimer:end web
-    cloudflared
-  )
   rel="$(need_current)"
-  for svc in "${order[@]}"; do
-    log "recreating $svc from $(basename "$rel")"
-    compose "$rel" up -d --force-recreate --no-deps "$svc" \
-      && wait_healthy "$rel" "$svc" \
-      || die "$svc did not come back healthy; nothing after it was recreated. The last api.env that ran healthy is $CONFIG/api.env.last-good (diff it, fix api.env, reload again)"
+  for svc in "${ROLLED[@]}"; do
+    roll "$rel" "$svc" force \
+      || die "$svc did not come up healthy, so the running one was kept and nothing after it was replaced. The last api.env that ran healthy is $CONFIG/api.env.last-good (diff it, fix api.env, reload again)"
   done
   verify_release "$rel" || die "reloaded, but the release is not healthy"
   cp -p "$CONFIG/api.env" "$CONFIG/api.env.last-good"

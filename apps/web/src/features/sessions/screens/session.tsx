@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionSkeleton } from '../components/session-skeleton';
 import { SessionPane } from '../sections/session-pane';
+import { SessionTerminal } from '../sections/session-terminal';
 
 /**
  * One session, in whichever state the URL lands on. The pane reads the
@@ -74,8 +75,14 @@ export function SessionScreen({
         <SessionPane
           sessionId={sessionId}
           closed={closed}
-          statusItem={statusItem}
-          composer={composer}
+          terminal={(session) => (
+            <SessionTerminal
+              sessionId={session.id}
+              hostId={session.hostId}
+              statusItem={statusItem}
+              composer={composer}
+            />
+          )}
         />
       </QueryState.Data>
     </QueryState>
