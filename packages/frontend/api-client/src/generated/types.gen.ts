@@ -2779,6 +2779,10 @@ export type PullRequestDetailResponseDto = {
      */
     body: string;
     baseRef: string;
+    /**
+     * Whether the head branch is in another repository (a fork), which a session cannot check out yet.
+     */
+    fromFork: boolean;
     state: 'open' | 'merged' | 'closed';
     changedFiles: number;
     /**

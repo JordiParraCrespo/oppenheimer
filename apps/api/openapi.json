@@ -22276,6 +22276,10 @@
           "baseRef": {
             "type": "string"
           },
+          "fromFork": {
+            "type": "boolean",
+            "description": "Whether the head branch is in another repository (a fork), which a session cannot check out yet."
+          },
           "state": {
             "type": "string",
             "enum": ["open", "merged", "closed"]
@@ -22333,6 +22337,7 @@
           "htmlUrl",
           "body",
           "baseRef",
+          "fromFork",
           "state",
           "changedFiles",
           "folders",

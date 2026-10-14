@@ -1416,6 +1416,17 @@
       "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes.",
       "weekOf": "Week of {{date}}",
       "hoverWeek": "Hover a week"
+    },
+    "reviewSession": {
+      "start": "Review in a session",
+      "starting": "Starting…",
+      "host": "Host",
+      "search": "Search hosts…",
+      "empty": "No host matches.",
+      "offline": "offline",
+      "noHost": "No host is online. Start the runner on one of your machines.",
+      "fork": "It comes from a fork, which a session cannot check out yet.",
+      "failed": "Could not start the review session."
     }
   },
   "tasks": {

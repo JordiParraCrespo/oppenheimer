@@ -41,6 +41,8 @@ export interface GithubPullRequestDetail extends GithubPullRequestSummary {
   mergeable: boolean | null;
   /** GitHub's `mergeable_state`: `clean`, `blocked`, `behind`, `dirty`, `unstable`, `draft`, `unknown`. */
   mergeableState: string;
+  /** Whether the head branch lives in another repository than the base. */
+  fromFork: boolean;
 }
 
 export interface GithubPullRequestFile {

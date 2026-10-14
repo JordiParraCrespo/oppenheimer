@@ -1420,6 +1420,17 @@
       "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez.",
       "weekOf": "Semana del {{date}}",
       "hoverWeek": "Pasa por una semana"
+    },
+    "reviewSession": {
+      "start": "Revisar en una sesión",
+      "starting": "Iniciando…",
+      "host": "Host",
+      "search": "Buscar hosts…",
+      "empty": "Ningún host coincide.",
+      "offline": "sin conexión",
+      "noHost": "No hay ningún host en línea. Arranca el runner en una de tus máquinas.",
+      "fork": "Viene de un fork, que una sesión todavía no puede descargar.",
+      "failed": "No se pudo iniciar la sesión de revisión."
     }
   },
   "tasks": {

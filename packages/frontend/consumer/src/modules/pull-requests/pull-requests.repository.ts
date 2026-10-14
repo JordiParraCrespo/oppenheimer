@@ -91,6 +91,7 @@ function toDetail(dto: PullRequestDetailResponseDto): PullRequestDetailEntity {
     toEntity(dto),
     dto.body,
     dto.baseRef,
+    dto.fromFork,
     dto.state,
     dto.changedFiles,
     dto.folders,

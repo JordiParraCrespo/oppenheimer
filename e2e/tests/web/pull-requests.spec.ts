@@ -90,6 +90,8 @@ test.describe('Pull requests', () => {
     await expect(page.getByText('Merge status')).toBeVisible();
     await expect(page.getByText('Can merge without conflicts')).toBeVisible();
     await expect(page.getByText('@ana-dev').first()).toBeVisible();
+    // Review in a session runs on one of the reader's hosts; with none online it cannot start.
+    await expect(page.getByRole('button', { name: 'Review in a session' })).toBeDisabled();
     // Two views only, and a link that still names the retired Briefing opens the description.
     await expect(page.getByRole('button', { name: 'Briefing' })).toHaveCount(0);
     await page.goto(`${page.url()}?view=briefing`);

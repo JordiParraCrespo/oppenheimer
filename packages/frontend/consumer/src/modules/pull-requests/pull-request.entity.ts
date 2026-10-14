@@ -143,6 +143,8 @@ export class PullRequestDetailEntity extends PullRequestEntity {
     /** The description, as written (Markdown). */
     public readonly body: string,
     public readonly baseRef: string,
+    /** The head branch is in a fork, which a session cannot check out yet. */
+    public readonly fromFork: boolean,
     public readonly state: 'open' | 'merged' | 'closed',
     public readonly changedFiles: number,
     /** Top-level directories, most files first. */
