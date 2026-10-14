@@ -215,18 +215,18 @@ export default function Page() {
         id="wordmark"
         title="Wordmark · BrandMark"
         meta="wordmark.tsx · brand-mark.tsx"
-        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em. The product suffix is the one place uppercase is allowed."
-        code={`<Wordmark product="Console" />`}
+        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em."
+        code={`<Wordmark />`}
       >
-        <Swatch label="18px, console">
-          <Wordmark product="Console" />
+        <Swatch label="18px">
+          <Wordmark />
         </Swatch>
         <Swatch label="28px">
           <Wordmark size={28} />
         </Swatch>
         <Swatch label="dark">
           <div className="dark rounded-md bg-canvas px-5 py-3">
-            <Wordmark product="Console" />
+            <Wordmark />
           </div>
         </Swatch>
         <Swatch label="BrandMark, the auth chrome's glyph">

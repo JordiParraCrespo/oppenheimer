@@ -1,7 +1,6 @@
 import { Wordmark } from '@oppenheimer/design-system-web';
 import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet, redirect, useMatches } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import { WorkspaceGate } from '@/features/organizations/sections/workspace-gate';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
@@ -44,7 +43,6 @@ export const Route = createFileRoute('/_authenticated')({
  * `ConsoleDialogs` mounts it; a button only asks.
  */
 function AuthenticatedShell() {
-  const { t } = useTranslation();
   const ownShell = useMatches({
     select: (matches) => matches.some((match) => match.staticData.shell === 'own'),
   });
@@ -68,10 +66,10 @@ function AuthenticatedShell() {
           userMenuLinks={USER_MENU}
           rail={<ConsoleRail />}
           sidebar={<ConsoleSidebar list={list} />}
-          // The brand row names the product, not the workspace — version 1 has one
-          // workspace per account. `chrome={false}` is the bar, the palette and
+          // The brand row is the wordmark alone, not the workspace — version 1 has
+          // one workspace per account. `chrome={false}` is the bar, the palette and
           // the foot's hairline; `AppShell` and `use-shell.ts` say why.
-          brand={<Wordmark size={18} product={t('common.product')} />}
+          brand={<Wordmark size={18} />}
           chrome={false}
         >
           <Outlet />

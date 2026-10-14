@@ -949,7 +949,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
         <SortableRail items={order.rail ?? []} sessions={total} />
         <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
           <div className="flex h-14 items-center px-4">
-            <Wordmark product="Console" />
+            <Wordmark />
           </div>
           <div className="px-3">
             <Button variant={empty ? 'secondary' : 'primary'} size="md" block>
