@@ -22,7 +22,7 @@ export function BotEngineChips({
   onEffortChange,
 }: {
   model: string | null;
-  effort: SessionEffort;
+  effort: SessionEffort | null;
   disabled?: boolean;
   onModelChange: (model: string | null) => void;
   onEffortChange: (effort: SessionEffort) => void;

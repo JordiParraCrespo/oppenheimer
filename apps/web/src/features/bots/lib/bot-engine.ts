@@ -35,13 +35,14 @@ export function botModel(model: string | null): string | null {
  */
 export function botEffort(
   model: string | null,
-  effort: SessionEffort,
+  /** Null runs the model at its CLI's default. */
+  effort: SessionEffort | null,
 ): { levels: readonly SessionEffort[]; value: SessionEffort } | null {
   const offered: CodingAgentEffort | undefined = effortFor(BOT_AGENT, model);
   if (!offered) return null;
   return {
     levels: offered.levels,
-    value: offered.levels.includes(effort) ? effort : offered.default,
+    value: effort !== null && offered.levels.includes(effort) ? effort : offered.default,
   };
 }
 

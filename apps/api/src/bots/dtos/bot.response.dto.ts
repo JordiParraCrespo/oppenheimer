@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   BOT_AVATAR_COLORS,
   BOT_PERMISSIONS,
@@ -49,7 +50,10 @@ export class BotResponseDto {
   })
   model!: string | null;
 
-  @ApiProperty({ enum: SESSION_EFFORTS, nullable: true })
+  @ApiProperty({
+    ...nullableEnum(SESSION_EFFORTS),
+    description: "The effort level; null runs the model at the CLI's default.",
+  })
   effort!: SessionEffort | null;
 
   @ApiProperty({ enum: BOT_PERMISSIONS, description: 'How far a turn may go without asking.' })

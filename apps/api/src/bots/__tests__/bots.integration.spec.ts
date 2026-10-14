@@ -209,6 +209,26 @@ describe('bots (integration)', () => {
     expect((await order(null)).map(([name]) => name)).toEqual(['Bea']);
   });
 
+  it('keeps both of two edits made from the same copy: each writes only what it changed', async () => {
+    const group = await addGroup('Engineering');
+    const ana = await create('Ana');
+    const recoloured = (await bots.findOneById(scope(), ana.id)).unwrap();
+    const regrouped = (await bots.findOneById(scope(), ana.id)).unwrap();
+
+    recoloured.edit({ avatarColor: 'coral' });
+    regrouped.moveTo(group.id, undefined);
+    regrouped.edit({ model: 'claude-opus-5-5', effort: 'high' });
+    expect(await bots.save(recoloured)).toBe('saved');
+    expect(await bots.save(regrouped)).toBe('saved');
+
+    expect((await bots.findOneById(scope(), ana.id)).unwrap()).toMatchObject({
+      avatarColor: 'coral',
+      groupId: group.id,
+      model: 'claude-opus-5-5',
+      effort: 'high',
+    });
+  });
+
   it('answers group-missing for a move into a group deleted under it, and writes nothing', async () => {
     const group = await addGroup('Gone');
     const ana = await create('Ana');

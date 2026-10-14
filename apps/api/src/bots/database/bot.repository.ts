@@ -79,20 +79,14 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
 
   async save(bot: BotEntity): Promise<BotWriteOutcome> {
     return this.writing(async (manager) => {
+      // Only what this edit set: a concurrent edit's columns are left as it wrote them.
+      const changes = Object.fromEntries(
+        [...bot.editedFields].map((field) => [field, bot[field]]),
+      ) as Partial<BotOrmEntity>;
       const result = await manager
         .createQueryBuilder()
         .update(BotOrmEntity)
-        .set({
-          name: bot.name,
-          description: bot.description,
-          avatarColor: bot.avatarColor,
-          groupId: bot.groupId,
-          homeHostId: bot.homeHostId,
-          model: bot.model,
-          effort: bot.effort,
-          permission: bot.permission,
-          learnAutomatically: bot.learnAutomatically,
-        })
+        .set(changes)
         .where('id = :id AND "organizationId" = :organizationId', {
           id: bot.id,
           organizationId: bot.organizationId,

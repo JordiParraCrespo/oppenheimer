@@ -2888,7 +2888,10 @@ export type BotResponseDto = {
      * A Claude Code model id; null runs Claude Code's default.
      */
     model: string | null;
-    effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+    /**
+     * The effort level; null runs the model at the CLI's default.
+     */
+    effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     /**
      * How far a turn may go without asking.
      */

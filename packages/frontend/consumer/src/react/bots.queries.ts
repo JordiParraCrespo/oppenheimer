@@ -230,7 +230,8 @@ export function useCreateBotGroup(options?: UseMutationOptions<BotGroupEntity, E
     mutationFn: (name: string) => app.bots.createGroup(name),
     ...withCacheOnSuccess(options, (added) =>
       queryClient.setQueryData<BotGroupEntity[]>(botsKeys.groupList(), (rows) =>
-        rows ? [...rows, added] : rows,
+        // Newest first, as the API lists them.
+        rows ? [added, ...rows] : rows,
       ),
     ),
   });

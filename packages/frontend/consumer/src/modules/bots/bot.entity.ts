@@ -27,7 +27,7 @@ export class BotEntity {
     public readonly homeHostId: string | null,
     /** A Claude Code model id; `null` runs Claude Code's default. */
     public readonly model: string | null,
-    public readonly effort: SessionEffort,
+    public readonly effort: SessionEffort | null,
     public readonly permission: BotPermission,
     public readonly learnAutomatically: boolean,
     public readonly createdAt: Date,

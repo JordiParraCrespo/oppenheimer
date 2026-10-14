@@ -30,6 +30,16 @@ describe('BotEntity', () => {
     });
   });
 
+  it('remembers which columns an edit set, so a write stores those alone', () => {
+    const bot = BotEntity.create({ id: randomUUID(), props: { ...newBot().getProps() } });
+    expect([...bot.editedFields]).toEqual([]);
+    bot.edit({ avatarColor: 'coral' });
+    expect([...bot.editedFields]).toEqual(['avatarColor']);
+    bot.edit({ model: 'claude-opus-5-5' });
+    // A new model can unset an effort it does not offer, so the effort is written with it.
+    expect([...bot.editedFields].sort()).toEqual(['avatarColor', 'effort', 'model']);
+  });
+
   it('records an effort the model offers, and none for one it does not', () => {
     const bot = newBot();
     bot.edit({ model: 'claude-opus-5-5', effort: 'high' });

@@ -59,6 +59,18 @@ export interface BotEdit {
   learnAutomatically?: boolean;
 }
 
+/** A column an edit can set. */
+export type BotEditedField =
+  | 'name'
+  | 'description'
+  | 'avatarColor'
+  | 'groupId'
+  | 'homeHostId'
+  | 'model'
+  | 'effort'
+  | 'permission'
+  | 'learnAutomatically';
+
 /**
  * A bot (`product/versions/mvp/25-bots.md` §1): who it is, where it sits in the
  * sidebar, where it runs and how it is started. Its documents and its memory
@@ -67,6 +79,12 @@ export interface BotEdit {
  */
 export class BotEntity extends AggregateRoot<BotProps> {
   private pendingPlacement: Placement | null = null;
+  /**
+   * The columns an edit set, and only those: two edits made at once from the
+   * console (the model, then the effort) each write what they changed, so the
+   * later never puts back what the earlier changed from its stale copy.
+   */
+  private readonly edited = new Set<BotEditedField>();
 
   static create(create: CreateEntityProps<BotProps>): BotEntity {
     return new BotEntity(create);
@@ -139,19 +157,41 @@ export class BotEntity extends AggregateRoot<BotProps> {
   }
 
   edit(changes: BotEdit): void {
-    const { props } = this;
-    if (changes.name !== undefined) props.name = changes.name.trim();
-    if (changes.description !== undefined) props.description = changes.description.trim();
-    if (changes.avatarColor !== undefined) props.avatarColor = changes.avatarColor;
-    if (changes.homeHostId !== undefined) props.homeHostId = changes.homeHostId;
-    if (changes.permission !== undefined) props.permission = changes.permission;
+    const { props, edited } = this;
+    if (changes.name !== undefined) {
+      props.name = changes.name.trim();
+      edited.add('name');
+    }
+    if (changes.description !== undefined) {
+      props.description = changes.description.trim();
+      edited.add('description');
+    }
+    if (changes.avatarColor !== undefined) {
+      props.avatarColor = changes.avatarColor;
+      edited.add('avatarColor');
+    }
+    if (changes.homeHostId !== undefined) {
+      props.homeHostId = changes.homeHostId;
+      edited.add('homeHostId');
+    }
+    if (changes.permission !== undefined) {
+      props.permission = changes.permission;
+      edited.add('permission');
+    }
     if (changes.learnAutomatically !== undefined) {
       props.learnAutomatically = changes.learnAutomatically;
+      edited.add('learnAutomatically');
     }
-    if (changes.model !== undefined) props.model = changes.model;
-    // An effort the (new) model does not offer is recorded as none: the CLI's default runs.
-    const effort = changes.effort !== undefined ? changes.effort : props.effort;
-    props.effort = botEffortFor(props.model, effort);
+    if (changes.model !== undefined) {
+      props.model = changes.model;
+      edited.add('model');
+    }
+    if (changes.model !== undefined || changes.effort !== undefined) {
+      // An effort the (new) model does not offer is recorded as none: the CLI's default runs.
+      const effort = changes.effort !== undefined ? changes.effort : props.effort;
+      props.effort = botEffortFor(props.model, effort);
+      edited.add('effort');
+    }
     this.setUpdatedAt(new Date());
     this.validate();
   }
@@ -164,7 +204,13 @@ export class BotEntity extends AggregateRoot<BotProps> {
     const changedGroup = groupId !== this.props.groupId;
     if (!changedGroup && at === undefined) return;
     this.props.groupId = groupId;
+    if (changedGroup) this.edited.add('groupId');
     this.pendingPlacement = at ?? 'last';
+  }
+
+  /** The columns this instance's edits set, for the write that stores them. */
+  get editedFields(): ReadonlySet<BotEditedField> {
+    return this.edited;
   }
 
   /** The write landed; the order it asked for is the stored one. */

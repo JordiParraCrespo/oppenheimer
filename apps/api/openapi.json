@@ -23886,8 +23886,9 @@
           },
           "effort": {
             "type": "string",
-            "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"],
-            "nullable": true
+            "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra", null],
+            "nullable": true,
+            "description": "The effort level; null runs the model at the CLI's default."
           },
           "permission": {
             "type": "string",
