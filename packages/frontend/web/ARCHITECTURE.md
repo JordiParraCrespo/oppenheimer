@@ -20,10 +20,10 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date and duration formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `SidebarSearchField` (a sidebar search box that keeps the half-typed word and hands its caller the settled one), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
-| `pairing` | `PairingChrome`, the column that pairs a machine with a pairing it is handed: `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
+| `pairing` | `PairingChrome`, the agent-first column that pairs a machine with a pairing it is handed (onboarding and the Add a host dialog): the agent prompt's card, the token line with the manual install behind it, and the Connection list. Settings composes `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt as one tabbed panel) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
 | `layout` | `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState` | middle |
 | `shell` | `AppShell` (the sidebar, top bar, user menu and command palette are its parts), `SettingsSidebar`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), the nav types | top |
-| `auth` | `AuthLayout`, `BrandLogo`, the auth primitives, `SocialLoginButtons`, `OAuthCallbackNotice`, `SessionRestoreError`, `redirectSignedIn` | top |
+| `auth` | `AuthLayout`, the auth primitives, `SocialLoginButtons`, `OAuthCallbackNotice`, `SessionRestoreError`, `redirectSignedIn` | top |
 
 The lists live in [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs), which
 passes them to `packages/tsconfig/depcruise/frontend-kit.cjs`.
@@ -42,8 +42,8 @@ from being unbuildable, and impossible to render in a test without mounting
 the whole app. Keeping `shell` and `auth` at the top means they compose the
 kit and nothing composes them.
 
-`AuthLayout` (top) importing `BrandLogo` (its own concern) and the `NavTo`
-type from `shell` is the direction the rule allows; `theme` importing `auth`
+`AuthLayout` (top) importing its own primitives and the `NavTo` type from
+`shell` is the direction the rule allows; `theme` importing `auth`
 is not.
 
 ## Concerns meet at their index
@@ -67,7 +67,7 @@ what the shell shows — `apps/web/src/routes/_authenticated.tsx`:
 <AppShell
   nav={NAV}
   sidebar={<SessionsSidebar />}
-  brand={<Wordmark size={18} product={t('common.product')} />}
+  brand={<Wordmark size={18} />}
   chrome={false}
 >
   <Outlet />

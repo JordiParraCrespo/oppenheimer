@@ -80,7 +80,7 @@ export function AddHostScreen() {
             summary={t('hosts.add.install.done')}
           >
             <div className="flex flex-col gap-2">
-              <PairingInstruction pairing={pairing ?? null} layout="panel" />
+              <PairingInstruction pairing={pairing ?? null} />
 
               <PairingToken
                 expiresAt={expiresAt}

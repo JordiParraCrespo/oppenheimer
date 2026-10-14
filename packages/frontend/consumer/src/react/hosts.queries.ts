@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -52,6 +52,17 @@ export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>)
 }
 
 /**
+ * {@link useHosts} for a section under a Suspense `QueryState`: no poll, and
+ * `select` reads less than the whole list, as there.
+ */
+export function useSuspenseHosts<TData = HostEntity[]>(select?: (hosts: HostEntity[]) => TData) {
+  return useSuspenseQuery<HostEntity[], Error, TData>({
+    ...useHostListQuery(),
+    ...(select ? { select } : {}),
+  });
+}
+
+/**
  * The hosts, for a view that shows whether each is online. Presence is not
  * streamed to the console yet, so the list polls on `LIVE_POLL.hostPresence`
  * while `watching` holds: for as long as Settings → Hosts is mounted, and for
@@ -68,8 +79,36 @@ export function useHostPresence<TData = HostEntity[]>({
   watching?: boolean;
   select?: (hosts: HostEntity[]) => TData;
 } = {}) {
-  const poll = usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), enabled && watching);
+  const poll = useHostPresencePoll(enabled && watching);
   return useHostList<TData>({ enabled, ...(select ? { select } : {}) }, poll);
+}
+
+/**
+ * {@link useHostPresence} for a section under `<Suspense>`: the same list, the
+ * same poll, but it suspends until the first answer and throws a first
+ * failure to the nearest error boundary, so `data` is always the hosts. A poll
+ * that fails over hosts already drawn does not throw; it is `error` on the
+ * result.
+ */
+export function useSuspenseHostPresence() {
+  const list = useHostListQuery();
+  const poll = useHostPresencePoll(true);
+  return useSuspenseQuery<HostEntity[], Error>({ ...list, ...poll });
+}
+
+/**
+ * What `GET /v1/hosts` is, for every read of it: the key and the fetch, once.
+ * {@link useHostList} and the Suspense reads all spread it, so they cannot
+ * drift from one another.
+ */
+function useHostListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: hostsKeys.list(), queryFn: () => app.hosts.findAll() };
+}
+
+/** The presence poll over the hosts list, while `active` holds. */
+function useHostPresencePoll(active: boolean) {
+  return usePollWhile<HostEntity[]>('hostPresence', hostsKeys.list(), active);
 }
 
 type HostListOptions<TData> = Omit<
@@ -86,14 +125,8 @@ export function useHostList<TData = HostEntity[]>(
   options?: HostListOptions<TData>,
   poll?: Poll<HostEntity[]>,
 ) {
-  const app = useConsumerApp();
-
-  return useQuery<HostEntity[], Error, TData>({
-    queryKey: hostsKeys.list(),
-    queryFn: () => app.hosts.findAll(),
-    ...options,
-    ...poll,
-  });
+  const list = useHostListQuery();
+  return useQuery<HostEntity[], Error, TData>({ ...list, ...options, ...poll });
 }
 
 /**

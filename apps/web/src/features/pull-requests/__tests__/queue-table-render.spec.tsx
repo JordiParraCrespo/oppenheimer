@@ -62,14 +62,20 @@ vi.mock('@oppenheimer/frontend-core/react', async (original) => ({
 vi.mock('../hooks/use-queue-search', () => ({
   useQueueSearch: () => ({
     scope: 'mine',
-    lane: undefined,
-    repo: undefined,
+    filters: {},
     setScope: vi.fn(),
+    setRepo: vi.fn(),
     setLane: vi.fn(),
+    setChecks: vi.fn(),
+    setWait: vi.fn(),
   }),
 }));
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
+  Link: () => null,
+}));
 
 function pull(title: string, number: number): PullRequestEntity {
   return {

@@ -9,7 +9,7 @@ export interface TaskSessionLink {
 
 /**
  * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
- * asks for, in one of four columns, under a project and maybe one of its goals.
+ * asks for, in one of four columns, under a project and maybe one of its milestones.
  * Due dates are calendar days (`YYYY-MM-DD`) read in the viewer's timezone, so the
  * caller says what today is.
  */
@@ -17,7 +17,7 @@ export class TaskEntity {
   constructor(
     public readonly id: string,
     public readonly projectId: string,
-    public readonly goalId: string | null,
+    public readonly milestoneId: string | null,
     public readonly status: TaskStatus,
     /** Its place in the column; compare byte by byte with {@link compareRank}. */
     public readonly rank: string,
@@ -29,10 +29,18 @@ export class TaskEntity {
     public readonly sessions: TaskSessionLink[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    /** Why it waits on a person, or null. Done clears it. */
+    public readonly blockedReason: string | null = null,
+    /** Goes up on every write, whoever made it. */
+    public readonly version = 1,
   ) {}
 
   get isDone(): boolean {
     return this.status === 'done';
+  }
+
+  get isBlocked(): boolean {
+    return !this.isDone && this.blockedReason !== null;
   }
 
   /** Open and due before `today` (`YYYY-MM-DD`, the viewer's). */
@@ -52,8 +60,8 @@ export function compareRank(a: TaskEntity, b: TaskEntity): number {
   return a.rank < b.rank ? -1 : a.rank > b.rank ? 1 : 0;
 }
 
-/** A goal over a project's tasks, with how far it is. */
-export class GoalEntity {
+/** A milestone over a project's tasks, with how far it is. */
+export class MilestoneEntity {
   constructor(
     public readonly id: string,
     public readonly projectId: string,
@@ -64,7 +72,7 @@ export class GoalEntity {
     public readonly createdAt: Date,
   ) {}
 
-  /** 0 to 100; a goal with no tasks is at 0. */
+  /** 0 to 100; a milestone with no tasks is at 0. */
   get percent(): number {
     return this.totalCount ? Math.round((this.doneCount / this.totalCount) * 100) : 0;
   }
@@ -80,9 +88,11 @@ export interface TaskInput {
   notes?: string;
   status?: TaskStatus;
   projectId?: string;
-  goalId?: string | null;
+  milestoneId?: string | null;
   dueDate?: string | null;
   dueTime?: string | null;
+  /** Marks the task blocked and says why; `null` unblocks it. */
+  blockedReason?: string | null;
 }
 
 /** A column change: first when `afterTaskId` is null, else directly after that task. */
@@ -91,7 +101,7 @@ export interface TaskMove {
   afterTaskId: string | null;
 }
 
-export interface GoalInput {
+export interface MilestoneInput {
   name: string;
   projectId: string;
   targetDate?: string | null;
@@ -100,7 +110,7 @@ export interface GoalInput {
 /** Narrows the board: one filter or none. */
 export interface TaskFilter {
   projectId?: string;
-  goalId?: string;
+  milestoneId?: string;
   sessionId?: string;
   dueFrom?: string;
   dueTo?: string;

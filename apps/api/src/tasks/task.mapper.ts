@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { PlanSummaryTask } from '@oppenheimer/shared/plan';
 import { TaskOrmEntity } from './database/task.orm-entity';
 import { TaskSessionOrmEntity } from './database/task-session.orm-entity';
 import { TaskEntity, type TaskSessionLink } from './domain/task.entity';
@@ -12,7 +13,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.projectId = entity.projectId;
-    record.goalId = entity.goalId;
+    record.milestoneId = entity.milestoneId;
     record.status = entity.status;
     record.rank = entity.rank;
     record.title = entity.title;
@@ -20,6 +21,10 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     record.dueDate = entity.dueDate;
     record.dueTime = entity.dueTime;
     record.completedAt = entity.completedAt;
+    record.blockedReason = entity.blockedReason;
+    record.blockedAt = entity.blockedAt;
+    record.version = entity.version;
+    record.idempotencyKey = entity.idempotencyKey;
     record.createdByUserId = entity.createdByUserId;
     return record;
   }
@@ -43,7 +48,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
       props: {
         organizationId: record.organizationId,
         projectId: record.projectId,
-        goalId: record.goalId ?? null,
+        milestoneId: record.milestoneId ?? null,
         status: record.status,
         rank: record.rank,
         title: record.title,
@@ -51,6 +56,10 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
         dueDate: record.dueDate ?? null,
         dueTime: record.dueTime ?? null,
         completedAt: record.completedAt ?? null,
+        blockedReason: record.blockedReason ?? null,
+        blockedAt: record.blockedAt ?? null,
+        version: record.version,
+        idempotencyKey: record.idempotencyKey ?? null,
         createdByUserId: record.createdByUserId ?? null,
         sessions: [...links]
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
@@ -68,7 +77,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     const dto = new TaskResponseDto();
     dto.id = entity.id;
     dto.projectId = entity.projectId;
-    dto.goalId = entity.goalId;
+    dto.milestoneId = entity.milestoneId;
     dto.status = entity.status;
     dto.rank = entity.rank;
     dto.title = entity.title;
@@ -76,6 +85,9 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     dto.dueDate = entity.dueDate;
     dto.dueTime = entity.dueTime;
     dto.completedAt = entity.completedAt?.toISOString() ?? null;
+    dto.blockedReason = entity.blockedReason;
+    dto.blockedAt = entity.blockedAt?.toISOString() ?? null;
+    dto.version = entity.version;
     dto.sessions = entity.sessions.map((link) => {
       const item = new TaskSessionLinkResponseDto();
       item.sessionId = link.sessionId;
@@ -86,5 +98,18 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();
     return dto;
+  }
+
+  /** What `summarizePlan` reads of a task. */
+  toSummaryTask(entity: TaskEntity): PlanSummaryTask {
+    return {
+      id: entity.id,
+      projectId: entity.projectId,
+      milestoneId: entity.milestoneId,
+      status: entity.status,
+      title: entity.title,
+      dueDate: entity.dueDate,
+      blockedReason: entity.blockedReason,
+    };
   }
 }

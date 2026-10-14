@@ -208,7 +208,8 @@
     "duplicate": "Duplicar",
     "delete": "Eliminar automatización",
     "resumeAction": "Reanudar",
-    "notFound": "Esta automatización no existe o se eliminó."
+    "notFound": "Esta automatización no existe o se eliminó.",
+    "loadFailed": "No se pudo cargar esta automatización."
   },
   "editor": {
     "newTitle": "Nueva automatización",

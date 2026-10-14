@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
+import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
   skipToken,
@@ -11,11 +11,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
-  CreatedShareLink,
   CreateSessionInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionShare,
   SharedSession,
 } from '../modules/sessions/session.entity';
 import {
@@ -26,6 +26,11 @@ import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
 import { seedDetails } from './seed-details';
 
+/**
+ * A session's share sits beside `details()`, not under `detail(id)`: sharing
+ * raises no `session.changed`, so a row's every change would refetch it for
+ * nothing.
+ */
 export const sessionsKeys = {
   all: ['sessions'] as const,
   lists: () => [...sessionsKeys.all, 'list'] as const,
@@ -34,9 +39,8 @@ export const sessionsKeys = {
   detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
   start: (id: string | undefined, failed: boolean) =>
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
-  shareLinks: (id: string) => [...sessionsKeys.detail(id), 'share-links'] as const,
-  /** Under `sessions`, so a link's secret never reaches the persisted cache. */
-  shared: (token: string | undefined) => [...sessionsKeys.all, 'shared', token] as const,
+  share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
+  shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
 };
 
 /**
@@ -452,63 +456,83 @@ export function usePasteSessionFile(
   });
 }
 
-/** A session's share links, for the people who may manage them. */
-export function useShareLinks(sessionId: string) {
+/** How a session is shared, or `null`, for the people who may manage it. */
+export function useSessionShare(sessionId: string) {
   const app = useConsumerApp();
   return useQuery({
-    queryKey: sessionsKeys.shareLinks(sessionId),
-    queryFn: () => app.sessions.findShareLinks(sessionId),
+    queryKey: sessionsKeys.share(sessionId),
+    queryFn: () => app.sessions.findShare(sessionId),
   });
 }
 
-export interface CreateShareLinkVariables {
-  sessionId: string;
-  input: CreateShareLinkDto;
+/** Seeds a session's share with what a write answered, or clears it. */
+function useSetShareCache() {
+  const queryClient = useQueryClient();
+  return (sessionId: string, share: SessionShare | null) =>
+    queryClient.setQueryData(sessionsKeys.share(sessionId), share);
 }
 
-/** Make a link. Its secret is on the answer, and nowhere in the cache. */
-export function useCreateShareLink(
-  options?: UseMutationOptions<CreatedShareLink, Error, CreateShareLinkVariables>,
+export interface PutSessionShareVariables {
+  sessionId: string;
+  input: PutSessionShareDto;
+}
+
+/** Share a session, or replace how it is shared; its address stays. */
+export function usePutSessionShare(
+  options?: UseMutationOptions<SessionShare, Error, PutSessionShareVariables>,
 ) {
   const app = useConsumerApp();
-  const queryClient = useQueryClient();
+  const setShare = useSetShareCache();
   return useMutation({
-    mutationFn: ({ sessionId, input }: CreateShareLinkVariables) =>
-      app.sessions.createShareLink(sessionId, input),
-    ...withCacheOnSuccess(options, (_link, { sessionId }) => {
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.shareLinks(sessionId) });
-    }),
+    mutationFn: ({ sessionId, input }: PutSessionShareVariables) =>
+      app.sessions.putShare(sessionId, input),
+    ...withCacheOnSuccess(options, (share, { sessionId }) => setShare(sessionId, share)),
   });
 }
 
-export interface RevokeShareLinkVariables {
+export interface SetSessionSharePeopleVariables {
   sessionId: string;
-  linkId: string;
+  people: string[];
 }
 
-export function useRevokeShareLink(
-  options?: UseMutationOptions<void, Error, RevokeShareLinkVariables>,
+/** Narrow who a `people` share names; to remove the last one, stop sharing. */
+export function useSetSessionSharePeople(
+  options?: UseMutationOptions<SessionShare, Error, SetSessionSharePeopleVariables>,
 ) {
   const app = useConsumerApp();
-  const queryClient = useQueryClient();
+  const setShare = useSetShareCache();
   return useMutation({
-    mutationFn: ({ sessionId, linkId }: RevokeShareLinkVariables) =>
-      app.sessions.revokeShareLink(sessionId, linkId),
-    ...withCacheOnSuccess(options, (_result, { sessionId }) => {
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.shareLinks(sessionId) });
-    }),
+    mutationFn: ({ sessionId, people }: SetSessionSharePeopleVariables) =>
+      app.sessions.setSharePeople(sessionId, people),
+    ...withCacheOnSuccess(options, (share, { sessionId }) => setShare(sessionId, share)),
   });
 }
 
-/** What a share link opens, for whoever holds it, signed in or not. */
+export interface StopSessionShareVariables {
+  sessionId: string;
+}
+
+/** Stop sharing: the address opens nothing again. */
+export function useStopSessionShare(
+  options?: UseMutationOptions<void, Error, StopSessionShareVariables>,
+) {
+  const app = useConsumerApp();
+  const setShare = useSetShareCache();
+  return useMutation({
+    mutationFn: ({ sessionId }: StopSessionShareVariables) => app.sessions.stopShare(sessionId),
+    ...withCacheOnSuccess(options, (_result, { sessionId }) => setShare(sessionId, null)),
+  });
+}
+
+/** What a share's address opens for whoever is signed in, or why it does not. */
 export function useSharedSession(
-  token: string | undefined,
+  slug: string | undefined,
   options?: Omit<UseQueryOptions<SharedSession, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
   return useQuery({
-    queryKey: sessionsKeys.shared(token),
-    queryFn: token ? () => app.sessions.findSharedSession(token) : skipToken,
+    queryKey: sessionsKeys.shared(slug),
+    queryFn: slug ? () => app.sessions.findSharedSession(slug) : skipToken,
     ...options,
   });
 }

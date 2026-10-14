@@ -20,7 +20,7 @@
   "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
   "taskAdded": "Tarea añadida.",
   "taskDeleted": "Tarea eliminada.",
-  "goalAdded": "Objetivo añadido.",
+  "milestoneAdded": "Hito añadido.",
   "taskSessionStarted": "Sesión iniciada.",
   "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar.",
   "pullRequestsSlowedDown": "GitHub nos pidió ir más despacio, así que a algunas filas les falta una parte. Aparecerá en la siguiente lectura.",
@@ -33,5 +33,7 @@
   "reviewSubmitted": "Revisión enviada.",
   "reviewApprovedMerged": "Aprobada y fusionada.",
   "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
-  "reviewCommentPosted": "Comentario publicado."
+  "reviewCommentPosted": "Comentario publicado.",
+  "reviewApproved": "Aprobada.",
+  "reviewApprovedAutoMerge": "Aprobada. Se hará merge cuando pasen los checks obligatorios."
 }

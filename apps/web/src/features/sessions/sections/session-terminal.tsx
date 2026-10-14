@@ -18,6 +18,7 @@ import { useTerminal } from '../hooks/use-terminal';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { HostLinkFix } from './host-link-fix';
+import { SessionShareButton } from './session-share-button';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
@@ -34,7 +35,8 @@ const AGENT_WINDOW = 0;
  * The bottom band is the host link (`HostLinkChrome`): the status bar while
  * the link is live or blipping, and while the host is away a banner in its
  * place that says so, counts the time, and opens the fix from How to fix.
- * It comes back on its own; the fix is for when it does not.
+ * It comes back on its own; the fix is for when it does not. Share closes
+ * the status line on the right, in either form.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
@@ -164,11 +166,13 @@ export function SessionTerminal({
                 memory, permission mode, host count — are numbers the runner
                 and the control plane report. They stay out until there is
                 something real to put in them. */}
+            <SessionShareButton sessionId={sessionId} />
           </HostLinkChrome>
         ) : (
           <TerminalStatusBar>
             {statusItem}
             <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
+            <SessionShareButton sessionId={sessionId} />
           </TerminalStatusBar>
         )}
       </Terminal>

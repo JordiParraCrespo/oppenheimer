@@ -8,6 +8,7 @@ export * from './github.schema.js';
 export * from './host.schema.js';
 export * from './organization.schema.js';
 export * from './pagination.schema.js';
+export * from './plan-stats.schema.js';
 export * from './primitives.js';
 export * from './profile.schema.js';
 export * from './project.schema.js';

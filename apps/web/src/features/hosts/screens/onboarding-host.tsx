@@ -7,13 +7,15 @@ import { usePairing } from '../hooks/use-pairing';
 
 /**
  * Onboarding: pair the first host (`design/version1/AddHost.dc.html`, the
- * 2026-09-27 export). This step owns the header and the wait: Continue waits
- * for the runner to come online (`usePairing`'s rules). The column is the
- * kit's `PairingChrome`, shared with the console's Add a host dialog.
+ * 2026-10-13 export): the agent prompt first, the command behind "Install
+ * manually instead", the Connection list under them. This step owns the
+ * header and the wait: Continue waits for the runner to come online
+ * (`usePairing`'s rules). The column is the kit's `PairingChrome`, shared
+ * with the console's Add a host dialog.
  *
- * Skip is there in every state, the answer about pairing still on its way
- * included. Where this deployment cannot pair, it is the primary action and
- * Continue goes.
+ * Skip for now sits beside Continue in every state, the answer about pairing
+ * still on its way included. Where this deployment cannot pair, it is the
+ * primary action and Continue goes.
  */
 export function OnboardingHostScreen({
   step,
@@ -62,27 +64,26 @@ export function OnboardingHostScreen({
         />
       </PairingGate>
 
-      <div className="flex flex-col items-start gap-3.5">
-        {!unavailable && (
-          <Button size="lg" disabled={!done} render={next(host?.id)}>
-            {t('onboarding.flow.continue')}
+      {/* Skippable even where pairing works: a machine may not be at hand,
+          and it is what makes Ready's "no host yet" row reachable. */}
+      <div className="flex flex-wrap items-center gap-4">
+        {unavailable ? (
+          <Button size="lg" render={skip}>
+            {t('onboarding.flow.host.skip')}
           </Button>
-        )}
-
-        {/* Skippable even where pairing works: a machine may not be at hand,
-            and it is what makes Ready's "no host yet" row reachable. */}
-        <div className="flex flex-col items-start gap-1.5">
-          {unavailable ? (
-            <Button size="lg" render={skip}>
-              {t('onboarding.flow.host.skip')}
+        ) : (
+          <>
+            <Button size="lg" disabled={!done} render={next(host?.id)}>
+              {t('onboarding.flow.continue')}
             </Button>
-          ) : (
-            <TextLink render={skip}>{t('onboarding.flow.host.skip')}</TextLink>
-          )}
-          <p className="text-xs leading-normal text-fg-subtle">
-            {t('onboarding.flow.host.skipNote')}
-          </p>
-        </div>
+            <TextLink className="text-sm" render={skip}>
+              {t('onboarding.flow.host.skip')}
+            </TextLink>
+          </>
+        )}
+        <p className="text-xs leading-normal text-pretty text-fg-subtle">
+          {t('onboarding.flow.host.skipNote')}
+        </p>
       </div>
     </div>
   );

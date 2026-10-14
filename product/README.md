@@ -332,6 +332,15 @@ earlier note:
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
   (`versions/mvp/17-plan.md`, "As built").
+- 17 to 19 named Plan's grouping of tasks **goals**. The 2026-10-13
+  export renamed them milestones, and the owner had the rename go all the
+  way down, tables and routes included (`versions/mvp/23-plan-milestones-stats-accounts.md`).
+- Note 23 first gave Plan's console a Stats view, a project overview, a
+  project list in the sidebar, a Blocked row on tasks and a toggle per
+  Google account. The owner had the console match the 2026-10-13 `Tasks`
+  frame instead (2026-10-13): Tasks, Milestones (the timeline alone) and
+  Calendar, nothing more. The API pieces stay for the agents' Projects
+  section (`versions/mvp/23-plan-milestones-stats-accounts.md`, "Settled since").
 - Note 15's first version proposed protecting the reviewer and the
   evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
   owner rejected it the same day (2026-09-27): the product is for people
@@ -366,6 +375,12 @@ earlier note:
   link, to watch or to type, for anyone, any account or named people
   (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
   as its creator's, so it opens nothing they could not.
+- `versions/mvp/21-session-share-links.md` built sharing on 2026-10-08 as
+  bearer links (anyone signed out, any account, or named people; the
+  secret shown once). On 2026-10-13 it was rebuilt to the `ShareSession`
+  design: one share per session at one address, named people or anyone
+  signed in, write for named people for a day at most. The note keeps the
+  links under Superseded.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06
@@ -399,3 +414,33 @@ earlier note:
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
+- `versions/mvp/05-screens.md` had onboarding's Add a host step and the
+  console's Add a host dialog lead with Copy install command and Copy
+  agent prompt, the instruction behind an Inspect fold and one status
+  line. Since 2026-10-13 both lead with the agent prompt (Copy prompt, the
+  text behind a fold), fold the command behind "Install manually instead"
+  and show a Connection list: Runner installed, then Host connected. The
+  export's Tools on PATH row waits for the wire to carry a host's tools.
+  Settings' Add a host page keeps the panel with both forms.
+- `next-steps/0.2-pull-requests.md` (version 1 scope, 2026-10-05) put a
+  summary agent's brief on every pull request, and the 2026-10-05 frames
+  opened one on a Briefing with a lane switcher and a review session. On
+  2026-10-13 the owner took the 2026-10-13 frames without their chat,
+  review agent or Employees: a pull request is **Description and
+  Changes**, the description is the author's own beside the rail (merge
+  status, comments, reviews, checks), and there is no generated summary
+  until the chat comes (0.7). The frame's status strip above the
+  description was built and dropped the next day for the rail. The queue filters by repository,
+  Difficulty, Checks and Waiting in a fixed order (Deep first, then the
+  longest wait); Submit review splits **Approve** from **Approve and
+  merge**, which turns on GitHub's auto-merge when it cannot merge yet;
+  the activity timeline, the Briefing and the Merge confidence
+  score are gone; watched repositories are set in Settings only
+  (`next-steps/0.2-pull-requests.md`, "The screens as built").
+- `versions/mvp/10-api-modules-and-data-model.md` held a project to at
+  least one repository, and the console would not save one without (the
+  2026-09-26 line above). On 2026-10-14 the owner allowed a project with
+  no repository: it is a place for tasks, milestones, memory and sessions,
+  and folder and terminal sessions need none. A project that holds
+  repositories still offers a default among them (`PROJECTS_006`). The
+  Unassigned project keeps that name.

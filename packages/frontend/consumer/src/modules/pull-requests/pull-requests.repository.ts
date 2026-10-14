@@ -22,6 +22,7 @@ import {
   type PullRequestQueue,
   type PullRequestScope,
   type ReviewInput,
+  type ReviewOutcome,
   type WatchedRepository,
 } from './pull-request.entity';
 import { PullRequestsErrors } from './pull-requests.errors';
@@ -212,12 +213,13 @@ export class PullRequestsRepository {
     });
   }
 
-  /** Answers whether approving also merged it; GitHub may hold the merge, and then it waits. */
+  /**
+   * Answers what happened to the merge: approve and merge merges now when
+   * GitHub allows it, and otherwise GitHub's auto-merge takes it once the
+   * required checks pass (`autoMerge`), or it waits.
+   */
   @MapApiError(PullRequestsErrors.REVIEW_FAILED)
-  async submitReview(
-    address: PullRequestAddress,
-    review: ReviewInput,
-  ): Promise<{ merged: boolean }> {
+  async submitReview(address: PullRequestAddress, review: ReviewInput): Promise<ReviewOutcome> {
     return unwrapBody(
       heyApiSdk.submitPullRequestReview({
         path: address,

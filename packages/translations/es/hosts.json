@@ -9,12 +9,16 @@
     "online": "Runner conectado",
     "mintFailed": "No hemos podido crear un token de registro.",
     "installerDigest": "SHA-256 del instalador: {{digest}}",
-    "copyCommand": "Copiar comando de instalación",
-    "copyPrompt": "Copiar instrucción para el agente",
-    "inspect": "Ver comando e instrucción",
+    "copyPrompt": "Copiar instrucción",
     "format": "Formato de instalación",
     "command": "Comando",
-    "agentPrompt": "Instrucción para el agente"
+    "agentPrompt": "Instrucción para el agente",
+    "manualLead": "Ejecuta esto tú mismo en la máquina:",
+    "connection": "Conexión",
+    "installWaiting": "Esperando a que el agente ejecute la instalación",
+    "installed": "Runner instalado",
+    "connected": "Host conectado",
+    "manual": "Instalar a mano"
   },
   "add": {
     "title": "Añadir un host",
@@ -33,7 +37,7 @@
     },
     "crumbHosts": "Hosts",
     "done": "Listo",
-    "description": "Ejecuta un comando en la máquina donde quieras las sesiones. Nada de ella queda expuesto a internet."
+    "description": "Pega esta instrucción en el agente de código de la máquina donde quieras las sesiones. Instala el runner y lo conecta. Nada queda expuesto a internet."
   },
   "settings": {
     "state": {

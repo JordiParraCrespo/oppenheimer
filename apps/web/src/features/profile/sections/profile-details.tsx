@@ -1,26 +1,19 @@
 import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
-import { useMyProfile } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ProfileEmailSection } from './profile-email';
-import { ProfileNameSection } from './profile-name';
-import { ProfilePictureSection } from './profile-picture';
+import { ProfileDetailsRows } from './profile-details-rows';
 
 /**
  * The profile card: picture, email, then the name and username the save row
- * commits. One query, and every row below reads the entity it returns — each
- * row owns its own write, so uploading a picture does not reset a name that
- * is half typed.
+ * commits. The rows read the profile under Suspense; this draws the card
+ * until they can, and the failure if the first read fails.
  */
 export function ProfileDetailsSection() {
   const { t } = useTranslation();
-  const profile = useMyProfile();
 
   return (
-    <QueryState
-      query={profile}
-      errorFallback={t('settings.profile.failed')}
-      pending={
+    <QueryState>
+      <QueryState.Pending>
         <SettingsGroup aria-busy>
           {[0, 1, 2, 3].map((row) => (
             <SettingsRow key={row} label={<Skeleton className="h-4 w-28" />}>
@@ -28,14 +21,11 @@ export function ProfileDetailsSection() {
             </SettingsRow>
           ))}
         </SettingsGroup>
-      }
-    >
-      {(data) => (
-        <ProfileNameSection profile={data}>
-          <ProfilePictureSection profile={data} />
-          <ProfileEmailSection profile={data} />
-        </ProfileNameSection>
-      )}
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('settings.profile.failed')} />
+      <QueryState.Data>
+        <ProfileDetailsRows />
+      </QueryState.Data>
     </QueryState>
   );
 }

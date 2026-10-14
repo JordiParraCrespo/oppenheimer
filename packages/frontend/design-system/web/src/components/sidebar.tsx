@@ -470,10 +470,17 @@ function SortableSidebarProjectGroup({
  * project settings) that only appear on hover or focus. 28px on a 6px
  * radius, the hover wash across the whole row. `current` lifts the name to
  * full ink while a session inside the group is open.
+ *
+ * `tone="eyebrow"` is Employees' group: the name in 11px uppercase subtle
+ * ink, as a label over its bots rather than a project to open. `marker` is
+ * a glyph that stays at the row's end (a lock on the Built-in group, whose
+ * bots cannot be moved or renamed), in place of actions it does not have.
  */
 function SidebarProjectHeader({
   name,
   count,
+  tone = 'project',
+  marker,
   open = true,
   onOpenChange,
   current,
@@ -486,6 +493,9 @@ function SidebarProjectHeader({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   current?: boolean;
+  tone?: 'project' | 'eyebrow';
+  /** A glyph that stays visible at the row's end, with its reason as its title. */
+  marker?: React.ReactNode;
   /** Icon buttons, 22px, shown on hover. */
   actions?: React.ReactNode;
 }) {
@@ -496,6 +506,7 @@ function SidebarProjectHeader({
       data-slot="sidebar-project-header"
       data-open={open}
       data-current={current || undefined}
+      data-tone={tone}
       className={cn(
         'group/project relative mx-1.5 flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-1.5 transition-colors duration-fast hover:bg-hover-surface',
         sortable && 'touch-none',
@@ -509,7 +520,12 @@ function SidebarProjectHeader({
         {...sortable?.control}
         aria-expanded={open}
         onClick={() => onOpenChange?.(!open)}
-        className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left text-[12.5px] font-medium tracking-[-0.006em] text-sidebar-muted outline-none transition-colors duration-fast hover:text-fg group-data-current/project:text-fg focus-visible:text-fg"
+        className={cn(
+          'flex h-full min-w-0 flex-1 items-center gap-1.5 text-left font-medium text-sidebar-muted outline-none transition-colors duration-fast hover:text-fg group-data-current/project:text-fg focus-visible:text-fg',
+          tone === 'eyebrow'
+            ? 'gap-1 text-[11px] tracking-[0.02em] text-fg-subtle uppercase'
+            : 'text-[12.5px] tracking-[-0.006em]',
+        )}
       >
         <ChevronDownIcon
           className={cn(
@@ -520,9 +536,12 @@ function SidebarProjectHeader({
         />
         <span className="truncate">{name}</span>
         {count !== undefined ? (
-          <span className="figures ml-0.5 text-[11px] font-normal text-fg-subtle">{count}</span>
+          <span className="figures ml-0.5 text-[11px] font-normal tracking-normal text-fg-subtle">{count}</span>
         ) : null}
       </button>
+      {marker ? (
+        <span className="flex shrink-0 pr-1 text-fg-subtle [&_svg:not([class*=size-])]:size-3.25">{marker}</span>
+      ) : null}
       {actions ? (
         <span
           {...(sortable ? dragIgnore : {})}
@@ -545,6 +564,32 @@ function SidebarEmptyRow({ className, ...props }: React.ComponentProps<'p'>) {
       )}
       {...props}
     />
+  );
+}
+
+/**
+ * SidebarEmptyCard — a list with nothing of the reader's own yet (Employees
+ * before the first bot): on the hover wash at the 14px radius, the title at
+ * 13.5px medium, a line on what will appear and how, and the one action that
+ * starts it. Built-in rows can still list under it.
+ */
+function SidebarEmptyCard({
+  title,
+  action,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'title'> & { title: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div
+      data-slot="sidebar-empty-card"
+      className={cn('mx-1.5 mt-2 flex flex-col gap-2 rounded-md bg-hover-surface p-3.5', className)}
+      {...props}
+    >
+      <span className="text-[13.5px] font-medium text-fg">{title}</span>
+      {children ? <span className="text-[12.5px] leading-[1.45] text-pretty text-fg-muted">{children}</span> : null}
+      {action ? <span className="mt-0.5 flex">{action}</span> : null}
+    </div>
   );
 }
 
@@ -928,6 +973,7 @@ export {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
+  SidebarEmptyCard,
   SidebarEmptyRow,
   SidebarListHead,
   SidebarProjectGroup,

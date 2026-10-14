@@ -373,8 +373,12 @@ stores a fresh one.
 
 `GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
 protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
-request waits. Approving answers `200` with `merged: false` instead of this
-code, because the approval itself landed.
+request waits. Approve and merge answers `200` with `merged: false` instead of
+this code, because the approval itself landed; it then asks GitHub to merge it
+once the required checks pass (`autoMerge: true`), or leaves it waiting when
+the repository does not allow auto-merge (`autoMerge: false`). If GitHub refuses that
+request for another reason, the answer is `GITHUB_015` for a rate limit and
+`GITHUB_009` otherwise; the approval has still landed.
 
 `GITHUB_015` is GitHub's rate limit: the primary hourly budget of an
 installation, a user token or the App, or a secondary limit. GitHub refuses
@@ -411,7 +415,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
-| `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
 
@@ -423,10 +427,11 @@ project" is a question only the module that owns sessions can answer, asked over
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
 
-`PROJECTS_006` is a repository list a project cannot hold: none, none offered by
-default, one repository twice, more than twenty, or a blank base branch. The
+`PROJECTS_006` is a repository list a project cannot hold: repositories with none
+offered by default, one repository twice, more than twenty, or a blank base branch. The
 `detail` names which. The request schema refuses the same bodies earlier; this is the
-project holding its own invariants whatever the caller.
+project holding its own invariants whatever the caller. An empty list is not
+one of them: a project may hold no repository.
 
 `PROJECTS_007` should never be seen: the last slug a new project tries carries part
 of its own id. It is reported rather than retried.
@@ -470,21 +475,23 @@ are never reissued.
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 | `SESSIONS_019` <a id="sessions_019" /> | An attached file is no longer waiting           | 410  |
 | `SESSIONS_020` <a id="sessions_020" /> | Too many files are waiting to be sent           | 429  |
-| `SESSIONS_021` <a id="sessions_021" /> | That share link does not open anything          | 404  |
-| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this share link                 | 401  |
-| `SESSIONS_023` <a id="sessions_023" /> | This share link is not shared with you          | 403  |
-| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold | 409 |
+| `SESSIONS_021` <a id="sessions_021" /> | That session is not shared, or no longer        | 404  |
+| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this shared session             | 401  |
+| `SESSIONS_023` <a id="sessions_023" /> | This session is not shared with you             | 403  |
+| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold (no longer raised) | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
 
-`SESSIONS_021`–`SESSIONS_024` belong to share links
-(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_021` is one answer for
-a secret that was never issued, a link revoked or expired, and a link to a closed
-session: the holder can only ask for a new one either way. `SESSIONS_022` and
-`SESSIONS_023` are apart because each has its own next step — sign in, or ask to be
-named; a list of people matches a verified email only. `SESSIONS_024` is twenty live
-links on one session.
+`SESSIONS_021`–`SESSIONS_023` belong to sharing a session
+(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_022` comes first, for
+anybody signed out, before the address is looked up, so a signed-out caller learns
+nothing about it. `SESSIONS_021` is one answer for an address that was never shared,
+a share stopped or expired, and a share of a closed session: the guest can only ask
+for it to be shared again either way. `SESSIONS_023` is apart because its next step
+is its own — ask to be named; a list of people matches a verified email only.
+`SESSIONS_024` was twenty live share links on one session; since 2026-10-13 a
+session has one share, and the code stays reserved so it is never reused.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -581,20 +588,21 @@ pauses the automation with a `pausedReason`.
 
 ## Tasks
 
-Plan's board: tasks, the goals over them, and the sessions a task started or
+Plan's board: tasks, the milestones over them, and the sessions a task started or
 links. See `product/versions/mvp/17-plan.md`.
 
 | Code                                 | Title                                    | HTTP |
 | ------------------------------------ | ---------------------------------------- | ---- |
 | `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
-| `TASKS_002` <a id="tasks_002" />     | Goal not found                           | 404  |
+| `TASKS_002` <a id="tasks_002" />     | Milestone not found                      | 404  |
 | `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
 | `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
 | `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
 | `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
-| `TASKS_007` <a id="tasks_007" />     | That goal belongs to another project     | 409  |
+| `TASKS_007` <a id="tasks_007" />     | That milestone belongs to another project | 409 |
+| `TASKS_008` <a id="tasks_008" />     | It changed since you read it             | 409  |
 
-`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, goal or
+`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, milestone or
 session in another workspace.
 
 `TASKS_004` is a project that is missing or archived: nothing new is filed under a
@@ -603,8 +611,13 @@ retired project.
 `TASKS_006` is a move that named a task to land after which is no longer in that
 column, or is the task being moved. The board was stale; reload it.
 
-`TASKS_007` is a request whose goal and project disagree. A goal brings its own
+`TASKS_007` is a request whose milestone and project disagree. A milestone brings its own
 project, so leave `projectId` out when choosing one.
+
+`TASKS_008` is a write that named the version it read (`expectedVersion`, or
+`If-Match` on a delete) after someone else had written the task or milestone.
+Nothing changed; read it again and decide again. A write that names no version
+always lands, and still moves the version on.
 
 ## Calendar
 
@@ -623,6 +636,7 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
 | `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
 | `CALENDAR_010` <a id="calendar_010" />   | Google Calendar's rate limit was reached; try again shortly | 429 |
+| `CALENDAR_011` <a id="calendar_011" />   | That is as many Google accounts as the calendar takes | 409 |
 
 `CALENDAR_003` is a range that runs backwards or covers more than 62 days.
 
@@ -635,8 +649,12 @@ else's. Start again from Connect Google Calendar.
 `CALENDAR_006` is Google refusing the code, returning no refresh token, or a
 consent screen where the calendar permission was left unticked.
 
-`CALENDAR_007` is no connection, or one Google has since revoked (or one sealed
-under a `CALENDAR_TOKEN_KEY` that was replaced): connect again.
+`CALENDAR_007` is no such connection of the caller's (a reconnect of an account
+since removed), or one Google has since revoked (or one sealed under a
+`CALENDAR_TOKEN_KEY` that was replaced): connect again.
+
+`CALENDAR_011` is a sixth Google account: a person connects five at most.
+Remove one, or reconnect one already listed, which does not count again.
 
 ## Inbound events
 

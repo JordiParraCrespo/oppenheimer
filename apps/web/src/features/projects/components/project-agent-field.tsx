@@ -16,6 +16,7 @@ export function ProjectAgentField({ control }: { control: Control<ProjectFormVal
         {CODING_AGENT_IDS.map((agent) => (
           <Chip
             key={agent}
+            size="md"
             selected={field.value === agent}
             icon={<AgentMark agent={agent} />}
             onClick={() => field.onChange(field.value === agent ? null : agent)}

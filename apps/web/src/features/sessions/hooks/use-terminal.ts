@@ -96,6 +96,9 @@ export function useTerminal(
 
     const stream = createStream();
     streamRef.current = stream;
+    // A new stream has not ended: one opened because the inputs changed (a
+    // shared session narrowed to watching) must not keep the last one's end.
+    setEnded(null);
     const snapshot = snapshotKey ? readTerminalSnapshot(snapshotKey) : undefined;
     // A kept picture is something on screen: the waiting state has nothing
     // to say over it. The pane may be a new session's, so this is set either way.

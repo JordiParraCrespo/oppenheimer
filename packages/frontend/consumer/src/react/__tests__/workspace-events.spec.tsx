@@ -132,7 +132,8 @@ describe('useWorkspaceEvents', () => {
     renderHook(() => useWorkspaceEvents('org-1'), { wrapper });
 
     await status('live');
-    expect(invalidated).toContainEqual(sessionsKeys.all);
+    expect(invalidated).toContainEqual(sessionsKeys.lists());
+    expect(invalidated).toContainEqual(sessionsKeys.details());
     expect(invalidated).toContainEqual(automationsKeys.details());
     const once = invalidated.length;
 

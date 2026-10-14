@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@oppenheimer/design-system-web/badge';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { Chip } from '@oppenheimer/design-system-web/chip';
 import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
@@ -11,7 +12,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@oppenheimer/design-system-web/dialog';
-import { PlayIcon } from '@oppenheimer/design-system-web/icons';
+import { EyeIcon, PlayIcon } from '@oppenheimer/design-system-web/icons';
 import { Kbd } from '@oppenheimer/design-system-web/kbd';
 import { SessionPaneBack, SessionPaneHeader } from '@oppenheimer/design-system-web/session-pane-header';
 import { dotVariants } from '@oppenheimer/design-system-web/status-dot';
@@ -22,6 +23,7 @@ import {
   TerminalPrompt,
   TerminalScrollback,
 } from '@oppenheimer/design-system-web/terminal';
+import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import * as React from 'react';
 
 import { COLUMNS, TODAY } from './plan-fixtures';
@@ -33,8 +35,8 @@ const PROJECTS: ChipSelectOption[] = [
   { value: 'atlas', label: 'Atlas' },
   { value: 'client-sites', label: 'Client sites' },
 ];
-const GOAL_OPTIONS: ChipSelectOption[] = [
-  { value: 'none', label: 'No goal' },
+const MILESTONE_OPTIONS: ChipSelectOption[] = [
+  { value: 'none', label: 'No milestone' },
   { value: 'atlas-beta', label: 'Atlas public beta' },
 ];
 const HOST_OPTIONS: ChipSelectOption[] = [
@@ -49,7 +51,7 @@ const REPO_OPTIONS: ChipSelectOption[] = [
 /**
  * The task dialog and Start session as the system draws them, in one state
  * each: the statuses and the agent's models are fixed, so they are chips;
- * projects, goals, hosts and repositories grow with the workspace, so they
+ * projects, milestones, hosts and repositories grow with the workspace, so they
  * are `ChipSelect`s that filter. What a pick does (an offline host, a
  * queued start) is the console's, not drawn here.
  */
@@ -58,7 +60,7 @@ export function PlanDialogsDemo() {
   const [startOpen, setStartOpen] = React.useState(false);
   const [status, setStatus] = React.useState<TaskStatus>('todo');
   const [project, setProject] = React.useState('atlas');
-  const [goal, setGoal] = React.useState('atlas-beta');
+  const [milestone, setMilestone] = React.useState('atlas-beta');
   const [due, setDue] = React.useState<string | null>('2026-10-10');
   const [host, setHost] = React.useState('mac-studio');
   const [repo, setRepo] = React.useState('atlas');
@@ -97,7 +99,7 @@ export function PlanDialogsDemo() {
               <dt className="col-span-1 text-fg-muted">Status</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
                 {COLUMNS.map((c) => (
-                  <Chip key={c.id} variant="solid" selected={status === c.id} onClick={() => setStatus(c.id)} icon={<span className={dotVariants({ state: TASK_STATUS_STATE[c.id] })} />}>
+                  <Chip key={c.id} variant="solid" size="md" selected={status === c.id} onClick={() => setStatus(c.id)} icon={<span className={dotVariants({ state: TASK_STATUS_STATE[c.id] })} />}>
                     {c.label}
                   </Chip>
                 ))}
@@ -106,9 +108,9 @@ export function PlanDialogsDemo() {
               <dd className="col-span-3 m-0">
                 <ChipSelect value={project} onValueChange={setProject} options={PROJECTS} aria-label="Project" searchPlaceholder="Search projects…" emptyText="No project matches." />
               </dd>
-              <dt className="col-span-1 text-fg-muted">Goal</dt>
+              <dt className="col-span-1 text-fg-muted">Milestone</dt>
               <dd className="col-span-3 m-0">
-                <ChipSelect value={goal} onValueChange={setGoal} options={GOAL_OPTIONS} aria-label="Goal" searchPlaceholder="Search goals…" emptyText="No goal matches." />
+                <ChipSelect value={milestone} onValueChange={setMilestone} options={MILESTONE_OPTIONS} aria-label="Milestone" searchPlaceholder="Search milestones…" emptyText="No milestone matches." />
               </dd>
               <dt className="col-span-1 text-fg-muted">Sessions</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
@@ -166,7 +168,7 @@ export function PlanDialogsDemo() {
               <dt className="col-span-1 text-fg-muted">Agent</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
                 {['Claude Code', 'Codex', 'OpenCode'].map((a) => (
-                  <Chip key={a} variant="solid" selected={agent === a} onClick={() => setAgent(a)}>
+                  <Chip key={a} variant="solid" size="md" selected={agent === a} onClick={() => setAgent(a)}>
                     {a}
                   </Chip>
                 ))}
@@ -175,7 +177,7 @@ export function PlanDialogsDemo() {
               <dd className="col-span-3 m-0 flex flex-col gap-1.5">
                 <span className="flex flex-wrap gap-1.5">
                   {['Opus 4.6', 'Sonnet 4.6', 'Haiku 4.5'].map((m) => (
-                    <Chip key={m} variant="solid" selected={model === m} onClick={() => setModel(m)}>
+                    <Chip key={m} variant="solid" size="md" selected={model === m} onClick={() => setModel(m)}>
                       {m}
                     </Chip>
                   ))}
@@ -238,6 +240,21 @@ export function SessionPaneHeaderDemo() {
       </div>
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         <SessionPaneHeader state="failed" name="retriever eval" stateLabel="Failed" meta="codex · gpt-5 · atlas" />
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border-subtle">
+        <SessionPaneHeader
+          state="running"
+          name="fix-auth-redirect"
+          stateLabel="Running"
+          back={<Wordmark size={14} />}
+          meta="Ends in 23h 41m"
+          actions={
+            <Badge variant="neutral">
+              <EyeIcon />
+              View only
+            </Badge>
+          }
+        />
       </div>
     </div>
   );

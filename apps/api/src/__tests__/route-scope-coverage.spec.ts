@@ -54,7 +54,7 @@ const WRITE_ON_READ: Record<string, string> = {
     "switches the caller's own session, not the organization",
   'POST /v1/workspaces/:id/set-active': "switches the caller's own session, not the workspace",
   'POST /v1/shared-sessions/lookup':
-    'reads the session a share link names; a POST only so the secret stays out of the URL',
+    'reads the session a share names; a POST only so the address stays out of API paths',
 };
 
 describe('route scope coverage', () => {

@@ -1,8 +1,3 @@
-export const userSettingsKeys = {
-  all: ['userSettings'] as const,
-  me: () => [...userSettingsKeys.all, 'me'] as const,
-};
-
 /**
  * Defined here rather than in `auth.queries.ts` because `persistence.ts` needs
  * it at module load, and `auth.queries.ts` imports `persistence.ts`: keeping it

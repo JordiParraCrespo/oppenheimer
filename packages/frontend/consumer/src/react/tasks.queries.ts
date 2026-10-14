@@ -9,10 +9,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
-  type GoalEntity,
-  type GoalInput,
+  type MilestoneEntity,
+  type MilestoneInput,
   TaskEntity,
-  type TaskFilter,
   type TaskInput,
   type TaskMove,
 } from '../modules/tasks/task.entity';
@@ -20,16 +19,18 @@ import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks
 import { useConsumerApp } from './context';
 import { sessionsKeys } from './sessions.queries';
 
+/**
+ * One list, the whole board: every column, count and card reads it, and a
+ * session's tasks are a `select` over it. A filtered read would be a second
+ * leaf with its own segment, not an object `{}` would fuzzy-match.
+ */
 export const tasksKeys = {
   all: ['tasks'] as const,
   lists: () => [...tasksKeys.all, 'list'] as const,
-  list: (filter: TaskFilter) => [...tasksKeys.lists(), filter] as const,
-  goals: () => [...tasksKeys.all, 'goals'] as const,
-  goalList: () => [...tasksKeys.goals(), 'list'] as const,
+  list: () => [...tasksKeys.lists()] as const,
+  milestones: () => [...tasksKeys.all, 'milestones'] as const,
+  milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
 };
-
-/** The whole board, which every column, count and card reads. */
-const BOARD: TaskFilter = {};
 
 /**
  * Every task on the board, in board order. One read serves the columns, the
@@ -40,8 +41,8 @@ export function useTasks<TData = TaskEntity[]>(
 ) {
   const app = useConsumerApp();
   return useQuery<TaskEntity[], Error, TData>({
-    queryKey: tasksKeys.list(BOARD),
-    queryFn: () => app.tasks.findAll(BOARD),
+    queryKey: tasksKeys.list(),
+    queryFn: () => app.tasks.findAll(),
     ...options,
   });
 }
@@ -55,21 +56,21 @@ export function useSessionTasks(sessionId: string | undefined) {
   });
 }
 
-/** The goals of the workspace, with their progress. */
-export function useGoals<TData = GoalEntity[]>(
-  options?: Omit<UseQueryOptions<GoalEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
+/** The milestones of the workspace, with their progress. */
+export function useMilestones<TData = MilestoneEntity[]>(
+  options?: Omit<UseQueryOptions<MilestoneEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
-  return useQuery<GoalEntity[], Error, TData>({
-    queryKey: tasksKeys.goalList(),
-    queryFn: () => app.tasks.findGoals(),
+  return useQuery<MilestoneEntity[], Error, TData>({
+    queryKey: tasksKeys.milestoneList(),
+    queryFn: () => app.tasks.findMilestones(),
     ...options,
   });
 }
 
 /**
  * The server's answer replaces that task's row on the board, or removes it on a
- * delete; goals refetch when a goal's `doneCount` or `totalCount` can move.
+ * delete; milestones refetch when a milestone's `doneCount` or `totalCount` can move.
  * `previous` is the row before the write: read from the board unless the caller
  * already drew a provisional one there. A board read already in flight is
  * cancelled first, so an answer from before the write cannot land on top of it.
@@ -78,26 +79,24 @@ async function settleTask(
   queryClient: QueryClient,
   id: string,
   task: TaskEntity | null,
-  previous = queryClient
-    .getQueryData<TaskEntity[]>(tasksKeys.list(BOARD))
-    ?.find((row) => row.id === id),
+  previous = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list())?.find((row) => row.id === id),
 ) {
-  const boardKnown = queryClient.getQueryData(tasksKeys.list(BOARD)) !== undefined;
-  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD), exact: true });
-  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
+  const boardKnown = queryClient.getQueryData(tasksKeys.list()) !== undefined;
+  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(), exact: true });
+  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) => {
     if (!rows) return rows;
     const rest = rows.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
   });
-  if (!boardKnown || movesGoalProgress(previous, task)) {
-    void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
+  if (!boardKnown || movesMilestoneProgress(previous, task)) {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
   }
 }
 
-/** A task joined or left a goal, or one on a goal turned Done or back. */
-function movesGoalProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
-  const before = was?.goalId ?? null;
-  const after = now?.goalId ?? null;
+/** A task joined or left a milestone, or one on a milestone turned Done or back. */
+function movesMilestoneProgress(was: TaskEntity | undefined, now: TaskEntity | null): boolean {
+  const before = was?.milestoneId ?? null;
+  const after = now?.milestoneId ?? null;
   if (before !== after) return true;
   return before !== null && (was?.isDone ?? false) !== (now?.isDone ?? false);
 }
@@ -152,10 +151,10 @@ export function useMoveTask(
       // Written before anything is awaited: the board lets go of its drag order in the
       // drop's own handler, and a read that lands later shows the card back home for a
       // frame. Cancelling first reverts a read on its way now, so it cannot undo this.
-      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
-      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
+      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list() });
+      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list());
       const previous = rows?.find((row) => row.id === move.id);
-      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) =>
+      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (current) =>
         current?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, current) : row)),
       );
       await cancelled;
@@ -164,11 +163,11 @@ export function useMoveTask(
     onError: (error, move, context, mutation) => {
       const previous = context?.previous;
       if (previous) {
-        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
+        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) =>
           rows?.map((row) => (row.id === previous.id ? previous : row)),
         );
       }
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.list(BOARD) });
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.list() });
       return options?.onError?.(error, move, context, mutation);
     },
   });
@@ -181,7 +180,7 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
   return new TaskEntity(
     task.id,
     task.projectId,
-    task.goalId,
+    task.milestoneId,
     move.status,
     rank,
     task.title,
@@ -253,42 +252,44 @@ export function useUnlinkTaskSession(
   });
 }
 
-export function useCreateGoal(options?: UseMutationOptions<GoalEntity, Error, GoalInput>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: GoalInput) => app.tasks.createGoal(input),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.goals() });
-    }),
-  });
-}
-
-export interface UpdateGoalVariables {
-  id: string;
-  input: Partial<GoalInput>;
-}
-
-/** A goal moved to another project takes its tasks with it, so the board refetches too. */
-export function useUpdateGoal(
-  options?: UseMutationOptions<GoalEntity, Error, UpdateGoalVariables>,
+export function useCreateMilestone(
+  options?: UseMutationOptions<MilestoneEntity, Error, MilestoneInput>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: UpdateGoalVariables) => app.tasks.updateGoal(id, input),
+    mutationFn: (input: MilestoneInput) => app.tasks.createMilestone(input),
+    ...withCacheOnSuccess(options, () => {
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
+    }),
+  });
+}
+
+export interface UpdateMilestoneVariables {
+  id: string;
+  input: Partial<MilestoneInput>;
+}
+
+/** A milestone moved to another project takes its tasks with it, so the board refetches too. */
+export function useUpdateMilestone(
+  options?: UseMutationOptions<MilestoneEntity, Error, UpdateMilestoneVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: UpdateMilestoneVariables) => app.tasks.updateMilestone(id, input),
     ...withCacheOnSuccess(options, () => {
       void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
     }),
   });
 }
 
-/** Its tasks lose their goal, so the board refetches too. */
-export function useDeleteGoal(options?: UseMutationOptions<void, Error, string>) {
+/** Its tasks lose their milestone, so the board refetches too. */
+export function useDeleteMilestone(options?: UseMutationOptions<void, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => app.tasks.removeGoal(id),
+    mutationFn: (id: string) => app.tasks.removeMilestone(id),
     ...withCacheOnSuccess(options, () => {
       void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
     }),

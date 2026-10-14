@@ -1,8 +1,9 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
-import { Cpu, User } from '@oppenheimer/design-system-web/icons';
+import { Cpu, Eye, User } from '@oppenheimer/design-system-web/icons';
 import { SettingsSidebar } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { HostCount } from '@/features/hosts/sections/host-count';
+import { WatchedCount } from '@/features/pull-requests/sections/watched-count';
 
 /**
  * Settings: its own chrome beside the console
@@ -24,16 +25,25 @@ function SettingsLayout() {
         groups={[
           {
             labelKey: 'account',
-            items: [{ to: '/settings/profile', icon: User, labelKey: 'profile' }],
+            items: [
+              { to: '/settings/profile', icon: User, labelKey: 'profile' },
+              { to: '/settings/repositories', icon: Eye, labelKey: 'repositories' },
+            ],
           },
           {
             labelKey: 'workspace',
             items: [{ to: '/settings/hosts', icon: Cpu, labelKey: 'hosts' }],
           },
         ]}
-        // The one row with a number: a section of its own, so the list it
+        // The rows with a number: a section of their own, so the list each
         // reads re-renders the count and not the nav.
-        renderCount={(to) => (to === '/settings/hosts' ? <HostCount /> : undefined)}
+        renderCount={(to) =>
+          to === '/settings/hosts' ? (
+            <HostCount />
+          ) : to === '/settings/repositories' ? (
+            <WatchedCount />
+          ) : undefined
+        }
       />
       <SettingsMain>
         <SettingsContent>

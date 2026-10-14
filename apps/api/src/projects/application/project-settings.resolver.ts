@@ -82,7 +82,6 @@ export function assertHoldable(repositories: readonly ProjectRepositoryProps[]):
 }
 
 const PROBLEMS = {
-  empty: 'A project must hold at least one repository',
   'no-default': 'At least one of the project’s repositories must be a default',
   duplicate: 'A repository appears more than once',
   'too-many': 'A project holds at most 20 repositories',

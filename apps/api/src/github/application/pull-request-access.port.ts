@@ -184,4 +184,11 @@ export interface PullRequestAccessPort {
     address: PullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
   ): Promise<void>;
+  /** Asks GitHub to merge it, in the caller's name, once what it requires passes; false when GitHub will not. */
+  enableAutoMerge(
+    scope: AccessScope,
+    userId: string,
+    address: PullRequestAddress,
+    method: 'squash' | 'merge' | 'rebase',
+  ): Promise<boolean>;
 }

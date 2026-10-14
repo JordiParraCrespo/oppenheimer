@@ -177,13 +177,6 @@ function plainText(tokens: Token[] | undefined): string {
     .join('');
 }
 
-/** The description's first paragraph as plain text: what a briefing leads with. */
-export function leadOf(source: string): string | null {
-  const lead = parseDescription(source).find((token) => token.type === 'paragraph');
-  const text = lead ? plainText(lead.tokens).replace(/\s+/g, ' ').trim() : '';
-  return text || null;
-}
-
 /**
  * Each column's cap from its longest cell, header included, on the Codex
  * app's steps: up to 40 characters, 100, 160, and beyond.

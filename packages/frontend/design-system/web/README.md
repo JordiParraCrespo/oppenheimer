@@ -49,6 +49,10 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   request's diff and its file tree, over `@pierre/diffs` and
   `@pierre/trees` (Shiki highlighting, the trees' file-type icon set,
   which `file-icon.tsx` also draws), themed to the tokens.
+- `src/components/chat-*.tsx` — the agent chat, one file per family of the
+  export's Chat Components inventory: the transcript, work and tools, the
+  cards a turn leaves, dividers and status, what stacks on the composer, the
+  blocking decisions, the composer's extras and the chat's chrome.
 - `src/components/` — the public components, one file each. The grouped
   inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names
   every file under the section that draws it.

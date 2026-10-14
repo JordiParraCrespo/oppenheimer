@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { calendarKeys } from '../calendar.queries';
 import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
+import { pullRequestsKeys } from '../pull-requests.queries';
+import { sessionsKeys } from '../sessions.queries';
 import { tasksKeys } from '../tasks.queries';
 
 /**
@@ -71,17 +73,44 @@ describe('hostsKeys', () => {
 });
 
 describe('tasksKeys', () => {
-  it('refreshes every task list, the board and a session’s alike, without touching the goals', async () => {
-    const board = tasksKeys.list({});
-    const session = tasksKeys.list({ sessionId: 's-1' });
-    const goals = tasksKeys.goalList();
-    const client = cacheWith(board, session, goals);
+  it('refreshes the board without touching the milestones', async () => {
+    const board = tasksKeys.list();
+    const milestones = tasksKeys.milestoneList();
+    const client = cacheWith(board, milestones);
 
     await client.invalidateQueries({ queryKey: tasksKeys.lists() });
 
     expect(invalidated(client, board)).toBe(true);
-    expect(invalidated(client, session)).toBe(true);
-    expect(invalidated(client, goals)).toBe(false);
+    expect(invalidated(client, milestones)).toBe(false);
+  });
+});
+
+describe('sessionsKeys', () => {
+  it('refreshes a session’s row and start log without reading its share again', async () => {
+    const start = sessionsKeys.start('s-1', false);
+    const share = sessionsKeys.share('s-1');
+    const client = cacheWith(sessionsKeys.detail('s-1'), start, share);
+
+    await client.invalidateQueries({ queryKey: sessionsKeys.detail('s-1') });
+
+    expect(invalidated(client, sessionsKeys.detail('s-1'))).toBe(true);
+    expect(invalidated(client, start)).toBe(true);
+    expect(invalidated(client, share)).toBe(false);
+  });
+});
+
+describe('pullRequestsKeys', () => {
+  const address = { installationId: 'inst-1', githubRepoId: 42, number: 7 };
+
+  it('refreshes one pull request’s files with it, and no other’s', async () => {
+    const files = pullRequestsKeys.files(address);
+    const other = pullRequestsKeys.files({ ...address, number: 8 });
+    const client = cacheWith(files, other);
+
+    await client.invalidateQueries({ queryKey: pullRequestsKeys.detail(address) });
+
+    expect(invalidated(client, files)).toBe(true);
+    expect(invalidated(client, other)).toBe(false);
   });
 });
 

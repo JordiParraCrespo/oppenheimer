@@ -37,9 +37,6 @@ import { ProjectGroup } from './project-group';
  * The dialog loads when first opened: the sidebar is on every authenticated
  * route, so what it imports is the console's first load.
  */
-const ShareSessionDialog = lazy(() =>
-  import('../dialogs/share-session').then((module) => ({ default: module.ShareSessionDialog })),
-);
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
@@ -61,7 +58,8 @@ const DeleteSessionDialog = lazy(() =>
 export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: sessions, isPending, error } = useSessions();
+  const sessionsQuery = useSessions();
+  const sessions = sessionsQuery.data;
   const projects = useProjects();
   // Selected down to plain pairs, which the query keeps by reference across a
   // refetch that changes no name.
@@ -72,7 +70,6 @@ export function SessionsSidebar() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
-  const [sharing, setSharing] = useState<SessionEntity | null>(null);
   // A later write that lands clears it, and so does Dismiss.
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
@@ -108,6 +105,7 @@ export function SessionsSidebar() {
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
+  const ready = combineQueries(sessionsQuery, projects, () => groups);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -143,81 +141,78 @@ export function SessionsSidebar() {
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {/* The rows need both reads: a session's group is its project. A failed
             read is not an empty list and not a list still loading. */}
-        <QueryState
-          query={combineQueries({ isPending, error, data: sessions }, projects, () => groups)}
-          pending={
+        <QueryState query={ready} isEmpty={(rows) => rows.length === 0}>
+          <QueryState.Pending>
             <SessionList className="mx-3 mt-2">
               <Skeleton shape="sm" className="h-7.5 w-full" />
               <Skeleton shape="sm" className="h-7.5 w-full" />
               <Skeleton shape="sm" className="h-7.5 w-full" />
             </SessionList>
-          }
-          errorFallback={t('sessions.sidebar.loadFailed')}
-          errorClassName="mx-3 mt-2"
-          // No project at all: the way to one is the plus above and the chip
-          // on New session, and the row says so rather than arguing with the
-          // pane.
-          empty={{
-            when: (ready) => ready.length === 0,
-            show: (
-              <div className="px-3 pt-2">
-                <EmptyState compact>
-                  <EmptyState.Header>
-                    <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-                  </EmptyState.Header>
-                </EmptyState>
-              </div>
-            ),
-          }}
-        >
-          {(ready) => (
-            <DragProvider
-              {...handlers}
-              labels={dragLabels}
-              overlay={(active) => <SidebarDragCopy item={active} />}
-            >
-              <SortableGroup
-                id={PROJECTS_GROUP}
-                items={ready.flatMap(({ project }) =>
-                  project ? [sortableProjectId(project.id)] : [],
-                )}
-                accepts={['project']}
+          </QueryState.Pending>
+          <QueryState.Error fallback={t('sessions.sidebar.loadFailed')} className="mx-3 mt-2" />
+          {/* No project at all: the way to one is the plus above and the chip
+              on New session, and the row says so rather than arguing with the
+              pane. */}
+          <QueryState.Empty>
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          </QueryState.Empty>
+          <QueryState.Data of={ready}>
+            {(rows) => (
+              <DragProvider
+                {...handlers}
+                labels={dragLabels}
+                overlay={(active) => <SidebarDragCopy item={active} />}
               >
-                {ready.map(({ project, sessions: members }) => {
-                  const key = project?.id ?? 'unfiled';
-                  return (
-                    <ProjectGroup
-                      key={key}
-                      project={project}
-                      sessions={members}
-                      open={!closed.includes(key)}
-                      onOpenChange={(next) =>
-                        setClosed((current) =>
-                          next ? current.filter((id) => id !== key) : [...current, key],
-                        )
-                      }
-                      narrowed={narrowed}
-                      query={query}
-                      onNewSessionHere={(target) =>
-                        navigate({ to: '/sessions/new', search: { project: target.id } })
-                      }
-                      onSettings={(target) =>
-                        dialogs.open({ kind: 'project', projectId: target.id })
-                      }
-                      onShare={setSharing}
-                      onDelete={setDeleting}
-                      onWrite={setFailure}
-                    />
-                  );
-                })}
-              </SortableGroup>
-            </DragProvider>
-          )}
+                <SortableGroup
+                  id={PROJECTS_GROUP}
+                  items={rows.flatMap(({ project }) =>
+                    project ? [sortableProjectId(project.id)] : [],
+                  )}
+                  accepts={['project']}
+                >
+                  {rows.map(({ project, sessions: members }) => {
+                    const key = project?.id ?? 'unfiled';
+                    return (
+                      <ProjectGroup
+                        key={key}
+                        project={project}
+                        sessions={members}
+                        open={!closed.includes(key)}
+                        onOpenChange={(next) =>
+                          setClosed((current) =>
+                            next ? current.filter((id) => id !== key) : [...current, key],
+                          )
+                        }
+                        narrowed={narrowed}
+                        query={query}
+                        onNewSessionHere={(target) =>
+                          navigate({ to: '/sessions/new', search: { project: target.id } })
+                        }
+                        onSettings={(target) =>
+                          dialogs.open({ kind: 'project', projectId: target.id })
+                        }
+                        onShare={(target) =>
+                          dialogs.open({ kind: 'share-session', sessionId: target.id })
+                        }
+                        onDelete={setDeleting}
+                        onWrite={setFailure}
+                      />
+                    );
+                  })}
+                </SortableGroup>
+              </DragProvider>
+            )}
+          </QueryState.Data>
         </QueryState>
       </div>
 
       <Suspense fallback={null}>
-        {sharing ? <ShareSessionDialog session={sharing} onClose={() => setSharing(null)} /> : null}
         {deleting ? (
           <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
         ) : null}
