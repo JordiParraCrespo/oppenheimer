@@ -1,6 +1,6 @@
 ---
 name: design-export-port
-description: Port a design export (a design system as tokens plus screen artboards, from Claude Design or a similar tool) onto this repo's web design system and rebuild the web showcase from it. Use this whenever the user says they uploaded or exported designs, wants the design system, tokens, colours, typography, foundations or showcase built or updated from a design, asks to "set up the design system" from a design folder, or wants the components a set of screens need — even if they only mention colours or foundations at first. Covers reading the export, rendering the artboards, reviewing them page by page to derive the component inventory, porting tokens, building components on Base UI, rebuilding the showcase, docs, verification and the PR.
+description: Port a design export (a design system as tokens plus screen artboards, from Claude Design or a similar tool) onto this repo's web design system and rebuild the web showcase from it. Run with no arguments (`/design-export-port`) it is autonomous - finds the export syncs since the last port, builds every new component and every change to an existing one, shows light and dark captures, and opens and drives the pull request. Use this whenever the user says they uploaded or exported designs, wants the design system, tokens, colours, typography, foundations or showcase built or updated from a design, asks to "set up the design system" from a design folder, or wants the components a set of screens need — even if they only mention colours or foundations at first. Covers reading the export, rendering the artboards, reviewing them page by page to derive the component inventory, porting tokens, building components on Base UI, rebuilding the showcase, docs, verification and the PR.
 ---
 
 # Port a design export onto the design system
@@ -27,9 +27,56 @@ The export is the spec, but the artboards are the truth: where they
 override the system, the artboards win, because they are what the user
 approved. Write that decision down in the token file.
 
+## Run with no arguments: the autonomous delta sync
+
+`/design-export-port` with nothing after it means "catch the design system
+up with the latest export and ship it". Do the whole job without stopping
+for confirmation; the person reviews the captures and the pull request.
+§0 and §3's questions become the defaults below, and you stop to ask only
+when the frames contradict each other or the package (two drawings of one
+thing, a token the artboards override two ways).
+
+1. **Delta.** `node .agents/skills/design-export-port/scripts/export-delta.mjs`.
+   It reads `last-port.json` (the export sync commit the package last caught
+   up with) and prints the frames that are new, changed or gone since, with
+   each frame's props and the lines the export's README added. "Up to date"
+   ends the run: say so in one line. A first port (no `last-port.json`) is
+   not autonomous; follow §0.
+2. **Branch.** Start from `origin/main` on the session's branch.
+3. **Inventory.** Render each new or changed frame in the states its props
+   offer (§2), light and dark. For more than two frames, fan out one
+   read-only agent per frame or frame group, each given the package's
+   component list and asked to tag every element as **covered**, a
+   **change** to an existing component (a variant, a slot, a state) or
+   **new**. Spot-check the claims that decide work. Leave out what the
+   README or the notes say the product does not build, and frames that are
+   app screens made of covered components (their assembly is the app's,
+   not the package's).
+4. **Build** every new component and every change in one pull request, on
+   the defaults: compose, don't configure (parts as children or compound
+   parts; a boolean that changes what a component is becomes a second
+   component; `pending`, `disabled`, `open`, `active` stay props); a demo
+   per piece in the showcase group the export's family maps to, on the
+   ground the product draws it on (the chat's recessed grey, the
+   sidebar's surface); never copy imagery of real people.
+5. **Verify** (§7) to zero: types in the package, the showcase, `apps/web`
+   and `packages/frontend/web`; the package's `test`; Biome;
+   `pnpm lint:design` at the warnings it had; `pnpm check:compiler`.
+6. **Captures.** Build the showcase and shoot one `--element` per new
+   component and per changed state, `--scale 2`, light and dark (§6). Look
+   at each against the frame's capture and fix what differs before anyone
+   else sees it. Then send them to the person in one message per group,
+   each with a one-line caption saying what it shows.
+7. **Ship** (§8, §9): docs, a changeset, `last-port.json` set to the sync
+   commit you ported, then `/steward`: commit by path, `pnpm ci:local`,
+   push on green, the pull request with the report, and drive it through
+   review to merge.
+
+Close with what was built, what was left out and why, and the link.
+
 ## 0. Plan, then confirm
 
-First decide which kind of run this is. A **first port** maps a whole
+With arguments, or on a first port, plan and confirm. First decide which kind of run this is. A **first port** maps a whole
 export onto the package. A **delta sync** is a later export that changes a
 few screens: its README names the delta, the diff against the previous sync
 shows the rest, and the job is the components that delta needs, on top of
@@ -101,7 +148,8 @@ where the copy and the states live.
 ## 3. Review page by page, with the user
 
 Walk the screens **one per turn**, in flow order, and wait before moving
-on. In a delta sync, walk the changed states instead, and when the user has
+on. In the autonomous run there is no walk: the captures in its step 6 are
+the review. In an asked-for delta sync, walk the changed states instead, and when the user has
 already agreed the inventory, present them together rather than one per
 turn. Send the light and dark capture, then list only what is new on that
 page:
@@ -204,7 +252,9 @@ the top and the section ids you name in light and dark, applies both theme
 selectors, and exits non-zero on console errors (a hydration mismatch
 included) or a server that never answers. `--state 'section:tag:steps'`
 captures one state of a section's demo after clicks or a held drag, as an
-element shot; raise `--height` for a tall section.
+element shot; raise `--height` for a tall section. `--element
+'name|selector|steps'` shoots one component, padded, which is the capture
+a person reviews; add `--scale 2` for those.
 
 A demo that renders a clock on a prerendered page mismatches on hydration;
 mark that one node `suppressHydrationWarning`, never the section.
@@ -235,6 +285,8 @@ agent notes if a stated rule changed.
 ## 9. Ship
 
 One PR: tokens, the inventory by family, what was dropped and why, the
-showcase, docs, the verification list, the out-of-scope list. Append a
-dated note to `references/` with what this export needed that the
-workflow did not predict, labelled as not to be replayed.
+showcase, docs, the verification list, the out-of-scope list, and
+`last-port.json` moved to the sync commit the PR ports, so the next
+autonomous run starts from there. Append a dated note to `references/`
+with what this export needed that the workflow did not predict, labelled
+as not to be replayed.
