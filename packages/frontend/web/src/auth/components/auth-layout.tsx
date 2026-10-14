@@ -1,9 +1,9 @@
+import { Wordmark } from '@oppenheimer/design-system-web';
 import { useMatches } from '@tanstack/react-router';
 import type { ParseKeys } from 'i18next';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { AuthLink } from './auth-primitives';
-import { BrandLogo } from './brand-logo';
 
 /**
  * How a page is framed inside the auth split. Each is route `staticData`, read
@@ -85,7 +85,7 @@ export function AuthLayout({ panel, children }: AuthLayoutProps) {
       }
     >
       <div className="relative flex w-full flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
-        <BrandLogo />
+        <Wordmark />
 
         <div
           className={`mx-auto flex w-full ${WIDTHS[width]} flex-1 flex-col justify-center py-10`}

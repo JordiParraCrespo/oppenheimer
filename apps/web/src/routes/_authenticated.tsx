@@ -66,8 +66,8 @@ function AuthenticatedShell() {
           userMenuLinks={USER_MENU}
           rail={<ConsoleRail />}
           sidebar={<ConsoleSidebar list={list} />}
-          // The brand row names the product, not the workspace — version 1 has one
-          // workspace per account. `chrome={false}` is the bar, the palette and
+          // The brand row is the wordmark alone, not the workspace — version 1 has
+          // one workspace per account. `chrome={false}` is the bar, the palette and
           // the foot's hairline; `AppShell` and `use-shell.ts` say why.
           brand={<Wordmark size={18} />}
           chrome={false}
