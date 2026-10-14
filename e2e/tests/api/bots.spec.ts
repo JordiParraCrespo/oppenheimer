@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
-import { pairHost } from '../../support/sessions';
 
 /**
  * Bots through the deployed API (`product/versions/mvp/25-bots.md`, slice 1):
@@ -67,8 +66,10 @@ test.describe('Bots', () => {
     expect(documents[0].content).toContain('You are New Bot.');
     expect(documents[1].content).toBe('');
 
-    // Rename, choose a model and effort, give it a home host the caller paired.
-    const hostId = await pairHost(api, 'bots box');
+    // Rename and choose a model and effort. A home host is only one the caller
+    // may use: pairing a real one here would spend the address's registration
+    // budget the hosts suite needs, so this asserts the refusal, and the
+    // integration suite and the console's spec pick a paired host.
     const renamed = await ok<Bot>(
       await api.patch(`/api/v1/bots/${first.id}`, {
         data: {
@@ -77,7 +78,6 @@ test.describe('Bots', () => {
           model: 'claude-opus-5-5',
           effort: 'high',
           permission: 'full',
-          homeHostId: hostId,
         },
       }),
     );
@@ -86,7 +86,7 @@ test.describe('Bots', () => {
       model: 'claude-opus-5-5',
       effort: 'high',
       permission: 'full',
-      homeHostId: hostId,
+      homeHostId: null,
     });
     await expectProblemDocument(
       await api.patch(`/api/v1/bots/${first.id}`, { data: { model: 'gpt-5.6-sol' } }),
