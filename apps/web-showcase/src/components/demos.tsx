@@ -178,7 +178,7 @@ import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
 import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
-import { RadioGroup, RadioGroupItem } from '@oppenheimer/design-system-web/radio-group';
+import { RadioGroup, RadioGroupCard, RadioGroupItem } from '@oppenheimer/design-system-web/radio-group';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ArrowUpRightIcon,
@@ -186,6 +186,7 @@ import {
   ClockIcon,
   CpuIcon,
   EllipsisIcon,
+  EyeIcon,
   FileTextIcon,
   GitBranchIcon,
   CircleCheckIcon,
@@ -722,6 +723,16 @@ export function RadioGroupDemo() {
       <RadioGroupItem value="comment" label="Comment" description="Post the comments without a verdict." />
       <RadioGroupItem value="approve" label="Approve" description="The change can merge once checks pass." />
       <RadioGroupItem value="changes" label="Request changes" description="It does not merge until these are addressed." />
+    </RadioGroup>
+  );
+}
+
+export function RadioGroupCardDemo() {
+  const [access, setAccess] = React.useState('read');
+  return (
+    <RadioGroup value={access} onValueChange={setAccess} aria-label="Permission" columns={2} className="w-full max-w-130">
+      <RadioGroupCard value="read" icon={<EyeIcon />} label="Can view" description="Watch the terminal live. Can’t type or stop the session." />
+      <RadioGroupCard value="write" tone="danger" icon={<TerminalIcon />} label="Can write" description="Send prompts and commands. They run as you." />
     </RadioGroup>
   );
 }

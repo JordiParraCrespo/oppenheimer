@@ -53,17 +53,17 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_014',
     message: 'Failed to get the host ready',
   },
-  SHARE_LINKS_FAILED: {
+  SHARE_LOAD_FAILED: {
     code: 'SESSIONS_CLIENT_015',
-    message: "Failed to load the session's share links",
+    message: 'Failed to load how the session is shared',
   },
   SHARE_FAILED: {
     code: 'SESSIONS_CLIENT_016',
     message: 'Failed to share the session',
   },
-  REVOKE_SHARE_FAILED: {
+  UPDATE_SHARE_FAILED: {
     code: 'SESSIONS_CLIENT_017',
-    message: 'Failed to revoke the share link',
+    message: 'Failed to change who the session is shared with',
   },
   SHARED_SESSION_FAILED: {
     code: 'SESSIONS_CLIENT_018',

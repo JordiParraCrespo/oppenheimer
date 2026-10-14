@@ -470,21 +470,23 @@ are never reissued.
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 | `SESSIONS_019` <a id="sessions_019" /> | An attached file is no longer waiting           | 410  |
 | `SESSIONS_020` <a id="sessions_020" /> | Too many files are waiting to be sent           | 429  |
-| `SESSIONS_021` <a id="sessions_021" /> | That share link does not open anything          | 404  |
-| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this share link                 | 401  |
-| `SESSIONS_023` <a id="sessions_023" /> | This share link is not shared with you          | 403  |
-| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold | 409 |
+| `SESSIONS_021` <a id="sessions_021" /> | That session is not shared, or no longer        | 404  |
+| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this shared session             | 401  |
+| `SESSIONS_023` <a id="sessions_023" /> | This session is not shared with you             | 403  |
+| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold (no longer raised) | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
 
-`SESSIONS_021`–`SESSIONS_024` belong to share links
-(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_021` is one answer for
-a secret that was never issued, a link revoked or expired, and a link to a closed
-session: the holder can only ask for a new one either way. `SESSIONS_022` and
-`SESSIONS_023` are apart because each has its own next step — sign in, or ask to be
-named; a list of people matches a verified email only. `SESSIONS_024` is twenty live
-links on one session.
+`SESSIONS_021`–`SESSIONS_023` belong to sharing a session
+(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_022` comes first, for
+anybody signed out, before the address is looked up, so a signed-out caller learns
+nothing about it. `SESSIONS_021` is one answer for an address that was never shared,
+a share stopped or expired, and a share of a closed session: the guest can only ask
+for it to be shared again either way. `SESSIONS_023` is apart because its next step
+is its own — ask to be named; a list of people matches a verified email only.
+`SESSIONS_024` was twenty live share links on one session; since 2026-10-13 a
+session has one share, and the code stays reserved so it is never reused.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its

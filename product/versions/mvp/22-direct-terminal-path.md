@@ -197,7 +197,10 @@ predictive echo hides whatever distance is left for what is typed most.
   stays on the relay: it is the audience that could be large, and a host's
   upload is somebody's home connection. *As built (step 1):* no share link
   is offered a direct path, whatever its audience; step 3 opens it to
-  `people` and `accounts`.
+  `people` and `accounts`. *Since 2026-10-13* a session has one share,
+  for named people or anyone signed in with its address (21); there is no
+  signed-out `anyone` audience, and the relay still offers a guest no
+  direct path.
 - **A large audience is the relay's job, later**, by fan-out: one read-only
   attachment from the host, its bytes copied by the relay to every watcher,
   with a `refresh-client` when one joins so it starts from a whole screen.
@@ -247,7 +250,8 @@ invite.
    that kills a channel in the middle of output and finds the screen whole
    (proven by hand, below; not yet a committed suite).
 3. **Share links**: direct for `people` and `accounts` audiences up to the
-   host's cap; `anyone` stays relayed.
+   host's cap; `anyone` stays relayed. (Since 2026-10-13, a share's named
+   people and its signed-in link; 21.)
 4. **Later**: relay fan-out for large read-only audiences.
 
 Each step's gate is the readout's number: a reader on the same LAN as the

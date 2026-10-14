@@ -375,6 +375,12 @@ earlier note:
   link, to watch or to type, for anyone, any account or named people
   (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
   as its creator's, so it opens nothing they could not.
+- `versions/mvp/21-session-share-links.md` built sharing on 2026-10-08 as
+  bearer links (anyone signed out, any account, or named people; the
+  secret shown once). On 2026-10-13 it was rebuilt to the `ShareSession`
+  design: one share per session at one address, named people or anyone
+  signed in, write for named people for a day at most. The note keeps the
+  links under Superseded.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06

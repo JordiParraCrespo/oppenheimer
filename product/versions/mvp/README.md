@@ -32,7 +32,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 18 | [Plan: the product](18-plan-product.md) | What the Plan frames say, screen by screen: the board, the dialogs, tasks that start or link sessions, and the gaps the frames leave |
 | 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
 | 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
-| 21 | [Session share links](21-session-share-links.md) | A link that opens a session's terminal outside the workspace: watch or type, for anyone, any account or named people; acts as its creator; read-only held by the relay and tmux |
+| 21 | [Sharing a session](21-session-share-links.md) | One share per session at one address, `/s/<slug>`: named people or anyone signed in; view, or write for named people for 24 hours at most; acts as whoever shared it; read-only held by the relay and tmux (links of 2026-10-08 superseded) |
 | 22 | [The direct terminal path](22-direct-terminal-path.md) | Keystroke latency measured in the browser and predictive local echo; a WebRTC data channel from browser to runner with the relay as the path it starts on and falls back to, behind `terminal_direct_path`; authorization stays the relay's |
 | 23 | [Plan: milestones, stats and Google accounts](23-plan-milestones-stats-accounts.md) | The 2026-10-13 Tasks frame read against the built Plan: goals renamed milestones, needs input as a field, a task event log, Stats, several Google accounts, and the contract the Projects agents build on; proposed, with the owner's questions open |
 
@@ -681,3 +681,13 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Milestones and Stats views (Stats is Plan's own view, settled when the
   owner asked for the whole screen without the agents), several Google
   accounts. Tokens and cost wait on the runner's headless drive.
+- 2026-10-13: **Sharing a session follows the `ShareSession` design** (21,
+  08, 22). The bearer links of 2026-10-08 are replaced by one share per
+  session at one stable address, `/s/<slug>`, which the dialog shows and
+  copies every time: named people by verified email, or anyone signed in
+  with the address. Nothing opens signed out. A link only watches; write
+  access names people, lasts 24 hours at most, and is given only after the
+  sharer ticks that they understand the guest acts as them. Lifetimes are
+  1h, 8h, 24h, 7d or never. Share opens from a row's menu and the status
+  line; the guest page is one bar and the terminal. Presence is not built.
+  Existing links were dropped, and `SESSIONS_024` is retired.
