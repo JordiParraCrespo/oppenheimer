@@ -1,4 +1,4 @@
-import { CircleCheck, GitPullRequest, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import { GitPullRequest, Layers, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import type { ConsoleList } from '@/lib/console';
 
 /**
@@ -33,7 +33,7 @@ export const RAIL = [
     to: '/plan',
     lists: ['tasks', 'calendar'],
     labelKey: 'nav.plan',
-    Icon: CircleCheck,
+    Icon: Layers,
   },
 ] as const satisfies readonly {
   id: string;
