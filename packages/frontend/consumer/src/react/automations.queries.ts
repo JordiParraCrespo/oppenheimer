@@ -1,6 +1,11 @@
 'use client';
 
-import { shareEntities, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  shareEntities,
+  useQuery,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
   type QueryClient,
@@ -56,9 +61,30 @@ export function useAutomations<TData = AutomationEntity[]>(
     'queryKey' | 'queryFn' | PollKeys
   >,
 ) {
+  return useQuery<AutomationEntity[], Error, TData>({
+    ...useAutomationListQuery(),
+    ...options,
+    ...useAutomationListPoll(),
+  });
+}
+
+/**
+ * {@link useAutomations} for a section under a Suspense `QueryState`: the
+ * same list, seeding the same details, polling while a run is live, and
+ * `data` is always the automations.
+ */
+export function useSuspenseAutomations() {
+  return useSuspenseQuery<AutomationEntity[], Error>({
+    ...useAutomationListQuery(),
+    ...useAutomationListPoll(),
+  });
+}
+
+/** The automations read, for both hooks over it: the key, and a fetch that fills each detail. */
+function useAutomationListQuery() {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-  return useQuery<AutomationEntity[], Error, TData>({
+  return {
     queryKey: automationsKeys.list(),
     queryFn: async () => {
       const askedAt = Date.now();
@@ -66,13 +92,16 @@ export function useAutomations<TData = AutomationEntity[]>(
       seedDetails(queryClient, automations, automationsKeys.detail, askedAt);
       return automations;
     },
-    ...options,
-    ...usePollWhile<AutomationEntity[]>(
-      'liveRun',
-      automationsKeys.list(),
-      (rows) => rows?.some((automation) => automation.isRunning) ?? false,
-    ),
-  });
+  };
+}
+
+/** The list polls while any of its automations has a run going. */
+function useAutomationListPoll() {
+  return usePollWhile<AutomationEntity[]>(
+    'liveRun',
+    automationsKeys.list(),
+    (rows) => rows?.some((automation) => automation.isRunning) ?? false,
+  );
 }
 
 export function useAutomation(
@@ -84,12 +113,30 @@ export function useAutomation(
     queryKey: automationsKeys.detail(id),
     queryFn: id ? () => app.automations.findById(id) : skipToken,
     ...options,
-    ...usePollWhile<AutomationEntity>(
-      'liveRun',
-      automationsKeys.detail(id),
-      (automation) => automation?.isRunning ?? false,
-    ),
+    ...useAutomationPoll(id),
   });
+}
+
+/**
+ * {@link useAutomation} for a section under a Suspense `QueryState`: the id
+ * is known, so nothing is switched off, and `data` is always the automation.
+ */
+export function useSuspenseAutomation(id: string) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<AutomationEntity, Error>({
+    queryKey: automationsKeys.detail(id),
+    queryFn: () => app.automations.findById(id),
+    ...useAutomationPoll(id),
+  });
+}
+
+/** An automation polls while one of its runs is going. */
+function useAutomationPoll(id: string | undefined) {
+  return usePollWhile<AutomationEntity>(
+    'liveRun',
+    automationsKeys.detail(id),
+    (automation) => automation?.isRunning ?? false,
+  );
 }
 
 /**

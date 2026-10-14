@@ -1,6 +1,11 @@
 'use client';
 
-import { PERSIST_META, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  PERSIST_META,
+  useQuery,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
   skipToken,
@@ -98,12 +103,25 @@ export function usePullRequest(address: PullRequestAddress | undefined) {
   });
 }
 
-/** The diff, file by file: the Changes view. */
-export function usePullRequestFiles(address: PullRequestAddress | undefined) {
+/**
+ * {@link usePullRequest} for a section under a Suspense `QueryState`: the
+ * address is known, so nothing is switched off, and `data` is always the pull
+ * request. Same key and fetch, so the toolbar's `usePullRequest` shares it.
+ */
+export function useSuspensePullRequest(address: PullRequestAddress) {
   const app = useConsumerApp();
-  return useQuery<PullRequestFile[], Error>({
+  return useSuspenseQuery<PullRequestDetailEntity, Error>({
+    queryKey: pullRequestsKeys.detail(address),
+    queryFn: () => app.pullRequests.find(address),
+  });
+}
+
+/** The diff, file by file: the Changes view, read under a Suspense `QueryState`. */
+export function useSuspensePullRequestFiles(address: PullRequestAddress) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PullRequestFile[], Error>({
     queryKey: pullRequestsKeys.files(address),
-    queryFn: address ? () => app.pullRequests.files(address) : skipToken,
+    queryFn: () => app.pullRequests.files(address),
   });
 }
 
@@ -117,11 +135,11 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
 }
 
 /** Its conversation: comments, commits, reviews and events, read for the rail's comments. */
-export function usePullRequestActivity(address: PullRequestAddress | undefined) {
+export function useSuspensePullRequestActivity(address: PullRequestAddress) {
   const app = useConsumerApp();
-  return useQuery<PullRequestActivityItem[], Error>({
+  return useSuspenseQuery<PullRequestActivityItem[], Error>({
     queryKey: pullRequestsKeys.activity(address),
-    queryFn: address ? () => app.pullRequests.activity(address) : skipToken,
+    queryFn: () => app.pullRequests.activity(address),
   });
 }
 
@@ -129,12 +147,29 @@ export function usePullRequestActivity(address: PullRequestAddress | undefined) 
 export function useWatchedRepositories<TData = WatchedRepository[]>(
   options?: Omit<UseQueryOptions<WatchedRepository[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
+  return useQuery<WatchedRepository[], Error, TData>({ ...useRepositoriesQuery(), ...options });
+}
+
+/**
+ * {@link useWatchedRepositories} for a section under a Suspense `QueryState`;
+ * `select` reads less than the whole list, as there.
+ */
+export function useSuspenseWatchedRepositories<TData = WatchedRepository[]>(
+  select?: (rows: WatchedRepository[]) => TData,
+) {
+  return useSuspenseQuery<WatchedRepository[], Error, TData>({
+    ...useRepositoriesQuery(),
+    ...(select ? { select } : {}),
+  });
+}
+
+/** What the repositories read is, for both hooks over it: the key and the fetch, once. */
+function useRepositoriesQuery() {
   const app = useConsumerApp();
-  return useQuery<WatchedRepository[], Error, TData>({
+  return {
     queryKey: pullRequestsKeys.repositories(),
     queryFn: () => app.pullRequests.repositories(),
-    ...options,
-  });
+  };
 }
 
 /**

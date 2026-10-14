@@ -11,6 +11,8 @@ export {
   useRunAutomation,
   useRunHistory,
   useSetAutomationPaused,
+  useSuspenseAutomation,
+  useSuspenseAutomations,
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
@@ -25,6 +27,7 @@ export {
   useLatestGoogleCalendarRead,
   useRemoveGoogleCalendarConnection,
   useStartGoogleCalendarConnection,
+  useSuspenseGoogleCalendarConnections,
   useUpdateCalendarEvent,
 } from './calendar.queries';
 // The pairing flow, not its parts: a surface that read the token or the host
@@ -38,6 +41,7 @@ export {
   useRemoveHost,
   useRenameHost,
   useSuspenseHostPresence,
+  useSuspenseHosts,
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,
@@ -63,9 +67,10 @@ export {
   useDeleteAccount,
   useDeleteAvatar,
   useMyProfile,
-  useProfileSessions,
   useRevokeOtherProfileSessions,
   useRevokeProfileSession,
+  useSuspenseMyProfile,
+  useSuspenseProfileSessions,
   useUpdateMyProfile,
   useUploadAvatar,
 } from './profile.queries';
@@ -85,13 +90,15 @@ export {
   useAddPullRequestComment,
   useMergePullRequest,
   usePullRequest,
-  usePullRequestActivity,
   usePullRequestAnalytics,
   usePullRequestComments,
-  usePullRequestFiles,
   usePullRequestQueue,
   useSetRepositoryWatch,
   useSubmitPullRequestReview,
+  useSuspensePullRequest,
+  useSuspensePullRequestActivity,
+  useSuspensePullRequestFiles,
+  useSuspenseWatchedRepositories,
   useWatchedRepositories,
 } from './pull-requests.queries';
 export { useRegister } from './register.queries';

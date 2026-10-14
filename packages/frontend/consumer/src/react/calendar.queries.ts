@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
@@ -52,12 +52,24 @@ export function useGoogleCalendarConnections<TData = GoogleCalendarConnectionEnt
     'queryKey' | 'queryFn'
   >,
 ) {
-  const app = useConsumerApp();
   return useQuery<GoogleCalendarConnectionEntity[], Error, TData>({
-    queryKey: calendarKeys.googleConnections(),
-    queryFn: () => app.calendar.findGoogleConnections(),
+    ...useGoogleConnectionsQuery(),
     ...options,
   });
+}
+
+/** {@link useGoogleCalendarConnections} for a section under a Suspense `QueryState`. */
+export function useSuspenseGoogleCalendarConnections() {
+  return useSuspenseQuery<GoogleCalendarConnectionEntity[], Error>(useGoogleConnectionsQuery());
+}
+
+/** The Google accounts read, for both hooks over it: the key and the fetch, once. */
+function useGoogleConnectionsQuery() {
+  const app = useConsumerApp();
+  return {
+    queryKey: calendarKeys.googleConnections(),
+    queryFn: () => app.calendar.findGoogleConnections(),
+  };
 }
 
 /**
