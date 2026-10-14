@@ -128,7 +128,9 @@ test('the rail is dragged into the reader’s own order, which a reload keeps', 
     rail
       .getByRole('link')
       .evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')));
-  await expect.poll(order).toEqual(['Sessions', 'Pull requests', 'Automations', 'Plan']);
+  await expect
+    .poll(order)
+    .toEqual(['Sessions', 'Employees', 'Pull requests', 'Automations', 'Plan']);
 
   // Plan dragged onto Sessions, in steps, so the drag layer sees a move past its 5px start.
   const plan = await rail.getByRole('link', { name: 'Plan' }).boundingBox();
@@ -139,12 +141,16 @@ test('the rail is dragged into the reader’s own order, which a reload keeps', 
   await page.mouse.move(plan.x + plan.width / 2, sessions.y + sessions.height / 2, { steps: 12 });
   await page.mouse.up();
 
-  await expect.poll(order).toEqual(['Plan', 'Sessions', 'Pull requests', 'Automations']);
+  await expect
+    .poll(order)
+    .toEqual(['Plan', 'Sessions', 'Employees', 'Pull requests', 'Automations']);
   // The drop did not open Plan: a drag is not a click.
   await expect(page).toHaveURL(/\/sessions/);
 
   await page.reload();
-  await expect.poll(order).toEqual(['Plan', 'Sessions', 'Pull requests', 'Automations']);
+  await expect
+    .poll(order)
+    .toEqual(['Plan', 'Sessions', 'Employees', 'Pull requests', 'Automations']);
 
   await rail.getByRole('link', { name: 'Plan' }).click();
   await expect(page).toHaveURL(/\/plan/);

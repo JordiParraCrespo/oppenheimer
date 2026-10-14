@@ -2,7 +2,13 @@
 
 import * as React from 'react';
 
-import { AvatarPicker, BotAvatar, type AvatarOption } from '@oppenheimer/design-system-web/avatar-picker';
+import {
+  type AvatarColor,
+  AvatarColorPicker,
+  AvatarPicker,
+  BotAvatar,
+  type AvatarOption,
+} from '@oppenheimer/design-system-web/avatar-picker';
 import { Badge } from '@oppenheimer/design-system-web/badge';
 import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
@@ -128,6 +134,41 @@ export function AvatarPickerDemo() {
   );
 }
 
+const COLOR_NAMES: Record<AvatarColor, string> = {
+  mint: 'Mint',
+  tangerine: 'Tangerine',
+  snow: 'Snow',
+  sky: 'Sky',
+  lilac: 'Lilac',
+  lemon: 'Lemon',
+  coral: 'Coral',
+  moss: 'Moss',
+};
+
+export function AvatarColorPickerDemo() {
+  const [color, setColor] = React.useState<AvatarColor>('tangerine');
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex items-center gap-3">
+        {(Object.keys(COLOR_NAMES) as AvatarColor[]).map((key) => (
+          <BotAvatar key={key} option={{ initials: 'NB' }} size={36} color={key} />
+        ))}
+      </div>
+      <div className="w-full max-w-180 rounded-lg bg-canvas-recessed p-4">
+        <div className="rounded-lg bg-card px-5 py-4">
+          <AvatarColorPicker
+            value={color}
+            onValueChange={setColor}
+            initials="NB"
+            name="New Bot"
+            colorNames={COLOR_NAMES}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── RoutineCard ─────────────────────────────────────────────────────────── */
 
 export function RoutineCardsDemo() {
@@ -190,8 +231,17 @@ export function SettingsListDemo() {
   ]);
   const [draft, setDraft] = React.useState('');
   const [mcp, setMcp] = React.useState({ linear: true, sentry: false });
+  const [file, setFile] = React.useState('instructions');
   return (
     <div className="flex w-full max-w-164 flex-col gap-6">
+      <SegmentedControl value={file} onValueChange={setFile} size="md" aria-label="File">
+        <SegmentedControlItem value="soul" mono>
+          SOUL.md
+        </SegmentedControlItem>
+        <SegmentedControlItem value="instructions" mono>
+          INSTRUCTIONS.md
+        </SegmentedControlItem>
+      </SegmentedControl>
       <SettingsGroup>
         <SettingsListRow lead="You" meta="INSTRUCTIONS.md · Just now" actions="Current" align="center">
           Ask before force-pushing any branch
@@ -319,6 +369,16 @@ export function EmployeesSection() {
         code={`<AvatarPicker options={photos} value={photo} onValueChange={setPhoto} name="Release Bot" onShuffle={shuffle} />`}
       >
         <AvatarPickerDemo />
+      </Spec>
+
+      <Spec
+        id="avatarcolorpicker"
+        title="AvatarColorPicker"
+        meta="avatar-picker.tsx"
+        desc="A bot's colour, while avatars are initials rather than photos: the 72px initials on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes, with the initials in dark ink on each. BotAvatar and BotItem take color to draw the initials on it."
+        code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" name="New Bot" colorNames={names} />`}
+      >
+        <AvatarColorPickerDemo />
       </Spec>
 
       <Spec

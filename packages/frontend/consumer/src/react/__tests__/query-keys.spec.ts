@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
+import { botsKeys } from '../bots.queries';
 import { calendarKeys } from '../calendar.queries';
 import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
@@ -142,5 +143,46 @@ describe('calendarKeys', () => {
 
     expect(invalidated(client, october)).toBe(true);
     expect(invalidated(client, google)).toBe(false);
+  });
+});
+
+describe('botsKeys', () => {
+  it('drops a deleted bot’s documents, revisions and memory with it, and nobody else’s', () => {
+    const mine = [
+      botsKeys.detail('bot-1'),
+      botsKeys.documentList('bot-1'),
+      botsKeys.revisions('bot-1', 'instructions'),
+      botsKeys.memoryList('bot-1'),
+    ];
+    const theirs = botsKeys.memoryList('bot-2');
+    const client = cacheWith(...mine, theirs, botsKeys.list());
+
+    client.removeQueries({ queryKey: botsKeys.detail('bot-1') });
+
+    for (const key of mine) expect(client.getQueryData(key)).toBeUndefined();
+    expect(client.getQueryData(theirs)).toBe('cached');
+    expect(client.getQueryData(botsKeys.list())).toBe('cached');
+  });
+
+  it('refreshes one document’s history without refetching the other’s or the pair', async () => {
+    const instructions = botsKeys.revisions('bot-1', 'instructions');
+    const soul = botsKeys.revisions('bot-1', 'soul');
+    const client = cacheWith(instructions, soul, botsKeys.documentList('bot-1'));
+
+    await client.invalidateQueries({ queryKey: instructions });
+
+    expect(invalidated(client, instructions)).toBe(true);
+    expect(invalidated(client, soul)).toBe(false);
+    expect(invalidated(client, botsKeys.documentList('bot-1'))).toBe(false);
+  });
+
+  it('re-reads the sidebar’s bots without touching its groups', async () => {
+    const client = cacheWith(botsKeys.list(), botsKeys.groupList(), botsKeys.detail('bot-1'));
+
+    await client.invalidateQueries({ queryKey: botsKeys.lists() });
+
+    expect(invalidated(client, botsKeys.list())).toBe(true);
+    expect(invalidated(client, botsKeys.groupList())).toBe(false);
+    expect(invalidated(client, botsKeys.detail('bot-1'))).toBe(false);
   });
 });

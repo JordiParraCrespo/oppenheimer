@@ -225,7 +225,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `TemplateTiles`. A bot's message to another is a `BotExchange`, and the
   instructions it proposes for itself a `ProposedFile`. Its photo is
   picked with `AvatarPicker`. The photos are the product's own: the
-  export's portraits are of real people and never ship.
+  export's portraits are of real people and never ship. Until there is a
+  set we may use, a bot's face is its initials in dark ink on one of the
+  export's eight colours (`--avatar-*`, the same in both themes): `BotAvatar`
+  and `BotItem` take `color`, and Profile picks it with `AvatarColorPicker`.
   A bot's routine is a `RoutineCard`, read and edited in place
   (`RoutineItem` is the workspace's, in the sidebar); records in a settings
   card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`

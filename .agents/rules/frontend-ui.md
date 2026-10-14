@@ -99,6 +99,8 @@ multi-line, so a grep for `export` misses most of them.
 | An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it; `needsInput` when it waits on the reader) | a `SessionItem` with an avatar |
 | Employees' group heads, and the list before the first bot | `SidebarProjectHeader tone="eyebrow"` (`marker` for the Built-in lock); `SidebarEmptyCard` | an uppercase `span`, a `Callout` in the sidebar |
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
+| A bot's colour, while its avatar is its initials | `AvatarColorPicker`; `BotAvatar` / `BotItem` with `color` | a row of coloured `div`s, a hex from the database |
+| A file edited in place (a bot's SOUL.md, INSTRUCTIONS.md) | `Textarea variant="code"`; `SegmentedControlItem mono` to switch files | a `Textarea` restyled to mono |
 | A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
 | The bar over one thing's own settings | `SettingsTopBar` | a `PageHeader`, a hand-built header |

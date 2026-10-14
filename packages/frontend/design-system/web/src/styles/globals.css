@@ -271,6 +271,20 @@
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
 
+    /* A bot's avatar: its initials on one of the export's eight colours
+       (`AV_COLORS`), an identity like a file's mark, never a state. The same
+       in both themes so a bot keeps its face; the initials are dark ink on
+       every one of them, which all sit at or above 0.70 lightness. */
+    --avatar-mint: oklch(0.74 0.13 175);
+    --avatar-tangerine: oklch(0.72 0.18 50);
+    --avatar-snow: oklch(0.96 0 0);
+    --avatar-sky: oklch(0.74 0.12 240);
+    --avatar-lilac: oklch(0.74 0.12 300);
+    --avatar-lemon: oklch(0.88 0.15 100);
+    --avatar-coral: oklch(0.72 0.15 20);
+    --avatar-moss: oklch(0.7 0.12 135);
+    --avatar-ink: oklch(0.21 0 0);
+
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
        layers detach from the page, all soft and ambient, never directional. */
@@ -832,6 +846,15 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-avatar-mint: var(--avatar-mint);
+  --color-avatar-tangerine: var(--avatar-tangerine);
+  --color-avatar-snow: var(--avatar-snow);
+  --color-avatar-sky: var(--avatar-sky);
+  --color-avatar-lilac: var(--avatar-lilac);
+  --color-avatar-lemon: var(--avatar-lemon);
+  --color-avatar-coral: var(--avatar-coral);
+  --color-avatar-moss: var(--avatar-moss);
+  --color-avatar-ink: var(--avatar-ink);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

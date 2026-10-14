@@ -35,5 +35,6 @@
   "reviewApprovedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
   "reviewCommentPosted": "Comentario publicado.",
   "reviewApproved": "Aprobada.",
-  "reviewApprovedAutoMerge": "Aprobada. Se hará merge cuando pasen los checks obligatorios."
+  "reviewApprovedAutoMerge": "Aprobada. Se hará merge cuando pasen los checks obligatorios.",
+  "botDeleted": "Se ha eliminado «{{name}}»."
 }

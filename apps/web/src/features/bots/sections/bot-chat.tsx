@@ -1,0 +1,100 @@
+import { BotAvatar, ChatHeader, IconButton, useSidebar } from '@oppenheimer/design-system-web';
+import { PanelLeft } from '@oppenheimer/design-system-web/icons';
+import { useSuspenseBot, useUpdateBot } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
+import { BotEngineChips } from '@/features/bots/components/bot-engine-chips';
+import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
+import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
+import { botModelLabel } from '@/features/bots/lib/bot-engine';
+import { BotComposer } from './bot-composer';
+import { BotHello } from './bot-hello';
+
+/**
+ * A bot's chat (`design/version1/Bots.dc.html`), before the chat itself
+ * (`25-bots.md`, slice 1): the header with the sidebar toggle, the bot's face
+ * and name and its menu; the bot's hello; and the composer, whose chips are
+ * how the bot's turns will start (its model, effort and approval level), each
+ * saved on the bot as it is picked. The header, the hello and the chips all
+ * draw this one bot, so it is read here once.
+ *
+ * The chips are made here, not in the composer, so the draft the composer
+ * owns never re-renders them; and this section owns their save, so a picked
+ * value shows at once and a refused one says why above the box.
+ */
+export function BotChat({ botId }: { botId: string }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { toggleSidebar } = useSidebar();
+  const { data: bot, error } = useSuspenseBot(botId);
+  const update = useUpdateBot();
+  const [deleting, setDeleting] = useState(false);
+  // While a pick is saving, it is what the chips show.
+  const picked = update.isPending ? update.variables.input : {};
+  const model = 'model' in picked ? (picked.model ?? null) : bot.model;
+  const effort = picked.effort ?? bot.effort;
+  const permission = picked.permission ?? bot.permission;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ChatHeader
+        leading={
+          <>
+            <IconButton
+              variant="quiet"
+              size="sm"
+              aria-label={t('bots.chat.toggleSidebar')}
+              onClick={toggleSidebar}
+            >
+              <PanelLeft />
+            </IconButton>
+            <BotAvatar option={{ initials: bot.initials }} size={26} color={bot.avatarColor} />
+          </>
+        }
+        title={bot.name}
+        actions={
+          <BotActionsMenu
+            onSettings={() =>
+              navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
+            }
+            onDelete={() => setDeleting(true)}
+          />
+        }
+      />
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 pb-10">
+        <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
+        <BotHello botId={bot.id} name={bot.name} modelLabel={botModelLabel(model)} />
+      </div>
+      <div className="px-5 pb-5">
+        <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
+          <ErrorAlert
+            error={update.error}
+            fallback={t('bots.chat.saveFailed')}
+            onDismiss={() => update.reset()}
+          />
+          <BotComposer
+            name={bot.name}
+            tools={
+              <BotPermissionChip
+                value={permission}
+                onValueChange={(next) => update.mutate({ id: bot.id, input: { permission: next } })}
+              />
+            }
+            engine={
+              <BotEngineChips
+                model={model}
+                effort={effort}
+                onModelChange={(next) => update.mutate({ id: bot.id, input: { model: next } })}
+                onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
+              />
+            }
+          />
+        </div>
+      </div>
+      {deleting ? <DeleteBotDialog bot={bot} onClose={() => setDeleting(false)} /> : null}
+    </div>
+  );
+}
