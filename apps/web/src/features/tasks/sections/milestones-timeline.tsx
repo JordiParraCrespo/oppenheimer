@@ -1,10 +1,11 @@
 import {
+  MilestoneEmpty,
   MilestoneTimeline,
   type MilestoneTimelineControls,
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { combineQueries, QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,49 +39,59 @@ export function MilestonesTimeline({
   const milestones = useMilestones();
   const tasks = useTasks();
 
-  const failed = projects.error ?? milestones.error ?? tasks.error;
-  if (failed) return <ErrorAlert error={failed} fallback={t('tasks.milestones.loadFailed')} />;
-  if (!projects.data || !milestones.data || !tasks.data) {
-    return <Skeleton className="h-60 w-full" />;
-  }
-
-  const named = projects.data.map((row) => ({
-    id: row.id,
-    name: row.isUnassigned ? t('tasks.filters.noProject') : row.name,
-  }));
-  const rows = timelineRows(named, milestones.data, tasks.data, projectId);
-  if (rows.length === 0) {
-    return (
-      <button
-        type="button"
-        onClick={onNew}
-        className="flex max-w-105 flex-col items-start gap-1 rounded-lg border border-border border-dashed px-4.5 py-4 text-left text-sm text-fg-muted hover:text-fg"
-      >
-        <span className="font-medium text-fg">{t('tasks.milestones.emptyTitle')}</span>
-        {t('tasks.milestones.empty')}
-      </button>
-    );
-  }
-  const slugOf = new Map(
-    projects.data.map((row) => [row.id, row.isUnassigned ? UNASSIGNED_SLUG : row.slug]),
+  const plan = combineQueries(
+    combineQueries(projects, milestones, (projectRows, milestoneRows) => ({
+      projectRows,
+      milestoneRows,
+    })),
+    tasks,
+    ({ projectRows, milestoneRows }, taskRows) => {
+      const named = projectRows.map((row) => ({
+        id: row.id,
+        name: row.isUnassigned ? t('tasks.filters.noProject') : row.name,
+      }));
+      const slugOf = new Map(
+        projectRows.map((row) => [row.id, row.isUnassigned ? UNASSIGNED_SLUG : row.slug]),
+      );
+      return { rows: timelineRows(named, milestoneRows, taskRows, projectId), slugOf };
+    },
   );
 
   return (
-    // Edge to edge, as the frame draws it: the pane cancels its gutter for
-    // `data-bleed`. Keyed by the project so a new filter opens on today again.
-    <MilestoneTimeline
-      key={projectId ?? 'all'}
-      data-bleed
-      controls={controls}
-      rows={rows}
-      today={today}
-      locale={locale}
-      labels={{
-        tasks: (total) => t('tasks.milestones.ofTasks', { count: total }),
-        edit: t('tasks.milestones.clickToEdit'),
-      }}
-      onOpenRow={(id) => navigate({ to: '/plan', search: { project: slugOf.get(id) } })}
-      onOpenMilestone={onEdit}
-    />
+    <QueryState query={plan} isEmpty={({ rows }) => rows.length === 0}>
+      <QueryState.Pending>
+        <Skeleton className="h-60 w-full" />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('tasks.milestones.loadFailed')} />
+      <QueryState.Empty>
+        <MilestoneEmpty
+          title={t('tasks.milestones.emptyTitle')}
+          onClick={onNew}
+          className="max-w-105"
+        >
+          {t('tasks.milestones.empty')}
+        </MilestoneEmpty>
+      </QueryState.Empty>
+      <QueryState.Data of={plan}>
+        {({ rows, slugOf }) => (
+          // Edge to edge, as the frame draws it: the pane cancels its gutter for
+          // `data-bleed`. Keyed by the project so a new filter opens on today again.
+          <MilestoneTimeline
+            key={projectId ?? 'all'}
+            data-bleed
+            controls={controls}
+            rows={rows}
+            today={today}
+            locale={locale}
+            labels={{
+              tasks: (total) => t('tasks.milestones.ofTasks', { count: total }),
+              edit: t('tasks.milestones.clickToEdit'),
+            }}
+            onOpenRow={(id) => navigate({ to: '/plan', search: { project: slugOf.get(id) } })}
+            onOpenMilestone={onEdit}
+          />
+        )}
+      </QueryState.Data>
+    </QueryState>
   );
 }
