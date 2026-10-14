@@ -3,7 +3,9 @@
  * that draws nothing: without `Error` a failed read is a blank, without
  * `Pending` the first load is. The types cannot say which children an element
  * needs, so this does: a `<QueryState>` holds a `Pending`, an `Error` and a
- * `Data`, and an `Empty` exactly when it is given `isEmpty`. Its `Data` draws
+ * `Data`, and an `Empty` exactly when it is given `isEmpty`. A root with no
+ * `query` is the boundary of a Suspense read: the section in its `Data` reads,
+ * so it takes no `isEmpty`, `stale`, `Empty` or `of`. Its `Data` draws
  * `of` the root's own `query`: the root decides whether `Data` draws, `of` is
  * what it draws, and two different reads would let the one disagree with the
  * other.
@@ -63,18 +65,40 @@ export function queryStateSlotProblems(source) {
     const line = text.slice(0, start).split('\n').length;
     const has = (slot) => new RegExp(`<QueryState\\.${slot}\\b`).test(inside);
     const emptyAsked = /\bisEmpty\s*=/.test(tag);
+    const query = /\bquery=\{([^}]*)\}/.exec(tag)?.[1].trim();
+    const of = /<QueryState\.Data\b[^>]*?\bof=\{([^}]*)\}/.exec(inside)?.[1].trim();
 
     const missing = REQUIRED.filter((slot) => !has(slot)).map((slot) => `QueryState.${slot}`);
-    if (emptyAsked && !has('Empty')) missing.push('QueryState.Empty (it is given isEmpty)');
+    if (query && emptyAsked && !has('Empty'))
+      missing.push('QueryState.Empty (it is given isEmpty)');
     if (missing.length > 0) {
       problems.push({
         line,
         message: `<QueryState> without ${missing.join(', ')} — each rung of a read draws something; a slot left out draws nothing`,
       });
     }
-    const query = /\bquery=\{([^}]*)\}/.exec(tag)?.[1].trim();
-    const of = /<QueryState\.Data\b[^>]*?\bof=\{([^}]*)\}/.exec(inside)?.[1].trim();
-    if (query && of && of !== query) {
+    if (!query) {
+      const queryOnly = [
+        ...(emptyAsked ? ['isEmpty'] : []),
+        ...(/\bstale\s*=/.test(tag) ? ['stale'] : []),
+        ...(has('Empty') ? ['QueryState.Empty'] : []),
+        ...(of ? ['Data of={…}'] : []),
+      ];
+      if (queryOnly.length > 0) {
+        problems.push({
+          line,
+          message: `<QueryState> with no query takes ${queryOnly.join(', ')} — it is a Suspense read's boundary, and the section in its Data reads, draws its own empty state and shows a later failure itself`,
+        });
+      }
+      continue;
+    }
+    if (has('Data') && !of) {
+      problems.push({
+        line,
+        message: `<QueryState.Data> with no of under <QueryState query={${query}}> — pass of={${query}} and draw the data it hands to children`,
+      });
+    }
+    if (of && of !== query) {
       problems.push({
         line,
         message: `<QueryState.Data of={${of}}> under <QueryState query={${query}}> — the slot draws the data of the query that decides whether it draws; pass the same one`,

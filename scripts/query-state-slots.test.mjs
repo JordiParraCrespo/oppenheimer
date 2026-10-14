@@ -82,7 +82,7 @@ test("a nested root's slots do not count for the root around it", () => {
   const source = section(
     '<QueryState query={things}>',
     PENDING,
-    `<QueryState.Data>{() => ${inner}}</QueryState.Data>`,
+    `<QueryState.Data of={things}>{() => ${inner}}</QueryState.Data>`,
   );
   const reported = messages(source);
   assert.equal(reported.length, 1);
@@ -93,6 +93,28 @@ test('Data drawing another query than its root is reported', () => {
   assert.match(
     messages(section('<QueryState query={things}>', PENDING, ERROR, other))[0],
     /^3: <QueryState\.Data of=\{others\}> under <QueryState query=\{things\}>/,
+  );
+});
+test('a Suspense root composes Pending, Error and a Data with no of, and nothing a query root takes', () => {
+  const rows = '<QueryState.Data><ThingRows /></QueryState.Data>';
+  assert.deepEqual(messages(section('<QueryState>', PENDING, ERROR, rows)), []);
+  assert.match(
+    messages(
+      section('<QueryState isEmpty={(rows) => !rows.length}>', PENDING, ERROR, EMPTY, DATA),
+    )[0],
+    /^3: <QueryState> with no query takes isEmpty, QueryState\.Empty, Data of=\{…\} — it is a Suspense read's boundary/,
+  );
+  assert.match(
+    messages(section('<QueryState>', PENDING, rows))[0],
+    /<QueryState> without QueryState\.Error —/,
+  );
+});
+
+test('a Data with no of under a query root is reported', () => {
+  const rows = '<QueryState.Data><ThingRows /></QueryState.Data>';
+  assert.match(
+    messages(section('<QueryState query={things}>', PENDING, ERROR, rows))[0],
+    /<QueryState\.Data> with no of under <QueryState query=\{things\}>/,
   );
 });
 // oppenheimer:end web

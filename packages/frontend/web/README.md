@@ -25,7 +25,8 @@ names the concern and what to reach for first.
 - **auth** — `AuthLayout`, the split screen around sign-in and onboarding.
 - **layout** — `QueryState`, a read's failed, loading, empty and loaded
   states as composed slots (`QueryState.Pending`, `.Error`, `.Empty`,
-  `.Data of={query}`, which types the data from the query); `ConfirmDialog` for the
+  `.Data of={query}`, which types the data from the query), and with no
+  `query` the boundary of a Suspense read; `ConfirmDialog` for the
   destructive confirm.
 - **forms** — `ErrorAlert` for an inline failure and `notifySuccess(key)` for
   a success toast (a `toasts.*` key, so its copy lives in one place; when to
