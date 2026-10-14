@@ -80,12 +80,23 @@ user reviews ── send ─────────▶ POST /v1/sessions (uncha
 3. **Intent (voice setup).** Only on the new-session screen, and only
    when the user asked for it (the mic in the form header, not the one
    in the composer): a structured-output LLM call reads the polished
-   text with the caller's own hosts, projects, branches and agents as
-   closed lists, and returns a proposal shaped like a partial
-   `CreateSessionInput`: `{ hostId?, projectId?, branch?, agent?,
-   effort?, permission?, name?, prompt }`, with a confidence for each
-   field. The console fills the fields it is sure of, highlights the
-   ones it guessed, and leaves the rest for you. It never starts the
+   text with the caller's own hosts, projects, repositories, base
+   branches and agents as closed lists, and returns a
+   `VoiceSessionProposal`, a Zod schema in `packages/shared` shaped like
+   the composer's draft rather than the wire:
+   `{ hostId?, projectId?, repository?: { installationId, githubRepoId },
+   baseBranch?, agent?, launch?: { model?, effort?, permission? },
+   name?, prompt }`, with a confidence for each field. The console maps
+   it onto the real contract: `repository` and `baseBranch` become the
+   one `checkouts` entry (`installationId`, `githubRepoId`,
+   `baseBranch`), and model, effort and permission go into `launch`.
+   There is no working-branch field to fill, since a session's branch is
+   always `oppenheimer/<slug>`. When no repository can be resolved (the
+   named one is not in the list, or the project has no default), the
+   repository picker stays empty and is flagged, and the send button
+   stays disabled exactly as it does for a typed draft. The console
+   fills the fields it is sure of, highlights the ones it guessed, and
+   leaves the rest for you. It never starts the
    session on its own: **you always press send.** "Start it" spoken at
    the end can focus the send button, nothing more.
 
@@ -157,10 +168,27 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 - A `voice-dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
   (a temporary release flag with an expiry), read with `useFeatureFlag`
   and `@RequireFlag`.
-- **Privacy.** Audio is never stored, logged or used for training. That
-  needs a provider with zero data retention, or the self-hosted server.
-  Transcripts are not stored beyond the prompt you send. The first time
-  the mic is used, the console says which provider hears the audio.
+- **Privacy.** Three things leave the control plane, and the promise
+  covers all three: the audio and the vocabulary hint go to the
+  speech-to-text provider, and the transcript plus the closed lists go
+  to the LLM provider for polish and intent. That happens even when you
+  cancel instead of sending.
+  - We store none of it: audio and transcripts are never written to
+    storage or logs, and only the prompt you send is kept.
+  - Hosted providers are configured only under terms that exclude
+    training and keep retention to the minimum they offer (zero data
+    retention where the account has it). The slice 0 spike records
+    each provider's actual retention, and the note states it instead
+    of "never stored" when a provider keeps data for abuse monitoring.
+    The self-hosted server is the option with no third party at all.
+  - The vocabulary is scoped to what the caller can already see in the
+    workspace, capped in size, and narrowed to the selected project
+    when there is one. It never includes secrets or file contents.
+  - The first time the mic is used, the console names both providers,
+    what each receives (audio and names to one, text and names to the
+    other) and their retention, and you accept before recording.
+    Polish and intent can be switched off, which sends nothing to the
+    LLM provider.
 - **Cost.** At Whisper-class prices (about $0.006 per minute, less on
   Groq) plus one small LLM call, a 20-second prompt costs well under a
   cent. The limiter's per-user bucket is what caps abuse.
