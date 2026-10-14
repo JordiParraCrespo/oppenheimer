@@ -404,8 +404,8 @@ pnpm changeset          # Create a changeset for versioning
   `packages/frontend/web/src`, `packages/frontend/design-system/web/src` or
   `packages/translations` that is not a test, story or doc: before the pull
   request is opened or updated, run the `/local-stack` skill's "Show a
-  visual change" step: stack up `--web`, `pnpm --filter @oppenheimer/e2e
-  screens` on each route the change shows on, light and dark. Look at every
+  visual change" step: stack up `--web`, `pnpm screens <route>...` on each
+  route the change shows on, light and dark (both pre-approved, no prompt). Look at every
   picture, send them to the user, and give the pull request a
   `## Screenshots` section (`/steward`). The screenshot guard holds the end
   of a task until `.screenshots/` is newer than the change; a change there

@@ -13,6 +13,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * Not a test of anything: it is the camera the `local-stack` skill points at
  * a visual change, and it only runs when `SCREENS` names something.
  *
+ *   pnpm screens /sessions /settings/profile     (scripts/stack/screens.mjs)
  *   SCREENS="/sessions,/settings/profile" pnpm --filter @oppenheimer/e2e screens
  *
  * - `anon:/login` photographs a route signed out.

@@ -120,6 +120,9 @@ function prepareClone(dir, ref) {
   run('rm', ['-rf', join(dir, 'scripts/evals')], dir);
   git(dir, 'add', '-A', 'scripts');
   git(dir, 'commit', '--quiet', '-m', 'eval: hide the evals');
+  // The task starts here, so this is the main its branch is diffed against.
+  git(dir, 'update-ref', 'refs/remotes/origin/main', 'HEAD');
+  git(dir, 'branch', '--quiet', '-f', 'main', 'HEAD');
   log(`clone ${dir} at ${ref} (${sha.slice(0, 8)})`);
   const install = run('pnpm', ['install', '--frozen-lockfile', '--prefer-offline'], dir);
   if (!install.ok) throw new Error(`pnpm install failed:\n${install.out.slice(-2000)}`);
@@ -266,7 +269,7 @@ function grade(testCase, agent, seen) {
     ),
     section: Boolean(seen.pr && /^#{2,3}\s+Screenshots\b/im.test(seen.pr)),
     pr: Boolean(seen.pr),
-    committed: seen.commits > 1,
+    committed: seen.commits > 0,
   };
   const pass = testCase.visual
     ? signals.stack && signals.shots && signals.looked && signals.section && signals.committed

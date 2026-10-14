@@ -20,7 +20,7 @@
 // `.agents/hooks/screenshot-guard.test.mjs`.
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -53,9 +53,43 @@ function mtime(path) {
   }
 }
 
+/**
+ * A checkout's `origin/main` can be older than the `main` the branch was cut
+ * from, and diffing against it counts main's own commits as the branch's. So
+ * it is fetched first: quietly, briefly, and at most every ten minutes.
+ */
+function refreshMain(root) {
+  const stamp = join(git(root, 'rev-parse', '--absolute-git-dir').trim(), 'screenshot-guard-fetch');
+  if (Date.now() / 1000 - mtime(stamp) < 600) return;
+  try {
+    execFileSync('git', ['fetch', '--quiet', '--no-tags', 'origin', 'main'], {
+      cwd: root,
+      stdio: 'ignore',
+      timeout: 8_000,
+    });
+  } catch {}
+  try {
+    writeFileSync(stamp, '');
+  } catch {}
+}
+
+/** Where the branch left main: the nearer merge-base of `origin/main` and `main`. */
+export function branchBase(root) {
+  const bases = [];
+  for (const ref of ['origin/main', 'main']) {
+    try {
+      const base = git(root, 'merge-base', ref, 'HEAD').trim();
+      bases.push({ base, ahead: Number(git(root, 'rev-list', '--count', `${base}..HEAD`)) });
+    } catch {}
+  }
+  if (bases.length === 0) throw new Error('no main to compare against');
+  return bases.sort((a, b) => a.ahead - b.ahead)[0].base;
+}
+
 /** The visual files the branch changes and when the newest of them changed, or null. */
-export function visualChange(root, base = 'origin/main') {
-  const mergeBase = git(root, 'merge-base', base, 'HEAD').trim();
+export function visualChange(root, { fetch = true } = {}) {
+  if (fetch) refreshMain(root);
+  const mergeBase = branchBase(root);
   const committed = git(root, 'diff', '--name-only', `${mergeBase}..HEAD`).split('\n');
   const pending = git(root, 'status', '--porcelain', '--untracked-files=all')
     .split('\n')
@@ -84,7 +118,7 @@ export function verdict(root) {
   return [
     `This branch changes what the console looks like (${listed}${more}) and has no screenshots newer than the change.`,
     // oppenheimer:begin e2e
-    'Before you finish: follow the `local-stack` skill\'s "Show a visual change" step (stack up --web, `SCREENS=... pnpm --filter @oppenheimer/e2e screens`), look at every picture, show them to the user, and give the pull request its `## Screenshots` section.',
+    'Before you finish: follow the `local-stack` skill\'s "Show a visual change" step (`node scripts/stack/stack.mjs up --web`, then `pnpm screens <route>...`), look at every picture, show them to the user, and give the pull request its `## Screenshots` section.',
     // oppenheimer:end e2e
     'If the change is not visual after all, write one line saying why to `.screenshots/not-visual.md` and say the same in the pull request.',
     'If this turn only asks the user something, or the work is not ready yet, say so and stop again.',
@@ -107,7 +141,7 @@ function main() {
   try {
     reason = verdict(root);
   } catch {
-    // No origin/main, a shallow clone: nothing to compare against.
+    // No main to compare against (a shallow clone): nothing to check.
     return;
   }
   if (reason) process.stdout.write(`${JSON.stringify({ decision: 'block', reason })}\n`);

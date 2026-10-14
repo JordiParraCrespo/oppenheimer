@@ -111,8 +111,20 @@ describe('the hook', () => {
     assert.equal(stop(), null);
   });
 
-  it('stays out of a repository with no origin/main', () => {
+  it('compares against main when origin/main is older than it', () => {
+    git('checkout', '-q', '-f', 'main');
+    git('clean', '-fdq');
+    write('apps/web/src/on-main.tsx', 'main', new Date(Date.now() + 60_000));
+    git('add', 'apps/web/src/on-main.tsx');
+    git('commit', '-q', '-m', 'main moved on');
+    git('checkout', '-q', '-b', 'fresh');
+    rmSync(join(root, '.screenshots'), { recursive: true, force: true });
+    assert.equal(stop(), null);
+  });
+
+  it('stays out of a repository with no main', () => {
     git('update-ref', '-d', 'refs/remotes/origin/main');
+    git('branch', '-q', '-m', 'main', 'trunk');
     assert.equal(stop(), null);
   });
 });

@@ -46,7 +46,7 @@ commit. It only exists when `SCREENS` is set, so no other run selects it.
 The `local-stack` skill's "Show a visual change" step is how it is used:
 
 ```bash
-SCREENS="/sessions,anon:/login" SCREENS_WIDTHS=1440,390 pnpm --filter @oppenheimer/e2e screens
+pnpm screens --phone /sessions anon:/login   # from the root: scripts/stack/screens.mjs
 ```
 
 ## The two stubs, and what they are for

@@ -12,7 +12,13 @@ node scripts/stack/stack.mjs up          # add --web when the console is involve
 ```
 
 It is the "Running it" steps of `e2e/README.md` in one command, and it
-leaves the checkout's `.env` and any running Postgres and Redis alone. The
+leaves the checkout's `.env` and any running Postgres and Redis alone. It
+does not need Docker: it uses a Postgres and a Redis already listening on
+5432 and 6379, and starts them with Docker only when nothing is. On a
+machine with neither (a cloud sandbox), start the local ones first —
+`service postgresql start && service redis-server start`, with an
+`oppenheimer` role and database matching `.env.example`'s `DB_*` — and run
+it. Try it before deciding the stack cannot run here. The
 API's log is `.stack/api.log`, which is where the suites read it by default.
 
 ## 2. Run what the change touches
@@ -48,18 +54,18 @@ branch until `.screenshots/` is newer than the change.
 2. Name the routes the change shows on and photograph them:
 
    ```bash
-   SCREENS="/sessions,/settings/profile" \
-     PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium \
-     pnpm --filter @oppenheimer/e2e screens
+   pnpm screens /sessions /settings/profile
    ```
 
    Each route is taken light and dark, signed in as a fresh account that
    owns a workspace, into `.screenshots/` (git-ignored) with a
    `manifest.json` naming the commit. `anon:/login` takes a signed-out
-   route; `SCREENS_GITHUB=1` connects a stub GitHub installation first, so
-   the composer and project screens have repositories; `SCREENS_WIDTHS=1440,390`
-   adds a phone. Leave `PLAYWRIGHT_CHROMIUM_PATH` out where Playwright has its
-   own browser. A component in the design system or the kit is photographed
+   route; `--github` connects a stub GitHub installation first, so the
+   composer and project screens have repositories; `--phone` adds a 390px
+   width, which a layout change needs. The stack commands, `pnpm screens`,
+   and reading or writing `.screenshots/` are allowed in
+   `.claude/settings.json`, so none of this asks the user for permission;
+   keep to those spellings. A component in the design system or the kit is photographed
    on a console route that renders it. A state an empty account cannot reach
    (a dialog open, a row's menu, a host online) is a few lines in a
    throwaway spec beside `e2e/tests/screens/screens.spec.ts` that reaches it
