@@ -21,14 +21,14 @@ export function useNewSessionForm(): NewSessionDraftForm {
   const [defaultValues] = useState(initialDraft);
   const form = useForm<NewSessionDraft>({ defaultValues });
 
-  // `localStorage`: the five remembered fields are written out as they change.
+  // `localStorage`: the six remembered fields are written out as they change.
   // `subscribe` rather than `useWatch`, so remembering a pick does not
   // re-render the section that owns the form.
   const { subscribe } = form;
   useEffect(
     () =>
       subscribe({
-        name: ['projectId', 'hostId', 'agent', 'model', 'efforts'],
+        name: ['projectId', 'hostId', 'agent', 'model', 'permission', 'efforts'],
         formState: { values: true },
         callback: ({ values }) => rememberDraft(values),
       }),

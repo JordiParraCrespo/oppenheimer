@@ -444,3 +444,7 @@ earlier note:
   and folder and terminal sessions need none. A project that holds
   repositories still offers a default among them (`PROJECTS_006`). The
   Unassigned project keeps that name.
+- `versions/mvp/05-screens.md` opened New session on the `full`
+  permission level every visit and never remembered it. On 2026-10-14 the
+  owner made it open on `auto` and remember the last level picked, like
+  the other chips.

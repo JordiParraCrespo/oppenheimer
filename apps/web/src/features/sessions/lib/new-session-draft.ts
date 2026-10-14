@@ -3,13 +3,15 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   isCodingAgentId,
+  SESSION_PERMISSIONS,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
 import { defaultModelFor, type EffortPicks } from './session-options';
 
 /**
- * What New session has been set to and remembers between visits, except that
- * **the permission level is never remembered**: every visit opens on `full`.
+ * What New session has been set to and remembers between visits, the
+ * permission level included: it opens on `auto` (Claude Code's own default for
+ * a session nobody watches line by line) and then on the last level picked.
  * Nothing here is validated against the lists; the chips do that once their queries answer,
  * when "that host is gone" is a fact rather than a list not yet loaded.
  */
@@ -38,22 +40,21 @@ const FALLBACK: NewSessionDraft = {
   scope: [],
   agent: 'claude-code',
   model: defaultModelFor('claude-code'),
-  permission: 'full',
+  permission: 'auto',
   efforts: {},
 };
 
-/** What is worth carrying between visits: the project, the host and the engine, never the scope. */
+/** What is worth carrying between visits: the project, the host, the engine and the permission level, never the scope. */
 type RememberedChoices = Pick<
   NewSessionDraft,
-  'projectId' | 'hostId' | 'agent' | 'model' | 'efforts'
+  'projectId' | 'hostId' | 'agent' | 'model' | 'permission' | 'efforts'
 >;
 
 /**
  * The draft a visit opens with: the fallback, overlaid with what the last
  * visit remembered.
  *
- * `permission` and `scope` are never restored: the first for the reason on
- * `STORAGE_KEY`, the second because it names repositories this visit may not
+ * `scope` is never restored, because it names repositories this visit may not
  * be about.
  */
 export function initialDraft(): NewSessionDraft {
@@ -64,15 +65,23 @@ export function initialDraft(): NewSessionDraft {
     hostId: stored.hostId ?? FALLBACK.hostId,
     agent: stored.agent ?? FALLBACK.agent,
     model: stored.model ?? (stored.agent ? defaultModelFor(stored.agent) : FALLBACK.model),
+    permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
   };
 }
 
-export function rememberDraft({ projectId, hostId, agent, model, efforts }: RememberedChoices) {
+export function rememberDraft({
+  projectId,
+  hostId,
+  agent,
+  model,
+  permission,
+  efforts,
+}: RememberedChoices) {
   try {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ projectId, hostId, agent, model, efforts }),
+      JSON.stringify({ projectId, hostId, agent, model, permission, efforts }),
     );
   } catch {
     // Private browsing, a full quota, storage switched off. The screen works
@@ -95,6 +104,7 @@ function remembered(): Partial<RememberedChoices> {
         agent && CODING_AGENTS[agent].models.some((model) => model.id === stored.model)
           ? stored.model
           : undefined,
+      permission: SESSION_PERMISSIONS.find((level) => level === stored.permission),
       efforts: effortPicks(stored.efforts),
     };
   } catch {
