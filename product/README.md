@@ -448,3 +448,9 @@ earlier note:
   permission level every visit and never remembered it. On 2026-10-14 the
   owner made it open on `auto` and remember the last level picked, like
   the other chips.
+- `versions/mvp/00-scope.md` made every session a worktree, the blank
+  terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
+  2026-10-14 the owner made the place a choice, a new worktree or a folder
+  already on the host, and moved the runner's work to `~/oppenheimer/`
+  as `<account>/<workspace>/{repos, agents, sessions}`
+  (`versions/mvp/24-session-places.md`).
