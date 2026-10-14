@@ -193,12 +193,13 @@ test.describe('Pull requests when GitHub answers in part', () => {
     await watch(page, ['acme-labs/xrp-mobile', 'acme-labs/xrp-web']);
 
     await page.goto('/pulls');
+    // The notice passes in a few seconds, so it is read first: it is said with the first read.
+    await expect(page.getByText(/the App needs Checks: read/)).toBeVisible({ timeout: 30_000 });
     // The queue renders: the refused repository's rows and the other repository's alike.
     await expect(rowButton(page, 'Store wallet tokens in the Keychain')).toBeVisible({
       timeout: 30_000,
     });
     await expect(rowButton(page, 'Dark mode for the dashboard')).toBeVisible();
-    await expect(page.getByText(/the App needs Checks: read/)).toBeVisible();
     const row = page.getByRole('row').filter({ hasText: 'Store wallet tokens in the Keychain' });
     await expect(row.getByText('Checks unavailable').first()).toBeVisible();
   });
