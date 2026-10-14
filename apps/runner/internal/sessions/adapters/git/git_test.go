@@ -267,6 +267,27 @@ func TestAReusedStoreFetchesFromTheRemoteItIsGiven(t *testing.T) {
 	}
 }
 
+// A deepen fetches into a new store in the background and holds its config
+// lock while it does; a second session on the same repository, started then,
+// names the remote the store already has and must not fail on rewriting it.
+func TestASecondEnsureDoesNotRewriteAnUnchangedRemote(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	c.Wait()
+	lock := filepath.Join(layout.Store(repo), "config.lock")
+	if err := os.WriteFile(lock, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(lock)
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatalf("a second ensure while the config is locked: %v", err)
+	}
+}
+
 // Has is what tells a first session's download from a later one's fetch, and
 // a clone that failed half-way must not count as the repository being here.
 func TestHasIsTrueOnlyOnceAWholeCloneIsInPlace(t *testing.T) {

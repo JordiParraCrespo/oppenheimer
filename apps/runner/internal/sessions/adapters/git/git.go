@@ -168,6 +168,16 @@ func (c *Client) repoIDOf(store string) string {
 	return strings.TrimSpace(out)
 }
 
+// originOf is the URL a store fetches from, empty when it records none.
+func (c *Client) originOf(store string) string {
+	out, err := c.run(context.Background(), command{timeout: quickTimeout},
+		"config", "--file", filepath.Join(store, "config"), "--get", "remote.origin.url")
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
+}
+
 // whole reports a store that is all there. A store is made beside its place
 // and renamed into it once its first fetch has landed, so a store with a
 // HEAD is never half a download.
@@ -204,7 +214,10 @@ func (c *Client) Ensure(ctx context.Context, repo domain.Repository, remote, ref
 	if whole(store) {
 		// The store may have been made under the repository's old name, or
 		// from another remote: what is fetched is what the caller names now.
-		if remote != "" {
+		// Written only when it differs: a deepen may be fetching into this
+		// store in the background, holding its config lock, and a second
+		// session on the same repository must not fail on a no-op write.
+		if remote != "" && c.originOf(store) != remote {
 			if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "remote", "set-url", "origin", remote); err != nil {
 				return err
 			}
