@@ -74,6 +74,8 @@ export {
   SubagentRow,
   SubagentRunCard,
 } from './components/chat-cards';
+export type { ChatComposerLabels } from './components/chat-composer';
+export { ChatComposer } from './components/chat-composer';
 export {
   ComposerContextMeter,
   ComposerMenu,
@@ -126,6 +128,8 @@ export {
   FloatingChip,
   TranscriptDivider,
 } from './components/chat-status';
+export type { TraceOutputLabels } from './components/chat-trace';
+export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from './components/chat-trace';
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,
@@ -137,18 +141,7 @@ export {
   StreamingCaret,
   TurnHeader,
 } from './components/chat-transcript';
-export type { TraceOutputLabels } from './components/chat-work';
-export {
-  ReasoningRow,
-  ToolCallGroup,
-  ToolCallLive,
-  ToolCallRow,
-  Trace,
-  TraceLive,
-  TraceNote,
-  TraceOutput,
-  TraceStep,
-} from './components/chat-work';
+export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';

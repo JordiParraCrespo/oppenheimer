@@ -1,4 +1,4 @@
-import { Composer, ComposerNotice, ComposerStackAction } from '@oppenheimer/design-system-web';
+import { ChatComposer, ComposerNotice, ComposerStackAction } from '@oppenheimer/design-system-web';
 import { KeyRound } from '@oppenheimer/design-system-web/icons';
 import {
   useBotActiveTurn,
@@ -62,8 +62,7 @@ export function BotComposer({
           cancel.reset();
         }}
       />
-      <Composer
-        variant="chat"
+      <ChatComposer
         value={draft}
         onValueChange={setDraft}
         inputRef={field}

@@ -18,6 +18,7 @@ import {
   SubagentRow,
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
+import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
 import {
   ComposerContextMeter,
   ComposerMenu,
@@ -75,17 +76,8 @@ import {
   StreamingCaret,
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
-import {
-  ReasoningRow,
-  ToolCallGroup,
-  ToolCallLive,
-  ToolCallRow,
-  Trace,
-  TraceLive,
-  TraceNote,
-  TraceOutput,
-  TraceStep,
-} from '@oppenheimer/design-system-web/chat-work';
+import { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
+import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
 import { DropdownMenuItem } from '@oppenheimer/design-system-web/dropdown-menu';
@@ -282,7 +274,7 @@ function ChatElementsBody() {
         <ChatSource index={3} href="https://nodejs.org">nodejs.org</ChatSource>
       </ChatSources>
       <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
-      <Composer variant="chat" value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
+      <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <div className="flex justify-center">
         <FloatingChip variant="round" aria-label="Jump to latest">
           <ChevronDownIcon />
@@ -980,8 +972,8 @@ export function ChatSection() {
       <Spec
         id="chatwork"
         title="Work and tools"
-        meta="chat-work.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s."
+        meta="chat-work.tsx · chat-trace.tsx"
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
@@ -990,8 +982,8 @@ export function ChatSection() {
       <Spec
         id="chatelements"
         title="AI elements"
-        meta="chat-elements.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is Composer variant chat, the 28px card that grows from two lines to eight; FloatingChip round takes the reader back to the latest turn."
+        meta="chat-elements.tsx · chat-composer.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />
