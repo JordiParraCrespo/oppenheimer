@@ -3,7 +3,6 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
-import { BOT_PROVIDERS } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -44,11 +43,6 @@ export class FindModelProviderCredentialsHttpController {
       FindModelProviderCredentialsQuery,
       ModelProviderCredentialEntity[]
     >(new FindModelProviderCredentialsQuery(scope));
-    return BOT_PROVIDERS.map((provider) => {
-      const credential = stored.find((row) => row.provider === provider);
-      return credential
-        ? this.mapper.toResponse(credential)
-        : this.mapper.toMissingResponse(provider);
-    });
+    return this.mapper.toResponseList(stored);
   }
 }
