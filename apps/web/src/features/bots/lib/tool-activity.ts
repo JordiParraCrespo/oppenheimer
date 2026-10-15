@@ -80,51 +80,10 @@ export function runningStep(answer: readonly BotMessageEntity[]): BotToolStep | 
   return [...steps].reverse().find((step) => step.output === null);
 }
 
-/** A page a web search found. */
-export interface SearchResult {
-  title: string;
-  url: string;
-}
-
-const MAX_RESULTS = 8;
-const JSON_STRING = '"((?:[^"\\\\]|\\\\.)*)"';
-/** A title and its address in either order inside one object, as each provider's results print them. */
-const RESULT_PATTERNS = [
-  new RegExp(`"title"\\s*:\\s*${JSON_STRING}[^{}]*?"(?:url|link)"\\s*:\\s*${JSON_STRING}`, 'g'),
-  new RegExp(`"(?:url|link)"\\s*:\\s*${JSON_STRING}[^{}]*?"title"\\s*:\\s*${JSON_STRING}`, 'g'),
-];
-
-function jsonText(raw: string): string {
-  try {
-    return JSON.parse(`"${raw}"`) as string;
-  } catch {
-    return raw;
-  }
-}
-
-/**
- * The pages a web search returned, read out of its output whatever shape the
- * provider printed it in (Claude's `Links: [...]`, z.ai's result summary):
- * every object with a title and a web address, the first of each address,
- * at most eight. Empty when the output names none.
- */
-export function searchResults(output: string): SearchResult[] {
-  const found = new Map<string, string>();
-  RESULT_PATTERNS.forEach((pattern, index) => {
-    for (const match of output.matchAll(pattern)) {
-      const [first, second] = [jsonText(match[1] ?? ''), jsonText(match[2] ?? '')];
-      const [title, url] = index === 0 ? [first, second] : [second, first];
-      if (!/^https?:\/\//.test(url) || found.has(url)) continue;
-      found.set(url, title.trim() || url);
-    }
-  });
-  return [...found].slice(0, MAX_RESULTS).map(([url, title]) => ({ title, url }));
-}
-
 /** A call's output for reading: JSON indented, anything else as it came. */
 export function readableOutput(output: string): string {
   const text = output.trim();
-  if (!/^[[{]/.test(text)) return output;
+  if (!text.startsWith('{') && !text.startsWith('[')) return output;
   try {
     return JSON.stringify(JSON.parse(text), null, 2);
   } catch {
