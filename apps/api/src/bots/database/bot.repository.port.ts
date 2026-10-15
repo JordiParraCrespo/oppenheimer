@@ -16,6 +16,11 @@ export interface BotRepositoryPort {
   findAll(scope: AccessScope): Promise<BotEntity[]>;
   /** `None` for a missing or out-of-scope bot. */
   findOneById(scope: AccessScope, id: string): Promise<Option<BotEntity>>;
+  /**
+   * The workspace's bot, for a turn the worker runs: the workspace is the
+   * turn's, and no person is asking. `None` for a bot of another workspace.
+   */
+  findForTurn(organizationId: string, botId: string): Promise<Option<BotEntity>>;
   /** Every bot name in the workspace, to number a new one. */
   namesIn(scope: AccessScope): Promise<string[]>;
   /** The bot, last in its group, with its first documents and their first revisions. */

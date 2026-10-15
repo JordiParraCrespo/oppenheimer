@@ -7,7 +7,7 @@ import {
 } from '@oppenheimer/backend-authz';
 import type { BotDocumentName } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, Repository } from 'typeorm';
+import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotResource } from '../bots.resource';
 import type { BotDocumentRevision } from '../domain/bot.types';
@@ -43,9 +43,25 @@ export class BotDocumentRepository
   }
 
   async findAll(scope: AccessScope, botId: string): Promise<BotDocumentEntity[]> {
+    return this.soulFirst(this.scopedQuery(scope).andWhere('document.botId = :botId', { botId }));
+  }
+
+  async findAllForTurn(organizationId: string, botId: string): Promise<BotDocumentEntity[]> {
+    return this.soulFirst(
+      this.repository
+        .createQueryBuilder('document')
+        .where('document.organizationId = :organizationId AND document.botId = :botId', {
+          organizationId,
+          botId,
+        }),
+    );
+  }
+
+  private async soulFirst(
+    query: SelectQueryBuilder<BotDocumentOrmEntity>,
+  ): Promise<BotDocumentEntity[]> {
     // PK_bot_document. `soul` sorts after `instructions`, so the order is spelled out.
-    const records = await this.scopedQuery(scope)
-      .andWhere('document.botId = :botId', { botId })
+    const records = await query
       .orderBy(`CASE document.name WHEN 'soul' THEN 0 ELSE 1 END`)
       .getMany();
     return records.map((record) => this.mapper.toDomain(record));

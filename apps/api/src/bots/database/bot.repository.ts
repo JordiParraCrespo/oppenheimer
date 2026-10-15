@@ -48,6 +48,12 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findForTurn(organizationId: string, botId: string): Promise<Option<BotEntity>> {
+    // UQ_bot_organization_id.
+    const record = await this.repository.findOne({ where: { organizationId, id: botId } });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async namesIn(scope: AccessScope): Promise<string[]> {
     const rows = await this.scopedQuery(scope).select('bot.name', 'name').getRawMany<{
       name: string;
