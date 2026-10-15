@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotProvider, BotTurnStatus } from '@oppenheimer/shared';
+import type { BotProvider, BotTurnStatus, Scope } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnEntity } from './domain/bot-turn.entity';
@@ -19,6 +19,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.model = entity.model;
     record.effort = entity.effort;
     record.timeZone = entity.timeZone;
+    record.credentialScopes = entity.credentialScopes ? [...entity.credentialScopes] : null;
     record.error = entity.error;
     record.inputTokens = entity.inputTokens;
     record.outputTokens = entity.outputTokens;
@@ -42,6 +43,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         model: record.model,
         effort: (record.effort ?? null) as SessionEffort | null,
         timeZone: record.timeZone ?? null,
+        credentialScopes: (record.credentialScopes ?? null) as Scope[] | null,
         error: record.error ?? null,
         inputTokens: record.inputTokens,
         outputTokens: record.outputTokens,

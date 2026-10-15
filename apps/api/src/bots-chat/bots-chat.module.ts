@@ -5,8 +5,17 @@ import { createBotEngine } from '@oppenheimer/backend-agents';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
+import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
+import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
+import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
+import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
+import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
+import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
+import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
+import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
+import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotMessageMapper } from './bot-message.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
@@ -16,6 +25,7 @@ import {
   BOT_STREAM,
   BOT_TURN_REPOSITORY,
   OWNER_HOSTS,
+  WEB_PAGE,
 } from './bots-chat.di-tokens';
 import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-bot-turn.command-handler';
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
@@ -27,6 +37,7 @@ import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
+import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
 import { FindBotConversationHttpController } from './queries/find-bot-conversation/find-bot-conversation.http.controller';
@@ -80,6 +91,16 @@ const queryHandlers: Provider[] = [
     BotMessageMapper,
     BotTurnContextResolver,
     BotOwnerScopeResolver,
+    BotToolboxFactory,
+    BotHostToolsFactory,
+    BotSessionToolsFactory,
+    BotSelfToolsFactory,
+    BotPlanToolsFactory,
+    BotGithubToolsFactory,
+    BotAutomationToolsFactory,
+    BotPeerToolsFactory,
+    BotWebToolsFactory,
+    { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },

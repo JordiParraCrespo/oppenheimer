@@ -24,6 +24,7 @@ import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
+import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
@@ -389,6 +390,7 @@ describe('bots chat (integration)', () => {
       sealer,
       owners,
       hosts,
+      { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
     );
   }
 

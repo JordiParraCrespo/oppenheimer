@@ -127,6 +127,23 @@ defined once, as an in-process MCP server both engines use.
 **Default** is the catalog's: *auto* runs, *ask* shows a Needs input card,
 *never* is not given to a bot at all. The owner changes any of them (§5).
 
+How a tool is built (`bots-chat/application/`): each area of the API is
+one `Bot<Area>ToolsFactory` declaring its tools (a name, a description
+whose first sentence the prompt's "What you can do" list shows, a zod
+input) and dispatching that area's own queries and commands with the
+owner's scope. The input is checked before anything runs; the answer is
+labelled text with ids inline, times in the sender's zone, cut at 12,000
+characters with the cut said; a catalog error comes back as its code,
+title and detail. Text from outside (a page, a pull request, a session's
+result) comes back fenced as data. A message sent through an API token or an
+OAuth grant rather than the console keeps that credential's scopes on its
+turn, and the turn is offered only the tools those scopes cover (each tool
+names the scope of the route it stands in for), so a token scoped to
+`bots:write` reaches no further through a bot than it could itself. Until the Needs input card exists, a
+tool whose default is *ask* runs only under **Full access**; under
+**Approve for me** it does not run and tells the model so, and the bot
+tells you what it would have done.
+
 ### 4.1 Itself
 | Tool | Does | Default |
 |------|------|---------|
@@ -143,7 +160,7 @@ defined once, as an in-process MCP server both engines use.
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state | auto |
-| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task | ask |
+| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` | ask |
 | `send_to_session` | Type a message into a running session | ask |
 | `read_session` | A session's recent output | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
@@ -220,7 +237,7 @@ a time (§2).
 |------|------|---------|
 | `delegate` | A subagent for a long job; the bot keeps talking and the result arrives as a message. Ours, not the engine's: Claude Code's subagents are off | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
-| `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones, with a time limit | auto |
+| `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `ask_user` | A question card with options | auto |
 
 ### 4.8 Never given to a bot
@@ -267,6 +284,20 @@ the local stack, with screenshots where the console changes.
    the Needs input card. Settings → Runs on becomes **Works on**.
 4. **It works with others.** §4.2 to §4.7: sessions, the plan, pull
    requests, automations, calendar, other bots, subagents.
+
+Built so far of slices 3 and 4 (2026-10-15): the prompt and the turn's
+limits (§2); the tools that run without asking, as the owner: itself
+(`get_self`, `edit_soul`, `edit_instructions`, `update_profile`,
+`remember`, `forget`, `recall`), hosts and sessions (`list_hosts`,
+`list_sessions`, `get_session`), the plan (`list_projects`,
+`get_project`, `list_tasks`, `get_task`, `plan_summary`, `create_task`,
+`update_task`, `move_task`), GitHub (`list_repositories`,
+`list_pull_requests`, `get_pull_request`), automations
+(`list_automations`, `get_automation`, `run_history`), other bots
+(`list_bots`, `get_bot`) and `web_fetch`; and `start_session` and
+`stop_session`, which ask. Next: the Needs input card and Settings →
+Permissions, then the asking tools of each area, `ask_bot`,
+`create_bot` and `delegate`.
 
 ## 7. Not built yet
 

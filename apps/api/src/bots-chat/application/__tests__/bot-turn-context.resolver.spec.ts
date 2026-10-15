@@ -10,6 +10,7 @@ import type { BotMessageRepositoryPort } from '../../database/bot-message.reposi
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
+import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
 
 /**
@@ -41,6 +42,7 @@ function setup(hostsOf: OwnerHostsPort['hostsOf']) {
     { isConfigured: () => true, open: () => 'key' } as unknown as ProviderKeySealerPort,
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
+    { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
   );
   const turn = BotTurnEntity.queue({
     organizationId: 'org-1',
