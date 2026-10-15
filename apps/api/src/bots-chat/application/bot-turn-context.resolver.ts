@@ -98,6 +98,7 @@ export class BotTurnContextResolver {
           turnId: turn.id,
           homeHostId: bot.homeHostId,
           timeZone: turn.timeZone ?? 'UTC',
+          permission: bot.permission,
         })
       : [];
     const documentText = (name: string) =>

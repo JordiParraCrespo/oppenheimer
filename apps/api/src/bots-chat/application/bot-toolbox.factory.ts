@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
+import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import type { BotToolArea, BotToolContext, BotToolDefinition } from './bot-tool.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 
@@ -14,8 +15,12 @@ import { BotWebToolsFactory } from './bot-web-tools.factory';
 export class BotToolboxFactory {
   private readonly areas: readonly BotToolArea[];
 
-  constructor(hosts: BotHostToolsFactory, web: BotWebToolsFactory) {
-    this.areas = [hosts, web];
+  constructor(
+    hosts: BotHostToolsFactory,
+    sessions: BotSessionToolsFactory,
+    web: BotWebToolsFactory,
+  ) {
+    this.areas = [hosts, sessions, web];
   }
 
   /** The tools, as the prompt names them. */

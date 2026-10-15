@@ -21,6 +21,7 @@ const context: BotToolContext = {
   turnId: 'turn-1',
   homeHostId: '11111111-1111-4111-8111-111111111111',
   timeZone: 'Europe/Madrid',
+  permission: 'auto',
 };
 
 function setup(answer: (query: unknown) => unknown) {
@@ -106,7 +107,9 @@ describe('BotHostToolsFactory', () => {
         { detail: 'No session with that id' },
       );
     });
-    const result = await call('get_session', { session_id: '33333333-3333-4333-8333-333333333333' });
+    const result = await call('get_session', {
+      session_id: '33333333-3333-4333-8333-333333333333',
+    });
     expect(result).toEqual({
       content: 'SESSIONS_001: Session not found. No session with that id',
       isError: true,

@@ -15,6 +15,7 @@ const context = (): BotToolContext => ({
   turnId: 'turn-1',
   homeHostId: null,
   timeZone: 'UTC',
+  permission: 'auto',
 });
 
 function setup(result: WebPageResult) {

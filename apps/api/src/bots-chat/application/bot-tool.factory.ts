@@ -2,6 +2,7 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
+import type { BotPermission } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
 
@@ -15,6 +16,12 @@ export interface BotToolContext {
   homeHostId: string | null;
   /** The sender's IANA zone; times a tool writes are in it. */
   timeZone: string;
+  /**
+   * The bot's approval preset (`25-bots.md` §5): `auto` (Approve for me)
+   * runs what stays inside Oppenheimer and asks for what reaches outside it;
+   * `full` runs everything.
+   */
+  permission: BotPermission;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -28,6 +35,13 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   description: string;
   input: Input;
+  /**
+   * The tool reaches outside Oppenheimer (it starts or stops work on a host,
+   * posts to GitHub, creates a bot): under Approve for me it asks the owner
+   * first. Until the Needs input card exists, asking means not running, and
+   * telling the model so.
+   */
+  asks?: boolean;
   /** Answers labelled text, ids inline; a throw becomes an error result the model reads. */
   run(input: z.output<Input>, context: BotToolContext, signal: AbortSignal): Promise<string>;
 }
@@ -62,6 +76,7 @@ export function defineBotTool<Input extends z.ZodType>(
       description: spec.description,
       inputSchema,
       run: async (input, { signal }) => {
+        if (spec.asks && context.permission !== 'full') return { content: NEEDS_APPROVAL };
         const parsed = spec.input.safeParse(input ?? {});
         if (!parsed.success) {
           return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
@@ -75,6 +90,10 @@ export function defineBotTool<Input extends z.ZodType>(
     }),
   };
 }
+
+/** What an asking tool answers while its bot is on Approve for me and the card does not exist yet. */
+export const NEEDS_APPROVAL =
+  "Not done: this needs the person's approval, and approving from the chat is not built yet. Tell them what you would do, with the exact details, so they can do it themselves; or, if they want you to do such things without asking, they can switch your approval setting to Full access in the composer.";
 
 function describeIssues(error: z.ZodError): string {
   return error.issues

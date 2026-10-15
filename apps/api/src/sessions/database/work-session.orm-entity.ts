@@ -177,11 +177,11 @@ export class WorkSessionOrmEntity {
 
   /**
    * Who asked for the session: `person`, `automation` (whose run points back
-   * here) or `review` (a pull request's review session, which the Sessions
-   * list leaves out).
+   * here), `review` (a pull request's review session, which the Sessions
+   * list leaves out) or `bot` (a bot acting for its owner).
    */
   @Column({ type: 'varchar', length: 16, default: 'person' })
-  origin!: 'person' | 'automation' | 'review';
+  origin!: 'person' | 'automation' | 'review' | 'bot';
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

@@ -7,6 +7,7 @@ import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
+import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
@@ -85,6 +86,7 @@ const queryHandlers: Provider[] = [
     BotOwnerScopeResolver,
     BotToolboxFactory,
     BotHostToolsFactory,
+    BotSessionToolsFactory,
     BotWebToolsFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     TurnCancelWatchFactory,
