@@ -29,7 +29,7 @@ type TimelineMilestone = {
 
 /** What a page's Today, Earlier and Later buttons do to the timeline. */
 type MilestoneTimelineControls = {
-  /** Scroll today back to a quarter in from the left. */
+  /** Scroll back to where the timeline opened (`openingScrollLeft`). */
   today: () => void;
   /** Four weeks back. */
   earlier: () => void;
@@ -62,6 +62,21 @@ function MilestoneGlyph({ filled = false, className }: { filled?: boolean; class
       )}
     />
   );
+}
+
+/** The gutter a bleeding page leaves before the timeline's first day. */
+const GUTTER = 32;
+
+/**
+ * Where the timeline opens: today a quarter in from the left, pulled left to
+ * the start of every track that runs through today (so its name shows), but
+ * never so far that today leaves the left two thirds of the viewport.
+ */
+function openingScrollLeft(todayX: number, viewport: number, trackStarts: number[]) {
+  const preferred = todayX + GUTTER - viewport * 0.25;
+  const leftmostTrack = trackStarts.length > 0 ? Math.min(...trackStarts) : preferred;
+  const furthestLeft = todayX + GUTTER - viewport * (2 / 3);
+  return Math.max(0, furthestLeft, Math.min(preferred, leftmostTrack));
 }
 
 function daysBetween(a: Date, b: Date) {
@@ -197,7 +212,8 @@ function MilestoneMarker({
 
 /**
  * MilestoneTimeline — Plan's milestones laid out on time, one row per
- * project. It scrolls sideways with no bar and opens on today.
+ * project. It scrolls sideways with no bar and opens on today, pulled left
+ * to show the start of every track that runs through it.
  *
  * - **Header** (56px): the months in 11px uppercase at their first day, each
  *   with a hairline down into the rows; week numbers in mono under them; today
@@ -247,17 +263,12 @@ function MilestoneTimeline({
   const todayLabel = dateFormat(locale, { day: 'numeric', month: 'short' }).format(now);
   const dueFormat = dateFormat(locale, { month: 'short', day: 'numeric' });
 
-  // Open on today, a quarter in from the left (past a 32px gutter when the
-  // page bleeds it), once: the reader scrolls from there, and Today comes back.
-  // A track that runs through today pulls the view left to show its start and
-  // its name, as long as today stays in the left two thirds.
+  // Open once, at `openingScrollLeft`: the reader scrolls from there, and
+  // Today comes back to it.
   const opened = React.useRef(false);
   const element = React.useRef<HTMLDivElement | null>(null);
-  const current = spans.filter((s) => +s.to >= +now).map((s) => xOf(s.from));
-  const onToday = (el: HTMLDivElement) => {
-    const at = (share: number) => todayX + 32 - el.clientWidth * share;
-    return Math.max(0, Math.max(Math.min(at(0.25), ...current), at(2 / 3)));
-  };
+  const trackStarts = spans.filter((s) => +s.to >= +now).map((s) => xOf(s.from));
+  const onToday = (el: HTMLDivElement) => openingScrollLeft(todayX, el.clientWidth, trackStarts);
   const scroller = (el: HTMLDivElement | null) => {
     element.current = el;
     if (el && !opened.current) {
