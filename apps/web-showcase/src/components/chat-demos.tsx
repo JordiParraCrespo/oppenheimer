@@ -40,7 +40,14 @@ import {
   ComposerApproval,
   QuestionPanel,
 } from '@oppenheimer/design-system-web/chat-decisions';
-import { ChatCodeBlock, ChatMarker, ChatSuggestion, ChatSuggestions } from '@oppenheimer/design-system-web/chat-elements';
+import {
+  ChatCodeBlock,
+  ChatMarker,
+  ChatSource,
+  ChatSources,
+  ChatSuggestion,
+  ChatSuggestions,
+} from '@oppenheimer/design-system-web/chat-elements';
 import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
@@ -269,6 +276,11 @@ function ChatElementsBody() {
         <ChatSuggestion>Show the diff</ChatSuggestion>
         <ChatSuggestion>Run the e2e suite</ChatSuggestion>
       </ChatSuggestions>
+      <ChatSources>
+        <ChatSource index={1} href="https://developer.mozilla.org">developer.mozilla.org</ChatSource>
+        <ChatSource index={2} href="https://streams.spec.whatwg.org">streams.spec.whatwg.org</ChatSource>
+        <ChatSource index={3} href="https://nodejs.org">nodejs.org</ChatSource>
+      </ChatSources>
       <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
       <Composer variant="chat" value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <div className="flex justify-center">
@@ -979,7 +991,7 @@ export function ChatSection() {
         id="chatelements"
         title="AI elements"
         meta="chat-elements.tsx"
-        desc="The bot chat's smaller parts. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is Composer variant chat, the 28px card that grows from two lines to eight; FloatingChip round takes the reader back to the latest turn."
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is Composer variant chat, the 28px card that grows from two lines to eight; FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />

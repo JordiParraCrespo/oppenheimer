@@ -37,8 +37,7 @@
     "settings": "Settings",
     "delete": "Delete bot",
     "helloBlank": "{{name}} is ready. Tell it what job to do.",
-    "helloBlankNote": "Or type below. A new bot starts blank and proposes its own instructions.",
-    "startFrom": "Start from a template",
+    "startFrom": "Try asking",
     "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
     "send": "Send",
@@ -72,7 +71,13 @@
       "planned": "Updated its plan",
       "planning": "Updating its plan",
       "using": "Using {{name}}",
-      "stepFailed": "failed"
+      "stepFailed": "failed",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "rawOutput": "Show raw output",
+      "moreLines_one": "Show {{count}} more line",
+      "moreLines_other": "Show {{count}} more lines",
+      "lessOutput": "Show less"
     },
     "suggest": {
       "task": {

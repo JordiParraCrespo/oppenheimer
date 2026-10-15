@@ -25,10 +25,10 @@ const JOBS = [
 /**
  * The bot's hello, before there is a conversation (the Bots frame's empty
  * chat): its name and what it is waiting for at 34px, centred. A bot with no
- * instructions asks for the job, offers four to start from as tiles, and
- * says it will propose its own instructions from the answer; one that has
- * them offers next steps as suggestions. A tile or a suggestion fills the
- * composer with a first message to finish and send. Which hello it is
+ * instructions asks for the job and suggests four under Try asking, as
+ * tiles; one that has them suggests next steps as pills. Either fills the
+ * composer with a first message to finish and send; nothing is applied
+ * until it is sent (there are no templates yet, `25-bots.md` §7). Which hello it is
  * depends on the instructions, so this reads them (narrowed to "are they
  * blank?") and draws nothing until it knows, rather than greeting one way
  * and switching. A read that fails greets the plain way: the hello is a
@@ -60,7 +60,6 @@ export function BotHello({ botId, name }: { botId: string; name: string }) {
                 />
               ))}
             </TemplateTiles>
-            <span className="text-sm text-fg-subtle">{t('bots.chat.helloBlankNote')}</span>
           </div>
         </ChatEmptyState>
       ) : (

@@ -3,10 +3,49 @@ import { describe, expect, it } from 'vitest';
 import {
   humaniseToolName,
   planItems,
+  readableOutput,
   runningStep,
+  searchResults,
   toolAction,
   toolTarget,
 } from '../lib/tool-activity';
+
+describe('searchResults', () => {
+  /** A search's pages read out of the shapes the providers print, not drawn as raw JSON. */
+  it('reads titles and addresses in either order, once each, from any provider’s output', () => {
+    const claude = `Web search results for query: "node lts"\n\nLinks: ${JSON.stringify([
+      { title: 'Node.js "Releases"', url: 'https://nodejs.org/en/about/releases' },
+      { title: 'Node.js', url: 'https://nodejs.org/en/about/releases' },
+    ])}`;
+    expect(searchResults(claude)).toEqual([
+      { title: 'Node.js "Releases"', url: 'https://nodejs.org/en/about/releases' },
+    ]);
+    const zai = `**web_search_prime_result_summary:** ${JSON.stringify([
+      {
+        text: [
+          {
+            link: 'https://endoflife.date/nodejs',
+            title: 'Node.js | endoflife.date',
+            content: '24 is Active LTS',
+          },
+        ],
+      },
+    ])}`;
+    expect(searchResults(zai)).toEqual([
+      { title: 'Node.js | endoflife.date', url: 'https://endoflife.date/nodejs' },
+    ]);
+    expect(searchResults('{"title": "x", "url": "javascript:alert(1)"}')).toEqual([]);
+    expect(searchResults('no results')).toEqual([]);
+  });
+});
+
+describe('readableOutput', () => {
+  it('indents JSON and leaves anything else as it came', () => {
+    expect(readableOutput('{"a":1}')).toBe('{\n  "a": 1\n}');
+    expect(readableOutput('PASS 40 tests')).toBe('PASS 40 tests');
+    expect(readableOutput('{not json')).toBe('{not json');
+  });
+});
 
 /**
  * How the chat words a bot's tool calls: plain verbs, never the tools' own

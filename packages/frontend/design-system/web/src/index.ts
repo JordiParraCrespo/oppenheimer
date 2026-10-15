@@ -103,6 +103,8 @@ export type { ChatCodeBlockLabels } from './components/chat-elements';
 export {
   ChatCodeBlock,
   ChatMarker,
+  ChatSource,
+  ChatSources,
   ChatSuggestion,
   ChatSuggestions,
 } from './components/chat-elements';
@@ -146,6 +148,7 @@ export {
   TraceOutput,
   TraceStep,
 } from './components/chat-work';
+export type { TraceOutputLabels } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';

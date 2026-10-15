@@ -911,8 +911,7 @@
       "settings": "Configuración",
       "delete": "Eliminar bot",
       "helloBlank": "{{name}} está listo. Dile qué trabajo hacer.",
-      "helloBlankNote": "O escribe abajo. Un bot nuevo empieza en blanco y propone sus propias instrucciones.",
-      "startFrom": "Empieza con una plantilla",
+      "startFrom": "Prueba a pedir",
       "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
       "send": "Enviar",
@@ -947,7 +946,15 @@
         "planned": "Actualizó su plan",
         "planning": "Actualizando su plan",
         "using": "Usando {{name}}",
-        "stepFailed": "error"
+        "stepFailed": "error",
+        "results_one": "{{count}} resultado",
+        "results_many": "{{count}} resultados",
+        "results_other": "{{count}} resultados",
+        "rawOutput": "Ver la salida completa",
+        "moreLines_one": "Ver {{count}} línea más",
+        "moreLines_many": "Ver {{count}} líneas más",
+        "moreLines_other": "Ver {{count}} líneas más",
+        "lessOutput": "Ver menos"
       },
       "suggest": {
         "task": {

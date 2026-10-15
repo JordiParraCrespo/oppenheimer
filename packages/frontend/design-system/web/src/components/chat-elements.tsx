@@ -16,6 +16,8 @@ import { IconButton } from './icon-button';
  *   `TranscriptDivider`.
  * - `ChatSuggestions` + `ChatSuggestion`: next steps offered as 34px pills
  *   on a hairline, wrapping; one tap fills the composer.
+ * - `ChatSources` + `ChatSource`: the pages a search found, numbered pills
+ *   that open each page in a new tab.
  * - `ChatCodeBlock`: a fenced block in a reply, on the card at the 18px
  *   radius: the language over the code with the copy button at its end,
  *   then the code at 13.5px mono on 1.7, its lines numbered in the gutter,
@@ -67,6 +69,37 @@ function ChatSuggestion({ className, ...props }: Omit<React.ComponentProps<'butt
   );
 }
 
+function ChatSources({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="chat-sources" className={cn('flex flex-wrap gap-1.5', className)} {...props} />;
+}
+
+/**
+ * One page a search found, as a pill: its number in mono, then its words
+ * (the page's title or its domain), opening in a new tab.
+ */
+function ChatSource({
+  index,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'a'>, 'target' | 'rel'> & { index: number }) {
+  return (
+    <a
+      data-slot="chat-source"
+      target="_blank"
+      rel="noreferrer"
+      className={cn(
+        'inline-flex h-6.5 max-w-80 items-center gap-1.5 rounded-pill bg-card px-2.5 text-[12.5px] text-fg no-underline outline-none transition-colors duration-instant hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring',
+        className,
+      )}
+      {...props}
+    >
+      <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{index}</span>
+      <span className="min-w-0 truncate">{children}</span>
+    </a>
+  );
+}
+
 type ChatCodeBlockLabels = { copy: string; copied: string };
 
 function ChatCodeBlock({
@@ -108,5 +141,5 @@ function ChatCodeBlock({
   );
 }
 
-export { ChatCodeBlock, ChatMarker, ChatSuggestion, ChatSuggestions };
+export { ChatCodeBlock, ChatMarker, ChatSource, ChatSources, ChatSuggestion, ChatSuggestions };
 export type { ChatCodeBlockLabels };

@@ -1,7 +1,7 @@
 'use client';
 
 import { CpuIcon, LoaderIcon, SlidersHorizontalIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
@@ -33,7 +33,9 @@ import { cn } from '../lib/utils';
  *   chevron that opens them. `tone="danger"` sets the line in red (a
  *   failed command). Open, its children hang under the title.
  * - `TraceOutput`: what a step returned, on the card at the 14px radius:
- *   mono 12.5px lines, numbered, scrolling past 256px.
+ *   mono 12.5px lines, numbered, scrolling past 256px. `maxLines` cuts a
+ *   long one with "Show N more lines" under it; `0` keeps it behind "Show
+ *   raw output", for a step whose summary is drawn above it.
  * - `TraceNote`: a step's words (the thinking, a plan), muted at 14px.
  * - `TraceLive`: the run in flight, after the last step: a spinner, what it
  *   is doing now breathing ("Searching abortSignal", "Writing"), the
@@ -272,22 +274,66 @@ function TraceStep({
   );
 }
 
-function TraceOutput({ className, children }: { className?: string; children: string }) {
-  const lines = children.replace(/\n$/, '').split('\n');
+type TraceOutputLabels = {
+  /** The button that shows output kept back entirely (`maxLines={0}`). */
+  raw: string;
+  /** The button under a cut: how many more lines it shows. */
+  more: (count: number) => string;
+  less: string;
+};
+
+const TRACE_OUTPUT_LABELS: TraceOutputLabels = {
+  raw: 'Show raw output',
+  more: (count) => `Show ${count} more lines`,
+  less: 'Show less',
+};
+
+function TraceOutput({
+  maxLines,
+  labels,
+  className,
+  children,
+}: {
+  /** Lines drawn before a "Show N more lines" button; 0 keeps the output behind "Show raw output". */
+  maxLines?: number;
+  labels?: Partial<TraceOutputLabels>;
+  className?: string;
+  children: string;
+}) {
+  const label = { ...TRACE_OUTPUT_LABELS, ...labels };
+  const [expanded, setExpanded] = React.useState(false);
+  const all = children.replace(/\n$/, '').split('\n');
+  const cut = maxLines !== undefined && !expanded && all.length > maxLines;
+  const lines = cut ? all.slice(0, maxLines) : all;
+  const toggle =
+    maxLines !== undefined && all.length > maxLines ? (
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded(!expanded)}
+        className="mb-2.5 self-start rounded-xs text-[13px] text-fg-muted outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {expanded ? label.less : maxLines === 0 ? label.raw : label.more(all.length - maxLines)}
+      </button>
+    ) : null;
+  if (lines.length === 0) return toggle;
   return (
-    <div data-slot="trace-output" className={cn('mt-0.5 mb-2.5 overflow-hidden rounded-md bg-card', className)}>
-      <div className="max-h-64 overflow-auto py-3 font-mono text-[12.5px] leading-[1.65]">
-        {lines.map((text, index) => (
-          // A step's output never reorders: a line's place is its identity.
-          // biome-ignore lint/suspicious/noArrayIndexKey: see above
-          <div key={index} className="flex min-w-max">
-            <span aria-hidden className="figures w-10 shrink-0 pr-3.5 text-right text-fg-subtle select-none">
-              {index + 1}
-            </span>
-            <span className="pr-4 whitespace-pre-wrap text-fg">{text}</span>
-          </div>
-        ))}
+    <div className="flex flex-col">
+      <div data-slot="trace-output" className={cn('mt-0.5 mb-2.5 overflow-hidden rounded-md bg-card', className)}>
+        <div className="max-h-64 overflow-auto py-3 font-mono text-[12.5px] leading-[1.65]">
+          {lines.map((text, index) => (
+            // A step's output never reorders: a line's place is its identity.
+            // biome-ignore lint/suspicious/noArrayIndexKey: see above
+            <div key={index} className="flex min-w-max">
+              <span aria-hidden className="figures w-10 shrink-0 pr-3.5 text-right text-fg-subtle select-none">
+                {index + 1}
+              </span>
+              <span className="pr-4 whitespace-pre-wrap text-fg">{text}</span>
+            </div>
+          ))}
+        </div>
       </div>
+      {toggle}
     </div>
   );
 }
@@ -327,3 +373,4 @@ function TraceLive({
 }
 
 export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow, Trace, TraceLive, TraceNote, TraceOutput, TraceStep };
+export type { TraceOutputLabels };
