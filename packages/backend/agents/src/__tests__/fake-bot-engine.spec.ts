@@ -1,7 +1,8 @@
 /**
- * The fake the API's tests drive turns with: it replays a script, runs the
- * tools the script calls, and holds to the same stream contract as the real
- * engines (one `done`, last; abort is `cancelled`; a throw is `failed`).
+ * The fake the API's tests drive turns with: it replays a script, ends each
+ * tool call the script makes (running the tool, or with a scripted result),
+ * and holds to the same stream contract as the real engines (one `done`,
+ * last; abort is `cancelled`; a throw is `failed`).
  * Also the factory's routing of a provider it does not know.
  */
 import { describe, expect, it } from 'vitest';
@@ -52,10 +53,9 @@ describe('FakeBotEngine', () => {
     ]);
   });
 
-  it('runs a tool the script calls and reports its real output, dropping a scripted result', async () => {
+  it('runs a tool the script calls and reports its real output', async () => {
     const engine = new FakeBotEngine(() => [
       { type: 'tool.started', callId: 'c1', name: 'remember', input: { fact: 'likes tea' } },
-      { type: 'tool.finished', callId: 'c1', name: 'remember', output: 'scripted', isError: false },
       { type: 'text.done', text: 'Noted.' },
     ]);
 
@@ -69,6 +69,60 @@ describe('FakeBotEngine', () => {
         isError: false,
       },
       { type: 'text.done', text: 'Noted.' },
+      { type: 'done', reason: 'completed' },
+    ]);
+  });
+
+  it('reports a scripted result instead of running the tool', async () => {
+    let ran = false;
+    const watched: BotEngineTool = {
+      ...remember,
+      run: async () => {
+        ran = true;
+        return { content: 'real' };
+      },
+    };
+    const engine = new FakeBotEngine(() => [
+      {
+        type: 'tool.started',
+        callId: 'c1',
+        name: 'remember',
+        input: {},
+        result: { output: 'scripted', isError: true },
+      },
+      {
+        type: 'tool.started',
+        callId: 'c2',
+        name: 'web_search',
+        input: {},
+        result: { output: 'hits' },
+      },
+    ]);
+
+    expect(await collect(engine.run(request({ tools: [watched] })))).toEqual([
+      { type: 'tool.started', callId: 'c1', name: 'remember', input: {} },
+      { type: 'tool.finished', callId: 'c1', name: 'remember', output: 'scripted', isError: true },
+      { type: 'tool.started', callId: 'c2', name: 'web_search', input: {} },
+      { type: 'tool.finished', callId: 'c2', name: 'web_search', output: 'hits', isError: false },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(ran).toBe(false);
+  });
+
+  it('reports a call to a tool the request does not have as an error result', async () => {
+    const engine = new FakeBotEngine(() => [
+      { type: 'tool.started', callId: 'c1', name: 'missing', input: {} },
+    ]);
+
+    expect(await collect(engine.run(request({ tools: [remember] })))).toEqual([
+      { type: 'tool.started', callId: 'c1', name: 'missing', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'c1',
+        name: 'missing',
+        output: 'Unknown tool: missing',
+        isError: true,
+      },
       { type: 'done', reason: 'completed' },
     ]);
   });

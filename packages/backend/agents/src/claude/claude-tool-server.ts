@@ -22,7 +22,10 @@ export function botToolName(name: string): string {
  * tools' JSON Schemas as they are, rather than through zod shapes the SDK
  * would turn back into JSON Schema.
  */
-export function createToolServer(tools: BotEngineTool[], signal: AbortSignal): McpServer {
+export function createToolServer(
+  tools: BotEngineTool[],
+  turn: { signal: AbortSignal; apiKey: string },
+): McpServer {
   const mcp = new McpServer(
     { name: TOOL_SERVER_NAME, version: '1.0.0' },
     { capabilities: { tools: {} } },
@@ -47,11 +50,10 @@ export function createToolServer(tools: BotEngineTool[], signal: AbortSignal): M
         isError: true,
       };
     }
-    const result = await runTool(
-      tool,
-      request.params.arguments ?? {},
-      AbortSignal.any([signal, extra.signal]),
-    );
+    const result = await runTool(tool, request.params.arguments ?? {}, {
+      signal: AbortSignal.any([turn.signal, extra.signal]),
+      apiKey: turn.apiKey,
+    });
     return { content: [{ type: 'text' as const, text: result.content }], isError: result.isError };
   });
 

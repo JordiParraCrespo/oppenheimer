@@ -1,18 +1,77 @@
 /**
  * The OpenAI engine's translation of the Agents SDK's stream events into
- * the engine's events, and what it hands the SDK: instructions, history as
- * input items, tools, effort and the step limit. The SDK's run is replaced
- * by a scripted stream that calls our tools the way the SDK would.
+ * the engine's events, and what it hands the SDK: key and base URL,
+ * instructions, history as input items, tools, effort and the step limit.
+ * The SDK module is mocked: its runner streams a script that calls our
+ * tools the way the SDK would. `openai-responses.spec.ts` runs the real SDK.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from '../../bot-engine';
-import {
-  OpenAiBotEngine,
-  type OpenAiRun,
-  type OpenAiRunSpec,
-  type OpenAiStart,
-} from '../openai-bot-engine';
+import { OpenAiBotEngine } from '../openai-bot-engine';
 import type { OpenAiStreamEvent } from '../openai-events';
+
+/** A tool as the mocked `tool()` keeps it: the options the adapter passed. */
+interface ToolOptions {
+  name: string;
+  description: string;
+  parameters: unknown;
+  strict: boolean;
+  execute(
+    input: unknown,
+    context: unknown,
+    details: { toolCall: { callId: string } },
+  ): Promise<string>;
+}
+
+/** What the adapter handed the SDK for one run. */
+interface Seen {
+  provider: { apiKey?: string; baseURL?: string };
+  runner: { tracingDisabled?: boolean };
+  agent: {
+    instructions: string;
+    model: string;
+    tools: ToolOptions[];
+    modelSettings: { reasoning?: { effort?: string } };
+  };
+  input: unknown;
+  options: { stream: boolean; signal: AbortSignal; maxTurns: number };
+}
+
+const sdk = vi.hoisted(() => {
+  const state: {
+    run?: (seen: Seen) => { events: AsyncIterable<unknown>; error: unknown };
+    seen?: Seen;
+  } = {};
+  class OpenAIProvider {
+    constructor(readonly options: Seen['provider']) {}
+  }
+  class Agent {
+    constructor(readonly config: Seen['agent']) {}
+  }
+  class Runner {
+    constructor(readonly options: Seen['runner'] & { modelProvider: OpenAIProvider }) {}
+    async run(agent: Agent, input: unknown, options: Seen['options']) {
+      const seen: Seen = {
+        provider: this.options.modelProvider.options,
+        runner: this.options,
+        agent: agent.config,
+        input,
+        options,
+      };
+      state.seen = seen;
+      const script = state.run?.(seen);
+      if (!script) throw new Error('No script');
+      return {
+        [Symbol.asyncIterator]: () => script.events[Symbol.asyncIterator](),
+        completed: Promise.resolve(),
+        error: script.error,
+      };
+    }
+  }
+  const tool = (options: unknown) => options;
+  return { state, module: { OpenAIProvider, Agent, Runner, tool } };
+});
+vi.mock('@openai/agents', () => sdk.module);
 
 const KEY = 'sk-openai-secret-0123456789';
 
@@ -37,23 +96,26 @@ async function collect(events: AsyncIterable<BotEngineEvent>): Promise<BotEngine
   return out;
 }
 
-/** A run that records its spec and streams what `script` yields; `error` is how it ended. */
+/**
+ * Makes the SDK's runner stream what `script` yields, given what the
+ * adapter handed it; `error` is how the run ended. Returns what it saw.
+ */
 function scripted(
-  script: (spec: OpenAiRunSpec) => AsyncGenerator<OpenAiStreamEvent>,
+  script: (seen: Seen) => AsyncGenerator<OpenAiStreamEvent>,
   error: unknown = null,
-) {
-  const seen: { spec?: OpenAiRunSpec } = {};
-  const start: OpenAiStart = async (spec) => {
-    seen.spec = spec;
-    const run: OpenAiRun = {
-      [Symbol.asyncIterator]: () => script(spec),
-      completed: Promise.resolve(),
-      error,
-    };
-    return run;
+): { readonly seen: Seen | undefined } {
+  sdk.state.seen = undefined;
+  sdk.state.run = (seen) => ({ events: script(seen), error });
+  return {
+    get seen() {
+      return sdk.state.seen;
+    },
   };
-  return { start, seen };
 }
+
+/** Calls a tool the way the SDK does. */
+const execute = (tool: ToolOptions, input: unknown, callId: string) =>
+  tool.execute(input, {}, { toolCall: { callId } });
 
 const textDelta = (delta: string): OpenAiStreamEvent => ({
   type: 'raw_model_stream_event',
@@ -91,7 +153,7 @@ const toolOutput = (callId: string, name: string, output: string): OpenAiStreamE
 
 describe('OpenAiBotEngine', () => {
   it('streams text, reports each message, summed usage and a completed end', async () => {
-    const { start } = scripted(async function* () {
+    scripted(async function* () {
       yield textDelta('Hel');
       yield textDelta('lo');
       yield responseDone(10, 2);
@@ -99,7 +161,7 @@ describe('OpenAiBotEngine', () => {
       yield responseDone(4, 1);
     });
 
-    const events = await collect(new OpenAiBotEngine(start).run(request()));
+    const events = await collect(new OpenAiBotEngine().run(request()));
 
     expect(events).toEqual([
       { type: 'text.delta', text: 'Hel' },
@@ -110,7 +172,7 @@ describe('OpenAiBotEngine', () => {
     ]);
   });
 
-  it('runs our tools, and reports a thrown error as a failed call the model reads', async () => {
+  it('runs our tools, and reports a thrown error as a failed call, key redacted, that the model reads', async () => {
     const getTime: BotEngineTool = {
       name: 'get_time',
       description: 'The time',
@@ -122,33 +184,45 @@ describe('OpenAiBotEngine', () => {
       description: 'Always throws',
       inputSchema: { type: 'object', properties: {} },
       run: async () => {
-        throw new Error('boom');
+        throw new Error(`upstream refused ${KEY}`);
       },
     };
-    const { start, seen } = scripted(async function* (spec) {
+    let modelRead: string | undefined;
+    const run = scripted(async function* (seen) {
       // What the SDK does with a function call: parse, execute, report.
-      const [time, fail] = spec.tools;
+      const [time, fail] = seen.agent.tools;
       yield toolCalled('call_1', 'get_time', '{"zone":"UTC"}');
-      yield toolOutput('call_1', 'get_time', await time.execute({ zone: 'UTC' }, 'call_1'));
+      yield toolOutput('call_1', 'get_time', await execute(time, { zone: 'UTC' }, 'call_1'));
       yield toolCalled('call_2', 'broken', '{}');
-      yield toolOutput('call_2', 'broken', await fail.execute({}, 'call_2'));
+      modelRead = await execute(fail, {}, 'call_2');
+      yield toolOutput('call_2', 'broken', modelRead);
       yield message('Done');
     });
 
-    const events = await collect(
-      new OpenAiBotEngine(start).run(request({ tools: [getTime, broken] })),
-    );
+    const events = await collect(new OpenAiBotEngine().run(request({ tools: [getTime, broken] })));
 
     expect(
-      seen.spec?.tools.map(({ name, description, parameters }) => ({
+      run.seen?.agent.tools.map(({ name, description, parameters, strict }) => ({
         name,
         description,
         parameters,
+        strict,
       })),
     ).toEqual([
-      { name: 'get_time', description: 'The time', parameters: getTime.inputSchema },
-      { name: 'broken', description: 'Always throws', parameters: broken.inputSchema },
+      {
+        name: 'get_time',
+        description: 'The time',
+        parameters: getTime.inputSchema,
+        strict: false,
+      },
+      {
+        name: 'broken',
+        description: 'Always throws',
+        parameters: broken.inputSchema,
+        strict: false,
+      },
     ]);
+    expect(modelRead).toBe('upstream refused [redacted]');
     expect(events.filter((event) => event.type.startsWith('tool.'))).toEqual([
       { type: 'tool.started', callId: 'call_1', name: 'get_time', input: { zone: 'UTC' } },
       {
@@ -159,16 +233,22 @@ describe('OpenAiBotEngine', () => {
         isError: false,
       },
       { type: 'tool.started', callId: 'call_2', name: 'broken', input: {} },
-      { type: 'tool.finished', callId: 'call_2', name: 'broken', output: 'boom', isError: true },
+      {
+        type: 'tool.finished',
+        callId: 'call_2',
+        name: 'broken',
+        output: 'upstream refused [redacted]',
+        isError: true,
+      },
     ]);
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
-  it('sends the history as native input items, then this message', async () => {
-    const { start, seen } = scripted(async function* () {});
+  it('sends the key, endpoint, history as native input items, then this message', async () => {
+    const run = scripted(async function* () {});
 
     await collect(
-      new OpenAiBotEngine(start).run(
+      new OpenAiBotEngine().run(
         request({
           history: [
             { role: 'user', text: 'My name is Ada.' },
@@ -182,13 +262,15 @@ describe('OpenAiBotEngine', () => {
       ),
     );
 
-    expect(seen.spec).toMatchObject({
-      apiKey: KEY,
-      baseUrl: 'https://example.test/v1',
-      model: 'model-placeholder',
-      instructions: 'You are a bot.',
-      effort: 'xhigh',
-      maxTurns: 4,
+    expect(run.seen).toMatchObject({
+      provider: { apiKey: KEY, baseURL: 'https://example.test/v1' },
+      runner: { tracingDisabled: true },
+      agent: {
+        model: 'model-placeholder',
+        instructions: 'You are a bot.',
+        modelSettings: { reasoning: { effort: 'xhigh' } },
+      },
+      options: { stream: true, maxTurns: 4 },
       input: [
         { type: 'message', role: 'user', content: 'My name is Ada.' },
         {
@@ -206,20 +288,20 @@ describe('OpenAiBotEngine', () => {
     const maxTurns = Object.assign(new Error('Max turns (4) exceeded'), {
       name: 'MaxTurnsExceededError',
     });
-    const { start } = scripted(async function* () {}, maxTurns);
+    scripted(async function* () {}, maxTurns);
 
-    const events = await collect(new OpenAiBotEngine(start).run(request()));
+    const events = await collect(new OpenAiBotEngine().run(request()));
 
     expect(events).toEqual([{ type: 'done', reason: 'max_steps' }]);
   });
 
   it('fails without the key in the error when the run errors', async () => {
-    const { start } = scripted(async function* () {
+    scripted(async function* () {
       yield textDelta('Hi');
       throw new Error(`401 Incorrect API key provided: ${KEY}`);
     });
 
-    const events = await collect(new OpenAiBotEngine(start).run(request()));
+    const events = await collect(new OpenAiBotEngine().run(request()));
 
     const done = events.at(-1) as { type: string; reason: string; error: string };
     expect(done.reason).toBe('failed');
@@ -228,26 +310,24 @@ describe('OpenAiBotEngine', () => {
   });
 
   it('fails when the run cannot start', async () => {
-    const start: OpenAiStart = async () => {
+    sdk.state.run = () => {
       throw new Error('connect ECONNREFUSED');
     };
 
-    const events = await collect(new OpenAiBotEngine(start).run(request()));
+    const events = await collect(new OpenAiBotEngine().run(request()));
 
     expect(events).toEqual([{ type: 'done', reason: 'failed', error: 'connect ECONNREFUSED' }]);
   });
 
   it('cancels promptly on abort and passes the signal to the SDK', async () => {
     const controller = new AbortController();
-    const { start, seen } = scripted(async function* () {
+    const run = scripted(async function* () {
       yield textDelta('Thinking');
       await new Promise(() => undefined);
     });
 
     const events: BotEngineEvent[] = [];
-    for await (const event of new OpenAiBotEngine(start).run(
-      request({ signal: controller.signal }),
-    )) {
+    for await (const event of new OpenAiBotEngine().run(request({ signal: controller.signal }))) {
       events.push(event);
       if (event.type === 'text.delta') controller.abort();
     }
@@ -256,6 +336,6 @@ describe('OpenAiBotEngine', () => {
       { type: 'text.delta', text: 'Thinking' },
       { type: 'done', reason: 'cancelled' },
     ]);
-    expect(seen.spec?.signal.aborted).toBe(true);
+    expect(run.seen?.options.signal.aborted).toBe(true);
   });
 });

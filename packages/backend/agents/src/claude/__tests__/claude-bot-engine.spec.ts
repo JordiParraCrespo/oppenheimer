@@ -1,21 +1,25 @@
 /**
  * The Claude engine's translation of the Agent SDK's messages into the
  * engine's events, and what it hands the SDK: options, environment, tools
- * and history. The SDK's `query` is replaced by a scripted stream; our tools
- * are called through the real in-process MCP server. The live spec runs the
- * real subprocess.
+ * and history. The SDK module is mocked so its `query` replays a scripted
+ * stream; our tools are called through the real in-process MCP server. The
+ * live spec runs the real subprocess.
  */
+import { getEventListeners } from 'node:events';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { Options, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import type { Options, Query, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from '../../bot-engine';
-import { ClaudeBotEngine, type ClaudeQuery, type ClaudeRun } from '../claude-bot-engine';
+import { ClaudeBotEngine } from '../claude-bot-engine';
 import { BUILT_IN_TOOLS, DISALLOWED_TOOLS, GLM_BASE_URL } from '../claude-options';
+
+const sdk = vi.hoisted(() => ({ query: vi.fn() }));
+vi.mock('@anthropic-ai/claude-agent-sdk', () => sdk);
 
 const KEY = 'sk-test-secret-key-0123456789';
 
@@ -48,24 +52,33 @@ async function collect(events: AsyncIterable<BotEngineEvent>): Promise<BotEngine
   return out;
 }
 
-/** A query that records its options and replays `messages`, which may depend on them. */
-function scripted(messages: (options: Options) => AsyncIterable<SDKMessage> | SDKMessage[]) {
+/**
+ * Makes the SDK's `query` record its options and replay `messages`, which
+ * may depend on them and on `closed`, which settles when the query is closed.
+ */
+function scripted(
+  messages: (options: Options, closed: Promise<void>) => AsyncIterable<SDKMessage> | SDKMessage[],
+) {
   const seen: { prompt?: string; options?: Options; closed: boolean } = { closed: false };
-  const query: ClaudeQuery = async ({ prompt, options }) => {
+  sdk.query.mockImplementation(({ prompt, options }: { prompt: string; options: Options }) => {
     seen.prompt = prompt;
     seen.options = options;
-    const source = messages(options);
-    const run: ClaudeRun = {
+    let onClose = () => {};
+    const closed = new Promise<void>((resolve) => {
+      onClose = resolve;
+    });
+    const source = messages(options, closed);
+    return {
       async *[Symbol.asyncIterator]() {
         yield* source;
       },
       close() {
         seen.closed = true;
+        onClose();
       },
-    };
-    return run;
-  };
-  return { query, seen };
+    } as unknown as Query;
+  });
+  return { seen };
 }
 
 const delta = (text: string, parent: string | null = null) =>
@@ -109,7 +122,7 @@ const success = (overrides: Record<string, unknown> = {}) =>
 
 describe('ClaudeBotEngine', () => {
   it('streams text, reports each text block, usage and a completed end', async () => {
-    const { query } = scripted(() => [
+    scripted(() => [
       delta('Hel'),
       delta('lo'),
       delta('subagent text', 'toolu_parent'),
@@ -117,7 +130,7 @@ describe('ClaudeBotEngine', () => {
       success(),
     ]);
 
-    const events = await collect(new ClaudeBotEngine(query).run(request()));
+    const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(events).toEqual([
       { type: 'text.delta', text: 'Hel' },
@@ -128,7 +141,7 @@ describe('ClaudeBotEngine', () => {
     ]);
   });
 
-  it('runs our tools through the in-process MCP server and reports them under our names', async () => {
+  it('runs our tools through the in-process MCP server, under our names, with the key redacted', async () => {
     const getTime: BotEngineTool = {
       name: 'get_time',
       description: 'The time',
@@ -137,14 +150,15 @@ describe('ClaudeBotEngine', () => {
     };
     const broken: BotEngineTool = {
       name: 'broken',
-      description: 'Always throws',
+      description: 'Always throws, echoing the key',
       inputSchema: { type: 'object', properties: {} },
       run: async () => {
-        throw new Error('boom');
+        throw new Error(`upstream refused ${KEY}`);
       },
     };
     let listed: unknown;
-    const { query } = scripted(async function* (options) {
+    let modelRead: unknown;
+    scripted(async function* (options) {
       // What Claude Code does with an sdk server: connect, list, call.
       const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
         .instance;
@@ -155,6 +169,7 @@ describe('ClaudeBotEngine', () => {
       listed = (await client.listTools()).tools;
       const ok = await client.callTool({ name: 'get_time', arguments: { zone: 'UTC' } });
       const bad = await client.callTool({ name: 'broken', arguments: {} });
+      modelRead = bad.content;
       await client.close();
 
       yield assistant([
@@ -178,9 +193,7 @@ describe('ClaudeBotEngine', () => {
       yield success();
     });
 
-    const events = await collect(
-      new ClaudeBotEngine(query).run(request({ tools: [getTime, broken] })),
-    );
+    const events = await collect(new ClaudeBotEngine().run(request({ tools: [getTime, broken] })));
 
     expect(listed).toEqual([
       expect.objectContaining({ name: 'get_time', inputSchema: getTime.inputSchema }),
@@ -196,13 +209,21 @@ describe('ClaudeBotEngine', () => {
         output: '12:00 in UTC',
         isError: false,
       },
-      { type: 'tool.finished', callId: 'toolu_2', name: 'broken', output: 'boom', isError: true },
+      {
+        type: 'tool.finished',
+        callId: 'toolu_2',
+        name: 'broken',
+        output: 'upstream refused [redacted]',
+        isError: true,
+      },
     ]);
+    // What the model read is the same redacted text.
+    expect(modelRead).toEqual([{ type: 'text', text: 'upstream refused [redacted]' }]);
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
   it('keeps built-in tool names and reports their results', async () => {
-    const { query } = scripted(() => [
+    scripted(() => [
       assistant([{ type: 'tool_use', id: 'toolu_w', name: 'WebSearch', input: { query: 'x' } }]),
       toolResults([
         {
@@ -214,7 +235,7 @@ describe('ClaudeBotEngine', () => {
       success(),
     ]);
 
-    const events = await collect(new ClaudeBotEngine(query).run(request()));
+    const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(events.slice(0, 2)).toEqual([
       { type: 'tool.started', callId: 'toolu_w', name: 'WebSearch', input: { query: 'x' } },
@@ -232,7 +253,7 @@ describe('ClaudeBotEngine', () => {
     process.env.DATABASE_URL = 'postgres://secret';
     process.env.ANTHROPIC_API_KEY = 'the-apis-own-key';
     try {
-      const { query, seen } = scripted(() => [success()]);
+      const { seen } = scripted(() => [success()]);
       const tool: BotEngineTool = {
         name: 'remember',
         description: '',
@@ -241,7 +262,7 @@ describe('ClaudeBotEngine', () => {
       };
 
       await collect(
-        new ClaudeBotEngine(query).run(request({ tools: [tool], effort: 'high', maxSteps: 7 })),
+        new ClaudeBotEngine().run(request({ tools: [tool], effort: 'high', maxSteps: 7 })),
       );
 
       const options = seen.options as Options;
@@ -277,7 +298,7 @@ describe('ClaudeBotEngine', () => {
 
   it('sends glm to z.ai with the key as a bearer token, unless a base URL is given', async () => {
     const glm = scripted(() => [success()]);
-    await collect(new ClaudeBotEngine(glm.query).run(request({ provider: 'glm' })));
+    await collect(new ClaudeBotEngine().run(request({ provider: 'glm' })));
     const env = glm.seen.options?.env as Record<string, string>;
     expect(env.ANTHROPIC_BASE_URL).toBe(GLM_BASE_URL);
     expect(env.ANTHROPIC_AUTH_TOKEN).toBe(KEY);
@@ -285,7 +306,7 @@ describe('ClaudeBotEngine', () => {
 
     const custom = scripted(() => [success()]);
     await collect(
-      new ClaudeBotEngine(custom.query).run(
+      new ClaudeBotEngine().run(
         request({ provider: 'glm', baseUrl: 'https://example.test/anthropic' }),
       ),
     );
@@ -295,10 +316,10 @@ describe('ClaudeBotEngine', () => {
   });
 
   it('renders earlier turns into the system prompt and sends only this message', async () => {
-    const { query, seen } = scripted(() => [success()]);
+    const { seen } = scripted(() => [success()]);
 
     await collect(
-      new ClaudeBotEngine(query).run(
+      new ClaudeBotEngine().run(
         request({
           history: [
             { role: 'user', text: 'My name is Ada.' },
@@ -318,7 +339,7 @@ describe('ClaudeBotEngine', () => {
   });
 
   it('ends with max_steps when the turn limit is reached', async () => {
-    const { query } = scripted(() => [
+    scripted(() => [
       {
         type: 'result',
         subtype: 'error_max_turns',
@@ -328,20 +349,20 @@ describe('ClaudeBotEngine', () => {
       } as unknown as SDKMessage,
     ]);
 
-    const events = await collect(new ClaudeBotEngine(query).run(request()));
+    const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'max_steps' });
   });
 
   it('fails with the API error, not as bot text, and never with the key in it', async () => {
-    const { query } = scripted(() => [
+    scripted(() => [
       assistant([{ type: 'text', text: `API Error: 401 invalid x-api-key ${KEY}` }], {
         error: 'authentication_failed',
       }),
       success({ is_error: true, result: 'API Error' }),
     ]);
 
-    const events = await collect(new ClaudeBotEngine(query).run(request()));
+    const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(events.some((event) => event.type === 'text.done')).toBe(false);
     const done = events.at(-1);
@@ -351,7 +372,7 @@ describe('ClaudeBotEngine', () => {
   });
 
   it('turns a crashed subprocess into a failed end that carries its stderr', async () => {
-    const { query } = scripted((options) => ({
+    scripted((options) => ({
       [Symbol.asyncIterator]: () => ({
         next: async (): Promise<IteratorResult<SDKMessage>> => {
           options.stderr?.(`fatal: bad key ${KEY}\n`);
@@ -360,7 +381,7 @@ describe('ClaudeBotEngine', () => {
       }),
     }));
 
-    const events = await collect(new ClaudeBotEngine(query).run(request()));
+    const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(events).toHaveLength(1);
     const done = events[0] as { type: string; reason: string; error: string };
@@ -370,24 +391,37 @@ describe('ClaudeBotEngine', () => {
     expect(done.error).not.toContain(KEY);
   });
 
-  it('cancels promptly on abort and kills the subprocess', async () => {
+  it('cancels promptly on abort, closes the subprocess and leaves no listener behind', async () => {
     const controller = new AbortController();
-    let subprocessAbort: AbortSignal | undefined;
-    const { query, seen } = scripted((options) => ({
+    let toolSignal: AbortSignal | undefined;
+    const tool: BotEngineTool = {
+      name: 'wait',
+      description: '',
+      inputSchema: {},
+      run: async (_input, { signal }) => {
+        toolSignal = signal;
+        return { content: '' };
+      },
+    };
+    const { seen } = scripted((options, closed) => ({
       async *[Symbol.asyncIterator]() {
-        subprocessAbort = options.abortController?.signal;
+        const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+          .instance;
+        const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+        await server.connect(serverSide);
+        const client = new Client({ name: 'test', version: '1.0.0' });
+        await client.connect(clientSide);
+        await client.callTool({ name: 'wait', arguments: {} });
         yield delta('Thinking');
-        // A model that never answers; only the abort ends it.
-        await new Promise((resolve) =>
-          options.abortController?.signal.addEventListener('abort', resolve),
-        );
+        // A model that never answers; only closing the query ends it.
+        await closed;
         throw new Error('aborted');
       },
     }));
 
     const events: BotEngineEvent[] = [];
-    for await (const event of new ClaudeBotEngine(query).run(
-      request({ signal: controller.signal }),
+    for await (const event of new ClaudeBotEngine().run(
+      request({ signal: controller.signal, tools: [tool] }),
     )) {
       events.push(event);
       if (event.type === 'text.delta') controller.abort();
@@ -397,7 +431,19 @@ describe('ClaudeBotEngine', () => {
       { type: 'text.delta', text: 'Thinking' },
       { type: 'done', reason: 'cancelled' },
     ]);
-    expect(subprocessAbort?.aborted).toBe(true);
+    expect(seen.closed).toBe(true);
+    expect(toolSignal?.aborted).toBe(true);
+    expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0);
+  });
+
+  it('closes the query and leaves no listener behind when a turn completes', async () => {
+    const controller = new AbortController();
+    const { seen } = scripted(() => [success()]);
+
+    const events = await collect(new ClaudeBotEngine().run(request({ signal: controller.signal })));
+
+    expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
     await expect.poll(() => seen.closed).toBe(true);
+    expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0);
   });
 });
