@@ -218,6 +218,15 @@ func (c *Client) Ensure(ctx context.Context, repo domain.Repository, remote, ref
 		// store in the background, holding its config lock, and a second
 		// session on the same repository must not fail on a no-op write.
 		if remote != "" && c.originOf(store) != remote {
+			// A deepen holds the config lock for as long as it fetches, so a
+			// write that has to happen waits for it to land.
+			if landed := c.deepeningOf(store); landed != nil {
+				select {
+				case <-landed:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
 			if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "remote", "set-url", "origin", remote); err != nil {
 				return err
 			}
