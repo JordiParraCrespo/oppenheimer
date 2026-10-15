@@ -25113,6 +25113,12 @@
             "enum": ["auto", "full"],
             "description": "How far a turn may go without asking."
           },
+          "createdByBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted."
+          },
           "learnAutomatically": {
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
@@ -25148,6 +25154,7 @@
           "model",
           "effort",
           "permission",
+          "createdByBotId",
           "learnAutomatically",
           "createdAt",
           "updatedAt",

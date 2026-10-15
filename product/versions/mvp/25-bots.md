@@ -264,6 +264,38 @@ that did not cover the tool never runs.
 one; both chats show it. A bot that creates a bot makes it **yours**,
 marked "created by" the creator, with no looser permissions than its own.
 
+`create_bot` (built 2026-10-15) dispatches the console's own create
+command as the owner, so the new bot's `createdByUserId` is the person's;
+`bot."createdByBotId"` marks the creator (composite on the workspace,
+`SET NULL` when the creator is deleted, shown on the bot's DTO). Its
+input is the name, description, soul, instructions, provider, model
+(id or label), effort, permission and group:
+
+- **Provider and model** default to the creator's: its model on the same
+  provider, the provider's default on another. A provider the workspace
+  has no key for is refused, naming the ones it has.
+- **Permission** is ranked by `BOT_PERMISSIONS`, strictest first: `auto`
+  (Approve for me), then `full` (Full access). The new bot gets the one
+  asked for when it is no looser than the creator's, and otherwise the
+  stricter of the creator's and the console's default, which is always
+  Approve for me today. Full access asked by a bot under Approve for me is
+  refused, never quietly lowered (`permissionForBotMadeBy`, held by the
+  tool and again by the command, whose insert re-reads the creator's level
+  under a row lock and rolls back if it changed since the check).
+- **Group** is one of the owner's, by id or name; a bot cannot create a
+  group.
+- **Once:** the creation is keyed (`bot."idempotencyKey"`, unique per
+  workspace): `bot:approval:<id>` for an approved call, the turn and a
+  digest of the input otherwise. A retried job or a repeated call answers
+  the bot the first one made; two racing ones make one.
+- A call the tool would refuse (a keyless provider, an unknown model or
+  group, a looser permission) is refused before any card is raised, so the
+  person is never asked to approve what cannot run. The card stores the
+  call with every default written out (provider, model, effort, level,
+  group by id), so a yes creates what the card showed even if the
+  creator's engine changed while it waited. The card reads
+  `Create bot "Scout" on GLM GLM-5.3, in group Research: Finds papers`.
+
 Two named policies bound bots talking to bots. Both belong to the turn
 queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a
 bot asked for, and it picks the next turn by lane. Nothing else holds
@@ -391,11 +423,11 @@ limits (§2); the tools that run without asking, as the owner: itself
 `update_task`, `move_task`), GitHub (`list_repositories`,
 `list_pull_requests`, `get_pull_request`), automations
 (`list_automations`, `get_automation`, `run_history`), other bots
-(`list_bots`, `get_bot`) and `web_fetch`; `start_session` and
-`stop_session`, which ask; and the Needs input card (§5): Approve, Deny
-with a note, the bot told either way. Next: Settings → Permissions and
-*Always allow*, then the asking tools of each area, `ask_bot`,
-`create_bot` and `delegate`.
+(`list_bots`, `get_bot`) and `web_fetch`; `start_session`,
+`stop_session` and `create_bot`, which ask; and the Needs input card
+(§5): Approve, Deny with a note, the bot told either way. Next:
+Settings → Permissions and *Always allow*, then the asking tools of each
+area, `ask_bot` and `delegate`.
 
 ## 7. Not built yet
 

@@ -2942,6 +2942,10 @@ export type BotResponseDto = {
      */
     permission: 'auto' | 'full';
     /**
+     * The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted.
+     */
+    createdByBotId: string | null;
+    /**
      * Whether what it decides to remember is saved without asking.
      */
     learnAutomatically: boolean;

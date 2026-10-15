@@ -10,12 +10,8 @@ import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-se
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
-import {
-  idempotencyKeyOf,
-  planSession,
-  sessionHostId,
-  sessionSummary,
-} from '../bot-session-tool.mapper';
+import { planSession, sessionHostId, sessionSummary } from '../bot-session-tool.mapper';
+import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
