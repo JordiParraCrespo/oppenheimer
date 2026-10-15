@@ -21,5 +21,5 @@ Codex CLI do it.
 - The worker refreshes the token before a turn when it is about to lapse, one
   refresh per workspace at a time, written only over the tokens it read; a
   refresh ChatGPT refuses removes the sign-in.
-- New problems `BOTS_015`–`BOTS_019`; `PUT /model-providers/chatgpt` answers
-  `BOTS_015`.
+- New problems `BOTS_017`–`BOTS_021`; `PUT /model-providers/chatgpt` answers
+  `BOTS_017`.

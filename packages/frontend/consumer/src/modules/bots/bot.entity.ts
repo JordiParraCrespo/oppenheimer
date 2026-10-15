@@ -194,7 +194,7 @@ export class ChatgptLoginEntity {
 export type ChatgptLoginState = 'pending' | 'connected' | 'expired';
 
 /** The code the API answers a poll of a lapsed or refused sign-in with. */
-const CHATGPT_LOGIN_EXPIRED = 'BOTS_016';
+const CHATGPT_LOGIN_EXPIRED = 'BOTS_018';
 
 /** Whether `error` is the API saying the sign-in being polled is over, and a new one is needed. */
 export function isChatgptLoginExpired(error: unknown): boolean {

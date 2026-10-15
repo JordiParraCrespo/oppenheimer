@@ -18,7 +18,7 @@ import { PutModelProviderCredentialCommand } from './put-model-provider-credenti
  * Settings → Model providers: the workspace's key for one provider, sealed
  * before it is stored, replacing the one there. The key is not checked against
  * the provider here; a bot's first turn on it says whether it works. A
- * provider that connects by signing in (ChatGPT) takes no key: `BOTS_015`.
+ * provider that connects by signing in (ChatGPT) takes no key: `BOTS_017`.
  */
 @CommandHandler(PutModelProviderCredentialCommand)
 export class PutModelProviderCredentialCommandHandler

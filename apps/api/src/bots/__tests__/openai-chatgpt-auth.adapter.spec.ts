@@ -97,7 +97,7 @@ describe('OpenAiChatgptAuthAdapter', () => {
     );
     const adapter = new OpenAiChatgptAuthAdapter();
     await expect(adapter.refresh('refresh-spent')).rejects.toBeInstanceOf(ChatgptAuthRefusedError);
-    await expect(adapter.refresh('refresh-spent')).rejects.toMatchObject({ code: 'BOTS_018' });
+    await expect(adapter.refresh('refresh-spent')).rejects.toMatchObject({ code: 'BOTS_020' });
   });
 
   it('refuses a token answer that names no account, rather than storing a sign-in turns cannot use', async () => {
@@ -110,19 +110,19 @@ describe('OpenAiChatgptAuthAdapter', () => {
         ),
     );
     await expect(new OpenAiChatgptAuthAdapter().refresh('refresh')).rejects.toMatchObject({
-      code: 'BOTS_018',
+      code: 'BOTS_020',
     });
   });
 
-  it('answers a rate refusal with BOTS_017 and asks nothing more until it lapses', async () => {
+  it('answers a rate refusal with BOTS_019 and asks nothing more until it lapses', async () => {
     const fetch = vi
       .fn()
       .mockResolvedValueOnce(new Response('{}', { status: 429, headers: { 'retry-after': '60' } }));
     vi.stubGlobal('fetch', fetch);
     const adapter = new OpenAiChatgptAuthAdapter();
 
-    await expect(adapter.requestDeviceCode()).rejects.toMatchObject({ code: 'BOTS_017' });
-    await expect(adapter.pollDeviceCode(CODE)).rejects.toMatchObject({ code: 'BOTS_017' });
+    await expect(adapter.requestDeviceCode()).rejects.toMatchObject({ code: 'BOTS_019' });
+    await expect(adapter.pollDeviceCode(CODE)).rejects.toMatchObject({ code: 'BOTS_019' });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

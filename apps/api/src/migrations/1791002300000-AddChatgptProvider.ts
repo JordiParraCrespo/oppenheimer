@@ -21,8 +21,8 @@ const TABLES = [
  * `down()` restores the three-provider checks, and so first removes the rows
  * that name `chatgpt`: its credentials, and the bots and turns on it.
  */
-export class AddChatgptProvider1791001900000 implements MigrationInterface {
-  name = 'AddChatgptProvider1791001900000';
+export class AddChatgptProvider1791002300000 implements MigrationInterface {
+  name = 'AddChatgptProvider1791002300000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     for (const [table, check] of TABLES) {

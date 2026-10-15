@@ -17,23 +17,32 @@ function codeNodes(nodes: CodeNode[], prefix: string): ReactNode[] {
   });
 }
 
-/** A fenced block of a description: the code as written, its syntax coloured, a copy button in its corner. */
+/**
+ * Code as written, its syntax coloured for `language` (highlight.js's common
+ * set) as spans, the plain text when the language is not one it knows. For
+ * a caller that draws the block around it (`ChatCodeBlock`).
+ */
+export function HighlightedCode({ code, language }: { code: string; language?: string }) {
+  const highlighted = highlightCode(code, language);
+  return <>{highlighted ? codeNodes(highlighted, 'code') : code}</>;
+}
+
+/** A fenced block: the code as written, its syntax coloured, a copy button in its corner. */
 export function MarkdownCode({ code, language }: { code: string; language?: string }) {
   const { t } = useTranslation();
   const { copied, copy } = useCopy(code);
-  const highlighted = highlightCode(code, language);
   return (
     <div className="relative">
       <pre data-language={language || undefined}>
-        <code>{highlighted ? codeNodes(highlighted, 'code') : code}</code>
+        <code>
+          <HighlightedCode code={code} language={language} />
+        </code>
       </pre>
       <IconButton
         size="xs"
         shape="square"
         className="absolute top-2 right-2"
-        aria-label={
-          copied ? t('pullRequests.detail.codeCopied') : t('pullRequests.detail.copyCode')
-        }
+        aria-label={copied ? t('common.copied') : t('common.copyCode')}
         onClick={copy}
       >
         {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}

@@ -5,6 +5,7 @@
     "close": "Close",
     "copied": "Copied",
     "copy": "Copy",
+    "copyCode": "Copy code",
     "loading": "Loading...",
     "or": "or",
     "relative": {
@@ -241,10 +242,13 @@
       "BOTS_012": "That model provider doesn't exist.",
       "BOTS_013": "This bot's model provider has no key yet. Add one in Settings → Model providers.",
       "BOTS_014": "That turn doesn't exist.",
-      "BOTS_015": "ChatGPT connects by signing in, not with a key.",
-      "BOTS_016": "That ChatGPT sign-in expired. Start again.",
-      "BOTS_017": "ChatGPT's sign-in is busy. Try again in a moment.",
-      "BOTS_018": "Couldn't reach ChatGPT's sign-in. Try again in a moment.",
+      "BOTS_015": "That approval doesn't exist.",
+      "BOTS_016": "That request was already answered.",
+      "BOTS_017": "ChatGPT connects by signing in, not with a key.",
+      "BOTS_018": "That ChatGPT sign-in expired. Start again.",
+      "BOTS_019": "ChatGPT's sign-in is busy. Try again in a moment.",
+      "BOTS_020": "Couldn't reach ChatGPT's sign-in. Try again in a moment.",
+      "BOTS_021": "The ChatGPT sign-in is being refreshed. Send your message again in a moment.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -281,8 +285,7 @@
       "SESSIONS_028": "That folder doesn’t exist on the host.",
       "SESSIONS_029": "That path is a file, not a folder.",
       "SESSIONS_030": "That folder can’t be read on the host.",
-      "SESSIONS_031": "The host didn’t answer in time. Try again.",
-      "BOTS_019": "The ChatGPT sign-in is being refreshed. Send your message again in a moment."
+      "SESSIONS_031": "The host didn’t answer in time. Try again."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -912,8 +915,9 @@
       "actions": "Bot options",
       "settings": "Settings",
       "delete": "Delete bot",
-      "helloBlank": "What would you most like help with? Tell me the job and I will write my own instructions from it.",
-      "hello": "Hi, I’m {{name}}. What should we work on?",
+      "helloBlank": "{{name}} is ready. Tell it what job to do.",
+      "startFrom": "Try asking",
+      "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
       "send": "Send",
       "stop": "Stop",
@@ -925,18 +929,76 @@
       "failedUnknown": "The turn ended without saying why.",
       "errorDetails": "Show details",
       "errorLess": "Show less",
+      "retry": "Retry",
+      "copyMessage": "Copy message",
+      "copyReply": "Copy reply",
+      "toLatest": "Jump to latest",
+      "switchedModel": "Switched to <model>{{model}}</model>",
+      "tokens_one": "{{tokens}} token",
+      "tokens_other": "{{tokens}} tokens",
       "turn": {
         "queued": "Waiting",
-        "working": "Working",
-        "worked": "Worked",
-        "stopped": "Stopped",
-        "interrupted": "Failed"
+        "thinking": "Thinking",
+        "writing": "Writing",
+        "stopped": "Stopped"
       },
       "activity": {
-        "summary_one": "Used {{count}} tool",
-        "summary_other": "Used {{count}} tools",
-        "failed": "{{count}} failed",
-        "running": "running"
+        "searched": "Searched the web",
+        "searchedFor": "Searched the web for “{{query}}”",
+        "searching": "Searching the web",
+        "searchingFor": "Searching the web for “{{query}}”",
+        "planned": "Updated its plan",
+        "planning": "Updating its plan",
+        "using": "Using {{name}}",
+        "stepFailed": "failed",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "rawOutput": "Show raw output",
+        "moreLines_one": "Show {{count}} more line",
+        "moreLines_other": "Show {{count}} more lines",
+        "lessOutput": "Show less"
+      },
+      "suggest": {
+        "task": {
+          "research": {
+            "name": "Research a topic",
+            "prompt": "Search the web and give me a short summary, with sources, of "
+          },
+          "summarise": {
+            "name": "Summarise something",
+            "prompt": "Summarise this in five bullet points:\n\n"
+          },
+          "draft": {
+            "name": "Draft a message",
+            "prompt": "Draft a short, friendly message to "
+          },
+          "plan": {
+            "name": "Make a plan",
+            "prompt": "Make a step-by-step plan to "
+          }
+        },
+        "job": {
+          "research": {
+            "name": "Research assistant",
+            "description": "Finds and sums up what I ask about",
+            "prompt": "Be my research assistant: when I name a topic, search the web and give me a short summary with its sources."
+          },
+          "writing": {
+            "name": "Writing partner",
+            "description": "Tightens my drafts in my own voice",
+            "prompt": "Be my writing partner: tighten what I write, suggest clearer wording and keep my tone."
+          },
+          "planner": {
+            "name": "Planner",
+            "description": "Turns goals into next steps",
+            "prompt": "Be my planner: break my goals into steps, keep a to-do list and tell me what to do next."
+          },
+          "news": {
+            "name": "News digest",
+            "description": "The latest on what I follow",
+            "prompt": "Be my news digest: when I ask, search the web for the latest on the topics I follow and sum it up in five bullets."
+          }
+        }
       },
       "model": "Model",
       "searchModels": "Search models…",
@@ -953,7 +1015,25 @@
         }
       },
       "saveFailed": "Could not change the bot.",
-      "loadFailed": "Could not load this bot."
+      "loadFailed": "Could not load this bot.",
+      "approval": {
+        "needsInput": "Needs input",
+        "title": "{{name}} wants to do this",
+        "detail": "It runs once, as you, when you approve. Writing to {{name}} instead dismisses the request.",
+        "approve": "Approve",
+        "approving": "Approving…",
+        "deny": "Deny",
+        "denying": "Denying…",
+        "noteLabel": "What should {{name}} do instead?",
+        "notePlaceholder": "Optional: why not, or what to do instead",
+        "cancel": "Cancel",
+        "failed": "Could not answer the request."
+      },
+      "event": {
+        "approved": "You approved: {{summary}}",
+        "denied": "You denied: {{summary}}",
+        "failed": "You approved, and it failed: {{summary}}"
+      }
     },
     "settings": {
       "back": "Back to the chat",
@@ -1518,8 +1598,6 @@
       },
       "into": "into",
       "noDescription": "No description.",
-      "copyCode": "Copy code",
-      "codeCopied": "Copied",
       "editOnGithub": "Edit on GitHub",
       "checks": "Checks",
       "noReviewers": "Nobody has reviewed it yet.",

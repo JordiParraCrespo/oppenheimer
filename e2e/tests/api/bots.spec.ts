@@ -243,13 +243,13 @@ test.describe('Bots', () => {
     // ChatGPT signs in instead; a sign-in the server never sealed is no sign-in.
     await expectProblemDocument(
       await api.put('/api/v1/model-providers/chatgpt', { data: { apiKey: secret } }),
-      { status: 422, code: 'BOTS_015' },
+      { status: 422, code: 'BOTS_017' },
     );
     await expectProblemDocument(
       await api.post('/api/v1/model-providers/chatgpt/login/poll', {
         data: { flowId: 'not-a-sealed-sign-in' },
       }),
-      { status: 410, code: 'BOTS_016' },
+      { status: 410, code: 'BOTS_018' },
     );
 
     // A bot moves to the provider and runs its default model.

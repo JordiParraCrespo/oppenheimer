@@ -630,11 +630,13 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
 | `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
 | `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
-| `BOTS_015` <a id="bots_015" />       | ChatGPT connects by signing in, not with a key | 422 |
-| `BOTS_016` <a id="bots_016" />       | The ChatGPT sign-in expired                  | 410  |
-| `BOTS_017` <a id="bots_017" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
-| `BOTS_018` <a id="bots_018" />       | ChatGPT's sign-in could not be reached       | 502  |
-| `BOTS_019` <a id="bots_019" />       | The ChatGPT sign-in is being refreshed       | 409  |
+| `BOTS_015` <a id="bots_015" />       | Approval not found                           | 404  |
+| `BOTS_016` <a id="bots_016" />       | The approval was already decided             | 409  |
+| `BOTS_017` <a id="bots_017" />       | ChatGPT connects by signing in, not with a key | 422 |
+| `BOTS_018` <a id="bots_018" />       | The ChatGPT sign-in expired                  | 410  |
+| `BOTS_019` <a id="bots_019" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
+| `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
+| `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -665,15 +667,20 @@ store one in Settings → Model providers. A turn that finds the key gone when
 it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
 or not in the caller's workspace.
 
-`BOTS_015` to `BOTS_019` are the ChatGPT provider, which runs on a sign-in to a
-ChatGPT subscription instead of a key. `BOTS_015` is `PUT
+`BOTS_015` is an approval (a Needs input card) that is not this bot's, or not
+in the caller's workspace. `BOTS_016` is a decision on one that was already
+approved, denied, or expired because a new message was sent to the bot: read
+the approvals again; the card is gone.
+
+`BOTS_017` to `BOTS_021` are the ChatGPT provider, which runs on a sign-in to a
+ChatGPT subscription instead of a key. `BOTS_017` is `PUT
 /model-providers/chatgpt`: sign in with `POST /model-providers/chatgpt/login`
-instead. `BOTS_016` is a poll of a sign-in that is past its fifteen minutes,
+instead. `BOTS_018` is a poll of a sign-in that is past its fifteen minutes,
 that ChatGPT refused, or that was started in another workspace; start again.
-`BOTS_017` is OpenAI's sign-in server refusing for rate (or too many calls to it
-waiting), with `Retry-After`. `BOTS_018` is that server not answering, or
+`BOTS_019` is OpenAI's sign-in server refusing for rate (or too many calls to it
+waiting), with `Retry-After`. `BOTS_020` is that server not answering, or
 answering something unusable. A ChatGPT sign-in that ChatGPT later refuses to
-refresh is removed, and the bot's next turn fails with `BOTS_013`. `BOTS_019`
+refresh is removed, and the bot's next turn fails with `BOTS_013`. `BOTS_021`
 is a turn that needed the token refreshed while another API replica was
 refreshing it; it fails at once rather than wait, and the next message runs on
 the refreshed token.

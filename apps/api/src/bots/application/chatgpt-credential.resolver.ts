@@ -43,7 +43,7 @@ function credentialOf({ accessToken, accountId }: ChatgptTokens): TurnCredential
  * workspace at a time. Turns on this replica that need it while it runs wait
  * for that refresh and take its answer; a turn on another replica finds the
  * lock held and, unless the token stored by then is fresh, fails at once with
- * `BOTS_019` rather than sleeping on a guess. The write is conditional on the
+ * `BOTS_021` rather than sleeping on a guess. The write is conditional on the
  * secret that was read, so a new sign-in landing first is never overwritten;
  * a refresh ChatGPT refuses removes the sign-in the same way, and the turn
  * fails with `BOTS_013`, which tells the person to sign in again.

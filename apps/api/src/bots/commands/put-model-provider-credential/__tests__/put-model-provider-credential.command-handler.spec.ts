@@ -53,9 +53,9 @@ describe('PutModelProviderCredentialCommandHandler', () => {
     expect(credentials.put).not.toHaveBeenCalled();
   });
 
-  it('refuses a key for ChatGPT, which connects by signing in, with BOTS_015, and writes nothing', async () => {
+  it('refuses a key for ChatGPT, which connects by signing in, with BOTS_017, and writes nothing', async () => {
     const { handler, credentials } = setup();
-    await expect(handler.execute(command('chatgpt'))).rejects.toMatchObject({ code: 'BOTS_015' });
+    await expect(handler.execute(command('chatgpt'))).rejects.toMatchObject({ code: 'BOTS_017' });
     expect(credentials.put).not.toHaveBeenCalled();
   });
 

@@ -21,7 +21,7 @@ import { PollChatgptLoginCommand } from './poll-chatgpt-login.command';
  * One poll of a ChatGPT sign-in the console is waiting on: asks ChatGPT
  * whether the person approved the code, and when they did, stores the
  * sign-in's tokens as the workspace's ChatGPT credential. A sign-in that does
- * not open, lapsed, or was started in another workspace answers `BOTS_016`.
+ * not open, lapsed, or was started in another workspace answers `BOTS_018`.
  * ChatGPT is asked at most once per interval it set for the code, whatever a
  * client polls at: a poll sooner than that answers "pending" without asking,
  * so no client can spend the client-wide budget every workspace signs in on.

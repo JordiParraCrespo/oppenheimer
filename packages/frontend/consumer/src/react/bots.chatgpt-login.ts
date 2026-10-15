@@ -32,7 +32,7 @@ export interface ChatgptLoginFlow {
  * current pairing token mints it, so `enabled: false` keeps the flow idle.
  * The code is never refetched on its own (a refetch would replace the one on
  * screen); `restart` asks for the next. The poll stops on `connected`, which
- * re-reads the providers list, and on `expired` (`BOTS_016`).
+ * re-reads the providers list, and on `expired` (`BOTS_018`).
  */
 export function useChatgptLogin({ enabled = true }: { enabled?: boolean } = {}): ChatgptLoginFlow {
   const app = useConsumerApp();

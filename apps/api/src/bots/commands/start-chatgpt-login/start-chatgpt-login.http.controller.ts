@@ -37,11 +37,11 @@ export class StartChatgptLoginHttpController {
     description: 'Bots belong to an organization',
     code: 'BOTS_002',
   })
-  @ApiProblemResponse({ status: 429, description: "ChatGPT's sign-in is busy", code: 'BOTS_017' })
+  @ApiProblemResponse({ status: 429, description: "ChatGPT's sign-in is busy", code: 'BOTS_019' })
   @ApiProblemResponse({
     status: 502,
     description: "ChatGPT's sign-in could not be reached",
-    code: 'BOTS_018',
+    code: 'BOTS_020',
   })
   @ApiProblemResponse({
     status: 503,

@@ -50,7 +50,7 @@ export class PutModelProviderCredentialHttpController {
   @ApiProblemResponse({
     status: 422,
     description: 'ChatGPT connects by signing in, not with a key',
-    code: 'BOTS_015',
+    code: 'BOTS_017',
   })
   @ApiProblemResponse({
     status: 503,

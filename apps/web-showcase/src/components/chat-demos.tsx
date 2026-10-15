@@ -18,6 +18,7 @@ import {
   SubagentRow,
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
+import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
 import {
   ComposerContextMeter,
   ComposerMenu,
@@ -40,6 +41,14 @@ import {
   ComposerApproval,
   QuestionPanel,
 } from '@oppenheimer/design-system-web/chat-decisions';
+import {
+  ChatCodeBlock,
+  ChatMarker,
+  ChatSource,
+  ChatSources,
+  ChatSuggestion,
+  ChatSuggestions,
+} from '@oppenheimer/design-system-web/chat-elements';
 import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
@@ -67,6 +76,7 @@ import {
   StreamingCaret,
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
+import { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
 import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
@@ -219,6 +229,57 @@ function ChatWorkBody() {
         The gateway already holds the run registry, so registering controllers there avoids a second lookup. A tool
         that ignores the signal still needs a ceiling, so the grace period stays.
       </ReasoningRow>
+      <Trace>
+        <TraceStep icon={<CheckCircleIcon />} title="Thought">
+          <TraceNote>stopRun() only flips run.status, so cancel has to reach the step itself.</TraceNote>
+        </TraceStep>
+        <TraceStep icon={<SearchIcon />} title="Searched abortSignal" meta="14 results" />
+        <TraceStep icon={<FileTextIcon />} title="Edited runner/step.ts" meta={<DiffStat additions={42} deletions={8} />} />
+        <TraceStep icon={<TerminalIcon />} title="Failed to run pnpm test runner" meta="2 failed" tone="danger" defaultOpen>
+          <TraceOutput>
+            {'FAIL  runner/step.test.ts\n  ✕ aborts a tool that ignores the signal (5012 ms)\n\nTests: 2 failed, 36 passed, 38 total'}
+          </TraceOutput>
+        </TraceStep>
+        <TraceStep icon={<TerminalIcon />} title="Ran pnpm test runner" meta="40 passed">
+          <TraceOutput>{'PASS  runner/step.test.ts\n\nTests: 40 passed, 40 total'}</TraceOutput>
+        </TraceStep>
+      </Trace>
+      <TraceLive elapsed="12s">Searching run.status</TraceLive>
+    </div>
+  );
+}
+
+/* ── AI elements ─────────────────────────────────────────────────────────── */
+
+function ChatElementsBody() {
+  return (
+    <div className="flex w-full max-w-184 flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <TranscriptDivider>Yesterday</TranscriptDivider>
+        <ChatMarker icon={<LayersIcon />} meta="142k → 18k tokens">
+          Context compacted
+        </ChatMarker>
+        <ChatMarker icon={<CpuIcon />}>
+          Switched to <strong>GPT-5.2 Codex</strong> for the next turn
+        </ChatMarker>
+      </div>
+      <ChatSuggestions>
+        <ChatSuggestion>Open the pull request</ChatSuggestion>
+        <ChatSuggestion>Show the diff</ChatSuggestion>
+        <ChatSuggestion>Run the e2e suite</ChatSuggestion>
+      </ChatSuggestions>
+      <ChatSources>
+        <ChatSource index={1} href="https://developer.mozilla.org">developer.mozilla.org</ChatSource>
+        <ChatSource index={2} href="https://streams.spec.whatwg.org">streams.spec.whatwg.org</ChatSource>
+        <ChatSource index={3} href="https://nodejs.org">nodejs.org</ChatSource>
+      </ChatSources>
+      <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
+      <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
+      <div className="flex justify-center">
+        <FloatingChip variant="round" aria-label="Jump to latest">
+          <ChevronDownIcon />
+        </FloatingChip>
+      </div>
     </div>
   );
 }
@@ -836,6 +897,14 @@ export function ChatWorkDemo() {
   );
 }
 
+export function ChatElementsDemo() {
+  return (
+    <ChatSurface>
+      <ChatElementsBody />
+    </ChatSurface>
+  );
+}
+
 export function ChatCardsDemo() {
   return (
     <ChatSurface>
@@ -903,11 +972,21 @@ export function ChatSection() {
       <Spec
         id="chatwork"
         title="Work and tools"
-        meta="chat-work.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s."
+        meta="chat-work.tsx · chat-trace.tsx"
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
+      </Spec>
+
+      <Spec
+        id="chatelements"
+        title="AI elements"
+        meta="chat-elements.tsx · chat-composer.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; FloatingChip round takes the reader back to the latest turn."
+        code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
+      >
+        <ChatElementsDemo />
       </Spec>
 
       <Spec

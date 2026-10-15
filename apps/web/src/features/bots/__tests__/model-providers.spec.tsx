@@ -7,7 +7,7 @@ import { ModelProviders } from '../sections/model-providers';
  * (`bot_providers` off) still offering Add, Replace and Remove, whose saves
  * can only answer BOTS_011; a failed Remove said only in a toast that
  * fades, rather than inline until dismissed; or ChatGPT's row offering a key
- * (which the API refuses, BOTS_015) instead of its sign-in.
+ * (which the API refuses, BOTS_017) instead of its sign-in.
  */
 
 vi.mock('react-i18next', () => ({

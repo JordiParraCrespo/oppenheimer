@@ -175,10 +175,13 @@
     "BOTS_012": "Ese proveedor de modelos no existe.",
     "BOTS_013": "El proveedor de modelos de este bot aún no tiene clave. Añade una en Ajustes → Proveedores de modelos.",
     "BOTS_014": "Ese turno no existe.",
-    "BOTS_015": "ChatGPT se conecta iniciando sesión, no con una clave.",
-    "BOTS_016": "Ese inicio de sesión de ChatGPT ha caducado. Vuelve a empezar.",
-    "BOTS_017": "El inicio de sesión de ChatGPT está ocupado. Inténtalo de nuevo en un momento.",
-    "BOTS_018": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
+    "BOTS_015": "Esa aprobación no existe.",
+    "BOTS_016": "Esa solicitud ya tenía respuesta.",
+    "BOTS_017": "ChatGPT se conecta iniciando sesión, no con una clave.",
+    "BOTS_018": "Ese inicio de sesión de ChatGPT ha caducado. Vuelve a empezar.",
+    "BOTS_019": "El inicio de sesión de ChatGPT está ocupado. Inténtalo de nuevo en un momento.",
+    "BOTS_020": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
+    "BOTS_021": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento.",
     "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
     "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
     "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
@@ -215,8 +218,7 @@
     "SESSIONS_028": "Esa carpeta no existe en el equipo.",
     "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
     "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-    "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
-    "BOTS_019": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento."
+    "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
   },
   "notFound": {
     "title": "Esta página no existe",

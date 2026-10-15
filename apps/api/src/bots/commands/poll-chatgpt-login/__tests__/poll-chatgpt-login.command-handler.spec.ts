@@ -18,7 +18,7 @@ import { PollChatgptLoginCommandHandler } from '../poll-chatgpt-login.command-ha
  * One poll of a ChatGPT sign-in: a sign-in still waiting stores nothing, an
  * approved one is stored for the poller's workspace, and a sign-in that lapsed,
  * was started in another workspace, was tampered with or that ChatGPT refused
- * answers BOTS_016 without storing anything (and, but for the refusal, without
+ * answers BOTS_018 without storing anything (and, but for the refusal, without
  * asking ChatGPT). ChatGPT is asked once per interval it set for the code,
  * however fast a client polls.
  */
@@ -107,18 +107,18 @@ describe('PollChatgptLoginCommandHandler', () => {
     ['lapsed', () => flowId({ expiresAt: new Date(Date.now() - 1) })],
     ['started in another workspace', () => flowId({ organizationId: randomUUID() })],
     ['not sealed by this server', () => Buffer.from('forged').toString('base64url')],
-  ])('refuses a sign-in that is %s with BOTS_016, without asking ChatGPT', async (_, id) => {
+  ])('refuses a sign-in that is %s with BOTS_018, without asking ChatGPT', async (_, id) => {
     const { handler, auth, chatgpt } = setup(async () => ({ status: 'authorized', tokens }));
-    await expect(handler.execute(command(id()))).rejects.toMatchObject({ code: 'BOTS_016' });
+    await expect(handler.execute(command(id()))).rejects.toMatchObject({ code: 'BOTS_018' });
     expect(auth.pollDeviceCode).not.toHaveBeenCalled();
     expect(chatgpt.connect).not.toHaveBeenCalled();
   });
 
-  it('refuses a sign-in ChatGPT refused with BOTS_016, and stores nothing', async () => {
+  it('refuses a sign-in ChatGPT refused with BOTS_018, and stores nothing', async () => {
     const { handler, chatgpt } = setup(async () => {
       throw new ChatgptAuthRefusedError('/oauth/token answered 400');
     });
-    await expect(handler.execute(command(flowId()))).rejects.toMatchObject({ code: 'BOTS_016' });
+    await expect(handler.execute(command(flowId()))).rejects.toMatchObject({ code: 'BOTS_018' });
     expect(chatgpt.connect).not.toHaveBeenCalled();
   });
 

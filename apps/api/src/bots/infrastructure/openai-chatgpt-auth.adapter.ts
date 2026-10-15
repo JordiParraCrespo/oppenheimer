@@ -22,7 +22,7 @@ const TIMEOUT_MS = 10_000;
  * A sign-in is one device code and a poll every five seconds while the
  * dialog is open (a few dozen calls at most), and a turn refreshes its token
  * once every few days. Four in flight per process is plenty; past twenty
- * waiting a call answers `BOTS_017` rather than hanging.
+ * waiting a call answers `BOTS_019` rather than hanging.
  */
 const LIMITS = { maxInFlight: 4, maxQueued: 20, maxWaitMs: 5_000 };
 /** OpenAI does not publish this server's limits; all of it is one client, so one bucket. */
@@ -48,7 +48,7 @@ const readRateRefusal: RefusalReader = (errorBody) => {
  *
  * Every call goes through one {@link UpstreamLimiter} (`.agents/rules/integrations.md`):
  * OpenAI counts the client, so there is one bucket, and a refusal for rate
- * pauses it on every replica and answers `BOTS_017`.
+ * pauses it on every replica and answers `BOTS_019`.
  */
 @Injectable()
 export class OpenAiChatgptAuthAdapter implements ChatgptAuthPort {
@@ -128,7 +128,7 @@ export class OpenAiChatgptAuthAdapter implements ChatgptAuthPort {
   }
 
   /**
-   * Every call, through the limiter. The rate-limit problem (`BOTS_017`)
+   * Every call, through the limiter. The rate-limit problem (`BOTS_019`)
    * passes through; a refusal comes back as its status and a line that says
    * it without echoing the body, which may hold a token.
    */

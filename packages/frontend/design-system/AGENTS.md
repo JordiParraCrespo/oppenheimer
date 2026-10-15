@@ -243,8 +243,22 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   request takes the composer's place (`ApprovalPanel`, `QuestionPanel`),
   and its number keys pick only while focus is inside it. In a bot's chat
   the request fuses onto the composer instead (`ComposerApproval` in
-  `Composer`'s `above`, under a Needs input line), so it can be answered
+  `ChatComposer`'s `above`, under a Needs input line), so it can be answered
   in words.
+- **A bot's chat is the Bots frame and AI Elements.** Your turns are
+  28px bubbles, their time and copy on hover; the bot's answer has no
+  header: a `Trace` line per tool call at the reply's 15px, muted, each
+  opening to its `TraceOutput` (numbered mono lines on the card) or a
+  `TraceNote`, failures in red, then the reply, its fenced code a
+  `ChatCodeBlock`, then a `MessageTrail` (copy, retry, model and tokens).
+  While it runs a `TraceLive` line says what it is doing, with its clock.
+  Between turns a `ChatMarker` notes a model switch and a
+  `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;
+  the way back to the latest turn is `FloatingChip variant="round"`; the
+  box is `ChatComposer`, a 28px card growing from two lines to eight, which
+  shares `Composer`'s send rules and send button (`internal/composer-send`)
+  rather than branching inside it. The trace lives in `chat-trace.tsx`,
+  apart from the agent's tool-call groups in `chat-work.tsx`.
 
 ## Conventions
 

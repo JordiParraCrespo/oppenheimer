@@ -80,8 +80,3 @@ export function effortStops(
 ): EffortStop<SessionEffort>[] {
   return levels.map((level) => ({ value: level, label: labels[level] }));
 }
-
-/** The model's name as the catalog spells it ("Claude Opus 5.5"), for the line under a reply. */
-export function botModelLabel(provider: BotProvider, model: string | null): string | null {
-  return botModelOf(provider, model)?.label ?? null;
-}

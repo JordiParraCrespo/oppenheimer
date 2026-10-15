@@ -33,12 +33,14 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
     @InjectQueue(QUEUE_NAMES.INBOUND_EVENTS) inboundEventsQueue: Queue,
     @InjectQueue(QUEUE_NAMES.AUTOMATION_RUNS) automationRunsQueue: Queue,
     @InjectQueue(QUEUE_NAMES.BOT_TURNS) botTurnsQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.BOT_APPROVALS) botApprovalsQueue: Queue,
   ) {
     this.queues = new Map<string, Queue>([
       [QUEUE_NAMES.EMAIL, emailQueue],
       [QUEUE_NAMES.INBOUND_EVENTS, inboundEventsQueue],
       [QUEUE_NAMES.AUTOMATION_RUNS, automationRunsQueue],
       [QUEUE_NAMES.BOT_TURNS, botTurnsQueue],
+      [QUEUE_NAMES.BOT_APPROVALS, botApprovalsQueue],
     ]);
     this.relay = new OutboxRelay(outbox, (message) => this.publish(message), {
       owner: `${hostname()}:${process.pid}`,

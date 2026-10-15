@@ -12,7 +12,7 @@ import { fakeKernel } from './fake-kernel';
 /**
  * The ChatGPT sign-in as the dialog reads it: opening it asks for one code,
  * an approval re-reads the providers list so the row shows the sign-in, a
- * lapsed code (`BOTS_016`) reads as `expired` rather than as a failure, and a
+ * lapsed code (`BOTS_018`) reads as `expired` rather than as a failure, and a
  * fresh code is only ever asked for on `restart`.
  */
 const login = (flowId: string) =>
@@ -64,7 +64,7 @@ describe('useChatgptLogin', () => {
 
   it('reads a lapsed code as expired, not as an error, and restarts with a new one', async () => {
     const { wrapper, repository } = setup(async (flowId) => {
-      if (flowId === 'flow-1') throw Object.assign(new Error('expired'), { code: 'BOTS_016' });
+      if (flowId === 'flow-1') throw Object.assign(new Error('expired'), { code: 'BOTS_018' });
       return 'pending';
     });
     const { result } = renderHook(() => useChatgptLogin(), { wrapper });
@@ -80,7 +80,7 @@ describe('useChatgptLogin', () => {
 
   it('surfaces a failed poll for any other reason as an error', async () => {
     const { wrapper } = setup(async () => {
-      throw Object.assign(new Error('unreachable'), { code: 'BOTS_018' });
+      throw Object.assign(new Error('unreachable'), { code: 'BOTS_020' });
     });
     const { result } = renderHook(() => useChatgptLogin(), { wrapper });
     await waitFor(() => expect(result.current.error?.message).toBe('unreachable'));

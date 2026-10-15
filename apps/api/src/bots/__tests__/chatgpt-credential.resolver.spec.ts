@@ -18,7 +18,7 @@ import type { ProviderKeySealerPort } from '../infrastructure/provider-key-seale
  * the secret that was read; a refresh ChatGPT refuses removes the sign-in and
  * fails the turn with BOTS_013, unless a newer sign-in already replaced it.
  * Turns on one replica share one refresh; a refresh held by another replica
- * fails the turn at once with BOTS_019, unless its token already landed.
+ * fails the turn at once with BOTS_021, unless its token already landed.
  */
 const organizationId = randomUUID();
 const now = new Date('2026-10-15T12:00:00.000Z');
@@ -166,7 +166,7 @@ describe('ChatgptCredentialResolver.turnCredential', () => {
     expect(auth.refresh).toHaveBeenCalledTimes(1);
   });
 
-  it('fails at once with BOTS_019 while another replica holds the refresh, without refreshing', async () => {
+  it('fails at once with BOTS_021 while another replica holds the refresh, without refreshing', async () => {
     const { resolver, auth } = setup(
       [tokensExpiringIn(60_000)],
       async () => tokensExpiringIn(0),
@@ -174,7 +174,7 @@ describe('ChatgptCredentialResolver.turnCredential', () => {
       true,
     );
     await expect(resolver.turnCredential(organizationId, now)).rejects.toMatchObject({
-      code: 'BOTS_019',
+      code: 'BOTS_021',
     });
     expect(auth.refresh).not.toHaveBeenCalled();
   });

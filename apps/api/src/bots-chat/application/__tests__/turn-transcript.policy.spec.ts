@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
-import { type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
+import { TIME_LIMIT_ERROR, type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
 
 /**
  * How a turn's engine events become the chat's messages: finished text is a
@@ -78,6 +78,30 @@ describe('TurnTranscript', () => {
     ]);
     expect(inserted(writes).map((message) => message.content)).toEqual(['Half an ans']);
     expect(transcript.result).toMatchObject({ reason: 'failed', error: 'model overloaded' });
+  });
+
+  it('fails a turn its time limit stopped, saying so, and keeps what it wrote', () => {
+    const subject = turn();
+    subject.start(new Date());
+    const transcript = new TurnTranscript(subject);
+    const writes = [
+      { type: 'text.delta', text: 'Working on it' },
+      { type: 'done', reason: 'cancelled' },
+    ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+    transcript.endTurn(new Date(), 'time_limit');
+    expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
+    expect(subject.status).toBe('failed');
+    expect(subject.error).toBe(TIME_LIMIT_ERROR);
+  });
+
+  it('ends a turn Stop cancelled as cancelled', () => {
+    const subject = turn();
+    subject.start(new Date());
+    const transcript = new TurnTranscript(subject);
+    transcript.apply({ type: 'done', reason: 'cancelled' });
+    transcript.endTurn(new Date(), 'stop');
+    expect(subject.status).toBe('cancelled');
+    expect(subject.error).toBeNull();
   });
 
   it('cuts a long tool answer short', () => {
