@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import {
-  type BotEngineEvent,
   type BotTurnRequest,
   FakeBotEngine,
+  type FakeScriptEvent,
 } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
@@ -38,7 +38,7 @@ function queued(status: 'queued' | 'running' = 'queued') {
 
 function setup(
   turn: BotTurnEntity | null,
-  script: (request: BotTurnRequest) => AsyncIterable<BotEngineEvent> | BotEngineEvent[],
+  script: (request: BotTurnRequest) => AsyncIterable<FakeScriptEvent> | FakeScriptEvent[],
   options: { claim?: 'claimed' | 'busy' | 'lost'; cancel?: boolean; resolve?: Error } = {},
 ) {
   const turns = {
@@ -105,9 +105,31 @@ describe('RunBotTurnCommandHandler', () => {
     ]);
   });
 
+  it('stores a tool call as an activity line whose step fills in when the call finishes', async () => {
+    const turn = queued();
+    const { handler, messages } = setup(turn, () => [
+      {
+        type: 'tool.started',
+        callId: 'c1',
+        name: 'web_search',
+        input: { query: 'x' },
+        result: { output: 'found' },
+      },
+      { type: 'text.done', text: 'Done' },
+    ]);
+    await run(handler, turn.id);
+    expect(messages.insert).toHaveBeenCalledWith(expect.objectContaining({ role: 'activity' }));
+    expect(messages.saveSteps).toHaveBeenCalledWith(
+      expect.objectContaining({
+        steps: [expect.objectContaining({ callId: 'c1', output: 'found', isError: false })],
+      }),
+    );
+    expect(turn).toMatchObject({ status: 'completed' });
+  });
+
   it('leaves the turn queued, and runs nothing, when the bot is busy', async () => {
     const turn = queued();
-    const script = vi.fn(() => [] as BotEngineEvent[]);
+    const script = vi.fn(() => [] as FakeScriptEvent[]);
     const { handler, turns } = setup(turn, script, { claim: 'busy' });
     await run(handler, turn.id);
     expect(script).not.toHaveBeenCalled();
@@ -116,7 +138,7 @@ describe('RunBotTurnCommandHandler', () => {
 
   it('fails a turn found running, rather than running it twice', async () => {
     const turn = queued('running');
-    const script = vi.fn(() => [] as BotEngineEvent[]);
+    const script = vi.fn(() => [] as FakeScriptEvent[]);
     const { handler, turns } = setup(turn, script);
     await run(handler, turn.id);
     expect(script).not.toHaveBeenCalled();
@@ -153,7 +175,7 @@ describe('RunBotTurnCommandHandler', () => {
             await new Promise<void>((resolve) =>
               request.signal.addEventListener('abort', () => resolve()),
             );
-            yield { type: 'done', reason: 'cancelled' } as BotEngineEvent;
+            yield { type: 'done', reason: 'cancelled' } as FakeScriptEvent;
           })(),
         { cancel: true },
       );
