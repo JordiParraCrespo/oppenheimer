@@ -45,6 +45,7 @@ function botDto(overrides: Record<string, unknown> = {}) {
     createdAt: '2026-10-14T09:00:00.000Z',
     updatedAt: '2026-10-14T09:00:00.000Z',
     lastActivityAt: '2026-10-14T09:30:00.000Z',
+    lastMessagePreview: 'Shipped the release notes.',
     ...overrides,
   };
 }
@@ -66,6 +67,7 @@ describe('BotsRepository', () => {
     expect(bot?.avatarColor).toBe('tangerine');
     expect(bot?.homeHostId).toBeNull();
     expect(bot?.lastActivityAt).toEqual(new Date('2026-10-14T09:30:00.000Z'));
+    expect(bot?.lastMessagePreview).toBe('Shipped the release notes.');
   });
 
   it('treats an absent body as a failed read, not an empty sidebar', async () => {

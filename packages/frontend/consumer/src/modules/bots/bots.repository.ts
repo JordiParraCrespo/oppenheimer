@@ -50,6 +50,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
     new Date(dto.lastActivityAt),
+    dto.lastMessagePreview,
   );
 }
 

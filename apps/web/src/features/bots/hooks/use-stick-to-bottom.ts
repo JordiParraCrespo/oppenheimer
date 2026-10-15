@@ -19,8 +19,14 @@ export function useStickToBottom(
     const inner = content.current;
     if (!box || !inner || typeof ResizeObserver === 'undefined') return;
     let pinned = true;
+    let lastTop = box.scrollTop;
+    // Only the reader moving up unpins: by the time the scroll this hook
+    // made is reported, a streaming reply may have grown past the margin.
     const onScroll = () => {
-      pinned = box.scrollHeight - box.scrollTop - box.clientHeight < NEAR_BOTTOM_PX;
+      const near = box.scrollHeight - box.scrollTop - box.clientHeight < NEAR_BOTTOM_PX;
+      if (box.scrollTop < lastTop) pinned = near;
+      else if (near) pinned = true;
+      lastTop = box.scrollTop;
     };
     const observer = new ResizeObserver(() => {
       if (pinned) box.scrollTop = box.scrollHeight;

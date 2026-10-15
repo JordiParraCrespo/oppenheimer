@@ -40,4 +40,8 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await expect(page.locator('[data-slot="chat-reply"]').last()).toContainText(/pineapple/i);
   await expect(page.locator('[data-slot="turn-header"]')).toContainText('GLM-5.3');
   await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
+  // The sidebar's row previews the last thing said.
+  await expect(
+    page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }),
+  ).toContainText(/pineapple/i);
 });

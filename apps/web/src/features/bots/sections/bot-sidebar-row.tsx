@@ -10,8 +10,8 @@ import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 
 /**
  * One bot in the Employees sidebar: its initials on its colour, the name, how
- * long since it last changed, and its description as the preview line until
- * the chat gives it a last message. A section because it subscribes to the
+ * long since it last changed, and its last message as the preview line (its
+ * description before the first). A section because it subscribes to the
  * route (lit on its chat and on its settings), owns the move, and keeps the
  * delete dialog open past the menu that asked for it. `now` is its group's
  * minute clock; `groups` are the Move pane's targets.
@@ -43,7 +43,7 @@ export function BotSidebarRow({
         initials={bot.initials}
         color={bot.avatarColor}
         age={formatAge(bot.lastActivityAt, now, t)}
-        preview={bot.description || t('bots.sidebar.noMessages')}
+        preview={bot.lastMessagePreview || bot.description || t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}
         render={<Link to="/bots/$botId" params={{ botId: bot.id }} />}
