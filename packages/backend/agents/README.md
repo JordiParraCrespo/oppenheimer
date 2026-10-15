@@ -76,10 +76,13 @@ before the model reads it.
 
 Claude Code runs as a subprocess per turn, with:
 
-- **No shell and no files.** Only `WebSearch`, `WebFetch`, `Agent`
-  (subagents) and `TodoWrite` are offered, the shell and file tools are
-  disallowed, and `permissionMode: 'dontAsk'` denies anything not on the
-  allowlist without prompting.
+- **No shell, no files, no fetch, no subagents.** Only `WebSearch` (run on
+  the provider's side) and `TodoWrite` are offered. The shell and file
+  tools, `WebFetch` (it fetched any address, the server's loopback and
+  private network included) and `Agent` (subagents, which bots used to go
+  looking through the server's disk) are disallowed, and
+  `permissionMode: 'dontAsk'` denies anything not on the allowlist without
+  prompting.
 - **Our tools in process.** They are served by an MCP server inside the API
   process (`mcp__oppenheimer__<name>`), with their JSON Schemas as given.
 - **An environment built from nothing.** `PATH`, the proxy and CA
