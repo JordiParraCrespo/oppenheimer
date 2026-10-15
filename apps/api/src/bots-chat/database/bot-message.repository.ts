@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { DataSource, type EntityManager, Repository } from 'typeorm';
+import { DataSource, type EntityManager, In, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
@@ -63,13 +63,13 @@ export class BotMessageRepository
     return records.reverse().map((record) => this.mapper.toDomain(record));
   }
 
-  async findPrompt(organizationId: string, turnId: string): Promise<string | null> {
+  async findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null> {
     // IDX_bot_message_turn.
     const record = await this.repository.findOne({
-      where: { organizationId, turnId, role: 'user' },
+      where: { organizationId, turnId, role: In(['user', 'event']) },
       order: { position: 'ASC' },
     });
-    return record?.content ?? null;
+    return record ? this.mapper.toDomain(record) : null;
   }
 
   async findHistory(
@@ -122,7 +122,8 @@ export async function insertMessageWithin(
       record.position,
     ],
   );
-  if (message.role === 'activity') return;
+  // The sidebar's line is a conversation's words: an activity line or an event is neither.
+  if (message.role === 'activity' || message.role === 'event') return;
   await manager.query(
     `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = left($3, ${PREVIEW_MAX})
       WHERE "organizationId" = $1 AND id = $2`,

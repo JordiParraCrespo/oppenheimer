@@ -43,6 +43,25 @@ export class BotToolboxFactory {
     return this.definitions().map((definition) => definition.bind(context));
   }
 
+  /**
+   * Carries out what the owner approved (`25-bots.md` §5): the stored tool
+   * with the stored input, bound to a context that lets exactly that call
+   * through and asks for any other. A tool gone since the card was raised is
+   * a failed run, not a crash.
+   */
+  async runApproved(
+    context: BotToolContext,
+    call: { tool: string; input: Record<string, unknown> },
+    signal: AbortSignal,
+  ): Promise<{ content: string; isError: boolean }> {
+    const definition = this.definitions().find((candidate) => candidate.name === call.tool);
+    if (!definition) return { content: `${call.tool} is no longer a tool.`, isError: true };
+    const answer = await definition
+      .bind({ ...context, approved: call })
+      .run(call.input, { signal });
+    return { content: answer.content, isError: answer.isError === true };
+  }
+
   private definitions(): BotToolDefinition[] {
     return this.areas.flatMap((area) => area.definitions());
   }

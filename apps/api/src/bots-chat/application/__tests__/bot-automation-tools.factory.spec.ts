@@ -52,6 +52,7 @@ const automation = {
     agent: 'claude',
     model: null,
     permission: 'auto',
+    approvals: { request: vi.fn() },
     effort: null,
     prompt: 'Run the test suite and report.',
     repositories: [{ installationId: 'inst-1', githubRepoId: '7', fullName: 'acme/api' }],

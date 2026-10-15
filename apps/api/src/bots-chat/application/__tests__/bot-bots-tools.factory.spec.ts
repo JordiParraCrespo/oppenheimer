@@ -40,6 +40,7 @@ function bot(id: string, name: string, description: string): BotEntity {
       model: null,
       effort: null,
       permission: 'auto',
+      approvals: { request: vi.fn() },
       learnAutomatically: true,
     },
   });

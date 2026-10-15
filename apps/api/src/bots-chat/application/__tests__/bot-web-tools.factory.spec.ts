@@ -16,6 +16,7 @@ const context = (): BotToolContext => ({
   homeHostId: null,
   timeZone: 'UTC',
   permission: 'auto',
+  approvals: { request: vi.fn() },
 });
 
 function setup(result: WebPageResult) {

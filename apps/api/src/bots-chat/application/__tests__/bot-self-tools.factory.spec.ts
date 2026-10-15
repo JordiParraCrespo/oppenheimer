@@ -53,6 +53,7 @@ function bot(props: { name?: string; learnAutomatically?: boolean } = {}): BotEn
       model: null,
       effort: null,
       permission: 'auto',
+      approvals: { request: vi.fn() },
       learnAutomatically: props.learnAutomatically ?? true,
     },
   });

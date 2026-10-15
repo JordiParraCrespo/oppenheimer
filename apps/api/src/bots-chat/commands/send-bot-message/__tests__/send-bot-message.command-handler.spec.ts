@@ -5,7 +5,9 @@ import type { BotLookupResolver } from '../../../../bots/application/bot-lookup.
 import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { ProviderKeySealerPort } from '../../../../bots/infrastructure/provider-key-sealer.port';
+import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
+import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from '../send-bot-message.command';
 import { SendBotMessageCommandHandler } from '../send-bot-message.command-handler';
@@ -14,7 +16,7 @@ import { SendBotMessageCommandHandler } from '../send-bot-message.command-handle
  * Sending a bot a message: a queued turn on the bot's provider and model as
  * they are now, with your message first, or a refusal where the person can
  * fix it — no key for the provider, no sealing key on the server — with
- * nothing queued.
+ * nothing queued. A card the bot is waiting on expires with the message.
  */
 const scope: AccessScope = {
   userId: randomUUID(),
@@ -24,7 +26,9 @@ const scope: AccessScope = {
   bypass: false,
 };
 
-function setup(options: { key?: boolean; sealer?: boolean } = {}) {
+function setup(
+  options: { key?: boolean; sealer?: boolean; pending?: boolean; lost?: boolean } = {},
+) {
   const bot = BotEntity.createNew({
     organizationId: scope.organizationId as string,
     createdByUserId: scope.userId,
@@ -41,14 +45,27 @@ function setup(options: { key?: boolean; sealer?: boolean } = {}) {
   };
   const sealer = { isConfigured: () => options.sealer ?? true } as ProviderKeySealerPort;
   const stream: BotStreamPort = { publish: vi.fn(async () => undefined), subscribe: vi.fn() };
+  const card = BotApprovalEntity.request({
+    organizationId: bot.organizationId,
+    botId: bot.id,
+    turnId: randomUUID(),
+    tool: 'start_session',
+    input: { task: 'x' },
+    summary: 'Start Claude Code on build-02',
+  });
+  const approvals = {
+    findPending: vi.fn(async () => (options.pending ? Some(card) : None)),
+    saveTransition: vi.fn(async () => !options.lost),
+  } satisfies Partial<BotApprovalRepositoryPort>;
   const handler = new SendBotMessageCommandHandler(
     { bot: async () => bot } as unknown as BotLookupResolver,
     credentials as unknown as ModelProviderCredentialRepositoryPort,
     sealer,
     turns as unknown as BotTurnRepositoryPort,
     stream,
+    approvals as unknown as BotApprovalRepositoryPort,
   );
-  return { handler, turns, bot };
+  return { handler, turns, bot, approvals, card, stream };
 }
 
 const send = (
@@ -88,5 +105,26 @@ describe('SendBotMessageCommandHandler', () => {
     const { handler, turns, bot } = setup({ sealer: false });
     await expect(send(handler, bot.id)).rejects.toMatchObject({ code: 'BOTS_011' });
     expect(turns.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('expires the card the bot is waiting on: nobody decided, and an open chat is told', async () => {
+    const { handler, bot, approvals, card, stream } = setup({ pending: true });
+    await send(handler, bot.id);
+    expect(card).toMatchObject({ status: 'expired', decidedByUserId: null });
+    expect(approvals.saveTransition).toHaveBeenCalledWith(card);
+    expect(stream.publish).toHaveBeenCalledWith(bot.id, {
+      type: 'approval',
+      approvalId: card.id,
+      status: 'expired',
+    });
+  });
+
+  it('announces nothing when a decision moved the card first', async () => {
+    const { handler, bot, stream } = setup({ pending: true, lost: true });
+    await send(handler, bot.id);
+    expect(stream.publish).not.toHaveBeenCalledWith(
+      bot.id,
+      expect.objectContaining({ type: 'approval' }),
+    );
   });
 });

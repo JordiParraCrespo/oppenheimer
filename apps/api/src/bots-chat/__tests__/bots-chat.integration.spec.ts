@@ -26,12 +26,16 @@ import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-k
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
+import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
+import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
+import { BotApprovalRepository } from '../database/bot-approval.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
+import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 
@@ -40,7 +44,9 @@ import { BotTurnEntity } from '../domain/bot-turn.entity';
  * §2–3): one running turn per bot and the next staged when it ends, a send
  * racing the end of a turn, the failure a turn's column holds, the stored
  * conversation and history, Stop's conditional writes, the cascade from the
- * bot, and a turn's context read in its own workspace only. The schema is the
+ * bot, and a turn's context read in its own workspace only; Needs input
+ * cards: one waiting per bot, decided once however many decide at once, the
+ * event that opens a decision's turn, and the cascade. The schema is the
  * migrations'.
  */
 describe('bots chat (integration)', () => {
@@ -52,6 +58,7 @@ describe('bots chat (integration)', () => {
   let credentials: ModelProviderCredentialRepository;
   let turns: BotTurnRepository;
   let messages: BotMessageRepository;
+  let approvals: BotApprovalRepository;
   let organizationId: string;
   let userId: string;
 
@@ -89,6 +96,7 @@ describe('bots chat (integration)', () => {
         ModelProviderCredentialOrmEntity,
         BotTurnOrmEntity,
         BotMessageOrmEntity,
+        BotApprovalOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -126,6 +134,10 @@ describe('bots chat (integration)', () => {
       dataSource.getRepository(BotMessageOrmEntity),
       dataSource,
       new BotMessageMapper(),
+    );
+    approvals = new BotApprovalRepository(
+      dataSource.getRepository(BotApprovalOrmEntity),
+      new BotApprovalMapper(),
     );
   }, 180000);
 
@@ -336,7 +348,10 @@ describe('bots chat (integration)', () => {
       'What is staging?',
       'Staging is devbox.',
     ]);
-    expect(await messages.findPrompt(organizationId, second.turn.id)).toBe('And production?');
+    expect(await messages.findOpening(organizationId, second.turn.id)).toMatchObject({
+      role: 'user',
+      content: 'And production?',
+    });
     const [{ lastMessagePreview }] = await dataSource.query(
       `SELECT "lastMessagePreview" FROM bot WHERE id = $1`,
       [bot.id],
@@ -430,5 +445,110 @@ describe('bots chat (integration)', () => {
     expect(context.systemPrompt).not.toContain('their secret');
     expect(context.systemPrompt).toContain("The person's hosts could not be read just now");
     expect(context.tools).toEqual([]);
+  });
+  async function asked(bot: BotEntity, summary = 'Start Claude Code on build-02') {
+    const { turn, message } = sent(bot, 'Start it');
+    await turns.enqueue(turn, message, null);
+    return BotApprovalEntity.request({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      tool: 'start_session',
+      input: { task: 'Fix it', project_id: randomUUID(), nested: { b: 1, a: [1, 2] } },
+      summary,
+    });
+  }
+
+  it('keeps one card waiting per bot: a second is refused until the first is decided', async () => {
+    const bot = await create('Asker');
+    const first = await asked(bot, 'First');
+    expect(await approvals.insertPending(first)).toBe('inserted');
+    expect(await approvals.insertPending(await asked(bot, 'Second'))).toBe('pending_exists');
+    // Another bot asks on its own.
+    expect(await approvals.insertPending(await asked(await create('Other')))).toBe('inserted');
+
+    const stored = (await approvals.findPending(organizationId, bot.id)).unwrap();
+    expect(stored).toMatchObject({ summary: 'First', input: first.input });
+    stored.deny(userId, new Date(), 'no');
+    expect(await approvals.saveTransition(stored)).toBe(true);
+    expect((await approvals.findPending(organizationId, bot.id)).isNone()).toBe(true);
+    expect(await approvals.insertPending(await asked(bot, 'Third'))).toBe('inserted');
+    const listed = await approvals.findForBot(scope(), bot.id, undefined, 50);
+    expect(listed.map((approval) => approval.status)).toEqual(['pending', 'denied']);
+    expect(await approvals.findForBot(scope(), bot.id, 'denied', 50)).toHaveLength(1);
+    // Another workspace sees none of them.
+    expect(
+      await approvals.findForBot(scopeOf(await insertOrganization()), bot.id, undefined, 50),
+    ).toEqual([]);
+  });
+
+  it('lets one decision win however many land at once: the rest lose and change nothing', async () => {
+    const bot = await create('Racer');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const copies = await Promise.all(
+      Array.from({ length: 6 }, () => approvals.findOne(scope(), bot.id, card.id)),
+    );
+    const decided = copies.map((copy, index) => {
+      const approval = copy.unwrap();
+      if (index % 3 === 0) approval.approve(userId, new Date());
+      else if (index % 3 === 1) approval.deny(userId, new Date(), 'no');
+      else approval.expire(new Date());
+      return approval;
+    });
+    const won = await Promise.all(decided.map((approval) => approvals.saveTransition(approval)));
+    expect(won.filter(Boolean)).toHaveLength(1);
+    const winner = decided[won.indexOf(true)];
+    const stored = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    expect(stored.status).toBe(winner.status);
+    // The winner's next write is conditioned on what it stored.
+    if (winner.status === 'approved') {
+      winner.recordResult('Started session s-1.', false);
+      expect(await approvals.saveTransition(winner)).toBe(true);
+    }
+  });
+
+  it('opens a decision’s turn with an event: read back as its opening, never the sidebar line', async () => {
+    const bot = await create('Reporter');
+    const { turn, message } = sent(bot, 'Before');
+    await turns.enqueue(turn, message, null);
+    const next = BotTurnEntity.queue({
+      organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+    });
+    const event = BotMessageEntity.createNew({
+      organizationId,
+      botId: bot.id,
+      turnId: next.id,
+      role: 'event',
+      content: 'Ana approved: Start Claude Code\nIt ran: Started session s-1.',
+      steps: [],
+      position: 0,
+    });
+    expect(await turns.enqueue(next, event, null)).toBe('waiting');
+    expect(await messages.findOpening(organizationId, next.id)).toMatchObject({
+      role: 'event',
+      content: event.content,
+    });
+    const [{ lastMessagePreview }] = await dataSource.query(
+      `SELECT "lastMessagePreview" FROM bot WHERE id = $1`,
+      [bot.id],
+    );
+    expect(lastMessagePreview).toBe('Before');
+  });
+
+  it('deletes a bot’s approvals with it', async () => {
+    const bot = await create('Gone');
+    await approvals.insertPending(await asked(bot));
+    await bots.delete(bot);
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM bot_approval WHERE "botId" = $1`,
+      [bot.id],
+    );
+    expect(count).toBe(0);
   });
 });

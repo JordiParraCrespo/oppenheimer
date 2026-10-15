@@ -2,13 +2,16 @@ import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { type CreateSessionDto, createSessionSchema } from '@oppenheimer/shared';
-import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
+import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
 import { FindProjectQuery } from '../../projects/queries/find-project/find-project.query';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
 import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
+import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
+import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
   type BotToolArea,
   type BotToolContext,
@@ -16,11 +19,15 @@ import {
   defineBotTool,
 } from './bot-tool.factory';
 
+/** How much of the task a Needs input card shows. */
+const TASK_IN_SUMMARY_MAX = 200;
+
 /**
  * Sessions, the writes (`25-bots.md` §4.2): start a coding agent on a host
  * with a task, or stop one. Both reach outside Oppenheimer (they run things
- * on the owner's machine), so under Approve for me they ask first. A bot's
- * session is the owner's, started in their scope, marked `bot`.
+ * on the owner's machine), so under Approve for me they ask first, and each
+ * says on the card what it will do, by name. A bot's session is the owner's,
+ * started in their scope, marked `bot`.
  */
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
@@ -68,6 +75,20 @@ export class BotSessionToolsFactory implements BotToolArea {
           .describe('Which coding agent; claude-code when omitted.'),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
       }),
+      summarize: async (input, context) => {
+        const project = input.project_id ? await this.project(context, input.project_id) : null;
+        const hostId = input.host_id ?? project?.defaultHostId ?? context.homeHostId;
+        const agent = input.agent ?? agentOf(project?.defaultAgent);
+        const host = hostId ? await this.hostName(context, hostId) : 'no host yet';
+        const checkout =
+          project && !input.folder ? pickRepository(project, input.repository) : null;
+        const where = input.folder
+          ? ` in ${input.folder}`
+          : checkout && 'fullName' in checkout
+            ? ` in ${checkout.fullName}`
+            : '';
+        return `Start ${CODING_AGENTS[agent].label} on ${host}${where}: ${clip(input.task)}`;
+      },
       run: async (input, context) => {
         const project = input.project_id ? await this.project(context, input.project_id) : null;
         if (!input.folder && !project) {
@@ -77,10 +98,15 @@ export class BotSessionToolsFactory implements BotToolArea {
         if (!hostId) {
           return 'No host given, and neither the project nor you have a default one. Ask which host to use (list_hosts).';
         }
-        const checkout = input.folder
+        const picked = input.folder
           ? null
           : pickRepository(project as ProjectEntity, input.repository);
-        if (checkout && 'reason' in checkout) return checkout.reason;
+        if (picked && 'reason' in picked) return picked.reason;
+        const checkout = picked && {
+          installationId: picked.installationId,
+          githubRepoId: picked.githubRepoId,
+          baseBranch: picked.baseBranch,
+        };
         const parsed = createSessionSchema.safeParse({
           hostId,
           agent: input.agent ?? project?.defaultAgent ?? 'claude-code',
@@ -122,6 +148,12 @@ export class BotSessionToolsFactory implements BotToolArea {
       input: z.object({
         session_id: z.uuid().describe('The session to stop (from list_sessions).'),
       }),
+      summarize: async (input, context) => {
+        const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+          new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
+        );
+        return `Stop the session "${session.name}" (${session.id})`;
+      },
       run: async (input, context) => {
         await this.commandBus.execute<StopSessionCommand, SessionCommandResult>(
           new StopSessionCommand({ scope: context.owner, sessionId: input.session_id }),
@@ -129,6 +161,16 @@ export class BotSessionToolsFactory implements BotToolArea {
         return `Asked session ${input.session_id} to stop. It stops once its host hears it; get_session shows when it has.`;
       },
     });
+  }
+
+  /** The host's name as the owner sees it; its id when they cannot read it. */
+  private async hostName(context: BotToolContext, hostId: string): Promise<string> {
+    const overview = await this.queryBus
+      .execute<FindHostQuery, { host: { name: string } }>(
+        new FindHostQuery({ scope: context.owner, hostId }),
+      )
+      .catch(() => null);
+    return overview?.host.name ?? `host ${hostId}`;
   }
 
   private project(context: BotToolContext, projectId: string): Promise<ProjectEntity> {
@@ -142,7 +184,9 @@ export class BotSessionToolsFactory implements BotToolArea {
 function pickRepository(
   project: ProjectEntity,
   name: string | undefined,
-): { installationId: string; githubRepoId: number; baseBranch: string } | { reason: string } {
+):
+  | { installationId: string; githubRepoId: number; baseBranch: string; fullName: string }
+  | { reason: string } {
   const repositories = project.repositories;
   const chosen = name
     ? repositories.find((repo) => repo.repositoryFullName.toLowerCase() === name.toLowerCase())
@@ -159,7 +203,19 @@ function pickRepository(
     installationId: chosen.installationId,
     githubRepoId: Number(chosen.githubRepoId),
     baseBranch: chosen.baseBranch,
+    fullName: chosen.repositoryFullName,
   };
+}
+
+/** A project's default agent when the catalog knows it; Claude Code otherwise. */
+function agentOf(id: string | null | undefined): CodingAgentId {
+  return CODING_AGENT_IDS.find((known) => known === id) ?? 'claude-code';
+}
+
+/** The task's start, on one line, cut for a card. */
+function clip(task: string): string {
+  const line = task.replace(/\s+/g, ' ').trim();
+  return line.length > TASK_IN_SUMMARY_MAX ? `${line.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : line;
 }
 
 /** The same call in the same turn starts one session, however often the model repeats it. */

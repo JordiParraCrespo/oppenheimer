@@ -277,10 +277,14 @@ export const BOT_ACTIVE_TURN_STATUSES = [
 ] as const satisfies readonly BotTurnStatus[];
 
 /**
- * What the chat draws (§3): your message, the bot's text, and one activity
- * line per run of tool calls.
+ * What the chat draws (§3): your message, the bot's text, one activity line
+ * per run of tool calls, and an `event`: something Oppenheimer tells the bot
+ * on the person's behalf (an approval decided, and what the approved call
+ * answered). An event opens the turn it starts, like a message of yours, but
+ * the chat draws it as a small line, not as a message from you, and the bot
+ * reads it back as a note from Oppenheimer.
  */
-export const BOT_MESSAGE_ROLES = ['user', 'assistant', 'activity'] as const;
+export const BOT_MESSAGE_ROLES = ['user', 'assistant', 'activity', 'event'] as const;
 export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
@@ -312,15 +316,58 @@ export const findBotConversationSchema = z.object({
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
 /**
+ * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call of an
+ * asking tool, waiting for the owner. `pending` until they decide; `approved`
+ * once the call ran on their yes, `failed` when it ran and failed; `denied`;
+ * `expired` when they wrote to the bot instead of answering.
+ */
+export const BOT_APPROVAL_STATUSES = [
+  'pending',
+  'approved',
+  'denied',
+  'expired',
+  'failed',
+] as const;
+export type BotApprovalStatus = (typeof BOT_APPROVAL_STATUSES)[number];
+
+export const BOT_APPROVAL_DECISIONS = ['approve', 'deny'] as const;
+export type BotApprovalDecision = (typeof BOT_APPROVAL_DECISIONS)[number];
+
+/** What the person may add to a decision: why they denied it, or what to do instead. */
+export const BOT_APPROVAL_NOTE_MAX = 1_000;
+
+/** `POST /bots/:id/approvals/:approvalId/decision`. */
+export const decideBotApprovalSchema = z.object({
+  decision: z.enum(BOT_APPROVAL_DECISIONS),
+  note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+});
+export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
+
+/** `GET /bots/:id/approvals`: newest first, every status unless one is named. */
+export const findBotApprovalsSchema = z.object({
+  status: z.enum(BOT_APPROVAL_STATUSES).optional(),
+});
+export type FindBotApprovalsDto = z.infer<typeof findBotApprovalsSchema>;
+
+/** The most approvals one read returns, newest first. */
+export const BOT_APPROVALS_PAGE_MAX = 50;
+
+/**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
- * turn writes it, and a nudge to read the conversation again when a message
- * lands or a turn changes. The stored messages are the record; this is how
+ * turn writes it, a nudge to read the conversation again when a message
+ * lands or a turn changes, and one to read the approvals when a card is
+ * raised or settled. The stored messages are the record; this is how
  * they arrive early.
  */
 export const botStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
   z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
   z.object({ type: z.literal('message'), turnId: z.string(), messageId: z.string() }),
+  z.object({
+    type: z.literal('approval'),
+    approvalId: z.string(),
+    status: z.enum(BOT_APPROVAL_STATUSES),
+  }),
 ]);
 export type BotStreamEvent = z.infer<typeof botStreamEventSchema>;
 

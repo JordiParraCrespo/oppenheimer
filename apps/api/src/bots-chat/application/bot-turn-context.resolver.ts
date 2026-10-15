@@ -26,6 +26,7 @@ import {
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
@@ -69,6 +70,7 @@ export class BotTurnContextResolver {
     private readonly owners: BotOwnerScopeResolver,
     private readonly queryBus: QueryBus,
     private readonly toolbox: BotToolboxFactory,
+    private readonly approvals: BotApprovalRequestFactory,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -99,6 +101,7 @@ export class BotTurnContextResolver {
           homeHostId: bot.homeHostId,
           timeZone: turn.timeZone ?? 'UTC',
           permission: bot.permission,
+          approvals: this.approvals,
         })
       : [];
     const documentText = (name: string) =>

@@ -31,6 +31,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  approvals: { request: vi.fn() },
 };
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';

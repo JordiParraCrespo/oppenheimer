@@ -81,4 +81,16 @@ export const BotErrors = {
     message: 'Turn not found',
     httpStatus: 404,
   },
+  /** Also an approval of another bot, or in another workspace. */
+  APPROVAL_NOT_FOUND: {
+    code: 'BOTS_015',
+    message: 'Approval not found',
+    httpStatus: 404,
+  },
+  /** It was approved, denied, or expired by a new message, before this decision arrived. */
+  APPROVAL_DECIDED: {
+    code: 'BOTS_016',
+    message: 'The approval was already decided',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

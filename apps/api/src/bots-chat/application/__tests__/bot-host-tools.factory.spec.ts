@@ -22,6 +22,7 @@ const context: BotToolContext = {
   homeHostId: '11111111-1111-4111-8111-111111111111',
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  approvals: { request: vi.fn() },
 };
 
 function setup(answer: (query: unknown) => unknown) {

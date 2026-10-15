@@ -4,7 +4,9 @@ import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
 import type { BotPermission } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { askedForApproval, waitingForApproval } from '../domain/bot-approval.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
+import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
 
 /** What every tool of a turn acts with: the owner's scope, the bot, the turn, the sender's zone. */
 export interface BotToolContext {
@@ -22,6 +24,14 @@ export interface BotToolContext {
    * `full` runs everything.
    */
   permission: BotPermission;
+  /** Where an asking tool's call goes under Approve for me: a Needs input card. */
+  approvals: BotApprovalRequesterPort;
+  /**
+   * The one call the owner approved, when this context carries out an
+   * approval: that tool, with exactly that input, runs without asking again.
+   * Any other call made with the context still asks.
+   */
+  approved?: { tool: string; input: Record<string, unknown> };
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -38,10 +48,16 @@ export interface BotToolSpec<Input extends z.ZodType> {
   /**
    * The tool reaches outside Oppenheimer (it starts or stops work on a host,
    * posts to GitHub, creates a bot): under Approve for me it asks the owner
-   * first. Until the Needs input card exists, asking means not running, and
-   * telling the model so.
+   * first. Its validated call becomes a Needs input card, the model is told
+   * to end its turn, and the call runs only when the owner approves it.
    */
   asks?: boolean;
+  /**
+   * What the card says the call will do, in words, from its input: "Start
+   * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
+   * Required with `asks`; a throw falls back to the tool and its input.
+   */
+  summarize?(input: z.output<Input>, context: BotToolContext): Promise<string> | string;
   /** Answers labelled text, ids inline; a throw becomes an error result the model reads. */
   run(input: z.output<Input>, context: BotToolContext, signal: AbortSignal): Promise<string>;
 }
@@ -76,12 +92,14 @@ export function defineBotTool<Input extends z.ZodType>(
       description: spec.description,
       inputSchema,
       run: async (input, { signal }) => {
-        if (spec.asks && context.permission !== 'full') return { content: NEEDS_APPROVAL };
         const parsed = spec.input.safeParse(input ?? {});
         if (!parsed.success) {
           return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
         }
         try {
+          if (mustAsk(spec, context, parsed.data)) {
+            return { content: await askOwner(spec, context, parsed.data) };
+          }
           return { content: fitToolOutput(await spec.run(parsed.data, context, signal)) };
         } catch (error) {
           return { content: describeToolFailure(error), isError: true };
@@ -91,9 +109,74 @@ export function defineBotTool<Input extends z.ZodType>(
   };
 }
 
-/** What an asking tool answers while its bot is on Approve for me and the card does not exist yet. */
-export const NEEDS_APPROVAL =
-  "Not done: this needs the person's approval, and approving from the chat is not built yet. Tell them what you would do, with the exact details, so they can do it themselves; or, if they want you to do such things without asking, they can switch your approval setting to Full access in the composer.";
+/**
+ * An asking tool asks under Approve for me, unless this context carries out
+ * the owner's yes to this very call: the same tool, the same input.
+ */
+function mustAsk<Input extends z.ZodType>(
+  spec: BotToolSpec<Input>,
+  context: BotToolContext,
+  input: unknown,
+): boolean {
+  if (!spec.asks || context.permission === 'full') return false;
+  const { approved } = context;
+  return !(approved?.tool === spec.name && canonicalJson(approved.input) === canonicalJson(input));
+}
+
+/** The call becomes a Needs input card, and the model is told what that means for its turn. */
+async function askOwner<Input extends z.ZodType>(
+  spec: BotToolSpec<Input>,
+  context: BotToolContext,
+  input: z.output<Input>,
+): Promise<string> {
+  const stored = asStoredInput(input);
+  const summary = await summaryOf(spec, context, input, stored);
+  const outcome = await context.approvals.request({
+    organizationId: context.organizationId,
+    botId: context.botId,
+    turnId: context.turnId,
+    tool: spec.name,
+    input: stored,
+    summary,
+  });
+  return outcome.status === 'requested'
+    ? askedForApproval(summary)
+    : waitingForApproval(outcome.summary);
+}
+
+async function summaryOf<Input extends z.ZodType>(
+  spec: BotToolSpec<Input>,
+  context: BotToolContext,
+  input: z.output<Input>,
+  stored: Record<string, unknown>,
+): Promise<string> {
+  try {
+    const summary = spec.summarize ? (await spec.summarize(input, context)).trim() : '';
+    if (summary) return summary;
+  } catch {
+    // The card still says what will run, in the tool's own terms.
+  }
+  return `${spec.name} ${JSON.stringify(stored)}`;
+}
+
+/** The validated input as it is stored and compared: plain JSON, no `undefined`. */
+function asStoredInput(input: unknown): Record<string, unknown> {
+  const json: unknown = JSON.parse(JSON.stringify(input ?? {}));
+  return json && typeof json === 'object' && !Array.isArray(json)
+    ? (json as Record<string, unknown>)
+    : { value: json };
+}
+
+/** JSON with every object's keys sorted: jsonb does not keep the order a call was written in. */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value ?? null, (_key, inner: unknown) =>
+    inner && typeof inner === 'object' && !Array.isArray(inner)
+      ? Object.fromEntries(
+          Object.entries(inner as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1)),
+        )
+      : inner,
+  );
+}
 
 function describeIssues(error: z.ZodError): string {
   return error.issues
