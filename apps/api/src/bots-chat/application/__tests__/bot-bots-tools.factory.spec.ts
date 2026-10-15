@@ -4,6 +4,7 @@ import { BOT_AVATAR_COLORS } from '@oppenheimer/shared';
 import { BotEntity } from '../../../bots/domain/bot.entity';
 import { FindBotQuery } from '../../../bots/queries/find-bot/find-bot.query';
 import { FindBotsQuery } from '../../../bots/queries/find-bots/find-bots.query';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotPeerToolsFactory } from '../bot-bots-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -40,6 +41,7 @@ function bot(id: string, name: string, description: string): BotEntity {
       model: null,
       effort: null,
       permission: 'auto',
+      budget: new BotTurnBudget(),
       learnAutomatically: true,
     },
   });

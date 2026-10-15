@@ -18,7 +18,7 @@ import type {
 import { FindAutomationQuery } from '../../automations/queries/find-automation/find-automation.query';
 import { FindAutomationRunsQuery } from '../../automations/queries/find-automation-runs/find-automation-runs.query';
 import { FindAutomationsQuery } from '../../automations/queries/find-automations/find-automations.query';
-import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
+import { cut, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
   type BotToolContext,
@@ -51,6 +51,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
   private listAutomations(): BotToolDefinition {
     return defineBotTool({
       name: 'list_automations',
+      scope: 'automations:read',
       description: `Lists the workspace's automations (a saved task a coding agent runs on a schedule, on a GitHub event, or by hand), each with its triggers, whether it is paused or running, and its last run. Filter by project; at most ${AUTOMATIONS_LIMIT_MAX} per call. Use get_automation for one automation's settings and prompt, and run_history for its runs.`,
       input: z.object({
         project_id: z
@@ -85,6 +86,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
   private getAutomation(): BotToolDefinition {
     return defineBotTool({
       name: 'get_automation',
+      scope: 'automations:read',
       description: `Reads one automation: its triggers and when each fires next, the host, agent, model and permission its runs use, the repositories it works in, its limits, its prompt, and a digest of its last ${RUN_HISTORY_DAYS} days of runs. Use run_history for the runs themselves.`,
       input: z.object({
         automation_id: z.uuid().describe('An automation id from list_automations.'),
@@ -119,6 +121,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
   private runHistory(): BotToolDefinition {
     return defineBotTool({
       name: 'run_history',
+      scope: 'automations:read',
       description: `Lists automation runs, newest first: each run's cause, status, when it fired, and the session it started. Filter by automation, project, status or window (24h, 7d, 30d); at most ${RUNS_LIMIT_MAX} per call. Runs that never became a session (skipped, expired) are left out unless asked for by status. A run's status is not its test results; read the session with get_session for what the agent reported.`,
       input: z.object({
         automation_id: z
@@ -245,8 +248,4 @@ function describeRun(run: RunReadModel, context: BotToolContext): string {
     parts.push(`agent exited ${run.turn.exitCode}`);
   }
   return `run ${run.id} of ${run.automationId} "${run.automationName}"${run.automationDeleted ? ' (deleted)' : ''} [${parts.join('; ')}]`;
-}
-
-function cut(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max)}… (cut)` : text;
 }

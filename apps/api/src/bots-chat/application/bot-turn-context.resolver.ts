@@ -27,6 +27,7 @@ import {
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
@@ -86,15 +87,19 @@ export class BotTurnContextResolver {
     ]);
     // An owner who can no longer act leaves the bot nothing to act through.
     const tools = owner
-      ? this.toolbox.tools({
-          owner,
-          organizationId: turn.organizationId,
-          botId: bot.id,
-          turnId: turn.id,
-          homeHostId: bot.homeHostId,
-          timeZone: turn.timeZone ?? 'UTC',
-          permission: bot.permission,
-        })
+      ? this.toolbox.tools(
+          {
+            owner,
+            organizationId: turn.organizationId,
+            botId: bot.id,
+            turnId: turn.id,
+            homeHostId: bot.homeHostId,
+            timeZone: turn.timeZone ?? 'UTC',
+            permission: bot.permission,
+            budget: new BotTurnBudget(),
+          },
+          turn.credentialScopes,
+        )
       : [];
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
@@ -114,7 +119,7 @@ export class BotTurnContextResolver {
         engineCapabilities: engineCapabilities(turn.provider),
         homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
         hosts,
-        tools: owner ? this.toolbox.catalog() : [],
+        tools: owner ? this.toolbox.catalog(turn.credentialScopes) : [],
       }),
       history: botHistory(earlier),
       message,

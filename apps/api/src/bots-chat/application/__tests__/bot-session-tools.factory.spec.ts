@@ -2,6 +2,7 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
 import { type BotToolContext, NEEDS_APPROVAL } from '../bot-tool.factory';
 
@@ -25,6 +26,7 @@ const context = (permission: BotToolContext['permission']): BotToolContext => ({
   homeHostId: HOME,
   timeZone: 'UTC',
   permission,
+  budget: new BotTurnBudget(),
 });
 
 const project = {

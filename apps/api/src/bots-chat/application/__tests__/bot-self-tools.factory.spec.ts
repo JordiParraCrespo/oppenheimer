@@ -14,6 +14,7 @@ import { FindBotDocumentQuery } from '../../../bots/queries/find-bot-document/fi
 import { FindBotDocumentsQuery } from '../../../bots/queries/find-bot-documents/find-bot-documents.query';
 import { FindBotMemoryQuery } from '../../../bots/queries/find-bot-memory/find-bot-memory.query';
 import { FindBotMemoryFactQuery } from '../../../bots/queries/find-bot-memory-fact/find-bot-memory-fact.query';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotSelfToolsFactory } from '../bot-self-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -53,6 +54,7 @@ function bot(props: { name?: string; learnAutomatically?: boolean } = {}): BotEn
       model: null,
       effort: null,
       permission: 'auto',
+      budget: new BotTurnBudget(),
       learnAutomatically: props.learnAutomatically ?? true,
     },
   });

@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { FindHostsQuery } from '../../../hosts/queries/find-hosts/find-hosts.query';
 import { FindSessionsQuery } from '../../../sessions/queries/find-sessions/find-sessions.query';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotHostToolsFactory } from '../bot-host-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -22,6 +23,7 @@ const context: BotToolContext = {
   homeHostId: '11111111-1111-4111-8111-111111111111',
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  budget: new BotTurnBudget(),
 };
 
 function setup(answer: (query: unknown) => unknown) {

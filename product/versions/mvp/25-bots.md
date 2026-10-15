@@ -135,7 +135,11 @@ owner's scope. The input is checked before anything runs; the answer is
 labelled text with ids inline, times in the sender's zone, cut at 12,000
 characters with the cut said; a catalog error comes back as its code,
 title and detail. Text from outside (a page, a pull request, a session's
-result) comes back fenced as data. Until the Needs input card exists, a
+result) comes back fenced as data. A message sent through an API token or an
+OAuth grant rather than the console keeps that credential's scopes on its
+turn, and the turn is offered only the tools those scopes cover (each tool
+names the scope of the route it stands in for), so a token scoped to
+`bots:write` reaches no further through a bot than it could itself. Until the Needs input card exists, a
 tool whose default is *ask* runs only under **Full access**; under
 **Approve for me** it does not run and tells the model so, and the bot
 tells you what it would have done.

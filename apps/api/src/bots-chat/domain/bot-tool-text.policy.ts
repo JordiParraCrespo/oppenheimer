@@ -46,3 +46,20 @@ export function formatToolList(
     more && more.total > more.shown ? `\n(${more.shown} of ${more.total} shown. ${more.hint})` : '';
   return `${heading} (${lines.length}):\n${lines.map((line) => `- ${line}`).join('\n')}${tail}`;
 }
+
+/** `text` cut to `max` characters, the cut said. */
+export function cut(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max)}… (cut)` : text;
+}
+
+/**
+ * Text from outside (a web page, a pull request, a session's output) fenced
+ * in `<tag>…</tag>`, so the prompt's rule that fenced text is data holds.
+ * Every opening or closing spelling of the tag inside it (any case, any
+ * spacing, `</tag >`, `< /tag>`) is neutralised, so the text cannot close
+ * the fence early and write outside it.
+ */
+export function fenceUntrusted(tag: string, text: string): string {
+  const spelling = new RegExp(`<(\\s*/?\\s*${tag})`, 'gi');
+  return `<${tag}>\n${text.replace(spelling, '&lt;$1')}\n</${tag}>`;
+}

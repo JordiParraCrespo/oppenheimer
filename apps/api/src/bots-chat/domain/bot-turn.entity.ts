@@ -5,7 +5,12 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import { BOT_TURN_STATUSES, type BotProvider, type BotTurnStatus } from '@oppenheimer/shared';
+import {
+  BOT_TURN_STATUSES,
+  type BotProvider,
+  type BotTurnStatus,
+  type Scope,
+} from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 
 export interface BotTurnProps {
@@ -20,6 +25,12 @@ export interface BotTurnProps {
   effort: SessionEffort | null;
   /** The sender's IANA time zone when they sent it; null means UTC. */
   timeZone: string | null;
+  /**
+   * The scopes of the credential the message was sent with (an API token, an
+   * OAuth grant); null for a browser session. The turn's tools are those
+   * these scopes cover, so a token reaches no further through a bot.
+   */
+  credentialScopes: readonly Scope[] | null;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
   inputTokens: number;
@@ -67,12 +78,14 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     model: string;
     effort: SessionEffort | null;
     timeZone?: string | null;
+    credentialScopes?: readonly Scope[] | null;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
       props: {
         ...props,
         timeZone: props.timeZone ?? null,
+        credentialScopes: props.credentialScopes ?? null,
         status: 'queued',
         error: null,
         inputTokens: 0,
@@ -109,6 +122,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
   get timeZone(): string | null {
     return this.props.timeZone;
+  }
+  get credentialScopes(): readonly Scope[] | null {
+    return this.props.credentialScopes;
   }
   get effort(): SessionEffort | null {
     return this.props.effort;

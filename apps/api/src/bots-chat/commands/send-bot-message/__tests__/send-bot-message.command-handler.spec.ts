@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { BotLookupResolver } from '../../../../bots/application/bot-lookup.resolver';
 import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
@@ -55,7 +56,11 @@ const send = (
   handler: SendBotMessageCommandHandler,
   botId: string,
   timeZone: string | null = null,
-) => handler.execute(new SendBotMessageCommand({ scope, botId, content: 'Ship it', timeZone }));
+  credentialScopes: Scope[] | null = null,
+) =>
+  handler.execute(
+    new SendBotMessageCommand({ scope, botId, content: 'Ship it', timeZone, credentialScopes }),
+  );
 
 describe('SendBotMessageCommandHandler', () => {
   it('queues a turn on the bot’s provider and default model, with the message first', async () => {
@@ -76,6 +81,13 @@ describe('SendBotMessageCommandHandler', () => {
     await send(handler, bot.id, 'Europe/Madrid');
     const [turn] = vi.mocked(turns.enqueue).mock.calls[0];
     expect(turn.timeZone).toBe('Europe/Madrid');
+  });
+
+  it('keeps the scopes of the token it was sent with, so the turn reaches no further', async () => {
+    const { handler, turns, bot } = setup();
+    await send(handler, bot.id, null, ['bots:write']);
+    const [turn] = vi.mocked(turns.enqueue).mock.calls[0];
+    expect(turn.credentialScopes).toEqual(['bots:write']);
   });
 
   it('refuses with BOTS_013 when the workspace has no key for the provider, queuing nothing', async () => {

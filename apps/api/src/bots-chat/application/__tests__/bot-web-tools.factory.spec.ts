@@ -1,4 +1,5 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { WebPagePort, WebPageResult } from '../../infrastructure/web-page.port';
 import type { BotToolContext } from '../bot-tool.factory';
 import { BotWebToolsFactory, WEB_FETCHES_PER_TURN } from '../bot-web-tools.factory';
@@ -16,6 +17,7 @@ const context = (): BotToolContext => ({
   homeHostId: null,
   timeZone: 'UTC',
   permission: 'auto',
+  budget: new BotTurnBudget(),
 });
 
 function setup(result: WebPageResult) {

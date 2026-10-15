@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
+import { expandScopes, type Scope } from '@oppenheimer/shared';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
@@ -33,17 +34,24 @@ export class BotToolboxFactory {
     this.areas = [self, hosts, sessions, plan, github, automations, peers, web];
   }
 
-  /** The tools, as the prompt names them. */
-  catalog(): BotPromptTool[] {
-    return this.definitions().map(({ name, description }) => ({ name, description }));
+  /**
+   * The tools a turn is offered, as the prompt names them. `granted` is the
+   * scopes of the credential the turn was sent with: null for a browser
+   * session (every tool), or a token's scopes (only the tools they cover).
+   */
+  catalog(granted: readonly Scope[] | null): BotPromptTool[] {
+    return this.definitions(granted).map(({ name, description }) => ({ name, description }));
   }
 
-  /** The tools, bound to one turn. */
-  tools(context: BotToolContext): BotEngineTool[] {
-    return this.definitions().map((definition) => definition.bind(context));
+  /** The same tools, bound to one turn. */
+  tools(context: BotToolContext, granted: readonly Scope[] | null): BotEngineTool[] {
+    return this.definitions(granted).map((definition) => definition.bind(context));
   }
 
-  private definitions(): BotToolDefinition[] {
-    return this.areas.flatMap((area) => area.definitions());
+  private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {
+    const all = this.areas.flatMap((area) => area.definitions());
+    if (granted === null) return all;
+    const covered = expandScopes(granted);
+    return all.filter((definition) => covered.has(definition.scope));
   }
 }
