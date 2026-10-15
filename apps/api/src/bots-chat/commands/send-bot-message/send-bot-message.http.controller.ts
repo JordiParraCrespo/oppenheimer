@@ -67,7 +67,12 @@ export class SendBotMessageHttpController {
     @Body() body: SendBotMessageRequest,
   ): Promise<BotTurnResponseDto> {
     const turnId = await this.commandBus.execute<SendBotMessageCommand, string>(
-      new SendBotMessageCommand({ scope, botId, content: body.content }),
+      new SendBotMessageCommand({
+        scope,
+        botId,
+        content: body.content,
+        timeZone: body.timeZone ?? null,
+      }),
     );
     const turn = await this.queryBus.execute<FindBotTurnQuery, BotTurnEntity>(
       new FindBotTurnQuery(scope, botId, turnId),

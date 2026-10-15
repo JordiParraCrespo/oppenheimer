@@ -3,7 +3,9 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
 import { BotsModule } from '../bots/bots.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
+import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotMessageMapper } from './bot-message.mapper';
@@ -13,6 +15,7 @@ import {
   BOT_MESSAGE_REPOSITORY,
   BOT_STREAM,
   BOT_TURN_REPOSITORY,
+  OWNER_HOSTS,
 } from './bots-chat.di-tokens';
 import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-bot-turn.command-handler';
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
@@ -24,6 +27,7 @@ import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
+import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
 import { FindBotConversationHttpController } from './queries/find-bot-conversation/find-bot-conversation.http.controller';
 import { FindBotConversationQueryHandler } from './queries/find-bot-conversation/find-bot-conversation.query-handler';
@@ -65,6 +69,8 @@ const queryHandlers: Provider[] = [
     // The `bot-turns` queue the outbox stages each due turn on.
     QueueModule,
     BotsModule,
+    // A turn acts as the bot's owner, who must still be a member.
+    OrganizationsModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -73,11 +79,13 @@ const queryHandlers: Provider[] = [
     BotTurnMapper,
     BotMessageMapper,
     BotTurnContextResolver,
+    BotOwnerScopeResolver,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
+    { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.
     { provide: BOT_ENGINE, useFactory: () => createBotEngine() },
   ],

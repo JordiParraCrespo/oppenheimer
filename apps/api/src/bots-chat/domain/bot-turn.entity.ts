@@ -18,6 +18,8 @@ export interface BotTurnProps {
   provider: BotProvider;
   model: string;
   effort: SessionEffort | null;
+  /** The sender's IANA time zone when they sent it; null means UTC. */
+  timeZone: string | null;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
   inputTokens: number;
@@ -29,6 +31,12 @@ export interface BotTurnProps {
 
 /** The longest failure a turn keeps (`bot_turn.error`); a longer one is cut to fit. */
 export const BOT_TURN_ERROR_MAX = 1_000;
+
+/**
+ * How long one turn may run before it is stopped (`25-bots.md` §2). A chat
+ * turn answers; work that takes longer belongs to a session on a host.
+ */
+export const BOT_TURN_TIME_LIMIT_MS = 4 * 60_000;
 
 /** The statuses a turn ends in. */
 export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'cancelled', 'failed'];
@@ -58,11 +66,13 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     provider: BotProvider;
     model: string;
     effort: SessionEffort | null;
+    timeZone?: string | null;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
       props: {
         ...props,
+        timeZone: props.timeZone ?? null,
         status: 'queued',
         error: null,
         inputTokens: 0,
@@ -96,6 +106,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
   get model(): string {
     return this.props.model;
+  }
+  get timeZone(): string | null {
+    return this.props.timeZone;
   }
   get effort(): SessionEffort | null {
     return this.props.effort;
