@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import type { Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
