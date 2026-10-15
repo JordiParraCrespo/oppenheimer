@@ -53,7 +53,7 @@ const lines = [
   `GITHUB_APP_OAUTH_URL=${GITHUB_STUB}`,
   '# Seals the stub user token the install exchange hands over.',
   `GITHUB_USER_TOKEN_KEY=${randomBytes(32).toString('base64')}`,
-  '# Seals the workspaces\' model provider keys, so bots can be given one.',
+  "# Seals the workspaces' model provider keys, so bots can be given one.",
   `BOTS_PROVIDER_KEY=${randomBytes(32).toString('base64')}`,
   '',
   '# Enough for the hosts capability: a signing key and somewhere to point an',
