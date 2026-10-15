@@ -70,4 +70,15 @@ export const BotErrors = {
     message: 'No such model provider',
     httpStatus: 404,
   },
+  /** The bot's provider has no key in the workspace, so it cannot answer. */
+  PROVIDER_KEY_MISSING: {
+    code: 'BOTS_013',
+    message: "The bot's model provider has no key",
+    httpStatus: 409,
+  },
+  TURN_NOT_FOUND: {
+    code: 'BOTS_014',
+    message: 'Turn not found',
+    httpStatus: 404,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

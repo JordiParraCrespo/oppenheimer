@@ -33,6 +33,7 @@ import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-st
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { BotsModule } from './bots/bots.module';
+import { BotsChatModule } from './bots-chat/bots-chat.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
@@ -259,6 +260,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     CalendarModule,
     PullRequestsModule,
     BotsModule,
+    BotsChatModule,
     RelayModule,
     HealthModule,
     QueueModule,

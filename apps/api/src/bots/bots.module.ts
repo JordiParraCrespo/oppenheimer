@@ -12,6 +12,7 @@ import { BotMemoryFactMapper } from './bot-memory-fact.mapper';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_GROUP_REPOSITORY,
+  BOT_LOOKUP,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_REPOSITORY,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
@@ -171,6 +172,16 @@ const queryHandlers: Provider[] = [
     { provide: BOT_GROUP_REPOSITORY, useClass: BotGroupRepository },
     { provide: BOT_DOCUMENT_REPOSITORY, useClass: BotDocumentRepository },
     { provide: BOT_MEMORY_FACT_REPOSITORY, useClass: BotMemoryFactRepository },
+    { provide: BOT_LOOKUP, useExisting: BotLookupResolver },
+  ],
+  // What the chat (`BotsChatModule`) reads a bot, its parts and its key through.
+  exports: [
+    BOT_LOOKUP,
+    BOT_REPOSITORY,
+    BOT_DOCUMENT_REPOSITORY,
+    BOT_MEMORY_FACT_REPOSITORY,
+    MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
+    PROVIDER_KEY_SEALER,
   ],
 })
 export class BotsModule {}

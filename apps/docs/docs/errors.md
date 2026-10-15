@@ -628,6 +628,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_010` <a id="bots_010" />       | That model cannot run a bot                  | 422  |
 | `BOTS_011` <a id="bots_011" />       | Model providers are not configured on this server | 503 |
 | `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
+| `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
+| `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -652,6 +654,11 @@ turn. Forget one first.
 `BOTS_011` is a server with no `BOTS_PROVIDER_KEY`: no workspace can store a
 model provider's key, so no bot can answer. `BOTS_012` is a provider other than
 `anthropic`, `glm` or `openai` in `/model-providers/:provider`.
+
+`BOTS_013` is a message to a bot whose provider has no key in the workspace;
+store one in Settings → Model providers. A turn that finds the key gone when
+it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
+or not in the caller's workspace.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

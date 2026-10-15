@@ -21,6 +21,8 @@ import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revi
 import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
 import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
 import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
+import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
@@ -123,6 +125,8 @@ export default new DataSource({
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
     ModelProviderCredentialOrmEntity,
+    BotTurnOrmEntity,
+    BotMessageOrmEntity,
     ReviewSessionOrmEntity,
     UserRoleOrmEntity,
     RoleCatalogVersionOrmEntity,

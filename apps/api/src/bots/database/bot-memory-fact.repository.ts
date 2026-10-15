@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
 import { BotResource } from '../bots.resource';
 import type { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
@@ -27,9 +27,25 @@ export class BotMemoryFactRepository
   }
 
   async findAll(scope: AccessScope, botId: string): Promise<BotMemoryFactEntity[]> {
+    return this.newestFirst(this.scopedQuery(scope).andWhere('fact.botId = :botId', { botId }));
+  }
+
+  async findAllForTurn(organizationId: string, botId: string): Promise<BotMemoryFactEntity[]> {
+    return this.newestFirst(
+      this.repository
+        .createQueryBuilder('fact')
+        .where('fact.organizationId = :organizationId AND fact.botId = :botId', {
+          organizationId,
+          botId,
+        }),
+    );
+  }
+
+  private async newestFirst(
+    query: SelectQueryBuilder<BotMemoryFactOrmEntity>,
+  ): Promise<BotMemoryFactEntity[]> {
     // IDX_bot_memory_fact_bot, scanned backwards.
-    const records = await this.scopedQuery(scope)
-      .andWhere('fact.botId = :botId', { botId })
+    const records = await query
       .orderBy('fact.createdAt', 'DESC')
       .addOrderBy('fact.id', 'DESC')
       .getMany();

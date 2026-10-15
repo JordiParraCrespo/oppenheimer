@@ -42,6 +42,14 @@ export class ModelProviderCredentialRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findForRun(
+    organizationId: string,
+    provider: BotProvider,
+  ): Promise<Option<ModelProviderCredentialEntity>> {
+    const record = await this.repository.findOne({ where: { organizationId, provider } });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async put(credential: ModelProviderCredentialEntity): Promise<void> {
     // One row per workspace and provider: a second key replaces the first.
     await this.repository

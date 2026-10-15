@@ -10,6 +10,8 @@ export type BotDocumentWriteOutcome = 'saved' | 'conflict';
 export interface BotDocumentRepositoryPort {
   /** A bot's documents, soul first. */
   findAll(scope: AccessScope, botId: string): Promise<BotDocumentEntity[]>;
+  /** A bot's documents, soul first, for a turn the worker runs in the bot's workspace. */
+  findAllForTurn(organizationId: string, botId: string): Promise<BotDocumentEntity[]>;
   findOne(
     scope: AccessScope,
     botId: string,

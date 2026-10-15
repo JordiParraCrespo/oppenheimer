@@ -88,6 +88,9 @@ importers:
       '@oppenheimer/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@oppenheimer/backend-agents':
+        specifier: workspace:*
+        version: link:../../packages/backend/agents
       '@oppenheimer/backend-authz':
         specifier: workspace:*
         version: link:../../packages/backend/authz

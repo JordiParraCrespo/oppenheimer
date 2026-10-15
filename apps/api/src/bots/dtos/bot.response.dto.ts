@@ -76,7 +76,14 @@ export class BotResponseDto {
   @ApiProperty({
     type: String,
     format: 'date-time',
-    description: 'When it last changed; from the chat slice, its last message.',
+    description: 'Its last message, or when it last changed before it had one.',
   })
   lastActivityAt!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'The start of its last message, for the sidebar; null before the first.',
+  })
+  lastMessagePreview!: string | null;
 }

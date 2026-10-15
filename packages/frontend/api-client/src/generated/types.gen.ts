@@ -2948,9 +2948,13 @@ export type BotResponseDto = {
     createdAt: string;
     updatedAt: string;
     /**
-     * When it last changed; from the chat slice, its last message.
+     * Its last message, or when it last changed before it had one.
      */
     lastActivityAt: string;
+    /**
+     * The start of its last message, for the sidebar; null before the first.
+     */
+    lastMessagePreview: string | null;
 };
 
 export type CreateBotRequest = {
@@ -3072,6 +3076,75 @@ export type ModelProviderCredentialResponseDto = {
 
 export type PutModelProviderCredentialRequest = {
     apiKey: string;
+};
+
+export type BotToolStepResponseDto = {
+    callId: string;
+    /**
+     * The tool, as the bot knows it.
+     */
+    name: string;
+    /**
+     * The input the bot called it with.
+     */
+    input: {
+        [key: string]: unknown;
+    };
+    /**
+     * What it answered, cut short; null while it runs.
+     */
+    output: string | null;
+    isError: boolean;
+};
+
+export type BotMessageResponseDto = {
+    id: string;
+    turnId: string;
+    role: 'user' | 'assistant' | 'activity';
+    /**
+     * The text; empty for an activity line.
+     */
+    content: string;
+    steps: Array<BotToolStepResponseDto>;
+    createdAt: string;
+};
+
+export type BotTurnResponseDto = {
+    id: string;
+    status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
+    provider: 'anthropic' | 'glm' | 'openai';
+    /**
+     * The model it runs on, fixed when it was sent.
+     */
+    model: string;
+    /**
+     * Why it failed; null otherwise.
+     */
+    error: string | null;
+    inputTokens: number;
+    outputTokens: number;
+    /**
+     * Stop was pressed and the worker has not ended it yet.
+     */
+    cancelRequested: boolean;
+    createdAt: string;
+    startedAt: string | null;
+    endedAt: string | null;
+};
+
+export type BotConversationResponseDto = {
+    /**
+     * Oldest first.
+     */
+    messages: Array<BotMessageResponseDto>;
+    /**
+     * The turns those messages belong to, and any still queued or running; oldest first.
+     */
+    turns: Array<BotTurnResponseDto>;
+};
+
+export type SendBotMessageRequest = {
+    content: string;
 };
 
 export type LivenessResponseDto = {
@@ -11008,6 +11081,144 @@ export type PutModelProviderCredentialResponses = {
 };
 
 export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
+
+export type FindBotConversationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/conversation';
+};
+
+export type FindBotConversationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotConversationError = FindBotConversationErrors[keyof FindBotConversationErrors];
+
+export type FindBotConversationResponses = {
+    200: BotConversationResponseDto;
+};
+
+export type FindBotConversationResponse = FindBotConversationResponses[keyof FindBotConversationResponses];
+
+export type SendBotMessageData = {
+    body: SendBotMessageRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/messages';
+};
+
+export type SendBotMessageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_013 — The bot's model provider has no key
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type SendBotMessageError = SendBotMessageErrors[keyof SendBotMessageErrors];
+
+export type SendBotMessageResponses = {
+    202: BotTurnResponseDto;
+};
+
+export type SendBotMessageResponse = SendBotMessageResponses[keyof SendBotMessageResponses];
+
+export type CancelBotTurnData = {
+    body?: never;
+    path: {
+        id: string;
+        turnId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/turns/{turnId}/cancel';
+};
+
+export type CancelBotTurnErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_014 — Turn not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CancelBotTurnError = CancelBotTurnErrors[keyof CancelBotTurnErrors];
+
+export type CancelBotTurnResponses = {
+    202: BotTurnResponseDto;
+};
+
+export type CancelBotTurnResponse = CancelBotTurnResponses[keyof CancelBotTurnResponses];
+
+export type StreamBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/stream';
+};
+
+export type StreamBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type StreamBotError = StreamBotErrors[keyof StreamBotErrors];
+
+export type StreamBotResponses = {
+    /**
+     * The event stream
+     */
+    200: unknown;
+};
 
 export type CheckData = {
     body?: never;
