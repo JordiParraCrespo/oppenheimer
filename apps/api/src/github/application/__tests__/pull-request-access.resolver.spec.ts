@@ -54,6 +54,7 @@ const PULL = {
   changedFiles: 1,
   mergeable: true,
   mergeableState: 'clean',
+  fromFork: false,
 };
 
 it('keeps the refusal GitHub gave for a pull request it would not read, beside the ones it did', async () => {

@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 
 /**
- * A bot (`1791001400000-AddBots`). `UQ_bot_organization_id` is the target of
+ * A bot (`1791001500000-AddBots`). `UQ_bot_organization_id` is the target of
  * its documents' and memory's composite keys, which keep them in the bot's
  * workspace.
  */

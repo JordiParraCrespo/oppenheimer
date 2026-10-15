@@ -396,14 +396,20 @@ export function ThingRows() {
   );
 }
 `;
+  const reasoned = rows(false).replace(
+    '  const { data, error }',
+    '  // A refetch that fails is not drawn here: the rows are a snapshot.\n  const { data, error }',
+  );
   const { report } = check({
     'src/features/things/sections/silent-rows.tsx': rows(false),
     'src/features/things/sections/thing-rows.tsx': rows(true),
+    'src/features/things/sections/snapshot-rows.tsx': reasoned,
   });
   assert.match(
     report,
     /sections\/silent-rows\.tsx: reads through useSuspenseThings and draws no ErrorAlert/,
   );
   assert.doesNotMatch(report, /sections\/thing-rows\.tsx/);
+  assert.doesNotMatch(report, /sections\/snapshot-rows\.tsx/);
 });
 // oppenheimer:end web

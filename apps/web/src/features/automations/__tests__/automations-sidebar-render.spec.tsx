@@ -58,7 +58,7 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 const PROJECTS = [{ id: 'project-1', name: 'Web', isUnassigned: false }] as ProjectEntity[];
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useSuspenseAutomationsAndProjects: () => {
+  useSuspenseAutomationsByProject: () => {
     const automations = useSyncExternalStore(world.subscribe, () => world.get().automations);
     return { automations, projects: PROJECTS, error: null };
   },

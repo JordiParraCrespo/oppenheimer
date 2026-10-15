@@ -135,7 +135,8 @@ export class WorkSessionMapper
         folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
-        origin: record.origin === 'automation' ? 'automation' : 'person',
+        origin:
+          record.origin === 'automation' || record.origin === 'review' ? record.origin : 'person',
         // Loaded by the repository when it folds, under the row lock.
         latestTurn: null,
         ...this.foldOf(record),

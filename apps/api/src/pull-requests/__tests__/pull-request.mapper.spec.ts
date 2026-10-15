@@ -44,6 +44,7 @@ function snapshot(missing: Part[]): PullRequestSnapshot {
       changedFiles: 1,
       mergeable: true,
       mergeableState: 'clean',
+      fromFork: false,
     },
     files: missing.includes('files')
       ? { value: null, refusal: 'forbidden' }

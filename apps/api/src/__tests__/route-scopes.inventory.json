@@ -93,6 +93,7 @@
   "GET /v1/pulls/:installationId/:githubRepoId/:number/files": ["pulls:read"],
   "GET /v1/pulls/analytics": ["pulls:read"],
   "GET /v1/pulls/repositories": ["pulls:read"],
+  "GET /v1/pulls/review-sessions": ["pulls:read"],
   "GET /v1/ready": "session-only",
   "GET /v1/roles": ["roles:read"],
   "GET /v1/roles/:id": ["roles:read"],
@@ -178,6 +179,10 @@
   "POST /v1/projects": ["projects:write"],
   "POST /v1/pulls/:installationId/:githubRepoId/:number/comments": ["pulls:write"],
   "POST /v1/pulls/:installationId/:githubRepoId/:number/merge": ["pulls:write"],
+  "POST /v1/pulls/:installationId/:githubRepoId/:number/review-session": [
+    "pulls:read",
+    "sessions:write"
+  ],
   "POST /v1/pulls/:installationId/:githubRepoId/:number/reviews": ["pulls:write"],
   "POST /v1/roles": ["roles:write"],
   "POST /v1/sessions": ["sessions:write"],

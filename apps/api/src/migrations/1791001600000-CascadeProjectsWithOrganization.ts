@@ -17,8 +17,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Swapping the action needs the constraint dropped and added again; nothing
  * is deployed, so it is done in place (`database-design.md`).
  */
-export class CascadeProjectsWithOrganization1791001500000 implements MigrationInterface {
-  name = 'CascadeProjectsWithOrganization1791001500000';
+export class CascadeProjectsWithOrganization1791001600000 implements MigrationInterface {
+  name = 'CascadeProjectsWithOrganization1791001600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await this.replace(queryRunner, 'CASCADE');

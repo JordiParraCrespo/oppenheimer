@@ -46,8 +46,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * system row, and the role catalog's version bumped so cached abilities are
  * rebuilt (`rbac-roles.md`).
  */
-export class AddBots1791001400000 implements MigrationInterface {
-  name = 'AddBots1791001400000';
+export class AddBots1791001500000 implements MigrationInterface {
+  name = 'AddBots1791001500000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

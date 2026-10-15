@@ -1,7 +1,7 @@
 import { DialogDescription, DialogHeader, DialogTitle } from '@oppenheimer/design-system-web';
 import {
   type usePutSessionShare,
-  useSuspenseSessionAndShare,
+  useSuspenseSessionShare,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
@@ -30,7 +30,7 @@ export function ShareSessionPanes({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { session, share: current, hosts, error } = useSuspenseSessionAndShare(sessionId);
+  const { session, share: current, hosts, error } = useSuspenseSessionShare(sessionId);
   const host = hosts.find((row) => row.id === session.hostId)?.name ?? t('sessions.share.thisHost');
   const [view, setView] = useState<'access' | 'add' | 'reshare'>('access');
   const composing = current === null || view === 'reshare';

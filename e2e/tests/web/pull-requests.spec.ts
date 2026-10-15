@@ -90,6 +90,13 @@ test.describe('Pull requests', () => {
     await expect(page.getByText('Merge status')).toBeVisible();
     await expect(page.getByText('Can merge without conflicts')).toBeVisible();
     await expect(page.getByText('@ana-dev').first()).toBeVisible();
+    // The Chat tab is the review session; with no host online it cannot start one.
+    await page.getByRole('button', { name: 'Chat', exact: true }).click();
+    await expect(page).toHaveURL(/view=chat/);
+    await expect(page.getByRole('button', { name: 'Start review session' })).toBeDisabled({
+      timeout: 30_000,
+    });
+    await page.getByRole('button', { name: 'Description', exact: true }).click();
     // Two views only, and a link that still names the retired Briefing opens the description.
     await expect(page.getByRole('button', { name: 'Briefing' })).toHaveCount(0);
     await page.goto(`${page.url()}?view=briefing`);

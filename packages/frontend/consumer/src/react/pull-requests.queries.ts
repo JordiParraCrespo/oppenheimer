@@ -3,6 +3,7 @@
 import {
   PERSIST_META,
   useQuery,
+  useSuspenseQueries,
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
@@ -29,6 +30,7 @@ import type {
   PullRequestScope,
   ReviewInput,
   ReviewOutcome,
+  ReviewSession,
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
@@ -66,6 +68,7 @@ export const pullRequestsKeys = {
   activity: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
+  reviewSessions: () => [...pullRequestsKeys.all, 'review-sessions'] as const,
   analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
   analyticsRange: (range: PullRequestAnalyticsRange) =>
     [...pullRequestsKeys.analytics(), range] as const,
@@ -303,5 +306,57 @@ export function useMergePullRequest(
     mutationFn: ({ address, method }: MergePullRequestVariables) =>
       app.pullRequests.merge(address, method),
     ...withCacheOnSuccess(options, invalidate),
+  });
+}
+
+/**
+ * The caller's review sessions, newest first: the sidebar's For review list
+ * and each pull request's Chat tab. `select` reads less than the whole list.
+ */
+export function useReviewSessions<TData = ReviewSession[]>(
+  options?: Omit<UseQueryOptions<ReviewSession[], Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery<ReviewSession[], Error, TData>({ ...useReviewSessionsQuery(), ...options });
+}
+
+/**
+ * A pull request's Chat tab under a Suspense `QueryState`: the pull request
+ * and the caller's review sessions, fetched side by side. `error` is the first
+ * refetch that failed over data already drawn.
+ */
+export function useSuspensePullRequestAndReviewSessions(address: PullRequestAddress) {
+  const [pull, sessions] = useSuspenseQueries({
+    queries: [usePullRequestQuery(address), useReviewSessionsQuery()],
+  });
+  return { pull: pull.data, reviewSessions: sessions.data, error: pull.error ?? sessions.error };
+}
+
+function useReviewSessionsQuery() {
+  const app = useConsumerApp();
+  return {
+    queryKey: pullRequestsKeys.reviewSessions(),
+    queryFn: () => app.pullRequests.reviewSessions(),
+  };
+}
+
+export interface StartReviewSessionVariables {
+  address: PullRequestAddress;
+  hostId: string;
+  /** The attempt's `Idempotency-Key`, minted by the screen that holds the attempt. */
+  idempotencyKey: string;
+}
+
+/** Starts a review session for a pull request; the For review list is read again. */
+export function useStartReviewSession(
+  options?: UseMutationOptions<string, Error, StartReviewSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ address, hostId, idempotencyKey }: StartReviewSessionVariables) =>
+      app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
+    ...withCacheOnSuccess(options, () =>
+      queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() }),
+    ),
   });
 }

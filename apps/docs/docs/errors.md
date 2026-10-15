@@ -398,6 +398,10 @@ and keeps nothing of a pull request but which repositories the caller watches.
 | Code                               | Title                                | HTTP |
 | ---------------------------------- | ------------------------------------ | ---- |
 | `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
+| `PULLS_002` <a id="pulls_002" /> | A pull request from a fork cannot be reviewed in a session yet | 409  |
+
+`PULLS_002` answers a review session started on a pull request whose head
+branch is in a fork: a host fetches the base repository's branches only.
 
 ## Projects
 

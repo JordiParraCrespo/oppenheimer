@@ -1,5 +1,5 @@
-import { useSuspenseAutomationsAndProjects } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { useSuspenseAutomationsByProject } from '@oppenheimer/frontend-consumer/react';
+import { useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChoiceToken } from '../components/choice-token';
 import { useRunsFilters } from '../hooks/use-runs-filters';
@@ -12,13 +12,14 @@ const ALL = '__all__';
  * automation's own page has neither, so `RunsTable` renders this only on the
  * Runs tab. It reads the automations and the projects under the same
  * Suspense boundary as the runs (the sidebar has usually read both already).
- * A refetch that fails keeps the facets and says so beside them.
  */
 export function RunsFacets() {
   const { t } = useTranslation();
   const locale = useLocale();
   const filters = useRunsFilters({});
-  const { automations, projects: all, error } = useSuspenseAutomationsAndProjects();
+  // A refetch that fails is not drawn here: the facets keep the options they
+  // have, and the sidebar beside them says the same read failed.
+  const { automations, projects: all } = useSuspenseAutomationsByProject();
   const projects = all.filter((project) => !project.isUnassigned);
   const { state } = filters;
   const automationName = automations.find((row) => row.id === state.automation)?.name;
@@ -26,7 +27,6 @@ export function RunsFacets() {
 
   return (
     <>
-      <ErrorAlert error={error} fallback={t('automations.runs.loadFailed')} />
       <ChoiceToken
         label={automationName ?? t('automations.runs.allAutomations')}
         value={state.automation ?? ALL}

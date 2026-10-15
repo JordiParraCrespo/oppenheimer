@@ -1,9 +1,9 @@
-import { Button, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ProjectDialogShell } from '../components/project-dialog-shell';
-import { SavedProjectDialog } from '../sections/saved-project-dialog';
+import { SavedProject } from '../sections/saved-project';
 import { ProjectEditorDialog } from './project-editor';
 
 /**
@@ -54,7 +54,22 @@ export function ProjectDialog({
         )}
       </QueryState.Error>
       <QueryState.Data>
-        <SavedProjectDialog projectId={projectId} onClose={onClose} onSaved={onSaved} />
+        <SavedProject projectId={projectId}>
+          {(project) =>
+            project ? (
+              <ProjectEditorDialog
+                key={project.id}
+                project={project}
+                onClose={onClose}
+                onSaved={onSaved}
+              />
+            ) : (
+              <ProjectDialogShell onClose={onClose}>
+                <FieldDescription>{t('projects.dialog.gone')}</FieldDescription>
+              </ProjectDialogShell>
+            )
+          }
+        </SavedProject>
       </QueryState.Data>
     </QueryState>
   );

@@ -43,6 +43,7 @@ import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-e
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { ReviewSessionOrmEntity } from '../pull-requests/database/review-session.orm-entity';
 import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-version.orm-entity';
@@ -120,6 +121,7 @@ export default new DataSource({
     BotDocumentOrmEntity,
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
+    ReviewSessionOrmEntity,
     UserRoleOrmEntity,
     RoleCatalogVersionOrmEntity,
     UserRoleVersionOrmEntity,

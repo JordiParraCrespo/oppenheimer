@@ -62,8 +62,8 @@ interface StubPull {
   closed_at: string | null;
   created_at: string;
   updated_at: string;
-  head: { ref: string; sha: string };
-  base: { ref: string };
+  head: { ref: string; sha: string; repo: { id: number } };
+  base: { ref: string; repo: { id: number } };
   requested_reviewers: StubUser[];
   mergeable: boolean | null;
   mergeable_state: string;
@@ -217,8 +217,8 @@ function pullOf(repository: PullsRepository, seed: Seed, now: number): StubPull 
         ...(seed.reviews ?? []).map((r) => r.hoursAgo),
       ),
     ),
-    head: { ref: seed.head, sha: shaOf(repository.id, seed.number) },
-    base: { ref: repository.default_branch },
+    head: { ref: seed.head, sha: shaOf(repository.id, seed.number), repo: { id: repository.id } },
+    base: { ref: repository.default_branch, repo: { id: repository.id } },
     requested_reviewers: (seed.requested ?? []).map(person),
     mergeable: state !== 'dirty',
     mergeable_state: seed.draft ? 'draft' : state,

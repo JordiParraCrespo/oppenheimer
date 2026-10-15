@@ -2,6 +2,7 @@ import { RoutineTable, Skeleton } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { RunHistorySkeleton } from '../components/run-history-skeleton';
 import { AutomationsTable } from '../sections/automations-table';
 import { OverviewTop } from '../sections/overview-top';
 import { RunHistoryCard } from '../sections/run-history-card';
@@ -19,7 +20,7 @@ export function AutomationsOverviewScreen() {
       <OverviewTop />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-47.5 w-full" />
+          <RunHistorySkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.history.loadFailed')} />
         <QueryState.Data>

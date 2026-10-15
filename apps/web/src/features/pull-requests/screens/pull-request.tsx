@@ -2,16 +2,19 @@ import { type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { PaneBar, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PullRequestView, pullRequestSearch } from '../lib/pull-request-search';
 import { PullRequestChanges } from '../sections/pull-request-changes';
+import { PullRequestChat } from '../sections/pull-request-chat';
 import { PullRequestDescription } from '../sections/pull-request-description';
 import { PullRequestToolbar } from '../sections/pull-request-toolbar';
 import { ReviewPopover } from '../sections/review-popover';
 
 /**
- * A pull request: the bar and one of its two views, Description and Changes. The review's pending
+ * A pull request: the bar and one of its three views, Description, Changes
+ * and Chat, the review session's terminal, which the route hands in as
+ * `terminal` because the terminal is the sessions feature's. The review's pending
  * line comments are shared by two of them — written on Changes, posted from
  * Submit review — and the diff's layout is switched in the bar and drawn on
  * Changes, so both live here.
@@ -24,9 +27,11 @@ import { ReviewPopover } from '../sections/review-popover';
 export function PullRequestScreen({
   address,
   view,
+  terminal,
 }: {
   address: PullRequestAddress;
   view: PullRequestView;
+  terminal: (sessionId: string) => ReactNode;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -86,6 +91,21 @@ export function PullRequestScreen({
                   onDiscardPending={(index) =>
                     setPending((current) => current.filter((_, i) => i !== index))
                   }
+                />
+              </QueryState.Data>
+            </QueryState>
+          ),
+          chat: (
+            <QueryState key="chat">
+              <QueryState.Pending>
+                <Skeleton className="min-h-0 w-full flex-1" />
+              </QueryState.Pending>
+              <QueryState.Error fallback={t('pullRequests.reviewSession.loadFailed')} />
+              <QueryState.Data>
+                <PullRequestChat
+                  address={address}
+                  terminal={terminal}
+                  onClose={() => setView('description')}
                 />
               </QueryState.Data>
             </QueryState>

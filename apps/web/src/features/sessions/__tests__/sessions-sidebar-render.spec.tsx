@@ -70,7 +70,7 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // No project holds these rows, so they all sit under the one unfiled group.
-  useSuspenseSessionsProjectsHosts: () => {
+  useSuspenseSessionsSidebar: () => {
     const sessions = useSyncExternalStore(world.subscribe, () => world.get().sessions);
     return { sessions, projects: [], hosts: [], error: null };
   },
