@@ -214,34 +214,23 @@ func (c *Client) Ensure(ctx context.Context, repo domain.Repository, remote, ref
 	if whole(store) {
 		// The store may have been made under the repository's old name, or
 		// from another remote: what is fetched is what the caller names now.
-		// Written only when it differs: a deepen may be fetching into this
-		// store in the background, holding its config lock, and a second
-		// session on the same repository must not fail on a no-op write.
-		if remote != "" && c.originOf(store) != remote {
-			// A rewrite takes the config lock the deepen holds while it
-			// fetches, so it waits for the deepen to land first.
-			if landed := c.deepeningOf(store); landed != nil {
-				select {
-				case <-landed:
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-			}
-			if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "remote", "set-url", "origin", remote); err != nil {
-				return err
-			}
-		}
-		if landed := c.deepeningOf(store); landed != nil {
+		// Written only when it differs, and never beside a deepen, which
+		// holds the store's config lock while it fetches.
+		rewrite := remote != "" && c.originOf(store) != remote
+		if c.deepeningOf(store) != nil {
 			// A deepen is fetching every branch right now, from a clone made
 			// moments ago: a ref the clone brought is current, and a second
 			// fetch beside the deepen would contend for the same refs.
-			if ref == "" || c.hasRemoteBranch(ctx, store, ref) {
+			if !rewrite && (ref == "" || c.hasRemoteBranch(ctx, store, ref)) {
 				return nil
 			}
-			select {
-			case <-landed:
-			case <-ctx.Done():
-				return ctx.Err()
+			if err := c.awaitDeepen(ctx, store); err != nil {
+				return err
+			}
+		}
+		if rewrite {
+			if _, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "remote", "set-url", "origin", remote); err != nil {
+				return err
 			}
 		}
 		if err := c.fetch(ctx, repo.FullName, store, ref); err != nil {
@@ -365,6 +354,21 @@ func (c *Client) deepeningOf(store string) chan struct{} {
 	return c.deepening[store]
 }
 
+// awaitDeepen returns once no deepen of store is running, or ctx's error.
+// It may be called under the store's lock: a deepen takes none.
+func (c *Client) awaitDeepen(ctx context.Context, store string) error {
+	landed := c.deepeningOf(store)
+	if landed == nil {
+		return nil
+	}
+	select {
+	case <-landed:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 // hasRemoteBranch reports origin/<branch> in store.
 func (c *Client) hasRemoteBranch(ctx context.Context, store, branch string) bool {
 	_, err := c.run(ctx, command{timeout: quickTimeout, dir: store},
@@ -393,14 +397,7 @@ func (c *Client) PrepareRepository(ctx context.Context, repo domain.Repository, 
 	// The history a shallow clone left out is fetched under this context's
 	// identity too: the caller's token must outlive it. A create meanwhile
 	// takes the spare and goes on without it.
-	if landed := c.deepeningOf(store); landed != nil {
-		select {
-		case <-landed:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-	return nil
+	return c.awaitDeepen(ctx, store)
 }
 
 // noMaintenance keeps git from packing or gc-ing the store on the back of a
