@@ -122,7 +122,8 @@ but other shell commands — a test suite, a build — are denied unless an
 allow rule covers them. A routine that must run tests either takes
 `full` or relies on the repository's own `permissions.allow` rules.
 Mapping `auto` to Claude Code's classifier mode (`--permission-mode
-auto`) instead is a catalog change, left open below.
+auto`) instead is a catalog change, left open below. (Decided on
+2026-10-15: the catalog makes that mapping; see `product/README.md`.)
 
 ### 4. Which repositories may run headless
 

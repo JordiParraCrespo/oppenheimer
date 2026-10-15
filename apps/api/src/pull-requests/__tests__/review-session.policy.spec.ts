@@ -3,7 +3,7 @@ import { reviewSessionInput } from '../domain/review-session.policy';
 
 /**
  * The session a review asks for: Claude Code, the head branch of the pull
- * request's own repository, every edit asked for, and a first task that reads the
+ * request's own repository, Claude Code's auto mode, and a first task that reads the
  * diff against the base, opens short and changes nothing.
  */
 const PULL = {
@@ -26,7 +26,7 @@ describe('a review session', () => {
       name: 'Review #14',
       checkouts: [{ installationId: 'inst-1', githubRepoId: 42, baseBranch: 'fix/empty-state' }],
       cwdGithubRepoId: 42,
-      launch: { permission: 'ask' },
+      launch: { permission: 'auto' },
     });
   });
 
