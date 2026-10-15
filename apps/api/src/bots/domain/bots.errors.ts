@@ -81,4 +81,28 @@ export const BotErrors = {
     message: 'Turn not found',
     httpStatus: 404,
   },
+  /** ChatGPT runs on a sign-in to a subscription (`chatgpt/login`), never on a typed key. */
+  CHATGPT_SIGN_IN_ONLY: {
+    code: 'BOTS_015',
+    message: 'ChatGPT connects by signing in, not with a key',
+    httpStatus: 422,
+  },
+  /** The sign-in being polled ran past its time, or was started for another workspace. */
+  CHATGPT_LOGIN_EXPIRED: {
+    code: 'BOTS_016',
+    message: 'The ChatGPT sign-in expired',
+    httpStatus: 410,
+  },
+  /** OpenAI's sign-in server refused for rate, or too many calls to it were waiting. */
+  CHATGPT_RATE_LIMITED: {
+    code: 'BOTS_017',
+    message: "ChatGPT's sign-in is busy; try again shortly",
+    httpStatus: 429,
+  },
+  /** OpenAI's sign-in server did not answer, or answered something unusable. */
+  CHATGPT_UNREACHABLE: {
+    code: 'BOTS_018',
+    message: "ChatGPT's sign-in could not be reached",
+    httpStatus: 502,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { HostsModule } from '../hosts/hosts.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';
+import { ChatgptCredentialResolver } from './application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from './application/model-provider.resolver';
 import { BotMapper } from './bot.mapper';
 import { BotDocumentMapper } from './bot-document.mapper';
@@ -15,6 +16,8 @@ import {
   BOT_LOOKUP,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_REPOSITORY,
+  CHATGPT_AUTH,
+  CHATGPT_CREDENTIALS,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
 } from './bots.di-tokens';
@@ -35,10 +38,14 @@ import { DeleteBotMemoryFactCommandHandler } from './commands/delete-bot-memory-
 import { DeleteBotMemoryFactHttpController } from './commands/delete-bot-memory-fact/delete-bot-memory-fact.http.controller';
 import { DeleteModelProviderCredentialCommandHandler } from './commands/delete-model-provider-credential/delete-model-provider-credential.command-handler';
 import { DeleteModelProviderCredentialHttpController } from './commands/delete-model-provider-credential/delete-model-provider-credential.http.controller';
+import { PollChatgptLoginCommandHandler } from './commands/poll-chatgpt-login/poll-chatgpt-login.command-handler';
+import { PollChatgptLoginHttpController } from './commands/poll-chatgpt-login/poll-chatgpt-login.http.controller';
 import { PutModelProviderCredentialCommandHandler } from './commands/put-model-provider-credential/put-model-provider-credential.command-handler';
 import { PutModelProviderCredentialHttpController } from './commands/put-model-provider-credential/put-model-provider-credential.http.controller';
 import { RevertBotDocumentCommandHandler } from './commands/revert-bot-document/revert-bot-document.command-handler';
 import { RevertBotDocumentHttpController } from './commands/revert-bot-document/revert-bot-document.http.controller';
+import { StartChatgptLoginCommandHandler } from './commands/start-chatgpt-login/start-chatgpt-login.command-handler';
+import { StartChatgptLoginHttpController } from './commands/start-chatgpt-login/start-chatgpt-login.http.controller';
 import { UpdateBotCommandHandler } from './commands/update-bot/update-bot.command-handler';
 import { UpdateBotHttpController } from './commands/update-bot/update-bot.http.controller';
 import { UpdateBotDocumentCommandHandler } from './commands/update-bot-document/update-bot-document.command-handler';
@@ -59,6 +66,7 @@ import { BotMemoryFactRepository } from './database/bot-memory-fact.repository';
 import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from './database/model-provider-credential.repository';
 import { AesProviderKeySealerAdapter } from './infrastructure/aes-provider-key-sealer.adapter';
+import { OpenAiChatgptAuthAdapter } from './infrastructure/openai-chatgpt-auth.adapter';
 import { ModelProviderCredentialMapper } from './model-provider-credential.mapper';
 import { FindBotHttpController } from './queries/find-bot/find-bot.http.controller';
 import { FindBotQueryHandler } from './queries/find-bot/find-bot.query-handler';
@@ -100,6 +108,8 @@ const httpControllers = [
   FindModelProviderCredentialsHttpController,
   PutModelProviderCredentialHttpController,
   DeleteModelProviderCredentialHttpController,
+  StartChatgptLoginHttpController,
+  PollChatgptLoginHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -117,6 +127,8 @@ const commandHandlers: Provider[] = [
   ClearBotMemoryCommandHandler,
   PutModelProviderCredentialCommandHandler,
   DeleteModelProviderCredentialCommandHandler,
+  StartChatgptLoginCommandHandler,
+  PollChatgptLoginCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -163,7 +175,10 @@ const queryHandlers: Provider[] = [
     BotLookupResolver,
     ModelProviderCredentialMapper,
     ModelProviderResolver,
+    ChatgptCredentialResolver,
     { provide: PROVIDER_KEY_SEALER, useClass: AesProviderKeySealerAdapter },
+    { provide: CHATGPT_AUTH, useClass: OpenAiChatgptAuthAdapter },
+    { provide: CHATGPT_CREDENTIALS, useExisting: ChatgptCredentialResolver },
     {
       provide: MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
       useClass: ModelProviderCredentialRepository,
@@ -182,6 +197,7 @@ const queryHandlers: Provider[] = [
     BOT_MEMORY_FACT_REPOSITORY,
     MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
     PROVIDER_KEY_SEALER,
+    CHATGPT_CREDENTIALS,
   ],
 })
 export class BotsModule {}

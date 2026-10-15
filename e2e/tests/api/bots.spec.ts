@@ -222,6 +222,7 @@ test.describe('Bots', () => {
       { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null },
       { provider: 'glm', configured: false, keyHint: null, updatedAt: null },
       { provider: 'openai', configured: false, keyHint: null, updatedAt: null },
+      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null },
     ]);
 
     const secret = `zai-${randomUUID()}-wxyz`;
@@ -238,6 +239,17 @@ test.describe('Bots', () => {
     await expectProblemDocument(
       await api.put('/api/v1/model-providers/mistral', { data: { apiKey: secret } }),
       { status: 404, code: 'BOTS_012' },
+    );
+    // ChatGPT signs in instead; a sign-in the server never sealed is no sign-in.
+    await expectProblemDocument(
+      await api.put('/api/v1/model-providers/chatgpt', { data: { apiKey: secret } }),
+      { status: 422, code: 'BOTS_015' },
+    );
+    await expectProblemDocument(
+      await api.post('/api/v1/model-providers/chatgpt/login/poll', {
+        data: { flowId: 'not-a-sealed-sign-in' },
+      }),
+      { status: 410, code: 'BOTS_016' },
     );
 
     // A bot moves to the provider and runs its default model.

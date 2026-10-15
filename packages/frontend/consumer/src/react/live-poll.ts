@@ -31,6 +31,9 @@ import { useStreamCovers } from './workspace-stream-status';
  *   one's settled tick. A detail query is per session, so each gets its own.
  * - `pairing`: whether a pairing token has been spent and its machine is online.
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
+ * - `chatgptLogin`: whether the person approved a ChatGPT sign-in code on
+ *   OpenAI's page, which they do in another tab: it keeps going in the
+ *   background. Five seconds is the pace ChatGPT's device flow asks for.
  * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
  *   back while a session's terminal waits on it. A reader who left the tab is
  *   redialled by the terminal's own visibility wake, so it still pauses.
@@ -45,6 +48,7 @@ export const LIVE_POLL = {
   },
   pairing: { interval: 3000, inBackground: true },
   liveRun: { interval: 5000, inBackground: true },
+  chatgptLogin: { interval: 5000, inBackground: true, streamCanCover: false },
   hostPresence: { interval: 15_000, inBackground: false },
   /**
    * A pull request answer that is still filling its parts. The rows are drawn

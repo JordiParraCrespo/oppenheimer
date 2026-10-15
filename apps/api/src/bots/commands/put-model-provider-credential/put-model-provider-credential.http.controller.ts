@@ -48,6 +48,11 @@ export class PutModelProviderCredentialHttpController {
   })
   @ApiProblemResponse({ status: 404, description: 'No such model provider', code: 'BOTS_012' })
   @ApiProblemResponse({
+    status: 422,
+    description: 'ChatGPT connects by signing in, not with a key',
+    code: 'BOTS_015',
+  })
+  @ApiProblemResponse({
     status: 503,
     description: 'Model providers are not configured on this server',
     code: 'BOTS_011',

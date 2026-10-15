@@ -5,7 +5,8 @@ import {
   type BotTurnRequest,
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
-import { guardTurn, runTool } from '../turn';
+import { failed, guardTurn, runTool } from '../turn';
+import { CHATGPT_BACKEND_URL, chatgptModelSettings } from './chatgpt-backend';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -49,13 +50,29 @@ function inputItems(request: BotTurnRequest): AgentInputItem[] {
   ];
 }
 
-/** Provider `openai`, on the OpenAI Agents SDK over the Responses API. */
+/** The model settings of a turn: its effort, and on `chatgpt` what that backend requires. */
+function modelSettings(request: BotTurnRequest, accountId: string | null) {
+  return {
+    ...(request.effort ? { reasoning: { effort: request.effort } } : {}),
+    ...(accountId ? chatgptModelSettings(accountId) : {}),
+  };
+}
+
+/**
+ * Providers `openai` and `chatgpt`, on the OpenAI Agents SDK over the
+ * Responses API: OpenAI's API on a key, or ChatGPT's backend on a sign-in.
+ */
 export class OpenAiBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
+    if (request.provider === 'chatgpt' && !request.accountId) {
+      return guardTurn(request, () => [failed('A ChatGPT turn needs the account it acts for')]);
+    }
     return guardTurn(request, () => this.stream(request));
   }
 
   private async *stream(request: BotTurnRequest): AsyncGenerator<BotEngineEvent> {
+    const accountId = request.provider === 'chatgpt' ? (request.accountId ?? null) : null;
+    const baseUrl = request.baseUrl ?? (accountId ? CHATGPT_BACKEND_URL : undefined);
     // Loaded on the first turn, so importing the package starts nothing.
     const sdk = await import('@openai/agents');
     const failedCalls = new Set<string>();
@@ -63,7 +80,7 @@ export class OpenAiBotEngine extends BotEngine {
 
     const modelProvider = new sdk.OpenAIProvider({
       apiKey: request.apiKey,
-      ...(request.baseUrl ? { baseURL: request.baseUrl } : {}),
+      ...(baseUrl ? { baseURL: baseUrl } : {}),
     });
     // Tracing would export the turn to OpenAI's trace store under a key read
     // from the environment; a bot's turn is recorded by Oppenheimer.
@@ -89,7 +106,7 @@ export class OpenAiBotEngine extends BotEngine {
           },
         }),
       ),
-      modelSettings: request.effort ? { reasoning: { effort: request.effort } } : {},
+      modelSettings: modelSettings(request, accountId),
     });
     const run: OpenAiRun = await runner.run(agent, inputItems(request), {
       stream: true,

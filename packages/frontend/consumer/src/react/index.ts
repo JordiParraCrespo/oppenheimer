@@ -26,6 +26,7 @@ export {
   useSendBotMessage,
   useSuspenseBotConversation,
 } from './bot-chat.queries';
+export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
   type DeleteBotFactVariables,

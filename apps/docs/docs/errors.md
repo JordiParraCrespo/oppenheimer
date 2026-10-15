@@ -630,6 +630,10 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
 | `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
 | `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
+| `BOTS_015` <a id="bots_015" />       | ChatGPT connects by signing in, not with a key | 422 |
+| `BOTS_016` <a id="bots_016" />       | The ChatGPT sign-in expired                  | 410  |
+| `BOTS_017` <a id="bots_017" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
+| `BOTS_018` <a id="bots_018" />       | ChatGPT's sign-in could not be reached       | 502  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -653,12 +657,22 @@ turn. Forget one first.
 
 `BOTS_011` is a server with no `BOTS_PROVIDER_KEY`: no workspace can store a
 model provider's key, so no bot can answer. `BOTS_012` is a provider other than
-`anthropic`, `glm` or `openai` in `/model-providers/:provider`.
+`anthropic`, `glm`, `openai` or `chatgpt` in `/model-providers/:provider`.
 
 `BOTS_013` is a message to a bot whose provider has no key in the workspace;
 store one in Settings → Model providers. A turn that finds the key gone when
 it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
 or not in the caller's workspace.
+
+`BOTS_015` to `BOTS_018` are the ChatGPT provider, which runs on a sign-in to a
+ChatGPT subscription instead of a key. `BOTS_015` is `PUT
+/model-providers/chatgpt`: sign in with `POST /model-providers/chatgpt/login`
+instead. `BOTS_016` is a poll of a sign-in that is past its fifteen minutes,
+that ChatGPT refused, or that was started in another workspace; start again.
+`BOTS_017` is OpenAI's sign-in server refusing for rate (or too many calls to it
+waiting), with `Retry-After`. `BOTS_018` is that server not answering, or
+answering something unusable. A ChatGPT sign-in that ChatGPT later refuses to
+refresh is removed, and the bot's next turn fails with `BOTS_013`.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

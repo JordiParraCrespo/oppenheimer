@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { BOT_PROVIDER_CATALOG } from '@oppenheimer/shared';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';
@@ -16,7 +17,8 @@ import { PutModelProviderCredentialCommand } from './put-model-provider-credenti
 /**
  * Settings → Model providers: the workspace's key for one provider, sealed
  * before it is stored, replacing the one there. The key is not checked against
- * the provider here; a bot's first turn on it says whether it works.
+ * the provider here; a bot's first turn on it says whether it works. A
+ * provider that connects by signing in (ChatGPT) takes no key: `BOTS_015`.
  */
 @CommandHandler(PutModelProviderCredentialCommand)
 export class PutModelProviderCredentialCommandHandler
@@ -36,6 +38,9 @@ export class PutModelProviderCredentialCommandHandler
     apiKey,
   }: PutModelProviderCredentialCommand): Promise<AggregateID> {
     const known = this.providers.provider(provider);
+    if (BOT_PROVIDER_CATALOG[known].auth !== 'api_key') {
+      throw new AppError(BotErrors.CHATGPT_SIGN_IN_ONLY);
+    }
     if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
     this.providers.assertConfigured();
     const credential = ModelProviderCredentialEntity.createNew({

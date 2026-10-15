@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { BotEffort, BotTurnRequest } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import type { ChatgptCredentialsPort } from '../../bots/application/chatgpt-credentials.port';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_REPOSITORY,
+  CHATGPT_CREDENTIALS,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
 } from '../../bots/bots.di-tokens';
@@ -46,17 +48,14 @@ export class BotTurnContextResolver {
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
     private readonly credentials: ModelProviderCredentialRepositoryPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
+    @Inject(CHATGPT_CREDENTIALS) private readonly chatgpt: ChatgptCredentialsPort,
   ) {}
 
   async resolve(turn: BotTurnEntity, message: string, now: Date): Promise<BotTurnContext> {
     const found = await this.bots.findForTurn(turn.organizationId, turn.botId);
     if (found.isNone()) throw new AppError(BotErrors.NOT_FOUND);
     const bot = found.unwrap();
-    const stored = await this.credentials.findForRun(turn.organizationId, turn.provider);
-    if (stored.isNone() || !this.sealer.isConfigured()) {
-      throw new AppError(BotErrors.PROVIDER_KEY_MISSING);
-    }
-    const credential = stored.unwrap();
+    const key = await this.keyFor(turn, now);
     const [documents, facts, earlier] = await Promise.all([
       this.documents.findAllForTurn(turn.organizationId, bot.id),
       this.memory.findAllForTurn(turn.organizationId, bot.id),
@@ -66,7 +65,7 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     return {
       provider: turn.provider,
-      apiKey: this.sealer.open(credential.sealedKey),
+      ...key,
       model: turn.model,
       effort: ENGINE_EFFORTS.includes(turn.effort ?? '') ? (turn.effort as BotEffort) : null,
       systemPrompt: composeBotSystemPrompt({
@@ -81,5 +80,25 @@ export class BotTurnContextResolver {
       message,
       tools: [],
     };
+  }
+
+  /**
+   * The turn's credential, opened: the workspace's key for its provider, or
+   * for ChatGPT the sign-in's access token and account, refreshed when it is
+   * about to lapse.
+   */
+  private async keyFor(
+    turn: BotTurnEntity,
+    now: Date,
+  ): Promise<Pick<BotTurnContext, 'apiKey' | 'accountId'>> {
+    if (turn.provider === 'chatgpt') {
+      const { accessToken, accountId } = await this.chatgpt.accessFor(turn.organizationId, now);
+      return { apiKey: accessToken, accountId };
+    }
+    const stored = await this.credentials.findForRun(turn.organizationId, turn.provider);
+    if (stored.isNone() || !this.sealer.isConfigured()) {
+      throw new AppError(BotErrors.PROVIDER_KEY_MISSING);
+    }
+    return { apiKey: this.sealer.open(stored.unwrap().sealedKey) };
   }
 }

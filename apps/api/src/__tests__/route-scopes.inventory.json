@@ -173,6 +173,8 @@
   "POST /v1/invitations/:id/cancel": ["invitations:write"],
   "POST /v1/invitations/:id/reject": ["invitations:write"],
   "POST /v1/milestones": ["tasks:write"],
+  "POST /v1/model-providers/chatgpt/login": ["bots:write"],
+  "POST /v1/model-providers/chatgpt/login/poll": ["bots:write"],
   "POST /v1/organizations": ["organizations:write"],
   "POST /v1/organizations/:id/set-active": ["organizations:read"],
   "POST /v1/organizations/:orgId/invitations": ["invitations:write"],

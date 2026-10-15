@@ -25,8 +25,9 @@ class ProviderBotEngine extends BotEngine {
   }
 }
 
-/** The engine for every provider: `anthropic` and `glm` on Claude, `openai` on OpenAI. */
+/** The engine for every provider: `anthropic` and `glm` on Claude, `openai` and `chatgpt` on OpenAI. */
 export function createBotEngine(): BotEngine {
   const claude = new ClaudeBotEngine();
-  return new ProviderBotEngine({ anthropic: claude, glm: claude, openai: new OpenAiBotEngine() });
+  const openai = new OpenAiBotEngine();
+  return new ProviderBotEngine({ anthropic: claude, glm: claude, openai, chatgpt: openai });
 }

@@ -34,6 +34,37 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
       { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null },
       { provider: 'glm', configured: true, keyHint: '12ab', updatedAt: updatedAt.toISOString() },
       { provider: 'openai', configured: true, keyHint: '9f3a', updatedAt: updatedAt.toISOString() },
+      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null },
     ]);
+  });
+});
+
+describe('ModelProviderCredentialMapper, ChatGPT sign-ins', () => {
+  const mapper = new ModelProviderCredentialMapper();
+  const tokens = {
+    accessToken: 'access-placeholder',
+    refreshToken: 'refresh-placeholder',
+    expiresAt: new Date('2026-10-20T08:00:00.000Z'),
+    accountId: 'account-placeholder',
+  };
+
+  it('reads back the tokens it sealed, and refuses a secret that is not a sign-in', () => {
+    expect(mapper.chatgptTokensOf(mapper.toChatgptSecret(tokens))).toEqual(tokens);
+    expect(mapper.chatgptTokensOf('sk-a-plain-api-key')).toBeNull();
+    expect(mapper.chatgptTokensOf(JSON.stringify({ ...tokens, accountId: '' }))).toBeNull();
+  });
+
+  it('reads back a sign-in in progress, and refuses one missing its workspace', () => {
+    const flow = {
+      deviceAuthId: 'device-placeholder',
+      userCode: 'ABCD-1234',
+      organizationId: randomUUID(),
+      expiresAt: new Date('2026-10-15T12:15:00.000Z'),
+    };
+    expect(mapper.chatgptLoginFlowOf(mapper.toChatgptLoginFlow(flow))).toEqual(flow);
+    const { organizationId: _, ...withoutWorkspace } = flow;
+    expect(
+      mapper.chatgptLoginFlowOf(JSON.stringify({ ...withoutWorkspace, expiresAt: 1 })),
+    ).toBeNull();
   });
 });

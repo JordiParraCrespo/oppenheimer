@@ -26,7 +26,7 @@ import { BOT_TURN_ERROR_MAX } from '../domain/bot-turn.entity';
   'CHK_bot_turn_status',
   `"status" IN ('queued', 'running', 'completed', 'cancelled', 'failed')`,
 )
-@Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
+@Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`)
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
 export class BotTurnOrmEntity {
   @PrimaryGeneratedColumn('uuid')
