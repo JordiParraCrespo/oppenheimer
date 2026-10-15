@@ -40,6 +40,9 @@ export interface BotProps {
   permission: BotPermission;
   /** Whether what it decides to remember is saved without asking (slice 3). */
   learnAutomatically: boolean;
+  /** When its chat last had a message, and the start of it; written by the chat, never an edit. */
+  lastMessageAt?: Date | null;
+  lastMessagePreview?: string | null;
 }
 
 export interface CreateBotProps {
@@ -161,6 +164,14 @@ export class BotEntity extends AggregateRoot<BotProps> {
   }
   get learnAutomatically(): boolean {
     return this.props.learnAutomatically;
+  }
+
+  get lastMessageAt(): Date | null {
+    return this.props.lastMessageAt ?? null;
+  }
+
+  get lastMessagePreview(): string | null {
+    return this.props.lastMessagePreview ?? null;
   }
 
   /** Where the next write puts it among its group's bots, when it moved; null when it did not. */

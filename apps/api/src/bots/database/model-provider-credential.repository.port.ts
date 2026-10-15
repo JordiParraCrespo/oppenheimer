@@ -10,6 +10,11 @@ export interface ModelProviderCredentialRepositoryPort {
     scope: AccessScope,
     provider: BotProvider,
   ): Promise<Option<ModelProviderCredentialEntity>>;
+  /** The worker's read: the key a turn of a bot in `organizationId` runs on. */
+  findForRun(
+    organizationId: string,
+    provider: BotProvider,
+  ): Promise<Option<ModelProviderCredentialEntity>>;
   /** Stores it, replacing the workspace's key for that provider when there is one. */
   put(credential: ModelProviderCredentialEntity): Promise<void>;
   /** Whether there was a key to remove. */

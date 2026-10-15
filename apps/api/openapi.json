@@ -16351,6 +16351,297 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/bots/{id}/conversation": {
+      "get": {
+        "description": "Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running.",
+        "operationId": "findBotConversation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotConversationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A bot's chat",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/messages": {
+      "post": {
+        "description": "A turn, queued on the bot's provider and model as they are now. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
+        "operationId": "sendBotMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendBotMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotTurnResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_013 — The bot's model provider has no key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a bot a message",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/turns/{turnId}/cancel": {
+      "post": {
+        "description": "A queued turn is cancelled at once; a running one is asked to stop and ends within a second (`cancelRequested` until then). An ended turn is left as it is.",
+        "operationId": "cancelBotTurn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotTurnResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_014 — Turn not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop a bot's turn",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/stream": {
+      "get": {
+        "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change: `{ type: \"text\", turnId, text }` as a turn writes, `{ type: \"message\", turnId, messageId }` when a message is stored, `{ type: \"turn\", turnId, status }` when a turn moves. The stored conversation is the record; read it again on `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
+        "operationId": "streamBot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The event stream"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Follow a bot's chat as it happens",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -24465,7 +24756,12 @@
           "lastActivityAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When it last changed; from the chat slice, its last message."
+            "description": "Its last message, or when it last changed before it had one."
+          },
+          "lastMessagePreview": {
+            "type": "string",
+            "nullable": true,
+            "description": "The start of its last message, for the sidebar; null before the first."
           }
         },
         "required": [
@@ -24483,7 +24779,8 @@
           "learnAutomatically",
           "createdAt",
           "updatedAt",
-          "lastActivityAt"
+          "lastActivityAt",
+          "lastMessagePreview"
         ]
       },
       "CreateBotRequest": {
@@ -24818,6 +25115,157 @@
           }
         },
         "required": ["apiKey"]
+      },
+      "BotToolStepResponseDto": {
+        "type": "object",
+        "properties": {
+          "callId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "The tool, as the bot knows it."
+          },
+          "input": {
+            "type": "object",
+            "description": "The input the bot called it with."
+          },
+          "output": {
+            "type": "string",
+            "nullable": true,
+            "description": "What it answered, cut short; null while it runs."
+          },
+          "isError": {
+            "type": "boolean"
+          }
+        },
+        "required": ["callId", "name", "input", "output", "isError"]
+      },
+      "BotMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant", "activity"]
+          },
+          "content": {
+            "type": "string",
+            "description": "The text; empty for an activity line."
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotToolStepResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "turnId", "role", "content", "steps", "createdAt"]
+      },
+      "BotTurnResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "cancelled", "failed"]
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["anthropic", "glm", "openai"]
+          },
+          "model": {
+            "type": "string",
+            "description": "The model it runs on, fixed when it was sent."
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why it failed; null otherwise."
+          },
+          "inputTokens": {
+            "type": "number"
+          },
+          "outputTokens": {
+            "type": "number"
+          },
+          "cancelRequested": {
+            "type": "boolean",
+            "description": "Stop was pressed and the worker has not ended it yet."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "provider",
+          "model",
+          "error",
+          "inputTokens",
+          "outputTokens",
+          "cancelRequested",
+          "createdAt",
+          "startedAt",
+          "endedAt"
+        ]
+      },
+      "BotConversationResponseDto": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "description": "Oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotMessageResponseDto"
+            }
+          },
+          "turns": {
+            "description": "The turns those messages belong to, and any still queued or running; oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotTurnResponseDto"
+            }
+          }
+        },
+        "required": ["messages", "turns"]
+      },
+      "SendBotMessageRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16000
+          }
+        },
+        "required": ["content"]
       },
       "LivenessResponseDto": {
         "type": "object",

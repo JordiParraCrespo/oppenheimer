@@ -72,4 +72,6 @@ export const QUEUE_NAMES = {
   AUTOMATION_RETENTION: 'automation-retention',
   /** The daily purge of delivered outbox rows past their retention. */
   OUTBOX_RETENTION: 'outbox-retention',
+  /** Run one bot turn on its provider's engine, then start the bot's next queued one. */
+  BOT_TURNS: 'bot-turns',
 } as const;

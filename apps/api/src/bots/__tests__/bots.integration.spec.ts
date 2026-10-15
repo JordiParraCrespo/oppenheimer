@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
@@ -7,6 +8,8 @@ import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
 import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
+import { BotMessageMapper } from '../bot-message.mapper';
+import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotOrmEntity } from '../database/bot.orm-entity';
 import { BotRepository } from '../database/bot.repository';
 import { BotDocumentOrmEntity } from '../database/bot-document.orm-entity';
@@ -16,6 +19,10 @@ import { BotGroupOrmEntity } from '../database/bot-group.orm-entity';
 import { BotGroupRepository } from '../database/bot-group.repository';
 import { BotMemoryFactOrmEntity } from '../database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from '../database/bot-memory-fact.repository';
+import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
+import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
+import { BotTurnRepository } from '../database/bot-turn.repository';
 import { ModelProviderCredentialOrmEntity } from '../database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../database/model-provider-credential.repository';
 import { BotEntity } from '../domain/bot.entity';
@@ -23,6 +30,8 @@ import { userActor } from '../domain/bot.types';
 import { BotDocumentEntity } from '../domain/bot-document.entity';
 import { BotGroupEntity } from '../domain/bot-group.entity';
 import { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
+import { BotMessageEntity } from '../domain/bot-message.entity';
+import { BotTurnEntity } from '../domain/bot-turn.entity';
 import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 
@@ -41,6 +50,8 @@ describe('bots (integration)', () => {
   let documents: BotDocumentRepository;
   let memory: BotMemoryFactRepository;
   let credentials: ModelProviderCredentialRepository;
+  let turns: BotTurnRepository;
+  let messages: BotMessageRepository;
   let organizationId: string;
   let userId: string;
 
@@ -77,6 +88,9 @@ describe('bots (integration)', () => {
         BotDocumentRevisionOrmEntity,
         BotMemoryFactOrmEntity,
         ModelProviderCredentialOrmEntity,
+        BotTurnOrmEntity,
+        BotMessageOrmEntity,
+        OutboxMessageSchema,
       ],
       synchronize: false,
     });
@@ -103,6 +117,18 @@ describe('bots (integration)', () => {
       dataSource.getRepository(BotMemoryFactOrmEntity),
       dataSource,
       new BotMemoryFactMapper(),
+    );
+    const outbox = new OutboxService(dataSource);
+    turns = new BotTurnRepository(
+      dataSource.getRepository(BotTurnOrmEntity),
+      outbox,
+      new BotTurnMapper(),
+      new BotMessageMapper(),
+    );
+    messages = new BotMessageRepository(
+      dataSource.getRepository(BotMessageOrmEntity),
+      dataSource,
+      new BotMessageMapper(),
     );
     credentials = new ModelProviderCredentialRepository(
       dataSource.getRepository(ModelProviderCredentialOrmEntity),
@@ -484,5 +510,126 @@ describe('bots (integration)', () => {
     await expect(
       dataSource.query(`UPDATE model_provider_credential SET provider = 'mistral'`),
     ).rejects.toMatchObject({ constraint: 'CHK_model_provider_credential_provider' });
+  });
+
+  function sent(bot: BotEntity, content: string) {
+    const turn = BotTurnEntity.queue({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+    });
+    const message = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      role: 'user',
+      content,
+      steps: [],
+      position: 0,
+    });
+    return { turn, message };
+  }
+
+  async function stagedTurns(): Promise<string[]> {
+    const rows: { payload: { turnId: string } }[] = await dataSource.query(
+      `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' ORDER BY "createdAt", id`,
+    );
+    return rows.map((row) => row.payload.turnId);
+  }
+
+  it('runs one turn per bot: the first is staged, the next waits and is staged when it ends', async () => {
+    await dataSource.query(`DELETE FROM outbox_message`);
+    const bot = await create('Glm Bot');
+    const first = sent(bot, 'One');
+    const second = sent(bot, 'Two');
+    expect(await turns.enqueue(first.turn, first.message, null)).toBe('staged');
+    expect(await turns.enqueue(second.turn, second.message, null)).toBe('waiting');
+    expect(await stagedTurns()).toEqual([first.turn.id]);
+
+    const claimed = (await turns.findForRun(first.turn.id)).unwrap();
+    claimed.start(new Date());
+    expect(await turns.claim(claimed)).toBe('claimed');
+    // The second cannot start while the first runs, whatever claims it.
+    const early = (await turns.findForRun(second.turn.id)).unwrap();
+    early.start(new Date());
+    expect(await turns.claim(early)).toBe('busy');
+
+    claimed.end('completed', new Date(), { inputTokens: 5, outputTokens: 1 });
+    expect(await turns.finish(claimed, null)).toBe(true);
+    expect(await stagedTurns()).toEqual([first.turn.id, second.turn.id]);
+    // A second write of the same ending loses: it was conditioned on running.
+    const stale = BotTurnEntity.create({
+      id: claimed.id,
+      props: { ...claimed.getProps(), status: 'running' },
+    });
+    stale.end('failed', new Date());
+    expect(await turns.finish(stale, null)).toBe(false);
+  });
+
+  it('stores the chat, makes the last message the sidebar line, and reads back history before a turn', async () => {
+    const bot = await create('Glm Bot');
+    const first = sent(bot, 'What is staging?');
+    await turns.enqueue(first.turn, first.message, null);
+    await messages.insert(
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: first.turn.id,
+        role: 'assistant',
+        content: 'Staging is devbox.',
+        steps: [],
+        position: 1,
+      }),
+    );
+    const second = sent(bot, 'And production?');
+    await turns.enqueue(second.turn, second.message, null);
+
+    const conversation = await messages.findConversation(scope(), bot.id, 10);
+    expect(conversation.map((message) => message.content)).toEqual([
+      'What is staging?',
+      'Staging is devbox.',
+      'And production?',
+    ]);
+    const history = await messages.findHistory(organizationId, bot.id, second.turn.id, 40);
+    expect(history.map((message) => message.content)).toEqual([
+      'What is staging?',
+      'Staging is devbox.',
+    ]);
+    expect(await messages.findPrompt(organizationId, second.turn.id)).toBe('And production?');
+    const [{ lastMessagePreview }] = await dataSource.query(
+      `SELECT "lastMessagePreview" FROM bot WHERE id = $1`,
+      [bot.id],
+    );
+    expect(lastMessagePreview).toBe('And production?');
+    // Another workspace reads none of it.
+    const other = await insertOrganization();
+    expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
+  });
+
+  it('cancels a queued turn and a running one only through its conditional writes', async () => {
+    const bot = await create('Glm Bot');
+    const { turn, message } = sent(bot, 'Wait');
+    await turns.enqueue(turn, message, null);
+    const loaded = (await turns.findForRun(turn.id)).unwrap();
+    expect(await turns.requestCancel(loaded, new Date())).toBe(false);
+    loaded.start(new Date());
+    await turns.claim(loaded);
+    expect(await turns.requestCancel(loaded, new Date())).toBe(true);
+    expect(await turns.isCancelRequested(turn.id)).toBe(true);
+  });
+
+  it('deletes a bot with its turns and messages', async () => {
+    const bot = await create('Glm Bot');
+    const { turn, message } = sent(bot, 'Bye');
+    await turns.enqueue(turn, message, null);
+    await bots.delete(bot);
+    const [{ count }] = await dataSource.query(
+      `SELECT (SELECT count(*) FROM bot_turn WHERE "botId" = $1) + (SELECT count(*) FROM bot_message WHERE "botId" = $1) AS count`,
+      [bot.id],
+    );
+    expect(Number(count)).toBe(0);
   });
 });

@@ -260,3 +260,62 @@ export const botMemoryFactSchema = z.object({
   content: memoryFactContentSchema,
 });
 export type BotMemoryFactDto = z.infer<typeof botMemoryFactSchema>;
+
+/**
+ * A bot's turn (`product/versions/mvp/25-bots.md` §2): one message of yours
+ * and what the bot did with it. `queued` waits for the bot's turn before it;
+ * one turn per bot runs at a time.
+ */
+export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled', 'failed'] as const;
+export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
+
+/** A turn that has not ended: the chat shows it as working, and Stop applies to it. */
+export const BOT_ACTIVE_TURN_STATUSES = [
+  'queued',
+  'running',
+] as const satisfies readonly BotTurnStatus[];
+
+/**
+ * What the chat draws (§3): your message, the bot's text, and one activity
+ * line per run of tool calls.
+ */
+export const BOT_MESSAGE_ROLES = ['user', 'assistant', 'activity'] as const;
+export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
+
+/** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
+export const BOT_MESSAGE_MAX = 16_000;
+/** The most messages one conversation read returns, newest first. */
+export const BOT_CONVERSATION_PAGE_MAX = 200;
+export const BOT_CONVERSATION_PAGE_DEFAULT = 100;
+
+/** `POST /bots/:id/messages`: what you say to the bot. */
+export const sendBotMessageSchema = z.object({
+  content: z.string().trim().min(1).max(BOT_MESSAGE_MAX),
+});
+export type SendBotMessageDto = z.infer<typeof sendBotMessageSchema>;
+
+/** `GET /bots/:id/conversation`: the newest `limit` messages, oldest first. */
+export const findBotConversationSchema = z.object({
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(BOT_CONVERSATION_PAGE_MAX)
+    .default(BOT_CONVERSATION_PAGE_DEFAULT),
+});
+export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
+
+/**
+ * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
+ * turn writes it, and a nudge to read the conversation again when a message
+ * lands or a turn changes. The stored messages are the record; this is how
+ * they arrive early.
+ */
+export type BotStreamEvent =
+  | { type: 'turn'; turnId: string; status: BotTurnStatus }
+  | { type: 'text'; turnId: string; text: string }
+  | { type: 'message'; turnId: string; messageId: string };
+
+/** The SSE event names on a bot's stream. */
+export const BOT_STREAM_READY = 'ready';
+export const BOT_STREAM_EVENT = 'bot';

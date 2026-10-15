@@ -71,6 +71,14 @@ export class BotOrmEntity {
   @Column({ type: 'boolean', default: true })
   learnAutomatically!: boolean;
 
+  /** When its chat last had a message; null until the first. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  lastMessageAt!: Date | null;
+
+  /** The start of that message, for the sidebar's line. */
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  lastMessagePreview!: string | null;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

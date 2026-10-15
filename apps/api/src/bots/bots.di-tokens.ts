@@ -4,3 +4,8 @@ export const BOT_DOCUMENT_REPOSITORY = Symbol('BOT_DOCUMENT_REPOSITORY');
 export const BOT_MEMORY_FACT_REPOSITORY = Symbol('BOT_MEMORY_FACT_REPOSITORY');
 export const MODEL_PROVIDER_CREDENTIAL_REPOSITORY = Symbol('MODEL_PROVIDER_CREDENTIAL_REPOSITORY');
 export const PROVIDER_KEY_SEALER = Symbol('PROVIDER_KEY_SEALER');
+export const BOT_TURN_REPOSITORY = Symbol('BOT_TURN_REPOSITORY');
+export const BOT_MESSAGE_REPOSITORY = Symbol('BOT_MESSAGE_REPOSITORY');
+export const BOT_STREAM = Symbol('BOT_STREAM');
+/** The engines a turn runs on (`@oppenheimer/backend-agents`), bound once per process. */
+export const BOT_ENGINE = Symbol('BOT_ENGINE');

@@ -47,6 +47,8 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         effort: (record.effort ?? null) as SessionEffort | null,
         permission: record.permission as BotPermission,
         learnAutomatically: record.learnAutomatically,
+        lastMessageAt: record.lastMessageAt ?? null,
+        lastMessagePreview: record.lastMessagePreview ?? null,
       },
     });
   }
@@ -67,7 +69,8 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.learnAutomatically = entity.learnAutomatically;
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();
-    dto.lastActivityAt = entity.updatedAt.toISOString();
+    dto.lastActivityAt = (entity.lastMessageAt ?? entity.updatedAt).toISOString();
+    dto.lastMessagePreview = entity.lastMessagePreview;
     return dto;
   }
 }
