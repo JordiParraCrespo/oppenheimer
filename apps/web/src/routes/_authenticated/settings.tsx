@@ -1,5 +1,5 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
-import { Cpu, Eye, User } from '@oppenheimer/design-system-web/icons';
+import { Cpu, Eye, KeyRound, User } from '@oppenheimer/design-system-web/icons';
 import { SettingsSidebar } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { HostCount } from '@/features/hosts/sections/host-count';
@@ -32,7 +32,10 @@ function SettingsLayout() {
           },
           {
             labelKey: 'workspace',
-            items: [{ to: '/settings/hosts', icon: Cpu, labelKey: 'hosts' }],
+            items: [
+              { to: '/settings/hosts', icon: Cpu, labelKey: 'hosts' },
+              { to: '/settings/model-providers', icon: KeyRound, labelKey: 'modelProviders' },
+            ],
           },
         ]}
         // The rows with a number: a section of their own, so the list each

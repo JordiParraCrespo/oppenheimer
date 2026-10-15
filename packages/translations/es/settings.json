@@ -5,7 +5,8 @@
     "workspace": "Espacio de trabajo",
     "profile": "Perfil",
     "hosts": "Hosts",
-    "repositories": "Repositorios observados"
+    "repositories": "Repositorios observados",
+    "modelProviders": "Proveedores de modelos"
   },
   "profile": {
     "title": "Perfil",
@@ -98,5 +99,31 @@
   "repositories": {
     "title": "Repositorios observados",
     "description": "Las pull requests abiertas de estos repositorios aparecen en la pestaña Observando de la cola de PR, aunque nadie haya pedido tu revisión."
+  },
+  "modelProviders": {
+    "title": "Proveedores de modelos",
+    "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar.",
+    "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
+    "loadFailed": "No se pudieron cargar los proveedores de modelos.",
+    "keyEnding": "Clave que termina en {{hint}}",
+    "noKey": "Sin clave",
+    "add": "Añadir clave",
+    "replace": "Reemplazar",
+    "remove": "Quitar",
+    "removeLabel": "Quitar la clave de {{provider}}",
+    "removeFailed": "No se pudo quitar la clave.",
+    "providers": {
+      "anthropic": "Modelos Claude, a través de la API de Anthropic.",
+      "glm": "Modelos GLM, a través de z.ai.",
+      "openai": "Modelos GPT, a través de la API de OpenAI."
+    },
+    "dialog": {
+      "title": "Clave de {{provider}}",
+      "description": "Pega la clave de la API. Sustituye a la guardada y los bots de {{provider}} la usan desde su siguiente mensaje.",
+      "label": "Clave de la API",
+      "save": "Guardar clave",
+      "saving": "Guardando…",
+      "failed": "No se pudo guardar la clave."
+    }
   }
 }

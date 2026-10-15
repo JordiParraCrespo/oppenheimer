@@ -626,6 +626,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_008` <a id="bots_008" />       | Memory fact not found                        | 404  |
 | `BOTS_009` <a id="bots_009" />       | The bot remembers as much as it can          | 422  |
 | `BOTS_010` <a id="bots_010" />       | That model cannot run a bot                  | 422  |
+| `BOTS_011` <a id="bots_011" />       | Model providers are not configured on this server | 503 |
+| `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -644,8 +646,12 @@ current now. Reload and save again.
 `BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
 turn. Forget one first.
 
-`BOTS_010` is a model id Claude Code's catalog does not list. A bot runs Claude
-Code; leave `model` null for its default.
+`BOTS_010` is a model id the bot's provider does not offer
+(`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.
+
+`BOTS_011` is a server with no `BOTS_PROVIDER_KEY`: no workspace can store a
+model provider's key, so no bot can answer. `BOTS_012` is a provider other than
+`anthropic`, `glm` or `openai` in `/model-providers/:provider`.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

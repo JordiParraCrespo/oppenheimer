@@ -1,31 +1,56 @@
 import type { AgentOption, EffortStop } from '@oppenheimer/design-system-web';
+import type { SessionEffort } from '@oppenheimer/shared/agents';
 import {
-  CODING_AGENTS,
-  type CodingAgentEffort,
-  effortFor,
-  type SessionEffort,
-} from '@oppenheimer/shared/agents';
+  BOT_PROVIDER_CATALOG,
+  BOT_PROVIDERS,
+  type BotProvider,
+  botModelOf,
+} from '@oppenheimer/shared/schemas/bot';
 
-/** A bot runs Claude Code, so its engine is Claude Code and its models are Claude Code's. */
-export const BOT_AGENT = 'claude-code';
+/**
+ * The mark each provider is drawn with: the coding agent whose maker it is, so
+ * Anthropic carries Claude Code's mark and OpenAI Codex's; GLM has no agent of
+ * its own and falls back to the bot glyph.
+ */
+const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, string>> = {
+  anthropic: 'claude-code',
+  glm: 'glm',
+  openai: 'codex',
+};
 
-/** The engine button's one agent and its models, from the shared catalog. */
-export function botAgentOptions(): AgentOption[] {
-  const agent = CODING_AGENTS[BOT_AGENT];
-  return [
-    {
-      id: agent.id,
-      label: agent.label,
-      models: agent.models.map((model) => ({ value: model.id, label: model.label })),
-    },
-  ];
+/** The table read the other way: a mark back to its provider. */
+const PROVIDER_OF_MARK: ReadonlyMap<string, BotProvider> = new Map(
+  BOT_PROVIDERS.map((provider) => [BOT_PROVIDER_MARKS[provider], provider]),
+);
+
+/** The model button's groups: one per provider, with that provider's models. */
+export function botProviderOptions(): AgentOption[] {
+  return BOT_PROVIDERS.map((provider) => {
+    const definition = BOT_PROVIDER_CATALOG[provider];
+    return {
+      id: BOT_PROVIDER_MARKS[provider],
+      label: definition.label,
+      models: definition.models.map((model) => ({ value: model.id, label: model.label })),
+    };
+  });
 }
 
-/** The model the button names: the bot's, or Claude Code's default when it has none. */
-export function botModel(model: string | null): string | null {
-  if (model) return model;
-  const models = CODING_AGENTS[BOT_AGENT].models;
-  return (models.find((row) => row.default) ?? models[0])?.id ?? null;
+/** The provider a pick in the model button belongs to; undefined for a mark no provider is drawn with. */
+export function providerOfMark(mark: string): BotProvider | undefined {
+  return PROVIDER_OF_MARK.get(mark);
+}
+
+/** What the model button shows for a bot: its provider's group and model. */
+export function botEngineValue(
+  provider: BotProvider,
+  model: string | null,
+): { agent: string; model: string | null } {
+  return { agent: BOT_PROVIDER_MARKS[provider], model: botModel(provider, model) };
+}
+
+/** The model the button names: the bot's, or its provider's default when it has none. */
+export function botModel(provider: BotProvider, model: string | null): string | null {
+  return botModelOf(provider, model)?.id ?? null;
 }
 
 /**
@@ -34,11 +59,12 @@ export function botModel(model: string | null): string | null {
  * the model takes no effort, and the slider is not drawn.
  */
 export function botEffort(
+  provider: BotProvider,
   model: string | null,
-  /** Null runs the model at its CLI's default. */
+  /** Null runs the model at its own default. */
   effort: SessionEffort | null,
 ): { levels: readonly SessionEffort[]; value: SessionEffort } | null {
-  const offered: CodingAgentEffort | undefined = effortFor(BOT_AGENT, model);
+  const offered = botModelOf(provider, model)?.effort;
   if (!offered) return null;
   return {
     levels: offered.levels,
@@ -53,8 +79,7 @@ export function effortStops(
   return levels.map((level) => ({ value: level, label: labels[level] }));
 }
 
-/** The model's name as the catalog spells it ("Claude Sonnet 4.6"), for the line under a reply. */
-export function botModelLabel(model: string | null): string | null {
-  const id = botModel(model);
-  return CODING_AGENTS[BOT_AGENT].models.find((row) => row.id === id)?.label ?? null;
+/** The model's name as the catalog spells it ("Claude Opus 5.5"), for the line under a reply. */
+export function botModelLabel(provider: BotProvider, model: string | null): string | null {
+  return botModelOf(provider, model)?.label ?? null;
 }

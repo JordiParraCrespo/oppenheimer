@@ -5,7 +5,7 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { botEffort, botModel } from '../lib/bot-engine';
+import { botEffort, botEngineValue, botModel, providerOfMark } from '../lib/bot-engine';
 import { botSections } from '../lib/bot-groups';
 import { revisionNote } from '../lib/revision-note';
 
@@ -58,18 +58,31 @@ describe('botSections', () => {
 });
 
 describe('botModel and botEffort', () => {
-  it('names Claude Code’s default model for a bot that has not picked one', () => {
-    expect(botModel(null)).toBe('claude-opus-5-5');
-    expect(botModel('claude-haiku-4-5')).toBe('claude-haiku-4-5');
+  it('names the provider’s default model for a bot that has not picked one', () => {
+    expect(botModel('anthropic', null)).toBe('claude-opus-5-5');
+    expect(botModel('glm', null)).toBe('glm-5.3');
+    expect(botModel('anthropic', 'claude-haiku-4-5')).toBe('claude-haiku-4-5');
   });
 
   it('shows the bot’s level when its model offers it, the model’s default when not', () => {
-    expect(botEffort('claude-fable-5-1', 'low')?.value).toBe('low');
-    expect(botEffort('claude-fable-5-1', 'ultra')?.value).toBe('high');
+    expect(botEffort('anthropic', 'claude-fable-5-1', 'low')?.value).toBe('low');
+    expect(botEffort('anthropic', 'claude-fable-5-1', 'ultra')?.value).toBe('high');
   });
 
   it('draws no effort for a model that takes none', () => {
-    expect(botEffort('claude-haiku-4-5', 'medium')).toBeNull();
+    expect(botEffort('anthropic', 'claude-haiku-4-5', 'medium')).toBeNull();
+  });
+});
+
+describe('the model button', () => {
+  it('maps a pick back to the provider whose group it is in', () => {
+    expect(providerOfMark(botEngineValue('openai', null).agent)).toBe('openai');
+    expect(providerOfMark(botEngineValue('glm', null).agent)).toBe('glm');
+    expect(providerOfMark('grok')).toBeUndefined();
+    expect(botEngineValue('anthropic', null)).toEqual({
+      agent: 'claude-code',
+      model: 'claude-opus-5-5',
+    });
   });
 });
 

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { HostsModule } from '../hosts/hosts.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';
+import { ModelProviderResolver } from './application/model-provider.resolver';
 import { BotMapper } from './bot.mapper';
 import { BotDocumentMapper } from './bot-document.mapper';
 import { BotGroupMapper } from './bot-group.mapper';
@@ -13,6 +14,8 @@ import {
   BOT_GROUP_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_REPOSITORY,
+  MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
+  PROVIDER_KEY_SEALER,
 } from './bots.di-tokens';
 import { BotResource } from './bots.resource';
 import { ClearBotMemoryCommandHandler } from './commands/clear-bot-memory/clear-bot-memory.command-handler';
@@ -29,6 +32,10 @@ import { DeleteBotGroupCommandHandler } from './commands/delete-bot-group/delete
 import { DeleteBotGroupHttpController } from './commands/delete-bot-group/delete-bot-group.http.controller';
 import { DeleteBotMemoryFactCommandHandler } from './commands/delete-bot-memory-fact/delete-bot-memory-fact.command-handler';
 import { DeleteBotMemoryFactHttpController } from './commands/delete-bot-memory-fact/delete-bot-memory-fact.http.controller';
+import { DeleteModelProviderCredentialCommandHandler } from './commands/delete-model-provider-credential/delete-model-provider-credential.command-handler';
+import { DeleteModelProviderCredentialHttpController } from './commands/delete-model-provider-credential/delete-model-provider-credential.http.controller';
+import { PutModelProviderCredentialCommandHandler } from './commands/put-model-provider-credential/put-model-provider-credential.command-handler';
+import { PutModelProviderCredentialHttpController } from './commands/put-model-provider-credential/put-model-provider-credential.http.controller';
 import { RevertBotDocumentCommandHandler } from './commands/revert-bot-document/revert-bot-document.command-handler';
 import { RevertBotDocumentHttpController } from './commands/revert-bot-document/revert-bot-document.http.controller';
 import { UpdateBotCommandHandler } from './commands/update-bot/update-bot.command-handler';
@@ -48,6 +55,10 @@ import { BotGroupOrmEntity } from './database/bot-group.orm-entity';
 import { BotGroupRepository } from './database/bot-group.repository';
 import { BotMemoryFactOrmEntity } from './database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from './database/bot-memory-fact.repository';
+import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
+import { ModelProviderCredentialRepository } from './database/model-provider-credential.repository';
+import { AesProviderKeySealerAdapter } from './infrastructure/aes-provider-key-sealer.adapter';
+import { ModelProviderCredentialMapper } from './model-provider-credential.mapper';
 import { FindBotHttpController } from './queries/find-bot/find-bot.http.controller';
 import { FindBotQueryHandler } from './queries/find-bot/find-bot.query-handler';
 import { FindBotDocumentQueryHandler } from './queries/find-bot-document/find-bot-document.query-handler';
@@ -63,6 +74,8 @@ import { FindBotMemoryQueryHandler } from './queries/find-bot-memory/find-bot-me
 import { FindBotMemoryFactQueryHandler } from './queries/find-bot-memory-fact/find-bot-memory-fact.query-handler';
 import { FindBotsHttpController } from './queries/find-bots/find-bots.http.controller';
 import { FindBotsQueryHandler } from './queries/find-bots/find-bots.query-handler';
+import { FindModelProviderCredentialsHttpController } from './queries/find-model-provider-credentials/find-model-provider-credentials.http.controller';
+import { FindModelProviderCredentialsQueryHandler } from './queries/find-model-provider-credentials/find-model-provider-credentials.query-handler';
 
 const httpControllers = [
   FindBotsHttpController,
@@ -83,6 +96,9 @@ const httpControllers = [
   CreateBotGroupHttpController,
   UpdateBotGroupHttpController,
   DeleteBotGroupHttpController,
+  FindModelProviderCredentialsHttpController,
+  PutModelProviderCredentialHttpController,
+  DeleteModelProviderCredentialHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -98,6 +114,8 @@ const commandHandlers: Provider[] = [
   UpdateBotMemoryFactCommandHandler,
   DeleteBotMemoryFactCommandHandler,
   ClearBotMemoryCommandHandler,
+  PutModelProviderCredentialCommandHandler,
+  DeleteModelProviderCredentialCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -110,12 +128,13 @@ const queryHandlers: Provider[] = [
   FindBotDocumentRevisionsQueryHandler,
   FindBotMemoryQueryHandler,
   FindBotMemoryFactQueryHandler,
+  FindModelProviderCredentialsQueryHandler,
 ];
 
 /**
- * Bots (`product/versions/mvp/25-bots.md`), slice 1: a bot without a runtime.
- * Who it is, the sidebar groups, its soul and instructions with their history,
- * and what it remembers. The chat, its tools and approvals are later slices.
+ * Bots (`product/versions/mvp/25-bots.md`): who a bot is, the sidebar groups,
+ * its soul and instructions with their history, what it remembers, and the
+ * workspace's model provider keys it runs on.
  */
 @Module({
   imports: [
@@ -126,6 +145,7 @@ const queryHandlers: Provider[] = [
       BotDocumentOrmEntity,
       BotDocumentRevisionOrmEntity,
       BotMemoryFactOrmEntity,
+      ModelProviderCredentialOrmEntity,
     ]),
     AuthzKernelModule.forFeature([BotResource]),
     // A home host is one the caller may use, asked through the hosts module's port.
@@ -140,6 +160,13 @@ const queryHandlers: Provider[] = [
     BotDocumentMapper,
     BotMemoryFactMapper,
     BotLookupResolver,
+    ModelProviderCredentialMapper,
+    ModelProviderResolver,
+    { provide: PROVIDER_KEY_SEALER, useClass: AesProviderKeySealerAdapter },
+    {
+      provide: MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
+      useClass: ModelProviderCredentialRepository,
+    },
     { provide: BOT_REPOSITORY, useClass: BotRepository },
     { provide: BOT_GROUP_REPOSITORY, useClass: BotGroupRepository },
     { provide: BOT_DOCUMENT_REPOSITORY, useClass: BotDocumentRepository },

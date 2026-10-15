@@ -15,11 +15,12 @@ const newBot = (overrides: Partial<Parameters<typeof BotEntity.createNew>[0]> = 
     avatarColor: 'mint',
     groupId: null,
     homeHostId: null,
+    provider: 'anthropic',
     ...overrides,
   });
 
 describe('BotEntity', () => {
-  it('is born blank: Claude Code’s default model, approve-for-me, learning on, placed last', () => {
+  it('is born blank: its provider’s default model, approve-for-me, learning on, placed last', () => {
     const bot = newBot();
     expect(bot).toMatchObject({
       model: null,
@@ -36,27 +37,16 @@ describe('BotEntity', () => {
     bot.edit({ avatarColor: 'coral' });
     expect([...bot.editedFields]).toEqual(['avatarColor']);
     bot.edit({ model: 'claude-opus-5-5' });
-    // A new model can unset an effort it does not offer, so the effort is written with it.
-    expect([...bot.editedFields].sort()).toEqual(['avatarColor', 'effort', 'model']);
+    // The provider, model and effort are one setting, written together.
+    expect([...bot.editedFields].sort()).toEqual(['avatarColor', 'effort', 'model', 'provider']);
   });
 
-  it('records an effort the model offers, and none for one it does not', () => {
+  it('applies the launch policy on a provider change and writes all three columns', () => {
     const bot = newBot();
     bot.edit({ model: 'claude-opus-5-5', effort: 'high' });
-    expect(bot.effort).toBe('high');
-    bot.edit({ effort: 'ultra' });
-    expect(bot.effort).toBeNull();
-  });
-
-  it('drops an effort the new model does not offer when only the model changes', () => {
-    const bot = newBot();
-    bot.edit({ model: 'claude-opus-5-5', effort: 'high' });
-    bot.edit({ model: 'claude-haiku-4-5' });
-    expect(bot.effort).toBeNull();
-  });
-
-  it('refuses a model Claude Code does not list', () => {
-    expect(() => newBot().edit({ model: 'gpt-5' })).toThrow();
+    bot.edit({ provider: 'openai' });
+    expect(bot).toMatchObject({ provider: 'openai', model: null, effort: null });
+    expect([...bot.editedFields]).toEqual(expect.arrayContaining(['provider', 'model', 'effort']));
   });
 
   it('refuses a blank name', () => {

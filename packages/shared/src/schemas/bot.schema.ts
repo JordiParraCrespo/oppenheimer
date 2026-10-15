@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { SESSION_EFFORTS, type SessionPermission } from '../agents/catalog.js';
+import {
+  CODING_AGENTS,
+  type CodingAgentEffort,
+  SESSION_EFFORTS,
+  type SessionEffort,
+  type SessionPermission,
+} from '../agents/catalog.js';
 
 /**
  * Bot shapes (`product/versions/mvp/25-bots.md`, slice 1): a bot, the sidebar
@@ -67,6 +73,103 @@ export function botSoulFor(name: string): string {
   return BOT_SOUL_TEMPLATE.replace('{name}', name);
 }
 
+/**
+ * Who answers a bot (`product/versions/mvp/25-bots.md` §2): the provider picks
+ * the engine, Anthropic and GLM the Claude Agent SDK, OpenAI the OpenAI Agents
+ * SDK. Each runs on the workspace's own key for it.
+ */
+export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai'] as const;
+export type BotProvider = (typeof BOT_PROVIDERS)[number];
+
+/** One model a bot may run on, as the composer's model chip lists it. */
+export interface BotModel {
+  readonly id: string;
+  readonly label: string;
+  readonly default?: true;
+  readonly effort?: CodingAgentEffort;
+}
+
+export interface BotProviderDefinition {
+  readonly id: BotProvider;
+  readonly label: string;
+  readonly models: readonly BotModel[];
+}
+
+const GLM_LEVELS = Object.freeze({
+  levels: Object.freeze(['low', 'medium', 'high'] as SessionEffort[]),
+  default: 'medium' as SessionEffort,
+});
+
+/**
+ * The models each provider offers a bot. Anthropic's and OpenAI's are the rows
+ * the coding agents already list (Claude Code's, Codex's), so a model offered to
+ * a session and to a bot is one row; GLM's are z.ai's, reached through its
+ * Anthropic-compatible endpoint.
+ */
+export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefinition>> =
+  Object.freeze({
+    anthropic: Object.freeze({
+      id: 'anthropic',
+      label: 'Anthropic',
+      models: CODING_AGENTS['claude-code'].models,
+    }),
+    glm: Object.freeze({
+      id: 'glm',
+      label: 'GLM',
+      models: Object.freeze([
+        Object.freeze({
+          id: 'glm-5.3',
+          label: 'GLM-5.3',
+          default: true as const,
+          effort: GLM_LEVELS,
+        }),
+      ]),
+    }),
+    openai: Object.freeze({
+      id: 'openai',
+      label: 'OpenAI',
+      models: CODING_AGENTS.codex.models,
+    }),
+  });
+
+/** The model a bot on `provider` runs when it names none: the provider's default row. */
+export function botDefaultModel(provider: BotProvider): BotModel {
+  const { models } = BOT_PROVIDER_CATALOG[provider];
+  return models.find((row) => row.default) ?? models[0];
+}
+
+/** The catalog row for `model` on `provider`; `null` is the provider's default. */
+export function botModelOf(provider: BotProvider, model: string | null): BotModel | undefined {
+  if (model === null) return botDefaultModel(provider);
+  return BOT_PROVIDER_CATALOG[provider].models.find((row) => row.id === model);
+}
+
+/**
+ * The effort a bot on `provider` and `model` records for `requested`: the level
+ * when that model offers it, else none (the model's own default).
+ */
+export function botEffortLevelFor(
+  provider: BotProvider,
+  model: string | null,
+  requested: unknown,
+): SessionEffort | null {
+  if (!SESSION_EFFORTS.includes(requested as SessionEffort)) return null;
+  const level = requested as SessionEffort;
+  return botModelOf(provider, model)?.effort?.levels.includes(level) ? level : null;
+}
+
+/** A provider key's length bounds: wide enough for every provider's format. */
+export const BOT_PROVIDER_KEY_MIN = 8;
+export const BOT_PROVIDER_KEY_MAX = 512;
+
+export const botProviderSchema = z.enum(BOT_PROVIDERS);
+
+/** `PUT /model-providers/:provider`: the key, replacing the one stored. Never read back. */
+export const putModelProviderCredentialSchema = z.object({
+  apiKey: z.string().trim().min(BOT_PROVIDER_KEY_MIN).max(BOT_PROVIDER_KEY_MAX),
+});
+export type PutModelProviderCredentialDto = z.infer<typeof putModelProviderCredentialSchema>;
+
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
@@ -88,6 +191,8 @@ export const createBotSchema = z.object({
   avatarColor: botAvatarColorSchema.optional(),
   groupId: z.string().uuid().nullable().optional(),
   homeHostId: z.string().uuid().nullable().optional(),
+  /** Anthropic unless named; the model is then the provider's default. */
+  provider: botProviderSchema.optional(),
 });
 export type CreateBotDto = z.infer<typeof createBotSchema>;
 
@@ -104,7 +209,9 @@ export const updateBotSchema = z.object({
   groupId: z.string().uuid().nullable().optional(),
   position: positionSchema.optional(),
   homeHostId: z.string().uuid().nullable().optional(),
-  /** A Claude Code model id from the agents catalog; `null` is Claude Code's default. */
+  /** Who answers the bot. A change of provider resets the model to that provider's default. */
+  provider: botProviderSchema.optional(),
+  /** A model id the provider's catalog lists; `null` is the provider's default. */
   model: z.string().min(1).max(128).nullable().optional(),
   /** Recorded only when the model offers it; otherwise the CLI's own default. */
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),

@@ -38,6 +38,7 @@ import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
   automationsConfig,
+  botsConfig,
   calendarConfig,
   databaseConfig,
   emailConfig,
@@ -101,6 +102,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         llmConfig,
         sessionsConfig,
         automationsConfig,
+        botsConfig,
         calendarConfig,
         retentionConfig,
         throttlingConfig,

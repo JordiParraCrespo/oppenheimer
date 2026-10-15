@@ -171,6 +171,8 @@
     "BOTS_008": "That fact doesn't exist, or it was forgotten.",
     "BOTS_009": "This bot remembers as much as it can. Forget something first.",
     "BOTS_010": "A bot can't run on that model.",
+    "BOTS_011": "Model providers aren't set up on this server, so bots can't answer yet.",
+    "BOTS_012": "That model provider doesn't exist.",
     "CALENDAR_001": "That event doesn't exist, or it was deleted.",
     "CALENDAR_002": "Choose a workspace before working with the calendar.",
     "CALENDAR_003": "That's too many days to show at once.",

@@ -10,12 +10,15 @@ import {
   BOT_DESCRIPTION_MAX,
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
+  BOT_PROVIDERS,
   type BotAvatarColor,
   type BotPermission,
+  type BotProvider,
+  botModelOf,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { Placement } from './bot.types';
-import { botEffortFor, isBotModel } from './bot-launch.policy';
+import { resolveBotEngine } from './bot-launch.policy';
 
 export interface BotProps {
   organizationId: string;
@@ -30,7 +33,9 @@ export interface BotProps {
   position: number;
   /** The host its turns run on; null until one is chosen, or once it is removed. */
   homeHostId: string | null;
-  /** A Claude Code model id; null runs Claude Code's default. */
+  /** Who answers it, and so which engine runs its turns. */
+  provider: BotProvider;
+  /** A model id the provider offers; null runs the provider's default. */
   model: string | null;
   effort: SessionEffort | null;
   permission: BotPermission;
@@ -46,6 +51,7 @@ export interface CreateBotProps {
   avatarColor: BotAvatarColor;
   groupId: string | null;
   homeHostId: string | null;
+  provider: BotProvider;
 }
 
 export interface BotEdit {
@@ -53,6 +59,7 @@ export interface BotEdit {
   description?: string;
   avatarColor?: BotAvatarColor;
   homeHostId?: string | null;
+  provider?: BotProvider;
   model?: string | null;
   effort?: SessionEffort | null;
   permission?: BotPermission;
@@ -66,6 +73,7 @@ export type BotEditedField =
   | 'avatarColor'
   | 'groupId'
   | 'homeHostId'
+  | 'provider'
   | 'model'
   | 'effort'
   | 'permission'
@@ -81,8 +89,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   private pendingPlacement: Placement | null = null;
   /**
    * The columns an edit set, and only those: two edits made at once from the
-   * console (the model, then the effort) each write what they changed, so the
-   * later never puts back what the earlier changed from its stale copy.
+   * console (the colour, then the model) each write what they changed, so the
+   * later never puts back what the earlier changed from its stale copy. The
+   * provider, model and effort are one setting and are written together.
    */
   private readonly edited = new Set<BotEditedField>();
 
@@ -90,7 +99,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
     return new BotEntity(create);
   }
 
-  /** A blank bot: Claude Code's default model, approve-for-me, learning on. Placed last in its group. */
+  /** A blank bot: its provider's default model, approve-for-me, learning on. Placed last in its group. */
   static createNew(props: CreateBotProps): BotEntity {
     const bot = new BotEntity({
       id: randomUUID(),
@@ -103,6 +112,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
         groupId: props.groupId,
         position: 0,
         homeHostId: props.homeHostId,
+        provider: props.provider,
         model: null,
         effort: null,
         permission: 'auto',
@@ -138,6 +148,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get homeHostId(): string | null {
     return this.props.homeHostId;
   }
+  get provider(): BotProvider {
+    return this.props.provider;
+  }
+
   get model(): string | null {
     return this.props.model;
   }
@@ -182,25 +196,18 @@ export class BotEntity extends AggregateRoot<BotProps> {
       props.learnAutomatically = changes.learnAutomatically;
       edited.add('learnAutomatically');
     }
-    if (changes.model !== undefined) {
-      props.model = changes.model;
-      edited.add('model');
+    if (
+      changes.provider !== undefined ||
+      changes.model !== undefined ||
+      changes.effort !== undefined
+    ) {
+      // The three are one setting: each is valid only for the others, so they
+      // are resolved and written together.
+      Object.assign(props, resolveBotEngine(props, changes));
+      edited.add('provider').add('model').add('effort');
     }
-    if (changes.effort !== undefined) props.effort = changes.effort;
-    if (changes.model !== undefined || changes.effort !== undefined) this.settleEffort();
     this.setUpdatedAt(new Date());
     this.validate();
-  }
-
-  /**
-   * The model/effort rule ({@link botEffortFor}): the effort recorded is one the
-   * model offers, else none, and the CLI's default runs. Applied whenever the
-   * model or the effort changes, and the effort is then written either way,
-   * because a new model alone can unset it.
-   */
-  private settleEffort(): void {
-    this.props.effort = botEffortFor(this.props.model, this.props.effort);
-    this.edited.add('effort');
   }
 
   /**
@@ -245,8 +252,11 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (!BOT_PERMISSIONS.includes(props.permission)) {
       throw new ArgumentInvalidException(`${props.permission} is not a bot's approval level`);
     }
-    if (!isBotModel(props.model)) {
-      throw new ArgumentInvalidException(`${props.model} is not a Claude Code model`);
+    if (!BOT_PROVIDERS.includes(props.provider)) {
+      throw new ArgumentInvalidException(`${props.provider} is not a bot provider`);
+    }
+    if (botModelOf(props.provider, props.model) === undefined) {
+      throw new ArgumentInvalidException(`${props.model} is not a ${props.provider} model`);
     }
     if (!Number.isInteger(props.position) || props.position < 0) {
       throw new ArgumentInvalidException('A position is a whole number from 0');

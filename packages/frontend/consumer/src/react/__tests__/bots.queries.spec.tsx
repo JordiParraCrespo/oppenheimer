@@ -26,6 +26,7 @@ function bot(fields: UpdateBotInput = {}): BotEntity {
     null,
     0,
     null,
+    fields.provider ?? 'anthropic',
     fields.model === undefined ? null : fields.model,
     fields.effort === undefined ? null : fields.effort,
     fields.permission ?? 'auto',

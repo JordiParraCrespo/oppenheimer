@@ -27,6 +27,7 @@ import {
 )
 @Check('CHK_bot_position', `"position" >= 0`)
 @Check('CHK_bot_permission', `"permission" IN ('auto', 'full')`)
+@Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
 export class BotOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -54,6 +55,9 @@ export class BotOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   homeHostId!: string | null;
+
+  @Column({ type: 'varchar', length: 16, default: 'anthropic' })
+  provider!: string;
 
   @Column({ type: 'varchar', length: 128, nullable: true })
   model!: string | null;

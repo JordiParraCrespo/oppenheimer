@@ -52,10 +52,22 @@ export const BotErrors = {
     message: 'The bot remembers as much as it can',
     httpStatus: 422,
   },
-  /** A bot runs Claude Code, so its model is one of Claude Code's. */
+  /** A bot's model is one its provider offers (`BOT_PROVIDER_CATALOG`). */
   MODEL_UNSUPPORTED: {
     code: 'BOTS_010',
     message: 'That model cannot run a bot',
     httpStatus: 422,
+  },
+  /** `BOTS_PROVIDER_KEY` is unset, so no provider key can be stored or read. */
+  PROVIDERS_NOT_CONFIGURED: {
+    code: 'BOTS_011',
+    message: 'Model providers are not configured on this server',
+    httpStatus: 503,
+  },
+  /** A provider the catalog does not list (`BOT_PROVIDERS`). */
+  PROVIDER_NOT_FOUND: {
+    code: 'BOTS_012',
+    message: 'No such model provider',
+    httpStatus: 404,
   },
 } as const satisfies Record<string, ErrorDefinition>;

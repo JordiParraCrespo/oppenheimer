@@ -51,6 +51,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       avatarColor: input.avatarColor ?? avatarColorFor(taken.length),
       groupId,
       homeHostId,
+      provider: input.provider ?? 'anthropic',
     });
     const actor = userActor(scope.userId);
     const documents = [

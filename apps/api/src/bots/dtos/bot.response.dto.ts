@@ -3,8 +3,10 @@ import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   BOT_AVATAR_COLORS,
   BOT_PERMISSIONS,
+  BOT_PROVIDERS,
   type BotAvatarColor,
   type BotPermission,
+  type BotProvider,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS, type SessionEffort } from '@oppenheimer/shared/agents';
 
@@ -43,16 +45,19 @@ export class BotResponseDto {
   })
   homeHostId!: string | null;
 
+  @ApiProperty({ enum: BOT_PROVIDERS, description: 'Who answers it, and so which engine runs.' })
+  provider!: BotProvider;
+
   @ApiProperty({
     nullable: true,
     type: String,
-    description: "A Claude Code model id; null runs Claude Code's default.",
+    description: "A model id the provider offers; null runs the provider's default.",
   })
   model!: string | null;
 
   @ApiProperty({
     ...nullableEnum(SESSION_EFFORTS),
-    description: "The effort level; null runs the model at the CLI's default.",
+    description: 'The effort level; null runs the model at its own default.',
   })
   effort!: SessionEffort | null;
 

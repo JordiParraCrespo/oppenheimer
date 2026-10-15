@@ -5,6 +5,7 @@ import type {
   BotAvatarColor,
   BotDocumentName,
   BotPermission,
+  BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
 
 /**
@@ -25,7 +26,9 @@ export class BotEntity {
     public readonly position: number,
     /** The host its turns run on; `null` until one is chosen. */
     public readonly homeHostId: string | null,
-    /** A Claude Code model id; `null` runs Claude Code's default. */
+    /** Who answers it: Anthropic, GLM or OpenAI. */
+    public readonly provider: BotProvider,
+    /** A model id its provider offers; `null` runs the provider's default. */
     public readonly model: string | null,
     public readonly effort: SessionEffort | null,
     public readonly permission: BotPermission,
@@ -127,6 +130,8 @@ export interface UpdateBotInput {
   groupId?: string | null;
   position?: number;
   homeHostId?: string | null;
+  /** A new provider with no model runs that provider's default. */
+  provider?: BotProvider;
   model?: string | null;
   effort?: SessionEffort | null;
   permission?: BotPermission;
@@ -153,4 +158,17 @@ export function documentConflictRevision(error: unknown): number | null {
   if (!appError || appError.code !== DOCUMENT_CONFLICT) return null;
   const revision = appError.problem?.revision;
   return typeof revision === 'number' ? revision : null;
+}
+
+/**
+ * One model provider as the workspace has it: whether a key is stored and its
+ * last four characters. The key itself never reaches the console.
+ */
+export class ModelProviderEntity {
+  constructor(
+    public readonly provider: BotProvider,
+    public readonly configured: boolean,
+    public readonly keyHint: string | null,
+    public readonly updatedAt: Date | null,
+  ) {}
 }

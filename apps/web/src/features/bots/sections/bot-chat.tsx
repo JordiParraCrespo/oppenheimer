@@ -62,7 +62,11 @@ export function BotChat({ botId }: { botId: string }) {
       />
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 pb-10">
         <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-        <BotHello botId={bot.id} name={bot.name} modelLabel={botModelLabel(bot.model)} />
+        <BotHello
+          botId={bot.id}
+          name={bot.name}
+          modelLabel={botModelLabel(bot.provider, bot.model)}
+        />
       </div>
       <div className="px-5 pb-5">
         <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
@@ -81,9 +85,10 @@ export function BotChat({ botId }: { botId: string }) {
             }
             engine={
               <BotEngineChips
+                provider={bot.provider}
                 model={bot.model}
                 effort={bot.effort}
-                onModelChange={(next) => update.mutate({ id: bot.id, input: { model: next } })}
+                onModelChange={(next) => update.mutate({ id: bot.id, input: next })}
                 onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
               />
             }
