@@ -1,8 +1,8 @@
 import {
   BOT_STREAM_EVENT,
   BOT_STREAM_READY,
-  BOT_TURN_STATUSES,
   type BotStreamEvent,
+  botStreamEventSchema,
 } from '@oppenheimer/shared/schemas/bot';
 import type { EventSourceLike } from '../../organizations/events/workspace-event-stream';
 
@@ -22,27 +22,6 @@ export interface BotStreamOptions {
 /** `EventSource.CLOSED`, without reading a global a non-browser test may not have. */
 const CLOSED = 2;
 
-function isString(value: unknown): value is string {
-  return typeof value === 'string';
-}
-
-/** A `bot` frame's data, checked, since it crossed the network. */
-function isBotStreamEvent(value: unknown): value is BotStreamEvent {
-  if (typeof value !== 'object' || value === null) return false;
-  const event = value as Record<string, unknown>;
-  if (!isString(event.turnId)) return false;
-  switch (event.type) {
-    case 'text':
-      return isString(event.text);
-    case 'message':
-      return isString(event.messageId);
-    case 'turn':
-      return (BOT_TURN_STATUSES as readonly unknown[]).includes(event.status);
-    default:
-      return false;
-  }
-}
-
 /**
  * One bot's chat as it happens (`GET /api/v1/bots/:id/stream`): text as a
  * turn writes it, and a nudge when a message is stored or a turn moves. The
@@ -50,8 +29,8 @@ function isBotStreamEvent(value: unknown): value is BotStreamEvent {
  *
  * The browser redials a dropped connection on its own, and the API ends the
  * stream every 15 minutes so the redial is authenticated again; a refused
- * stream stays closed. Nothing is opened until `open()`; `dispose()` closes
- * it for good.
+ * stream stays closed. Nothing is opened until `open()`, so a caller
+ * subscribes first and misses no frame; `dispose()` closes it for good.
  */
 export class BotStream {
   private readonly eventListeners = new Set<(event: BotStreamEvent) => void>();
@@ -91,14 +70,16 @@ export class BotStream {
     });
     source.addEventListener(BOT_STREAM_EVENT, (message) => {
       if (this.source !== source) return;
-      let event: unknown;
+      let data: unknown;
       try {
-        event = JSON.parse(message.data);
+        data = JSON.parse(message.data);
       } catch {
         return;
       }
-      if (!isBotStreamEvent(event)) return;
-      for (const listener of this.eventListeners) listener(event);
+      // It crossed the network: a frame this build cannot read is dropped.
+      const parsed = botStreamEventSchema.safeParse(data);
+      if (!parsed.success) return;
+      for (const listener of this.eventListeners) listener(parsed.data);
     });
     source.onerror = () => {
       if (this.source !== source) return;
