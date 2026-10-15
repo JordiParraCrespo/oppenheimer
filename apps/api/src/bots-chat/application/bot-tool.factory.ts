@@ -74,7 +74,8 @@ export interface BotToolSpec<Input extends z.ZodType> {
   /**
    * What the card says the call will do, in words, from its input: "Start
    * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
-   * Required with `asks`; a throw falls back to the tool and its input.
+   * Required with `asks`. A `BotToolRefusal` refuses the call before any
+   * card is raised; any other throw falls back to the tool and its input.
    */
   summarize?(input: z.output<Input>, context: BotToolCallContext): Promise<string> | string;
   /**
@@ -211,8 +212,11 @@ async function summaryOf<Input extends z.ZodType>(
   try {
     const summary = spec.summarize ? (await spec.summarize(input, context)).trim() : '';
     if (summary) return summary;
-  } catch {
-    // The card still says what will run, in the tool's own terms.
+  } catch (error) {
+    // A call the tool would refuse raises no card: the owner is never asked
+    // to approve what cannot run.
+    if (error instanceof BotToolRefusal) throw error;
+    // Anything else: the card still says what will run, in the tool's own terms.
   }
   return `${spec.name} ${JSON.stringify(stored)}`;
 }
