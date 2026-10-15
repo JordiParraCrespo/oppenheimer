@@ -13,6 +13,7 @@ const sdk = vi.hoisted(() => ({
   createBot: vi.fn(),
   updateBotDocument: vi.fn(),
   findBotDocumentRevisions: vi.fn(),
+  findBotConversation: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: sdk }));
@@ -149,5 +150,41 @@ describe('BotsRepository', () => {
 
     expect(revision?.revertedFrom).toBe(1);
     expect(revision?.createdAt).toEqual(new Date('2026-10-14T11:00:00.000Z'));
+  });
+
+  it('maps a conversation, and finds the turn Stop applies to', async () => {
+    const turn = (id: string, status: string, startedAt: string | null) => ({
+      id,
+      status,
+      provider: 'glm',
+      model: 'glm-5.3',
+      error: null,
+      inputTokens: 0,
+      outputTokens: 0,
+      cancelRequested: false,
+      createdAt: '2026-10-15T09:00:00.000Z',
+      startedAt,
+      endedAt: null,
+    });
+    sdk.findBotConversation.mockResolvedValue(
+      ok({
+        messages: [
+          {
+            id: 'm1',
+            turnId: 't1',
+            role: 'activity',
+            content: '',
+            steps: [{ callId: 'c1', name: 'read', input: {}, output: null, isError: false }],
+            createdAt: '2026-10-15T09:00:01.000Z',
+          },
+        ],
+        turns: [turn('t1', 'queued', null), turn('t2', 'running', '2026-10-15T09:00:02.000Z')],
+      }),
+    );
+    const conversation = await repository.findConversation('bot-1');
+    expect(conversation.messages[0]?.steps[0]?.output).toBeNull();
+    expect(conversation.messages[0]?.createdAt).toEqual(new Date('2026-10-15T09:00:01.000Z'));
+    expect(conversation.turns[0]?.startedAt).toBeNull();
+    expect(conversation.activeTurn?.id).toBe('t2');
   });
 });

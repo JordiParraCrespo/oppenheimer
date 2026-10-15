@@ -1,15 +1,19 @@
 import {
+  type BotConversationResponseDto,
   type BotDocumentResponseDto,
   type BotDocumentRevisionResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
+  type BotMessageResponseDto,
   type BotResponseDto,
+  type BotTurnResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type { BotDocumentName, BotProvider } from '@oppenheimer/shared/schemas/bot';
-import { injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
+import { TOKENS } from '../../di/tokens';
 import {
   BotDocumentEntity,
   BotDocumentRevisionEntity,
@@ -20,7 +24,14 @@ import {
   type SaveBotDocumentInput,
   type UpdateBotInput,
 } from './bot.entity';
+import {
+  BotConversationEntity,
+  BotMessageEntity,
+  type BotToolStep,
+  BotTurnEntity,
+} from './bot-conversation.entity';
 import { BotsErrors } from './bots.errors';
+import { BotStream } from './stream/bot-stream';
 
 function toBot(dto: BotResponseDto): BotEntity {
   return new BotEntity(
@@ -88,6 +99,38 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
   );
 }
 
+function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
+  const steps: BotToolStep[] = dto.steps.map((step) => ({ ...step }));
+  return new BotMessageEntity(
+    dto.id,
+    dto.turnId,
+    dto.role,
+    dto.content,
+    steps,
+    new Date(dto.createdAt),
+  );
+}
+
+function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
+  return new BotTurnEntity(
+    dto.id,
+    dto.status,
+    dto.provider,
+    dto.model,
+    dto.error,
+    dto.inputTokens,
+    dto.outputTokens,
+    dto.cancelRequested,
+    new Date(dto.createdAt),
+    dto.startedAt ? new Date(dto.startedAt) : null,
+    dto.endedAt ? new Date(dto.endedAt) : null,
+  );
+}
+
+function toConversation(dto: BotConversationResponseDto): BotConversationEntity {
+  return new BotConversationEntity(dto.messages.map(toMessage), dto.turns.map(toTurn));
+}
+
 /**
  * The workspace's bots, their sidebar groups, their two documents and what
  * they remember (`product/versions/mvp/25-bots.md`, slice 1). Every call is
@@ -95,6 +138,49 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
  */
 @injectable()
 export class BotsRepository {
+  constructor(
+    @inject(TOKENS.ApiBaseUrl)
+    @optional()
+    private readonly apiBaseUrl: string = '',
+  ) {}
+
+  /** The newest messages of the chat, oldest first, and their turns. */
+  @MapApiError(BotsErrors.FETCH_CONVERSATION_FAILED)
+  async findConversation(id: string): Promise<BotConversationEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotConversation({ path: { id } }),
+      BotsErrors.FETCH_CONVERSATION_FAILED,
+    );
+    return toConversation(data);
+  }
+
+  /** Says `content` to the bot: a turn, queued behind any it has not finished. */
+  @MapApiError(BotsErrors.SEND_FAILED)
+  async sendMessage(id: string, content: string): Promise<BotTurnEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.sendBotMessage({ path: { id }, body: { content } }),
+      BotsErrors.SEND_FAILED,
+    );
+    return toTurn(data);
+  }
+
+  /** Stop: a queued turn ends now, a running one at its next step. */
+  @MapApiError(BotsErrors.STOP_FAILED)
+  async cancelTurn(id: string, turnId: string): Promise<BotTurnEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.cancelBotTurn({ path: { id, turnId } }),
+      BotsErrors.STOP_FAILED,
+    );
+    return toTurn(data);
+  }
+
+  /** The chat, live. This dials; `dispose()` closes it. */
+  openStream(id: string): BotStream {
+    const stream = new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
+    stream.open();
+    return stream;
+  }
+
   @MapApiError(BotsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<BotEntity[]> {
     const data = await unwrapBody(heyApiSdk.findBots(), BotsErrors.FETCH_LIST_FAILED);

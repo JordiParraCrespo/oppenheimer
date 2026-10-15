@@ -47,6 +47,7 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
   groupLists: () => [...botsKeys.groups(), 'list'] as const,
   groupList: () => [...botsKeys.groupLists()] as const,
@@ -487,13 +488,24 @@ export function useClearBotMemory(options?: UseMutationOptions<void, Error, stri
   });
 }
 
+function useModelProviderListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: botsKeys.providerList(), queryFn: () => app.bots.findModelProviders() };
+}
+
+/** The model providers, for a reader that draws nothing while they load (the composer). */
+export function useModelProviders<TData = ModelProviderEntity[]>(
+  options?: Omit<UseQueryOptions<ModelProviderEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery<ModelProviderEntity[], Error, TData>({
+    ...useModelProviderListQuery(),
+    ...options,
+  });
+}
+
 /** The workspace's model providers, each with whether it has a key, under a Suspense `QueryState`. */
 export function useSuspenseModelProviders() {
-  const app = useConsumerApp();
-  return useSuspenseQuery<ModelProviderEntity[], Error>({
-    queryKey: botsKeys.providerList(),
-    queryFn: () => app.bots.findModelProviders(),
-  });
+  return useSuspenseQuery<ModelProviderEntity[], Error>(useModelProviderListQuery());
 }
 
 interface ModelProviderKeyVariables {
