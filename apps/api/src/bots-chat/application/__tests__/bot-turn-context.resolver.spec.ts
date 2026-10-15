@@ -1,14 +1,14 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { Some } from 'oxide.ts';
+import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
 import type { BotRepositoryPort } from '../../../bots/database/bot.repository.port';
 import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../../bots/database/bot-memory-fact.repository.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../../bots/database/model-provider-credential.repository.port';
-import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
+import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
@@ -36,13 +36,11 @@ function setup(hostsOf: OwnerHostsPort['hostsOf']) {
     { findAllForTurn: async () => [] } as unknown as BotDocumentRepositoryPort,
     { findAllForTurn: async () => [] } as unknown as BotMemoryFactRepositoryPort,
     { findHistory: async () => [] } as unknown as BotMessageRepositoryPort,
-    {
-      findForRun: async () => Some({ sealedKey: Buffer.from('k') }),
-    } as unknown as ModelProviderCredentialRepositoryPort,
-    { isConfigured: () => true, open: () => 'key' } as unknown as ProviderKeySealerPort,
+    { forTurn: async () => ({ apiKey: 'key' }) } satisfies TurnCredentialsPort,
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
     { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
+    {} as BotApprovalRequestFactory,
   );
   const turn = BotTurnEntity.queue({
     organizationId: 'org-1',

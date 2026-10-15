@@ -8,6 +8,7 @@ import {
   type BotMessageResponseDto,
   type BotResponseDto,
   type BotTurnResponseDto,
+  type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
@@ -25,6 +26,8 @@ import {
   BotEntity,
   BotGroupEntity,
   BotMemoryFactEntity,
+  ChatgptLoginEntity,
+  type ChatgptLoginState,
   ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotInput,
@@ -66,6 +69,16 @@ function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntit
     dto.configured,
     dto.keyHint,
     dto.updatedAt ? new Date(dto.updatedAt) : null,
+  );
+}
+
+function toChatgptLogin(dto: ChatgptLoginResponseDto): ChatgptLoginEntity {
+  return new ChatgptLoginEntity(
+    dto.flowId,
+    dto.userCode,
+    dto.verificationUrl,
+    dto.intervalSeconds,
+    new Date(dto.expiresAt),
   );
 }
 
@@ -409,5 +422,25 @@ export class BotsRepository {
       heyApiSdk.deleteModelProviderCredential({ path: { provider } }),
       BotsErrors.DELETE_PROVIDER_KEY_FAILED,
     );
+  }
+
+  /** Asks ChatGPT for a device code for the workspace's sign-in. Nothing is stored yet. */
+  @MapApiError(BotsErrors.START_CHATGPT_LOGIN_FAILED)
+  async startChatgptLogin(): Promise<ChatgptLoginEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.startChatgptLogin(),
+      BotsErrors.START_CHATGPT_LOGIN_FAILED,
+    );
+    return toChatgptLogin(data);
+  }
+
+  /** One poll of a sign-in: `connected` once the person approved it and the API stored it. */
+  @MapApiError(BotsErrors.POLL_CHATGPT_LOGIN_FAILED)
+  async pollChatgptLogin(flowId: string): Promise<Exclude<ChatgptLoginState, 'expired'>> {
+    const data = await unwrapBody(
+      heyApiSdk.pollChatgptLogin({ body: { flowId } }),
+      BotsErrors.POLL_CHATGPT_LOGIN_FAILED,
+    );
+    return data.status;
   }
 }

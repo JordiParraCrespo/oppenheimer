@@ -10,6 +10,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { BotEngineEvent } from '../../bot-engine';
+import { ChatgptBotEngine } from '../chatgpt-bot-engine';
 import { OpenAiBotEngine } from '../openai-bot-engine';
 
 const KEY = 'sk-local-0123456789';
@@ -21,7 +22,12 @@ const KEY = 'sk-local-0123456789';
  */
 const SDK_LOAD_MS = 30_000;
 
-type ResponsesRequest = { authorization?: string; body: Record<string, unknown> };
+type ResponsesRequest = {
+  url?: string;
+  authorization?: string;
+  headers: Record<string, string | string[] | undefined>;
+  body: Record<string, unknown>;
+};
 
 const usage = {
   input_tokens: 11,
@@ -100,7 +106,12 @@ beforeEach(async () => {
       body += chunk;
     });
     req.on('end', () => {
-      requests.push({ authorization: req.headers.authorization, body: JSON.parse(body) });
+      requests.push({
+        url: req.url,
+        authorization: req.headers.authorization,
+        headers: req.headers,
+        body: JSON.parse(body),
+      });
       res.writeHead(200, { 'content-type': 'text/event-stream' });
       res.end(replies.shift());
     });
@@ -165,6 +176,9 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
       expect(requests).toHaveLength(2);
       const [first, second] = requests;
       expect(first.authorization).toBe(`Bearer ${KEY}`);
+      // OpenAI's API on a key carries none of what ChatGPT's backend requires.
+      expect(first.headers['chatgpt-account-id']).toBeUndefined();
+      expect(first.body).not.toHaveProperty('store');
       expect(first.body).toMatchObject({
         model: 'model-placeholder',
         instructions: 'You are a bot.',
@@ -188,4 +202,75 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     },
     SDK_LOAD_MS,
   );
+
+  it(
+    "runs a chatgpt turn on the sign-in's token, with what ChatGPT's backend requires",
+    async () => {
+      const events: BotEngineEvent[] = [];
+      for await (const event of new ChatgptBotEngine().run({
+        provider: 'chatgpt',
+        apiKey: KEY,
+        accountId: 'account-placeholder',
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'What time is it?',
+        tools: [
+          {
+            name: 'get_time',
+            description: 'The time',
+            inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+            run: async () => ({ content: '13:37' }),
+          },
+        ],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+      expect(requests).toHaveLength(2);
+      for (const sent of requests) {
+        expect(sent.url).toBe('/v1/responses');
+        expect(sent.authorization).toBe(`Bearer ${KEY}`);
+        expect(sent.headers['chatgpt-account-id']).toBe('account-placeholder');
+        expect(sent.headers['openai-beta']).toBe('responses=experimental');
+        expect(sent.headers.originator).toBe('oppenheimer');
+        expect(sent.body).toMatchObject({
+          instructions: 'You are a bot.',
+          stream: true,
+          store: false,
+          include: ['reasoning.encrypted_content'],
+        });
+        expect(sent.body).not.toHaveProperty('extraHeaders');
+        expect(sent.body).not.toHaveProperty('extra_headers');
+      }
+    },
+    SDK_LOAD_MS,
+  );
+
+  it('fails a chatgpt turn that names no account, without calling the backend', async () => {
+    const events: BotEngineEvent[] = [];
+    for await (const event of new ChatgptBotEngine().run({
+      provider: 'chatgpt',
+      apiKey: KEY,
+      baseUrl,
+      model: 'model-placeholder',
+      systemPrompt: 'You are a bot.',
+      history: [],
+      message: 'Hi',
+      tools: [],
+      signal: AbortSignal.timeout(20_000),
+      scratchDir: '/unused',
+    })) {
+      events.push(event);
+    }
+
+    expect(events).toEqual([
+      { type: 'done', reason: 'failed', error: 'A ChatGPT turn needs the account it acts for' },
+    ]);
+    expect(requests).toHaveLength(0);
+  });
 });

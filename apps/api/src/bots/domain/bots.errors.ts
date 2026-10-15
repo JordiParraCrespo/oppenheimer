@@ -93,4 +93,34 @@ export const BotErrors = {
     message: 'The approval was already decided',
     httpStatus: 409,
   },
+  /** ChatGPT runs on a sign-in to a subscription (`chatgpt/login`), never on a typed key. */
+  CHATGPT_SIGN_IN_ONLY: {
+    code: 'BOTS_017',
+    message: 'ChatGPT connects by signing in, not with a key',
+    httpStatus: 422,
+  },
+  /** The sign-in being polled ran past its time, or was started for another workspace. */
+  CHATGPT_LOGIN_EXPIRED: {
+    code: 'BOTS_018',
+    message: 'The ChatGPT sign-in expired',
+    httpStatus: 410,
+  },
+  /** OpenAI's sign-in server refused for rate, or too many calls to it were waiting. */
+  CHATGPT_RATE_LIMITED: {
+    code: 'BOTS_019',
+    message: "ChatGPT's sign-in is busy; try again shortly",
+    httpStatus: 429,
+  },
+  /** OpenAI's sign-in server did not answer, or answered something unusable. */
+  CHATGPT_UNREACHABLE: {
+    code: 'BOTS_020',
+    message: "ChatGPT's sign-in could not be reached",
+    httpStatus: 502,
+  },
+  /** Another replica is refreshing the workspace's ChatGPT sign-in; a turn that needs it now fails rather than waits. */
+  CHATGPT_REFRESHING: {
+    code: 'BOTS_021',
+    message: 'The ChatGPT sign-in is being refreshed',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

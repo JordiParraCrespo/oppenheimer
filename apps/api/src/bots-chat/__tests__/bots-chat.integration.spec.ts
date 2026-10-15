@@ -4,6 +4,8 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
+import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
 import { BotMemoryFactMapper } from '../../bots/bot-memory-fact.mapper';
@@ -23,6 +25,7 @@ import { BotMemoryFactEntity } from '../../bots/domain/bot-memory-fact.entity';
 import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
+import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
@@ -396,6 +399,8 @@ describe('bots chat (integration)', () => {
       seal: (plaintext) => Buffer.from(`sealed:${plaintext}`),
       open: (sealed) => sealed.toString().replace(/^sealed:/, ''),
     };
+    // A key provider's turn never asks the ChatGPT resolver.
+    const chatgpt = {} as ChatgptCredentialResolver;
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
     const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
@@ -404,11 +409,11 @@ describe('bots chat (integration)', () => {
       documents,
       memory,
       messages,
-      credentials,
-      sealer,
+      new TurnCredentialsResolver(credentials, sealer, chatgpt),
       owners,
       hosts,
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
+      {} as BotApprovalRequestFactory,
     );
   }
 

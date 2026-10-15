@@ -12,6 +12,7 @@ behind one port.
 | `anthropic` | Claude Agent SDK (Claude Code as a library) | Anthropic's API (`ANTHROPIC_API_KEY`), or `baseUrl` when given            |
 | `glm`       | Claude Agent SDK                           | z.ai's Anthropic-compatible endpoint, `https://api.z.ai/api/anthropic` (`ANTHROPIC_AUTH_TOKEN`), or `baseUrl` |
 | `openai`    | OpenAI Agents SDK, Responses API           | OpenAI's API, or `baseUrl` when given                                    |
+| `chatgpt`   | OpenAI Agents SDK, Responses API           | ChatGPT's Codex backend, `https://chatgpt.com/backend-api/codex`, on a ChatGPT sign-in (`apiKey` is its access token, `accountId` its account), or `baseUrl` |
 
 No model id is written in the package: the bot's model comes in on every
 request. `effort` goes to Claude Code's `effort` option and to OpenAI's
@@ -39,6 +40,14 @@ for await (const event of engine.run({
   // publish to the chat's stream, store the messages
 }
 ```
+
+A `chatgpt` turn runs on a ChatGPT subscription instead of API billing, the
+way the Codex CLI and OpenClaw do (`openai/chatgpt-bot-engine.ts`, the OpenAI
+engine with another endpoint): the request
+names the account (`chatgpt-account-id`), sends `store: false` and asks for
+its reasoning back encrypted (`include: ['reasoning.encrypted_content']`).
+Signing in and refreshing the token are the caller's; the engine only uses
+the access token it is given, and fails a turn that names no account.
 
 **Keys are passed per call and never read from the environment.** The
 package reads no `ANTHROPIC_*`, `OPENAI_*` or other provider variable, and

@@ -19,7 +19,10 @@ import {
 @Index('IDX_model_provider_credential_updated_by', ['updatedByUserId'], {
   where: '"updatedByUserId" IS NOT NULL',
 })
-@Check('CHK_model_provider_credential_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
+@Check(
+  'CHK_model_provider_credential_provider',
+  `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`,
+)
 export class ModelProviderCredentialOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
