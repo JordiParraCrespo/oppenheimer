@@ -37,6 +37,8 @@ export class BotEntity {
     public readonly updatedAt: Date,
     /** When it last changed; from the chat slice, its last message. */
     public readonly lastActivityAt: Date,
+    /** The start of its last message; `null` before the first. */
+    public readonly lastMessagePreview: string | null = null,
   ) {}
 
   /**

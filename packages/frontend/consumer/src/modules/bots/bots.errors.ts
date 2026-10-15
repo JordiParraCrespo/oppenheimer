@@ -27,4 +27,7 @@ export const BotsErrors = {
   },
   SAVE_PROVIDER_KEY_FAILED: { code: 'BOTS_CLIENT_017', message: 'Failed to save the key' },
   DELETE_PROVIDER_KEY_FAILED: { code: 'BOTS_CLIENT_018', message: 'Failed to remove the key' },
+  FETCH_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_019', message: 'Failed to load the chat' },
+  SEND_FAILED: { code: 'BOTS_CLIENT_020', message: 'Failed to send the message' },
+  STOP_FAILED: { code: 'BOTS_CLIENT_021', message: 'Failed to stop the turn' },
 } as const satisfies Record<string, ErrorDefinition>;

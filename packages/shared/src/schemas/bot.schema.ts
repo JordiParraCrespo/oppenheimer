@@ -311,10 +311,12 @@ export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
  * lands or a turn changes. The stored messages are the record; this is how
  * they arrive early.
  */
-export type BotStreamEvent =
-  | { type: 'turn'; turnId: string; status: BotTurnStatus }
-  | { type: 'text'; turnId: string; text: string }
-  | { type: 'message'; turnId: string; messageId: string };
+export const botStreamEventSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
+  z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
+  z.object({ type: z.literal('message'), turnId: z.string(), messageId: z.string() }),
+]);
+export type BotStreamEvent = z.infer<typeof botStreamEventSchema>;
 
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';

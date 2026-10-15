@@ -7,8 +7,8 @@ import { provisionedUser, reloadFromServer, signInAs } from '../../support/web';
  * (`product/versions/mvp/25-bots.md`, `design/version1/Bots.dc.html` and
  * `BotSettings.dc.html`).
  *
- * One bot's whole life before the chat exists: made blank from the Employees
- * sidebar, greeted in its chat (which says the chat comes next), renamed and
+ * One bot's whole life outside the chat: made blank from the Employees
+ * sidebar, greeted in its chat (which says its provider needs a key first), renamed and
  * recoloured on Profile, moved into a new sidebar group, its INSTRUCTIONS.md
  * edited and reverted, a fact added, reworded and forgotten, a home host
  * picked, and deleted. The host is paired but no runner dials in: Runs on is
@@ -37,9 +37,9 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   const botId = chatUrl.split('/').pop() as string;
   await expect(page.getByText('What would you most like help with?')).toBeVisible();
   await expect(page.getByRole('link', { name: /New Bot/ })).toBeVisible();
-  // Send stays off until the chat arrives, and says so.
+  // Send stays off while the bot's provider has no key, and says where to add one.
   await expect(
-    page.getByRole('status').filter({ hasText: 'Chatting with bots arrives' }),
+    page.getByRole('status').filter({ hasText: 'Anthropic has no key in this workspace yet' }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send' })).toHaveAttribute('aria-disabled', 'true');
 

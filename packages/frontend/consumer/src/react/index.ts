@@ -17,6 +17,16 @@ export {
   useUpdateAutomation,
 } from './automations.queries';
 export {
+  type BotLiveText,
+  type CancelBotTurnVariables,
+  type SendBotMessageVariables,
+  useBotActiveTurn,
+  useBotLiveText,
+  useCancelBotTurn,
+  useSendBotMessage,
+  useSuspenseBotConversation,
+} from './bot-chat.queries';
+export {
   type AddBotFactVariables,
   type DeleteBotFactVariables,
   type RenameBotGroupVariables,
@@ -34,6 +44,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
+  useModelProviders,
   usePutModelProviderKey,
   useReloadBotDocuments,
   useRemoveModelProviderKey,
