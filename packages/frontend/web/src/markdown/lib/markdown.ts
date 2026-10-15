@@ -1,9 +1,10 @@
 import { Marked, type MarkedToken, type Token, type Tokens } from 'marked';
 
 /**
- * A pull request's description, read the way the Codex desktop app reads it:
- * GitHub's Markdown lexed by `marked` into tokens that `MarkdownBody` turns
- * into elements, so nothing from GitHub is ever put into the page as markup.
+ * Markdown read the way the Codex desktop app reads a pull request's
+ * description: GitHub's flavour lexed by `marked` into tokens that `Markdown`
+ * turns into elements, so nothing in the source is ever put into the page as
+ * markup.
  * What GitHub renders beyond Markdown is taught to the lexer, not rewritten
  * in the source: a `<details>` fold and an attribute-free inline tag are
  * tokens of their own, and an alert's `[!NOTE]` becomes its word. Any other
@@ -120,8 +121,8 @@ function nameAlert(token: Token): void {
   );
 }
 
-/** The description as the tokens `MarkdownBody` renders. */
-export function parseDescription(source: string): MarkdownToken[] {
+/** The source as the tokens `Markdown` renders. */
+export function parseMarkdown(source: string): MarkdownToken[] {
   const tokens = markdown.lexer(source.replace(/\r\n/g, '\n'));
   markdown.walkTokens(tokens, nameAlert);
   return tokens as MarkdownToken[];
@@ -149,9 +150,10 @@ export function decodeEntities(text: string): string {
 }
 
 /**
- * Where a link or image in the description goes, resolved against the pull
- * request's page the way GitHub resolves it (`#fragment`, `../blob/…`); only
- * the web and mail, never `javascript:`.
+ * Where a link or image goes, resolved against `base` the way GitHub resolves
+ * a description's against its page (`#fragment`, `../blob/…`); only the web
+ * and mail, never `javascript:`. Without a base a relative address goes
+ * nowhere.
  */
 export function safeHref(href: string, base: string | undefined): string | null {
   try {

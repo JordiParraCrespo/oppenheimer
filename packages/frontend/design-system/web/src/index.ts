@@ -74,6 +74,8 @@ export {
   SubagentRow,
   SubagentRunCard,
 } from './components/chat-cards';
+export type { ChatComposerLabels } from './components/chat-composer';
+export { ChatComposer } from './components/chat-composer';
 export {
   ComposerContextMeter,
   ComposerMenu,
@@ -99,6 +101,15 @@ export {
   ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
+export type { ChatCodeBlockLabels } from './components/chat-elements';
+export {
+  ChatCodeBlock,
+  ChatMarker,
+  ChatSource,
+  ChatSources,
+  ChatSuggestion,
+  ChatSuggestions,
+} from './components/chat-elements';
 export type { ThreadFindLabels } from './components/chat-header';
 export {
   ChatEmptyState,
@@ -117,6 +128,8 @@ export {
   FloatingChip,
   TranscriptDivider,
 } from './components/chat-status';
+export type { TraceOutputLabels } from './components/chat-trace';
+export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from './components/chat-trace';
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,

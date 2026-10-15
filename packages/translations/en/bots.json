@@ -36,8 +36,9 @@
     "actions": "Bot options",
     "settings": "Settings",
     "delete": "Delete bot",
-    "helloBlank": "What would you most like help with? Tell me the job and I will write my own instructions from it.",
-    "hello": "Hi, I’m {{name}}. What should we work on?",
+    "helloBlank": "{{name}} is ready. Tell it what job to do.",
+    "startFrom": "Try asking",
+    "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
     "send": "Send",
     "stop": "Stop",
@@ -49,18 +50,76 @@
     "failedUnknown": "The turn ended without saying why.",
     "errorDetails": "Show details",
     "errorLess": "Show less",
+    "retry": "Retry",
+    "copyMessage": "Copy message",
+    "copyReply": "Copy reply",
+    "toLatest": "Jump to latest",
+    "switchedModel": "Switched to <model>{{model}}</model>",
+    "tokens_one": "{{tokens}} token",
+    "tokens_other": "{{tokens}} tokens",
     "turn": {
       "queued": "Waiting",
-      "working": "Working",
-      "worked": "Worked",
-      "stopped": "Stopped",
-      "interrupted": "Failed"
+      "thinking": "Thinking",
+      "writing": "Writing",
+      "stopped": "Stopped"
     },
     "activity": {
-      "summary_one": "Used {{count}} tool",
-      "summary_other": "Used {{count}} tools",
-      "failed": "{{count}} failed",
-      "running": "running"
+      "searched": "Searched the web",
+      "searchedFor": "Searched the web for “{{query}}”",
+      "searching": "Searching the web",
+      "searchingFor": "Searching the web for “{{query}}”",
+      "planned": "Updated its plan",
+      "planning": "Updating its plan",
+      "using": "Using {{name}}",
+      "stepFailed": "failed",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "rawOutput": "Show raw output",
+      "moreLines_one": "Show {{count}} more line",
+      "moreLines_other": "Show {{count}} more lines",
+      "lessOutput": "Show less"
+    },
+    "suggest": {
+      "task": {
+        "research": {
+          "name": "Research a topic",
+          "prompt": "Search the web and give me a short summary, with sources, of "
+        },
+        "summarise": {
+          "name": "Summarise something",
+          "prompt": "Summarise this in five bullet points:\n\n"
+        },
+        "draft": {
+          "name": "Draft a message",
+          "prompt": "Draft a short, friendly message to "
+        },
+        "plan": {
+          "name": "Make a plan",
+          "prompt": "Make a step-by-step plan to "
+        }
+      },
+      "job": {
+        "research": {
+          "name": "Research assistant",
+          "description": "Finds and sums up what I ask about",
+          "prompt": "Be my research assistant: when I name a topic, search the web and give me a short summary with its sources."
+        },
+        "writing": {
+          "name": "Writing partner",
+          "description": "Tightens my drafts in my own voice",
+          "prompt": "Be my writing partner: tighten what I write, suggest clearer wording and keep my tone."
+        },
+        "planner": {
+          "name": "Planner",
+          "description": "Turns goals into next steps",
+          "prompt": "Be my planner: break my goals into steps, keep a to-do list and tell me what to do next."
+        },
+        "news": {
+          "name": "News digest",
+          "description": "The latest on what I follow",
+          "prompt": "Be my news digest: when I ask, search the web for the latest on the topics I follow and sum it up in five bullets."
+        }
+      }
     },
     "model": "Model",
     "searchModels": "Search models…",

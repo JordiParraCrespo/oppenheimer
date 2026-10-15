@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MarkdownBody } from '../components/markdown-body';
+import { Markdown } from './markdown';
 
 /**
  * A pull request's description renders the way GitHub's author meant it,
@@ -13,9 +13,9 @@ import { MarkdownBody } from '../components/markdown-body';
 afterEach(cleanup);
 
 const PAGE = 'https://github.com/acme/app/pull/12';
-const view = (source: string) => render(<MarkdownBody source={source} base={PAGE} />).container;
+const view = (source: string) => render(<Markdown source={source} base={PAGE} />).container;
 
-describe('MarkdownBody', () => {
+describe('Markdown', () => {
   it('renders emphasis, links, nested lists and tables as elements, not syntax', () => {
     const page = view(
       [
@@ -136,5 +136,26 @@ describe('MarkdownBody', () => {
     const boxes = view('- [x] done\n- [ ] todo').querySelectorAll('input[type=checkbox]');
     expect([...boxes].map((box) => (box as HTMLInputElement).checked)).toEqual([true, false]);
     expect([...boxes].every((box) => (box as HTMLInputElement).disabled)).toBe(true);
+  });
+
+  it('puts the write head after the last words, inside a list or after a block with none', () => {
+    const caret = <i data-caret />;
+    const tail = (source: string) =>
+      render(<Markdown source={source} caret={caret} />).container.querySelector('[data-caret]')
+        ?.parentElement?.tagName;
+    expect(tail('One.\n\nTwo')).toBe('P');
+    expect(tail('Steps:\n\n1. first\n2. sec')).toBe('LI');
+    expect(tail('```ts\nconst a')).not.toBe('CODE');
+    expect(render(<Markdown source="x" />).container.querySelector('[data-caret]')).toBeNull();
+  });
+
+  it('opens a link in a new tab and drops a relative one when there is no page to resolve it', () => {
+    const page = render(
+      <Markdown source="[docs](https://example.com) and [here](./x)" />,
+    ).container;
+    const links = page.querySelectorAll('a');
+    expect(links).toHaveLength(1);
+    expect(links[0]?.getAttribute('target')).toBe('_blank');
+    expect(page.textContent).toBe('docs and here');
   });
 });

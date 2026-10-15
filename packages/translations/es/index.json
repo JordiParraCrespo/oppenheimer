@@ -5,6 +5,7 @@
     "close": "Cerrar",
     "copied": "Copiado",
     "copy": "Copiar",
+    "copyCode": "Copiar código",
     "loading": "Cargando...",
     "or": "o",
     "relative": {
@@ -911,8 +912,9 @@
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
-      "helloBlank": "¿En qué te gustaría que te ayudara? Cuéntame el trabajo y escribiré mis propias instrucciones a partir de él.",
-      "hello": "Hola, soy {{name}}. ¿En qué trabajamos?",
+      "helloBlank": "{{name}} está listo. Dile qué trabajo hacer.",
+      "startFrom": "Prueba a pedir",
+      "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
       "send": "Enviar",
       "stop": "Detener",
@@ -924,18 +926,79 @@
       "failedUnknown": "El turno terminó sin decir por qué.",
       "errorDetails": "Mostrar detalles",
       "errorLess": "Mostrar menos",
+      "retry": "Reintentar",
+      "copyMessage": "Copiar mensaje",
+      "copyReply": "Copiar respuesta",
+      "toLatest": "Ir a lo último",
+      "switchedModel": "Cambiado a <model>{{model}}</model>",
+      "tokens_one": "{{tokens}} token",
+      "tokens_many": "{{tokens}} tokens",
+      "tokens_other": "{{tokens}} tokens",
       "turn": {
         "queued": "Esperando",
-        "working": "Trabajando",
-        "worked": "Trabajó",
-        "stopped": "Detenido",
-        "interrupted": "Falló"
+        "thinking": "Pensando",
+        "writing": "Escribiendo",
+        "stopped": "Detenido"
       },
       "activity": {
-        "summary_one": "Usó {{count}} herramienta",
-        "summary_other": "Usó {{count}} herramientas",
-        "failed": "{{count}} con error",
-        "running": "en curso"
+        "searched": "Buscó en la web",
+        "searchedFor": "Buscó en la web «{{query}}»",
+        "searching": "Buscando en la web",
+        "searchingFor": "Buscando en la web «{{query}}»",
+        "planned": "Actualizó su plan",
+        "planning": "Actualizando su plan",
+        "using": "Usando {{name}}",
+        "stepFailed": "error",
+        "results_one": "{{count}} resultado",
+        "results_many": "{{count}} resultados",
+        "results_other": "{{count}} resultados",
+        "rawOutput": "Ver la salida completa",
+        "moreLines_one": "Ver {{count}} línea más",
+        "moreLines_many": "Ver {{count}} líneas más",
+        "moreLines_other": "Ver {{count}} líneas más",
+        "lessOutput": "Ver menos"
+      },
+      "suggest": {
+        "task": {
+          "research": {
+            "name": "Investigar un tema",
+            "prompt": "Busca en la web y dame un resumen breve, con fuentes, sobre "
+          },
+          "summarise": {
+            "name": "Resumir algo",
+            "prompt": "Resume esto en cinco viñetas:\n\n"
+          },
+          "draft": {
+            "name": "Redactar un mensaje",
+            "prompt": "Redacta un mensaje breve y cordial para "
+          },
+          "plan": {
+            "name": "Hacer un plan",
+            "prompt": "Haz un plan paso a paso para "
+          }
+        },
+        "job": {
+          "research": {
+            "name": "Asistente de investigación",
+            "description": "Encuentra y resume lo que le pido",
+            "prompt": "Sé mi asistente de investigación: cuando te dé un tema, busca en la web y dame un resumen breve con sus fuentes."
+          },
+          "writing": {
+            "name": "Compañero de escritura",
+            "description": "Pule mis borradores con mi propia voz",
+            "prompt": "Sé mi compañero de escritura: pule lo que escribo, propón una redacción más clara y mantén mi tono."
+          },
+          "planner": {
+            "name": "Planificador",
+            "description": "Convierte objetivos en próximos pasos",
+            "prompt": "Sé mi planificador: divide mis objetivos en pasos, lleva una lista de tareas y dime qué hacer a continuación."
+          },
+          "news": {
+            "name": "Resumen de noticias",
+            "description": "Lo último de lo que sigo",
+            "prompt": "Sé mi resumen de noticias: cuando te lo pida, busca en la web lo último sobre los temas que sigo y resúmelo en cinco viñetas."
+          }
+        }
       },
       "model": "Modelo",
       "searchModels": "Buscar modelos…",
@@ -1537,8 +1600,6 @@
       },
       "into": "en",
       "noDescription": "Sin descripción.",
-      "copyCode": "Copiar código",
-      "codeCopied": "Copiado",
       "editOnGithub": "Editar en GitHub",
       "checks": "Checks",
       "noReviewers": "Nadie la ha revisado todavía.",

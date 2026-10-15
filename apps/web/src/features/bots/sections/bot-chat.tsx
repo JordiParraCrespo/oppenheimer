@@ -13,11 +13,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
+import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotEngineChips } from '@/features/bots/components/bot-engine-chips';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
-import { useStickToBottom } from '@/features/bots/hooks/use-stick-to-bottom';
-import { botModelLabel } from '@/features/bots/lib/bot-engine';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotTranscript } from './bot-transcript';
@@ -25,7 +24,8 @@ import { BotTranscript } from './bot-transcript';
 /**
  * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): the header
  * with the sidebar toggle, the bot's face and name and its menu; the
- * transcript, which follows the latest line while you are there; and the
+ * transcript, which follows the latest line while you are there and offers
+ * the way back when you scroll up; and the
  * composer, whose chips are how the bot's turns start (its model, effort and
  * approval level), each saved on the bot as it is picked. The header, the
  * transcript and the chips all draw this one bot, so it is read here once.
@@ -42,7 +42,6 @@ export function BotChat({ botId }: { botId: string }) {
   const { data: bot, error } = useSuspenseBot(botId);
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
-  const { scroller, content } = useStickToBottom();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -70,28 +69,22 @@ export function BotChat({ botId }: { botId: string }) {
           />
         }
       />
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 pb-10">
-        <div ref={content}>
-          <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-          <QueryState>
-            <QueryState.Pending>
-              <ChatTranscript>
-                <Skeleton className="h-4 w-3/5" />
-                <Skeleton className="h-4 w-2/5" />
-              </ChatTranscript>
-            </QueryState.Pending>
-            <QueryState.Error fallback={t('bots.chat.loadFailed')} />
-            <QueryState.Data>
-              <BotTranscript
-                botId={bot.id}
-                name={bot.name}
-                modelLabel={botModelLabel(bot.provider, bot.model)}
-              />
-            </QueryState.Data>
-          </QueryState>
-        </div>
-      </div>
-      <div className="px-5 pb-5">
+      <BotChatScroller>
+        <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
+        <QueryState>
+          <QueryState.Pending>
+            <ChatTranscript>
+              <Skeleton className="h-4 w-3/5" />
+              <Skeleton className="h-4 w-2/5" />
+            </ChatTranscript>
+          </QueryState.Pending>
+          <QueryState.Error fallback={t('bots.chat.loadFailed')} />
+          <QueryState.Data>
+            <BotTranscript botId={bot.id} name={bot.name} />
+          </QueryState.Data>
+        </QueryState>
+      </BotChatScroller>
+      <div className="px-5 pb-4">
         <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
           <BotApprovalCard botId={bot.id} name={bot.name} />
           <ErrorAlert
