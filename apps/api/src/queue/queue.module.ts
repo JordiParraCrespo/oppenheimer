@@ -31,6 +31,8 @@ import { EmailProcessor } from './infrastructure/email.processor';
       { name: QUEUE_NAMES.INBOUND_EVENTS, defaultJobOptions: DURABLE_JOB_OPTIONS },
       { name: QUEUE_NAMES.AUTOMATION_RUNS, defaultJobOptions: DURABLE_JOB_OPTIONS },
       { name: QUEUE_NAMES.BOT_TURNS, defaultJobOptions: BOT_TURN_JOB_OPTIONS },
+      // An approved call is keyed by its approval, so a retry runs it once.
+      { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS },
       // Scheduler-driven queues (the automation tick, the daily purges): the
       // root defaults from `app.module.ts`.
       { name: QUEUE_NAMES.HOST_RETENTION },

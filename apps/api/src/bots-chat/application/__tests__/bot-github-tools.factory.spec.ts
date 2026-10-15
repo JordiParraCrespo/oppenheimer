@@ -29,6 +29,7 @@ const context: BotToolContext = {
   timeZone: 'Europe/Madrid',
   permission: 'auto',
   budget: new BotTurnBudget(),
+  approvals: { request: vi.fn() },
 };
 
 const INSTALLATION = '11111111-1111-4111-8111-111111111111';

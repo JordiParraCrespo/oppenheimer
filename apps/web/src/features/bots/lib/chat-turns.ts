@@ -9,6 +9,7 @@ export interface ChatTurnBlock {
   turnId: string;
   /** `undefined` only for a turn older than the page the API answered with. */
   turn: BotTurnEntity | undefined;
+  /** What opened it: your message, or an event Oppenheimer told the bot for you. */
   asked: BotMessageEntity[];
   answer: BotMessageEntity[];
 }
@@ -26,7 +27,8 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
   };
   for (const message of conversation.messages) {
     const block = blockOf(message.turnId);
-    (message.role === 'user' ? block.asked : block.answer).push(message);
+    const opens = message.role === 'user' || message.role === 'event';
+    (opens ? block.asked : block.answer).push(message);
   }
   for (const turn of conversation.turns) blockOf(turn.id);
   return [...blocks.values()];

@@ -24,6 +24,7 @@ const context: BotToolContext = {
   timeZone: 'Europe/Madrid',
   permission: 'auto',
   budget: new BotTurnBudget(),
+  approvals: { request: vi.fn() },
 };
 
 function setup(answer: (query: unknown) => unknown) {

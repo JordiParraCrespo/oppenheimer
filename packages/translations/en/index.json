@@ -241,6 +241,8 @@
       "BOTS_012": "That model provider doesn't exist.",
       "BOTS_013": "This bot's model provider has no key yet. Add one in Settings → Model providers.",
       "BOTS_014": "That turn doesn't exist.",
+      "BOTS_015": "That approval doesn't exist.",
+      "BOTS_016": "That request was already answered.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -948,7 +950,25 @@
         }
       },
       "saveFailed": "Could not change the bot.",
-      "loadFailed": "Could not load this bot."
+      "loadFailed": "Could not load this bot.",
+      "approval": {
+        "needsInput": "Needs input",
+        "title": "{{name}} wants to do this",
+        "detail": "It runs once, as you, when you approve. Writing to {{name}} instead dismisses the request.",
+        "approve": "Approve",
+        "approving": "Approving…",
+        "deny": "Deny",
+        "denying": "Denying…",
+        "noteLabel": "What should {{name}} do instead?",
+        "notePlaceholder": "Optional: why not, or what to do instead",
+        "cancel": "Cancel",
+        "failed": "Could not answer the request."
+      },
+      "event": {
+        "approved": "You approved: {{summary}}",
+        "denied": "You denied: {{summary}}",
+        "failed": "You approved, and it failed: {{summary}}"
+      }
     },
     "settings": {
       "back": "Back to the chat",

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { type CreateSessionDto, createSessionSchema } from '@oppenheimer/shared';
-import type { CodingAgentId } from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import type { ProjectEntity } from '../projects/domain/project.entity';
 
 /**
@@ -30,7 +30,7 @@ export function planSession(
       refusal: 'Give a project_id (to work in one of its repositories) or a folder on the host.',
     };
   }
-  const hostId = input.host_id ?? project?.defaultHostId ?? homeHostId;
+  const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
       refusal:
@@ -58,6 +58,52 @@ export function planSession(
   return { body: parsed.data, hostId };
 }
 
+/** How much of the task a Needs input card shows. */
+const TASK_IN_SUMMARY_MAX = 200;
+
+/** The host a `start_session` call runs on: the one named, the project's default, the home host. */
+export function sessionHostId(
+  input: StartSessionInput,
+  project: ProjectEntity | null,
+  homeHostId: string | null,
+): string | null {
+  return input.host_id ?? project?.defaultHostId ?? homeHostId;
+}
+
+/**
+ * The Needs input card's line for a `start_session` call: "Start Claude Code
+ * on build-02 in acme/xrp-mobile: Fix the failing test", the task cut to
+ * fit. `hostName` is the host as the owner sees it, or null when none is set.
+ */
+export function sessionSummary(
+  input: StartSessionInput,
+  project: ProjectEntity | null,
+  hostName: string | null,
+): string {
+  const id = input.agent ?? project?.defaultAgent;
+  const agent: CodingAgentId = CODING_AGENT_IDS.find((known) => known === id) ?? 'claude-code';
+  const repository = project && !input.folder ? repositoryOf(project, input.repository) : null;
+  const where = input.folder
+    ? ` in ${input.folder}`
+    : repository
+      ? ` in ${repository}`
+      : input.project_id
+        ? ` in project ${input.project_id}`
+        : '';
+  const task = input.task.replace(/\s+/g, ' ').trim();
+  const clipped =
+    task.length > TASK_IN_SUMMARY_MAX ? `${task.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : task;
+  return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}: ${clipped}`;
+}
+
+function repositoryOf(project: ProjectEntity, name: string | undefined): string | null {
+  const repositories = project.repositories;
+  const chosen = name
+    ? repositories.find((repo) => repo.repositoryFullName.toLowerCase() === name.toLowerCase())
+    : (repositories.find((repo) => repo.isDefault) ?? repositories[0]);
+  return chosen?.repositoryFullName ?? null;
+}
+
 /** The project's repository to check out: the one named, or its default. */
 function pickRepository(
   project: ProjectEntity,
@@ -82,8 +128,17 @@ function pickRepository(
   };
 }
 
-/** The same call in the same turn starts one session, however often the model repeats it. */
-export function idempotencyKeyOf(turnId: string, body: CreateSessionDto): string {
+/**
+ * The same call in the same turn starts one session, however often the model
+ * repeats it; an approved call starts one per approval, however often its job
+ * is retried.
+ */
+export function idempotencyKeyOf(
+  turnId: string,
+  body: CreateSessionDto,
+  approvalId?: string,
+): string {
+  if (approvalId) return `bot:approval:${approvalId}`;
   const digest = createHash('sha256').update(JSON.stringify(body)).digest('hex').slice(0, 32);
   return `bot:${turnId}:${digest}`;
 }

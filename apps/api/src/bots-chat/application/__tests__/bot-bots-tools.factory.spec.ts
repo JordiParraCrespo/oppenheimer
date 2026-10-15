@@ -23,6 +23,9 @@ const context: BotToolContext = {
   turnId: 'turn-1',
   homeHostId: null,
   timeZone: 'Europe/Madrid',
+  permission: 'auto',
+  budget: new BotTurnBudget(),
+  approvals: { request: vi.fn() },
 };
 
 function bot(id: string, name: string, description: string): BotEntity {

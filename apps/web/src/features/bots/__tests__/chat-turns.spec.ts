@@ -76,3 +76,13 @@ describe('toolTarget', () => {
     expect(toolTarget({ limit: 3 })).toBeUndefined();
   });
 });
+
+describe('events from Oppenheimer', () => {
+  it('opens its turn like your message does, apart from the bot’s answer', () => {
+    const [block] = chatTurns(
+      conversation([message('e1', 't1', 'event'), message('m2', 't1', 'assistant')], [turn('t1')]),
+    );
+    expect(block.asked.map((row) => row.id)).toEqual(['e1']);
+    expect(block.answer.map((row) => row.id)).toEqual(['m2']);
+  });
+});

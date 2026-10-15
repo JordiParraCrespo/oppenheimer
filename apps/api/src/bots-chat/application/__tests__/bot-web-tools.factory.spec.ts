@@ -18,6 +18,7 @@ const context = (): BotToolContext => ({
   timeZone: 'UTC',
   permission: 'auto',
   budget: new BotTurnBudget(),
+  approvals: { request: vi.fn() },
 });
 
 function setup(result: WebPageResult) {

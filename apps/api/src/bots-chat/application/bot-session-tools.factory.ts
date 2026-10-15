@@ -2,24 +2,34 @@ import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
+import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
 import { FindProjectQuery } from '../../projects/queries/find-project/find-project.query';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
 import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
-import { idempotencyKeyOf, planSession } from '../bot-session-tool.mapper';
+import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
+import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
+import {
+  idempotencyKeyOf,
+  planSession,
+  sessionHostId,
+  sessionSummary,
+} from '../bot-session-tool.mapper';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
 /**
  * Sessions, the writes (`25-bots.md` §4.2): start a coding agent on a host
  * with a task, or stop one. Both reach outside Oppenheimer (they run things
- * on the owner's machine), so under Approve for me they ask first. A bot's
- * session is the owner's, started in their scope, marked `bot`.
+ * on the owner's machine), so under Approve for me they ask first, and each
+ * says on the card what it will do, by name. A bot's session is the owner's,
+ * started in their scope, marked `bot`.
  */
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
@@ -68,17 +78,26 @@ export class BotSessionToolsFactory implements BotToolArea {
           .describe('Which coding agent; claude-code when omitted.'),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
       }),
+      summarize: async (input, context) => {
+        // A project the owner cannot read still gets a card, naming it by id: the call says why.
+        const project = input.project_id
+          ? await this.project(context, input.project_id).catch(() => null)
+          : null;
+        const hostId = sessionHostId(input, project, context.homeHostId);
+        const host = hostId ? await this.hostName(context, hostId) : null;
+        return sessionSummary(input, project, host);
+      },
       run: async (input, context) => {
         const project = input.project_id ? await this.project(context, input.project_id) : null;
         const plan = planSession(input, project, context.homeHostId);
-        if ('refusal' in plan) return plan.refusal;
+        if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
         const { body, hostId } = plan;
         const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
           new CreateSessionCommand({
             scope: context.owner,
             userId: context.owner.userId,
             input: body,
-            idempotencyKey: idempotencyKeyOf(context.turnId, body),
+            idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
             origin: 'bot',
           }),
         );
@@ -100,6 +119,12 @@ export class BotSessionToolsFactory implements BotToolArea {
       input: z.object({
         session_id: z.uuid().describe('The session to stop (from list_sessions).'),
       }),
+      summarize: async (input, context) => {
+        const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+          new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
+        );
+        return `Stop the session "${session.name}" (${session.id})`;
+      },
       run: async (input, context) => {
         await this.commandBus.execute<StopSessionCommand, SessionCommandResult>(
           new StopSessionCommand({ scope: context.owner, sessionId: input.session_id }),
@@ -109,7 +134,17 @@ export class BotSessionToolsFactory implements BotToolArea {
     });
   }
 
-  private project(context: BotToolContext, projectId: string): Promise<ProjectEntity> {
+  /** The host's name as the owner sees it; its id when they cannot read it. */
+  private async hostName(context: BotToolCallContext, hostId: string): Promise<string> {
+    const overview = await this.queryBus
+      .execute<FindHostQuery, { host: { name: string } }>(
+        new FindHostQuery({ scope: context.owner, hostId }),
+      )
+      .catch(() => null);
+    return overview?.host.name ?? `host ${hostId}`;
+  }
+
+  private project(context: BotToolCallContext, projectId: string): Promise<ProjectEntity> {
     return this.queryBus.execute<FindProjectQuery, ProjectEntity>(
       new FindProjectQuery({ scope: context.owner, projectId }),
     );

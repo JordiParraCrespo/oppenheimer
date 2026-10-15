@@ -9,7 +9,12 @@ import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
-import type { BotToolArea, BotToolContext, BotToolDefinition } from './bot-tool.factory';
+import type {
+  ApprovedCallContext,
+  BotToolArea,
+  BotToolContext,
+  BotToolDefinition,
+} from './bot-tool.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 
 /**
@@ -46,6 +51,31 @@ export class BotToolboxFactory {
   /** The same tools, bound to one turn. */
   tools(context: BotToolContext, granted: readonly Scope[] | null): BotEngineTool[] {
     return this.definitions(granted).map((definition) => definition.bind(context));
+  }
+
+  /**
+   * Carries out what the owner approved (`25-bots.md` §5): the stored input,
+   * validated when the card was raised, straight to the tool's run. Only if
+   * `granted` (what the asking turn's and the deciding credential's scopes
+   * both cover; null for none narrower than the owner) covers the tool's
+   * scope; otherwise nothing runs. A tool gone since is a failed run.
+   */
+  async runApproved(
+    context: ApprovedCallContext,
+    granted: readonly Scope[] | null,
+    call: { tool: string; input: Record<string, unknown> },
+    signal: AbortSignal,
+  ): Promise<{ content: string; isError: boolean }> {
+    const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
+    if (!definition)
+      return { content: `Not run: ${call.tool} is no longer a tool.`, isError: true };
+    if (granted !== null && !expandScopes(granted).has(definition.scope)) {
+      return {
+        content: `Not run: your credential does not cover ${definition.scope}.`,
+        isError: true,
+      };
+    }
+    return definition.runApproved(call.input, context, signal);
   }
 
   private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {

@@ -2,6 +2,7 @@ import {
   BOT_PROMPT_HOSTS_MAX,
   type BotPromptInput,
   botHistory,
+  botTurnPrompt,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
 
@@ -136,5 +137,30 @@ describe('botHistory', () => {
     const history = botHistory(many);
     expect(history).toHaveLength(40);
     expect(history[0].text).toBe('10');
+  });
+});
+
+describe('events from Oppenheimer', () => {
+  const event = {
+    role: 'event' as const,
+    content: 'Ana denied: Start Claude Code\nTheir note: no',
+  };
+
+  it('reads an event back on the person’s side, marked as Oppenheimer’s, never as their words', () => {
+    const [read] = botHistory([event]);
+    expect(read.role).toBe('user');
+    expect(read.text).toMatch(/^\[A note from Oppenheimer, not a message from the person\]\n/);
+    expect(read.text).toContain('Their note: no');
+  });
+
+  it('asks a turn an event opened to report back and not to route around a denial', () => {
+    const prompt = botTurnPrompt(event);
+    expect(prompt).toContain('Ana denied: Start Claude Code');
+    expect(prompt).toContain('do not try the same thing another way');
+  });
+
+  it('asks a turn your message opened exactly what you wrote', () => {
+    expect(botTurnPrompt({ role: 'user', content: 'Ship it' })).toBe('Ship it');
+    expect(botTurnPrompt(null)).toBe('');
   });
 });

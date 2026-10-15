@@ -17,6 +17,11 @@ export {
   useUpdateAutomation,
 } from './automations.queries';
 export {
+  type DecideBotApprovalVariables,
+  useBotPendingApproval,
+  useDecideBotApproval,
+} from './bot-approvals.queries';
+export {
   type BotLiveText,
   type CancelBotTurnVariables,
   type SendBotMessageVariables,

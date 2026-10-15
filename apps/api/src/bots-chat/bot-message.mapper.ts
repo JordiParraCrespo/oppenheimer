@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotMessageRole } from '@oppenheimer/shared';
+import { BOT_EVENT_OUTCOMES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import { BotMessageResponseDto } from './dtos/bot-message.response.dto';
@@ -25,6 +25,7 @@ export class BotMessageMapper
       isError: step.isError,
     }));
     record.position = entity.position;
+    record.event = entity.event ? { ...entity.event } : null;
     return record;
   }
 
@@ -41,6 +42,7 @@ export class BotMessageMapper
         content: record.content,
         steps: (record.steps ?? []).map(toStep),
         position: record.position,
+        event: toEvent(record.event),
       },
     });
   }
@@ -58,6 +60,7 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
     }));
+    dto.event = entity.event ? { ...entity.event } : null;
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
@@ -71,5 +74,18 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     input: raw.input ?? null,
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
+  };
+}
+
+/** A stored event, narrowed once; anything the mapper did not write reads as none. */
+function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
+  if (raw?.kind !== 'approval') return null;
+  const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
+  if (!outcome) return null;
+  return {
+    kind: 'approval',
+    outcome,
+    tool: String(raw.tool ?? ''),
+    summary: String(raw.summary ?? ''),
   };
 }

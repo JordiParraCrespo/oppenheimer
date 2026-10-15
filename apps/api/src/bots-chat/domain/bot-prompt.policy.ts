@@ -163,9 +163,11 @@ export interface HistoryMessage {
 export const BOT_HISTORY_MESSAGES = 40;
 
 /**
- * The conversation a turn continues: your messages and the bot's text, oldest
- * first, the latest `BOT_HISTORY_MESSAGES` of them. Activity lines are the
- * bot's own working and are not read back.
+ * The conversation a turn continues: your messages, the bot's text and the
+ * events Oppenheimer told it (an approval decided), oldest first, the latest
+ * `BOT_HISTORY_MESSAGES` of them. An event is read back as a note on your
+ * side, marked as Oppenheimer's so it is never taken for your words. Activity
+ * lines are the bot's own working and are not read back.
  */
 export function botHistory(
   messages: readonly HistoryMessage[],
@@ -173,8 +175,24 @@ export function botHistory(
   return messages
     .filter((message) => message.role !== 'activity' && message.content.trim())
     .slice(-BOT_HISTORY_MESSAGES)
-    .map((message) => ({
-      role: message.role === 'user' ? 'user' : 'assistant',
-      text: message.content,
-    }));
+    .map((message) => {
+      if (message.role === 'event') return { role: 'user', text: eventNote(message.content) };
+      return { role: message.role === 'user' ? 'user' : 'assistant', text: message.content };
+    });
+}
+
+/**
+ * What a turn is asked: your message as you wrote it, or, for a turn an event
+ * opened, the event with what to do about it.
+ */
+export function botTurnPrompt(opening: HistoryMessage | null): string {
+  if (!opening) return '';
+  if (opening.role !== 'event') return opening.content;
+  return `${eventNote(opening.content)}
+
+This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.`;
+}
+
+function eventNote(content: string): string {
+  return `[A note from Oppenheimer, not a message from the person]\n${content}`;
 }

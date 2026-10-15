@@ -46,6 +46,7 @@ const context: BotToolContext = {
   timeZone: 'UTC',
   permission: 'full',
   budget: new BotTurnBudget(),
+  approvals: { request: vi.fn() },
 };
 
 const names = (granted: readonly Scope[] | null) =>
@@ -64,5 +65,25 @@ describe('BotToolboxFactory', () => {
   it('offers a token scoped to the bot alone none of the workspace’s tools', () => {
     expect(names(['bots:write'])).toEqual([]);
     expect(toolbox.catalog(['bots:write'])).toEqual([]);
+  });
+
+  it('runs an approved call only under the scopes of the turn that asked', async () => {
+    const signal = new AbortController().signal;
+    const call = { tool: 'start_session', input: {} };
+    const ran = await toolbox.runApproved(
+      { ...context, permission: 'auto' },
+      ['sessions:write'],
+      call,
+      signal,
+    );
+    expect(ran).toEqual({ content: 'ok', isError: false });
+    const refused = await toolbox.runApproved(
+      { ...context, permission: 'auto' },
+      ['bots:write'],
+      call,
+      signal,
+    );
+    expect(refused.isError).toBe(true);
+    expect(refused.content).toContain('Not run');
   });
 });

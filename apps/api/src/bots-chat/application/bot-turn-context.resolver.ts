@@ -29,6 +29,7 @@ import {
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
+import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
@@ -65,6 +66,7 @@ export class BotTurnContextResolver {
     private readonly owners: BotOwnerScopeResolver,
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     private readonly toolbox: BotToolboxFactory,
+    private readonly approvals: BotApprovalRequestFactory,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -97,6 +99,7 @@ export class BotTurnContextResolver {
             timeZone: turn.timeZone ?? 'UTC',
             permission: bot.permission,
             budget: new BotTurnBudget(),
+            approvals: this.approvals,
           },
           turn.credentialScopes,
         )
