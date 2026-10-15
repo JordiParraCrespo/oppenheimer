@@ -249,9 +249,15 @@ function MilestoneTimeline({
 
   // Open on today, a quarter in from the left (past a 32px gutter when the
   // page bleeds it), once: the reader scrolls from there, and Today comes back.
+  // A track that runs through today pulls the view left to show its start and
+  // its name, as long as today stays in the left two thirds.
   const opened = React.useRef(false);
   const element = React.useRef<HTMLDivElement | null>(null);
-  const onToday = (el: HTMLDivElement) => Math.max(0, todayX + 32 - el.clientWidth * 0.25);
+  const current = spans.filter((s) => +s.to >= +now).map((s) => xOf(s.from));
+  const onToday = (el: HTMLDivElement) => {
+    const at = (share: number) => todayX + 32 - el.clientWidth * share;
+    return Math.max(0, Math.max(Math.min(at(0.25), ...current), at(2 / 3)));
+  };
   const scroller = (el: HTMLDivElement | null) => {
     element.current = el;
     if (el && !opened.current) {
@@ -269,7 +275,6 @@ function MilestoneTimeline({
       earlier: () => element.current?.scrollBy({ left: -28 * PX, behavior: 'smooth' }),
       later: () => element.current?.scrollBy({ left: 28 * PX, behavior: 'smooth' }),
     }),
-    [todayX],
   );
 
   return (
@@ -315,16 +320,19 @@ function MilestoneTimeline({
         />
         {spans.map(({ row, from, to }) => (
           <div key={row.id} className="relative h-28">
-            <button
-              type="button"
-              onClick={() => onOpenRow?.(row.id)}
-              className="absolute top-4.5 flex items-center gap-2 text-[15px] font-medium tracking-[-0.011em] whitespace-nowrap text-fg outline-none hover:text-link focus-visible:text-link"
-              style={{ left: xOf(from) }}
-            >
-              <FolderIcon className="size-3.75 text-fg-muted" />
-              {row.name}
-              <span className="figures font-mono text-[12px] font-normal text-fg-subtle">{row.progress}%</span>
-            </button>
+            {/* The name rides its track: it sticks to the left edge while the
+                track is scrolled past it, and leaves with the track's end. */}
+            <div className="absolute top-4.5" style={{ left: xOf(from), width: xOf(to) - xOf(from) }}>
+              <button
+                type="button"
+                onClick={() => onOpenRow?.(row.id)}
+                className="sticky left-4 flex w-max items-center gap-2 text-[15px] font-medium tracking-[-0.011em] whitespace-nowrap text-fg outline-none hover:text-link focus-visible:text-link"
+              >
+                <FolderIcon className="size-3.75 text-fg-muted" />
+                {row.name}
+                <span className="figures font-mono text-[12px] font-normal text-fg-subtle">{row.progress}%</span>
+              </button>
+            </div>
             <div
               className="absolute top-12 h-7.5 rounded-sm border border-border-subtle bg-card"
               style={{ left: xOf(from), width: xOf(to) - xOf(from) }}
