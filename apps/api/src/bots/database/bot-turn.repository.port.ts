@@ -33,7 +33,9 @@ export interface BotTurnRepositoryPort {
 
   /**
    * Stores how it ended, conditioned on the status it was loaded in, and
-   * stages the job of the bot's oldest queued turn. Whether this write won.
+   * stages the job of the bot's oldest queued turn, under the same lock on
+   * the bot `enqueue` takes, so a message sent meanwhile is never left
+   * queued with no job. Whether this write won.
    */
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean>;
 

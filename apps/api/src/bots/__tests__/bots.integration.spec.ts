@@ -569,6 +569,69 @@ describe('bots (integration)', () => {
     expect(await turns.finish(stale, null)).toBe(false);
   });
 
+  it('never strands a message sent while the running turn ends: it is staged by one or the other', async () => {
+    // The two transactions serialize on the bot's row. Without that, the send
+    // can count the ending turn as active while the end looks for a queued
+    // turn the send has not committed, and neither stages the new one.
+    for (let round = 0; round < 25; round++) {
+      const bot = await create(`Race ${round}`);
+      const first = sent(bot, 'One');
+      await turns.enqueue(first.turn, first.message, null);
+      const running = (await turns.findForRun(first.turn.id)).unwrap();
+      running.start(new Date());
+      await turns.claim(running);
+      running.end('completed', new Date());
+      const next = sent(bot, 'Two');
+      const [finished] = await Promise.all([
+        turns.finish(running, null),
+        turns.enqueue(next.turn, next.message, null),
+      ]);
+      expect(finished).toBe(true);
+      expect(await stagedTurns()).toContain(next.turn.id);
+    }
+  });
+
+  it('stores the end of a turn whose engine failed with more words than the column holds', async () => {
+    const bot = await create('Verbose');
+    const { turn, message } = sent(bot, 'One');
+    await turns.enqueue(turn, message, null);
+    const running = (await turns.findForRun(turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    running.end('failed', new Date(), { error: 'e'.repeat(2_001) });
+    expect(await turns.finish(running, null)).toBe(true);
+    expect((await turns.findForRun(turn.id)).unwrap()).toMatchObject({ status: 'failed' });
+  });
+
+  it('makes the end of a turn wait for the bot row a send holds', async () => {
+    const bot = await create('Locked');
+    const first = sent(bot, 'One');
+    await turns.enqueue(first.turn, first.message, null);
+    const running = (await turns.findForRun(first.turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    running.end('completed', new Date());
+
+    const holder = dataSource.createQueryRunner();
+    await holder.connect();
+    await holder.startTransaction();
+    try {
+      await holder.query(`SELECT id FROM bot WHERE id = $1 FOR NO KEY UPDATE`, [bot.id]);
+      const finishing = turns.finish(running, null);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const [{ status }]: { status: string }[] = await dataSource.query(
+        `SELECT status FROM bot_turn WHERE id = $1`,
+        [first.turn.id],
+      );
+      expect(status).toBe('running');
+      await holder.commitTransaction();
+      expect(await finishing).toBe(true);
+    } finally {
+      if (holder.isTransactionActive) await holder.rollbackTransaction();
+      await holder.release();
+    }
+  });
+
   it('stores the chat, makes the last message the sidebar line, and reads back history before a turn', async () => {
     const bot = await create('Glm Bot');
     const first = sent(bot, 'What is staging?');

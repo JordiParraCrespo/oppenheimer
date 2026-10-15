@@ -45,13 +45,7 @@ export class BotTurnRepository
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing'> {
     return this.outbox.transaction(async (manager) => {
-      // The bot's row is the lock two sends take turns on, so only one of
-      // them can find no active turn and stage its job.
-      const bot: unknown[] = await manager.query(
-        `SELECT id FROM bot WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
-        [turn.organizationId, turn.botId],
-      );
-      if (bot.length === 0) return 'missing';
+      if (!(await lockBot(manager, turn))) return 'missing';
       // IDX_bot_turn_active.
       const [{ active }]: { active: number }[] = await manager.query(
         `SELECT count(*)::int AS active FROM bot_turn
@@ -115,6 +109,9 @@ export class BotTurnRepository
 
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean> {
     return this.outbox.transaction(async (manager) => {
+      // The same lock a send takes, first: a send either commits before this
+      // looks for the next queued turn, or counts this one as ended.
+      await lockBot(manager, turn);
       const result = await manager
         .createQueryBuilder()
         .update(BotTurnOrmEntity)
@@ -151,6 +148,20 @@ export class BotTurnRepository
     });
     return Boolean(record?.cancelRequestedAt);
   }
+}
+
+/**
+ * Locks the bot's row for the rest of the transaction: the one lock a send
+ * and the end of a turn take turns on, so only one of them decides which
+ * turn is due. `FOR NO KEY UPDATE` leaves the bot's turns free to reference
+ * it. Whether the bot is still there.
+ */
+async function lockBot(manager: EntityManager, turn: BotTurnEntity): Promise<boolean> {
+  const bot: unknown[] = await manager.query(
+    `SELECT id FROM bot WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
+    [turn.organizationId, turn.botId],
+  );
+  return bot.length > 0;
 }
 
 /** Stages the job that runs `turnId`, in the transaction that made it due. */
