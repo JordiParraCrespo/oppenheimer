@@ -67,6 +67,7 @@ export function BotTurn({
       {block.asked.map((message) => (
         <ChatUserMessage
           key={message.id}
+          data-message-id={message.id}
           time={time.format(message.createdAt)}
           actions={<CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />}
         >
