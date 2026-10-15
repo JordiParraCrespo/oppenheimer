@@ -18,7 +18,7 @@ export const pullRequestSearchSchema = z.object({
 });
 
 /** The view a pull request opens on, and the one its address leaves out. */
-export const DEFAULT_PULL_REQUEST_VIEW = 'description' satisfies PullRequestView;
+const DEFAULT_PULL_REQUEST_VIEW = 'description' satisfies PullRequestView;
 
 export function resolvePullRequestView(view: PullRequestView | undefined): PullRequestView {
   return view ?? DEFAULT_PULL_REQUEST_VIEW;
