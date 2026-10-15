@@ -632,6 +632,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
 | `BOTS_015` <a id="bots_015" />       | Approval not found                           | 404  |
 | `BOTS_016` <a id="bots_016" />       | The approval was already decided             | 409  |
+| `BOTS_017` <a id="bots_017" />       | That model provider has no key               | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -666,6 +667,10 @@ or not in the caller's workspace.
 in the caller's workspace. `BOTS_016` is a decision on one that was already
 approved, denied, or expired because a new message was sent to the bot: read
 the approvals again; the card is gone.
+
+`BOTS_017` is making a provider the one new bots start on
+(`PUT /model-providers/:provider/default`) when the workspace has no key for
+it. Store the key first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

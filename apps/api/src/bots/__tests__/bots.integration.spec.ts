@@ -438,10 +438,14 @@ describe('bots (integration)', () => {
     });
   });
 
-  function credential(key: string, organization = organizationId) {
+  function credential(
+    key: string,
+    organization = organizationId,
+    provider: 'glm' | 'openai' = 'glm',
+  ) {
     return ModelProviderCredentialEntity.createNew({
       organizationId: organization,
-      provider: 'glm',
+      provider,
       sealedKey: Buffer.from(`sealed:${key}`),
       keyHint: key.slice(-4),
       updatedByUserId: userId,
@@ -477,6 +481,31 @@ describe('bots (integration)', () => {
       [organizationId],
     );
     expect(count).toBe(0);
+  });
+
+  it('marks one default per workspace, keeps it across a key replace, and refuses a provider with no key', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    expect(await credentials.setDefault(scope(), 'glm')).toBe(true);
+    expect(await credentials.setDefault(scope(), 'openai')).toBe(true);
+    await credentials.put(credential('openai-key-3333', organizationId, 'openai'));
+    const marked = (await credentials.findAll(scope())).filter((row) => row.isDefault);
+    expect(marked.map((row) => row.provider)).toEqual(['openai']);
+
+    expect(await credentials.setDefault(scope(), 'anthropic')).toBe(false);
+    const after = (await credentials.findAll(scope())).filter((row) => row.isDefault);
+    expect(after.map((row) => row.provider)).toEqual(['openai']);
+  });
+
+  it('refuses a second default in a workspace', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    await expect(
+      dataSource.query(
+        `UPDATE model_provider_credential SET "isDefault" = true WHERE "organizationId" = $1`,
+        [organizationId],
+      ),
+    ).rejects.toMatchObject({ constraint: 'UQ_model_provider_credential_default' });
   });
 
   it('refuses a provider the check does not list', async () => {

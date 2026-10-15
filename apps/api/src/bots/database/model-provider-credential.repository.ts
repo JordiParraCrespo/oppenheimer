@@ -64,6 +64,19 @@ export class ModelProviderCredentialRepository
       .execute();
   }
 
+  async setDefault(scope: AccessScope, provider: BotProvider): Promise<boolean> {
+    const { organizationId } = scope;
+    if (!organizationId) return false;
+    return this.repository.manager.transaction(async (manager) => {
+      const rows = manager.getRepository(ModelProviderCredentialOrmEntity);
+      if (!(await rows.exists({ where: { organizationId, provider } }))) return false;
+      // UQ_model_provider_credential_default is checked row by row: the old mark goes first.
+      await rows.update({ organizationId, isDefault: true }, { isDefault: false });
+      await rows.update({ organizationId, provider }, { isDefault: true });
+      return true;
+    });
+  }
+
   async delete(scope: AccessScope, provider: BotProvider): Promise<boolean> {
     if (!scope.organizationId) return false;
     const result = await this.repository.delete({

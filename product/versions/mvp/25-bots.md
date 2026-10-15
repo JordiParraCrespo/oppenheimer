@@ -55,6 +55,12 @@ worker runs it and streams what happens back to the chat.
   same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that
   wraps them (`@oppenheimer/backend-agents`).
+- **A new bot starts on the workspace's default provider**, at its
+  default model. Settings → Model providers marks one provider with a key
+  as the default (**Make default**); with none marked it is the provider
+  whose key was stored first, so a workspace with one key starts its bots
+  on that one; with no key at all it is Anthropic. Removing the default's
+  key falls back the same way. Bots already made keep their provider.
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
   tab does not stop it and a turn is not capped by a request's timeout.
   One turn at a time per bot: a message sent while it works waits its
@@ -416,6 +422,9 @@ The decisions it produced:
 - 2026-10-15: **the owner chooses the permissions**, tool by tool, within
   their own; the approval chip is a preset over them. It replaces
   2026-10-14's "*Ask for approval* comes with slice 4".
+- 2026-10-15: **a new bot starts on the workspace's default provider**:
+  the one marked in Settings → Model providers, else the first key
+  stored, else Anthropic (§2).
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
 - 2026-10-15: **the engine's `WebFetch` and subagents are off.** Battle

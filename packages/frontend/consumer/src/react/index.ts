@@ -56,6 +56,7 @@ export {
   useRenameBotGroup,
   useRevertBotDocument,
   useSaveBotDocument,
+  useSetDefaultModelProvider,
   useSuspenseBot,
   useSuspenseBotAndHosts,
   useSuspenseBotDocuments,

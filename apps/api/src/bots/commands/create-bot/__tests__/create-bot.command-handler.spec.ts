@@ -5,9 +5,11 @@ import { None, Some } from 'oxide.ts';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../../database/bot-group.repository.port';
+import type { ModelProviderCredentialRepositoryPort } from '../../../database/model-provider-credential.repository.port';
 import type { BotEntity } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
+import { ModelProviderCredentialEntity } from '../../../domain/model-provider-credential.entity';
 import { CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
@@ -39,16 +41,20 @@ function setup(names: string[] = []) {
   const hosts = {
     assertUsable: vi.fn<HostAccessPort['assertUsable']>(async () => ({ probedTools: null })),
   } satisfies HostAccessPort;
+  const credentials = {
+    findAll: vi.fn<ModelProviderCredentialRepositoryPort['findAll']>(async () => []),
+  } satisfies Pick<ModelProviderCredentialRepositoryPort, 'findAll'>;
   const handler = new CreateBotCommandHandler(
     bots as unknown as BotRepositoryPort,
     groups as unknown as BotGroupRepositoryPort,
     hosts,
+    credentials as unknown as ModelProviderCredentialRepositoryPort,
   );
   const written = () => {
     const [bot, documents] = bots.insert.mock.calls[0] as [BotEntity, BotDocumentEntity[]];
     return { bot, documents };
   };
-  return { handler, bots, groups, hosts, written };
+  return { handler, bots, groups, hosts, credentials, written };
 }
 
 describe('CreateBotCommandHandler', () => {
@@ -77,6 +83,23 @@ describe('CreateBotCommandHandler', () => {
       { name: 'instructions', content: '', revision: 1, authorUserId: userId },
     ]);
     expect(documents.every((document) => document.botId === bot.id)).toBe(true);
+  });
+
+  it("starts a bot that names no provider on the workspace's default, and one that names one on it", async () => {
+    const { handler, credentials, written, bots } = setup();
+    const marked = ModelProviderCredentialEntity.createNew({
+      organizationId,
+      provider: 'openai',
+      sealedKey: Buffer.from('sealed'),
+      keyHint: 'abcd',
+      updatedByUserId: userId,
+    });
+    credentials.findAll.mockResolvedValue([marked]);
+    await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
+    expect(written().bot.provider).toBe('openai');
+    bots.insert.mockClear();
+    await handler.execute(new CreateBotCommand({ scope: scope(), input: { provider: 'glm' } }));
+    expect(written().bot.provider).toBe('glm');
   });
 
   it('refuses a group the workspace does not have with BOTS_003 and writes nothing', async () => {

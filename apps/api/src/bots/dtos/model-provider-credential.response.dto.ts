@@ -18,4 +18,10 @@ export class ModelProviderCredentialResponseDto {
 
   @ApiProperty({ nullable: true, type: String, format: 'date-time' })
   updatedAt!: string | null;
+
+  @ApiProperty({
+    description:
+      'Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is.',
+  })
+  isDefault!: boolean;
 }

@@ -19,6 +19,10 @@ import {
 @Index('IDX_model_provider_credential_updated_by', ['updatedByUserId'], {
   where: '"updatedByUserId" IS NOT NULL',
 })
+@Index('UQ_model_provider_credential_default', ['organizationId'], {
+  unique: true,
+  where: '"isDefault"',
+})
 @Check('CHK_model_provider_credential_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
 export class ModelProviderCredentialOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -35,6 +39,10 @@ export class ModelProviderCredentialOrmEntity {
 
   @Column({ type: 'varchar', length: 4 })
   keyHint!: string;
+
+  /** The provider new bots start on (`1791002300000-AddModelProviderDefault`); one per workspace at most. */
+  @Column({ type: 'boolean', default: false })
+  isDefault!: boolean;
 
   @Column({ type: 'uuid', nullable: true })
   updatedByUserId!: string | null;

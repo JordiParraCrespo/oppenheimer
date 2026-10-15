@@ -39,6 +39,8 @@ import { PutModelProviderCredentialCommandHandler } from './commands/put-model-p
 import { PutModelProviderCredentialHttpController } from './commands/put-model-provider-credential/put-model-provider-credential.http.controller';
 import { RevertBotDocumentCommandHandler } from './commands/revert-bot-document/revert-bot-document.command-handler';
 import { RevertBotDocumentHttpController } from './commands/revert-bot-document/revert-bot-document.http.controller';
+import { SetDefaultModelProviderCommandHandler } from './commands/set-default-model-provider/set-default-model-provider.command-handler';
+import { SetDefaultModelProviderHttpController } from './commands/set-default-model-provider/set-default-model-provider.http.controller';
 import { UpdateBotCommandHandler } from './commands/update-bot/update-bot.command-handler';
 import { UpdateBotHttpController } from './commands/update-bot/update-bot.http.controller';
 import { UpdateBotDocumentCommandHandler } from './commands/update-bot-document/update-bot-document.command-handler';
@@ -100,6 +102,7 @@ const httpControllers = [
   FindModelProviderCredentialsHttpController,
   PutModelProviderCredentialHttpController,
   DeleteModelProviderCredentialHttpController,
+  SetDefaultModelProviderHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -117,6 +120,7 @@ const commandHandlers: Provider[] = [
   ClearBotMemoryCommandHandler,
   PutModelProviderCredentialCommandHandler,
   DeleteModelProviderCredentialCommandHandler,
+  SetDefaultModelProviderCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [

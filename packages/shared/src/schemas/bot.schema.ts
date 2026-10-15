@@ -192,7 +192,11 @@ export const createBotSchema = z.object({
   avatarColor: botAvatarColorSchema.optional(),
   groupId: z.string().uuid().nullable().optional(),
   homeHostId: z.string().uuid().nullable().optional(),
-  /** Anthropic unless named; the model is then the provider's default. */
+  /**
+   * Unless named, the workspace's default provider (Settings → Model providers),
+   * else the one it stored a key for first, else Anthropic. The model is then
+   * the provider's default.
+   */
   provider: botProviderSchema.optional(),
 });
 export type CreateBotDto = z.infer<typeof createBotSchema>;

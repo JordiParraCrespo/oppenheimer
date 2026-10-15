@@ -5,8 +5,9 @@ import { ModelProviders } from '../sections/model-providers';
 /**
  * Settings → Model providers. What breaks this: a server with no sealing key
  * (`bot_providers` off) still offering Add, Replace and Remove, whose saves
- * can only answer BOTS_011; or a failed Remove said only in a toast that
- * fades, rather than inline until dismissed.
+ * can only answer BOTS_011; a failed Remove said only in a toast that
+ * fades, rather than inline until dismissed; or Make default offered on a
+ * provider with no key, which the API refuses with BOTS_017.
  */
 
 vi.mock('react-i18next', () => ({
@@ -17,6 +18,7 @@ const state = vi.hoisted(() => ({
   botProviders: true as boolean | undefined,
   removeError: null as Error | null,
   reset: vi.fn(),
+  makeDefault: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
@@ -28,8 +30,15 @@ vi.mock('@oppenheimer/frontend-core/react', () => ({
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSuspenseModelProviders: () => ({
     data: [
-      { provider: 'anthropic', configured: true, keyHint: '9f3a', updatedAt: null },
-      { provider: 'glm', configured: false, keyHint: null, updatedAt: null },
+      {
+        provider: 'anthropic',
+        configured: true,
+        keyHint: '9f3a',
+        updatedAt: null,
+        isDefault: true,
+      },
+      { provider: 'glm', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'openai', configured: true, keyHint: '12ab', updatedAt: null, isDefault: false },
     ],
     error: null,
   }),
@@ -39,6 +48,13 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     variables: undefined,
     error: state.removeError,
     reset: state.reset,
+  }),
+  useSetDefaultModelProvider: () => ({
+    mutate: state.makeDefault,
+    isPending: false,
+    variables: undefined,
+    error: null,
+    reset: vi.fn(),
   }),
 }));
 
@@ -60,22 +76,36 @@ vi.mock('../dialogs/model-provider-key', () => ({ ModelProviderKeyDialog: () => 
 
 const editing = () =>
   [
-    'settings.modelProviders.removeLabel',
-    'settings.modelProviders.replace',
-    'settings.modelProviders.add',
-  ].map((name) => screen.getByRole('button', { name }) as HTMLButtonElement);
+    ...screen.getAllByRole('button', { name: 'settings.modelProviders.removeLabel' }),
+    ...screen.getAllByRole('button', { name: 'settings.modelProviders.replace' }),
+    screen.getByRole('button', { name: 'settings.modelProviders.add' }),
+  ] as HTMLButtonElement[];
 
 afterEach(() => {
   cleanup();
   state.botProviders = true;
   state.removeError = null;
   state.reset.mockClear();
+  state.makeDefault.mockClear();
 });
 
 describe('ModelProviders', () => {
   it('offers Add, Replace and Remove on a server that can seal keys', () => {
     render(<ModelProviders />);
-    expect(editing().map((button) => button.disabled)).toEqual([false, false, false]);
+    expect(editing().every((button) => !button.disabled)).toBe(true);
+  });
+
+  it('says Default on the provider new bots start on and offers Make default only on another with a key', () => {
+    render(<ModelProviders />);
+    const [anthropic, glm, openai] = screen.getAllByTestId('model-provider');
+    expect(anthropic.textContent).toContain('settings.modelProviders.default');
+    expect(glm.textContent).not.toContain('settings.modelProviders.makeDefault');
+    const makeDefault = screen.getByRole('button', {
+      name: 'settings.modelProviders.makeDefaultLabel',
+    });
+    expect(openai.contains(makeDefault)).toBe(true);
+    fireEvent.click(makeDefault);
+    expect(state.makeDefault).toHaveBeenCalledWith('openai');
   });
 
   it('disables them, the warning as their reason, when the server cannot seal keys', () => {

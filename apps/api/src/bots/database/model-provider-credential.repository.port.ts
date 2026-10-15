@@ -17,6 +17,11 @@ export interface ModelProviderCredentialRepositoryPort {
   ): Promise<Option<ModelProviderCredentialEntity>>;
   /** Stores it, replacing the workspace's key for that provider when there is one. */
   put(credential: ModelProviderCredentialEntity): Promise<void>;
+  /**
+   * Marks the workspace's key for `provider` as the one new bots start on, and
+   * no other. False, with nothing changed, when there is no such key.
+   */
+  setDefault(scope: AccessScope, provider: BotProvider): Promise<boolean>;
   /** Whether there was a key to remove. */
   delete(scope: AccessScope, provider: BotProvider): Promise<boolean>;
 }

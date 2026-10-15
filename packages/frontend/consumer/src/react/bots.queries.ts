@@ -530,7 +530,19 @@ export function usePutModelProviderKey(
   });
 }
 
-/** Forgets a provider's key. */
+/** Makes a provider, one with a key, the one new bots start on. */
+export function useSetDefaultModelProvider(options?: UseMutationOptions<void, Error, BotProvider>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: BotProvider) => app.bots.setDefaultModelProvider(provider),
+    ...withCacheOnSuccess(options, () =>
+      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
+    ),
+  });
+}
+
+/** Forgets a provider's key, and with it the default when it was the one. */
 export function useRemoveModelProviderKey(options?: UseMutationOptions<void, Error, BotProvider>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

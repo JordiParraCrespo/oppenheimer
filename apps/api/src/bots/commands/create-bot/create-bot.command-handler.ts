@@ -5,14 +5,20 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { BOT_DEFAULT_NAME, botSoulFor } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
-import { BOT_GROUP_REPOSITORY, BOT_REPOSITORY } from '../../bots.di-tokens';
+import {
+  BOT_GROUP_REPOSITORY,
+  BOT_REPOSITORY,
+  MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
+} from '../../bots.di-tokens';
 import type { BotRepositoryPort } from '../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
+import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';
 import { BotEntity } from '../../domain/bot.entity';
 import { userActor } from '../../domain/bot.types';
 import { BotDocumentEntity } from '../../domain/bot-document.entity';
 import { avatarColorFor, uniqueBotName } from '../../domain/bot-naming.policy';
 import { BotErrors } from '../../domain/bots.errors';
+import { defaultBotProvider } from '../../domain/model-provider-default.policy';
 import { CreateBotCommand } from './create-bot.command';
 
 /**
@@ -20,7 +26,8 @@ import { CreateBotCommand } from './create-bot.command';
  * numbered when the workspace already has the name, on the next avatar colour,
  * last in its group. It is born with a `SOUL.md` that says its name and an
  * empty `INSTRUCTIONS.md`, both at revision 1, so its history starts with its
- * creation. A home host, when given, is one the caller may use.
+ * creation. A home host, when given, is one the caller may use. A bot that
+ * names no provider starts on the workspace's default (`defaultBotProvider`).
  */
 @CommandHandler(CreateBotCommand)
 export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand, AggregateID> {
@@ -31,6 +38,8 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     private readonly groups: BotGroupRepositoryPort,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
+    @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
+    private readonly credentials: ModelProviderCredentialRepositoryPort,
   ) {}
 
   async execute({ scope, input }: CreateBotCommand): Promise<AggregateID> {
@@ -42,6 +51,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     const homeHostId = input.homeHostId ?? null;
     if (homeHostId) await this.hosts.assertUsable(scope, homeHostId);
 
+    const provider = input.provider ?? defaultBotProvider(await this.credentials.findAll(scope));
     const taken = await this.bots.namesIn(scope);
     const bot = BotEntity.createNew({
       organizationId: scope.organizationId,
@@ -51,7 +61,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       avatarColor: input.avatarColor ?? avatarColorFor(taken.length),
       groupId,
       homeHostId,
-      provider: input.provider ?? 'anthropic',
+      provider,
     });
     const actor = userActor(scope.userId);
     const documents = [

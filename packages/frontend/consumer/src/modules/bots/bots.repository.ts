@@ -66,6 +66,7 @@ function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntit
     dto.configured,
     dto.keyHint,
     dto.updatedAt ? new Date(dto.updatedAt) : null,
+    dto.isDefault,
   );
 }
 
@@ -246,7 +247,10 @@ export class BotsRepository {
     return toBot(data);
   }
 
-  /** A blank bot: "New Bot" (numbered when the workspace has one), ungrouped. */
+  /**
+   * A blank bot: "New Bot" (numbered when the workspace has one), ungrouped, on
+   * the workspace's default provider.
+   */
   @MapApiError(BotsErrors.SAVE_FAILED)
   async create(): Promise<BotEntity> {
     const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);
@@ -400,6 +404,15 @@ export class BotsRepository {
     await unwrap(
       heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
       BotsErrors.SAVE_PROVIDER_KEY_FAILED,
+    );
+  }
+
+  /** Makes `provider`, which must have a key, the one new bots start on. */
+  @MapApiError(BotsErrors.SET_DEFAULT_PROVIDER_FAILED)
+  async setDefaultModelProvider(provider: BotProvider): Promise<void> {
+    await unwrap(
+      heyApiSdk.setDefaultModelProvider({ path: { provider } }),
+      BotsErrors.SET_DEFAULT_PROVIDER_FAILED,
     );
   }
 
