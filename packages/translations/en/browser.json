@@ -227,6 +227,16 @@
       "TASKS_006": "The board changed while you were moving that task. It has been reloaded; try again.",
       "TASKS_007": "That milestone belongs to another project.",
       "TASKS_008": "Someone changed this since you opened it. Reload and try again.",
+      "BOTS_001": "That bot doesn't exist, or it was deleted.",
+      "BOTS_002": "Choose a workspace before working with bots.",
+      "BOTS_003": "That group doesn't exist, or it was deleted.",
+      "BOTS_004": "There's already a group with that name.",
+      "BOTS_005": "A bot has a soul and instructions, and nothing else to edit there.",
+      "BOTS_006": "Someone changed this since you opened it. Reload and try again.",
+      "BOTS_007": "That revision doesn't exist.",
+      "BOTS_008": "That fact doesn't exist, or it was forgotten.",
+      "BOTS_009": "This bot remembers as much as it can. Forget something first.",
+      "BOTS_010": "A bot can't run on that model.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -853,6 +863,190 @@
     },
     "screen": {
       "loadFailed": "Couldn’t refresh this session."
+    }
+  },
+  "bots": {
+    "sidebar": {
+      "new": "New bot",
+      "creating": "Creating…",
+      "createFailed": "Could not create the bot.",
+      "search": "Search bots",
+      "clearSearch": "Clear search",
+      "noMatch": "No bots match “{{query}}”.",
+      "ungrouped": "Ungrouped",
+      "emptyTitle": "No bots yet",
+      "emptyBody": "Bots you create appear here. Make one, tell it the job, and shape it in its settings.",
+      "emptyGroup": "No bots in this group yet.",
+      "noMessages": "No messages yet",
+      "newGroup": "New group",
+      "groupName": "Group name",
+      "groupActions": "Options for {{name}}",
+      "renameGroup": "Rename group",
+      "deleteGroup": "Delete group",
+      "groupFailed": "Could not save the group.",
+      "rowActions": "Bot options",
+      "settings": "Settings",
+      "move": "Move to group",
+      "moveTitle": "Move to",
+      "moveNone": "No other group yet",
+      "moveFailed": "Could not move the bot.",
+      "delete": "Delete bot",
+      "loadFailed": "Could not load your bots."
+    },
+    "landing": {
+      "titleEmpty": "Make your first bot.",
+      "title": "Pick a bot, or make a new one.",
+      "note": "A new bot starts blank. Tell it the job, and shape it in its settings."
+    },
+    "chat": {
+      "toggleSidebar": "Toggle sidebar",
+      "actions": "Bot options",
+      "settings": "Settings",
+      "delete": "Delete bot",
+      "helloBlank": "What would you most like help with? Tell me the job and I will write my own instructions from it.",
+      "hello": "Hi, I’m {{name}}. What should we work on?",
+      "placeholder": "Message {{name}}",
+      "notYet": "Chatting with bots arrives in the next update. Until then, shape this one in its settings.",
+      "send": "Send",
+      "stop": "Stop",
+      "model": "Model",
+      "searchModels": "Search models…",
+      "noModel": "No model matches “{{query}}”.",
+      "permission": {
+        "label": "Approval level",
+        "auto": {
+          "label": "Approve for me",
+          "description": "Edits files and runs commands without asking."
+        },
+        "full": {
+          "label": "Full access",
+          "description": "Everything, unattended, on the bot’s home host."
+        }
+      },
+      "saveFailed": "Could not change the bot.",
+      "loadFailed": "Could not load this bot."
+    },
+    "settings": {
+      "back": "Back to the chat",
+      "openChat": "Open chat",
+      "navLabel": "Bot settings",
+      "loadFailed": "Could not load this bot.",
+      "tabs": {
+        "profile": "Profile",
+        "instructions": "Instructions",
+        "memory": "Memory",
+        "runsOn": "Runs on"
+      },
+      "profile": {
+        "title": "Profile",
+        "subtitle": "Who the bot is and where it sits in the sidebar.",
+        "name": "Name",
+        "description": "Description",
+        "descriptionPlaceholder": "What it does, in a line",
+        "color": "Colour",
+        "colors": {
+          "mint": "Mint",
+          "tangerine": "Tangerine",
+          "snow": "Snow",
+          "sky": "Sky",
+          "lilac": "Lilac",
+          "lemon": "Lemon",
+          "coral": "Coral",
+          "moss": "Moss"
+        },
+        "group": "Sidebar group",
+        "groupHint": "Where it appears in the Employees sidebar",
+        "newGroup": "New group in the sidebar",
+        "searchGroups": "Search groups…",
+        "noGroup": "No group matches “{{query}}”.",
+        "created": "Created",
+        "history": "Chat history",
+        "noMessages": "No messages yet.",
+        "export": "Export",
+        "clear": "Clear history",
+        "discard": "Discard",
+        "save": "Save changes",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "failed": "Could not save the bot."
+      },
+      "instructions": {
+        "title": "Instructions",
+        "subtitle": "The two files the bot reads before every message.",
+        "file": "File",
+        "soulHint": "Personality and tone",
+        "instructionsHint": "Rules it follows on every task",
+        "placeholder": "{{file}} is empty.",
+        "discard": "Discard",
+        "save": "Save revision",
+        "saving": "Saving…",
+        "saveFailed": "Could not save the revision.",
+        "conflict": "{{file}} was saved somewhere else while you edited it, and is at revision {{revision}} now. Reload to see it; copy your text first if you want to keep it.",
+        "reload": "Reload",
+        "history": "Revision history",
+        "historyFailed": "Could not load the revision history.",
+        "loadFailed": "Could not load the instructions.",
+        "you": "You",
+        "bot": "Bot",
+        "created": "Created",
+        "edited": "Edited {{file}}",
+        "reverted": "Reverted to revision {{revision}}",
+        "meta": "{{file}} · revision {{revision}} · {{when}}",
+        "current": "Current",
+        "revert": "Revert",
+        "reverting": "Reverting…",
+        "revertFailed": "Could not revert the file."
+      },
+      "memory": {
+        "title": "Memory",
+        "subtitle": "What the bot remembers between chats.",
+        "learn": "Learn automatically",
+        "learnHint": "Save facts it picks up in chat without asking",
+        "learnFailed": "Could not change how the bot learns.",
+        "facts_one": "Facts · {{count}}",
+        "facts_other": "Facts · {{count}}",
+        "clearAll": "Clear all",
+        "clearTitle_one": "Clear {{count}} fact?",
+        "clearTitle_other": "Clear all {{count}} facts?",
+        "clearBody": "The bot forgets everything it was told to remember. Its soul and instructions stay.",
+        "clearing": "Clearing…",
+        "clearFailed": "Could not clear the memory.",
+        "empty": "No facts yet. Add one below.",
+        "fact": "Fact",
+        "newFact": "New fact",
+        "add": "Add",
+        "addPlaceholder": "Add a fact, e.g. Prefers squash merges",
+        "addedByYou": "Added by you · {{date}}",
+        "editedByYou": "Edited by you · {{date}}",
+        "learned": "Learned by the bot · {{date}}",
+        "edit": "Edit",
+        "save": "Save",
+        "saving": "Saving…",
+        "cancel": "Cancel",
+        "saveFailed": "Could not save the fact.",
+        "forget": "Forget “{{fact}}”",
+        "forgetFailed": "Could not forget the fact.",
+        "loadFailed": "Could not load what the bot remembers."
+      },
+      "runsOn": {
+        "title": "Runs on",
+        "subtitle": "The machine the bot works on.",
+        "homeHost": "Home host",
+        "online": "Online",
+        "offline": "Offline",
+        "noHosts": "No hosts yet",
+        "noHostsBody": "A bot runs on a machine you own. Add one, then pick it here.",
+        "addHost": "Add a host",
+        "failed": "Could not change the home host.",
+        "hostsFailed": "Could not load your hosts."
+      }
+    },
+    "delete": {
+      "title": "Delete {{name}}?",
+      "description": "The bot, its instructions, its memory and its conversation are removed for good.",
+      "confirm": "Delete bot",
+      "pending": "Deleting…",
+      "failed": "Could not delete the bot."
     }
   },
   "automations": {
@@ -1875,7 +2069,8 @@
     "automations": "Automations",
     "logOutFailed": "Could not log you out. Try again.",
     "plan": "Plan",
-    "pullRequests": "Pull requests"
+    "pullRequests": "Pull requests",
+    "employees": "Employees"
   },
   "language": {
     "label": "Language",
@@ -2157,6 +2352,7 @@
     "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
     "reviewCommentPosted": "Comment posted.",
     "reviewApproved": "Approved.",
-    "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass."
+    "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass.",
+    "botDeleted": "“{{name}}” deleted."
   }
 }

@@ -73,6 +73,13 @@ export const ENDPOINT_POLICIES = {
   'DELETE /automations/:id': [{ action: 'delete', subject: 'Automation' }],
   'POST /automations/:id/run': [{ action: 'update', subject: 'Automation' }],
   'GET /automation-runs': [{ action: 'read', subject: 'Automation' }],
+
+  // Bots. Editing a bot's documents and memory is `update Bot`.
+  'GET /bots': [{ action: 'read', subject: 'Bot' }],
+  'GET /bots/:id': [{ action: 'read', subject: 'Bot' }],
+  'POST /bots': [{ action: 'create', subject: 'Bot' }],
+  'PATCH /bots/:id': [{ action: 'update', subject: 'Bot' }],
+  'DELETE /bots/:id': [{ action: 'delete', subject: 'Bot' }],
 } satisfies Record<string, readonly [EndpointPolicy, ...EndpointPolicy[]]>;
 
 /** An endpoint whose rules are declared in {@link ENDPOINT_POLICIES}. */

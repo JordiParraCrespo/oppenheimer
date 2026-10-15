@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AddCheckoutData, AddCheckoutErrors, AddCheckoutResponses, AddMemberData, AddMemberErrors, AddMemberResponses, AddPullRequestCommentData, AddPullRequestCommentErrors, AddPullRequestCommentResponses, AddWorkspaceMemberData, AddWorkspaceMemberErrors, AddWorkspaceMemberResponses, AdminUpdateUserData, AdminUpdateUserErrors, AdminUpdateUserResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignUserRolesData, AssignUserRolesErrors, AssignUserRolesResponses, BanUserData, BanUserErrors, BanUserResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectGoogleCalendarData, ConnectGoogleCalendarErrors, ConnectGoogleCalendarResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, CreateAccessGrantData, CreateAccessGrantErrors, CreateAccessGrantResponses, CreateApiTokenData, CreateApiTokenErrors, CreateApiTokenResponses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateCalendarEventData, CreateCalendarEventErrors, CreateCalendarEventResponses, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateMilestoneData, CreateMilestoneErrors, CreateMilestoneResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateRoleData, CreateRoleErrors, CreateRoleResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateTaskData, CreateTaskErrors, CreateTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkspaceData, CreateWorkspaceErrors, CreateWorkspaceResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteCalendarEventData, DeleteCalendarEventErrors, DeleteCalendarEventResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteMilestoneData, DeleteMilestoneErrors, DeleteMilestoneResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleResponses, DeleteTaskData, DeleteTaskErrors, DeleteTaskResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DeleteWorkspaceData, DeleteWorkspaceErrors, DeleteWorkspaceResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAccessGrantsData, FindAccessGrantsErrors, FindAccessGrantsResponses, FindApiTokensData, FindApiTokensErrors, FindApiTokensResponses, FindAuthzCatalogData, FindAuthzCatalogErrors, FindAuthzCatalogResponses, FindAutomationData, FindAutomationErrors, FindAutomationResponses, FindAutomationRunData, FindAutomationRunErrors, FindAutomationRunResponses, FindAutomationRunsData, FindAutomationRunsErrors, FindAutomationRunsResponses, FindAutomationsData, FindAutomationsErrors, FindAutomationSettingsData, FindAutomationSettingsErrors, FindAutomationSettingsResponses, FindAutomationsResponses, FindCalendarEventsData, FindCalendarEventsErrors, FindCalendarEventsResponses, FindCurrentCredentialData, FindCurrentCredentialErrors, FindCurrentCredentialResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindGoogleCalendarConnectionsData, FindGoogleCalendarConnectionsErrors, FindGoogleCalendarConnectionsResponses, FindGoogleCalendarEventsData, FindGoogleCalendarEventsErrors, FindGoogleCalendarEventsResponses, FindGrantablePermissionsData, FindGrantablePermissionsErrors, FindGrantablePermissionsResponses, FindHostData, FindHostErrors, FindHostFoldersData, FindHostFoldersErrors, FindHostFoldersResponses, FindHostResponses, FindHostsData, FindHostsErrors, FindHostsResponses, FindHostTimelineData, FindHostTimelineErrors, FindHostTimelineResponses, FindInstallationsData, FindInstallationsErrors, FindInstallationsResponses, FindMilestonesData, FindMilestonesErrors, FindMilestonesResponses, FindPairingTokenData, FindPairingTokenErrors, FindPairingTokenResponses, FindPairingTokensData, FindPairingTokensErrors, FindPairingTokensResponses, FindPlanStatsData, FindPlanStatsErrors, FindPlanStatsResponses, FindProfileSessionsData, FindProfileSessionsErrors, FindProfileSessionsResponses, FindProjectData, FindProjectErrors, FindProjectResponses, FindProjectsData, FindProjectsErrors, FindProjectsResponses, FindPullRequestActivityData, FindPullRequestActivityErrors, FindPullRequestActivityResponses, FindPullRequestAnalyticsData, FindPullRequestAnalyticsErrors, FindPullRequestAnalyticsResponses, FindPullRequestCommentsData, FindPullRequestCommentsErrors, FindPullRequestCommentsResponses, FindPullRequestData, FindPullRequestErrors, FindPullRequestFilesData, FindPullRequestFilesErrors, FindPullRequestFilesResponses, FindPullRequestResponses, FindPullRequestsData, FindPullRequestsErrors, FindPullRequestsResponses, FindReviewSessionsData, FindReviewSessionsErrors, FindReviewSessionsResponses, FindRoleByIdData, FindRoleByIdErrors, FindRoleByIdResponses, FindRolesData, FindRolesErrors, FindRolesResponses, FindRunHistoryData, FindRunHistoryErrors, FindRunHistoryResponses, FindSessionData, FindSessionErrors, FindSessionEventsData, FindSessionEventsErrors, FindSessionEventsResponses, FindSessionResponses, FindSessionsData, FindSessionsErrors, FindSessionShareData, FindSessionShareErrors, FindSessionShareResponses, FindSessionsResponses, FindSharedSessionData, FindSharedSessionErrors, FindSharedSessionResponses, FindTaskData, FindTaskErrors, FindTaskResponses, FindTasksData, FindTasksErrors, FindTasksResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, FindWatchedRepositoriesData, FindWatchedRepositoriesErrors, FindWatchedRepositoriesResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetInvitationData, GetInvitationErrors, GetInvitationResponses, GetMeData, GetMeErrors, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetMeResponses, GetMyPermissionsData, GetMyPermissionsErrors, GetMyPermissionsResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetUserData, GetUserErrors, GetUserResponses, GetUserSettingsData, GetUserSettingsErrors, GetUserSettingsResponses, ImpersonateUserData, ImpersonateUserErrors, ImpersonateUserResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, IssueSharedAttachTicketData, IssueSharedAttachTicketErrors, IssueSharedAttachTicketResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkTaskSessionData, LinkTaskSessionErrors, LinkTaskSessionResponses, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMyInvitationsData, ListMyInvitationsErrors, ListMyInvitationsResponses, ListMyWorkspacesData, ListMyWorkspacesErrors, ListMyWorkspacesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, ListWorkspaceMembersData, ListWorkspaceMembersErrors, ListWorkspaceMembersResponses, ListWorkspacesData, ListWorkspacesErrors, ListWorkspacesResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, MintPairingTokenData, MintPairingTokenErrors, MintPairingTokenResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, MoveTaskData, MoveTaskErrors, MoveTaskResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, PrepareSessionData, PrepareSessionErrors, PrepareSessionResponses, PreviewTriggerData, PreviewTriggerErrors, PreviewTriggerResponses, PutSessionShareData, PutSessionShareErrors, PutSessionShareResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterHostData, RegisterHostErrors, RegisterHostResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveCheckoutData, RemoveCheckoutErrors, RemoveCheckoutResponses, RemoveGoogleCalendarConnectionData, RemoveGoogleCalendarConnectionErrors, RemoveGoogleCalendarConnectionResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RemoveWorkspaceMemberData, RemoveWorkspaceMemberErrors, RemoveWorkspaceMemberResponses, RenameHostData, RenameHostErrors, RenameHostResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RenameWorkspaceData, RenameWorkspaceErrors, RenameWorkspaceResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, RevokeAccessGrantData, RevokeAccessGrantErrors, RevokeAccessGrantResponses, RevokeApiTokenData, RevokeApiTokenErrors, RevokeApiTokenResponses, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokePairingTokenData, RevokePairingTokenErrors, RevokePairingTokenResponses, RevokeProfileSessionData, RevokeProfileSessionErrors, RevokeProfileSessionResponses, RevokeUserSessionData, RevokeUserSessionErrors, RevokeUserSessionResponses, RevokeUserSessionsData, RevokeUserSessionsErrors, RevokeUserSessionsResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetActiveWorkspaceData, SetActiveWorkspaceErrors, SetActiveWorkspaceResponses, SetRepositoryWatchData, SetRepositoryWatchErrors, SetRepositoryWatchResponses, SetSessionSharePeopleData, SetSessionSharePeopleErrors, SetSessionSharePeopleResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, SetUserRoleData, SetUserRoleErrors, SetUserRoleResponses, StartGoogleCalendarConnectionData, StartGoogleCalendarConnectionErrors, StartGoogleCalendarConnectionResponses, StartInstallationData, StartInstallationErrors, StartInstallationResponses, StartReviewSessionData, StartReviewSessionErrors, StartReviewSessionResponses, StartTaskSessionData, StartTaskSessionErrors, StartTaskSessionResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, StopSessionShareData, StopSessionShareErrors, StopSessionShareResponses, StreamWorkspaceEventsData, StreamWorkspaceEventsErrors, StreamWorkspaceEventsResponses, SubmitPullRequestReviewData, SubmitPullRequestReviewErrors, SubmitPullRequestReviewResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanUserData, UnbanUserErrors, UnbanUserResponses, UninstallHostData, UninstallHostErrors, UninstallHostResponses, UnlinkTaskSessionData, UnlinkTaskSessionErrors, UnlinkTaskSessionResponses, UnpairHostData, UnpairHostErrors, UnpairHostResponses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateCalendarEventData, UpdateCalendarEventErrors, UpdateCalendarEventResponses, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdateMemberRoleData, UpdateMemberRoleErrors, UpdateMemberRoleResponses, UpdateMilestoneData, UpdateMilestoneErrors, UpdateMilestoneResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateRoleData, UpdateRoleErrors, UpdateRolePermissionsData, UpdateRolePermissionsErrors, UpdateRolePermissionsResponses, UpdateRoleResponses, UpdateTaskData, UpdateTaskErrors, UpdateTaskResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateUserSettingsData, UpdateUserSettingsErrors, UpdateUserSettingsResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses, UploadSessionAttachmentData, UploadSessionAttachmentErrors, UploadSessionAttachmentResponses } from './types.gen';
+import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AddCheckoutData, AddCheckoutErrors, AddCheckoutResponses, AddMemberData, AddMemberErrors, AddMemberResponses, AddPullRequestCommentData, AddPullRequestCommentErrors, AddPullRequestCommentResponses, AddWorkspaceMemberData, AddWorkspaceMemberErrors, AddWorkspaceMemberResponses, AdminUpdateUserData, AdminUpdateUserErrors, AdminUpdateUserResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignUserRolesData, AssignUserRolesErrors, AssignUserRolesResponses, BanUserData, BanUserErrors, BanUserResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, ClearBotMemoryData, ClearBotMemoryErrors, ClearBotMemoryResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectGoogleCalendarData, ConnectGoogleCalendarErrors, ConnectGoogleCalendarResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, CreateAccessGrantData, CreateAccessGrantErrors, CreateAccessGrantResponses, CreateApiTokenData, CreateApiTokenErrors, CreateApiTokenResponses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateBotData, CreateBotErrors, CreateBotGroupData, CreateBotGroupErrors, CreateBotGroupResponses, CreateBotMemoryFactData, CreateBotMemoryFactErrors, CreateBotMemoryFactResponses, CreateBotResponses, CreateCalendarEventData, CreateCalendarEventErrors, CreateCalendarEventResponses, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateMilestoneData, CreateMilestoneErrors, CreateMilestoneResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateRoleData, CreateRoleErrors, CreateRoleResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateTaskData, CreateTaskErrors, CreateTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkspaceData, CreateWorkspaceErrors, CreateWorkspaceResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteBotData, DeleteBotErrors, DeleteBotGroupData, DeleteBotGroupErrors, DeleteBotGroupResponses, DeleteBotMemoryFactData, DeleteBotMemoryFactErrors, DeleteBotMemoryFactResponses, DeleteBotResponses, DeleteCalendarEventData, DeleteCalendarEventErrors, DeleteCalendarEventResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteMilestoneData, DeleteMilestoneErrors, DeleteMilestoneResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleResponses, DeleteTaskData, DeleteTaskErrors, DeleteTaskResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DeleteWorkspaceData, DeleteWorkspaceErrors, DeleteWorkspaceResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAccessGrantsData, FindAccessGrantsErrors, FindAccessGrantsResponses, FindApiTokensData, FindApiTokensErrors, FindApiTokensResponses, FindAuthzCatalogData, FindAuthzCatalogErrors, FindAuthzCatalogResponses, FindAutomationData, FindAutomationErrors, FindAutomationResponses, FindAutomationRunData, FindAutomationRunErrors, FindAutomationRunResponses, FindAutomationRunsData, FindAutomationRunsErrors, FindAutomationRunsResponses, FindAutomationsData, FindAutomationsErrors, FindAutomationSettingsData, FindAutomationSettingsErrors, FindAutomationSettingsResponses, FindAutomationsResponses, FindBotData, FindBotDocumentRevisionsData, FindBotDocumentRevisionsErrors, FindBotDocumentRevisionsResponses, FindBotDocumentsData, FindBotDocumentsErrors, FindBotDocumentsResponses, FindBotErrors, FindBotGroupsData, FindBotGroupsErrors, FindBotGroupsResponses, FindBotMemoryData, FindBotMemoryErrors, FindBotMemoryResponses, FindBotResponses, FindBotsData, FindBotsErrors, FindBotsResponses, FindCalendarEventsData, FindCalendarEventsErrors, FindCalendarEventsResponses, FindCurrentCredentialData, FindCurrentCredentialErrors, FindCurrentCredentialResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindGoogleCalendarConnectionsData, FindGoogleCalendarConnectionsErrors, FindGoogleCalendarConnectionsResponses, FindGoogleCalendarEventsData, FindGoogleCalendarEventsErrors, FindGoogleCalendarEventsResponses, FindGrantablePermissionsData, FindGrantablePermissionsErrors, FindGrantablePermissionsResponses, FindHostData, FindHostErrors, FindHostFoldersData, FindHostFoldersErrors, FindHostFoldersResponses, FindHostResponses, FindHostsData, FindHostsErrors, FindHostsResponses, FindHostTimelineData, FindHostTimelineErrors, FindHostTimelineResponses, FindInstallationsData, FindInstallationsErrors, FindInstallationsResponses, FindMilestonesData, FindMilestonesErrors, FindMilestonesResponses, FindPairingTokenData, FindPairingTokenErrors, FindPairingTokenResponses, FindPairingTokensData, FindPairingTokensErrors, FindPairingTokensResponses, FindPlanStatsData, FindPlanStatsErrors, FindPlanStatsResponses, FindProfileSessionsData, FindProfileSessionsErrors, FindProfileSessionsResponses, FindProjectData, FindProjectErrors, FindProjectResponses, FindProjectsData, FindProjectsErrors, FindProjectsResponses, FindPullRequestActivityData, FindPullRequestActivityErrors, FindPullRequestActivityResponses, FindPullRequestAnalyticsData, FindPullRequestAnalyticsErrors, FindPullRequestAnalyticsResponses, FindPullRequestCommentsData, FindPullRequestCommentsErrors, FindPullRequestCommentsResponses, FindPullRequestData, FindPullRequestErrors, FindPullRequestFilesData, FindPullRequestFilesErrors, FindPullRequestFilesResponses, FindPullRequestResponses, FindPullRequestsData, FindPullRequestsErrors, FindPullRequestsResponses, FindReviewSessionsData, FindReviewSessionsErrors, FindReviewSessionsResponses, FindRoleByIdData, FindRoleByIdErrors, FindRoleByIdResponses, FindRolesData, FindRolesErrors, FindRolesResponses, FindRunHistoryData, FindRunHistoryErrors, FindRunHistoryResponses, FindSessionData, FindSessionErrors, FindSessionEventsData, FindSessionEventsErrors, FindSessionEventsResponses, FindSessionResponses, FindSessionsData, FindSessionsErrors, FindSessionShareData, FindSessionShareErrors, FindSessionShareResponses, FindSessionsResponses, FindSharedSessionData, FindSharedSessionErrors, FindSharedSessionResponses, FindTaskData, FindTaskErrors, FindTaskResponses, FindTasksData, FindTasksErrors, FindTasksResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, FindWatchedRepositoriesData, FindWatchedRepositoriesErrors, FindWatchedRepositoriesResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetInvitationData, GetInvitationErrors, GetInvitationResponses, GetMeData, GetMeErrors, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetMeResponses, GetMyPermissionsData, GetMyPermissionsErrors, GetMyPermissionsResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetUserData, GetUserErrors, GetUserResponses, GetUserSettingsData, GetUserSettingsErrors, GetUserSettingsResponses, ImpersonateUserData, ImpersonateUserErrors, ImpersonateUserResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, IssueSharedAttachTicketData, IssueSharedAttachTicketErrors, IssueSharedAttachTicketResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkTaskSessionData, LinkTaskSessionErrors, LinkTaskSessionResponses, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMyInvitationsData, ListMyInvitationsErrors, ListMyInvitationsResponses, ListMyWorkspacesData, ListMyWorkspacesErrors, ListMyWorkspacesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, ListWorkspaceMembersData, ListWorkspaceMembersErrors, ListWorkspaceMembersResponses, ListWorkspacesData, ListWorkspacesErrors, ListWorkspacesResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, MintPairingTokenData, MintPairingTokenErrors, MintPairingTokenResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, MoveTaskData, MoveTaskErrors, MoveTaskResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, PrepareSessionData, PrepareSessionErrors, PrepareSessionResponses, PreviewTriggerData, PreviewTriggerErrors, PreviewTriggerResponses, PutSessionShareData, PutSessionShareErrors, PutSessionShareResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterHostData, RegisterHostErrors, RegisterHostResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveCheckoutData, RemoveCheckoutErrors, RemoveCheckoutResponses, RemoveGoogleCalendarConnectionData, RemoveGoogleCalendarConnectionErrors, RemoveGoogleCalendarConnectionResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RemoveWorkspaceMemberData, RemoveWorkspaceMemberErrors, RemoveWorkspaceMemberResponses, RenameHostData, RenameHostErrors, RenameHostResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RenameWorkspaceData, RenameWorkspaceErrors, RenameWorkspaceResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, RevertBotDocumentData, RevertBotDocumentErrors, RevertBotDocumentResponses, RevokeAccessGrantData, RevokeAccessGrantErrors, RevokeAccessGrantResponses, RevokeApiTokenData, RevokeApiTokenErrors, RevokeApiTokenResponses, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokePairingTokenData, RevokePairingTokenErrors, RevokePairingTokenResponses, RevokeProfileSessionData, RevokeProfileSessionErrors, RevokeProfileSessionResponses, RevokeUserSessionData, RevokeUserSessionErrors, RevokeUserSessionResponses, RevokeUserSessionsData, RevokeUserSessionsErrors, RevokeUserSessionsResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetActiveWorkspaceData, SetActiveWorkspaceErrors, SetActiveWorkspaceResponses, SetRepositoryWatchData, SetRepositoryWatchErrors, SetRepositoryWatchResponses, SetSessionSharePeopleData, SetSessionSharePeopleErrors, SetSessionSharePeopleResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, SetUserRoleData, SetUserRoleErrors, SetUserRoleResponses, StartGoogleCalendarConnectionData, StartGoogleCalendarConnectionErrors, StartGoogleCalendarConnectionResponses, StartInstallationData, StartInstallationErrors, StartInstallationResponses, StartReviewSessionData, StartReviewSessionErrors, StartReviewSessionResponses, StartTaskSessionData, StartTaskSessionErrors, StartTaskSessionResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, StopSessionShareData, StopSessionShareErrors, StopSessionShareResponses, StreamWorkspaceEventsData, StreamWorkspaceEventsErrors, StreamWorkspaceEventsResponses, SubmitPullRequestReviewData, SubmitPullRequestReviewErrors, SubmitPullRequestReviewResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanUserData, UnbanUserErrors, UnbanUserResponses, UninstallHostData, UninstallHostErrors, UninstallHostResponses, UnlinkTaskSessionData, UnlinkTaskSessionErrors, UnlinkTaskSessionResponses, UnpairHostData, UnpairHostErrors, UnpairHostResponses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateBotData, UpdateBotDocumentData, UpdateBotDocumentErrors, UpdateBotDocumentResponses, UpdateBotErrors, UpdateBotGroupData, UpdateBotGroupErrors, UpdateBotGroupResponses, UpdateBotMemoryFactData, UpdateBotMemoryFactErrors, UpdateBotMemoryFactResponses, UpdateBotResponses, UpdateCalendarEventData, UpdateCalendarEventErrors, UpdateCalendarEventResponses, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdateMemberRoleData, UpdateMemberRoleErrors, UpdateMemberRoleResponses, UpdateMilestoneData, UpdateMilestoneErrors, UpdateMilestoneResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateRoleData, UpdateRoleErrors, UpdateRolePermissionsData, UpdateRolePermissionsErrors, UpdateRolePermissionsResponses, UpdateRoleResponses, UpdateTaskData, UpdateTaskErrors, UpdateTaskResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateUserSettingsData, UpdateUserSettingsErrors, UpdateUserSettingsResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses, UploadSessionAttachmentData, UploadSessionAttachmentErrors, UploadSessionAttachmentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -2191,6 +2191,224 @@ export const mergePullRequest = <ThrowOnError extends boolean = false>(options: 
 export const startReviewSession = <ThrowOnError extends boolean = false>(options: Options<StartReviewSessionData, ThrowOnError>): RequestResult<StartReviewSessionResponses, StartReviewSessionErrors, ThrowOnError> => (options.client ?? client).post<StartReviewSessionResponses, StartReviewSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/review-session',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the workspace’s bots
+ *
+ * Every bot, ungrouped first, then by group and position: the Employees sidebar.
+ */
+export const findBots = <ThrowOnError extends boolean = false>(options?: Options<FindBotsData, ThrowOnError>): RequestResult<FindBotsResponses, FindBotsErrors, ThrowOnError> => (options?.client ?? client).get<FindBotsResponses, FindBotsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots',
+    ...options
+});
+
+/**
+ * Create a bot
+ *
+ * A blank bot: "New Bot" unless named, numbered when the workspace has the name, last in its group, with a soul that says its name and empty instructions.
+ */
+export const createBot = <ThrowOnError extends boolean = false>(options: Options<CreateBotData, ThrowOnError>): RequestResult<CreateBotResponses, CreateBotErrors, ThrowOnError> => (options.client ?? client).post<CreateBotResponses, CreateBotErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a bot
+ *
+ * Removes the bot, its soul and instructions with their history, and its memory.
+ */
+export const deleteBot = <ThrowOnError extends boolean = false>(options: Options<DeleteBotData, ThrowOnError>): RequestResult<DeleteBotResponses, DeleteBotErrors, ThrowOnError> => (options.client ?? client).delete<DeleteBotResponses, DeleteBotErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}',
+    ...options
+});
+
+/**
+ * Read a bot
+ */
+export const findBot = <ThrowOnError extends boolean = false>(options: Options<FindBotData, ThrowOnError>): RequestResult<FindBotResponses, FindBotErrors, ThrowOnError> => (options.client ?? client).get<FindBotResponses, FindBotErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}',
+    ...options
+});
+
+/**
+ * Edit a bot
+ *
+ * Profile, home host, model, effort, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.
+ */
+export const updateBot = <ThrowOnError extends boolean = false>(options: Options<UpdateBotData, ThrowOnError>): RequestResult<UpdateBotResponses, UpdateBotErrors, ThrowOnError> => (options.client ?? client).patch<UpdateBotResponses, UpdateBotErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read a bot’s soul and instructions
+ *
+ * Both documents, soul first, each with the revision a save sends back.
+ */
+export const findBotDocuments = <ThrowOnError extends boolean = false>(options: Options<FindBotDocumentsData, ThrowOnError>): RequestResult<FindBotDocumentsResponses, FindBotDocumentsErrors, ThrowOnError> => (options.client ?? client).get<FindBotDocumentsResponses, FindBotDocumentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/documents',
+    ...options
+});
+
+/**
+ * Save a bot’s soul or instructions
+ *
+ * Saved over `baseRevision`, the revision the editor loaded, as the next revision. Saving the stored content makes no revision.
+ */
+export const updateBotDocument = <ThrowOnError extends boolean = false>(options: Options<UpdateBotDocumentData, ThrowOnError>): RequestResult<UpdateBotDocumentResponses, UpdateBotDocumentErrors, ThrowOnError> => (options.client ?? client).put<UpdateBotDocumentResponses, UpdateBotDocumentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/documents/{name}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read a bot document’s revisions
+ *
+ * Newest first, at most `limit` (50 unless asked, 100 at most).
+ */
+export const findBotDocumentRevisions = <ThrowOnError extends boolean = false>(options: Options<FindBotDocumentRevisionsData, ThrowOnError>): RequestResult<FindBotDocumentRevisionsResponses, FindBotDocumentRevisionsErrors, ThrowOnError> => (options.client ?? client).get<FindBotDocumentRevisionsResponses, FindBotDocumentRevisionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/documents/{name}/revisions',
+    ...options
+});
+
+/**
+ * Revert a bot document to a revision
+ *
+ * Writes that revision’s content as the next revision, so nothing in the history is lost.
+ */
+export const revertBotDocument = <ThrowOnError extends boolean = false>(options: Options<RevertBotDocumentData, ThrowOnError>): RequestResult<RevertBotDocumentResponses, RevertBotDocumentErrors, ThrowOnError> => (options.client ?? client).post<RevertBotDocumentResponses, RevertBotDocumentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/documents/{name}/revisions/{revision}/revert',
+    ...options
+});
+
+/**
+ * Make a bot forget everything it remembers
+ */
+export const clearBotMemory = <ThrowOnError extends boolean = false>(options: Options<ClearBotMemoryData, ThrowOnError>): RequestResult<ClearBotMemoryResponses, ClearBotMemoryErrors, ThrowOnError> => (options.client ?? client).delete<ClearBotMemoryResponses, ClearBotMemoryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/memory',
+    ...options
+});
+
+/**
+ * Read what a bot remembers
+ *
+ * Newest first.
+ */
+export const findBotMemory = <ThrowOnError extends boolean = false>(options: Options<FindBotMemoryData, ThrowOnError>): RequestResult<FindBotMemoryResponses, FindBotMemoryErrors, ThrowOnError> => (options.client ?? client).get<FindBotMemoryResponses, FindBotMemoryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/memory',
+    ...options
+});
+
+/**
+ * Teach a bot a fact
+ *
+ * One fact, in a sentence.
+ */
+export const createBotMemoryFact = <ThrowOnError extends boolean = false>(options: Options<CreateBotMemoryFactData, ThrowOnError>): RequestResult<CreateBotMemoryFactResponses, CreateBotMemoryFactErrors, ThrowOnError> => (options.client ?? client).post<CreateBotMemoryFactResponses, CreateBotMemoryFactErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/memory',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Make a bot forget a fact
+ */
+export const deleteBotMemoryFact = <ThrowOnError extends boolean = false>(options: Options<DeleteBotMemoryFactData, ThrowOnError>): RequestResult<DeleteBotMemoryFactResponses, DeleteBotMemoryFactErrors, ThrowOnError> => (options.client ?? client).delete<DeleteBotMemoryFactResponses, DeleteBotMemoryFactErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/memory/{factId}',
+    ...options
+});
+
+/**
+ * Reword a fact a bot remembers
+ */
+export const updateBotMemoryFact = <ThrowOnError extends boolean = false>(options: Options<UpdateBotMemoryFactData, ThrowOnError>): RequestResult<UpdateBotMemoryFactResponses, UpdateBotMemoryFactErrors, ThrowOnError> => (options.client ?? client).patch<UpdateBotMemoryFactResponses, UpdateBotMemoryFactErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bots/{id}/memory/{factId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the sidebar’s bot groups
+ *
+ * In sidebar order.
+ */
+export const findBotGroups = <ThrowOnError extends boolean = false>(options?: Options<FindBotGroupsData, ThrowOnError>): RequestResult<FindBotGroupsResponses, FindBotGroupsErrors, ThrowOnError> => (options?.client ?? client).get<FindBotGroupsResponses, FindBotGroupsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bot-groups',
+    ...options
+});
+
+/**
+ * Add a bot group
+ *
+ * It goes last in the sidebar.
+ */
+export const createBotGroup = <ThrowOnError extends boolean = false>(options: Options<CreateBotGroupData, ThrowOnError>): RequestResult<CreateBotGroupResponses, CreateBotGroupErrors, ThrowOnError> => (options.client ?? client).post<CreateBotGroupResponses, CreateBotGroupErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bot-groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a bot group
+ *
+ * Its bots stay, ungrouped, after the bots already there.
+ */
+export const deleteBotGroup = <ThrowOnError extends boolean = false>(options: Options<DeleteBotGroupData, ThrowOnError>): RequestResult<DeleteBotGroupResponses, DeleteBotGroupErrors, ThrowOnError> => (options.client ?? client).delete<DeleteBotGroupResponses, DeleteBotGroupErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bot-groups/{id}',
+    ...options
+});
+
+/**
+ * Rename or move a bot group
+ *
+ * A `position` places it at that index in the sidebar; the others close up.
+ */
+export const updateBotGroup = <ThrowOnError extends boolean = false>(options: Options<UpdateBotGroupData, ThrowOnError>): RequestResult<UpdateBotGroupResponses, UpdateBotGroupErrors, ThrowOnError> => (options.client ?? client).patch<UpdateBotGroupResponses, UpdateBotGroupErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/bot-groups/{id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

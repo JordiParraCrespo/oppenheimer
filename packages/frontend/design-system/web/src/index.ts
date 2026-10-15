@@ -20,8 +20,8 @@ export {
   AvatarGroupCount,
   AvatarImage,
 } from './components/avatar';
-export type { AvatarOption } from './components/avatar-picker';
-export { AvatarPicker, BotAvatar } from './components/avatar-picker';
+export type { AvatarColor, AvatarOption } from './components/avatar-picker';
+export { AvatarColorPicker, AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
 export { BotItem, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';

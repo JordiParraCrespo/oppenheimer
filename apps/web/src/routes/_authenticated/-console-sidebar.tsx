@@ -12,6 +12,11 @@ const AutomationsSidebar = lazy(() =>
     default: module.AutomationsSidebar,
   })),
 );
+const BotsSidebar = lazy(() =>
+  import('@/features/bots/sections/bots-sidebar').then((module) => ({
+    default: module.BotsSidebar,
+  })),
+);
 const PullRequestsSidebar = lazy(() =>
   import('@/features/pull-requests/sections/pull-requests-sidebar').then((module) => ({
     default: module.PullRequestsSidebar,
@@ -38,7 +43,9 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
   if (list === 'sessions') return <SessionsSidebar />;
   return (
     <Suspense fallback={null}>
-      {list === 'automations' ? (
+      {list === 'bots' ? (
+        <BotsSidebar />
+      ) : list === 'automations' ? (
         <AutomationsSidebar />
       ) : list === 'pulls' ? (
         <PullRequestsSidebar />

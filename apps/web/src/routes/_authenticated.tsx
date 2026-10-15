@@ -1,4 +1,3 @@
-import { Wordmark } from '@oppenheimer/design-system-web';
 import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { WorkspaceGate } from '@/features/organizations/sections/workspace-gate';
@@ -7,6 +6,7 @@ import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { ConsoleDialogProvider, useConsoleList } from '@/lib/console';
 import { NAV, USER_MENU } from '@/lib/nav';
 import { ConsoleDialogs } from '@/providers/console-dialogs';
+import { ConsoleBrand } from './_authenticated/-console-brand';
 import { ConsoleSidebar } from './_authenticated/-console-sidebar';
 
 declare module '@tanstack/react-router' {
@@ -66,10 +66,9 @@ function AuthenticatedShell() {
           userMenuLinks={USER_MENU}
           rail={<ConsoleRail />}
           sidebar={<ConsoleSidebar list={list} />}
-          // The brand row is the wordmark alone, not the workspace — version 1 has
-          // one workspace per account. `chrome={false}` is the bar, the palette and
-          // the foot's hairline; `AppShell` and `use-shell.ts` say why.
-          brand={<Wordmark size={18} />}
+          // `chrome={false}` is the bar, the palette and the foot's hairline;
+          // `AppShell` and `use-shell.ts` say why.
+          brand={<ConsoleBrand list={list} />}
           chrome={false}
         >
           <Outlet />

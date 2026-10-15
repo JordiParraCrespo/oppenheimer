@@ -12,6 +12,11 @@ import { UpdateAutomationHttpController } from '../../automations/commands/updat
 import { FindAutomationHttpController } from '../../automations/queries/find-automation/find-automation.http.controller';
 import { FindAutomationRunsHttpController } from '../../automations/queries/find-automation-runs/find-automation-runs.http.controller';
 import { FindAutomationsHttpController } from '../../automations/queries/find-automations/find-automations.http.controller';
+import { CreateBotHttpController } from '../../bots/commands/create-bot/create-bot.http.controller';
+import { DeleteBotHttpController } from '../../bots/commands/delete-bot/delete-bot.http.controller';
+import { UpdateBotHttpController } from '../../bots/commands/update-bot/update-bot.http.controller';
+import { FindBotHttpController } from '../../bots/queries/find-bot/find-bot.http.controller';
+import { FindBotsHttpController } from '../../bots/queries/find-bots/find-bots.http.controller';
 import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
 import { ListMembersHttpController } from '../../organizations/queries/list-members/list-members.http.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
@@ -87,6 +92,11 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'DELETE /automations/:id': { controller: DeleteAutomationHttpController, handler: 'handle' },
   'POST /automations/:id/run': { controller: RunAutomationHttpController, handler: 'run' },
   'GET /automation-runs': { controller: FindAutomationRunsHttpController, handler: 'list' },
+  'GET /bots': { controller: FindBotsHttpController, handler: 'list' },
+  'GET /bots/:id': { controller: FindBotHttpController, handler: 'find' },
+  'POST /bots': { controller: CreateBotHttpController, handler: 'create' },
+  'PATCH /bots/:id': { controller: UpdateBotHttpController, handler: 'update' },
+  'DELETE /bots/:id': { controller: DeleteBotHttpController, handler: 'delete' },
 };
 
 function methodOn(controller: object, handler: string): object {
