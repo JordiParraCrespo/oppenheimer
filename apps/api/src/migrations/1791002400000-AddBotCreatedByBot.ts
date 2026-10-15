@@ -25,8 +25,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - a creator's deletion nulling `createdByBotId` (the FK's referencing
  *   side): `IDX_bot_created_by_bot`, partial on the rows that have one.
  */
-export class AddBotCreatedByBot1791002300000 implements MigrationInterface {
-  name = 'AddBotCreatedByBot1791002300000';
+export class AddBotCreatedByBot1791002400000 implements MigrationInterface {
+  name = 'AddBotCreatedByBot1791002400000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE bot ADD COLUMN "createdByBotId" uuid`);

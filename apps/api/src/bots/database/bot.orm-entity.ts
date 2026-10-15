@@ -45,7 +45,7 @@ export class BotOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
 
-  /** The bot that made it through `create_bot` (`1791002300000-AddBotCreatedByBot`). */
+  /** The bot that made it through `create_bot` (`1791002400000-AddBotCreatedByBot`). */
   @Column({ type: 'uuid', nullable: true })
   createdByBotId!: string | null;
 
