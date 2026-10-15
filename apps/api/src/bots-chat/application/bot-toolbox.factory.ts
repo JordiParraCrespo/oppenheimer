@@ -3,6 +3,7 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import type { BotToolArea, BotToolContext, BotToolDefinition } from './bot-tool.factory';
+import { BotWebToolsFactory } from './bot-web-tools.factory';
 
 /**
  * Every tool a bot's turn is offered (`25-bots.md` §4), area by area. A tool
@@ -13,8 +14,8 @@ import type { BotToolArea, BotToolContext, BotToolDefinition } from './bot-tool.
 export class BotToolboxFactory {
   private readonly areas: readonly BotToolArea[];
 
-  constructor(hosts: BotHostToolsFactory) {
-    this.areas = [hosts];
+  constructor(hosts: BotHostToolsFactory, web: BotWebToolsFactory) {
+    this.areas = [hosts, web];
   }
 
   /** The tools, as the prompt names them. */

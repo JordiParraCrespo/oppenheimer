@@ -9,6 +9,7 @@ import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
+import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotMessageMapper } from './bot-message.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
@@ -17,6 +18,7 @@ import {
   BOT_MESSAGE_REPOSITORY,
   BOT_STREAM,
   BOT_TURN_REPOSITORY,
+  WEB_PAGE,
 } from './bots-chat.di-tokens';
 import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-bot-turn.command-handler';
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
@@ -28,6 +30,7 @@ import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
+import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
 import { FindBotConversationHttpController } from './queries/find-bot-conversation/find-bot-conversation.http.controller';
 import { FindBotConversationQueryHandler } from './queries/find-bot-conversation/find-bot-conversation.query-handler';
@@ -82,6 +85,8 @@ const queryHandlers: Provider[] = [
     BotOwnerScopeResolver,
     BotToolboxFactory,
     BotHostToolsFactory,
+    BotWebToolsFactory,
+    { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
