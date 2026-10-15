@@ -464,3 +464,10 @@ earlier note:
   name was settled as the id the runner receives when it is paired
   (`POST /hosts/register` answers it), so `session.create` and
   `repository.prepare` carry the workspace only (24 §2, §5).
+- `versions/mvp/25-bots.md` ran a bot's chat as a headless Claude Code turn
+  on its home host and made a change to its own instructions wait for the
+  owner. On 2026-10-15 the owner moved the loop into Oppenheimer, on the
+  Claude Agent SDK or the OpenAI Agents SDK by the bot's provider
+  (Anthropic, GLM, OpenAI), let a bot edit itself without asking (every
+  change a revision), and made each tool's permission the owner's choice.
+  The home host is now where its sessions run.

@@ -36,7 +36,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 22 | [The direct terminal path](22-direct-terminal-path.md) | Keystroke latency measured in the browser and predictive local echo; a WebRTC data channel from browser to runner with the relay as the path it starts on and falls back to, behind `terminal_direct_path`; authorization stays the relay's |
 | 23 | [Plan: milestones, stats and Google accounts](23-plan-milestones-stats-accounts.md) | The 2026-10-13 Tasks frame read against the built Plan: goals renamed milestones, needs input as a field, a task event log, Stats, several Google accounts, and the contract the Projects agents build on; proposed, with the owner's questions open |
 | 24 | [Where a session runs](24-session-places.md) | Two places on a host (the runner's home `~/.oppenheimer/`, the work folder `~/oppenheimer/`), the work folder as `<account>/<workspace>/{repos, agents, sessions}` named by ids, and three ways to start: a new worktree, a folder on the host, a blank terminal in either |
-| 25 | [Bots](25-bots.md) | The Employees section's general bot, end to end in four slices: the bot without a runtime, the chat as headless turns on its home host, the bot writing its own instructions through Oppenheimer's tools, approvals; templates and built-in bots later |
+| 25 | [Bots](25-bots.md) | The Employees section's general bot: its loop in Oppenheimer on the Claude Agent SDK or the OpenAI Agents SDK by provider (Anthropic, GLM, OpenAI), the tool catalog and per-bot permissions, bots that edit themselves, talk to each other and create bots, hosts for the sessions it starts; four slices |
 
 ## Decision log
 
@@ -712,3 +712,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   shaped by chat and settings, a headless turn per message on its home
   host. Inside the product it is a bot; the nav keeps Employees. No
   templates and no built-in bots yet, and no photos of people as avatars.
+- 2026-10-15: **A bot's loop runs in Oppenheimer** (25 §2), on the Claude
+  Agent SDK for Anthropic and GLM and the OpenAI Agents SDK for OpenAI,
+  in a BullMQ worker; keys are the workspace's, encrypted. The home host
+  becomes where the bot's sessions run. A bot edits its own soul,
+  instructions and memory without asking, each change a revision; the
+  owner sets each tool to Allow, Ask or Off within their own permissions;
+  bots ask and message each other and create bots, within loop limits.

@@ -96,6 +96,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
+  <li><a href="#bots">Bots</a></li>
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
@@ -677,6 +678,9 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">ephemeral</span><span>Realistic scale is at most ten running at once, which one AX42 handles. Each session carries a lifetime: Keep, the default on your host, with the sleep tiers; or Ephemeral, the default on cloud hosts, destroyed after two idle hours with the branch auto-pushed and the scrollback kept in the log. Ten ephemeral sessions of four hours a day on AWS cost about $130 a month on demand or $45 on spot, and nothing on days you do not use them. The host chip shows cloud hosts with their per-hour price.</span>
 </div>
 
+
+<h2 id="bots">Bots</h2>
+<p>The Employees section: bots you talk to, each with a soul, instructions and memory kept in Oppenheimer with every change a revision. A bot's loop runs in Oppenheimer on the Claude Agent SDK (Anthropic, GLM) or the OpenAI Agents SDK (OpenAI), with the workspace's encrypted keys; it works through Oppenheimer's tools as its owner, each tool Allow, Ask or Off by the owner's choice, and sends real work to sessions on a host. Bots edit themselves, ask each other and create bots (<code>versions/mvp/25-bots.md</code>).</p>
 
 <h2 id="layout">Workspace layout</h2>
 <p>Two places on a host: the runner's home <code>~/.oppenheimer/</code> (keys, state, logs) and the work folder, <code>~/oppenheimer/</code> unless chosen at install. What the runner makes lives in the work folder, named by ids that never change; a folder session runs anywhere else on the host and leaves it as it is (<code>versions/mvp/24-session-places.md</code>).</p>
