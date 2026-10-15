@@ -14,6 +14,7 @@ oppenheimer/
 │   └── web-showcase/     # Next.js showcase of the web design system
 ├── packages/
 │   ├── backend/
+│   │   ├── agents/       # The bot engines over two agent SDKs (@oppenheimer/backend-agents)
 │   │   ├── cache/        # Redis cache abstraction (@oppenheimer/backend-cache)
 │   │   ├── core/         # Errors, filters, pipes, interceptors (@oppenheimer/backend-core)
 │   │   ├── email/        # Pluggable email + React Email templates (@oppenheimer/backend-email)
@@ -47,6 +48,7 @@ packages/backend/core     → api, other backend packages
 packages/backend/email    → api
 packages/backend/cache    → api
 packages/backend/llm      → api
+packages/backend/agents   → api
 packages/backend/storage  → api
 packages/backend/queue    → api
 packages/translations     → web, api (email copy)

@@ -1,0 +1,180 @@
+/**
+ * The OpenAI engine through the real Agents SDK, against a local server
+ * that speaks the Responses API's stream: the key and base URL reach the
+ * request, history goes in as input items, a tool call runs our tool and
+ * its output goes back to the model, and the stream comes out as the
+ * engine's events. What the scripted spec cannot see: that the SDK is
+ * wired as the adapter assumes.
+ */
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { BotEngineEvent } from '../../bot-engine';
+import { OpenAiBotEngine } from '../openai-bot-engine';
+
+const KEY = 'sk-local-0123456789';
+
+type ResponsesRequest = { authorization?: string; body: Record<string, unknown> };
+
+const usage = {
+  input_tokens: 11,
+  output_tokens: 3,
+  total_tokens: 14,
+  input_tokens_details: { cached_tokens: 0 },
+  output_tokens_details: { reasoning_tokens: 0 },
+};
+
+/** The SSE body of one streamed response whose output is `item`. */
+function streamOf(id: string, item: Record<string, unknown>, deltas: string[] = []): string {
+  const response = {
+    id,
+    object: 'response',
+    status: 'completed',
+    model: 'model-placeholder',
+    output: [item],
+    usage,
+  };
+  const events = [
+    { type: 'response.created', response: { ...response, status: 'in_progress', output: [] } },
+    {
+      type: 'response.output_item.added',
+      output_index: 0,
+      item: { ...item, status: 'in_progress' },
+    },
+    ...deltas.map((delta) => ({
+      type: 'response.output_text.delta',
+      item_id: item.id,
+      output_index: 0,
+      content_index: 0,
+      delta,
+    })),
+    { type: 'response.output_item.done', output_index: 0, item },
+    { type: 'response.completed', response },
+  ];
+  return events
+    .map(
+      (event, sequence) =>
+        `event: ${event.type}\ndata: ${JSON.stringify({ ...event, sequence_number: sequence })}\n\n`,
+    )
+    .join('');
+}
+
+const callTool = streamOf('resp_1', {
+  type: 'function_call',
+  id: 'fc_1',
+  call_id: 'call_1',
+  name: 'get_time',
+  arguments: '{"zone":"UTC"}',
+  status: 'completed',
+});
+
+const answer = streamOf(
+  'resp_2',
+  {
+    type: 'message',
+    id: 'msg_1',
+    role: 'assistant',
+    status: 'completed',
+    content: [{ type: 'output_text', text: 'It is 13:37.', annotations: [] }],
+  },
+  ['It is ', '13:37.'],
+);
+
+let server: Server;
+let baseUrl: string;
+let requests: ResponsesRequest[];
+
+beforeEach(async () => {
+  requests = [];
+  const replies = [callTool, answer];
+  server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', () => {
+      requests.push({ authorization: req.headers.authorization, body: JSON.parse(body) });
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      res.end(replies.shift());
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1`;
+});
+
+afterEach(async () => {
+  await new Promise((resolve) => server.close(resolve));
+});
+
+describe('OpenAiBotEngine on the Agents SDK', () => {
+  it('runs a turn with a tool call over the Responses API', async () => {
+    const events: BotEngineEvent[] = [];
+    for await (const event of new OpenAiBotEngine().run({
+      provider: 'openai',
+      apiKey: KEY,
+      baseUrl,
+      model: 'model-placeholder',
+      effort: 'low',
+      systemPrompt: 'You are a bot.',
+      history: [
+        { role: 'user', text: 'Hi' },
+        { role: 'assistant', text: 'Hello.' },
+      ],
+      message: 'What time is it?',
+      tools: [
+        {
+          name: 'get_time',
+          description: 'The time',
+          inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+          run: async () => {
+            throw new Error('clock broken');
+          },
+        },
+      ],
+      signal: AbortSignal.timeout(20_000),
+      scratchDir: '/unused',
+    })) {
+      events.push(event);
+    }
+
+    expect(events).toEqual([
+      { type: 'tool.started', callId: 'call_1', name: 'get_time', input: { zone: 'UTC' } },
+      {
+        type: 'tool.finished',
+        callId: 'call_1',
+        name: 'get_time',
+        output: 'clock broken',
+        isError: true,
+      },
+      { type: 'text.delta', text: 'It is ' },
+      { type: 'text.delta', text: '13:37.' },
+      { type: 'text.done', text: 'It is 13:37.' },
+      { type: 'usage', inputTokens: 22, outputTokens: 6 },
+      { type: 'done', reason: 'completed' },
+    ]);
+
+    expect(requests).toHaveLength(2);
+    const [first, second] = requests;
+    expect(first.authorization).toBe(`Bearer ${KEY}`);
+    expect(first.body).toMatchObject({
+      model: 'model-placeholder',
+      instructions: 'You are a bot.',
+      reasoning: { effort: 'low' },
+      tools: [
+        { type: 'function', name: 'get_time', strict: false, parameters: { type: 'object' } },
+      ],
+      input: [
+        { role: 'user', content: 'Hi' },
+        { role: 'assistant', content: [{ type: 'output_text', text: 'Hello.' }] },
+        { role: 'user', content: 'What time is it?' },
+      ],
+    });
+    expect(second.body.input).toContainEqual(
+      expect.objectContaining({
+        type: 'function_call_output',
+        call_id: 'call_1',
+        output: 'clock broken',
+      }),
+    );
+  });
+});
