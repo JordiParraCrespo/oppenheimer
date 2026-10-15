@@ -16,7 +16,7 @@ src/
 ├── fake-bot-engine.ts     # FakeBotEngine, for the API's tests
 ├── turn.ts                # guardTurn (the stream contract), runTool, key scrubbing
 ├── claude/                # Claude Agent SDK: options + env, MCP tool server, message translation
-├── openai/                # OpenAI Agents SDK: run spec, stream translation
+├── openai/                # OpenAI Agents SDK: agent and run, stream translation
 ├── __tests__/             # fake, routing, the live GLM spec
 └── index.ts
 ```
@@ -42,11 +42,17 @@ src/
   subprocess: `claudeEnv` builds it from an allowlist.
 - **No model ids in code.** Tests use placeholders; the live spec passes
   its model from the test.
-- The adapters take their SDK entry point (`ClaudeQuery`, `OpenAiStart`)
-  as a constructor argument, defaulting to the SDK; `createBotEngine` does
-  not expose it. Specs drive the translation with scripted streams through
-  it; `openai-responses.spec.ts` runs the real Agents SDK against a local
-  Responses API server.
+- **No test seam in the adapters.** Their constructors take nothing; the
+  adapter specs `vi.mock` the SDK module (`@anthropic-ai/claude-agent-sdk`,
+  `@openai/agents`), which also catches the lazy `import()`, and script the
+  stream through the mock. `openai-responses.spec.ts` runs the real Agents
+  SDK against a local Responses API server and must stay unmocked.
+- **Tool output is redacted in `runTool`.** The request's key is replaced
+  in every tool result before the model or `tool.finished` sees it, the way
+  `guardTurn` does for `done.error`.
+- **Model pinning has one owner.** `pinAllModels` sets every variable
+  Claude Code picks a model through (`MODEL_VARIABLES`, read from the
+  binary the SDK ships); recheck that list when the SDK is upgraded.
 - Ships **CommonJS**.
 
 ## Commands
