@@ -471,3 +471,5 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
+- `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
+  on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").

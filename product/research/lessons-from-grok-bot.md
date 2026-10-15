@@ -95,3 +95,27 @@ its second year: brokered descriptors with structured hints, resumable
 migration streams, recreate-with-data-preserved updates, disk pressure,
 and epoch-guarded reconnects. All of it fits the runner and control
 plane as designed, without changing a boundary.
+
+## 5. Grok Bot 0.71.2: the bot itself (2026-10-15)
+
+Sections 1 to 4 read version 0.18's connection layer. On 2026-10-15 a
+static read of version 0.71.2, built by Anysphere on Cursor's agent
+stack, looked at the bot instead of the box, for the bots design
+(`versions/mvp/25-bots.md`). It found:
+
+- **The loop moved to the vendor's servers.** The desktop app no longer
+  runs the agent; it is a client of a loop that runs elsewhere.
+- **A curated chat.** Only what the bot sends reaches you; the tool
+  calls behind it are not the conversation.
+- **Memory as files, with a source on each fact.** What the bot
+  remembers says where it learned it.
+- **Layered approvals.** More than one level decides whether a tool call
+  runs without asking.
+- **Bots that edit themselves without asking**, with no history to go
+  back to.
+
+What note 25 takes from it, and what it does differently, is that
+note's "Research" section: the curated chat, the source on each fact,
+queue lanes and a bounded chain for bot-to-bot turns, taken; revisions
+for the bot's documents and the owner's own permissions as the ceiling,
+where Grok Bot has neither.
