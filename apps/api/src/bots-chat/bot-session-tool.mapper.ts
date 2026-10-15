@@ -83,7 +83,13 @@ export function sessionSummary(
   const id = input.agent ?? project?.defaultAgent;
   const agent: CodingAgentId = CODING_AGENT_IDS.find((known) => known === id) ?? 'claude-code';
   const repository = project && !input.folder ? repositoryOf(project, input.repository) : null;
-  const where = input.folder ? ` in ${input.folder}` : repository ? ` in ${repository}` : '';
+  const where = input.folder
+    ? ` in ${input.folder}`
+    : repository
+      ? ` in ${repository}`
+      : input.project_id
+        ? ` in project ${input.project_id}`
+        : '';
   const task = input.task.replace(/\s+/g, ' ').trim();
   const clipped =
     task.length > TASK_IN_SUMMARY_MAX ? `${task.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : task;

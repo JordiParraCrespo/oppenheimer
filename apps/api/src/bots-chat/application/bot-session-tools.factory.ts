@@ -78,7 +78,10 @@ export class BotSessionToolsFactory implements BotToolArea {
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
       }),
       summarize: async (input, context) => {
-        const project = input.project_id ? await this.project(context, input.project_id) : null;
+        // A project the owner cannot read still gets a card, naming it by id: the call says why.
+        const project = input.project_id
+          ? await this.project(context, input.project_id).catch(() => null)
+          : null;
         const hostId = sessionHostId(input, project, context.homeHostId);
         const host = hostId ? await this.hostName(context, hostId) : null;
         return sessionSummary(input, project, host);

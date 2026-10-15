@@ -97,6 +97,18 @@ describe('BotSessionToolsFactory', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
+  it('still names a project the owner cannot read on the card, by its id', async () => {
+    const { queryBus, approvals, call } = setup('auto');
+    queryBus.execute.mockImplementation(async (query: unknown) => {
+      if (query instanceof FindHostQuery) return { host: { name: 'build-02' }, online: true };
+      throw new Error('PROJECTS_001');
+    });
+    await call('start_session', { task: 'Upgrade', project_id: PROJECT });
+    expect(approvals.request.mock.calls[0][0].summary).toBe(
+      `Start Claude Code on build-02 in project ${PROJECT}: Upgrade`,
+    );
+  });
+
   it('starts the agent in the project’s default repository on the home host, as the owner, marked as the bot’s', async () => {
     const { commandBus, call } = setup('full');
     const result = await call('start_session', {
