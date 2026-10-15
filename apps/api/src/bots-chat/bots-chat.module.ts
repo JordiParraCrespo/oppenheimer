@@ -5,8 +5,13 @@ import { createBotEngine } from '@oppenheimer/backend-agents';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
+import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
+import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
+import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
+import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
+import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
@@ -87,6 +92,11 @@ const queryHandlers: Provider[] = [
     BotToolboxFactory,
     BotHostToolsFactory,
     BotSessionToolsFactory,
+    BotSelfToolsFactory,
+    BotPlanToolsFactory,
+    BotGithubToolsFactory,
+    BotAutomationToolsFactory,
+    BotPeerToolsFactory,
     BotWebToolsFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     TurnCancelWatchFactory,

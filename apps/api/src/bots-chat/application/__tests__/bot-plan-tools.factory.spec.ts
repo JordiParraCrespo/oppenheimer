@@ -30,6 +30,7 @@ const context: BotToolContext = {
   turnId: 'turn-1',
   homeHostId: null,
   timeZone: 'Europe/Madrid',
+  permission: 'auto',
 };
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';

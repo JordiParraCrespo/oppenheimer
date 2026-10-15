@@ -81,7 +81,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           ? null
           : pickRepository(project as ProjectEntity, input.repository);
         if (checkout && 'reason' in checkout) return checkout.reason;
-        const body: CreateSessionDto = createSessionSchema.parse({
+        const parsed = createSessionSchema.safeParse({
           hostId,
           agent: input.agent ?? project?.defaultAgent ?? 'claude-code',
           projectId: project?.id,
@@ -91,6 +91,11 @@ export class BotSessionToolsFactory implements BotToolArea {
             ? { folder: input.folder }
             : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
         });
+        if (!parsed.success) {
+          const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'input');
+          return `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). Check the task, folder and name.`;
+        }
+        const body: CreateSessionDto = parsed.data;
         const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
           new CreateSessionCommand({
             scope: context.owner,
