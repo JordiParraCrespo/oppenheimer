@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { BOT_SUMMARY_MAX } from '../domain/bot-summary.policy';
 
-/** A bot's conversation summary, one per bot (`1791002300000-AddBotConversationSummaries`). */
+/** A bot's conversation summary, one per bot (`1791002500000-AddBotConversationSummaries`). */
 @Entity('bot_conversation_summary')
 @Index('IDX_bot_conversation_summary_message', ['coversThroughMessageId'])
 @Check('CHK_bot_conversation_summary_content', `char_length("content") > 0`)

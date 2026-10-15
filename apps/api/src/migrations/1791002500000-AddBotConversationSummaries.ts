@@ -39,8 +39,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   `IDX_bot_conversation_summary_message`.
  * One row per bot, rewritten in place: no retention needed.
  */
-export class AddBotConversationSummaries1791002300000 implements MigrationInterface {
-  name = 'AddBotConversationSummaries1791002300000';
+export class AddBotConversationSummaries1791002500000 implements MigrationInterface {
+  name = 'AddBotConversationSummaries1791002500000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
