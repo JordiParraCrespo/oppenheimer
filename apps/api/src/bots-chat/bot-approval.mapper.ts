@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotApprovalStatus } from '@oppenheimer/shared';
+import { type BotApprovalStatus, SCOPES, type Scope } from '@oppenheimer/shared';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalEntity } from './domain/bot-approval.entity';
 import { BotApprovalResponseDto } from './dtos/bot-approval.response.dto';
@@ -22,6 +22,7 @@ export class BotApprovalMapper
     record.result = entity.result;
     record.note = entity.note;
     record.decidedByUserId = entity.decidedByUserId;
+    record.decidedWithScopes = entity.decidedWithScopes ? [...entity.decidedWithScopes] : null;
     record.decidedAt = entity.decidedAt;
     return record;
   }
@@ -42,6 +43,7 @@ export class BotApprovalMapper
         result: record.result,
         note: record.note,
         decidedByUserId: record.decidedByUserId,
+        decidedWithScopes: asScopes(record.decidedWithScopes),
         decidedAt: record.decidedAt,
       },
     });
@@ -69,4 +71,12 @@ function asInput(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === 'object' && !Array.isArray(raw)
     ? (raw as Record<string, unknown>)
     : {};
+}
+
+/** The stored scopes, narrowed once; an unknown one is dropped, never widened to all. */
+function asScopes(raw: unknown): Scope[] | null {
+  if (raw === null || raw === undefined) return null;
+  return Array.isArray(raw)
+    ? raw.filter((scope): scope is Scope => SCOPES.includes(scope as Scope))
+    : [];
 }

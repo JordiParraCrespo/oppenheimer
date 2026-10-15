@@ -47,20 +47,9 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing'> {
-    return this.outbox.transaction(async (manager) => {
-      if (!(await lockBot(manager, turn))) return 'missing';
-      // IDX_bot_turn_active.
-      const [{ active }]: { active: number }[] = await manager.query(
-        `SELECT count(*)::int AS active FROM bot_turn
-          WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
-        [turn.organizationId, turn.botId],
-      );
-      await manager.getRepository(BotTurnOrmEntity).insert(this.mapper.toPersistence(turn));
-      await insertMessageWithin(manager, this.messages, message);
-      if (active > 0) return 'waiting';
-      await stageRun(this.outbox, manager, turn.botId, turn.id, correlationId);
-      return 'staged';
-    });
+    return this.outbox.transaction((manager) =>
+      enqueueWithin(manager, this.outbox, this.mapper, this.messages, turn, message, correlationId),
+    );
   }
 
   async findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>> {
@@ -151,6 +140,35 @@ export class BotTurnRepository
     });
     return Boolean(record?.cancelRequestedAt);
   }
+}
+
+/**
+ * `enqueue` in the caller's transaction: the turn and its opening message
+ * under the lock on the bot, its job staged when nothing else of the bot's
+ * is queued or running. A decision's turn is queued this way in the same
+ * transaction as the decision.
+ */
+export async function enqueueWithin(
+  manager: EntityManager,
+  outbox: OutboxService,
+  turns: BotTurnMapper,
+  messages: BotMessageMapper,
+  turn: BotTurnEntity,
+  message: BotMessageEntity,
+  correlationId: string | null,
+): Promise<'staged' | 'waiting' | 'missing'> {
+  if (!(await lockBot(manager, turn))) return 'missing';
+  // IDX_bot_turn_active.
+  const [{ active }]: { active: number }[] = await manager.query(
+    `SELECT count(*)::int AS active FROM bot_turn
+      WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
+    [turn.organizationId, turn.botId],
+  );
+  await manager.getRepository(BotTurnOrmEntity).insert(turns.toPersistence(turn));
+  await insertMessageWithin(manager, messages, message);
+  if (active > 0) return 'waiting';
+  await stageRun(outbox, manager, turn.botId, turn.id, correlationId);
+  return 'staged';
 }
 
 /**

@@ -963,6 +963,11 @@
         "notePlaceholder": "Optional: why not, or what to do instead",
         "cancel": "Cancel",
         "failed": "Could not answer the request."
+      },
+      "event": {
+        "approved": "You approved: {{summary}}",
+        "denied": "You denied: {{summary}}",
+        "failed": "You approved, and it failed: {{summary}}"
       }
     },
     "settings": {

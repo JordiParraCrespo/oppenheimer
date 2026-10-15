@@ -3097,6 +3097,19 @@ export type BotToolStepResponseDto = {
     isError: boolean;
 };
 
+export type BotMessageEventResponseDto = {
+    kind: 'approval';
+    outcome: 'approved' | 'denied' | 'failed';
+    /**
+     * The tool the decided call was for.
+     */
+    tool: string;
+    /**
+     * The card's line: what the call does, in words.
+     */
+    summary: string;
+};
+
 export type BotMessageResponseDto = {
     id: string;
     turnId: string;
@@ -3106,6 +3119,10 @@ export type BotMessageResponseDto = {
      */
     content: string;
     steps: Array<BotToolStepResponseDto>;
+    /**
+     * What an event says happened; null on every other role.
+     */
+    event: BotMessageEventResponseDto | null;
     createdAt: string;
 };
 

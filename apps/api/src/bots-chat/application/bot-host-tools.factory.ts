@@ -14,7 +14,7 @@ import {
 } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
@@ -143,7 +143,7 @@ export class BotHostToolsFactory implements BotToolArea {
   }
 }
 
-function describeHost(view: HostView, context: BotToolContext): string {
+function describeHost(view: HostView, context: BotToolCallContext): string {
   const agents = (view.inventory?.tools ?? [])
     .filter((tool) => tool.path && AGENT_COMMANDS[tool.name])
     .map((tool) => AGENT_COMMANDS[tool.name]);
@@ -159,7 +159,7 @@ function describeHost(view: HostView, context: BotToolContext): string {
   return `${view.host.id} "${view.host.name}"${home} [${parts.join('; ')}]`;
 }
 
-function describeSession(session: WorkSessionEntity, context: BotToolContext): string {
+function describeSession(session: WorkSessionEntity, context: BotToolCallContext): string {
   const where = session.folderPath
     ? `folder ${session.folderPath}`
     : `branch ${session.branch ?? '-'}`;

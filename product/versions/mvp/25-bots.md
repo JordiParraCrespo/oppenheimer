@@ -280,16 +280,28 @@ How the card works (built 2026-10-15, `bot_approval`):
 - **Deciding is a request of its own**
   (`POST /v1/bots/:id/approvals/:approvalId/decision`), a conditional write
   on `pending`: a second click, or a click racing a new message, is
-  `BOTS_016` and does nothing. **Approve** runs exactly the stored call as
-  the owner, in their scope resolved now, and keeps its answer (the card
-  ends `failed` when the call failed). **Deny** runs nothing, and takes an
-  optional note: why not, or what to do instead.
+  `BOTS_016` and does nothing. **Approve** moves the card and, in the same
+  transaction, stages a `run-approved-call` job (`bot-approvals` queue,
+  retried). The job runs exactly the stored call as the owner, in their
+  scope resolved now, keyed by the approval (one session per approval
+  however often it is retried), and keeps its answer (the card ends
+  `failed` when the call failed). A crash leaves a job to retry, never a
+  card stuck approved. **Deny** runs nothing, and takes an optional note:
+  why not, or what to do instead.
+- **No credential reaches further through a card.** The deciding
+  credential's scopes are kept on the approval. The call runs only if the
+  tool's scope is covered by both the asking turn's scopes and the
+  decider's (a browser session restricts neither); otherwise it ends
+  `failed`, "Not run: your credential does not cover …", and nothing runs.
 - **The bot reports back.** Either way the bot gets a turn of its own,
-  opened by an **event**: a chat message of its own role, written by
-  Oppenheimer, that says who decided what and the call's answer or the
-  note. The chat draws it as a trace line, never as a bubble from you; the
-  bot reads it, then and in later history, as a note from Oppenheimer and
-  not as your words, and is told not to route around a denial.
+  under that same intersection of scopes, opened by an **event**: a chat
+  message of its own role, written by Oppenheimer, whose words say who
+  decided what and the call's answer or the note, and whose fields (kind,
+  outcome, tool, the card's line) are what the chat draws, as a trace line,
+  never as a bubble from you. The answer and that turn are written together,
+  once. The bot reads the words, then and in later history, as a note from
+  Oppenheimer and not as your words, and is told not to route around a
+  denial.
 - **Writing to the bot instead expires the card.** The new turn starts
   fresh; nobody decided, and the bot is not told.
 - **Not built yet:** *Always allow* (it needs Settings → Permissions), Off,

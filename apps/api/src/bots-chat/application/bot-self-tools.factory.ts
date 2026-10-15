@@ -26,7 +26,7 @@ import { FindBotMemoryFactQuery } from '../../bots/queries/find-bot-memory-fact/
 import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
@@ -309,13 +309,13 @@ export class BotSelfToolsFactory implements BotToolArea {
     });
   }
 
-  private bot(context: BotToolContext): Promise<BotEntity> {
+  private bot(context: BotToolCallContext): Promise<BotEntity> {
     return this.queryBus.execute<FindBotQuery, BotEntity>(
       new FindBotQuery({ scope: context.owner, botId: context.botId }),
     );
   }
 
-  private facts(context: BotToolContext): Promise<BotMemoryFactEntity[]> {
+  private facts(context: BotToolCallContext): Promise<BotMemoryFactEntity[]> {
     return this.queryBus.execute<FindBotMemoryQuery, BotMemoryFactEntity[]>(
       new FindBotMemoryQuery({ scope: context.owner, botId: context.botId }),
     );

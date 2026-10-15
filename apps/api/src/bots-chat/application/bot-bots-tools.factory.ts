@@ -8,7 +8,7 @@ import { FindBotsQuery } from '../../bots/queries/find-bots/find-bots.query';
 import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
@@ -69,7 +69,7 @@ export class BotPeerToolsFactory implements BotToolArea {
   }
 }
 
-function summarizeBot(bot: BotEntity, context: BotToolContext): string {
+function summarizeBot(bot: BotEntity, context: BotToolCallContext): string {
   const you = bot.id === context.botId ? ' (you)' : '';
   const parts = [
     bot.description || 'no description',

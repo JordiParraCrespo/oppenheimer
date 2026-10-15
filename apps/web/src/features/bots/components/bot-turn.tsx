@@ -23,7 +23,7 @@ export function BotTurn({ block, live }: { block: ChatTurnBlock; live: string | 
     <div className="flex flex-col gap-4">
       {block.asked.map((message) =>
         message.role === 'event' ? (
-          <BotEventLine key={message.id} content={message.content} />
+          <BotEventLine key={message.id} message={message} />
         ) : (
           <ChatUserMessage key={message.id} time={time.format(message.createdAt)}>
             <span className="whitespace-pre-wrap">{message.content}</span>

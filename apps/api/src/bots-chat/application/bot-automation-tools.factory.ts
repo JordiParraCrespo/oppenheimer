@@ -21,7 +21,7 @@ import { FindAutomationsQuery } from '../../automations/queries/find-automations
 import { cut, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
@@ -178,7 +178,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
 function describeAutomation(
   automation: AutomationEntity,
   digest: AutomationRunDigest | undefined,
-  context: BotToolContext,
+  context: BotToolCallContext,
 ): string {
   const triggers = automation.triggers.length
     ? automation.triggers.map((trigger) => describeTrigger(trigger, context)).join(', ')
@@ -202,7 +202,7 @@ function describeState(automation: AutomationEntity): string {
   return `paused (${automation.pausedReason ?? 'user'})`;
 }
 
-function describeTrigger(trigger: AutomationTriggerProps, context: BotToolContext): string {
+function describeTrigger(trigger: AutomationTriggerProps, context: BotToolCallContext): string {
   if (trigger.source === 'schedule') {
     const { config } = trigger;
     const at = `${String(config.hour).padStart(2, '0')}:${String(config.minute).padStart(2, '0')}`;
@@ -225,7 +225,10 @@ function describeTrigger(trigger: AutomationTriggerProps, context: BotToolContex
   return `${trigger.source} ${trigger.eventType} on ${trigger.config.repositories.join(', ') || 'any repository'}${filter}`;
 }
 
-function describeDigest(digest: AutomationRunDigest | undefined, context: BotToolContext): string {
+function describeDigest(
+  digest: AutomationRunDigest | undefined,
+  context: BotToolCallContext,
+): string {
   if (!digest || digest.runCount === 0) {
     return `Runs: none in the last ${RUN_HISTORY_DAYS} days.`;
   }
@@ -235,7 +238,7 @@ function describeDigest(digest: AutomationRunDigest | undefined, context: BotToo
   ].join('\n');
 }
 
-function describeRun(run: RunReadModel, context: BotToolContext): string {
+function describeRun(run: RunReadModel, context: BotToolCallContext): string {
   const cause = [run.causeSummary.label, run.causeSummary.ref].filter(Boolean).join(' ');
   const when = formatToolTime(run.scheduledFor ?? run.createdAt, context.timeZone);
   const outcome =

@@ -4,29 +4,30 @@ import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { botDefaultModel } from '@oppenheimer/shared';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
-import type { BotEntity } from '../../../bots/domain/bot.entity';
 import { BotErrors } from '../../../bots/domain/bots.errors';
-import { BotApprovedCallResolver } from '../../application/bot-approved-call.resolver';
 import {
   BOT_APPROVAL_REPOSITORY,
   BOT_STREAM,
   BOT_TURN_REPOSITORY,
 } from '../../bots-chat.di-tokens';
-import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
+import type {
+  BotApprovalEffects,
+  BotApprovalRepositoryPort,
+} from '../../database/bot-approval.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
-import { approvalEvent, decisionTurn } from '../../domain/bot-approval.policy';
-import type { BotTurnEntity } from '../../domain/bot-turn.entity';
+import { decisionTurn, intersectScopes } from '../../domain/bot-approval.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { DecideBotApprovalCommand } from './decide-bot-approval.command';
 
 /**
  * The owner answers a Needs input card (`25-bots.md` §5). The decision is a
  * conditional write on `pending`, so a second click, or a click racing a new
- * message, loses with `BOTS_016` and does nothing. A yes then runs exactly
- * the stored call as the owner and keeps its answer; a no runs nothing. Either
- * way the bot gets a turn of its own, opened by an event that says what was
- * decided, by whom, and what came of it, so it reports back in the chat.
+ * message, loses with `BOTS_016` and writes nothing. What it owes commits
+ * with it: a yes stages the `run-approved-call` job (the call runs there, so
+ * a crash leaves a job to retry, never a card stuck approved); a no queues
+ * the bot's turn that is told so. The deciding credential's scopes are kept
+ * on the approval: the call, and the turn that reports it, get only what
+ * both they and the asking turn's cover.
  */
 @CommandHandler(DecideBotApprovalCommand)
 export class DecideBotApprovalCommandHandler
@@ -37,77 +38,57 @@ export class DecideBotApprovalCommandHandler
     @Inject(BOT_APPROVAL_REPOSITORY) private readonly approvals: BotApprovalRepositoryPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
-    private readonly calls: BotApprovedCallResolver,
   ) {}
 
   async execute(command: DecideBotApprovalCommand): Promise<string> {
-    const { scope, botId, approvalId, decision, note, deciderName } = command;
+    const { scope, botId, approvalId, decision, note, deciderName, credentialScopes } = command;
     const bot = await this.lookup.bot(scope, botId);
     const approval = requireFound(
       await this.approvals.findOne(scope, bot.id, approvalId),
       BotErrors.APPROVAL_NOT_FOUND,
     );
     if (approval.status !== 'pending') throw new AppError(BotErrors.APPROVAL_DECIDED);
-    const found = await this.turns.findOne(scope, bot.id, approval.turnId);
-    const asked = found.isSome() ? found.unwrap() : null;
-    const timeZone = asked?.timeZone ?? null;
 
-    if (decision === 'approve') approval.approve(scope.userId, new Date());
-    else approval.deny(scope.userId, new Date(), note);
-    if (!(await this.approvals.saveTransition(approval))) {
+    let effects: BotApprovalEffects;
+    if (decision === 'approve') {
+      approval.approve(scope.userId, new Date(), credentialScopes);
+      effects = { runCall: { by: deciderName } };
+    } else {
+      approval.deny(scope.userId, new Date(), note, credentialScopes);
+      const found = await this.turns.findOne(scope, bot.id, approval.turnId);
+      const asked = found.isSome() ? found.unwrap() : null;
+      effects = {
+        continuation: decisionTurn(
+          {
+            organizationId: bot.organizationId,
+            botId: bot.id,
+            requestedByUserId: scope.userId,
+            provider: bot.provider,
+            model: bot.model ?? botDefaultModel(bot.provider).id,
+            effort: bot.effort,
+            timeZone: asked?.timeZone ?? null,
+            credentialScopes: intersectScopes(
+              asked ? asked.credentialScopes : [],
+              credentialScopes,
+            ),
+          },
+          approval,
+          deciderName,
+        ),
+      };
+    }
+    if (!(await this.approvals.saveTransition(approval, effects, command.metadata.correlationId))) {
       throw new AppError(BotErrors.APPROVAL_DECIDED);
     }
-    await this.announce(approval);
-
-    if (decision === 'approve') await this.carryOut(bot, approval, asked);
-    const event = approvalEvent(approval, deciderName);
-    await this.continueWith(bot, scope.userId, timeZone, event, command.metadata.correlationId);
-    return approval.id;
-  }
-
-  /** Runs the approved call and keeps its answer. */
-  private async carryOut(
-    bot: BotEntity,
-    approval: BotApprovalEntity,
-    asked: BotTurnEntity | null,
-  ): Promise<void> {
-    const answer = await this.calls.resolve(bot, approval, asked);
-    approval.recordResult(answer.content, answer.isError);
-    await this.approvals.saveTransition(approval);
-    await this.announce(approval);
-  }
-
-  /** The bot's next turn, opened by the event, queued behind any turn it has. */
-  private async continueWith(
-    bot: BotEntity,
-    userId: string,
-    timeZone: string | null,
-    event: string,
-    correlationId: string,
-  ): Promise<void> {
-    const { turn, opening } = decisionTurn(
-      {
-        organizationId: bot.organizationId,
-        botId: bot.id,
-        requestedByUserId: userId,
-        provider: bot.provider,
-        model: bot.model ?? botDefaultModel(bot.provider).id,
-        effort: bot.effort,
-        timeZone,
-      },
-      event,
-    );
-    if ((await this.turns.enqueue(turn, opening, correlationId)) === 'missing') {
-      throw new AppError(BotErrors.NOT_FOUND);
-    }
-    await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
-  }
-
-  private announce(approval: BotApprovalEntity): Promise<void> {
-    return this.stream.publish(approval.botId, {
+    await this.stream.publish(bot.id, {
       type: 'approval',
       approvalId: approval.id,
       status: approval.status,
     });
+    if (effects.continuation) {
+      const { turn } = effects.continuation;
+      await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
+    }
+    return approval.id;
   }
 }

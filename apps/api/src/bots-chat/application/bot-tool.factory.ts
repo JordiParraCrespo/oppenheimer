@@ -9,8 +9,12 @@ import { fitToolOutput } from '../domain/bot-tool-text.policy';
 import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
 
-/** What every tool of a turn acts with: the owner's scope, the bot, the turn, the sender's zone. */
-export interface BotToolContext {
+/**
+ * What a tool's call acts with: the owner's scope, the bot, the turn, the
+ * sender's zone. It holds no way to ask, so a call made with it alone, an
+ * approved call carried out, can never raise another card.
+ */
+export interface BotToolCallContext {
   /** The bot's owner's scope, resolved for this turn (`BotOwnerScopeResolver`). */
   owner: AccessScope;
   organizationId: string;
@@ -25,16 +29,22 @@ export interface BotToolContext {
    * `full` runs everything.
    */
   permission: BotPermission;
-  /** Where an asking tool's call goes under Approve for me: a Needs input card. */
-  approvals: BotApprovalRequesterPort;
-  /**
-   * The one call the owner approved, when this context carries out an
-   * approval: that tool, with exactly that input, runs without asking again.
-   * Any other call made with the context still asks.
-   */
-  approved?: { tool: string; input: Record<string, unknown> };
   /** What this turn may still spend on calls a tool limits per turn. */
   budget: BotTurnBudget;
+}
+
+/** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
+export interface BotToolContext extends BotToolCallContext {
+  approvals: BotApprovalRequesterPort;
+}
+
+/**
+ * The context an approved call is carried out with: no requester, so it
+ * cannot ask again, and the approval it carries out, which keys its effect
+ * (the same approval starts one session however often its job is retried).
+ */
+export interface ApprovedCallContext extends BotToolCallContext {
+  approvalId: string;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -66,9 +76,16 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
    * Required with `asks`; a throw falls back to the tool and its input.
    */
-  summarize?(input: z.output<Input>, context: BotToolContext): Promise<string> | string;
-  /** Answers labelled text, ids inline; a throw becomes an error result the model reads. */
-  run(input: z.output<Input>, context: BotToolContext, signal: AbortSignal): Promise<string>;
+  summarize?(input: z.output<Input>, context: BotToolCallContext): Promise<string> | string;
+  /**
+   * Answers labelled text, ids inline; a throw becomes an error result the
+   * model reads. `context.approvalId` is set when it carries out an approval.
+   */
+  run(
+    input: z.output<Input>,
+    context: BotToolCallContext & { approvalId?: string },
+    signal: AbortSignal,
+  ): Promise<string>;
 }
 
 /** A declared tool, ready to be bound to a turn. */
@@ -76,7 +93,17 @@ export interface BotToolDefinition {
   readonly name: string;
   readonly description: string;
   readonly scope: Scope;
+  /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
+  /**
+   * Carries out an approved call: the stored input, already validated when
+   * the card was raised, straight to the tool's run, with no asking.
+   */
+  runApproved(
+    input: Record<string, unknown>,
+    context: ApprovedCallContext,
+    signal: AbortSignal,
+  ): Promise<{ content: string; isError: boolean }>;
 }
 
 /** What an area of the API offers bots: one class per area, each a list of tools. */
@@ -88,53 +115,73 @@ export interface BotToolArea {
  * Turns a spec into a tool both engines can run: the input checked against
  * its schema (a bad call comes back as an error the model can correct), the
  * answer cut to a size a prompt can hold, and an `AppError` read back as its
- * code, title and detail rather than a bare message.
+ * code, title and detail rather than a bare message. An asking tool is the
+ * same tool behind `askingFirst`.
  */
 export function defineBotTool<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
 ): BotToolDefinition {
   const { $schema: _dialect, ...inputSchema } = z.toJSONSchema(spec.input, { io: 'input' });
+  const call = async (
+    input: z.output<Input>,
+    context: BotToolCallContext & { approvalId?: string },
+    signal: AbortSignal,
+  ) => {
+    try {
+      return { content: fitToolOutput(await spec.run(input, context, signal)), isError: false };
+    } catch (error) {
+      return { content: describeToolFailure(error), isError: true };
+    }
+  };
   return {
     name: spec.name,
     description: spec.description,
     scope: spec.scope,
-    bind: (context) => ({
-      name: spec.name,
-      description: spec.description,
-      inputSchema,
-      run: async (input, { signal }) => {
-        const parsed = spec.input.safeParse(input ?? {});
-        if (!parsed.success) {
-          return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
-        }
-        try {
-          if (mustAsk(spec, context, parsed.data)) {
-            return { content: await askOwner(spec, context, parsed.data) };
+    bind: (context) => {
+      const tool: BotEngineTool = {
+        name: spec.name,
+        description: spec.description,
+        inputSchema,
+        run: async (input, { signal }) => {
+          const parsed = spec.input.safeParse(input ?? {});
+          if (!parsed.success) {
+            return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          return { content: fitToolOutput(await spec.run(parsed.data, context, signal)) };
-        } catch (error) {
-          return { content: describeToolFailure(error), isError: true };
-        }
-      },
-    }),
+          return call(parsed.data, context, signal);
+        },
+      };
+      return spec.asks && context.permission !== 'full' ? askingFirst(tool, spec, context) : tool;
+    },
+    runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
   };
 }
 
 /**
- * An asking tool asks under Approve for me, unless this context carries out
- * the owner's yes to this very call: the same tool, the same input.
+ * An asking tool under Approve for me (`25-bots.md` §5): a valid call becomes
+ * a Needs input card instead of running, and the model is told to end its
+ * turn, or to wait when a card is already up. A bad call is the tool's own
+ * error, unchanged.
  */
-function mustAsk<Input extends z.ZodType>(
+function askingFirst<Input extends z.ZodType>(
+  tool: BotEngineTool,
   spec: BotToolSpec<Input>,
   context: BotToolContext,
-  input: unknown,
-): boolean {
-  if (!spec.asks || context.permission === 'full') return false;
-  const { approved } = context;
-  return !(approved?.tool === spec.name && canonicalJson(approved.input) === canonicalJson(input));
+): BotEngineTool {
+  return {
+    ...tool,
+    run: async (input, options) => {
+      const parsed = spec.input.safeParse(input ?? {});
+      if (!parsed.success) return tool.run(input, options);
+      try {
+        return { content: await askOwner(spec, context, parsed.data) };
+      } catch (error) {
+        return { content: describeToolFailure(error), isError: true };
+      }
+    },
+  };
 }
 
-/** The call becomes a Needs input card, and the model is told what that means for its turn. */
+/** The call becomes a card, its input stored as validated, and the model is told what that means. */
 async function askOwner<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
   context: BotToolContext,
@@ -157,7 +204,7 @@ async function askOwner<Input extends z.ZodType>(
 
 async function summaryOf<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
-  context: BotToolContext,
+  context: BotToolCallContext,
   input: z.output<Input>,
   stored: Record<string, unknown>,
 ): Promise<string> {
@@ -170,23 +217,12 @@ async function summaryOf<Input extends z.ZodType>(
   return `${spec.name} ${JSON.stringify(stored)}`;
 }
 
-/** The validated input as it is stored and compared: plain JSON, no `undefined`. */
+/** The validated input as it is stored: plain JSON, no `undefined`. */
 function asStoredInput(input: unknown): Record<string, unknown> {
   const json: unknown = JSON.parse(JSON.stringify(input ?? {}));
   return json && typeof json === 'object' && !Array.isArray(json)
     ? (json as Record<string, unknown>)
     : { value: json };
-}
-
-/** JSON with every object's keys sorted: jsonb does not keep the order a call was written in. */
-function canonicalJson(value: unknown): string {
-  return JSON.stringify(value ?? null, (_key, inner: unknown) =>
-    inner && typeof inner === 'object' && !Array.isArray(inner)
-      ? Object.fromEntries(
-          Object.entries(inner as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1)),
-        )
-      : inner,
-  );
 }
 
 function describeIssues(error: z.ZodError): string {

@@ -1,15 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import type { BotApprovalStatus } from '@oppenheimer/shared';
+import { OutboxService } from '@oppenheimer/backend-ddd';
+import { type BotApprovalStatus, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { BotResource } from '../../bots/bots.resource';
 import { BotApprovalMapper } from '../bot-approval.mapper';
+import { BotMessageMapper } from '../bot-message.mapper';
+import { BotTurnMapper } from '../bot-turn.mapper';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotApprovalOrmEntity } from './bot-approval.orm-entity';
-import type { BotApprovalRepositoryPort } from './bot-approval.repository.port';
+import type { BotApprovalEffects, BotApprovalRepositoryPort } from './bot-approval.repository.port';
+import { enqueueWithin } from './bot-turn.repository';
+
+/** The job that carries out an approved call; its payload is `{ approvalId, by }`. */
+export const RUN_APPROVED_CALL_JOB = 'run-approved-call';
 
 /** The insert broke `UQ_bot_approval_pending`: the bot already has a card waiting. */
 function isPendingTaken(error: unknown): boolean {
@@ -30,6 +37,9 @@ export class BotApprovalRepository
     @InjectRepository(BotApprovalOrmEntity)
     protected readonly repository: Repository<BotApprovalOrmEntity>,
     private readonly mapper: BotApprovalMapper,
+    private readonly outbox: OutboxService,
+    private readonly turns: BotTurnMapper,
+    private readonly messages: BotMessageMapper,
   ) {
     super();
   }
@@ -59,6 +69,11 @@ export class BotApprovalRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findForRun(approvalId: string): Promise<Option<BotApprovalEntity>> {
+    const record = await this.repository.findOne({ where: { id: approvalId } });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async findPending(organizationId: string, botId: string): Promise<Option<BotApprovalEntity>> {
     // UQ_bot_approval_pending.
     const record = await this.repository.findOne({
@@ -84,25 +99,56 @@ export class BotApprovalRepository
     return records.map((record) => this.mapper.toDomain(record));
   }
 
-  async saveTransition(approval: BotApprovalEntity): Promise<boolean> {
-    const result = await this.repository
-      .createQueryBuilder()
-      .update(BotApprovalOrmEntity)
-      .set({
-        status: approval.status,
-        result: approval.result,
-        note: approval.note,
-        decidedByUserId: approval.decidedByUserId,
-        decidedAt: approval.decidedAt,
-      })
-      .where('id = :id AND "organizationId" = :organizationId AND "status" = :at', {
-        id: approval.id,
-        organizationId: approval.organizationId,
-        at: approval.statusAtLoad,
-      })
-      .execute();
-    if (result.affected !== 1) return false;
-    approval.markPersisted();
-    return true;
+  saveTransition(
+    approval: BotApprovalEntity,
+    effects: BotApprovalEffects = {},
+    correlationId: string | null = null,
+  ): Promise<boolean> {
+    return this.outbox.transaction(async (manager) => {
+      const update = manager
+        .createQueryBuilder()
+        .update(BotApprovalOrmEntity)
+        .set({
+          status: approval.status,
+          result: approval.result,
+          note: approval.note,
+          decidedByUserId: approval.decidedByUserId,
+          decidedWithScopes: approval.decidedWithScopes ? [...approval.decidedWithScopes] : null,
+          decidedAt: approval.decidedAt,
+        })
+        .where('id = :id AND "organizationId" = :organizationId AND "status" = :at', {
+          id: approval.id,
+          organizationId: approval.organizationId,
+          at: approval.statusAtLoad,
+        });
+      // An approved call's result is written once: a retried job finds it there and stops.
+      if (approval.statusAtLoad === 'approved') update.andWhere('"result" IS NULL');
+      const result = await update.execute();
+      if (result.affected !== 1) return false;
+      approval.markPersisted();
+      if (effects.continuation) {
+        const { turn, opening } = effects.continuation;
+        await enqueueWithin(
+          manager,
+          this.outbox,
+          this.turns,
+          this.messages,
+          turn,
+          opening,
+          correlationId,
+        );
+      }
+      if (effects.runCall) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_APPROVALS,
+          jobName: RUN_APPROVED_CALL_JOB,
+          payload: { approvalId: approval.id, by: effects.runCall.by },
+          reason: `bot ${approval.botId}: approval ${approval.id} was approved`,
+          aggregateId: approval.id,
+          correlationId,
+        });
+      }
+      return true;
+    });
   }
 }

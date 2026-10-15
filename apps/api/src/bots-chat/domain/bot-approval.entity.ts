@@ -9,6 +9,7 @@ import {
   BOT_APPROVAL_NOTE_MAX,
   BOT_APPROVAL_STATUSES,
   type BotApprovalStatus,
+  type Scope,
 } from '@oppenheimer/shared';
 
 export interface BotApprovalProps {
@@ -29,6 +30,8 @@ export interface BotApprovalProps {
   note: string | null;
   /** Who decided; null while pending, once expired, or once that account is gone. */
   decidedByUserId: string | null;
+  /** The deciding credential's scopes; null for a browser session (or while pending). */
+  decidedWithScopes: readonly Scope[] | null;
   decidedAt: Date | null;
 }
 
@@ -41,7 +44,7 @@ export const BOT_APPROVAL_RESULT_MAX = 2_000;
  * One call of an asking tool waiting for the bot's owner (`25-bots.md` §5,
  * the Needs input card). It is decided once: `pending` moves to `approved`,
  * `denied` or `expired`, and an approved call that failed when it ran ends
- * `failed`. The status it was loaded in is what its next write is
+ * `failed`. Approved with no result yet is a call running. The status it was loaded in is what its next write is
  * conditioned on, so two clicks, or a click and a new message, never both
  * decide it.
  */
@@ -74,6 +77,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
         result: null,
         note: null,
         decidedByUserId: null,
+        decidedWithScopes: null,
         decidedAt: null,
       },
     });
@@ -114,18 +118,33 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
   get decidedByUserId(): string | null {
     return this.props.decidedByUserId;
   }
+  get decidedWithScopes(): readonly Scope[] | null {
+    return this.props.decidedWithScopes;
+  }
+  /** Approved and not run yet: its job is queued or running. */
+  get running(): boolean {
+    return this.props.status === 'approved' && this.props.result === null;
+  }
   get decidedAt(): Date | null {
     return this.props.decidedAt;
   }
 
-  /** The owner said yes. Only a pending approval is decided. */
-  approve(userId: string, now: Date): void {
-    this.decide('approved', userId, now);
+  /**
+   * The owner said yes, through a credential with these scopes (null for a
+   * browser session). Only a pending approval is decided; it then runs.
+   */
+  approve(userId: string, now: Date, scopes: readonly Scope[] | null = null): void {
+    this.decide('approved', userId, now, scopes);
   }
 
   /** The owner said no, with what they added. Only a pending approval is decided. */
-  deny(userId: string, now: Date, note?: string | null): void {
-    this.decide('denied', userId, now);
+  deny(
+    userId: string,
+    now: Date,
+    note?: string | null,
+    scopes: readonly Scope[] | null = null,
+  ): void {
+    this.decide('denied', userId, now, scopes);
     const trimmed = note?.trim();
     this.props.note = trimmed ? cut(trimmed, BOT_APPROVAL_NOTE_MAX) : null;
   }
@@ -137,10 +156,10 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.props.decidedAt = now;
   }
 
-  /** What the call answered when it ran on the yes; an error ends it `failed`. */
+  /** What the call answered when it ran on the yes; an error ends it `failed`. Once. */
   recordResult(result: string, failed: boolean): void {
-    if (this.props.status !== 'approved') {
-      throw new ArgumentInvalidException(`A ${this.props.status} approval ran nothing`);
+    if (!this.running) {
+      throw new ArgumentInvalidException(`A ${this.props.status} approval has nothing running`);
     }
     this.props.result = cut(result, BOT_APPROVAL_RESULT_MAX);
     if (failed) this.props.status = 'failed';
@@ -151,11 +170,17 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.loadedStatus = this.props.status;
   }
 
-  private decide(status: 'approved' | 'denied', userId: string, now: Date): void {
+  private decide(
+    status: 'approved' | 'denied',
+    userId: string,
+    now: Date,
+    scopes: readonly Scope[] | null,
+  ): void {
     this.requirePending();
     if (!userId) throw new ArgumentNotProvidedException('Somebody decides an approval');
     this.props.status = status;
     this.props.decidedByUserId = userId;
+    this.props.decidedWithScopes = scopes ? [...scopes] : null;
     this.props.decidedAt = now;
   }
 

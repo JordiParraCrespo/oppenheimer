@@ -62,23 +62,3 @@ export function toolTarget(input: Record<string, unknown>): string | undefined {
   const line = first.trim().split('\n')[0] ?? '';
   return line.length > TARGET_MAX ? `${line.slice(0, TARGET_MAX)}…` : line;
 }
-
-/** How a decision event ended, as its first line says it. */
-export type EventOutcome = 'approved' | 'denied' | 'failed' | null;
-
-/**
- * An event as one trace line: its first line ("Ana approved: …"), and how
- * the decision went. The rest (the call's answer, the note) is the bot's to
- * report.
- */
-export function eventLine(content: string): { headline: string; outcome: EventOutcome } {
-  const [headline = '', ...rest] = content.split('\n');
-  const outcome: EventOutcome = /^.+? denied: /.test(headline)
-    ? 'denied'
-    : /^.+? approved: /.test(headline)
-      ? rest.some((line) => line.startsWith('It ran and failed'))
-        ? 'failed'
-        : 'approved'
-      : null;
-  return { headline, outcome };
-}

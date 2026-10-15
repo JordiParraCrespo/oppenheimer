@@ -16721,7 +16721,7 @@
     },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
-        "description": "`approve` runs exactly the call the bot asked for, as the bot's owner, and keeps its answer (`failed` when it failed); `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, and it reports back in the chat.",
+        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
         "operationId": "decideBotApproval",
         "parameters": [
           {
@@ -25311,6 +25311,28 @@
         },
         "required": ["callId", "name", "input", "output", "isError"]
       },
+      "BotMessageEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["approval"]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["approved", "denied", "failed"]
+          },
+          "tool": {
+            "type": "string",
+            "description": "The tool the decided call was for."
+          },
+          "summary": {
+            "type": "string",
+            "description": "The card's line: what the call does, in words."
+          }
+        },
+        "required": ["kind", "outcome", "tool", "summary"]
+      },
       "BotMessageResponseDto": {
         "type": "object",
         "properties": {
@@ -25336,12 +25358,22 @@
               "$ref": "#/components/schemas/BotToolStepResponseDto"
             }
           },
+          "event": {
+            "nullable": true,
+            "description": "What an event says happened; null on every other role.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotMessageEventResponseDto"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "required": ["id", "turnId", "role", "content", "steps", "createdAt"]
+        "required": ["id", "turnId", "role", "content", "steps", "event", "createdAt"]
       },
       "BotTurnResponseDto": {
         "type": "object",

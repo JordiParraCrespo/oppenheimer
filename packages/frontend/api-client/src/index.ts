@@ -44,6 +44,7 @@ export type {
   BotDocumentRevisionResponseDto,
   BotGroupResponseDto,
   BotMemoryFactResponseDto,
+  BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotResponseDto,
   BotToolStepResponseDto,

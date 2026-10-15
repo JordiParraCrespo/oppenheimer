@@ -4,7 +4,7 @@ import { z } from 'zod/v4';
 import type { ProjectEntity } from './../projects/domain/project.entity';
 import type { PlanActor } from './../tasks/domain/plan-change.types';
 import type { TaskEntity } from './../tasks/domain/task.entity';
-import { type BotToolContext } from './application/bot-tool.factory';
+import { type BotToolCallContext } from './application/bot-tool.factory';
 import { cut, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
@@ -44,7 +44,7 @@ export const dueTimeHasDate = (value: { due_date?: string | null; due_time?: str
   !value.due_time || Boolean(value.due_date);
 
 /** The bot, acting for its owner: Plan's log names both. */
-export function botActor(context: BotToolContext): PlanActor {
+export function botActor(context: BotToolCallContext): PlanActor {
   return { type: 'agent', userId: context.owner.userId, agentId: context.botId };
 }
 
@@ -58,7 +58,7 @@ export function todayIn(timeZone: string): string {
   }).format(new Date());
 }
 
-export function describeProject(project: ProjectEntity, context: BotToolContext): string {
+export function describeProject(project: ProjectEntity, context: BotToolCallContext): string {
   const parts = [
     `${project.repositories.length} repositories`,
     `default host ${project.defaultHostId ?? 'none'}`,
@@ -87,7 +87,7 @@ export function describeTask(task: TaskEntity): string {
   return `${task.id} "${task.title}" [${parts.join('; ')}]`;
 }
 
-export function describeTaskInFull(task: TaskEntity, context: BotToolContext): string {
+export function describeTaskInFull(task: TaskEntity, context: BotToolCallContext): string {
   const sessions = task.sessions.map(
     (link) =>
       `  - session ${link.sessionId} (${link.origin}, ${formatToolTime(link.linkedAt, context.timeZone)})`,

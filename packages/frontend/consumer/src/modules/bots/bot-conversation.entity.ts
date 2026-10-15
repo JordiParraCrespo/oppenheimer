@@ -1,5 +1,6 @@
 import type {
   BotApprovalStatus,
+  BotMessageEvent,
   BotMessageRole,
   BotProvider,
   BotTurnStatus,
@@ -30,6 +31,8 @@ export class BotMessageEntity {
     public readonly content: string,
     public readonly steps: readonly BotToolStep[],
     public readonly createdAt: Date,
+    /** What an event says happened, for the chat to draw; `null` on every other role. */
+    public readonly event: BotMessageEvent | null = null,
   ) {}
 }
 

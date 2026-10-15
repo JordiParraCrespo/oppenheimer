@@ -35,6 +35,7 @@ import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-b
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
 import { DecideBotApprovalCommandHandler } from './commands/decide-bot-approval/decide-bot-approval.command-handler';
 import { DecideBotApprovalHttpController } from './commands/decide-bot-approval/decide-bot-approval.http.controller';
+import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
 import { SendBotMessageCommandHandler } from './commands/send-bot-message/send-bot-message.command-handler';
 import { SendBotMessageHttpController } from './commands/send-bot-message/send-bot-message.http.controller';
@@ -44,6 +45,7 @@ import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
+import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
@@ -71,6 +73,7 @@ const commandHandlers: Provider[] = [
   CancelBotTurnCommandHandler,
   RunBotTurnCommandHandler,
   DecideBotApprovalCommandHandler,
+  RunApprovedCallCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -123,6 +126,7 @@ const queryHandlers: Provider[] = [
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     TurnCancelWatchFactory,
     BotTurnsProcessor,
+    BotApprovalsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_APPROVAL_REPOSITORY, useClass: BotApprovalRepository },

@@ -287,6 +287,23 @@ export const BOT_ACTIVE_TURN_STATUSES = [
 export const BOT_MESSAGE_ROLES = ['user', 'assistant', 'activity', 'event'] as const;
 export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 
+/**
+ * What an `event` message says happened, for the chat to draw without
+ * reading its words: an approval decided (`25-bots.md` §5), how it went,
+ * and the card's line. The words stay in the message for the bot.
+ */
+export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
+export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
+
+export interface BotMessageEvent {
+  kind: 'approval';
+  outcome: BotEventOutcome;
+  /** The approved or denied call's tool. */
+  tool: string;
+  /** The card's line: what the call does, in words. */
+  summary: string;
+}
+
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
 export const BOT_MESSAGE_MAX = 16_000;
 /** The most messages one conversation read returns, newest first. */

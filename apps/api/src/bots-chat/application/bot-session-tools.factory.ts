@@ -18,7 +18,7 @@ import {
 } from '../bot-session-tool.mapper';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
@@ -93,7 +93,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             scope: context.owner,
             userId: context.owner.userId,
             input: body,
-            idempotencyKey: idempotencyKeyOf(context.turnId, body),
+            idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
             origin: 'bot',
           }),
         );
@@ -131,7 +131,7 @@ export class BotSessionToolsFactory implements BotToolArea {
   }
 
   /** The host's name as the owner sees it; its id when they cannot read it. */
-  private async hostName(context: BotToolContext, hostId: string): Promise<string> {
+  private async hostName(context: BotToolCallContext, hostId: string): Promise<string> {
     const overview = await this.queryBus
       .execute<FindHostQuery, { host: { name: string } }>(
         new FindHostQuery({ scope: context.owner, hostId }),
@@ -140,7 +140,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     return overview?.host.name ?? `host ${hostId}`;
   }
 
-  private project(context: BotToolContext, projectId: string): Promise<ProjectEntity> {
+  private project(context: BotToolCallContext, projectId: string): Promise<ProjectEntity> {
     return this.queryBus.execute<FindProjectQuery, ProjectEntity>(
       new FindProjectQuery({ scope: context.owner, projectId }),
     );

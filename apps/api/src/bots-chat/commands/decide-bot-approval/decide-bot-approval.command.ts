@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { BotApprovalDecision } from '@oppenheimer/shared';
+import type { BotApprovalDecision, Scope } from '@oppenheimer/shared';
 
 export class DecideBotApprovalCommand extends CommandBase {
   readonly scope: AccessScope;
@@ -11,6 +11,8 @@ export class DecideBotApprovalCommand extends CommandBase {
   readonly note: string | null;
   /** Who decided, as the bot is told: the caller's name. */
   readonly deciderName: string;
+  /** The deciding credential's scopes; null for a browser session. */
+  readonly credentialScopes: readonly Scope[] | null;
 
   constructor(props: CommandProps<DecideBotApprovalCommand>) {
     super(props);
@@ -20,5 +22,6 @@ export class DecideBotApprovalCommand extends CommandBase {
     this.decision = props.decision;
     this.note = props.note ?? null;
     this.deciderName = props.deciderName;
+    this.credentialScopes = props.credentialScopes ?? null;
   }
 }

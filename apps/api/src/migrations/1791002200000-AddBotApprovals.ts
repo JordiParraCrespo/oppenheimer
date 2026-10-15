@@ -24,11 +24,22 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   - `result` is the tool's answer after it ran on a yes (bounded); `note`
  *     what the person added to a no.
  *   - `decidedByUserId` goes null with the account (`SET NULL`), the approval
- *     stays.
+ *     stays. `decidedWithScopes` is the deciding credential's scopes (null for
+ *     a browser session): the call runs only if both the asking turn's and
+ *     these cover its tool, and the turn that reports back gets the same
+ *     intersection. Read whole (jsonb).
+ *   - `approved` with no `result` is a call running: a yes stages a
+ *     `run-approved-call` job on the outbox in the same transaction as the
+ *     move, so a crash leaves a job BullMQ retries, never a stranded card.
+ *     The worker writes the result conditionally (still approved, no result
+ *     yet) together with the turn that reports back, and the call itself is
+ *     keyed by the approval (one session per approval, however often run).
  * - `bot_message."role"` admits `event`: what Oppenheimer tells the bot on the
  *   person's behalf (an approval decided, and what the call answered). It
  *   opens the continuation turn as your message opens yours, and the chat
- *   draws it as a small line, not as a bubble from you.
+ *   draws it as a small line, not as a bubble from you. `event` says what
+ *   happened for the chat to draw (kind, outcome, tool, the card's line);
+ *   set on an event and on nothing else (`CHK_bot_message_event`).
  *
  * Every parent reference is composite on `("organizationId", …)`, so nothing
  * points into another workspace, and an approval goes with its bot and with
@@ -60,6 +71,7 @@ export class AddBotApprovals1791002200000 implements MigrationInterface {
         "result" character varying(2000),
         "note" character varying(1000),
         "decidedByUserId" uuid,
+        "decidedWithScopes" jsonb,
         "decidedAt" timestamp with time zone,
         "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
         "updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
@@ -95,9 +107,15 @@ export class AddBotApprovals1791002200000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE bot_message ADD CONSTRAINT "CHK_bot_message_role" CHECK ("role" IN ('user', 'assistant', 'activity', 'event'))`,
     );
+    await queryRunner.query(`ALTER TABLE bot_message ADD COLUMN "event" jsonb`);
+    await queryRunner.query(
+      `ALTER TABLE bot_message ADD CONSTRAINT "CHK_bot_message_event" CHECK (("role" = 'event') = ("event" IS NOT NULL))`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE bot_message DROP CONSTRAINT "CHK_bot_message_event"`);
+    await queryRunner.query(`ALTER TABLE bot_message DROP COLUMN "event"`);
     // An event opened its turn; with the role gone it reads back as the person's.
     await queryRunner.query(`UPDATE bot_message SET "role" = 'user' WHERE "role" = 'event'`);
     await queryRunner.query(`ALTER TABLE bot_message DROP CONSTRAINT "CHK_bot_message_role"`);

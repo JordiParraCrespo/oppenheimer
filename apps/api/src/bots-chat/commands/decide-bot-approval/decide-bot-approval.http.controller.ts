@@ -13,8 +13,10 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import type { ScopeContext } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -46,7 +48,7 @@ export class DecideBotApprovalHttpController {
   @ApiOperation({
     summary: "Answer a bot's Needs input card",
     description:
-      "`approve` runs exactly the call the bot asked for, as the bot's owner, and keeps its answer (`failed` when it failed); `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, and it reports back in the chat.",
+      "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
   })
   @ApiResponse({ status: 201, type: BotApprovalResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -59,6 +61,7 @@ export class DecideBotApprovalHttpController {
   async decide(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('name') name: string | undefined,
+    @CurrentScope() credential: ScopeContext | null,
     @Param('id', new ParseUUIDPipe()) botId: string,
     @Param('approvalId', new ParseUUIDPipe()) approvalId: string,
     @Body() body: DecideBotApprovalRequest,
@@ -71,6 +74,7 @@ export class DecideBotApprovalHttpController {
         decision: body.decision,
         note: body.note ?? null,
         deciderName: name ?? '',
+        credentialScopes: credential ? credential.scopes : null,
       }),
     );
     const approval = await this.queryBus.execute<FindBotApprovalQuery, BotApprovalEntity>(

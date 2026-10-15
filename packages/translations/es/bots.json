@@ -90,6 +90,11 @@
       "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
       "cancel": "Cancelar",
       "failed": "No se pudo responder a la solicitud."
+    },
+    "event": {
+      "approved": "Aprobaste: {{summary}}",
+      "denied": "Denegaste: {{summary}}",
+      "failed": "Aprobaste y falló: {{summary}}"
     }
   },
   "settings": {

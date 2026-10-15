@@ -139,6 +139,9 @@ describe('bots chat (integration)', () => {
     approvals = new BotApprovalRepository(
       dataSource.getRepository(BotApprovalOrmEntity),
       new BotApprovalMapper(),
+      new OutboxService(dataSource),
+      new BotTurnMapper(),
+      new BotMessageMapper(),
     );
   }, 180000);
 
@@ -528,12 +531,14 @@ describe('bots chat (integration)', () => {
       turnId: next.id,
       role: 'event',
       content: 'Ana approved: Start Claude Code\nIt ran: Started session s-1.',
+      event: { kind: 'approval', outcome: 'approved', tool: 'start_session', summary: 'Start it' },
       steps: [],
       position: 0,
     });
     expect(await turns.enqueue(next, event, null)).toBe('waiting');
     expect(await messages.findOpening(organizationId, next.id)).toMatchObject({
       role: 'event',
+      event: { kind: 'approval', outcome: 'approved', tool: 'start_session', summary: 'Start it' },
       content: event.content,
     });
     const [{ lastMessagePreview }] = await dataSource.query(
@@ -552,5 +557,60 @@ describe('bots chat (integration)', () => {
       [bot.id],
     );
     expect(count).toBe(0);
+  });
+
+  it('stages the approved call’s job with the yes, writes its result once, and queues the report with it', async () => {
+    await dataSource.query(`DELETE FROM outbox_message`);
+    const bot = await create('Runner');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const loaded = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    loaded.approve(userId, new Date(), ['bots:write']);
+    expect(await approvals.saveTransition(loaded, { runCall: { by: 'Ana' } }, null)).toBe(true);
+    const jobs: { topic: string; payload: { approvalId: string; by: string } }[] =
+      await dataSource.query(
+        `SELECT topic, payload FROM outbox_message WHERE topic = 'bot-approvals'`,
+      );
+    expect(jobs).toEqual([{ topic: 'bot-approvals', payload: { approvalId: card.id, by: 'Ana' } }]);
+
+    // Two runs of the job: the first result lands with its report, the second writes nothing.
+    const runs = await Promise.all([approvals.findForRun(card.id), approvals.findForRun(card.id)]);
+    const [first, second] = runs.map((found) => found.unwrap());
+    expect(first.decidedWithScopes).toEqual(['bots:write']);
+    first.recordResult('Started session s-1.', false);
+    second.recordResult('Started session s-1.', false);
+    const report = () => {
+      const { turn, message } = sent(bot, 'unused');
+      const opening = BotMessageEntity.createNew({
+        organizationId,
+        botId: bot.id,
+        turnId: turn.id,
+        role: 'event',
+        content: 'Ana approved: x',
+        event: { kind: 'approval', outcome: 'approved', tool: 'start_session', summary: 'x' },
+        steps: [],
+        position: message.position,
+      });
+      return { turn, opening };
+    };
+    expect(await approvals.saveTransition(first, { continuation: report() }, null)).toBe(true);
+    expect(await approvals.saveTransition(second, { continuation: report() }, null)).toBe(false);
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM bot_message WHERE "botId" = $1 AND "role" = 'event'`,
+      [bot.id],
+    );
+    expect(count).toBe(1);
+  });
+
+  it('refuses an event with nothing said about it, and a message that is not an event saying one', async () => {
+    const bot = await create('Strict');
+    const { turn, message } = sent(bot, 'Hi');
+    await turns.enqueue(turn, message, null);
+    await expect(
+      dataSource.query(
+        `INSERT INTO bot_message ("organizationId", "botId", "turnId", "role", "content", "position") VALUES ($1, $2, $3, 'event', 'x', 1)`,
+        [organizationId, bot.id, turn.id],
+      ),
+    ).rejects.toMatchObject({ driverError: { constraint: 'CHK_bot_message_event' } });
   });
 });

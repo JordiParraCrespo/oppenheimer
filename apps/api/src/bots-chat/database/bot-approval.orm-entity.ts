@@ -61,6 +61,10 @@ export class BotApprovalOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   decidedByUserId!: string | null;
 
+  /** The deciding credential's scopes, read whole; null for a browser session. */
+  @Column({ type: 'jsonb', nullable: true })
+  decidedWithScopes!: string[] | null;
+
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   decidedAt!: Date | null;
 

@@ -109,8 +109,8 @@ export async function insertMessageWithin(
 ): Promise<void> {
   const record = mapper.toPersistence(message);
   await manager.query(
-    `INSERT INTO bot_message (id, "organizationId", "botId", "turnId", "role", "content", "steps", "position")
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)`,
+    `INSERT INTO bot_message (id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event")
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb)`,
     [
       record.id,
       record.organizationId,
@@ -120,6 +120,7 @@ export async function insertMessageWithin(
       record.content,
       JSON.stringify(record.steps),
       record.position,
+      record.event ? JSON.stringify(record.event) : null,
     ],
   );
   // The sidebar's line is a conversation's words: an activity line or an event is neither.

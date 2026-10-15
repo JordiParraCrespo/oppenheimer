@@ -115,6 +115,7 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     dto.content,
     steps,
     new Date(dto.createdAt),
+    dto.event ? { ...dto.event } : null,
   );
 }
 

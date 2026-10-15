@@ -1,3 +1,4 @@
+import { type BotMessageEvent, expandScopes, type Scope } from '@oppenheimer/shared';
 import type { BotApprovalEntity } from './bot-approval.entity';
 import { BotMessageEntity } from './bot-message.entity';
 import { BotTurnEntity } from './bot-turn.entity';
@@ -40,14 +41,38 @@ export function approvalEvent(approval: BotApprovalEntity, by: string): string {
   return `${who} approved: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
 }
 
+/** What the chat draws for a decided approval, without reading the event's words. */
+export function approvalEventOf(approval: BotApprovalEntity): BotMessageEvent {
+  const outcome =
+    approval.status === 'denied' ? 'denied' : approval.status === 'failed' ? 'failed' : 'approved';
+  return { kind: 'approval', outcome, tool: approval.tool, summary: approval.summary };
+}
+
+/**
+ * What two credentials may both do: null is unrestricted (a browser
+ * session), so null with a list is the list; two lists meet on what both
+ * cover, a write scope covering its read.
+ */
+export function intersectScopes(
+  a: readonly Scope[] | null,
+  b: readonly Scope[] | null,
+): readonly Scope[] | null {
+  if (a === null) return b === null ? null : [...b];
+  if (b === null) return [...a];
+  const other = expandScopes(b);
+  return [...expandScopes(a)].filter((scope) => other.has(scope)).sort();
+}
+
 /**
  * The turn a decision gives the bot: queued like a message of yours, on the
- * bot's provider, model and effort as they are now, and opened by the event
- * rather than by words of yours.
+ * bot's provider, model and effort as they are now, opened by the event (its
+ * words for the bot, what happened for the chat) rather than by words of
+ * yours.
  */
 export function decisionTurn(
   props: Parameters<typeof BotTurnEntity.queue>[0],
-  event: string,
+  approval: BotApprovalEntity,
+  by: string,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue(props);
   const opening = BotMessageEntity.createNew({
@@ -55,7 +80,8 @@ export function decisionTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: event,
+    content: approvalEvent(approval, by),
+    event: approvalEventOf(approval),
     steps: [],
     position: 0,
   });

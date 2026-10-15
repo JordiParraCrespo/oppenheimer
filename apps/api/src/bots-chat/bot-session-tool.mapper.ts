@@ -122,8 +122,17 @@ function pickRepository(
   };
 }
 
-/** The same call in the same turn starts one session, however often the model repeats it. */
-export function idempotencyKeyOf(turnId: string, body: CreateSessionDto): string {
+/**
+ * The same call in the same turn starts one session, however often the model
+ * repeats it; an approved call starts one per approval, however often its job
+ * is retried.
+ */
+export function idempotencyKeyOf(
+  turnId: string,
+  body: CreateSessionDto,
+  approvalId?: string,
+): string {
+  if (approvalId) return `bot:approval:${approvalId}`;
   const digest = createHash('sha256').update(JSON.stringify(body)).digest('hex').slice(0, 32);
   return `bot:${turnId}:${digest}`;
 }

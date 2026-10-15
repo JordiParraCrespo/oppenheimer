@@ -31,7 +31,7 @@ import {
 import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
-  type BotToolContext,
+  type BotToolCallContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
@@ -363,7 +363,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     });
   }
 
-  private readTask(taskId: string, context: BotToolContext): Promise<TaskEntity> {
+  private readTask(taskId: string, context: BotToolCallContext): Promise<TaskEntity> {
     return this.queryBus.execute<FindTaskQuery, TaskEntity>(
       new FindTaskQuery({ scope: context.owner, taskId }),
     );

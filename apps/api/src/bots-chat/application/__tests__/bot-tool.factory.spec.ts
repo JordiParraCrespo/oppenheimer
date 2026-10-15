@@ -7,14 +7,15 @@ import { type BotToolContext, defineBotTool } from '../bot-tool.factory';
 /**
  * How an asking tool asks (`25-bots.md` §5): under Approve for me its call is
  * checked, then becomes a Needs input card and never runs; the model is told
- * to end its turn, or to wait when a card is already up. Full access runs it,
- * and so does a context carrying out the owner's yes to exactly this call.
+ * to end its turn, or to wait when a card is already up. Full access runs it;
+ * an approved call is carried out through `runApproved`, which never asks.
  */
 function setup(options: { waiting?: boolean; summarize?: () => string } = {}) {
   const run = vi.fn(async (input: { task: string; host?: string }) => `Started ${input.task}`);
   const tool = defineBotTool({
     name: 'start_thing',
     asks: true,
+    scope: 'sessions:write',
     description: 'Starts a thing.',
     input: z.object({ task: z.string().min(1), host: z.string().optional() }),
     summarize: options.summarize ?? ((input) => `Start ${input.task}`),
@@ -96,15 +97,33 @@ describe('defineBotTool, an asking tool', () => {
     expect(approvals.request).not.toHaveBeenCalled();
   });
 
-  it('runs the approved call, its input stored in any key order, and asks again for any other', async () => {
-    const { run, approvals, call } = setup();
-    const approved = { tool: 'start_thing', input: { host: 'b2', task: 'deploy' } };
-    expect((await call({ task: 'deploy', host: 'b2' }, { approved })).content).toBe(
-      'Started deploy',
+  it('carries out an approved call straight to its run: no asking, its approval id passed on', async () => {
+    const { run, approvals } = setup();
+    const tool = defineBotTool({
+      name: 'start_thing',
+      asks: true,
+      scope: 'sessions:write',
+      description: 'Starts a thing.',
+      input: z.object({ task: z.string().min(1) }),
+      run,
+    });
+    const answer = await tool.runApproved(
+      { task: 'deploy' },
+      {
+        owner: emptyScope('owner-1', 'org-1'),
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        turnId: 'turn-1',
+        homeHostId: null,
+        timeZone: 'UTC',
+        permission: 'auto',
+        budget: new BotTurnBudget(),
+        approvalId: 'approval-1',
+      },
+      new AbortController().signal,
     );
-    await call({ task: 'deploy', host: 'b3' }, { approved });
-    await call({ task: 'deploy', host: 'b2' }, { approved: { ...approved, tool: 'other' } });
-    expect(run).toHaveBeenCalledOnce();
-    expect(approvals.request).toHaveBeenCalledTimes(2);
+    expect(answer).toEqual({ content: 'Started deploy', isError: false });
+    expect(run.mock.calls[0][1]).toMatchObject({ approvalId: 'approval-1' });
+    expect(approvals.request).not.toHaveBeenCalled();
   });
 });

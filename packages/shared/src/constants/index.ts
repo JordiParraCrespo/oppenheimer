@@ -74,4 +74,6 @@ export const QUEUE_NAMES = {
   OUTBOX_RETENTION: 'outbox-retention',
   /** Run one bot turn on its provider's engine, then start the bot's next queued one. */
   BOT_TURNS: 'bot-turns',
+  /** Carry out a call its bot's owner approved, then queue the turn that reports it. */
+  BOT_APPROVALS: 'bot-approvals',
 } as const;
