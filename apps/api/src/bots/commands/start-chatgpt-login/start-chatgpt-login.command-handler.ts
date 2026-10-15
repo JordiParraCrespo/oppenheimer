@@ -3,12 +3,12 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { CHATGPT_AUTH, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
+import { ChatgptSignInMapper } from '../../chatgpt-sign-in.mapper';
 import { BotErrors } from '../../domain/bots.errors';
 import { chatgptLoginExpiry } from '../../domain/chatgpt-login.policy';
 import type { ChatgptLoginResponseDto } from '../../dtos/chatgpt-login.response.dto';
 import type { ChatgptAuthPort } from '../../infrastructure/chatgpt-auth.port';
 import type { ProviderKeySealerPort } from '../../infrastructure/provider-key-sealer.port';
-import { ModelProviderCredentialMapper } from '../../model-provider-credential.mapper';
 import { StartChatgptLoginCommand } from './start-chatgpt-login.command';
 
 /**
@@ -26,7 +26,7 @@ export class StartChatgptLoginCommandHandler
     private readonly providers: ModelProviderResolver,
     @Inject(CHATGPT_AUTH) private readonly auth: ChatgptAuthPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
-    private readonly mapper: ModelProviderCredentialMapper,
+    private readonly mapper: ChatgptSignInMapper,
   ) {}
 
   async execute({ scope }: StartChatgptLoginCommand): Promise<ChatgptLoginResponseDto> {
@@ -34,13 +34,13 @@ export class StartChatgptLoginCommandHandler
     this.providers.assertConfigured();
     const code = await this.auth.requestDeviceCode();
     const expiresAt = chatgptLoginExpiry(new Date());
-    const flow = this.mapper.toChatgptLoginFlow({
+    const flow = this.mapper.toLoginFlow({
       deviceAuthId: code.deviceAuthId,
       userCode: code.userCode,
       organizationId: scope.organizationId,
       expiresAt,
     });
     const flowId = this.sealer.seal(flow).toString('base64url');
-    return this.mapper.toChatgptLoginResponse(flowId, code, expiresAt);
+    return this.mapper.toLoginResponse(flowId, code, expiresAt);
   }
 }

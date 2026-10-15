@@ -42,7 +42,8 @@ for await (const event of engine.run({
 ```
 
 A `chatgpt` turn runs on a ChatGPT subscription instead of API billing, the
-way the Codex CLI and OpenClaw do (`openai/chatgpt-backend.ts`): the request
+way the Codex CLI and OpenClaw do (`openai/chatgpt-bot-engine.ts`, the OpenAI
+engine with another endpoint): the request
 names the account (`chatgpt-account-id`), sends `store: false` and asks for
 its reasoning back encrypted (`include: ['reasoning.encrypted_content']`).
 Signing in and refreshing the token are the caller's; the engine only uses

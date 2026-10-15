@@ -6,7 +6,6 @@ import {
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
 import { failed, guardTurn, runTool } from '../turn';
-import { CHATGPT_BACKEND_URL, chatgptModelSettings } from './chatgpt-backend';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -50,29 +49,34 @@ function inputItems(request: BotTurnRequest): AgentInputItem[] {
   ];
 }
 
-/** The model settings of a turn: its effort, and on `chatgpt` what that backend requires. */
-function modelSettings(request: BotTurnRequest, accountId: string | null) {
-  return {
-    ...(request.effort ? { reasoning: { effort: request.effort } } : {}),
-    ...(accountId ? chatgptModelSettings(accountId) : {}),
-  };
+/**
+ * Where a turn's requests go and what they carry besides its effort: the
+ * endpoint, and the model settings that endpoint requires. A subclass that
+ * reaches another Responses API endpoint says so here and nowhere else.
+ */
+export interface ResponsesEndpoint {
+  baseUrl?: string;
+  modelSettings: Record<string, unknown>;
 }
 
-/**
- * Providers `openai` and `chatgpt`, on the OpenAI Agents SDK over the
- * Responses API: OpenAI's API on a key, or ChatGPT's backend on a sign-in.
- */
+/** Provider `openai`, on the OpenAI Agents SDK over the Responses API. */
 export class OpenAiBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
-    if (request.provider === 'chatgpt' && !request.accountId) {
-      return guardTurn(request, () => [failed('A ChatGPT turn needs the account it acts for')]);
-    }
-    return guardTurn(request, () => this.stream(request));
+    const endpoint = this.endpoint(request);
+    if (typeof endpoint === 'string') return guardTurn(request, () => [failed(endpoint)]);
+    return guardTurn(request, () => this.stream(request, endpoint));
   }
 
-  private async *stream(request: BotTurnRequest): AsyncGenerator<BotEngineEvent> {
-    const accountId = request.provider === 'chatgpt' ? (request.accountId ?? null) : null;
-    const baseUrl = request.baseUrl ?? (accountId ? CHATGPT_BACKEND_URL : undefined);
+  /** OpenAI's API, or the request's `baseUrl`; a string refuses the turn with that reason. */
+  protected endpoint(request: BotTurnRequest): ResponsesEndpoint | string {
+    return { baseUrl: request.baseUrl, modelSettings: {} };
+  }
+
+  private async *stream(
+    request: BotTurnRequest,
+    endpoint: ResponsesEndpoint,
+  ): AsyncGenerator<BotEngineEvent> {
+    const { baseUrl } = endpoint;
     // Loaded on the first turn, so importing the package starts nothing.
     const sdk = await import('@openai/agents');
     const failedCalls = new Set<string>();
@@ -106,7 +110,10 @@ export class OpenAiBotEngine extends BotEngine {
           },
         }),
       ),
-      modelSettings: modelSettings(request, accountId),
+      modelSettings: {
+        ...(request.effort ? { reasoning: { effort: request.effort } } : {}),
+        ...endpoint.modelSettings,
+      },
     });
     const run: OpenAiRun = await runner.run(agent, inputItems(request), {
       stream: true,

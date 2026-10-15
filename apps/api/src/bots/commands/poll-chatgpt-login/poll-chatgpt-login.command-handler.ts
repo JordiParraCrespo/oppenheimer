@@ -4,6 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { ChatgptCredentialResolver } from '../../application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { CHATGPT_AUTH, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
+import { ChatgptSignInMapper } from '../../chatgpt-sign-in.mapper';
 import { BotErrors } from '../../domain/bots.errors';
 import { type ChatgptLoginFlow, isChatgptLoginOpen } from '../../domain/chatgpt-login.policy';
 import {
@@ -12,7 +13,6 @@ import {
   type ChatgptDevicePoll,
 } from '../../infrastructure/chatgpt-auth.port';
 import type { ProviderKeySealerPort } from '../../infrastructure/provider-key-sealer.port';
-import { ModelProviderCredentialMapper } from '../../model-provider-credential.mapper';
 import { PollChatgptLoginCommand } from './poll-chatgpt-login.command';
 
 /**
@@ -30,7 +30,7 @@ export class PollChatgptLoginCommandHandler
     private readonly providers: ModelProviderResolver,
     @Inject(CHATGPT_AUTH) private readonly auth: ChatgptAuthPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
-    private readonly mapper: ModelProviderCredentialMapper,
+    private readonly mapper: ChatgptSignInMapper,
     private readonly chatgpt: ChatgptCredentialResolver,
   ) {}
 
@@ -61,7 +61,7 @@ export class PollChatgptLoginCommandHandler
   /** The sign-in a `flowId` seals; null for one this server did not seal. */
   private open(flowId: string): ChatgptLoginFlow | null {
     try {
-      return this.mapper.chatgptLoginFlowOf(this.sealer.open(Buffer.from(flowId, 'base64url')));
+      return this.mapper.loginFlowOf(this.sealer.open(Buffer.from(flowId, 'base64url')));
     } catch {
       return null;
     }

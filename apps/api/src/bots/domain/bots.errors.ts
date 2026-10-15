@@ -105,4 +105,10 @@ export const BotErrors = {
     message: "ChatGPT's sign-in could not be reached",
     httpStatus: 502,
   },
+  /** Another replica is refreshing the workspace's ChatGPT sign-in; a turn that needs it now fails rather than waits. */
+  CHATGPT_REFRESHING: {
+    code: 'BOTS_019',
+    message: 'The ChatGPT sign-in is being refreshed',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

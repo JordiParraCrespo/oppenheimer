@@ -4,6 +4,8 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
+import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
 import { BotMemoryFactMapper } from '../../bots/bot-memory-fact.mapper';
@@ -375,7 +377,15 @@ describe('bots chat (integration)', () => {
       seal: (plaintext) => Buffer.from(`sealed:${plaintext}`),
       open: (sealed) => sealed.toString().replace(/^sealed:/, ''),
     };
-    return new BotTurnContextResolver(bots, documents, memory, messages, credentials, sealer);
+    // A key provider's turn never asks the ChatGPT resolver.
+    const chatgpt = {} as ChatgptCredentialResolver;
+    return new BotTurnContextResolver(
+      bots,
+      documents,
+      memory,
+      messages,
+      new TurnCredentialsResolver(credentials, sealer, chatgpt),
+    );
   }
 
   it("reads a turn's bot, documents and memory in the turn's workspace, and never another's", async () => {

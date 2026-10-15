@@ -8,5 +8,5 @@ export const PROVIDER_KEY_SEALER = Symbol('PROVIDER_KEY_SEALER');
 export const BOT_LOOKUP = Symbol('BOT_LOOKUP');
 /** Signing in to ChatGPT and refreshing what it hands back (`ChatgptAuthPort`). */
 export const CHATGPT_AUTH = Symbol('CHATGPT_AUTH');
-/** A ChatGPT credential's live access token, refreshed when it is about to lapse (`ChatgptCredentialResolver`). */
-export const CHATGPT_CREDENTIALS = Symbol('CHATGPT_CREDENTIALS');
+/** The credential a turn runs on, whatever its provider takes (`TurnCredentialsPort`). */
+export const TURN_CREDENTIALS = Symbol('TURN_CREDENTIALS');

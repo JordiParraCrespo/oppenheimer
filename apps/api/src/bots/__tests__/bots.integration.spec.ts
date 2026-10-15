@@ -495,12 +495,12 @@ describe('bots (integration)', () => {
     const read = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
     const raced = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
 
-    expect(await credentials.rotateSecret(read, Buffer.from('sealed:signin-bbbb'), 'bbbb')).toBe(
-      true,
-    );
-    expect(await credentials.rotateSecret(raced, Buffer.from('sealed:signin-cccc'), 'cccc')).toBe(
-      false,
-    );
+    expect(
+      await credentials.replaceSecretIfUnchanged(read, Buffer.from('sealed:signin-bbbb'), 'bbbb'),
+    ).toBe(true);
+    expect(
+      await credentials.replaceSecretIfUnchanged(raced, Buffer.from('sealed:signin-cccc'), 'cccc'),
+    ).toBe(false);
     const stored = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
     expect(stored.sealedKey.toString()).toBe('sealed:signin-bbbb');
     expect(stored.keyHint).toBe('bbbb');

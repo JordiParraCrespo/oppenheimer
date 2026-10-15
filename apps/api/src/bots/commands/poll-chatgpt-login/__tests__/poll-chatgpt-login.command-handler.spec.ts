@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { ChatgptCredentialResolver } from '../../../application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from '../../../application/model-provider.resolver';
+import { ChatgptSignInMapper } from '../../../chatgpt-sign-in.mapper';
 import type {
   ChatgptAuthPort,
   ChatgptDevicePoll,
@@ -9,7 +10,6 @@ import type {
 } from '../../../infrastructure/chatgpt-auth.port';
 import { ChatgptAuthRefusedError } from '../../../infrastructure/chatgpt-auth.port';
 import type { ProviderKeySealerPort } from '../../../infrastructure/provider-key-sealer.port';
-import { ModelProviderCredentialMapper } from '../../../model-provider-credential.mapper';
 import { PollChatgptLoginCommand } from '../poll-chatgpt-login.command';
 import { PollChatgptLoginCommandHandler } from '../poll-chatgpt-login.command-handler';
 
@@ -46,10 +46,10 @@ const sealer: ProviderKeySealerPort = {
     return text.slice('sealed:'.length);
   },
 };
-const mapper = new ModelProviderCredentialMapper();
+const mapper = new ChatgptSignInMapper();
 
 function flowId(overrides: { organizationId?: string; expiresAt?: Date } = {}): string {
-  const flow = mapper.toChatgptLoginFlow({
+  const flow = mapper.toLoginFlow({
     deviceAuthId: 'device-placeholder',
     userCode: 'ABCD-1234',
     organizationId: overrides.organizationId ?? organizationId,

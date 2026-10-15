@@ -83,7 +83,9 @@ worker runs it and streams what happens back to the chat.
   calls `https://chatgpt.com/backend-api/codex/responses` with the account
   header, `store: false` and its reasoning sent back encrypted. The worker
   refreshes the token when a turn finds it about to lapse, one refresh per
-  workspace at a time, written only over the tokens it read; a refresh
+  workspace at a time (turns on the same replica share it; one on another
+  replica fails at once rather than wait), written only over the tokens it
+  read; a refresh
   ChatGPT refuses removes the sign-in, and the bot answers that it has no
   key. Usage counts against the subscription's limits, not API billing.
   The route is not a published API: OpenAI may change the client, the

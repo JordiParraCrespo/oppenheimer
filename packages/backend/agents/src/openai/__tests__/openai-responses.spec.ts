@@ -10,6 +10,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { BotEngineEvent } from '../../bot-engine';
+import { ChatgptBotEngine } from '../chatgpt-bot-engine';
 import { OpenAiBotEngine } from '../openai-bot-engine';
 
 const KEY = 'sk-local-0123456789';
@@ -175,6 +176,9 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
       expect(requests).toHaveLength(2);
       const [first, second] = requests;
       expect(first.authorization).toBe(`Bearer ${KEY}`);
+      // OpenAI's API on a key carries none of what ChatGPT's backend requires.
+      expect(first.headers['chatgpt-account-id']).toBeUndefined();
+      expect(first.body).not.toHaveProperty('store');
       expect(first.body).toMatchObject({
         model: 'model-placeholder',
         instructions: 'You are a bot.',
@@ -203,7 +207,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     "runs a chatgpt turn on the sign-in's token, with what ChatGPT's backend requires",
     async () => {
       const events: BotEngineEvent[] = [];
-      for await (const event of new OpenAiBotEngine().run({
+      for await (const event of new ChatgptBotEngine().run({
         provider: 'chatgpt',
         apiKey: KEY,
         accountId: 'account-placeholder',
@@ -249,7 +253,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
 
   it('fails a chatgpt turn that names no account, without calling the backend', async () => {
     const events: BotEngineEvent[] = [];
-    for await (const event of new OpenAiBotEngine().run({
+    for await (const event of new ChatgptBotEngine().run({
       provider: 'chatgpt',
       apiKey: KEY,
       baseUrl,

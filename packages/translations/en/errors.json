@@ -215,7 +215,8 @@
     "SESSIONS_028": "That folder doesn’t exist on the host.",
     "SESSIONS_029": "That path is a file, not a folder.",
     "SESSIONS_030": "That folder can’t be read on the host.",
-    "SESSIONS_031": "The host didn’t answer in time. Try again."
+    "SESSIONS_031": "The host didn’t answer in time. Try again.",
+    "BOTS_019": "The ChatGPT sign-in is being refreshed. Send your message again in a moment."
   },
   "notFound": {
     "title": "That page does not exist",

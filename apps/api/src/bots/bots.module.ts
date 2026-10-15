@@ -6,6 +6,7 @@ import { HostsModule } from '../hosts/hosts.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';
 import { ChatgptCredentialResolver } from './application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from './application/model-provider.resolver';
+import { TurnCredentialsResolver } from './application/turn-credentials.resolver';
 import { BotMapper } from './bot.mapper';
 import { BotDocumentMapper } from './bot-document.mapper';
 import { BotGroupMapper } from './bot-group.mapper';
@@ -17,11 +18,12 @@ import {
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_REPOSITORY,
   CHATGPT_AUTH,
-  CHATGPT_CREDENTIALS,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
+  TURN_CREDENTIALS,
 } from './bots.di-tokens';
 import { BotResource } from './bots.resource';
+import { ChatgptSignInMapper } from './chatgpt-sign-in.mapper';
 import { ClearBotMemoryCommandHandler } from './commands/clear-bot-memory/clear-bot-memory.command-handler';
 import { ClearBotMemoryHttpController } from './commands/clear-bot-memory/clear-bot-memory.http.controller';
 import { CreateBotCommandHandler } from './commands/create-bot/create-bot.command-handler';
@@ -174,11 +176,13 @@ const queryHandlers: Provider[] = [
     BotMemoryFactMapper,
     BotLookupResolver,
     ModelProviderCredentialMapper,
+    ChatgptSignInMapper,
     ModelProviderResolver,
     ChatgptCredentialResolver,
     { provide: PROVIDER_KEY_SEALER, useClass: AesProviderKeySealerAdapter },
     { provide: CHATGPT_AUTH, useClass: OpenAiChatgptAuthAdapter },
-    { provide: CHATGPT_CREDENTIALS, useExisting: ChatgptCredentialResolver },
+    TurnCredentialsResolver,
+    { provide: TURN_CREDENTIALS, useExisting: TurnCredentialsResolver },
     {
       provide: MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
       useClass: ModelProviderCredentialRepository,
@@ -197,7 +201,7 @@ const queryHandlers: Provider[] = [
     BOT_MEMORY_FACT_REPOSITORY,
     MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
     PROVIDER_KEY_SEALER,
-    CHATGPT_CREDENTIALS,
+    TURN_CREDENTIALS,
   ],
 })
 export class BotsModule {}

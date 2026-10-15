@@ -20,15 +20,16 @@ export interface ModelProviderCredentialRepositoryPort {
   /** Whether there was a key to remove. */
   delete(scope: AccessScope, provider: BotProvider): Promise<boolean>;
   /**
-   * The worker's refresh of a sign-in (ChatGPT): replaces the sealed secret,
-   * only while the row still holds the one `credential` was read with. False
-   * when another writer (a second refresh, a new sign-in) moved it first.
+   * Replaces the sealed secret only while the row still holds the one
+   * `credential` was read with: an optimistic write, for a secret the server
+   * changes on its own (a refreshed token). False when another writer moved
+   * it first; the caller reads again rather than retrying its own value.
    */
-  rotateSecret(
+  replaceSecretIfUnchanged(
     credential: ModelProviderCredentialEntity,
     sealedKey: Buffer,
     keyHint: string,
   ): Promise<boolean>;
-  /** The worker's removal of a sign-in the provider refused, only while it is still the one read. */
+  /** Removes the credential only while it is still the one read: false when it was replaced or removed first. */
   deleteIfUnchanged(credential: ModelProviderCredentialEntity): Promise<boolean>;
 }

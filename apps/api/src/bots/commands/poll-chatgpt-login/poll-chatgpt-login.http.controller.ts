@@ -17,8 +17,8 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { ChatgptSignInMapper } from '../../chatgpt-sign-in.mapper';
 import { ChatgptLoginStatusResponseDto } from '../../dtos/chatgpt-login.response.dto';
-import { ModelProviderCredentialMapper } from '../../model-provider-credential.mapper';
 import { PollChatgptLoginCommand } from './poll-chatgpt-login.command';
 import { PollChatgptLoginRequest } from './poll-chatgpt-login.request.dto';
 
@@ -31,7 +31,7 @@ import { PollChatgptLoginRequest } from './poll-chatgpt-login.request.dto';
 export class PollChatgptLoginHttpController {
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly mapper: ModelProviderCredentialMapper,
+    private readonly mapper: ChatgptSignInMapper,
   ) {}
 
   @Post('chatgpt/login/poll')
@@ -69,6 +69,6 @@ export class PollChatgptLoginHttpController {
     const connected = await this.commandBus.execute<PollChatgptLoginCommand, boolean>(
       new PollChatgptLoginCommand({ scope, flowId: body.flowId }),
     );
-    return this.mapper.toChatgptLoginStatusResponse(connected);
+    return this.mapper.toLoginStatusResponse(connected);
   }
 }

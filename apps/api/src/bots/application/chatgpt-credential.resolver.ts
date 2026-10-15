@@ -6,6 +6,7 @@ import {
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
 } from '../bots.di-tokens';
+import { ChatgptSignInMapper } from '../chatgpt-sign-in.mapper';
 import type { ModelProviderCredentialRepositoryPort } from '../database/model-provider-credential.repository.port';
 import { BotErrors } from '../domain/bots.errors';
 import { isChatgptTokenFresh } from '../domain/chatgpt-login.policy';
@@ -19,16 +20,17 @@ import {
   type ChatgptTokens,
 } from '../infrastructure/chatgpt-auth.port';
 import type { ProviderKeySealerPort } from '../infrastructure/provider-key-sealer.port';
-import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
-import type { ChatgptAccess, ChatgptCredentialsPort } from './chatgpt-credentials.port';
+import type { TurnCredential } from './turn-credentials.port';
 
-/** One refresh per workspace at a time: ChatGPT rotates the refresh token on every use. */
+/**
+ * How long another replica is kept from refreshing the same sign-in: longer
+ * than a refresh takes (one call, ten seconds at most), and released as soon
+ * as it ends.
+ */
 const REFRESH_LOCK_SECONDS = 30;
-/** How long a turn that finds another refresh running waits before it reads what that one stored. */
-const REFRESH_WAIT_MS = 1_000;
 
-function accessOf({ accessToken, accountId }: ChatgptTokens): ChatgptAccess {
-  return { accessToken, accountId };
+function credentialOf({ accessToken, accountId }: ChatgptTokens): TurnCredential {
+  return { apiKey: accessToken, accountId };
 }
 
 /**
@@ -37,21 +39,27 @@ function accessOf({ accessToken, accountId }: ChatgptTokens): ChatgptAccess {
  * rather than a key, and refreshed by the worker when a turn finds the access
  * token about to lapse.
  *
- * The refresh is a conditional write on the secret the turn read, so a second
- * refresh or a new sign-in landing first is never overwritten; a refresh
- * ChatGPT refuses removes the sign-in, the same way, and the turn fails with
- * `BOTS_013`, which tells the person to sign in again.
+ * ChatGPT rotates the refresh token on every use, so one refresh runs per
+ * workspace at a time. Turns on this replica that need it while it runs wait
+ * for that refresh and take its answer; a turn on another replica finds the
+ * lock held and, unless the token stored by then is fresh, fails at once with
+ * `BOTS_019` rather than sleeping on a guess. The write is conditional on the
+ * secret that was read, so a new sign-in landing first is never overwritten;
+ * a refresh ChatGPT refuses removes the sign-in the same way, and the turn
+ * fails with `BOTS_013`, which tells the person to sign in again.
  */
 @Injectable()
-export class ChatgptCredentialResolver implements ChatgptCredentialsPort {
+export class ChatgptCredentialResolver {
   private readonly logger = new Logger(ChatgptCredentialResolver.name);
+  /** The refresh running on this replica, per workspace, for the turns that ask while it runs. */
+  private readonly refreshing = new Map<string, Promise<TurnCredential>>();
 
   constructor(
     @Inject(CHATGPT_AUTH) private readonly auth: ChatgptAuthPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
     private readonly credentials: ModelProviderCredentialRepositoryPort,
-    private readonly mapper: ModelProviderCredentialMapper,
+    private readonly mapper: ChatgptSignInMapper,
     private readonly cache: CacheService,
   ) {}
 
@@ -60,7 +68,7 @@ export class ChatgptCredentialResolver implements ChatgptCredentialsPort {
     const credential = ModelProviderCredentialEntity.createNew({
       organizationId,
       provider: 'chatgpt',
-      sealedKey: this.sealer.seal(this.mapper.toChatgptSecret(tokens)),
+      sealedKey: this.sealer.seal(this.mapper.toSecret(tokens)),
       keyHint: keyHintOf(tokens.accountId),
       updatedByUserId: userId,
     });
@@ -68,20 +76,32 @@ export class ChatgptCredentialResolver implements ChatgptCredentialsPort {
     return credential.id;
   }
 
-  /** The access a turn of a bot in `organizationId` runs on, refreshed first when it is about to lapse. */
-  async accessFor(organizationId: string, now: Date): Promise<ChatgptAccess> {
+  /** What a turn of a bot in `organizationId` runs on, refreshed first when it is about to lapse. */
+  async turnCredential(organizationId: string, now: Date): Promise<TurnCredential> {
     const credential = await this.read(organizationId);
     const tokens = this.tokensOf(credential);
-    if (isChatgptTokenFresh(tokens.expiresAt, now)) return accessOf(tokens);
+    if (isChatgptTokenFresh(tokens.expiresAt, now)) return credentialOf(tokens);
 
-    const lock = `bots:chatgpt:refresh:${organizationId}`;
+    const running = this.refreshing.get(organizationId);
+    if (running) return running;
+    const refresh = this.refreshOnce(credential, tokens, now).finally(() =>
+      this.refreshing.delete(organizationId),
+    );
+    this.refreshing.set(organizationId, refresh);
+    return refresh;
+  }
+
+  /** The one refresh across replicas, or the token another replica's refresh already stored. */
+  private async refreshOnce(
+    credential: ModelProviderCredentialEntity,
+    tokens: ChatgptTokens,
+    now: Date,
+  ): Promise<TurnCredential> {
+    const lock = `bots:chatgpt:refresh:${credential.organizationId}`;
     if (!(await this.cache.setIfAbsent(lock, 1, REFRESH_LOCK_SECONDS))) {
-      await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
-      const after = this.tokensOf(await this.read(organizationId));
-      if (isChatgptTokenFresh(after.expiresAt, now)) return accessOf(after);
-      throw new AppError(BotErrors.CHATGPT_UNREACHABLE, {
-        detail: 'Another turn is refreshing the ChatGPT sign-in; try again shortly',
-      });
+      const stored = this.tokensOf(await this.read(credential.organizationId));
+      if (isChatgptTokenFresh(stored.expiresAt, now)) return credentialOf(stored);
+      throw new AppError(BotErrors.CHATGPT_REFRESHING);
     }
     try {
       return await this.refresh(credential, tokens);
@@ -93,7 +113,7 @@ export class ChatgptCredentialResolver implements ChatgptCredentialsPort {
   private async refresh(
     credential: ModelProviderCredentialEntity,
     tokens: ChatgptTokens,
-  ): Promise<ChatgptAccess> {
+  ): Promise<TurnCredential> {
     let next: ChatgptTokens;
     try {
       next = await this.auth.refresh(tokens.refreshToken);
@@ -105,18 +125,18 @@ export class ChatgptCredentialResolver implements ChatgptCredentialsPort {
         organizationId: credential.organizationId,
         removed,
       });
-      if (!removed) return accessOf(this.tokensOf(await this.read(credential.organizationId)));
+      if (!removed) return credentialOf(this.tokensOf(await this.read(credential.organizationId)));
       throw new AppError(BotErrors.PROVIDER_KEY_MISSING, {
         detail: 'The ChatGPT sign-in has lapsed. Sign in again in Settings → Model providers.',
       });
     }
-    const stored = await this.credentials.rotateSecret(
+    const stored = await this.credentials.replaceSecretIfUnchanged(
       credential,
-      this.sealer.seal(this.mapper.toChatgptSecret(next)),
+      this.sealer.seal(this.mapper.toSecret(next)),
       keyHintOf(next.accountId),
     );
     // A new sign-in landed while this one refreshed: the workspace's choice wins.
-    return accessOf(stored ? next : this.tokensOf(await this.read(credential.organizationId)));
+    return credentialOf(stored ? next : this.tokensOf(await this.read(credential.organizationId)));
   }
 
   private async read(organizationId: string): Promise<ModelProviderCredentialEntity> {
@@ -131,7 +151,7 @@ export class ChatgptCredentialResolver implements ChatgptCredentialsPort {
   private tokensOf(credential: ModelProviderCredentialEntity): ChatgptTokens {
     let tokens: ChatgptTokens | null = null;
     try {
-      tokens = this.mapper.chatgptTokensOf(this.sealer.open(credential.sealedKey));
+      tokens = this.mapper.tokensOf(this.sealer.open(credential.sealedKey));
     } catch {
       tokens = null;
     }

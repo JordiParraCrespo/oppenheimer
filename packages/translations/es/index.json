@@ -281,7 +281,8 @@
       "SESSIONS_028": "Esa carpeta no existe en el equipo.",
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "BOTS_019": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento."
     },
     "notFound": {
       "title": "Esta página no existe",

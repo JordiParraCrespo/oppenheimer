@@ -73,7 +73,7 @@ export class ModelProviderCredentialRepository
     return (result.affected ?? 0) > 0;
   }
 
-  async rotateSecret(
+  async replaceSecretIfUnchanged(
     credential: ModelProviderCredentialEntity,
     sealedKey: Buffer,
     keyHint: string,
