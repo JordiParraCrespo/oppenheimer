@@ -36,7 +36,7 @@ the OS's application-support directory, its worktrees under
         ├── repos/                               stores: a cache of GitHub, safe to rebuild
         │   ├── <owner>--<repo>.git/             bare, found by GitHub id (oppenheimer.repo-id)
         │   └── .spares/<owner>--<repo>/         the pre-built worktree that makes a create instant
-        ├── agents/<agent-id>/                   an agent's home (the Employees slice)
+        ├── agents/<agent-id>/                   reserved (bots moved into Oppenheimer: 25-bots.md)
         └── sessions/<slug>/                     a worktree session
             ├── .oppenheimer/meta.json           {"kind":"session", "id": …, "origin": …}
             └── <repo>/                          a checkout: the agent's working directory
