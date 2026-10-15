@@ -9,6 +9,7 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
+import { BOT_TURN_ERROR_MAX } from '../domain/bot-turn.entity';
 
 /** One message of yours and the bot's answer (`1791001800000-AddBotTurns`). */
 @Entity('bot_turn')
@@ -52,7 +53,7 @@ export class BotTurnOrmEntity {
   @Column({ type: 'varchar', length: 16, nullable: true })
   effort!: string | null;
 
-  @Column({ type: 'varchar', length: 1000, nullable: true })
+  @Column({ type: 'varchar', length: BOT_TURN_ERROR_MAX, nullable: true })
   error!: string | null;
 
   @Column({ type: 'integer', default: 0 })

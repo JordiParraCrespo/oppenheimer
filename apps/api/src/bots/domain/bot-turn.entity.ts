@@ -27,6 +27,9 @@ export interface BotTurnProps {
   endedAt: Date | null;
 }
 
+/** The longest failure a turn keeps (`bot_turn.error`); a longer one is cut to fit. */
+export const BOT_TURN_ERROR_MAX = 1_000;
+
 /** The statuses a turn ends in. */
 export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'cancelled', 'failed'];
 
@@ -137,7 +140,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     if (this.ended) throw new ArgumentInvalidException(`The turn already ${this.props.status}`);
     this.props.status = status;
     this.props.endedAt = now;
-    this.props.error = status === 'failed' ? (outcome.error ?? 'The turn failed') : null;
+    this.props.error = status === 'failed' ? fitError(outcome.error ?? 'The turn failed') : null;
     this.props.inputTokens = outcome.inputTokens ?? this.props.inputTokens;
     this.props.outputTokens = outcome.outputTokens ?? this.props.outputTokens;
   }
@@ -157,4 +160,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     }
     if (!props.model) throw new ArgumentNotProvidedException('A turn runs on a model');
   }
+}
+
+/** `error` cut to `BOT_TURN_ERROR_MAX` characters, an ellipsis marking the cut, never half a pair. */
+function fitError(error: string): string {
+  if (error.length <= BOT_TURN_ERROR_MAX) return error;
+  return `${error.slice(0, BOT_TURN_ERROR_MAX - 1).replace(/[\uD800-\uDBFF]$/, '')}…`;
 }
