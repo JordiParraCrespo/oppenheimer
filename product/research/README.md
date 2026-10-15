@@ -14,7 +14,7 @@ cited by those numbers elsewhere; the Formerly column below maps them.
 
 | Note | Formerly | What it is |
 |------|----------|------------|
-| [Lessons from Grok Bot](lessons-from-grok-bot.md) | note 12 | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
+| [Lessons from Grok Bot](lessons-from-grok-bot.md) | note 12 | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take. §5: version 0.71.2's bot (loop on the vendor's servers, curated chat, sourced memory, self-edits) and what note 25 took |
 | [Lessons from herdr](lessons-from-herdr.md) | note 13 | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; a 340-line SSH web terminal as the list of what not to do |
 | [Session boot time, measured](session-boot-time.md) | note 14 | Each hop from Send to the agent's first byte, measured from the browser, beside how Orca prepares a checkout before the click; its questions are `versions/mvp/02` open question 9 and `05` open question 8 |
 | [Developer-tools landscape](developer-tools-landscape.md) | note 16 | AI review, agent consoles, merge tools, analytics and sandboxes as of September 2026; ten things to take, feeding note 15 and `next-steps/0.2-pull-requests.md` |

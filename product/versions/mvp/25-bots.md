@@ -32,7 +32,10 @@ it lives.
 
 Postgres is the source of truth for all of it. A bot changes what it is
 and what it knows only through Oppenheimer's tools (§4), and every change
-is a revision you can read and revert.
+shows in the chat. Its two documents, `SOUL.md` and `INSTRUCTIONS.md`,
+keep revisions you can read and revert; a change to its profile or its
+memory is an activity line saying what changed, and you undo it by hand
+in Settings, not from a history.
 
 ## 2. Where a turn runs
 
@@ -80,7 +83,11 @@ The chat shows what the bot says, not everything it does:
   web"), which opens to the steps;
 - cards for what needs you or changed something: a **Needs input** card
   (§5), "Updated INSTRUCTIONS.md" with a link to the revision, "Created
-  *Researcher*" with an Open link.
+  *Researcher*" with an Open link;
+- an activity line for each change to its profile or memory ("Renamed
+  itself *Scout*", "Remembered: deploys go out on Tuesdays", "Forgot a
+  fact"), with the old and new value, and a link to the Settings tab
+  where you change it back.
 
 ## 4. The tools
 
@@ -98,9 +105,9 @@ defined once, as an in-process MCP server both engines use.
 | `get_self` | Its profile, soul, instructions and settings | auto |
 | `edit_soul` | Rewrite SOUL.md, saved as a revision | auto |
 | `edit_instructions` | Rewrite INSTRUCTIONS.md, saved as a revision | auto |
-| `update_profile` | Its name and description | auto |
-| `remember` | Save a fact with its source | auto with *Learn automatically*, else ask |
-| `forget` | Delete a fact | auto |
+| `update_profile` | Change its name and description; an activity line, no revision | auto |
+| `remember` | Save a fact with its source; an activity line, no revision | auto with *Learn automatically*, else ask |
+| `forget` | Delete a fact; an activity line with the fact, no revision | auto |
 | `recall` | Search its memory | auto |
 
 ### 4.2 Sessions: its hands on hosts
@@ -117,11 +124,11 @@ defined once, as an in-process MCP server both engines use.
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
 |------|------|---------|
-| `list_projects` / `get_project` | | auto |
-| `create_project` / `update_project` | | ask |
+| `list_projects` / `get_project` | The workspace's projects, or one with its repositories, default host and agent | auto |
+| `create_project` / `update_project` | Make a project, or change its name, repositories, default host or agent | ask |
 | `list_tasks` / `get_task` / `plan_summary` | Tasks, milestones, stats | auto |
-| `create_task` / `update_task` / `move_task` | | auto |
-| `delete_task` | | ask |
+| `create_task` / `update_task` / `move_task` | Add a task, edit its title, notes, milestone, due date or blocked reason, or move it to a column | auto |
+| `delete_task` | Delete a task | ask |
 | `start_task_session` | A session for a task | ask |
 
 ### 4.4 GitHub and pull requests
@@ -129,18 +136,18 @@ defined once, as an in-process MCP server both engines use.
 |------|------|---------|
 | `list_repositories` / `list_branches` | What the connected installations cover | auto |
 | `list_pull_requests` / `get_pull_request` | With files, comments and activity | auto |
-| `comment_on_pull_request` / `review_pull_request` | | ask |
+| `comment_on_pull_request` / `review_pull_request` | Post a line comment, or submit a review: approve, request changes or comment | ask |
 | `start_review_session` | Review it in a session | ask |
-| `merge_pull_request` | | ask |
+| `merge_pull_request` | Merge it, squash by default | ask |
 
 ### 4.5 Automations and calendar
 | Tool | Does | Default |
 |------|------|---------|
-| `list_automations` / `get_automation` / `run_history` | | auto |
-| `create_automation` / `update_automation` / `delete_automation` | | ask |
-| `run_automation` / `pause_automation` / `resume_automation` | | ask |
-| `list_events` | When a calendar is connected | auto |
-| `create_event` / `update_event` / `delete_event` | | ask |
+| `list_automations` / `get_automation` / `run_history` | The workspace's automations, one with its trigger and settings, and their past runs | auto |
+| `create_automation` / `update_automation` / `delete_automation` | Make, change or delete an automation | ask |
+| `run_automation` / `pause_automation` / `resume_automation` | Run one now, or stop and restart its triggers | ask |
+| `list_events` | Events on a connected calendar | auto |
+| `create_event` / `update_event` / `delete_event` | Add, change or delete an event on a connected calendar | ask |
 
 ### 4.6 Other bots
 | Tool | Does | Default |
@@ -151,12 +158,34 @@ defined once, as an in-process MCP server both engines use.
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
 
 `ask_bot` runs a turn in the other bot, marked as coming from the first
-one; both chats show it. In a bot's queue your messages come before
-messages from bots, which come before background work. A chain of bots
-stops at three deep, at ten bot-to-bot turns after one message of yours,
-and never asks a bot already in the chain; the bot then says it stopped.
-A bot that creates a bot makes it **yours**, marked "created by" the
-creator, with no looser permissions than its own.
+one; both chats show it. A bot that creates a bot makes it **yours**,
+marked "created by" the creator, with no looser permissions than its own.
+
+Two named policies bound bots talking to bots. Both belong to the turn
+queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a
+bot asked for, and it picks the next turn by lane. Nothing else holds
+these numbers.
+
+**`BotChainPolicy`**: a chain starts at one message of yours and
+counts every turn a bot asks of another bot because of it.
+
+| Limit | Value | Past it |
+|-------|-------|---------|
+| `maxDepth` | 3 bots deep | the call is refused |
+| `turnBudget` | 10 bot-to-bot turns per chain | the call is refused |
+| `cycles` | none: a bot already in the chain is never asked | the call is refused |
+
+A refused call comes back to the asking bot as the tool's result, and the
+bot says in its chat that it stopped and why.
+
+**`BotQueueLanes`**: the order a bot's waiting turns run in, one turn at
+a time (§2).
+
+| Lane | Holds |
+|------|-------|
+| 1. `owner` | Your messages |
+| 2. `bots` | Messages and `ask_bot` calls from other bots |
+| 3. `background` | Delegated jobs and other work nobody waits on |
 
 ### 4.7 Work and the web
 | Tool | Does | Default |
@@ -233,23 +262,32 @@ eight colours (`AV_COLORS`).
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
   the only code that imports either SDK.
+- **Revisions and activity:** `bot_document_revision` covers the two
+  documents, `SOUL.md` and `INSTRUCTIONS.md`, and only those: they are
+  what Settings reads and reverts. A self-edit of the profile (`update_profile`)
+  or of memory (`remember`, `forget`) has no revision table; it is a
+  `bot_message` of kind activity in the chat, carrying who changed what,
+  from what to what, and it is undone by hand.
 - **Worker:** a BullMQ queue `bot-turns`, processed in the API process for
   now; the same image can run it alone when turns need their own
-  container.
+  container. It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
 - **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
   keys are `/settings/model-providers`.
 
 ## Research
 
-`product/research/lessons-from-grok-bot.md` read Grok Bot 0.18's
-connection layer. On 2026-10-15 a static read of Grok Bot 0.71.2 (built by
-Anysphere on Cursor's agent stack) found the loop moved to the vendor's
-servers, a curated chat where only what the bot sends reaches you, memory
-as files with a source on each fact, layered approvals, and bots that
-edit themselves without asking. We take the curated chat, the source on
-each fact, queue lanes and caps on bot-to-bot turns; we keep revisions
-for every self-edit and the owner's own permissions as the ceiling.
+What a read of Grok Bot found is in
+[`lessons-from-grok-bot.md`](../../research/lessons-from-grok-bot.md) §5.
+The decisions it produced:
+
+- **A curated chat** (§3): what the bot says, one activity line per run
+  of tools, cards for what needs you.
+- **A source on each fact** it remembers (§1, §4.1).
+- **Queue lanes and a bounded chain** for bot-to-bot turns
+  (`BotQueueLanes`, `BotChainPolicy`, §4.6).
+- **Revisions for its documents** (§1, §8), where Grok Bot keeps none.
+- **The owner's own permissions as the ceiling** (§4, §5).
 
 ## Decided
 
@@ -266,11 +304,13 @@ for every self-edit and the owner's own permissions as the ceiling.
   SDK**, behind one port, chosen by the bot's provider: Anthropic, GLM,
   OpenAI. Their tooling (compaction, subagents, web tools, approvals) is
   why, over a loop of our own.
-- 2026-10-15: **a bot changes itself without asking**, by default: every
-  change is a revision. It replaces 2026-10-11's "a change it proposes to
+- 2026-10-15: **a bot changes itself without asking**, by default: a
+  change to SOUL.md or INSTRUCTIONS.md is a revision you can revert, and
+  a change to its profile or memory is an activity line in the chat. It
+  replaces 2026-10-11's "a change it proposes to
   its own soul or instructions waits for you".
 - 2026-10-15: **the owner chooses the permissions**, tool by tool, within
   their own; the approval chip is a preset over them. It replaces
   2026-10-14's "*Ask for approval* comes with slice 4".
 - 2026-10-15: bots **talk to each other and create bots**, within the
-  loop limits of §4.6.
+  limits of `BotChainPolicy` (§4.6).
