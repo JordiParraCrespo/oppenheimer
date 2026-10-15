@@ -9,7 +9,7 @@ import (
 func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	// A level is the CLI's own name for it, passed through as that name.
 	got := Launch{Model: "claude-fable-5-1", Permission: "auto", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentClaude)
-	want := []string{"--model", "claude-fable-5-1", "--permission-mode", "acceptEdits", "--effort", "xhigh", "fix the picker"}
+	want := []string{"--model", "claude-fable-5-1", "--permission-mode", "auto", "--effort", "xhigh", "fix the picker"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("claude argv = %q, want %q", got, want)
 	}

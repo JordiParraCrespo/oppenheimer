@@ -72,7 +72,7 @@ describe('starting a review session', () => {
         hostId: 'host-1',
         agent: 'claude-code',
         checkouts: [{ installationId: 'inst-1', githubRepoId: 42, baseBranch: 'fix/empty' }],
-        launch: { permission: 'ask' },
+        launch: { permission: 'auto' },
       },
     });
     expect(created.input.prompt).toContain('git diff origin/main...HEAD');
