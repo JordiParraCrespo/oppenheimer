@@ -38,9 +38,11 @@ export function BotEngineChips({
       <AgentModelSelect
         agents={botProviderOptions()}
         value={botEngineValue(provider, model)}
-        onValueChange={(next) =>
-          onModelChange({ provider: providerOfMark(next.agent), model: next.model })
-        }
+        onValueChange={(next) => {
+          const picked = providerOfMark(next.agent);
+          // A mark no provider is drawn with is no pick: nothing to save.
+          if (picked) onModelChange({ provider: picked, model: next.model });
+        }}
         disabled={disabled}
         aria-label={t('bots.chat.model')}
         searchPlaceholder={t('bots.chat.searchModels')}

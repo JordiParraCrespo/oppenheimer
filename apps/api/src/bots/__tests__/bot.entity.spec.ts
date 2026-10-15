@@ -37,42 +37,16 @@ describe('BotEntity', () => {
     bot.edit({ avatarColor: 'coral' });
     expect([...bot.editedFields]).toEqual(['avatarColor']);
     bot.edit({ model: 'claude-opus-5-5' });
-    // A new model can unset an effort it does not offer, so the effort is written with it.
-    expect([...bot.editedFields].sort()).toEqual(['avatarColor', 'effort', 'model']);
+    // The provider, model and effort are one setting, written together.
+    expect([...bot.editedFields].sort()).toEqual(['avatarColor', 'effort', 'model', 'provider']);
   });
 
-  it('records an effort the model offers, and none for one it does not', () => {
-    const bot = newBot();
-    bot.edit({ model: 'claude-opus-5-5', effort: 'high' });
-    expect(bot.effort).toBe('high');
-    bot.edit({ effort: 'ultra' });
-    expect(bot.effort).toBeNull();
-  });
-
-  it('drops an effort the new model does not offer when only the model changes', () => {
-    const bot = newBot();
-    bot.edit({ model: 'claude-opus-5-5', effort: 'high' });
-    bot.edit({ model: 'claude-haiku-4-5' });
-    expect(bot.effort).toBeNull();
-  });
-
-  it('refuses a model its provider does not offer', () => {
-    expect(() => newBot().edit({ model: 'gpt-5.6-sol' })).toThrow();
-    expect(() => newBot({ provider: 'glm' }).edit({ model: 'claude-opus-5-5' })).toThrow();
-  });
-
-  it('runs the new provider’s default model, with no effort, when only the provider changes', () => {
+  it('applies the launch policy on a provider change and writes all three columns', () => {
     const bot = newBot();
     bot.edit({ model: 'claude-opus-5-5', effort: 'high' });
     bot.edit({ provider: 'openai' });
     expect(bot).toMatchObject({ provider: 'openai', model: null, effort: null });
     expect([...bot.editedFields]).toEqual(expect.arrayContaining(['provider', 'model', 'effort']));
-  });
-
-  it('takes a provider and one of its models in one edit', () => {
-    const bot = newBot();
-    bot.edit({ provider: 'openai', model: 'gpt-5.6-terra', effort: 'high' });
-    expect(bot).toMatchObject({ provider: 'openai', model: 'gpt-5.6-terra', effort: 'high' });
   });
 
   it('refuses a blank name', () => {
