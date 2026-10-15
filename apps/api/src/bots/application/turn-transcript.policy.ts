@@ -1,4 +1,5 @@
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_TOOL_OUTPUT_MAX,
   BotMessageEntity,
@@ -107,4 +108,10 @@ export class TurnTranscript {
       position: this.position++,
     });
   }
+}
+
+/** A turn's failure in words a person can act on: the catalog's for ours, the engine's otherwise. */
+export function failureReasonOf(error: unknown): string {
+  if (error instanceof AppError) return error.message;
+  return error instanceof Error ? error.message.slice(0, 500) : 'The turn failed';
 }

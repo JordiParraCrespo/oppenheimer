@@ -6,7 +6,11 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
-import { type TranscriptWrite, TurnTranscript } from '../../application/turn-transcript.policy';
+import {
+  failureReasonOf,
+  type TranscriptWrite,
+  TurnTranscript,
+} from '../../application/turn-transcript.policy';
 import {
   BOT_ENGINE,
   BOT_MESSAGE_REPOSITORY,
@@ -74,7 +78,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
       turn.end(status, new Date(), { error, inputTokens, outputTokens });
     } catch (error) {
-      turn.end('failed', new Date(), { error: reasonOf(error) });
+      turn.end('failed', new Date(), { error: failureReasonOf(error) });
       if (!(error instanceof AppError)) {
         this.logger.error(
           { message: 'A bot turn failed', turnId },
@@ -111,10 +115,4 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       });
     }
   }
-}
-
-/** A failure in words a person can act on: the catalog's for ours, the engine's otherwise. */
-function reasonOf(error: unknown): string {
-  if (error instanceof AppError) return error.message;
-  return error instanceof Error ? error.message.slice(0, 500) : 'The turn failed';
 }
