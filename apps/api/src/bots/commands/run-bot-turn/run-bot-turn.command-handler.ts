@@ -6,6 +6,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
+import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
 import {
   failureReasonOf,
   type TranscriptWrite,
@@ -22,9 +23,6 @@ import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.p
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from './run-bot-turn.command';
-
-/** How often a running turn looks for Stop. */
-const CANCEL_POLL_MS = 750;
 
 /**
  * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
@@ -43,53 +41,57 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
     @Inject(BOT_ENGINE) private readonly engine: BotEngine,
     private readonly context: BotTurnContextResolver,
+    private readonly cancelWatch: TurnCancelWatchFactory,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
+    const turn = await this.claim(turnId, metadata.correlationId);
+    if (!turn) return;
+    await this.run(turn);
+    await this.close(turn, metadata.correlationId);
+  }
+
+  /** The turn, now running on this worker; null when there is nothing to run. */
+  private async claim(turnId: string, correlationId: string): Promise<BotTurnEntity | null> {
     const found = await this.turns.findForRun(turnId);
-    if (found.isNone()) return;
+    if (found.isNone()) return null;
     const turn = found.unwrap();
     if (turn.status === 'running') {
-      turn.end('failed', new Date(), {
-        error: 'The turn was interrupted. Send the message again.',
-      });
-      return this.close(turn, metadata.correlationId);
+      turn.abandon(new Date());
+      await this.close(turn, correlationId);
+      return null;
     }
-    if (turn.status !== 'queued') return;
+    if (turn.status !== 'queued') return null;
     turn.start(new Date());
     // Busy: another turn of the bot runs, and stages this one when it ends.
-    if ((await this.turns.claim(turn)) !== 'claimed') return;
+    if ((await this.turns.claim(turn)) !== 'claimed') return null;
     await this.stream.publish(turn.botId, { type: 'turn', turnId, status: 'running' });
+    return turn;
+  }
 
-    const prompt = (await this.messages.findPrompt(turn.organizationId, turn.id)) ?? '';
-    const abort = new AbortController();
-    const watch = setInterval(() => {
-      void this.turns.isCancelRequested(turn.id).then((asked) => asked && abort.abort());
-    }, CANCEL_POLL_MS);
-    watch.unref();
-    const scratchDir = await mkdtemp(join(tmpdir(), 'oppenheimer-bot-turn-'));
-    const transcript = new TurnTranscript(turn);
+  /** Runs the engine and ends the turn with how it went, a failure included. */
+  private async run(turn: BotTurnEntity): Promise<void> {
+    const watch = this.cancelWatch.watch(turn.id);
+    let scratchDir: string | undefined;
     try {
+      scratchDir = await mkdtemp(join(tmpdir(), 'oppenheimer-bot-turn-'));
+      const prompt = (await this.messages.findPrompt(turn.organizationId, turn.id)) ?? '';
       const context = await this.context.resolve(turn, prompt, new Date());
-      for await (const event of this.engine.run({ ...context, signal: abort.signal, scratchDir })) {
+      const transcript = new TurnTranscript(turn);
+      for await (const event of this.engine.run({ ...context, signal: watch.signal, scratchDir })) {
         for (const write of transcript.apply(event)) await this.apply(turn, write);
       }
-      const { reason, error, inputTokens, outputTokens } = transcript.result;
-      const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
-      turn.end(status, new Date(), { error, inputTokens, outputTokens });
+      transcript.endTurn(new Date());
     } catch (error) {
       turn.end('failed', new Date(), { error: failureReasonOf(error) });
       if (!(error instanceof AppError)) {
-        this.logger.error(
-          { message: 'A bot turn failed', turnId },
-          error instanceof Error ? error.stack : String(error),
-        );
+        const stack = error instanceof Error ? error.stack : String(error);
+        this.logger.error({ message: 'A bot turn failed', turnId: turn.id }, stack);
       }
     } finally {
-      clearInterval(watch);
-      await rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
+      watch.stop();
+      if (scratchDir) await rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
     }
-    await this.close(turn, metadata.correlationId);
   }
 
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
@@ -107,12 +109,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
   }
 
   private async close(turn: BotTurnEntity, correlationId: string): Promise<void> {
-    if (await this.turns.finish(turn, correlationId)) {
-      await this.stream.publish(turn.botId, {
-        type: 'turn',
-        turnId: turn.id,
-        status: turn.status,
-      });
-    }
+    if (!(await this.turns.finish(turn, correlationId))) return;
+    await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
   }
 }

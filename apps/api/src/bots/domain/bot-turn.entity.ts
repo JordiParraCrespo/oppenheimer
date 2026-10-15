@@ -145,6 +145,11 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.outputTokens = outcome.outputTokens ?? this.props.outputTokens;
   }
 
+  /** A worker found it running: the one that ran it died, so it fails rather than running twice. */
+  abandon(now: Date): void {
+    this.end('failed', now, { error: 'The turn was interrupted. Send the message again.' });
+  }
+
   /** The write that stored this instance landed: its next one is conditioned on what it holds now. */
   markPersisted(): void {
     this.loadedStatus = this.props.status;

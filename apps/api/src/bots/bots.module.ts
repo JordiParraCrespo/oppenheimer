@@ -8,6 +8,7 @@ import { QueueModule } from '../queue/queue.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { ModelProviderResolver } from './application/model-provider.resolver';
+import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotMapper } from './bot.mapper';
 import { BotDocumentMapper } from './bot-document.mapper';
 import { BotGroupMapper } from './bot-group.mapper';
@@ -204,6 +205,7 @@ const queryHandlers: Provider[] = [
     BotTurnMapper,
     BotMessageMapper,
     BotTurnContextResolver,
+    TurnCancelWatchFactory,
     BotTurnsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },

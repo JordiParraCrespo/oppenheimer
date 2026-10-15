@@ -72,6 +72,13 @@ export class TurnTranscript {
     return this.outcome;
   }
 
+  /** Ends the turn as the engine said it ended; running out of steps still completes it. */
+  endTurn(now: Date): void {
+    const { reason, error, inputTokens, outputTokens } = this.outcome;
+    const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
+    this.turn.end(status, now, { error, inputTokens, outputTokens });
+  }
+
   private say(text: string): TranscriptWrite[] {
     if (!text.trim()) return [];
     this.activity = null;

@@ -7,6 +7,7 @@ import {
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
+import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
@@ -74,6 +75,7 @@ function setup(
     stream,
     new FakeBotEngine(script),
     context as unknown as BotTurnContextResolver,
+    new TurnCancelWatchFactory(turns as unknown as BotTurnRepositoryPort),
   );
   return { handler, turns, messages, stream };
 }
@@ -164,8 +166,17 @@ describe('RunBotTurnCommandHandler', () => {
     expect(messages.insert).not.toHaveBeenCalled();
   });
 
+  it('fails the turn, rather than leaving it running, when its message cannot be read', async () => {
+    const turn = queued();
+    const { handler, messages, turns } = setup(turn, () => []);
+    messages.findPrompt.mockRejectedValueOnce(new Error('connection reset'));
+    await run(handler, turn.id);
+    expect(turn).toMatchObject({ status: 'failed', error: 'connection reset' });
+    expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
+  });
+
   it('aborts the engine when Stop is pressed, and ends cancelled', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {
       const turn = queued();
       const { handler } = setup(
