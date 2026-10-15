@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -58,10 +59,22 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	if inner.overlap.Load() {
 		t.Fatal("two updaters of one CLI ran at once")
 	}
-	// Another agent's launch does not wait on claude's lock.
-	start = time.Now()
-	agentGate{paths: paths}.Hold(context.Background(), "codex")()
-	if waited := time.Since(start); waited > 20*time.Millisecond {
-		t.Errorf("codex waited %s on nothing", waited)
+	// Another agent's launch does not wait on claude's lock: with claude's
+	// lock held as an update holds it, codex still gets through. No
+	// wall-clock bound, which a loaded machine overruns.
+	releaseClaude, err := lockAgent(context.Background(), paths.AgentLock("claude"), syscall.LOCK_EX)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer releaseClaude()
+	codex := make(chan struct{})
+	go func() {
+		agentGate{paths: paths}.Hold(context.Background(), "codex")()
+		close(codex)
+	}()
+	select {
+	case <-codex:
+	case <-time.After(5 * time.Second):
+		t.Fatal("codex waited on claude's lock")
 	}
 }

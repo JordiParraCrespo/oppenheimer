@@ -590,6 +590,7 @@ cmd_setup() {
         -e "s|@BETTER_AUTH_SECRET@|$(openssl rand -base64 32)|" \
         -e "s|@CONTROL_PLANE_SIGNING_KEY@|$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)|" \
         -e "s|@GITHUB_USER_TOKEN_KEY@|$(openssl rand -base64 32)|" \
+        -e "s|@BOTS_PROVIDER_KEY@|$(openssl rand -base64 32)|" \
         "$HERE/config/api.env.example" > "$CONFIG/api.env"
     chmod 0600 "$CONFIG/api.env"
     log "wrote $CONFIG/api.env with fresh secrets — set the hostname in it"
