@@ -14,6 +14,13 @@ import { OpenAiBotEngine } from '../openai-bot-engine';
 
 const KEY = 'sk-local-0123456789';
 
+/**
+ * The engine imports the Agents SDK on its first turn, and this spec is that
+ * first turn: a cold import under a parallel `turbo test` took longer than
+ * Vitest's 5s default on its own.
+ */
+const SDK_LOAD_MS = 30_000;
+
 type ResponsesRequest = { authorization?: string; body: Record<string, unknown> };
 
 const usage = {
@@ -107,74 +114,78 @@ afterEach(async () => {
 });
 
 describe('OpenAiBotEngine on the Agents SDK', () => {
-  it('runs a turn with a tool call over the Responses API', async () => {
-    const events: BotEngineEvent[] = [];
-    for await (const event of new OpenAiBotEngine().run({
-      provider: 'openai',
-      apiKey: KEY,
-      baseUrl,
-      model: 'model-placeholder',
-      effort: 'low',
-      systemPrompt: 'You are a bot.',
-      history: [
-        { role: 'user', text: 'Hi' },
-        { role: 'assistant', text: 'Hello.' },
-      ],
-      message: 'What time is it?',
-      tools: [
-        {
-          name: 'get_time',
-          description: 'The time',
-          inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
-          run: async () => {
-            throw new Error('clock broken');
+  it(
+    'runs a turn with a tool call over the Responses API',
+    async () => {
+      const events: BotEngineEvent[] = [];
+      for await (const event of new OpenAiBotEngine().run({
+        provider: 'openai',
+        apiKey: KEY,
+        baseUrl,
+        model: 'model-placeholder',
+        effort: 'low',
+        systemPrompt: 'You are a bot.',
+        history: [
+          { role: 'user', text: 'Hi' },
+          { role: 'assistant', text: 'Hello.' },
+        ],
+        message: 'What time is it?',
+        tools: [
+          {
+            name: 'get_time',
+            description: 'The time',
+            inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+            run: async () => {
+              throw new Error('clock broken');
+            },
           },
+        ],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events).toEqual([
+        { type: 'tool.started', callId: 'call_1', name: 'get_time', input: { zone: 'UTC' } },
+        {
+          type: 'tool.finished',
+          callId: 'call_1',
+          name: 'get_time',
+          output: 'clock broken',
+          isError: true,
         },
-      ],
-      signal: AbortSignal.timeout(20_000),
-      scratchDir: '/unused',
-    })) {
-      events.push(event);
-    }
+        { type: 'text.delta', text: 'It is ' },
+        { type: 'text.delta', text: '13:37.' },
+        { type: 'text.done', text: 'It is 13:37.' },
+        { type: 'usage', inputTokens: 22, outputTokens: 6 },
+        { type: 'done', reason: 'completed' },
+      ]);
 
-    expect(events).toEqual([
-      { type: 'tool.started', callId: 'call_1', name: 'get_time', input: { zone: 'UTC' } },
-      {
-        type: 'tool.finished',
-        callId: 'call_1',
-        name: 'get_time',
-        output: 'clock broken',
-        isError: true,
-      },
-      { type: 'text.delta', text: 'It is ' },
-      { type: 'text.delta', text: '13:37.' },
-      { type: 'text.done', text: 'It is 13:37.' },
-      { type: 'usage', inputTokens: 22, outputTokens: 6 },
-      { type: 'done', reason: 'completed' },
-    ]);
-
-    expect(requests).toHaveLength(2);
-    const [first, second] = requests;
-    expect(first.authorization).toBe(`Bearer ${KEY}`);
-    expect(first.body).toMatchObject({
-      model: 'model-placeholder',
-      instructions: 'You are a bot.',
-      reasoning: { effort: 'low' },
-      tools: [
-        { type: 'function', name: 'get_time', strict: false, parameters: { type: 'object' } },
-      ],
-      input: [
-        { role: 'user', content: 'Hi' },
-        { role: 'assistant', content: [{ type: 'output_text', text: 'Hello.' }] },
-        { role: 'user', content: 'What time is it?' },
-      ],
-    });
-    expect(second.body.input).toContainEqual(
-      expect.objectContaining({
-        type: 'function_call_output',
-        call_id: 'call_1',
-        output: 'clock broken',
-      }),
-    );
-  });
+      expect(requests).toHaveLength(2);
+      const [first, second] = requests;
+      expect(first.authorization).toBe(`Bearer ${KEY}`);
+      expect(first.body).toMatchObject({
+        model: 'model-placeholder',
+        instructions: 'You are a bot.',
+        reasoning: { effort: 'low' },
+        tools: [
+          { type: 'function', name: 'get_time', strict: false, parameters: { type: 'object' } },
+        ],
+        input: [
+          { role: 'user', content: 'Hi' },
+          { role: 'assistant', content: [{ type: 'output_text', text: 'Hello.' }] },
+          { role: 'user', content: 'What time is it?' },
+        ],
+      });
+      expect(second.body.input).toContainEqual(
+        expect.objectContaining({
+          type: 'function_call_output',
+          call_id: 'call_1',
+          output: 'clock broken',
+        }),
+      );
+    },
+    SDK_LOAD_MS,
+  );
 });
