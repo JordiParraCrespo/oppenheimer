@@ -7,6 +7,8 @@ import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
 import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
+import { CreateBotCommand } from '../commands/create-bot/create-bot.command';
+import { CreateBotCommandHandler } from '../commands/create-bot/create-bot.command-handler';
 import { BotOrmEntity } from '../database/bot.orm-entity';
 import { BotRepository } from '../database/bot.repository';
 import { BotDocumentOrmEntity } from '../database/bot-document.orm-entity';
@@ -30,8 +32,10 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
  * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
  * the migration's keys and checks, the sidebar order a move and a group delete
  * leave, the document's conditional write under two writers, the memory cap
- * under two adders, and the workspace boundary on every read. The schema is
- * the migrations', so a wrong key fails here.
+ * under two adders, and the workspace boundary on every read; a bot made by a
+ * bot, its composite "created by" link and the key that makes its creation
+ * happen once, under two racing creations. The schema is the migrations', so a
+ * wrong key fails here.
  */
 describe('bots (integration)', () => {
   let pg: StartedTestContainer;
@@ -484,5 +488,115 @@ describe('bots (integration)', () => {
     await expect(
       dataSource.query(`UPDATE model_provider_credential SET provider = 'mistral'`),
     ).rejects.toMatchObject({ constraint: 'CHK_model_provider_credential_provider' });
+  });
+
+  describe('made by a bot', () => {
+    async function madeBy(
+      creator: BotEntity,
+      name: string,
+      idempotencyKey: string | null = null,
+    ): Promise<{ bot: BotEntity; outcome: string }> {
+      const bot = BotEntity.createNew({
+        organizationId,
+        createdByUserId: userId,
+        name,
+        description: '',
+        avatarColor: 'mint',
+        groupId: null,
+        homeHostId: null,
+        provider: 'glm',
+        createdByBotId: creator.id,
+        idempotencyKey,
+      });
+      const docs = (['soul', 'instructions'] as const).map((documentName) =>
+        BotDocumentEntity.initial({
+          organizationId,
+          botId: bot.id,
+          name: documentName,
+          content: '',
+          actor: userActor(userId),
+        }),
+      );
+      return { bot, outcome: await bots.insert(bot, docs) };
+    }
+
+    const handler = () =>
+      new CreateBotCommandHandler(bots, groups, {
+        assertUsable: async () => ({ probedTools: null }),
+      });
+
+    it('marks it as its creator’s, and keeps it, unmarked, when the creator is deleted', async () => {
+      const ada = await create('Ada');
+      const { bot, outcome } = await madeBy(ada, 'Scout');
+      expect(outcome).toBe('saved');
+      expect((await bots.findOneById(scope(), bot.id)).unwrap().createdByBotId).toBe(ada.id);
+
+      await bots.delete(ada);
+      const kept = (await bots.findOneById(scope(), bot.id)).unwrap();
+      expect(kept.createdByBotId).toBeNull();
+      expect(kept.organizationId).toBe(organizationId);
+    });
+
+    it('refuses a creator in another workspace (the composite key)', async () => {
+      const theirs = await create('Theirs', { organization: await insertOrganization() });
+      const mine = await create('Mine');
+      await expect(
+        dataSource.query(`UPDATE bot SET "createdByBotId" = $1 WHERE id = $2`, [
+          theirs.id,
+          mine.id,
+        ]),
+      ).rejects.toMatchObject({ constraint: 'FK_bot_created_by_bot' });
+    });
+
+    it('answers taken for a second creation with the same key, writing none of it', async () => {
+      const ada = await create('Ada');
+      const first = await madeBy(ada, 'Scout', 'bot:approval:a-1');
+      const second = await madeBy(ada, 'Scout 2', 'bot:approval:a-1');
+      expect([first.outcome, second.outcome]).toEqual(['saved', 'taken']);
+      expect((await bots.findOneByIdempotencyKey(scope(), 'bot:approval:a-1')).unwrap().id).toBe(
+        first.bot.id,
+      );
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM bot_document WHERE "botId" = $1`,
+        [second.bot.id],
+      );
+      expect(count).toBe(0);
+      // The key is the workspace's: another workspace may use it.
+      expect((await bots.findOneByIdempotencyKey(scopeOf(null), 'bot:approval:a-1')).isNone()).toBe(
+        true,
+      );
+    });
+
+    it('creates one bot for two racing creations with the same key, and both answer it', async () => {
+      const ada = await create('Ada');
+      const command = () =>
+        new CreateBotCommand({
+          scope: scope(),
+          input: { name: 'Scout', provider: 'glm' },
+          byBot: {
+            creatorBotId: ada.id,
+            idempotencyKey: 'bot:approval:race',
+            model: null,
+            effort: null,
+            permission: 'auto',
+            instructions: 'Read papers.',
+          },
+        });
+      const ids = await Promise.all([handler().execute(command()), handler().execute(command())]);
+      expect(ids[0]).toBe(ids[1]);
+      const made = await dataSource.query(
+        `SELECT id, "createdByBotId", "createdByUserId" FROM bot WHERE "organizationId" = $1 AND "idempotencyKey" = $2`,
+        [organizationId, 'bot:approval:race'],
+      );
+      expect(made).toEqual([{ id: ids[0], createdByBotId: ada.id, createdByUserId: userId }]);
+      const stored = await documents.findAll(scope(), ids[0]);
+      expect(stored.map((document) => [document.name, document.content])).toEqual([
+        ['soul', expect.stringContaining('Scout')],
+        ['instructions', 'Read papers.'],
+      ]);
+      // A retry after both landed answers the same bot and writes nothing.
+      expect(await handler().execute(command())).toBe(ids[0]);
+      expect((await bots.findAll(scope())).map((bot) => bot.name)).toEqual(['Ada', 'Scout']);
+    });
   });
 });

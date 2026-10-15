@@ -6,16 +6,19 @@ import type { HostAccessPort } from '../../../../hosts/application/host-access.p
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../../database/bot-group.repository.port';
 import type { BotEntity } from '../../../domain/bot.entity';
+import { BotEntity as Bot } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
-import { CreateBotCommand } from '../create-bot.command';
+import { type CreateBotByBot, CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
 /**
  * New bot (`product/versions/mvp/25-bots.md` §2): a numbered default name, a
  * soul that says it, empty instructions, both at revision 1, and every id it
- * names checked as the caller before anything is written. The write itself is
- * the integration spec's.
+ * names checked as the caller before anything is written. A bot creating one
+ * (`create_bot`, §4.6) also sets its engine, its level and both documents,
+ * marks it as its own, is held to its own level, and creates once per key.
+ * The write itself, and two racing creations, are the integration spec's.
  */
 const userId = randomUUID();
 const organizationId = randomUUID();
@@ -32,7 +35,12 @@ function setup(names: string[] = []) {
   const bots = {
     namesIn: vi.fn(async () => names),
     insert: vi.fn<BotRepositoryPort['insert']>(async () => 'saved'),
-  } satisfies Pick<BotRepositoryPort, 'namesIn' | 'insert'>;
+    findOneById: vi.fn<BotRepositoryPort['findOneById']>(async () => None),
+    findOneByIdempotencyKey: vi.fn<BotRepositoryPort['findOneByIdempotencyKey']>(async () => None),
+  } satisfies Pick<
+    BotRepositoryPort,
+    'namesIn' | 'insert' | 'findOneById' | 'findOneByIdempotencyKey'
+  >;
   const groups = {
     findOneById: vi.fn<BotGroupRepositoryPort['findOneById']>(async () => None),
   } satisfies Pick<BotGroupRepositoryPort, 'findOneById'>;
@@ -112,5 +120,127 @@ describe('CreateBotCommandHandler', () => {
       handler.execute(new CreateBotCommand({ scope: scope({ organizationId: null }), input: {} })),
     ).rejects.toMatchObject({ code: 'BOTS_002' });
     expect(bots.insert).not.toHaveBeenCalled();
+  });
+
+  describe('made by a bot', () => {
+    const creatorOn = (permission: Bot['permission']) =>
+      Bot.createNew({
+        organizationId,
+        createdByUserId: userId,
+        name: 'Ada',
+        description: '',
+        avatarColor: 'mint',
+        groupId: null,
+        homeHostId: null,
+        provider: 'glm',
+        permission,
+      });
+    const byBot = (creator: Bot, overrides: Partial<CreateBotByBot> = {}): CreateBotByBot => ({
+      creatorBotId: creator.id,
+      idempotencyKey: 'bot:approval:approval-1',
+      model: 'glm-5.3',
+      effort: 'low',
+      permission: 'auto',
+      ...overrides,
+    });
+
+    it('is the caller’s, marked as the creator’s, on the engine and level it was given, with its documents', async () => {
+      const { handler, bots, written } = setup();
+      const creator = creatorOn('full');
+      bots.findOneById.mockResolvedValueOnce(Some(creator));
+      await handler.execute(
+        new CreateBotCommand({
+          scope: scope(),
+          input: { name: 'Scout', provider: 'glm' },
+          byBot: byBot(creator, {
+            permission: 'full',
+            soul: 'You are Scout.',
+            instructions: 'Read papers.',
+          }),
+        }),
+      );
+      const { bot, documents } = written();
+      expect(bot).toMatchObject({
+        createdByUserId: userId,
+        createdByBotId: creator.id,
+        idempotencyKey: 'bot:approval:approval-1',
+        provider: 'glm',
+        model: 'glm-5.3',
+        effort: 'low',
+        permission: 'full',
+      });
+      expect(documents.map((document) => [document.name, document.content])).toEqual([
+        ['soul', 'You are Scout.'],
+        ['instructions', 'Read papers.'],
+      ]);
+      expect(documents[0].pendingRevision?.authorUserId).toBe(userId);
+    });
+
+    it('refuses a level looser than the creator’s and writes nothing', async () => {
+      const { handler, bots } = setup();
+      const creator = creatorOn('auto');
+      bots.findOneById.mockResolvedValueOnce(Some(creator));
+      await expect(
+        handler.execute(
+          new CreateBotCommand({
+            scope: scope(),
+            input: { name: 'Scout' },
+            byBot: byBot(creator, { permission: 'full' }),
+          }),
+        ),
+      ).rejects.toMatchObject({ code: 'GENERIC.ARGUMENT_INVALID' });
+      expect(bots.insert).not.toHaveBeenCalled();
+    });
+
+    it('refuses a creator the caller cannot see with BOTS_001 and writes nothing', async () => {
+      const { handler, bots } = setup();
+      await expect(
+        handler.execute(
+          new CreateBotCommand({
+            scope: scope(),
+            input: { name: 'Scout' },
+            byBot: byBot(creatorOn('full')),
+          }),
+        ),
+      ).rejects.toMatchObject({ code: 'BOTS_001' });
+      expect(bots.insert).not.toHaveBeenCalled();
+    });
+
+    it('answers the bot a landed attempt with the same key made, writing nothing and checking nothing again', async () => {
+      const { handler, bots } = setup();
+      const earlier = creatorOn('auto');
+      bots.findOneByIdempotencyKey.mockResolvedValueOnce(Some(earlier));
+      const id = await handler.execute(
+        new CreateBotCommand({
+          scope: scope(),
+          input: { name: 'Scout' },
+          byBot: byBot(creatorOn('auto')),
+        }),
+      );
+      expect(id).toBe(earlier.id);
+      expect(bots.findOneByIdempotencyKey).toHaveBeenCalledWith(
+        expect.objectContaining({ userId }),
+        'bot:approval:approval-1',
+      );
+      expect(bots.findOneById).not.toHaveBeenCalled();
+      expect(bots.insert).not.toHaveBeenCalled();
+    });
+
+    it('answers the bot a racing attempt made when its own insert lost on the key', async () => {
+      const { handler, bots } = setup();
+      const creator = creatorOn('auto');
+      const winner = creatorOn('auto');
+      bots.findOneById.mockResolvedValueOnce(Some(creator));
+      bots.insert.mockResolvedValueOnce('taken');
+      bots.findOneByIdempotencyKey.mockResolvedValueOnce(None).mockResolvedValueOnce(Some(winner));
+      const id = await handler.execute(
+        new CreateBotCommand({
+          scope: scope(),
+          input: { name: 'Scout', provider: 'glm' },
+          byBot: byBot(creator),
+        }),
+      );
+      expect(id).toBe(winner.id);
+    });
   });
 });

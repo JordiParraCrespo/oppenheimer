@@ -16,6 +16,7 @@ import { BotDocumentOrmEntity } from './bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from './bot-document-revision.orm-entity';
 
 const FOREIGN_KEY_VIOLATION = '23503';
+const UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements BotRepositoryPort {
@@ -51,6 +52,14 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
   async findForTurn(organizationId: string, botId: string): Promise<Option<BotEntity>> {
     // UQ_bot_organization_id.
     const record = await this.repository.findOne({ where: { organizationId, id: botId } });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async findOneByIdempotencyKey(scope: AccessScope, key: string): Promise<Option<BotEntity>> {
+    // UQ_bot_organization_idempotency.
+    const record = await this.scopedQuery(scope)
+      .andWhere('bot.idempotencyKey = :key', { key })
+      .getOne();
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
@@ -111,7 +120,11 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
   }
 
-  /** One transaction; a group deleted under the write answers `group-missing`, not a 500. */
+  /**
+   * One transaction; a group deleted under the write answers `group-missing`,
+   * and a creation whose idempotency key another write already used answers
+   * `taken` (the whole transaction rolled back), not a 500.
+   */
   private async writing(
     work: (manager: EntityManager) => Promise<BotWriteOutcome>,
   ): Promise<BotWriteOutcome> {
@@ -119,6 +132,7 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
       return await this.dataSource.transaction(work);
     } catch (error) {
       if (violated(error, FOREIGN_KEY_VIOLATION, 'FK_bot_group')) return 'group-missing';
+      if (violated(error, UNIQUE_VIOLATION, 'UQ_bot_organization_idempotency')) return 'taken';
       throw error;
     }
   }
