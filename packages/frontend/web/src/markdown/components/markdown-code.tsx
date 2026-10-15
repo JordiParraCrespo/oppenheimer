@@ -17,7 +17,7 @@ function codeNodes(nodes: CodeNode[], prefix: string): ReactNode[] {
   });
 }
 
-/** A fenced block of a description: the code as written, its syntax coloured, a copy button in its corner. */
+/** A fenced block: the code as written, its syntax coloured, a copy button in its corner. */
 export function MarkdownCode({ code, language }: { code: string; language?: string }) {
   const { t } = useTranslation();
   const { copied, copy } = useCopy(code);
@@ -31,9 +31,7 @@ export function MarkdownCode({ code, language }: { code: string; language?: stri
         size="xs"
         shape="square"
         className="absolute top-2 right-2"
-        aria-label={
-          copied ? t('pullRequests.detail.codeCopied') : t('pullRequests.detail.copyCode')
-        }
+        aria-label={copied ? t('common.copied') : t('common.copyCode')}
         onClick={copy}
       >
         {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}

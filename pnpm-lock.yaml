@@ -366,12 +366,6 @@ importers:
       i18next:
         specifier: ^26.4.2
         version: 26.4.2(typescript@7.0.2)
-      lowlight:
-        specifier: ^3
-        version: 3.3.0
-      marked:
-        specifier: ^16
-        version: 16.4.2
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -1099,6 +1093,12 @@ importers:
       i18next-browser-languagedetector:
         specifier: ^8.2.1
         version: 8.2.1
+      lowlight:
+        specifier: ^3
+        version: 3.3.0
+      marked:
+        specifier: ^16
+        version: 16.4.2
       posthog-js:
         specifier: ^1.432.0
         version: 1.432.0(@types/react@19.2.14)(preact-render-to-string@6.6.5(preact@11.0.0-beta.0))(react@19.2.3)

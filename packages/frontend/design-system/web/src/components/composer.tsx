@@ -80,6 +80,7 @@ function Composer({
   scope,
   above,
   minRows = 3,
+  inputRef,
   labels,
   className,
   ...props
@@ -115,6 +116,8 @@ function Composer({
   /** What the run waits on, fused to the field's top edge (`ComposerApproval`). */
   above?: React.ReactNode;
   minRows?: number;
+  /** The textarea, for a caller that moves focus into it (on open, after a suggestion fills it). */
+  inputRef?: React.Ref<HTMLTextAreaElement>;
   /** The icon buttons' accessible names; any left out stay in English. */
   labels?: Partial<ComposerLabels>;
 }) {
@@ -149,6 +152,7 @@ function Composer({
       {...props}
     >
       <textarea
+        ref={inputRef}
         data-slot="composer-input"
         value={value}
         onChange={(event) => onValueChange(event.target.value)}

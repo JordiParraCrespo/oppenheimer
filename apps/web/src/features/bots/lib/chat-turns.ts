@@ -38,25 +38,36 @@ export function turnDurationMs(turn: BotTurnEntity): number | null {
   return turn.endedAt.getTime() - turn.startedAt.getTime();
 }
 
-/** A reply's paragraphs: its text split on blank lines. */
-export function replyParagraphs(content: string): string[] {
-  return content
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+/**
+ * Where a turn is, as the chat says it: `queued` (waiting for its turn),
+ * `thinking` (running, nothing on screen yet), `working` (running, something
+ * on screen), or how it ended.
+ */
+export type TurnPhase = 'queued' | 'thinking' | 'working' | 'completed' | 'cancelled' | 'failed';
+
+/** A turn's phase; `wrote` is whether anything of it is on screen yet (a reply, a tool call, live text). */
+export function turnPhase(turn: BotTurnEntity, wrote: boolean): TurnPhase {
+  if (turn.status === 'queued') return 'queued';
+  if (turn.status === 'running') return wrote ? 'working' : 'thinking';
+  return turn.status;
 }
 
-const TARGET_MAX = 80;
+/** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */
+export function replyText(block: ChatTurnBlock): string {
+  return block.answer
+    .filter((message) => message.role === 'assistant')
+    .map((message) => message.content.trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
 
 /**
- * What a tool call was pointed at, in one line: the first text it was given
- * (a path, a query, a command), cut short.
+ * What Retry sends again: the last thing you said in the newest turn, when
+ * that turn failed. Only the newest: retrying an older failure would answer
+ * a question the chat has moved past.
  */
-export function toolTarget(input: Record<string, unknown>): string | undefined {
-  const first = Object.values(input).find(
-    (value): value is string => typeof value === 'string' && value.trim() !== '',
-  );
-  if (!first) return undefined;
-  const line = first.trim().split('\n')[0] ?? '';
-  return line.length > TARGET_MAX ? `${line.slice(0, TARGET_MAX)}…` : line;
+export function retryContent(blocks: readonly ChatTurnBlock[]): string | null {
+  const last = blocks.at(-1);
+  if (last?.turn?.status !== 'failed') return null;
+  return last.asked.at(-1)?.content ?? null;
 }

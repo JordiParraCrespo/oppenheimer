@@ -23,6 +23,8 @@
     "@oppenheimer/translations": "workspace:*",
     "@hookform/resolvers": "^5.9.1",
     "i18next-browser-languagedetector": "^8.2.1",
+    "lowlight": "^3",
+    "marked": "^16",
     "posthog-js": "^1.432.0",
     "react-error-boundary": "^6.1.6"
   },

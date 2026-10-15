@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 /**
- * An image in a description, at an address already made safe. One that does
+ * An image in markdown, at an address already made safe. One that does
  * not load (a private attachment, a dead link) becomes a link to it, so the
  * reader still has a way there.
  */

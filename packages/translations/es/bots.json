@@ -36,8 +36,9 @@
     "actions": "Opciones del bot",
     "settings": "Configuración",
     "delete": "Eliminar bot",
+    "helloTitle": "Hola, soy {{name}}",
     "helloBlank": "¿En qué te gustaría que te ayudara? Cuéntame el trabajo y escribiré mis propias instrucciones a partir de él.",
-    "hello": "Hola, soy {{name}}. ¿En qué trabajamos?",
+    "hello": "¿En qué trabajamos? Empieza por una de estas ideas o escribe la tuya.",
     "placeholder": "Escribe a {{name}}",
     "send": "Enviar",
     "stop": "Detener",
@@ -49,18 +50,82 @@
     "failedUnknown": "El turno terminó sin decir por qué.",
     "errorDetails": "Mostrar detalles",
     "errorLess": "Mostrar menos",
+    "retry": "Reintentar",
+    "copyMessage": "Copiar mensaje",
+    "copyReply": "Copiar respuesta",
+    "toLatest": "Ir a lo último",
     "turn": {
       "queued": "Esperando",
+      "thinking": "Pensando",
       "working": "Trabajando",
-      "worked": "Trabajó",
-      "stopped": "Detenido",
-      "interrupted": "Falló"
+      "stopped": "Detenido"
     },
     "activity": {
-      "summary_one": "Usó {{count}} herramienta",
-      "summary_other": "Usó {{count}} herramientas",
+      "searched": "Buscó en la web",
+      "searchedFor": "Buscó en la web «{{query}}»",
+      "searchedTimes_one": "Buscó en la web {{count}} vez",
+      "searchedTimes_many": "Buscó en la web {{count}} veces",
+      "searchedTimes_other": "Buscó en la web {{count}} veces",
+      "searching": "Buscando en la web",
+      "searchingFor": "Buscando en la web «{{query}}»",
+      "planned": "Actualizó su plan",
+      "planning": "Actualizando su plan",
+      "using": "Usando {{name}}",
+      "toolTimes_one": "{{name}} ×{{count}}",
+      "toolTimes_many": "{{name}} ×{{count}}",
+      "toolTimes_other": "{{name}} ×{{count}}",
+      "steps_one": "{{count}} paso",
+      "steps_many": "{{count}} pasos",
+      "steps_other": "{{count}} pasos",
       "failed": "{{count}} con error",
+      "stepFailed": "error",
       "running": "en curso"
+    },
+    "suggest": {
+      "task": {
+        "research": {
+          "name": "Investigar un tema",
+          "description": "Buscar en la web y resumir lo que encuentre",
+          "prompt": "Busca en la web y dame un resumen breve, con fuentes, sobre "
+        },
+        "summarise": {
+          "name": "Resumir algo",
+          "description": "Pega un texto y obtén sus puntos clave",
+          "prompt": "Resume esto en cinco viñetas:\n\n"
+        },
+        "draft": {
+          "name": "Redactar un mensaje",
+          "description": "Un correo, una publicación o una respuesta",
+          "prompt": "Redacta un mensaje breve y cordial para "
+        },
+        "plan": {
+          "name": "Hacer un plan",
+          "description": "Dividir un objetivo en pasos",
+          "prompt": "Haz un plan paso a paso para "
+        }
+      },
+      "job": {
+        "research": {
+          "name": "Asistente de investigación",
+          "description": "Encuentra y resume lo que le pido",
+          "prompt": "Sé mi asistente de investigación: cuando te dé un tema, busca en la web y dame un resumen breve con sus fuentes."
+        },
+        "writing": {
+          "name": "Compañero de escritura",
+          "description": "Pule mis borradores con mi propia voz",
+          "prompt": "Sé mi compañero de escritura: pule lo que escribo, propón una redacción más clara y mantén mi tono."
+        },
+        "planner": {
+          "name": "Planificador",
+          "description": "Convierte objetivos en próximos pasos",
+          "prompt": "Sé mi planificador: divide mis objetivos en pasos, lleva una lista de tareas y dime qué hacer a continuación."
+        },
+        "news": {
+          "name": "Resumen de noticias",
+          "description": "Lo último de lo que sigo",
+          "prompt": "Sé mi resumen de noticias: cuando te lo pida, busca en la web lo último sobre los temas que sigo y resúmelo en cinco viñetas."
+        }
+      }
     },
     "model": "Modelo",
     "searchModels": "Buscar modelos…",

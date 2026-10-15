@@ -4,7 +4,14 @@ import type {
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { chatTurns, replyParagraphs, toolTarget, turnDurationMs } from '../lib/chat-turns';
+import {
+  type ChatTurnBlock,
+  chatTurns,
+  replyText,
+  retryContent,
+  turnDurationMs,
+  turnPhase,
+} from '../lib/chat-turns';
 
 /** How the chat reads the stored conversation: as turns, each your message and the bot's work. */
 
@@ -62,17 +69,54 @@ describe('turnDurationMs', () => {
   });
 });
 
-describe('replyParagraphs', () => {
-  it('splits on blank lines and keeps a single line break inside a paragraph', () => {
-    expect(replyParagraphs('One\ntwo\n\n\nThree\n')).toEqual(['One\ntwo', 'Three']);
+describe('turnPhase', () => {
+  const at = (status: BotTurnEntity['status']) => ({ status }) as BotTurnEntity;
+
+  /** Thinking until the first word or call shows, then working; an ended turn says how it ended. */
+  it('tells thinking from working by whether anything is on screen yet', () => {
+    expect(turnPhase(at('queued'), false)).toBe('queued');
+    expect(turnPhase(at('running'), false)).toBe('thinking');
+    expect(turnPhase(at('running'), true)).toBe('working');
+    expect(turnPhase(at('cancelled'), true)).toBe('cancelled');
+    expect(turnPhase(at('failed'), false)).toBe('failed');
   });
 });
 
-describe('toolTarget', () => {
-  it('is the first text the call was given, on one line and cut short', () => {
-    expect(toolTarget({ limit: 3, path: 'src/index.ts' })).toBe('src/index.ts');
-    expect(toolTarget({ command: 'ls\npwd' })).toBe('ls');
-    expect(toolTarget({ query: 'x'.repeat(100) })).toBe(`${'x'.repeat(80)}…`);
-    expect(toolTarget({ limit: 3 })).toBeUndefined();
+const said = (id: string, role: BotMessageEntity['role'], content: string) =>
+  ({ id, turnId: 't', role, content }) as BotMessageEntity;
+const block = (
+  status: BotTurnEntity['status'] | undefined,
+  asked: BotMessageEntity[],
+  answer: BotMessageEntity[] = [],
+): ChatTurnBlock => ({
+  turnId: 't',
+  turn: status ? ({ id: 't', status } as BotTurnEntity) : undefined,
+  asked,
+  answer,
+});
+
+describe('replyText', () => {
+  it('copies what the bot said, a blank line apart, and none of its tool work', () => {
+    const turnBlock = block(
+      'completed',
+      [],
+      [
+        said('a', 'assistant', ' First. '),
+        said('b', 'activity', ''),
+        said('c', 'assistant', 'Second.'),
+      ],
+    );
+    expect(replyText(turnBlock)).toBe('First.\n\nSecond.');
+  });
+});
+
+describe('retryContent', () => {
+  /** Retry resends the question of the newest failed turn, and only that one. */
+  it('is your last message when the newest turn failed, and nothing otherwise', () => {
+    const asked = [said('q1', 'user', 'first try'), said('q2', 'user', 'what about bun?')];
+    expect(retryContent([block('failed', asked)])).toBe('what about bun?');
+    expect(retryContent([block('failed', asked), block('completed', asked)])).toBeNull();
+    expect(retryContent([block('cancelled', asked)])).toBeNull();
+    expect(retryContent([])).toBeNull();
   });
 });

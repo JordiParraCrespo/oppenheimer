@@ -83,7 +83,7 @@ multi-line, so a grep for `export` misses most of them.
 | Submitting a review | `ReviewDecision` in a `Popover` from `SubmitReviewButton` | a `Dialog`, a `DropdownMenu` of verdicts |
 | A diff, its comments and its files | `DiffFile` + `DiffFileHeader` + `DiffView` (`colorScheme` from the app's theme; `DiffComment`, `DiffCommentDraft`), `DiffFileTree` | a `<pre>`, a diff library imported in a feature |
 | A file's type mark | `FileIcon` | a copied logo, an extension in text |
-| Rendered markdown someone wrote | `Prose` | `dangerouslySetInnerHTML` into an unstyled `div` |
+| Rendered markdown someone wrote | the kit's `Markdown` inside `Prose` (in a chat, inside `ChatReply`) | `dangerouslySetInnerHTML` into an unstyled `div`, a markdown library imported in a feature |
 | Counts over time, shares of a whole, ranked reasons | `BarChart`, `LineChart`, `RingChart`, `BarList` | a chart library, `RunHistory` stretched |
 | A choice that exists but cannot be picked now (an offline host) | a `disabled` `ChipSelect` option whose `description` says why | hiding it, an error after the pick |
 | A setting that applies the moment it flips | `Switch` | a `Checkbox` with no Save, a `SegmentedControl` of On / Off |

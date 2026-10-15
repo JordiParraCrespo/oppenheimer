@@ -1,24 +1,59 @@
-import { ChatReply, ChatTranscript, MessageTrail } from '@oppenheimer/design-system-web';
+import {
+  type AvatarColor,
+  BotAvatar,
+  ChatEmptyState,
+  ChatTranscript,
+  TemplateTile,
+  TemplateTiles,
+} from '@oppenheimer/design-system-web';
+import {
+  Globe,
+  ListChecks,
+  MessageSquareText,
+  Newspaper,
+  PenLine,
+  ScrollText,
+} from '@oppenheimer/design-system-web/icons';
 import { useBotDocuments } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
+import { fillBotDraft } from '@/features/bots/lib/bot-drafts';
+
+/** What a bot with instructions can be asked to start on. */
+const TASKS = [
+  { key: 'research', Icon: Globe },
+  { key: 'summarise', Icon: ScrollText },
+  { key: 'draft', Icon: MessageSquareText },
+  { key: 'plan', Icon: ListChecks },
+] as const;
+
+/** Jobs a bot with no instructions yet can be given: it writes its own from the answer. */
+const JOBS = [
+  { key: 'research', Icon: Globe },
+  { key: 'writing', Icon: PenLine },
+  { key: 'planner', Icon: ListChecks },
+  { key: 'news', Icon: Newspaper },
+] as const;
 
 /**
- * The bot's first message, before there is a conversation: a bot with no
- * instructions asks for the job and says it will write its own from it; one
- * that has them greets the reader by its name. Which it is depends on the
- * instructions, so this reads them (narrowed to "are they blank?") and draws
- * nothing until it knows, rather than greeting one way and switching. A read
- * that fails greets the plain way: the hello is a courtesy, not a fact the
- * reader acts on.
+ * The bot's hello, before there is a conversation: its face, its name and a
+ * line, then four ways to start that fill the composer with a first message
+ * to finish and send. A bot with no instructions asks for the job and says
+ * it will write its own from it, and offers jobs; one that has them offers
+ * tasks. Which it is depends on the instructions, so this reads them
+ * (narrowed to "are they blank?") and draws nothing until it knows, rather
+ * than greeting one way and switching. A read that fails greets the plain
+ * way: the hello is a courtesy, not a fact the reader acts on.
  */
 export function BotHello({
   botId,
   name,
-  modelLabel,
+  initials,
+  color,
 }: {
   botId: string;
   name: string;
-  modelLabel: string | null;
+  initials: string;
+  color: AvatarColor;
 }) {
   const { t } = useTranslation();
   const { data: blank, isPending } = useBotDocuments(botId, {
@@ -27,13 +62,34 @@ export function BotHello({
   if (isPending) return null;
 
   return (
-    <ChatTranscript>
-      <div className="flex flex-col gap-2">
-        <ChatReply>
-          <p>{blank ? t('bots.chat.helloBlank') : t('bots.chat.hello', { name })}</p>
-        </ChatReply>
-        {modelLabel ? <MessageTrail meta={modelLabel} /> : null}
-      </div>
+    <ChatTranscript className="items-center">
+      <BotAvatar option={{ initials }} size={52} color={color} />
+      <ChatEmptyState align="center" title={t('bots.chat.helloTitle', { name })}>
+        <p className="m-0 -mt-3 text-center text-body text-pretty text-fg-muted">
+          {blank ? t('bots.chat.helloBlank') : t('bots.chat.hello')}
+        </p>
+        <TemplateTiles>
+          {blank
+            ? JOBS.map(({ key, Icon }) => (
+                <TemplateTile
+                  key={key}
+                  icon={<Icon />}
+                  name={t(`bots.chat.suggest.job.${key}.name`)}
+                  description={t(`bots.chat.suggest.job.${key}.description`)}
+                  onClick={() => fillBotDraft(botId, t(`bots.chat.suggest.job.${key}.prompt`))}
+                />
+              ))
+            : TASKS.map(({ key, Icon }) => (
+                <TemplateTile
+                  key={key}
+                  icon={<Icon />}
+                  name={t(`bots.chat.suggest.task.${key}.name`)}
+                  description={t(`bots.chat.suggest.task.${key}.description`)}
+                  onClick={() => fillBotDraft(botId, t(`bots.chat.suggest.task.${key}.prompt`))}
+                />
+              ))}
+        </TemplateTiles>
+      </ChatEmptyState>
     </ChatTranscript>
   );
 }

@@ -280,17 +280,40 @@ function TurnHeader({
 
 /**
  * The agent's answer, unboxed: markdown at 15px on 1.6 across the chat's
- * column. Pass the rendered markdown as children; it styles the elements
- * the way `Prose` does, at the column's width rather than 72ch.
+ * column, its blocks 12px apart. Pass the rendered markdown as children; it
+ * styles the elements the way `Prose` does at a chat's scale: headings a step
+ * or two over the text, lists with muted markers, links in the link blue,
+ * a quote behind a 2px rule, code blocks bordered on the card with room on
+ * the right for a copy button, and tables full width on hairlines, each
+ * scrolling sideways in its own box when it is wider than the column.
  */
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="chat-reply"
       className={cn(
-        'flex flex-col gap-3 text-[15px] leading-[1.6] tracking-[-0.011em] text-pretty text-fg',
-        '[&_h3]:mt-1.5 [&_h3]:text-[17px] [&_h3]:font-semibold [&_h3]:tracking-[-0.014em] [&_li]:mt-1.5 [&_li:first-child]:mt-0 [&_ol]:pl-5 [&_p]:m-0 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ul]:marker:text-fg-subtle',
+        'flex min-w-0 flex-col gap-3 text-[15px] leading-[1.6] tracking-[-0.011em] text-pretty wrap-anywhere text-fg',
+        // Headings
+        '[&_:is(h1,h2,h3,h4,h5,h6)]:m-0 [&_:is(h1,h2,h3,h4,h5,h6)]:mt-1.5 [&_:is(h1,h2,h3,h4,h5,h6)]:font-semibold [&_:is(h1,h2,h3,h4,h5,h6)]:tracking-[-0.014em]',
+        '[&_h1]:text-[20px] [&_h2]:text-[18px] [&_h3]:text-[17px] [&_:is(h4,h5,h6)]:text-[15px]',
+        // Text, lists, quotes, rules
+        '[&_p]:m-0 [&_strong]:font-semibold [&_b]:font-semibold [&_em]:italic',
+        '[&_:is(ul,ol)]:m-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1.5 [&_li:first-child]:mt-0 [&_li]:ps-0.5 [&_li]:marker:text-fg-subtle',
+        '[&_li_:is(ul,ol)]:mt-1.5 [&_li>p+p]:mt-2',
+        '[&_[data-task-list]]:pl-0.5 [&_[data-task-list]>li]:flex [&_[data-task-list]>li]:list-none [&_[data-task-list]>li]:items-baseline [&_[data-task-list]>li]:gap-2 [&_[data-task-list]_input]:m-0 [&_[data-task-list]_input]:accent-primary',
+        '[&_blockquote]:m-0 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3.5 [&_blockquote]:text-fg-muted',
+        '[&_hr]:my-1 [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-border-subtle',
+        '[&_a]:text-link [&_a]:underline-offset-2 [&_a:hover]:underline',
+        '[&_img]:block [&_img]:h-auto [&_img]:max-h-[min(60vh,32rem)] [&_img]:max-w-full [&_img]:rounded-sm',
+        '[&_summary]:cursor-pointer [&_summary]:font-medium',
+        // Inline code, then blocks
         '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-hover-surface [&_:not(pre)>code]:px-1.25 [&_:not(pre)>code]:py-px [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
+        '[&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-card [&_pre]:py-3 [&_pre]:ps-3.5 [&_pre]:pe-10 [&_pre]:font-mono [&_pre]:text-[12.5px] [&_pre]:leading-[1.6] [&_pre]:tracking-normal',
+        // Tables
+        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[13.5px] [&_table]:leading-normal [&_table]:tabular-nums',
+        '[&_th]:border-b [&_th]:border-border-strong [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-start [&_th]:font-semibold',
+        '[&_td]:border-b [&_td]:border-border-subtle [&_td]:px-2 [&_td]:py-2 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
+        '[&_:is(th,td):first-child]:ps-0 [&_:is(th,td):last-child]:pe-0',
         className,
       )}
       {...props}

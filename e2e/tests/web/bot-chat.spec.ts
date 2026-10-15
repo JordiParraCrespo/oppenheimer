@@ -29,16 +29,18 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await box.fill('Reply with exactly the word: pineapple');
   await page.getByRole('button', { name: 'Send' }).click();
 
-  // Your message as a card, the turn at work, then its answer and how it went.
+  // Your message as a bubble, the turn at work, then its answer and how it went.
   await expect(page.locator('[data-slot="chat-user-message"]')).toContainText(
     'Reply with exactly the word: pineapple',
   );
   await expect(box).toHaveValue('');
-  await expect(page.locator('[data-slot="turn-header"][data-state="done"]')).toBeVisible({
+  await expect(page.locator('[data-slot="bot-turn"][data-phase="completed"]')).toBeVisible({
     timeout: 120_000,
   });
   await expect(page.locator('[data-slot="chat-reply"]').last()).toContainText(/pineapple/i);
-  await expect(page.locator('[data-slot="turn-header"]')).toContainText('GLM-5.3');
+  // Under it, how it went: its model, and a copy button for the answer.
+  await expect(page.locator('[data-slot="message-trail"]')).toContainText('GLM-5.3');
+  await expect(page.getByRole('button', { name: 'Copy reply' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
   // The sidebar's row previews the last thing said.
   await expect(
