@@ -81,7 +81,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       for await (const event of this.engine.run({ ...context, signal: watch.signal, scratchDir })) {
         for (const write of transcript.apply(event)) await this.apply(turn, write);
       }
-      transcript.endTurn(new Date(), watch.timedOut);
+      transcript.endTurn(new Date(), watch.interruption);
     } catch (error) {
       turn.end('failed', new Date(), { error: failureReasonOf(error) });
       if (!(error instanceof AppError)) {

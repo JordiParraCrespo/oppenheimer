@@ -1,6 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
-import type { BotEffort, BotTurnRequest } from '@oppenheimer/backend-agents';
+import {
+  type BotEffort,
+  type BotTurnRequest,
+  engineCapabilities,
+} from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import {
@@ -16,16 +19,15 @@ import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory
 import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
-import { FindHostsQuery } from '../../hosts/queries/find-hosts/find-hosts.query';
-import { BOT_MESSAGE_REPOSITORY } from '../bots-chat.di-tokens';
+import { BOT_MESSAGE_REPOSITORY, OWNER_HOSTS } from '../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import {
   BOT_HISTORY_MESSAGES,
-  type BotPromptHost,
   botHistory,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
@@ -39,13 +41,6 @@ export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir'>;
  * turn answers, and longer work belongs to a session on a host.
  */
 export const BOT_TURN_MAX_STEPS = 20;
-
-/** A host as the hosts module answers `FindHostsQuery`, the part a turn reads. */
-interface HostOverviewView {
-  host: { id: string; name: string };
-  online: boolean;
-  runningSessions: number;
-}
 
 /**
  * Everything a turn needs, read when it starts: the bot as it is now (its
@@ -67,7 +62,7 @@ export class BotTurnContextResolver {
     private readonly credentials: ModelProviderCredentialRepositoryPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
     private readonly owners: BotOwnerScopeResolver,
-    private readonly queryBus: QueryBus,
+    @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     private readonly toolbox: BotToolboxFactory,
   ) {}
 
@@ -116,6 +111,7 @@ export class BotTurnContextResolver {
         facts: [...facts].reverse().map((fact) => fact.content),
         now,
         timeZone: turn.timeZone,
+        engineCapabilities: engineCapabilities(turn.provider),
         homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
         hosts,
         tools: owner ? this.toolbox.catalog() : [],
@@ -128,28 +124,22 @@ export class BotTurnContextResolver {
   }
 
   /**
-   * The owner's hosts, or null when they cannot be read: the turn still
-   * runs, and the prompt says the hosts are unknown rather than that there
-   * are none.
+   * The owner's hosts, or null when the hosts module refuses to say: the
+   * turn still runs, and the prompt says the hosts are unknown rather than
+   * that there are none. Anything else the read throws is a fault, and
+   * fails the turn like any other.
    */
-  private async hostsOf(
-    owner: AccessScope | null,
-    turnId: string,
-  ): Promise<(BotPromptHost & { id: string })[] | null> {
+  private async hostsOf(owner: AccessScope | null, turnId: string): Promise<OwnerHost[] | null> {
     if (!owner) return null;
     try {
-      const overviews = await this.queryBus.execute<FindHostsQuery, HostOverviewView[]>(
-        new FindHostsQuery({ scope: owner }),
-      );
-      return overviews.map(({ host, online, runningSessions }) => ({
-        id: host.id,
-        name: host.name,
-        online,
-        runningSessions,
-      }));
+      return await this.hosts.hostsOf(owner);
     } catch (error) {
-      const stack = error instanceof Error ? error.stack : String(error);
-      this.logger.warn({ message: 'A bot turn could not read its hosts', turnId }, stack);
+      if (!(error instanceof AppError)) throw error;
+      this.logger.warn({
+        message: 'A bot turn could not read its hosts',
+        turnId,
+        code: error.code,
+      });
       return null;
     }
   }

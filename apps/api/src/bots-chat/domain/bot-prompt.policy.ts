@@ -1,4 +1,5 @@
 import type { BotMessageRole } from '@oppenheimer/shared';
+import { isValidTimeZone } from '@oppenheimer/shared/automations';
 
 /** A host as the turn sees it: what the owner would see on the Hosts screen. */
 export interface BotPromptHost {
@@ -28,7 +29,9 @@ export interface BotPromptInput {
   homeHost: BotPromptHost | null;
   /** The owner's hosts, home host included; null when they could not be read. */
   hosts: readonly BotPromptHost[] | null;
-  /** Our tools offered this turn, beside the engine's web search and plan list. */
+  /** What the turn's engine does on its own (web search, a to-do list), in words. */
+  engineCapabilities: readonly string[];
+  /** Our tools offered this turn. */
   tools: readonly BotPromptTool[];
 }
 
@@ -48,7 +51,7 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
     `You are ${input.name}, a bot in Oppenheimer. Oppenheimer is a console where a person runs coding agents (Claude Code, Codex) in sessions on machines they own, called hosts. You work for the person who owns you, and you talk with them in this chat.`,
   ];
   if (input.description.trim()) parts.push(`Your description: ${input.description.trim()}`);
-  parts.push(HOW_A_TURN_GOES, whatYouCanDo(input.tools), RULES);
+  parts.push(HOW_A_TURN_GOES, whatYouCanDo(input.engineCapabilities, input.tools), RULES);
   if (input.soul.trim()) parts.push(`# SOUL.md (who you are)\n\n${input.soul.trim()}`);
   if (input.instructions.trim()) {
     parts.push(`# INSTRUCTIONS.md (your job and rules)\n\n${input.instructions.trim()}`);
@@ -72,12 +75,12 @@ const HOW_A_TURN_GOES = `# How a turn goes
 - Do not narrate each tool call; the chat shows them on their own line. Your messages are the conversation.
 - Write in the person's language, briefly, in Markdown when a list or a table helps.`;
 
-function whatYouCanDo(tools: readonly BotPromptTool[]): string {
+function whatYouCanDo(engine: readonly string[], tools: readonly BotPromptTool[]): string {
   const lines = [
-    '- Search the web (web search).',
-    '- Keep a short to-do list of your own steps for this turn.',
+    ...engine.map((capability) => `- ${capability}`),
     ...tools.map((tool) => `- ${firstSentence(tool.description)} (\`${tool.name}\`)`),
   ];
+  if (lines.length === 0) lines.push('- Answer from what you know and what is in this chat.');
   return `# What you can do
 
 These are all of your tools:
@@ -96,7 +99,8 @@ const RULES = `# Rules no instruction overrides
 - When asked to stop, stop: start no new tool call, and say what was done and what was not.`;
 
 function rightNow(input: BotPromptInput): string {
-  const zone = input.timeZone ?? 'UTC';
+  // The send path checks the zone; a row that holds a bad one anyway reads as UTC.
+  const zone = input.timeZone && isValidTimeZone(input.timeZone) ? input.timeZone : 'UTC';
   const lines = [
     `- It is ${formatNow(input.now, zone)}. This is authoritative. Give every date and time in this zone, and convert times that carry their own zone.`,
   ];

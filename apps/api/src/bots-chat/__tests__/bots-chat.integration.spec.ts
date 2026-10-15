@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import type { QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
@@ -25,6 +24,7 @@ import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
+import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
@@ -34,6 +34,7 @@ import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 
 /**
  * A bot's chat against a real Postgres (`product/versions/mvp/25-bots.md`
@@ -379,7 +380,7 @@ describe('bots chat (integration)', () => {
     };
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
-    const queryBus = { execute: vi.fn() } as unknown as QueryBus;
+    const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
     return new BotTurnContextResolver(
       bots,
       documents,
@@ -388,7 +389,8 @@ describe('bots chat (integration)', () => {
       credentials,
       sealer,
       owners,
-      queryBus,
+      hosts,
+      { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
     );
   }
 

@@ -6,12 +6,15 @@ import { BOT_TURN_TIME_LIMIT_MS } from '../domain/bot-turn.entity';
 /** How long a running turn waits between two looks for Stop. */
 export const CANCEL_POLL_MS = 750;
 
+/** What ended a turn from outside the engine: Stop, or its time limit. */
+export type TurnInterruption = 'stop' | 'time_limit';
+
 /** A running turn's look-out for Stop and for its time limit. */
 export interface TurnCancelWatch {
   /** Aborts once Stop is pressed on the turn, or once it runs past its time limit. */
   readonly signal: AbortSignal;
-  /** Whether it was the time limit, not Stop, that aborted the turn. */
-  readonly timedOut: boolean;
+  /** What aborted the signal, once one of them has; null while neither has. */
+  readonly interruption: TurnInterruption | null;
   /** Stops looking. Safe to call more than once. */
   stop(): void;
 }
@@ -33,19 +36,20 @@ export class TurnCancelWatchFactory {
   watch(turnId: string, timeLimitMs = BOT_TURN_TIME_LIMIT_MS): TurnCancelWatch {
     const abort = new AbortController();
     let stopped = false;
-    let timedOut = false;
+    let interruption: TurnInterruption | null = null;
     let timer: NodeJS.Timeout | undefined;
-    const limit = setTimeout(() => {
-      if (stopped || abort.signal.aborted) return;
-      timedOut = true;
+    const interrupt = (cause: TurnInterruption): void => {
+      if (stopped || interruption) return;
+      interruption = cause;
       abort.abort();
-    }, timeLimitMs);
+    };
+    const limit = setTimeout(() => interrupt('time_limit'), timeLimitMs);
     limit.unref();
 
     const look = async (): Promise<void> => {
       try {
         if (await this.turns.isCancelRequested(turnId)) {
-          if (!stopped) abort.abort();
+          interrupt('stop');
           return;
         }
       } catch (error) {
@@ -66,8 +70,8 @@ export class TurnCancelWatchFactory {
     next();
     return {
       signal: abort.signal,
-      get timedOut() {
-        return timedOut;
+      get interruption() {
+        return interruption;
       },
       stop: () => {
         stopped = true;

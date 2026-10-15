@@ -6,6 +6,7 @@ import {
   type BotToolStep,
 } from '../domain/bot-message.entity';
 import { BOT_TURN_TIME_LIMIT_MS, type BotTurnEntity } from '../domain/bot-turn.entity';
+import type { TurnInterruption } from './turn-cancel-watch.factory';
 
 /** What one engine event asks the runner to do. */
 export type TranscriptWrite =
@@ -73,18 +74,22 @@ export class TurnTranscript {
   }
 
   /**
-   * Ends the turn as the engine said it ended; running out of steps still
-   * completes it. A turn stopped by its time limit failed, and says so: what
-   * it wrote before is kept.
+   * Ends the turn. What interrupted it from outside decides first: Stop
+   * cancels it, the time limit fails it with a message saying so (what it
+   * wrote is kept). Otherwise it ends as the engine said; running out of
+   * steps still completes it.
    */
-  endTurn(now: Date, timedOut = false): void {
+  endTurn(now: Date, interruption: TurnInterruption | null): void {
     const { reason, error, inputTokens, outputTokens } = this.outcome;
-    if (timedOut && reason === 'cancelled') {
-      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, inputTokens, outputTokens });
-      return;
+    const usage = { inputTokens, outputTokens };
+    if (interruption === 'time_limit') {
+      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, ...usage });
+    } else if (interruption === 'stop') {
+      this.turn.end('cancelled', now, usage);
+    } else {
+      const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
+      this.turn.end(status, now, { error, ...usage });
     }
-    const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
-    this.turn.end(status, now, { error, inputTokens, outputTokens });
   }
 
   private say(text: string): TranscriptWrite[] {

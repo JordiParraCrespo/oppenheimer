@@ -8,10 +8,13 @@ import type { WorkspaceLookupPort } from '../../organizations/application/worksp
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 
 /**
- * The scope a bot's turn acts in (`25-bots.md` §4): its owner's, in the
- * bot's workspace, resolved fresh for every turn and never cached. A bot can
- * see and do exactly what its owner can now: an owner who left the
- * workspace leaves it nothing to act through.
+ * The scope a bot acts in (`25-bots.md` §4): its owner's, in the bot's
+ * workspace, resolved fresh each time and never cached. Two rules, held
+ * here once for every caller (a turn's context, its tools, an approval
+ * being decided): the owner must still be a member of the workspace, and
+ * the scope is never elevated (no platform tier, no full-access bypass),
+ * so a bot can do exactly what its owner can now and nothing once they
+ * leave.
  */
 @Injectable()
 export class BotOwnerScopeResolver {
