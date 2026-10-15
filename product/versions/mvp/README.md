@@ -712,10 +712,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   shaped by chat and settings, a headless turn per message on its home
   host. Inside the product it is a bot; the nav keeps Employees. No
   templates and no built-in bots yet, and no photos of people as avatars.
-- 2026-10-15: **A bot's loop runs in Oppenheimer** (25 §2), on the Claude
-  Agent SDK for Anthropic and GLM and the OpenAI Agents SDK for OpenAI,
-  in a BullMQ worker; keys are the workspace's, encrypted. The home host
-  becomes where the bot's sessions run. A bot edits its own soul,
-  instructions and memory without asking, each change a revision; the
-  owner sets each tool to Allow, Ask or Off within their own permissions;
-  bots ask and message each other and create bots, within loop limits.
+- 2026-10-15: **A bot's loop moved into Oppenheimer** on its provider's
+  agent SDK, with owner-set tool permissions and bots that edit
+  themselves; see [25](25-bots.md) "Decided".
