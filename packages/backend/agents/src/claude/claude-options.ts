@@ -187,13 +187,14 @@ export function claudeOptions(
   onStderr: (data: string) => void,
 ): Options {
   const ourTools = request.tools.map((tool) => qualifiedToolName(tool.name));
+  const builtIns = request.engineTools === false ? [] : BUILT_IN_TOOLS;
   return {
     model: request.model,
     systemPrompt: renderSystemPrompt(request.systemPrompt, request.history),
     cwd: dirs.cwd,
     env: claudeEnv(request, dirs),
-    tools: BUILT_IN_TOOLS,
-    allowedTools: [...BUILT_IN_TOOLS, ...ourTools],
+    tools: builtIns,
+    allowedTools: [...builtIns, ...ourTools],
     disallowedTools: DISALLOWED_TOOLS,
     // Anything not allowed above is denied without asking: no one is there
     // to answer a prompt.

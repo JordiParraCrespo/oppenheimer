@@ -6,3 +6,4 @@ export const BOT_STREAM = Symbol('BOT_STREAM');
 export const BOT_ENGINE = Symbol('BOT_ENGINE');
 export const WEB_PAGE = Symbol('WEB_PAGE');
 export const OWNER_HOSTS = Symbol('OWNER_HOSTS');
+export const BOT_CONVERSATION_SUMMARY_REPOSITORY = Symbol('BOT_CONVERSATION_SUMMARY_REPOSITORY');

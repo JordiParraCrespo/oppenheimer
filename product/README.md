@@ -484,3 +484,14 @@ earlier note:
   2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
   through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
   (25, §2 and "Decided").
+- Note 25's system prompt ended with the moment the turn ran in: the
+  sender's time, the home host and the hosts. On 2026-10-15 that moved to
+  a `<turn_context>` block opening each turn's message, so the system
+  prompt is the same bytes every turn and the provider's prompt cache
+  hits (25, "Decided").
+- Note 25 sent a turn the bot's last 40 messages and dropped everything
+  older without a word. On 2026-10-15 history became a token budget
+  (24,000 tokens) opened by a stored summary of the older messages, which
+  a `bot-summaries` job writes with the bot's own model once they pass the
+  budget with headroom (25 §2, "Decided"). The chat still shows every
+  message.

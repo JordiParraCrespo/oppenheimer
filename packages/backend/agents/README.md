@@ -49,6 +49,17 @@ its reasoning back encrypted (`include: ['reasoning.encrypted_content']`).
 Signing in and refreshing the token are the caller's; the engine only uses
 the access token it is given, and fails a turn that names no account.
 
+For text the caller keeps rather than a chat turn (a conversation's
+summary), `complete` asks for one answer with no tool at all, ours or the
+engine's, no history and one model round trip, through `run` and its
+contract. It resolves to the text, or rejects with the turn's reason:
+
+```ts
+const summary = await engine.complete({
+  provider, apiKey, model, systemPrompt, message, signal, scratchDir,
+});
+```
+
 **Keys are passed per call and never read from the environment.** The
 package reads no `ANTHROPIC_*`, `OPENAI_*` or other provider variable, and
 it never logs a key; an error or a tool result that echoes one has it
@@ -78,6 +89,16 @@ before the model reads it.
 - A tool that throws becomes an error result the model reads
   (`isError: true`), not a crash. Tool calls from Claude subagents are
   reported too; subagent text is not.
+- A failure the provider refused for rate or quota carries
+  `done.rateLimit = { resetAt }`: when it may be called again, or null when
+  it did not say. The Claude engine reads the SDK's `rate_limit` error, a
+  `429` status, a rejected rate-limit event (its reset) and Claude Code's own
+  retry wait; the OpenAI engine reads a `429` and its `Retry-After`.
+  `complete` throws it as `BotRateLimitError`. This package has no workspace
+  dependencies, so it cannot hold a shared pause itself
+  (`.agents/rules/integrations.md`): the caller must not call the provider
+  again with that key before `resetAt`, and a queued job is moved to delayed
+  until then rather than retried on its own schedule.
 - `maxSteps` (default 25) caps model round trips: Claude Code's `maxTurns`,
   the Agents SDK's `maxTurns`. Reaching it ends with `max_steps`.
 
