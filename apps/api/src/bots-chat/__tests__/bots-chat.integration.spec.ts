@@ -448,7 +448,7 @@ describe('bots chat (integration)', () => {
     expect(context.apiKey).toBe('my-key-1234');
     expect(context.systemPrompt).toContain('You are Mine.');
     expect(context.systemPrompt).not.toContain('their secret');
-    expect(context.systemPrompt).toContain("The person's hosts could not be read just now");
+    expect(context.message).toContain("The person's hosts could not be read just now");
     expect(context.tools).toEqual([]);
   });
   async function asked(bot: BotEntity, summary = 'Start Claude Code on build-02') {

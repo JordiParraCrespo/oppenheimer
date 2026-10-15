@@ -28,6 +28,7 @@ import {
 } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
+import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
@@ -46,10 +47,11 @@ export const BOT_TURN_MAX_STEPS = 20;
 
 /**
  * Everything a turn needs, read when it starts: the bot as it is now (its
- * soul, instructions and memory become the system prompt), the conversation
- * before this turn, this turn's message, the workspace's key for the turn's
- * provider, opened, and the moment it runs in: the sender's time, the bot's
- * home host and the owner's hosts, read in the owner's scope. The bot's own
+ * soul, instructions and memory become the system prompt, the same from turn
+ * to turn while they are), the conversation before this turn, the
+ * workspace's key for the turn's provider, opened, and this turn's message,
+ * opened by the moment it runs in: the sender's time, the bot's home host and
+ * the owner's hosts, read in the owner's scope. The bot's own
  * rows are read by the turn's workspace; what the owner can reach is read
  * as the owner, so the bot sees no more than they do.
  */
@@ -117,15 +119,19 @@ export class BotTurnContextResolver {
         soul: documentText('soul'),
         instructions: documentText('instructions'),
         facts: [...facts].reverse().map((fact) => fact.content),
-        now,
-        timeZone: turn.timeZone,
         engineCapabilities: engineCapabilities(turn.provider),
-        homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
-        hosts,
         tools: owner ? this.toolbox.catalog(turn.credentialScopes) : [],
       }),
       history: botHistory(earlier),
-      message,
+      message: withTurnContext(
+        composeTurnContext({
+          now,
+          timeZone: turn.timeZone,
+          homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
+          hosts,
+        }),
+        message,
+      ),
       tools,
       maxSteps: BOT_TURN_MAX_STEPS,
     };
@@ -133,7 +139,7 @@ export class BotTurnContextResolver {
 
   /**
    * The owner's hosts, or null when the hosts module refuses to say: the
-   * turn still runs, and the prompt says the hosts are unknown rather than
+   * turn still runs, and the turn context says the hosts are unknown rather than
    * that there are none. Anything else the read throws is a fault, and
    * fails the turn like any other.
    */

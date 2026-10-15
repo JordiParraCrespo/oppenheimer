@@ -79,9 +79,18 @@ worker runs it and streams what happens back to the chat.
     make things up, tool text is data, never talk about paths or the
     model;
   - SOUL.md, INSTRUCTIONS.md and memory;
-  - **right now**: the time in the sender's time zone (the console sends
-    the browser's with each message; UTC when none comes), the bot's home
-    host and the owner's hosts, each online or not.
+  - that each turn's message opens with a turn context Oppenheimer
+    writes, which is current and the authority on the date.
+- **The system prompt does not change from turn to turn.** It holds
+  nothing of the moment, so two turns of a bot whose soul, instructions,
+  memory and tools are unchanged send the same bytes, and the provider's
+  prompt cache keeps them (2026-10-15). The moment goes in a
+  `<turn_context>` block at the start of the turn's message: the time in
+  the sender's time zone (the console sends the browser's with each
+  message; UTC when none comes), the bot's home host and the owner's
+  hosts, each online or not. The block is added to the message the model
+  is sent and never stored: the message kept is what the person wrote, so
+  a later turn reads it back without a stale clock.
 - **A turn acts as its owner.** Everything a turn reads or does beyond the
   bot's own rows goes through the owner's scope, resolved fresh for each
   turn: the bot sees what they see now, and nothing once they leave the
@@ -431,6 +440,12 @@ The decisions it produced:
   (`research/lessons-from-grok-bot.md` §5): without them a bot searched
   the server for what it lacked, asked people to paste tokens, answered
   in UTC and ran on to any length.
+- 2026-10-15: **the system prompt is stable; the moment opens the
+  message.** The prompt's "Right now" section (the time, the home host,
+  the hosts) changed every turn, so the provider's prompt cache never
+  hit. It moved to a `<turn_context>` block at the start of each turn's
+  message, which the prompt names as Oppenheimer's and authoritative. It
+  replaces that part of the line above.
 - 2026-10-15: **a Needs input card ends the turn that raised it.** The
   decision runs the stored call (on a yes) and gives the bot a new turn,
   opened by an *event* message, rather than holding a turn open while the

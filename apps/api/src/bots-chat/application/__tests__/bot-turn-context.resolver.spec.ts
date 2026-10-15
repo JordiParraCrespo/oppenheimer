@@ -14,10 +14,13 @@ import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
 
 /**
- * How a turn's moment is read: the owner's hosts in their scope, the home
- * host named among them, a refusal from the hosts module read as "unknown"
- * (the turn still runs), and any other failure failing the turn rather than
- * being hidden. The reads of the bot's own rows are the integration spec's.
+ * How a turn's moment is read and where it goes: the owner's hosts in their
+ * scope, the home host named among them, a refusal from the hosts module
+ * read as "unknown" (the turn still runs), and any other failure failing the
+ * turn rather than being hidden; all of it in the block that opens this
+ * turn's message, so the system prompt is the same bytes on every turn of an
+ * unchanged bot and the provider's prompt cache hits. The reads of the bot's
+ * own rows are the integration spec's.
  */
 const HOME = '11111111-1111-4111-8111-111111111111';
 
@@ -44,15 +47,20 @@ function setup(hostsOf: OwnerHostsPort['hostsOf']) {
     { hostsOf: vi.fn(hostsOf) },
     { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
   );
-  const turn = BotTurnEntity.queue({
-    organizationId: 'org-1',
-    botId: 'bot-1',
-    requestedByUserId: 'owner-1',
-    provider: 'glm',
-    model: 'model-1',
-    effort: null,
-  });
-  return { resolve: () => resolver.resolve(turn, 'Hi', new Date('2026-10-15T09:00:00Z')) };
+  const turnFrom = (timeZone: string | null) =>
+    BotTurnEntity.queue({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      requestedByUserId: 'owner-1',
+      provider: 'glm',
+      model: 'model-1',
+      effort: null,
+      timeZone,
+    });
+  return {
+    resolve: (at = new Date('2026-10-15T09:00:00Z'), timeZone: string | null = null) =>
+      resolver.resolve(turnFrom(timeZone), 'Hi', at),
+  };
 }
 
 describe('BotTurnContextResolver', () => {
@@ -60,7 +68,32 @@ describe('BotTurnContextResolver', () => {
     const { resolve } = setup(async () => [
       { id: HOME, name: 'build-01', online: true, runningSessions: 1 },
     ]);
-    expect((await resolve()).systemPrompt).toContain('Your home host is build-01 (online)');
+    expect((await resolve()).message).toContain('Your home host is build-01 (online)');
+  });
+
+  it('opens the message with the turn context and ends it with what the person wrote', async () => {
+    const { resolve } = setup(async () => []);
+    const { message } = await resolve(new Date('2026-10-15T09:00:00Z'), 'Europe/Madrid');
+    expect(message).toMatch(
+      /^<turn_context>\nIt is Thursday, 15 October 2026, 11:00 \(Europe\/Madrid/,
+    );
+    expect(message.endsWith('</turn_context>\n\nHi')).toBe(true);
+  });
+
+  it('composes the same system prompt on two turns apart in time, zone and hosts', async () => {
+    const hosts = vi
+      .fn<OwnerHostsPort['hostsOf']>()
+      .mockResolvedValueOnce([{ id: HOME, name: 'build-01', online: true, runningSessions: 1 }])
+      .mockResolvedValueOnce([
+        { id: HOME, name: 'build-01', online: false, runningSessions: 0 },
+        { id: 'other', name: 'old-laptop', online: true, runningSessions: 2 },
+      ]);
+    const { resolve } = setup(hosts);
+    const first = await resolve(new Date('2026-10-15T09:00:00Z'), 'Europe/Madrid');
+    const second = await resolve(new Date('2026-10-16T21:37:00Z'), 'America/New_York');
+    expect(second.systemPrompt).toBe(first.systemPrompt);
+    expect(second.message).not.toBe(first.message);
+    expect(second.message).toContain('old-laptop');
   });
 
   it('runs the turn when the hosts module refuses, saying the hosts are unknown', async () => {
@@ -71,9 +104,7 @@ describe('BotTurnContextResolver', () => {
         httpStatus: 503,
       });
     });
-    expect((await resolve()).systemPrompt).toContain(
-      "The person's hosts could not be read just now",
-    );
+    expect((await resolve()).message).toContain("The person's hosts could not be read just now");
   });
 
   it('fails the turn on any other failure, rather than hiding it', async () => {
