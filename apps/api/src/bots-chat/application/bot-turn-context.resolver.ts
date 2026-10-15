@@ -27,6 +27,7 @@ import {
 } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
+import { BotToolboxFactory } from './bot-toolbox.factory';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -67,6 +68,7 @@ export class BotTurnContextResolver {
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
     private readonly owners: BotOwnerScopeResolver,
     private readonly queryBus: QueryBus,
+    private readonly toolbox: BotToolboxFactory,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -87,6 +89,17 @@ export class BotTurnContextResolver {
       this.messages.findHistory(turn.organizationId, bot.id, turn.id, BOT_HISTORY_MESSAGES),
       this.hostsOf(owner, turn.id),
     ]);
+    // An owner who can no longer act leaves the bot nothing to act through.
+    const tools = owner
+      ? this.toolbox.tools({
+          owner,
+          organizationId: turn.organizationId,
+          botId: bot.id,
+          turnId: turn.id,
+          homeHostId: bot.homeHostId,
+          timeZone: turn.timeZone ?? 'UTC',
+        })
+      : [];
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
     return {
@@ -104,11 +117,11 @@ export class BotTurnContextResolver {
         timeZone: turn.timeZone,
         homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
         hosts,
-        tools: [],
+        tools: owner ? this.toolbox.catalog() : [],
       }),
       history: botHistory(earlier),
       message,
-      tools: [],
+      tools,
       maxSteps: BOT_TURN_MAX_STEPS,
     };
   }

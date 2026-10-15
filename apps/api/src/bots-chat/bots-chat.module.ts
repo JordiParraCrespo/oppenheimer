@@ -5,7 +5,9 @@ import { createBotEngine } from '@oppenheimer/backend-agents';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
+import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
+import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotMessageMapper } from './bot-message.mapper';
@@ -78,6 +80,8 @@ const queryHandlers: Provider[] = [
     BotMessageMapper,
     BotTurnContextResolver,
     BotOwnerScopeResolver,
+    BotToolboxFactory,
+    BotHostToolsFactory,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
