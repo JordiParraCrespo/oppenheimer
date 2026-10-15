@@ -5,8 +5,10 @@ import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
 import type { BotMessageRepositoryPort } from './bot-message.repository.port';
+import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 
 /** How much of a message the sidebar's line keeps. */
 const PREVIEW_MAX = 200;
@@ -104,22 +106,31 @@ export class BotMessageRepository
     botId: string,
     afterMessageId: string | null,
     limit: number,
-  ): Promise<BotMessageEntity[]> {
-    // IDX_bot_message_bot, read forwards from the cutoff.
+  ): Promise<SummarizableMessage[]> {
+    // IDX_bot_message_bot, read forwards from the cutoff; each message's turn
+    // by its primary key, for whether it has ended.
     const query = this.repository
       .createQueryBuilder('message')
+      .innerJoin(
+        BotTurnOrmEntity,
+        'turn',
+        'turn.organizationId = message.organizationId AND turn.id = message.turnId',
+      )
+      .addSelect('turn.status', 'turnStatus')
       .where('message.organizationId = :organizationId AND message.botId = :botId', {
         organizationId,
         botId,
       })
       .andWhere(`message.role <> 'activity'`);
-    const records = await after(query, afterMessageId)
+    const { entities, raw } = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'ASC')
       .addOrderBy('message.position', 'ASC')
       .addOrderBy('message.id', 'ASC')
-      .take(limit)
-      .getMany();
-    return records.map((record) => this.mapper.toDomain(record));
+      .limit(limit)
+      .getRawAndEntities<{ turnStatus: string }>();
+    return entities.map((record, index) =>
+      this.mapper.toSummarizable(record, raw[index]?.turnStatus),
+    );
   }
 }
 

@@ -5,10 +5,16 @@ import {
   type HistoryMessage,
 } from './bot-history.policy';
 
-/** A stored message the summary may fold: what it says, and where it sits. */
+/** A stored message the summary may fold: what it says, where it sits, and whether its turn is over. */
 export interface SummarizableMessage extends HistoryMessage {
   id: string;
   createdAt: Date;
+  /**
+   * Whether the turn it belongs to has ended (completed, failed or
+   * cancelled). A queued or running turn's messages are still to be read as
+   * that turn's prompt and history, so nothing from one is ever folded.
+   */
+  turnEnded: boolean;
 }
 
 /**
@@ -40,51 +46,81 @@ export interface SummaryPlan {
   fold: SummarizableMessage[];
   /** The newest message folded: the summary's new cutoff. */
   through: SummarizableMessage;
-  /** What is left uncovered after the fold, oldest first. */
+  /** What is left of the foldable prefix after the fold, oldest first: what the next call weighs. */
   rest: SummarizableMessage[];
 }
 
 /**
  * Whether the conversation needs summarizing, and what to fold
  * (`25-bots.md` §2). `uncovered` is every message after the summary's cutoff,
- * oldest first, as far as `BOT_SUMMARY_READ_MAX`. Nothing is folded until
- * those messages pass `BOT_SUMMARY_TRIGGER_TOKENS` (or the read came back
- * full); then the oldest are folded until `BOT_SUMMARY_KEEP_TOKENS` are left,
- * or `BOT_SUMMARY_FOLD_MAX_TOKENS` are folded. The bot's answers to the
- * last folded message are folded with it, so the history a turn is sent never
- * opens on an answer whose question is only in the summary; and so are
- * messages that share its instant, so a cutoff never falls between
- * two of them. Activity lines are not history, and are neither counted nor
- * folded.
+ * oldest first, as far as `BOT_SUMMARY_READ_MAX`.
+ *
+ * Only the foldable prefix counts: the messages up to the first one whose
+ * turn has not ended. That one, and everything after it, is never folded or
+ * skipped over, so the cutoff is always one unbroken prefix of ended turns
+ * and a queued turn never meets its own message in the summary.
+ *
+ * Nothing is folded until that prefix passes `BOT_SUMMARY_TRIGGER_TOKENS`
+ * (or the read came back full with no such stop); then the oldest are
+ * folded until `BOT_SUMMARY_KEEP_TOKENS` are left. The bot's answers to the
+ * last folded message are folded with it, so the history a turn is sent
+ * never opens on an answer whose question is only in the summary, and so are
+ * messages that share its instant. `BOT_SUMMARY_FOLD_MAX_TOKENS` bounds all
+ * of it: when the cap is what stops the fold, the rest waits for the next
+ * call, even if that splits an answer from its question or an instant. A
+ * single message larger than the cap is folded alone, so a fold always moves
+ * forward. Activity lines are not history, and are neither counted nor folded.
  */
 export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryPlan | null {
-  const messages = uncovered.filter(
+  const history = uncovered.filter(
     (message) => message.role !== 'activity' && message.content.trim(),
   );
+  const open = history.findIndex((message) => !message.turnEnded);
+  const messages = open === -1 ? history : history.slice(0, open);
   const total = messages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
-  const full = uncovered.length >= BOT_SUMMARY_READ_MAX;
+  const full = uncovered.length >= BOT_SUMMARY_READ_MAX && open === -1;
   if (messages.length === 0 || (total <= BOT_SUMMARY_TRIGGER_TOKENS && !full)) return null;
   let left = total;
   let folded = 0;
   let end = 0;
-  while (end < messages.length && left > BOT_SUMMARY_KEEP_TOKENS) {
-    const cost = estimateTokens(messages[end].content);
-    if (end > 0 && folded + cost > BOT_SUMMARY_FOLD_MAX_TOKENS) break;
+  const fits = (cost: number) => end === 0 || folded + cost <= BOT_SUMMARY_FOLD_MAX_TOKENS;
+  const take = (cost: number) => {
     folded += cost;
     left -= cost;
     end += 1;
+  };
+  while (end < messages.length && left > BOT_SUMMARY_KEEP_TOKENS) {
+    const cost = estimateTokens(messages[end].content);
+    if (!fits(cost)) break;
+    take(cost);
   }
   if (end === 0) return null;
   // The bot's answers to the last folded message go with it, and so does
-  // anything stored at the same instant.
+  // anything stored at the same instant, within the cap.
   const instant = messages[end - 1].createdAt.getTime();
   while (
     end < messages.length &&
     (messages[end].role === 'assistant' || messages[end].createdAt.getTime() === instant)
   ) {
-    end += 1;
+    const cost = estimateTokens(messages[end].content);
+    if (!fits(cost)) break;
+    take(cost);
   }
   return { fold: messages.slice(0, end), through: messages[end - 1], rest: messages.slice(end) };
+}
+
+/** How long a summary waits after a rate limit that named no reset. */
+export const BOT_SUMMARY_RATE_LIMIT_WAIT_MS = 60_000;
+
+/**
+ * When a summary the provider refused for rate may be tried again: the reset
+ * it named, or `BOT_SUMMARY_RATE_LIMIT_WAIT_MS` from now when it named none
+ * or one already past.
+ */
+export function summaryRetryAt(resetAt: Date | null, now: Date): Date {
+  const floor = now.getTime() + 1_000;
+  if (resetAt && resetAt.getTime() >= floor) return resetAt;
+  return new Date(now.getTime() + BOT_SUMMARY_RATE_LIMIT_WAIT_MS);
 }
 
 /** Who said a message, as the summarizer's transcript names them. */

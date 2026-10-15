@@ -51,7 +51,33 @@ export type BotEngineEvent =
   | { type: 'tool.started'; callId: string; name: string; input: unknown }
   | { type: 'tool.finished'; callId: string; name: string; output: string; isError: boolean }
   | { type: 'usage'; inputTokens: number; outputTokens: number }
-  | { type: 'done'; reason: 'completed' | 'cancelled' | 'max_steps' | 'failed'; error?: string };
+  | {
+      type: 'done';
+      reason: 'completed' | 'cancelled' | 'max_steps' | 'failed';
+      error?: string;
+      /**
+       * Set on a `failed` end the provider refused for rate or quota (a
+       * `429`, or the SDK naming a rate limit): when it said it may be
+       * called again, or null when it did not say.
+       */
+      rateLimit?: { resetAt: Date | null };
+    };
+
+/**
+ * What `complete` throws when the provider refused for rate or quota. A
+ * caller does not call it again before `resetAt` (null: the provider gave no
+ * time, so the caller picks a wait of its own).
+ */
+export class BotRateLimitError extends Error {
+  override readonly name = 'BotRateLimitError';
+
+  constructor(
+    message: string,
+    readonly resetAt: Date | null,
+  ) {
+    super(message);
+  }
+}
 
 /**
  * One answer to one message, with no tools and no history: a request for
@@ -82,7 +108,8 @@ export abstract class BotEngine {
    * A completion: one model round trip with no tool at all, ours or the
    * engine's, through `run`, so it holds to the same contract (no key in an
    * error, abort honoured). Resolves to the text the model wrote; rejects
-   * with the turn's reason when it does not complete.
+   * with the turn's reason when it does not complete, as a
+   * `BotRateLimitError` when the provider refused for rate or quota.
    */
   async complete(request: BotCompletionRequest): Promise<string> {
     const texts: string[] = [];
@@ -95,7 +122,9 @@ export abstract class BotEngine {
     })) {
       if (event.type === 'text.done') texts.push(event.text);
       if (event.type === 'done' && event.reason !== 'completed') {
-        throw new Error(event.error ?? `The completion ended ${event.reason}.`);
+        const reason = event.error ?? `The completion ended ${event.reason}.`;
+        if (event.rateLimit) throw new BotRateLimitError(reason, event.rateLimit.resetAt);
+        throw new Error(reason);
       }
     }
     return texts.join('\n\n').trim();

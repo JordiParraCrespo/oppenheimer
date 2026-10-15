@@ -6,19 +6,9 @@ import {
 } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import {
-  BOT_DOCUMENT_REPOSITORY,
-  BOT_MEMORY_FACT_REPOSITORY,
-  BOT_REPOSITORY,
-  MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
-  PROVIDER_KEY_SEALER,
-} from '../../bots/bots.di-tokens';
-import type { BotRepositoryPort } from '../../bots/database/bot.repository.port';
+import { BOT_DOCUMENT_REPOSITORY, BOT_MEMORY_FACT_REPOSITORY } from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
-import { BotErrors } from '../../bots/domain/bots.errors';
-import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
@@ -33,6 +23,7 @@ import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
+import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
@@ -61,15 +52,12 @@ export const BOT_TURN_MAX_STEPS = 20;
 @Injectable()
 export class BotTurnContextResolver {
   constructor(
-    @Inject(BOT_REPOSITORY) private readonly bots: BotRepositoryPort,
+    private readonly access: BotModelAccessResolver,
     @Inject(BOT_DOCUMENT_REPOSITORY) private readonly documents: BotDocumentRepositoryPort,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
-    @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
-    private readonly credentials: ModelProviderCredentialRepositoryPort,
-    @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
     private readonly owners: BotOwnerScopeResolver,
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     private readonly toolbox: BotToolboxFactory,
@@ -79,14 +67,8 @@ export class BotTurnContextResolver {
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, message: string, now: Date): Promise<BotTurnContext> {
-    const found = await this.bots.findForTurn(turn.organizationId, turn.botId);
-    if (found.isNone()) throw new AppError(BotErrors.NOT_FOUND);
-    const bot = found.unwrap();
-    const stored = await this.credentials.findForRun(turn.organizationId, turn.provider);
-    if (stored.isNone() || !this.sealer.isConfigured()) {
-      throw new AppError(BotErrors.PROVIDER_KEY_MISSING);
-    }
-    const credential = stored.unwrap();
+    const bot = await this.access.bot(turn.organizationId, turn.botId);
+    const apiKey = await this.access.apiKey(turn.organizationId, turn.provider);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
@@ -123,7 +105,7 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     return {
       provider: turn.provider,
-      apiKey: this.sealer.open(credential.sealedKey),
+      apiKey,
       model: turn.model,
       effort: ENGINE_EFFORTS.includes(turn.effort ?? '') ? (turn.effort as BotEffort) : null,
       systemPrompt: composeBotSystemPrompt({

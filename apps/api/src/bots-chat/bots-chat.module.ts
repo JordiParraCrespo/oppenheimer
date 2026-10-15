@@ -9,9 +9,9 @@ import { BotApprovalRequestFactory } from './application/bot-approval-request.fa
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
-import { BotCompletionResolver } from './application/bot-completion.resolver';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
+import { BotModelAccessResolver } from './application/bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
@@ -129,7 +129,7 @@ const queryHandlers: Provider[] = [
     BotConversationSummaryMapper,
     BotTurnContextResolver,
     BotSummaryTriggerPolicy,
-    BotCompletionResolver,
+    BotModelAccessResolver,
     BotApprovalRequestFactory,
     BotApprovedCallResolver,
     BotOwnerScopeResolver,

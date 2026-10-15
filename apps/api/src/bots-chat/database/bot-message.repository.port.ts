@@ -1,5 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { SummarizableMessage } from '../domain/bot-summary.policy';
 
 export interface BotMessageRepositoryPort {
   /**
@@ -28,12 +29,12 @@ export interface BotMessageRepositoryPort {
   /**
    * What the summary does not cover yet: the bot's oldest `limit` messages
    * after `afterMessageId` (null for all of them), oldest first, activity
-   * lines left out.
+   * lines left out, each with whether its turn has ended.
    */
   findUncovered(
     organizationId: string,
     botId: string,
     afterMessageId: string | null,
     limit: number,
-  ): Promise<BotMessageEntity[]>;
+  ): Promise<SummarizableMessage[]>;
 }

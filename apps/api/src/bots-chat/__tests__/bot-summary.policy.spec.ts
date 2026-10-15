@@ -9,15 +9,18 @@ import {
   planSummary,
   type SummarizableMessage,
   summaryContent,
+  summaryRetryAt,
 } from '../domain/bot-summary.policy';
 
 /**
  * When a conversation's oldest messages are folded into its summary, which
  * ones, and what the summarizer is asked. Nothing is folded below the
  * trigger (a summary every turn would cost a model call every turn); past
- * it, the oldest go until about half the budget is left, never splitting
- * an instant, never more than one call's worth. The job that acts on the
- * plan is the handler's spec; the conditional write, the integration spec's.
+ * it, the oldest go until about half the budget is left, an answer with its
+ * question and an instant whole, never more than one call's worth, and never
+ * a message of a turn that has not ended, nor anything after one. The job
+ * that acts on the plan is the handler's spec; the conditional write, and a
+ * queued turn's message read back as not ended, the integration spec's.
  */
 let clock = Date.parse('2026-10-15T09:00:00Z');
 function message(
@@ -30,6 +33,7 @@ function message(
     role: 'user',
     content: 'x'.repeat(tokens * 4),
     createdAt: new Date(clock),
+    turnEnded: true,
     ...overrides,
   };
 }
@@ -73,8 +77,10 @@ describe('planSummary', () => {
 
   it('folds a single message larger than one call’s worth on its own, rather than none', () => {
     const giant = message(BOT_SUMMARY_FOLD_MAX_TOKENS * 2);
-    const plan = planSummary([giant, message(10)]);
+    const answer = message(10, { role: 'assistant' });
+    const plan = planSummary([giant, answer, message(10)]);
     expect(plan?.fold).toEqual([giant]);
+    expect(plan?.rest[0]).toBe(answer);
   });
 
   it('never puts the cutoff between two messages stored at the same instant', () => {
@@ -95,11 +101,63 @@ describe('planSummary', () => {
     expect(plan?.rest[0]).toBe(messages[29]);
   });
 
+  it('lets the cap split a question from its answer, leaving the answer for the next call', () => {
+    const messages = Array.from({ length: 60 }, () => message(1_000));
+    messages[32] = { ...messages[32], role: 'assistant' };
+    const plan = planSummary(messages);
+    expect(tokensOf(plan?.fold ?? [])).toBe(BOT_SUMMARY_FOLD_MAX_TOKENS);
+    expect(plan?.through).toBe(messages[31]);
+    expect(plan?.rest[0]).toBe(messages[32]);
+  });
+
+  it('lets the cap split an instant, leaving the rest of it for the next call', () => {
+    const messages = Array.from({ length: 60 }, () => message(1_000));
+    messages[32] = { ...messages[32], createdAt: messages[31].createdAt };
+    const plan = planSummary(messages);
+    expect(tokensOf(plan?.fold ?? [])).toBeLessThanOrEqual(BOT_SUMMARY_FOLD_MAX_TOKENS);
+    expect(plan?.through).toBe(messages[31]);
+  });
+
+  it('counts only messages before the first turn that has not ended', () => {
+    const messages = Array.from({ length: 40 }, () => message(1_000));
+    messages[10] = { ...messages[10], turnEnded: false };
+    // Forty thousand tokens stored, but only ten thousand foldable: below the trigger.
+    expect(planSummary(messages)).toBeNull();
+  });
+
+  it('never folds a queued turn’s message, nor skips over it to an ended one', () => {
+    const messages = Array.from({ length: 38 }, () => message(1_000));
+    const queued = message(1_000, { turnEnded: false });
+    const later = message(1_000, { role: 'assistant' });
+    const plan = planSummary([...messages, queued, later]);
+    expect(plan?.fold).toEqual(messages.slice(0, 26));
+    expect(plan?.rest).toEqual(messages.slice(26));
+    const giant = message(BOT_SUMMARY_TRIGGER_TOKENS + 1);
+    const alone = planSummary([giant, queued, later]);
+    expect(alone?.fold).toEqual([giant]);
+    expect(alone?.rest).toEqual([]);
+  });
+
   it('treats a read that came back full as past the trigger', () => {
     const many = Array.from({ length: BOT_SUMMARY_READ_MAX }, () => message(10));
     const plan = planSummary(many);
     expect(plan).not.toBeNull();
     expect(tokensOf(plan?.rest ?? [])).toBeLessThanOrEqual(BOT_SUMMARY_KEEP_TOKENS);
+  });
+});
+
+describe('summaryRetryAt', () => {
+  const now = new Date('2026-10-15T09:00:00Z');
+
+  it('waits until the reset the provider named', () => {
+    const reset = new Date('2026-10-15T09:05:00Z');
+    expect(summaryRetryAt(reset, now)).toBe(reset);
+  });
+
+  it('waits a minute when it named none, or one already past', () => {
+    const minute = new Date('2026-10-15T09:01:00Z');
+    expect(summaryRetryAt(null, now)).toEqual(minute);
+    expect(summaryRetryAt(new Date('2026-10-15T08:00:00Z'), now)).toEqual(minute);
   });
 });
 

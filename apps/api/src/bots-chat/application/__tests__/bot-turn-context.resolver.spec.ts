@@ -12,6 +12,7 @@ import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summ
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
+import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
@@ -43,8 +44,15 @@ function setup(
     homeHostId: HOME,
     permission: 'auto',
   };
-  const resolver = new BotTurnContextResolver(
+  const access = new BotModelAccessResolver(
     { findForTurn: async () => Some(bot) } as unknown as BotRepositoryPort,
+    {
+      findForRun: async () => Some({ sealedKey: Buffer.from('k') }),
+    } as unknown as ModelProviderCredentialRepositoryPort,
+    { isConfigured: () => true, open: () => 'key' } as unknown as ProviderKeySealerPort,
+  );
+  const resolver = new BotTurnContextResolver(
+    access,
     { findAllForTurn: async () => [] } as unknown as BotDocumentRepositoryPort,
     { findAllForTurn: async () => [] } as unknown as BotMemoryFactRepositoryPort,
     {
@@ -53,10 +61,6 @@ function setup(
     {
       findForBot: async () => (conversation.summary ? Some(conversation.summary) : None),
     } as unknown as BotConversationSummaryRepositoryPort,
-    {
-      findForRun: async () => Some({ sealedKey: Buffer.from('k') }),
-    } as unknown as ModelProviderCredentialRepositoryPort,
-    { isConfigured: () => true, open: () => 'key' } as unknown as ProviderKeySealerPort,
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
     { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,

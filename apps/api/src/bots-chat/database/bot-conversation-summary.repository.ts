@@ -41,8 +41,7 @@ export class BotConversationSummaryRepository
   }
 
   async save(summary: BotConversationSummaryEntity): Promise<boolean> {
-    const record = this.mapper.toPersistence(summary);
-    const won = record.version === 0 ? await this.insertFirst(record) : await this.revise(record);
+    const won = await this.writeVersioned(this.mapper.toPersistence(summary));
     if (won) summary.markPersisted();
     return won;
   }
@@ -64,42 +63,56 @@ export class BotConversationSummaryRepository
     );
   }
 
-  /** The bot's first summary; loses to any summary stored meanwhile. */
-  private async insertFirst(record: BotConversationSummaryOrmEntity): Promise<boolean> {
-    const rows: unknown[] = await this.repository.query(
-      `INSERT INTO bot_conversation_summary
-         ("organizationId", "botId", "content", "coversThroughMessageId", "coversThroughCreatedAt", "version")
-       SELECT $1, $2, $3, m.id, m."createdAt", 1
-         FROM bot_message m
-        WHERE m."organizationId" = $1 AND m."botId" = $2 AND m.id = $4
-       ON CONFLICT ("organizationId", "botId") DO NOTHING
-       RETURNING "version"`,
-      [record.organizationId, record.botId, record.content, record.coversThroughMessageId],
-    );
-    return rows.length === 1;
-  }
-
-  /** A revision of the row at the version it was read at, to a later cutoff only. */
-  private async revise(record: BotConversationSummaryOrmEntity): Promise<boolean> {
+  /**
+   * The one write of a summary, as one statement that owns the column list
+   * and the guard. `$4` names the cutoff message, read within the same
+   * workspace and bot, and the cutoff's time is taken from its row (`m`), so
+   * it keeps the database's microseconds.
+   *
+   * - Version 0, never stored: an insert that loses to any summary stored
+   *   meanwhile (`ON CONFLICT DO NOTHING`).
+   * - Otherwise: an update of the row at the version it was read at, and
+   *   only to a later cutoff, so a racing or stale write never moves it back.
+   *
+   * Whether it won: exactly one row written.
+   */
+  private async writeVersioned(record: BotConversationSummaryOrmEntity): Promise<boolean> {
+    const columns: [string, string][] = [
+      ['content', '$3'],
+      ['coversThroughMessageId', 'm.id'],
+      ['coversThroughCreatedAt', 'm."createdAt"'],
+    ];
+    const cutoff = `m."organizationId" = $1 AND m."botId" = $2 AND m.id = $4`;
+    const params = [
+      record.organizationId,
+      record.botId,
+      record.content,
+      record.coversThroughMessageId,
+    ];
+    if (record.version === 0) {
+      // An INSERT answers its rows (typeorm.md).
+      const rows: unknown[] = await this.repository.query(
+        `INSERT INTO bot_conversation_summary ("organizationId", "botId", ${columns.map(([name]) => `"${name}"`).join(', ')}, "version")
+         SELECT $1, $2, ${columns.map(([, value]) => value).join(', ')}, 1
+           FROM bot_message m
+          WHERE ${cutoff}
+         ON CONFLICT ("organizationId", "botId") DO NOTHING
+         RETURNING "version"`,
+        params,
+      );
+      return rows.length === 1;
+    }
     // An UPDATE answers `[rows, affected]` (typeorm.md).
     const [, affected]: [unknown[], number] = await this.repository.query(
       `UPDATE bot_conversation_summary s
-          SET "content" = $3,
-              "coversThroughMessageId" = m.id,
-              "coversThroughCreatedAt" = m."createdAt",
+          SET ${columns.map(([name, value]) => `"${name}" = ${value}`).join(', ')},
               "version" = s."version" + 1,
               "updatedAt" = now()
          FROM bot_message m
         WHERE s."organizationId" = $1 AND s."botId" = $2 AND s."version" = $5
-          AND m."organizationId" = $1 AND m."botId" = $2 AND m.id = $4
+          AND ${cutoff}
           AND m."createdAt" > s."coversThroughCreatedAt"`,
-      [
-        record.organizationId,
-        record.botId,
-        record.content,
-        record.coversThroughMessageId,
-        record.version,
-      ],
+      [...params, record.version],
     );
     return affected === 1;
   }

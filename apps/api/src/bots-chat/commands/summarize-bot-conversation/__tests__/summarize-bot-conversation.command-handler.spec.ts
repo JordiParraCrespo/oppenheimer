@@ -1,11 +1,13 @@
-import { type BotTurnRequest, FakeBotEngine } from '@oppenheimer/backend-agents';
+import { BotRateLimitError, type BotTurnRequest, FakeBotEngine } from '@oppenheimer/backend-agents';
 import { None, Some } from 'oxide.ts';
-import type { BotCompletionResolver } from '../../../application/bot-completion.resolver';
+import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotConversationSummaryRepositoryPort } from '../../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import { BotConversationSummaryEntity } from '../../../domain/bot-conversation-summary.entity';
-import { BotMessageEntity } from '../../../domain/bot-message.entity';
-import { BOT_SUMMARIZER_PROMPT } from '../../../domain/bot-summary.policy';
+import {
+  BOT_SUMMARIZER_PROMPT,
+  type SummarizableMessage,
+} from '../../../domain/bot-summary.policy';
 import { SummarizeBotConversationCommand } from '../summarize-bot-conversation.command';
 import { SummarizeBotConversationCommandHandler } from '../summarize-bot-conversation.command-handler';
 
@@ -14,25 +16,14 @@ import { SummarizeBotConversationCommandHandler } from '../summarize-bot-convers
  * own provider, model and key and no tools, stores the result conditioned
  * on the version it read, and on losing that race writes nothing more. It
  * decides again on what it reads, so a job with nothing to fold calls no
- * model, and a bot with no key is left alone. The write's SQL is the
- * integration spec's.
+ * model, and a bot with no key is left alone. A refusal for rate reaches the
+ * worker as a `BotRateLimitError`, which delays the job (the processor's
+ * spec). The write's SQL is the integration spec's.
  */
 let clock = Date.parse('2026-10-15T09:00:00Z');
-function stored(content: string, role: 'user' | 'assistant' = 'user'): BotMessageEntity {
+function stored(content: string, role: 'user' | 'assistant' = 'user'): SummarizableMessage {
   clock += 1_000;
-  return BotMessageEntity.create({
-    id: `m-${clock}`,
-    createdAt: new Date(clock),
-    props: {
-      organizationId: 'org-1',
-      botId: 'bot-1',
-      turnId: 'turn-1',
-      role,
-      content,
-      steps: [],
-      position: 0,
-    },
-  });
+  return { id: `m-${clock}`, createdAt: new Date(clock), role, content, turnEnded: true };
 }
 /** Forty messages of about a thousand tokens each: past the trigger. */
 const long = () =>
@@ -42,16 +33,27 @@ const long = () =>
 
 function setup(
   options: {
-    uncovered?: BotMessageEntity[];
+    uncovered?: SummarizableMessage[];
     summary?: BotConversationSummaryEntity | null;
     wins?: boolean;
     target?: boolean;
     answer?: string;
+    rateLimitedUntil?: Date | null;
   } = {},
 ) {
   const requests: BotTurnRequest[] = [];
   const engine = new FakeBotEngine((request) => {
     requests.push(request);
+    if (options.rateLimitedUntil !== undefined) {
+      return [
+        {
+          type: 'done',
+          reason: 'failed',
+          error: '429 rate limit reached',
+          rateLimit: { resetAt: options.rateLimitedUntil },
+        },
+      ];
+    }
     return [{ type: 'text.done', text: options.answer ?? 'The person ships on Fridays.' }];
   });
   const complete = vi.spyOn(engine, 'complete');
@@ -67,18 +69,18 @@ function setup(
   const messages = {
     findUncovered: vi.fn(async () => options.uncovered ?? long()),
   } satisfies Pick<BotMessageRepositoryPort, 'findUncovered'>;
-  const targets = {
-    resolve: vi.fn(async () =>
+  const access = {
+    ownModel: vi.fn(async () =>
       options.target === false
         ? null
         : { provider: 'glm' as const, model: 'glm-5.3', apiKey: 'workspace-key' },
     ),
-  } satisfies Pick<BotCompletionResolver, 'resolve'>;
+  } satisfies Pick<BotModelAccessResolver, 'ownModel'>;
   const handler = new SummarizeBotConversationCommandHandler(
     summaries,
     messages as unknown as BotMessageRepositoryPort,
     engine,
-    targets as unknown as BotCompletionResolver,
+    access as unknown as BotModelAccessResolver,
   );
   const run = () =>
     handler.execute(
@@ -168,6 +170,16 @@ describe('SummarizeBotConversationCommandHandler', () => {
     const { run, summaries } = setup({ answer: '   ' });
     await expect(run()).rejects.toThrow('came back empty');
     expect(summaries.save).not.toHaveBeenCalled();
+  });
+
+  it('lets a refusal for rate reach the worker as one, with the reset, and writes nothing', async () => {
+    const resetAt = new Date('2026-10-15T10:00:00Z');
+    const { run, summaries } = setup({ rateLimitedUntil: resetAt });
+    const failure = await run().catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(BotRateLimitError);
+    expect(failure).toMatchObject({ resetAt });
+    expect(summaries.save).not.toHaveBeenCalled();
+    expect(summaries.stageSummarize).not.toHaveBeenCalled();
   });
 
   it('stages the next fold when the conversation is still past the threshold', async () => {

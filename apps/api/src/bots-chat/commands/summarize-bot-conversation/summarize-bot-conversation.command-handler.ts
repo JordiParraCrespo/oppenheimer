@@ -5,9 +5,9 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import {
-  BotCompletionResolver,
-  type BotCompletionTarget,
-} from '../../application/bot-completion.resolver';
+  BotModelAccessResolver,
+  type BotModelTarget,
+} from '../../application/bot-model-access.resolver';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
@@ -46,7 +46,7 @@ export class SummarizeBotConversationCommandHandler
     private readonly summaries: BotConversationSummaryRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_ENGINE) private readonly engine: BotEngine,
-    private readonly targets: BotCompletionResolver,
+    private readonly access: BotModelAccessResolver,
   ) {}
 
   async execute({
@@ -54,7 +54,7 @@ export class SummarizeBotConversationCommandHandler
     botId,
     metadata,
   }: SummarizeBotConversationCommand): Promise<void> {
-    const target = await this.targets.resolve(organizationId, botId);
+    const target = await this.access.ownModel(organizationId, botId);
     if (!target) return;
     const found = await this.summaries.findForBot(organizationId, botId);
     const summary = found.isSome() ? found.unwrap() : null;
@@ -86,7 +86,7 @@ export class SummarizeBotConversationCommandHandler
   }
 
   /** One tool-less answer from the bot's model, in a scratch directory of its own. */
-  private async complete(target: BotCompletionTarget, message: string): Promise<string> {
+  private async complete(target: BotModelTarget, message: string): Promise<string> {
     const scratchDir = await mkdtemp(join(tmpdir(), 'bot-summary-'));
     try {
       return await this.engine.complete({

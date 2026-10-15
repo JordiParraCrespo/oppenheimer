@@ -103,7 +103,11 @@ worker runs it and streams what happens back to the chat.
   `bot-summaries` queue folds the oldest of them into the summary until
   about half the budget is left (at most 32,000 tokens a call; a longer
   backlog takes several), with the bot's own provider, model and key and
-  no tools (`BotEngine.complete`). The summarizer keeps decisions, facts
+  no tools (`BotEngine.complete`). Only messages of turns that have ended
+  are folded, up to the first that has not: a queued message is never in
+  the summary before its own turn reads it. A provider that refuses the
+  call for rate or quota delays the job until the reset it names
+  (`BotRateLimitError`), rather than retrying on the queue's schedule. The summarizer keeps decisions, facts
   about the person and their work, ids and names, open tasks and the
   bot's promises, drops small talk, and treats the conversation as data,
   not instructions. The summary is one row per bot,

@@ -2,7 +2,7 @@ import { None, Some } from 'oxide.ts';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
-import { BotMessageEntity } from '../../domain/bot-message.entity';
+import type { SummarizableMessage } from '../../domain/bot-summary.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { BotSummaryTriggerPolicy } from '../bot-summary-trigger.policy';
 
@@ -13,25 +13,19 @@ import { BotSummaryTriggerPolicy } from '../bot-summary-trigger.policy';
  * reaches the turn, which has already ended.
  */
 let clock = Date.parse('2026-10-15T09:00:00Z');
-function stored(tokens: number): BotMessageEntity {
+function stored(tokens: number, turnEnded = true): SummarizableMessage {
   clock += 1_000;
-  return BotMessageEntity.create({
+  return {
     id: `m-${clock}`,
     createdAt: new Date(clock),
-    props: {
-      organizationId: 'org-1',
-      botId: 'bot-1',
-      turnId: 'turn-1',
-      role: 'user',
-      content: 'x'.repeat(tokens * 4),
-      steps: [],
-      position: 0,
-    },
-  });
+    role: 'user',
+    content: 'x'.repeat(tokens * 4),
+    turnEnded,
+  };
 }
 
 function setup(
-  uncovered: BotMessageEntity[] | Error,
+  uncovered: SummarizableMessage[] | Error,
   summary: BotConversationSummaryEntity | null = null,
 ) {
   const summaries = {
@@ -64,6 +58,16 @@ describe('BotSummaryTriggerPolicy', () => {
     const { afterTurn, summaries } = setup(Array.from({ length: 40 }, () => stored(1_000)));
     expect(await afterTurn()).toBe(true);
     expect(summaries.stageSummarize).toHaveBeenCalledWith('org-1', 'bot-1', 'corr-1');
+  });
+
+  it('stages nothing when what is past the threshold waits behind a turn that has not ended', async () => {
+    const { afterTurn, summaries } = setup([
+      stored(1_000),
+      stored(1_000, false),
+      ...Array.from({ length: 40 }, () => stored(1_000)),
+    ]);
+    expect(await afterTurn()).toBe(false);
+    expect(summaries.stageSummarize).not.toHaveBeenCalled();
   });
 
   it('stages nothing below it', async () => {

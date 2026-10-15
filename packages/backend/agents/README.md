@@ -80,6 +80,16 @@ before the model reads it.
 - A tool that throws becomes an error result the model reads
   (`isError: true`), not a crash. Tool calls from Claude subagents are
   reported too; subagent text is not.
+- A failure the provider refused for rate or quota carries
+  `done.rateLimit = { resetAt }`: when it may be called again, or null when
+  it did not say. The Claude engine reads the SDK's `rate_limit` error, a
+  `429` status, a rejected rate-limit event (its reset) and Claude Code's own
+  retry wait; the OpenAI engine reads a `429` and its `Retry-After`.
+  `complete` throws it as `BotRateLimitError`. This package has no workspace
+  dependencies, so it cannot hold a shared pause itself
+  (`.agents/rules/integrations.md`): the caller must not call the provider
+  again with that key before `resetAt`, and a queued job is moved to delayed
+  until then rather than retried on its own schedule.
 - `maxSteps` (default 25) caps model round trips: Claude Code's `maxTurns`,
   the Agents SDK's `maxTurns`. Reaching it ends with `max_steps`.
 
