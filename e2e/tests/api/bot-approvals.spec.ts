@@ -11,7 +11,8 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
  * nothing and gives the bot a turn opened by an event that says so, and a
  * second decision is `BOTS_016`. Approving one answers at once with the card
  * `approved` and no result: the call runs in a job, its answer lands on the
- * card, and the bot gets a turn opened by an event that says so. The live
+ * card (here a refusal, as the account has no host, so the card ends
+ * failed), and the bot gets a turn opened by an event that says so. The live
  * half is skipped without the key.
  */
 
@@ -153,7 +154,7 @@ test('approving a card answers at once, runs the call in its job, and the bot re
   expect(approved.status(), await approved.text()).toBe(201);
   expect(await approved.json()).toMatchObject({ status: 'approved', result: null });
 
-  // The account has no host: the call runs and answers that it needs one.
+  // The account has no host: the call refuses, saying it needs one, so the card ends failed.
   await expect
     .poll(
       async () => {
@@ -183,7 +184,7 @@ test('approving a card answers at once, runs the call in its job, and the bot re
     await api.get(`/api/v1/bots/${bot.id}/conversation`)
   ).json()) as Conversation;
   const event = conversation.messages.find((message) => message.role === 'event');
-  expect(event?.event).toMatchObject({ kind: 'approval', outcome: 'approved' });
+  expect(event?.event).toMatchObject({ kind: 'approval', outcome: 'failed' });
   expect(event?.content).toContain('approved: ');
   await api.dispose();
 });
