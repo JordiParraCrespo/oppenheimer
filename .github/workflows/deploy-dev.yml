@@ -13,10 +13,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# One deploy at a time, and none cancelled halfway through a migration.
-concurrency:
-  group: deploy-dev
-  cancel-in-progress: false
+# No run-level concurrency: builds start as soon as a runner is free, even
+# while an earlier push is deploying. Only the deploy job holds the lock, and
+# it ships nothing once main has moved past its commit (see the deploy job).
 
 jobs:
   build:
@@ -55,6 +54,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       # Tagged by commit only; `:latest` stays the scheduled CI run's. The
       # server is x86: Hetzner CX/CPX, not the Arm CAX line.
+      #
+      # The layer cache lives in GHCR beside the image, as `:buildcache-dev`.
+      # The runners are fresh VMs with no local cache, and the Actions cache
+      # downloaded at 2-5 MB/s there (about 9 of the API's 10 minutes); GHCR
+      # answers the same host at 17-50 MB/s. Only this job, on main, holds
+      # `packages: write`, so a pull request's job cannot seed the cache main
+      # deploys from.
       - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ${{ matrix.context }}
@@ -64,14 +70,19 @@ jobs:
           build-args: |
             VERSION=${{ github.sha }}
           tags: ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:${{ github.sha }}
-          cache-from: type=gha,scope=deploy-dev-${{ matrix.image }}
-          cache-to: type=gha,scope=deploy-dev-${{ matrix.image }},mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:buildcache-dev
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:buildcache-dev,mode=max,image-manifest=true,oci-mediatypes=true
 
   deploy:
     name: Deploy to the dev server
     needs: build
     if: vars.DEV_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: gha-vm
+    # One deploy at a time, and none cancelled halfway through a migration.
+    # A deploy still waiting is replaced by a newer push's.
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
     # Holds the secrets below; restrict it to `main` in the repository's
     # environment settings so no other branch can reach the server.
     environment:
@@ -84,6 +95,24 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # Builds of different pushes run side by side, so an older push can
+      # reach this lock after a newer one has deployed. Shipping it would roll
+      # dev back; when main has moved on, the newer push's run deploys instead.
+      - name: Still the tip of main?
+        id: current
+        run: |
+          tip="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ -z "$tip" ]; then
+            echo "::error::could not read the tip of main"
+            exit 1
+          fi
+          if [ "$tip" = "$GITHUB_SHA" ]; then
+            echo "ship=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::main is at $tip now; its run deploys, this one ships nothing"
+            echo "ship=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Joins the tailnet as an ephemeral node tagged tag:ci. The tailnet
       # policy lets tag:ci reach tag:oppenheimer-dev on port 22 and nothing
       # else (deploy/dev/README.md has the ACL).
@@ -94,6 +123,7 @@ jobs:
       # with no TUN device, and SSH reaches the server through `tailscale nc`.
       # The OAuth client secret is accepted as an auth key for a tagged node.
       - name: Join the tailnet (userspace, as tag:ci)
+        if: steps.current.outputs.ship == 'true'
         env:
           TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
           DEV_SSH_HOST: ${{ vars.DEV_SSH_HOST }}
@@ -130,6 +160,7 @@ jobs:
           exit 1
 
       - name: SSH key and pinned host key
+        if: steps.current.outputs.ship == 'true'
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEV_DEPLOY_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEV_SSH_KNOWN_HOSTS }}
@@ -143,6 +174,7 @@ jobs:
       # deploy gate accepts nothing else. The token goes in the tarball, not
       # on a command line where `ps` would show it.
       - name: Deploy ${{ github.sha }}
+        if: steps.current.outputs.ship == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEV_SSH_HOST: ${{ vars.DEV_SSH_HOST }}
@@ -164,6 +196,7 @@ jobs:
       # From outside, through Cloudflare's edge and the tunnel to nginx, the
       # API, Postgres and Redis: the one path the server cannot check itself.
       - name: Public readiness check
+        if: steps.current.outputs.ship == 'true'
         env:
           DEV_URL: ${{ vars.DEV_URL }}
         run: |
