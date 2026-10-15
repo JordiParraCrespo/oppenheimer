@@ -43,8 +43,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - the FK to the turn that asked: `IDX_bot_approval_turn`;
  * - an account's deletion nulling `decidedByUserId`: `IDX_bot_approval_decided_by`.
  */
-export class AddBotApprovals1791002100000 implements MigrationInterface {
-  name = 'AddBotApprovals1791002100000';
+export class AddBotApprovals1791002200000 implements MigrationInterface {
+  name = 'AddBotApprovals1791002200000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { BOT_APPROVAL_RESULT_MAX, BOT_APPROVAL_SUMMARY_MAX } from '../domain/bot-approval.entity';
 
-/** One call of an asking tool waiting for the bot's owner (`1791002100000-AddBotApprovals`). */
+/** One call of an asking tool waiting for the bot's owner (`1791002200000-AddBotApprovals`). */
 @Entity('bot_approval')
 @Index('IDX_bot_approval_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('UQ_bot_approval_pending', ['botId'], { unique: true, where: `"status" = 'pending'` })

@@ -1,5 +1,6 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { z } from 'zod/v4';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { type BotToolContext, defineBotTool } from '../bot-tool.factory';
 
@@ -34,6 +35,7 @@ function setup(options: { waiting?: boolean; summarize?: () => string } = {}) {
     homeHostId: null,
     timeZone: 'UTC',
     permission: 'auto',
+    budget: new BotTurnBudget(),
     approvals,
     ...extra,
   });

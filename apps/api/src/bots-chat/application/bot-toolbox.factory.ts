@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
+import { expandScopes, type Scope } from '@oppenheimer/shared';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
@@ -33,36 +34,51 @@ export class BotToolboxFactory {
     this.areas = [self, hosts, sessions, plan, github, automations, peers, web];
   }
 
-  /** The tools, as the prompt names them. */
-  catalog(): BotPromptTool[] {
-    return this.definitions().map(({ name, description }) => ({ name, description }));
+  /**
+   * The tools a turn is offered, as the prompt names them. `granted` is the
+   * scopes of the credential the turn was sent with: null for a browser
+   * session (every tool), or a token's scopes (only the tools they cover).
+   */
+  catalog(granted: readonly Scope[] | null): BotPromptTool[] {
+    return this.definitions(granted).map(({ name, description }) => ({ name, description }));
   }
 
-  /** The tools, bound to one turn. */
-  tools(context: BotToolContext): BotEngineTool[] {
-    return this.definitions().map((definition) => definition.bind(context));
+  /** The same tools, bound to one turn. */
+  tools(context: BotToolContext, granted: readonly Scope[] | null): BotEngineTool[] {
+    return this.definitions(granted).map((definition) => definition.bind(context));
   }
 
   /**
    * Carries out what the owner approved (`25-bots.md` §5): the stored tool
    * with the stored input, bound to a context that lets exactly that call
-   * through and asks for any other. A tool gone since the card was raised is
-   * a failed run, not a crash.
+   * through and asks for any other. It is offered under the same scope
+   * filter as the turn that asked (`granted`, that turn's credential scopes),
+   * so a card raised by a turn whose token did not cover the tool never runs.
+   * A tool gone since the card was raised is a failed run, not a crash.
    */
   async runApproved(
     context: BotToolContext,
+    granted: readonly Scope[] | null,
     call: { tool: string; input: Record<string, unknown> },
     signal: AbortSignal,
   ): Promise<{ content: string; isError: boolean }> {
-    const definition = this.definitions().find((candidate) => candidate.name === call.tool);
-    if (!definition) return { content: `${call.tool} is no longer a tool.`, isError: true };
+    const definition = this.definitions(granted).find((candidate) => candidate.name === call.tool);
+    if (!definition) {
+      return {
+        content: `Not run: ${call.tool} is not a tool this bot may use here.`,
+        isError: true,
+      };
+    }
     const answer = await definition
       .bind({ ...context, approved: call })
       .run(call.input, { signal });
     return { content: answer.content, isError: answer.isError === true };
   }
 
-  private definitions(): BotToolDefinition[] {
-    return this.areas.flatMap((area) => area.definitions());
+  private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {
+    const all = this.areas.flatMap((area) => area.definitions());
+    if (granted === null) return all;
+    const covered = expandScopes(granted);
+    return all.filter((definition) => covered.has(definition.scope));
   }
 }

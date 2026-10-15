@@ -135,12 +135,18 @@ owner's scope. The input is checked before anything runs; the answer is
 labelled text with ids inline, times in the sender's zone, cut at 12,000
 characters with the cut said; a catalog error comes back as its code,
 title and detail. Text from outside (a page, a pull request, a session's
-result) comes back fenced as data. A tool whose default is *ask* runs at
-once under **Full access**; under **Approve for me** its checked call
-becomes a **Needs input** card (§5) and the model is told to end its turn
-and say what it asked for. Each such tool writes the card's line from its
-input (`summarize`: "Start Claude Code on build-02 in acme/xrp-mobile: Fix
-the failing test").
+result) comes back fenced as data. A message sent through an API token or an
+OAuth grant rather than the console keeps that credential's scopes on its
+turn, and the turn is offered only the tools those scopes cover (each tool
+names the scope of the route it stands in for), so a token scoped to
+`bots:write` reaches no further through a bot than it could itself. A tool
+whose default is *ask* runs at once under **Full access**; under **Approve
+for me** its checked call becomes a **Needs input** card (§5) and the model
+is told to end its turn and say what it asked for. Each such tool writes the
+card's line from its input (`summarize`: "Start Claude Code on build-02 in
+acme/xrp-mobile: Fix the failing test"). An approved call runs under the
+same scope filter as the turn that asked, so a card raised through a token
+that did not cover the tool never runs.
 
 ### 4.1 Itself
 | Tool | Does | Default |

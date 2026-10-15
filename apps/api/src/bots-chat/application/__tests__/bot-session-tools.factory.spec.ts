@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -32,6 +33,7 @@ const context = (
   timeZone: 'UTC',
   permission,
   approvals,
+  budget: new BotTurnBudget(),
 });
 
 const project = {

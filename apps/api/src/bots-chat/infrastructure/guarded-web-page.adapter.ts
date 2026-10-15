@@ -41,7 +41,15 @@ export class GuardedWebPageAdapter implements WebPagePort {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       const refusal = refuseUrl(current);
       if (refusal) return { kind: 'refused', reason: refusal };
-      const pinned = await this.resolve(current.hostname.replace(/^\[|\]$/g, ''));
+      let pinned: Awaited<ReturnType<GuardedWebPageAdapter['resolve']>>;
+      try {
+        pinned = await beforeDeadline(
+          this.resolve(current.hostname.replace(/^\[|\]$/g, '')),
+          deadline,
+        );
+      } catch {
+        return { kind: 'failed', reason: describeNetworkError(null, deadline) };
+      }
       if ('reason' in pinned) return { kind: 'refused', reason: pinned.reason };
       let response: Response;
       try {
@@ -161,6 +169,25 @@ function readBody(incoming: IncomingMessage): Promise<Response> {
     });
     incoming.on('end', done);
     incoming.on('error', (error) => (truncated ? undefined : reject(error)));
+  });
+}
+
+/** `work`, or a rejection once `signal` aborts: a slow name lookup is held to the fetch's deadline. */
+function beforeDeadline<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+    work.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(error);
+      },
+    );
   });
 }
 

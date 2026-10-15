@@ -16,6 +16,7 @@ import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repo
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { approvalEvent, decisionTurn } from '../../domain/bot-approval.policy';
+import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { DecideBotApprovalCommand } from './decide-bot-approval.command';
 
@@ -47,8 +48,9 @@ export class DecideBotApprovalCommandHandler
       BotErrors.APPROVAL_NOT_FOUND,
     );
     if (approval.status !== 'pending') throw new AppError(BotErrors.APPROVAL_DECIDED);
-    const asked = await this.turns.findOne(scope, bot.id, approval.turnId);
-    const timeZone = asked.isSome() ? asked.unwrap().timeZone : null;
+    const found = await this.turns.findOne(scope, bot.id, approval.turnId);
+    const asked = found.isSome() ? found.unwrap() : null;
+    const timeZone = asked?.timeZone ?? null;
 
     if (decision === 'approve') approval.approve(scope.userId, new Date());
     else approval.deny(scope.userId, new Date(), note);
@@ -57,7 +59,7 @@ export class DecideBotApprovalCommandHandler
     }
     await this.announce(approval);
 
-    if (decision === 'approve') await this.carryOut(bot, approval, timeZone);
+    if (decision === 'approve') await this.carryOut(bot, approval, asked);
     const event = approvalEvent(approval, deciderName);
     await this.continueWith(bot, scope.userId, timeZone, event, command.metadata.correlationId);
     return approval.id;
@@ -67,9 +69,9 @@ export class DecideBotApprovalCommandHandler
   private async carryOut(
     bot: BotEntity,
     approval: BotApprovalEntity,
-    timeZone: string | null,
+    asked: BotTurnEntity | null,
   ): Promise<void> {
-    const answer = await this.calls.resolve(bot, approval, timeZone);
+    const answer = await this.calls.resolve(bot, approval, asked);
     approval.recordResult(answer.content, answer.isError);
     await this.approvals.saveTransition(approval);
     await this.announce(approval);

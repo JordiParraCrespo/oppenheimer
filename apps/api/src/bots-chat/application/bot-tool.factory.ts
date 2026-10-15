@@ -2,10 +2,11 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
-import type { BotPermission } from '@oppenheimer/shared';
+import type { BotPermission, Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { askedForApproval, waitingForApproval } from '../domain/bot-approval.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
+import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
 
 /** What every tool of a turn acts with: the owner's scope, the bot, the turn, the sender's zone. */
@@ -32,6 +33,8 @@ export interface BotToolContext {
    * Any other call made with the context still asks.
    */
   approved?: { tool: string; input: Record<string, unknown> };
+  /** What this turn may still spend on calls a tool limits per turn. */
+  budget: BotTurnBudget;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -45,6 +48,12 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   description: string;
   input: Input;
+  /**
+   * The credential scope a call needs, as the route the tool stands in for
+   * requires it. A turn sent through an API token or OAuth grant is offered
+   * only the tools its scopes cover; a browser session, all of them.
+   */
+  scope: Scope;
   /**
    * The tool reaches outside Oppenheimer (it starts or stops work on a host,
    * posts to GitHub, creates a bot): under Approve for me it asks the owner
@@ -66,6 +75,7 @@ export interface BotToolSpec<Input extends z.ZodType> {
 export interface BotToolDefinition {
   readonly name: string;
   readonly description: string;
+  readonly scope: Scope;
   bind(context: BotToolContext): BotEngineTool;
 }
 
@@ -87,6 +97,7 @@ export function defineBotTool<Input extends z.ZodType>(
   return {
     name: spec.name,
     description: spec.description,
+    scope: spec.scope,
     bind: (context) => ({
       name: spec.name,
       description: spec.description,

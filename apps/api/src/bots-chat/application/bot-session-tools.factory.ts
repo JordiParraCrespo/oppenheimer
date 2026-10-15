@@ -1,8 +1,6 @@
-import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { type CreateSessionDto, createSessionSchema } from '@oppenheimer/shared';
-import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
@@ -13,14 +11,17 @@ import type { SessionCommandResult } from '../../sessions/domain/session-command
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
+  idempotencyKeyOf,
+  planSession,
+  sessionHostId,
+  sessionSummary,
+} from '../bot-session-tool.mapper';
+import {
   type BotToolArea,
   type BotToolContext,
   type BotToolDefinition,
   defineBotTool,
 } from './bot-tool.factory';
-
-/** How much of the task a Needs input card shows. */
-const TASK_IN_SUMMARY_MAX = 200;
 
 /**
  * Sessions, the writes (`25-bots.md` §4.2): start a coding agent on a host
@@ -43,6 +44,7 @@ export class BotSessionToolsFactory implements BotToolArea {
   private startSession(): BotToolDefinition {
     return defineBotTool({
       name: 'start_session',
+      scope: 'sessions:write',
       asks: true,
       description:
         "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code; it returns at once with the session's id, and the agent works on its own. Check its progress later with get_session. The host defaults to the project's default host, then your home host.",
@@ -77,57 +79,21 @@ export class BotSessionToolsFactory implements BotToolArea {
       }),
       summarize: async (input, context) => {
         const project = input.project_id ? await this.project(context, input.project_id) : null;
-        const hostId = input.host_id ?? project?.defaultHostId ?? context.homeHostId;
-        const agent = input.agent ?? agentOf(project?.defaultAgent);
-        const host = hostId ? await this.hostName(context, hostId) : 'no host yet';
-        const checkout =
-          project && !input.folder ? pickRepository(project, input.repository) : null;
-        const where = input.folder
-          ? ` in ${input.folder}`
-          : checkout && 'fullName' in checkout
-            ? ` in ${checkout.fullName}`
-            : '';
-        return `Start ${CODING_AGENTS[agent].label} on ${host}${where}: ${clip(input.task)}`;
+        const hostId = sessionHostId(input, project, context.homeHostId);
+        const host = hostId ? await this.hostName(context, hostId) : null;
+        return sessionSummary(input, project, host);
       },
       run: async (input, context) => {
         const project = input.project_id ? await this.project(context, input.project_id) : null;
-        if (!input.folder && !project) {
-          return 'Give a project_id (to work in one of its repositories) or a folder on the host.';
-        }
-        const hostId = input.host_id ?? project?.defaultHostId ?? context.homeHostId;
-        if (!hostId) {
-          return 'No host given, and neither the project nor you have a default one. Ask which host to use (list_hosts).';
-        }
-        const picked = input.folder
-          ? null
-          : pickRepository(project as ProjectEntity, input.repository);
-        if (picked && 'reason' in picked) return picked.reason;
-        const checkout = picked && {
-          installationId: picked.installationId,
-          githubRepoId: picked.githubRepoId,
-          baseBranch: picked.baseBranch,
-        };
-        const parsed = createSessionSchema.safeParse({
-          hostId,
-          agent: input.agent ?? project?.defaultAgent ?? 'claude-code',
-          projectId: project?.id,
-          name: input.name,
-          prompt: input.task,
-          ...(input.folder
-            ? { folder: input.folder }
-            : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
-        });
-        if (!parsed.success) {
-          const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'input');
-          return `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). Check the task, folder and name.`;
-        }
-        const body: CreateSessionDto = parsed.data;
+        const plan = planSession(input, project, context.homeHostId);
+        if ('refusal' in plan) return plan.refusal;
+        const { body, hostId } = plan;
         const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
           new CreateSessionCommand({
             scope: context.owner,
             userId: context.owner.userId,
             input: body,
-            idempotencyKey: idempotencyKeyOf(context, body),
+            idempotencyKey: idempotencyKeyOf(context.turnId, body),
             origin: 'bot',
           }),
         );
@@ -142,6 +108,7 @@ export class BotSessionToolsFactory implements BotToolArea {
   private stopSession(): BotToolDefinition {
     return defineBotTool({
       name: 'stop_session',
+      scope: 'sessions:write',
       asks: true,
       description:
         "Stops a running session's agent. The worktree and its changes are kept. Use it when the person asks to stop one, or for a session you started that went wrong.",
@@ -178,48 +145,4 @@ export class BotSessionToolsFactory implements BotToolArea {
       new FindProjectQuery({ scope: context.owner, projectId }),
     );
   }
-}
-
-/** The project's repository to check out: the one named, or its default. */
-function pickRepository(
-  project: ProjectEntity,
-  name: string | undefined,
-):
-  | { installationId: string; githubRepoId: number; baseBranch: string; fullName: string }
-  | { reason: string } {
-  const repositories = project.repositories;
-  const chosen = name
-    ? repositories.find((repo) => repo.repositoryFullName.toLowerCase() === name.toLowerCase())
-    : (repositories.find((repo) => repo.isDefault) ?? repositories[0]);
-  if (!chosen) {
-    const names = repositories.map((repo) => repo.repositoryFullName).join(', ') || 'none';
-    return {
-      reason: name
-        ? `The project has no repository ${name}. Its repositories: ${names}.`
-        : 'The project has no repository. Use a folder, or ask the person to add one to the project.',
-    };
-  }
-  return {
-    installationId: chosen.installationId,
-    githubRepoId: Number(chosen.githubRepoId),
-    baseBranch: chosen.baseBranch,
-    fullName: chosen.repositoryFullName,
-  };
-}
-
-/** A project's default agent when the catalog knows it; Claude Code otherwise. */
-function agentOf(id: string | null | undefined): CodingAgentId {
-  return CODING_AGENT_IDS.find((known) => known === id) ?? 'claude-code';
-}
-
-/** The task's start, on one line, cut for a card. */
-function clip(task: string): string {
-  const line = task.replace(/\s+/g, ' ').trim();
-  return line.length > TASK_IN_SUMMARY_MAX ? `${line.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : line;
-}
-
-/** The same call in the same turn starts one session, however often the model repeats it. */
-function idempotencyKeyOf(context: BotToolContext, body: CreateSessionDto): string {
-  const digest = createHash('sha256').update(JSON.stringify(body)).digest('hex').slice(0, 32);
-  return `bot:${context.turnId}:${digest}`;
 }

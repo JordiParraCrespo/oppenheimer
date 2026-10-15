@@ -107,7 +107,11 @@ describe('DecideBotApprovalCommandHandler', () => {
   it('runs exactly the stored call on a yes, keeps its answer, and queues a turn that reports it', async () => {
     const { bot, approval, approvals, calls, decide, continuation } = setup();
     await decide('approve');
-    expect(calls.resolve).toHaveBeenCalledWith(bot, approval, 'Europe/Madrid');
+    expect(calls.resolve).toHaveBeenCalledWith(
+      bot,
+      approval,
+      expect.objectContaining({ id: approval.turnId }),
+    );
     expect(approval).toMatchObject({
       status: 'approved',
       decidedByUserId: scope.userId,

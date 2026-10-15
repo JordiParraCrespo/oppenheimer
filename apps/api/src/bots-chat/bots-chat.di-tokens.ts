@@ -5,3 +5,4 @@ export const BOT_STREAM = Symbol('BOT_STREAM');
 /** The engines a turn runs on (`@oppenheimer/backend-agents`), bound once per process. */
 export const BOT_ENGINE = Symbol('BOT_ENGINE');
 export const WEB_PAGE = Symbol('WEB_PAGE');
+export const OWNER_HOSTS = Symbol('OWNER_HOSTS');

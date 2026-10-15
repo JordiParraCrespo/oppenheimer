@@ -29,6 +29,7 @@ export class BotPeerToolsFactory implements BotToolArea {
   private listBots(): BotToolDefinition {
     return defineBotTool({
       name: 'list_bots',
+      scope: 'bots:read',
       description:
         "Lists the workspace's bots (you included, marked) with what each is for, its provider and model, and its home host. Use get_bot for one bot's details.",
       input: z.strictObject({}),
@@ -48,6 +49,7 @@ export class BotPeerToolsFactory implements BotToolArea {
   private getBot(): BotToolDefinition {
     return defineBotTool({
       name: 'get_bot',
+      scope: 'bots:read',
       description:
         "Reads one bot of the workspace: its name, what it is for, its provider and model, its home host and when its chat was last used. It does not read the bot's soul, instructions, memory or chat.",
       input: z.strictObject({ bot_id: z.uuid().describe('A bot id from list_bots.') }),

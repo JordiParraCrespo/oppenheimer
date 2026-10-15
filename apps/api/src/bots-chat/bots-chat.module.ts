@@ -28,6 +28,7 @@ import {
   BOT_MESSAGE_REPOSITORY,
   BOT_STREAM,
   BOT_TURN_REPOSITORY,
+  OWNER_HOSTS,
   WEB_PAGE,
 } from './bots-chat.di-tokens';
 import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-bot-turn.command-handler';
@@ -45,6 +46,7 @@ import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
+import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
 import { FindBotApprovalQueryHandler } from './queries/find-bot-approval/find-bot-approval.query-handler';
 import { FindBotApprovalsHttpController } from './queries/find-bot-approvals/find-bot-approvals.http.controller';
@@ -125,6 +127,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_APPROVAL_REPOSITORY, useClass: BotApprovalRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
+    { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.
     { provide: BOT_ENGINE, useFactory: () => createBotEngine() },
   ],

@@ -36,12 +36,16 @@ for (const [network, prefix] of [
   ['2001::', 32],
   ['2001:db8::', 32],
   ['2002::', 16],
+  ['3fff::', 20],
   ['fc00::', 7],
   ['fe80::', 10],
   ['ff00::', 8],
 ] as const) {
   BLOCKED.addSubnet(network, prefix, 'ipv6');
 }
+
+const GLOBAL_UNICAST = new BlockList();
+GLOBAL_UNICAST.addSubnet('2000::', 3, 'ipv6');
 
 /** Whether `address` (an IP literal, IPv6 without brackets) is a public unicast address. */
 export function isPublicAddress(address: string): boolean {
@@ -50,7 +54,9 @@ export function isPublicAddress(address: string): boolean {
   if (family !== 6) return false;
   const embedded = embeddedIpv4(address);
   if (embedded !== null) return isIP(embedded) === 4 && !BLOCKED.check(embedded, 'ipv4');
-  return !BLOCKED.check(address, 'ipv6');
+  // Only global unicast (2000::/3) is the internet; site-local (fec0::/10),
+  // unique-local, link-local and every other range is not.
+  return GLOBAL_UNICAST.check(address, 'ipv6') && !BLOCKED.check(address, 'ipv6');
 }
 
 /** The IPv4 address an IPv4-mapped (`::ffff:0:0/96`) or NAT64 (`64:ff9b::/96`) address carries. */

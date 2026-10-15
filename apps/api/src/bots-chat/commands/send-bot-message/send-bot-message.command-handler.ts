@@ -49,6 +49,7 @@ export class SendBotMessageCommandHandler
     botId,
     content,
     timeZone,
+    credentialScopes,
     metadata,
   }: SendBotMessageCommand): Promise<string> {
     const bot = await this.lookup.bot(scope, botId);
@@ -67,6 +68,7 @@ export class SendBotMessageCommandHandler
       model: bot.model ?? botDefaultModel(bot.provider).id,
       effort: bot.effort,
       timeZone,
+      credentialScopes,
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,

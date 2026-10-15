@@ -369,12 +369,21 @@ describe('ClaudeBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'max_steps' });
   });
 
-  it('never hands back the turn’s scratch directory, in text or in a tool’s answer', async () => {
+  it('never hands back the turn’s scratch directory: in text, streamed or not, in a tool’s input or its answer', async () => {
     const leaked = join(scratchDir, 'work');
+    const split = 8;
     scripted(() => [
-      delta(`I run in ${leaked}`),
+      delta(`I run in ${leaked.slice(0, split)}`),
+      delta(`${leaked.slice(split)} now`),
       assistant([{ type: 'text', text: `I run in ${leaked}` }]),
-      assistant([{ type: 'tool_use', id: 'toolu_1', name: 'TodoWrite', input: {} }]),
+      assistant([
+        {
+          type: 'tool_use',
+          id: 'toolu_1',
+          name: 'TodoWrite',
+          input: { todos: [{ note: leaked }] },
+        },
+      ]),
       toolResults([{ type: 'tool_result', tool_use_id: 'toolu_1', content: `saved in ${leaked}` }]),
       success(),
     ]);
@@ -382,6 +391,10 @@ describe('ClaudeBotEngine', () => {
     const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(JSON.stringify(events)).not.toContain(scratchDir);
+    const streamed = events.flatMap((event) => (event.type === 'text.delta' ? [event.text] : []));
+    // Split across two deltas, the path still never goes out, in whole or in halves.
+    expect(streamed.join('')).toBe('I run in [workspace]/work now');
+    expect(streamed.some((text) => text.includes(leaked.slice(0, split)))).toBe(false);
     expect(events).toContainEqual({ type: 'text.done', text: 'I run in [workspace]/work' });
     expect(events).toContainEqual(
       expect.objectContaining({ type: 'tool.finished', output: 'saved in [workspace]/work' }),

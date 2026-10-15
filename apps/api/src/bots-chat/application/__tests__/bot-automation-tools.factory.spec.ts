@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { FindAutomationQuery } from '../../../automations/queries/find-automation/find-automation.query';
 import { FindAutomationRunsQuery } from '../../../automations/queries/find-automation-runs/find-automation-runs.query';
 import { FindAutomationsQuery } from '../../../automations/queries/find-automations/find-automations.query';
+import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotAutomationToolsFactory } from '../bot-automation-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -21,6 +22,9 @@ const context: BotToolContext = {
   turnId: 'turn-1',
   homeHostId: null,
   timeZone: 'Europe/Madrid',
+  permission: 'auto',
+  budget: new BotTurnBudget(),
+  approvals: { request: vi.fn() },
 };
 
 const AUTOMATION = '11111111-1111-4111-8111-111111111111';
@@ -52,7 +56,7 @@ const automation = {
     agent: 'claude',
     model: null,
     permission: 'auto',
-    approvals: { request: vi.fn() },
+    budget: new BotTurnBudget(),
     effort: null,
     prompt: 'Run the test suite and report.',
     repositories: [{ installationId: 'inst-1', githubRepoId: '7', fullName: 'acme/api' }],
