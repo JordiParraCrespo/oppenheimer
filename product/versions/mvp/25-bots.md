@@ -135,10 +135,12 @@ owner's scope. The input is checked before anything runs; the answer is
 labelled text with ids inline, times in the sender's zone, cut at 12,000
 characters with the cut said; a catalog error comes back as its code,
 title and detail. Text from outside (a page, a pull request, a session's
-result) comes back fenced as data. Until the Needs input card exists, a
-tool whose default is *ask* runs only under **Full access**; under
-**Approve for me** it does not run and tells the model so, and the bot
-tells you what it would have done.
+result) comes back fenced as data. A tool whose default is *ask* runs at
+once under **Full access**; under **Approve for me** its checked call
+becomes a **Needs input** card (§5) and the model is told to end its turn
+and say what it asked for. Each such tool writes the card's line from its
+input (`summarize`: "Start Claude Code on build-02 in acme/xrp-mobile: Fix
+the failing test").
 
 ### 4.1 Itself
 | Tool | Does | Default |
@@ -261,6 +263,33 @@ differ from the catalog are stored, so a tool added later reaches every
 bot with its default. No setting lets a bot exceed its owner's own
 permissions, and §4.8 is never on the list.
 
+How the card works (built 2026-10-15, `bot_approval`):
+
+- **The turn does not wait on it.** The asking call is stored, exactly as
+  validated, as a pending approval with its line; the tool answers the
+  model that nothing ran and it should end its turn, and the turn ends. No
+  worker is held across a person's time, and a deploy loses nothing.
+- **One card per bot.** While one waits, another asking call is told to
+  wait for it, and the database holds that if two race.
+- **Deciding is a request of its own**
+  (`POST /v1/bots/:id/approvals/:approvalId/decision`), a conditional write
+  on `pending`: a second click, or a click racing a new message, is
+  `BOTS_016` and does nothing. **Approve** runs exactly the stored call as
+  the owner, in their scope resolved now, and keeps its answer (the card
+  ends `failed` when the call failed). **Deny** runs nothing, and takes an
+  optional note: why not, or what to do instead.
+- **The bot reports back.** Either way the bot gets a turn of its own,
+  opened by an **event**: a chat message of its own role, written by
+  Oppenheimer, that says who decided what and the call's answer or the
+  note. The chat draws it as a trace line, never as a bubble from you; the
+  bot reads it, then and in later history, as a note from Oppenheimer and
+  not as your words, and is told not to route around a denial.
+- **Writing to the bot instead expires the card.** The new turn starts
+  fresh; nobody decided, and the bot is not told.
+- **Not built yet:** *Always allow* (it needs Settings → Permissions), Off,
+  a card for a bot-to-bot or background turn (they will need a timeout
+  where yours has none), and the asking tools of the other areas.
+
 ## 6. What is built, in slices
 
 Each slice is a stacked pull request, green on `pnpm ci:local`, checked on
@@ -290,9 +319,10 @@ limits (§2); the tools that run without asking, as the owner: itself
 `update_task`, `move_task`), GitHub (`list_repositories`,
 `list_pull_requests`, `get_pull_request`), automations
 (`list_automations`, `get_automation`, `run_history`), other bots
-(`list_bots`, `get_bot`) and `web_fetch`; and `start_session` and
-`stop_session`, which ask. Next: the Needs input card and Settings →
-Permissions, then the asking tools of each area, `ask_bot`,
+(`list_bots`, `get_bot`) and `web_fetch`; `start_session` and
+`stop_session`, which ask; and the Needs input card (§5): Approve, Deny
+with a note, the bot told either way. Next: Settings → Permissions and
+*Always allow*, then the asking tools of each area, `ask_bot`,
 `create_bot` and `delegate`.
 
 ## 7. Not built yet
@@ -383,3 +413,9 @@ The decisions it produced:
   (`research/lessons-from-grok-bot.md` §5): without them a bot searched
   the server for what it lacked, asked people to paste tokens, answered
   in UTC and ran on to any length.
+- 2026-10-15: **a Needs input card ends the turn that raised it.** The
+  decision runs the stored call (on a yes) and gives the bot a new turn,
+  opened by an *event* message, rather than holding a turn open while the
+  card waits; a new message from you expires the card. From Grok Bot's
+  parked turns (`research/lessons-from-grok-bot.md`), which BullMQ cannot
+  park.
