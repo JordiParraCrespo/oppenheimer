@@ -312,7 +312,9 @@ ends with.
 
 A variable added to `config/api.env.example` later reaches an existing
 server only when it is copied into `api.env` by hand: `setup` writes the file
-once and never again. The direct terminal path's STUN server is one such line,
+once and never again. `BOTS_PROVIDER_KEY` is one: a server set up before bots
+needs `BOTS_PROVIDER_KEY=<openssl rand -base64 32>` in `api.env` and a reload,
+or bots cannot answer (Settings → Model providers says so). The direct terminal path's STUN server is one such line,
 `RELAY_ICE_SERVERS=stun:stun.cloudflare.com:3478`
 (`product/versions/mvp/22-direct-terminal-path.md`): without it, a terminal
 goes direct only for a browser on the host's own network.

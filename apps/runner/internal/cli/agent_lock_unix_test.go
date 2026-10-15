@@ -6,7 +6,6 @@ import (
 	"context"
 	"os"
 	"sync/atomic"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -22,6 +21,15 @@ func (s *slowUpdater) Update(context.Context, string, string, []string) error {
 	}
 	time.Sleep(50 * time.Millisecond)
 	s.running.Add(-1)
+	return nil
+}
+
+// blockingUpdater holds its agent's lock until the test lets it finish.
+type blockingUpdater struct{ held, finish chan struct{} }
+
+func (b blockingUpdater) Update(context.Context, string, string, []string) error {
+	close(b.held)
+	<-b.finish
 	return nil
 }
 
@@ -59,14 +67,19 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	if inner.overlap.Load() {
 		t.Fatal("two updaters of one CLI ran at once")
 	}
-	// Another agent's launch does not wait on claude's lock: with claude's
-	// lock held as an update holds it, codex still gets through. No
-	// wall-clock bound, which a loaded machine overruns.
-	releaseClaude, err := lockAgent(context.Background(), paths.AgentLock("claude"), syscall.LOCK_EX)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer releaseClaude()
+	// Another agent's launch does not wait on claude's lock: while claude's
+	// updater holds it, codex still gets through. A codex that waited would
+	// block until that update ends, which this test never lets happen; the
+	// bound is a few polls of the lock, far inside launchWaitLimit, so it
+	// tells "waited on claude" apart without timing how fast a launch is.
+	held := make(chan struct{})
+	finish := make(chan struct{})
+	updated := make(chan error, 1)
+	go func() {
+		updated <- lockedUpdater{paths: paths, next: blockingUpdater{held: held, finish: finish}}.
+			Update(context.Background(), "claude", "/bin/claude", []string{"update"})
+	}()
+	<-held
 	codex := make(chan struct{})
 	go func() {
 		agentGate{paths: paths}.Hold(context.Background(), "codex")()
@@ -74,7 +87,11 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	}()
 	select {
 	case <-codex:
-	case <-time.After(5 * time.Second):
-		t.Fatal("codex waited on claude's lock")
+	case <-time.After(20 * agentLockPoll):
+		t.Fatal("codex waited on claude's update")
+	}
+	close(finish)
+	if err := <-updated; err != nil {
+		t.Fatal(err)
 	}
 }
