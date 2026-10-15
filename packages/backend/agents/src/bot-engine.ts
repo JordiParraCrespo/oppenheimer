@@ -33,6 +33,11 @@ export interface BotTurnRequest {
   /** This turn's user message. */
   message: string;
   tools: BotEngineTool[];
+  /**
+   * Whether the engine offers its own tools (the Claude engine's web search
+   * and to-do list) beside `tools`. Default true; a completion turns them off.
+   */
+  engineTools?: boolean;
   /** Model round trips before the turn ends with `max_steps`. Default 25. */
   maxSteps?: number;
   signal: AbortSignal;
@@ -49,11 +54,52 @@ export type BotEngineEvent =
   | { type: 'done'; reason: 'completed' | 'cancelled' | 'max_steps' | 'failed'; error?: string };
 
 /**
+ * One answer to one message, with no tools and no history: a request for
+ * text the caller keeps (a conversation's summary), on the same provider,
+ * model and key a turn would use.
+ */
+export type BotCompletionRequest = Pick<
+  BotTurnRequest,
+  | 'provider'
+  | 'apiKey'
+  | 'baseUrl'
+  | 'model'
+  | 'effort'
+  | 'systemPrompt'
+  | 'message'
+  | 'signal'
+  | 'scratchDir'
+>;
+
+/**
  * Runs one turn of a bot. The stream never throws once iteration starts:
  * every turn ends with exactly one `done`, and nothing follows it.
  */
 export abstract class BotEngine {
   abstract run(request: BotTurnRequest): AsyncIterable<BotEngineEvent>;
+
+  /**
+   * A completion: one model round trip with no tool at all, ours or the
+   * engine's, through `run`, so it holds to the same contract (no key in an
+   * error, abort honoured). Resolves to the text the model wrote; rejects
+   * with the turn's reason when it does not complete.
+   */
+  async complete(request: BotCompletionRequest): Promise<string> {
+    const texts: string[] = [];
+    for await (const event of this.run({
+      ...request,
+      history: [],
+      tools: [],
+      engineTools: false,
+      maxSteps: 1,
+    })) {
+      if (event.type === 'text.done') texts.push(event.text);
+      if (event.type === 'done' && event.reason !== 'completed') {
+        throw new Error(event.error ?? `The completion ended ${event.reason}.`);
+      }
+    }
+    return texts.join('\n\n').trim();
+  }
 }
 
 export const DEFAULT_MAX_STEPS = 25;

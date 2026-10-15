@@ -1,6 +1,5 @@
 import {
   type BotPromptInput,
-  botHistory,
   botTurnPrompt,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
@@ -83,43 +82,11 @@ describe('composeBotSystemPrompt', () => {
   });
 });
 
-describe('botHistory', () => {
-  it('reads back your messages and the bot’s text, not its activity lines', () => {
-    expect(
-      botHistory([
-        { role: 'user', content: 'Hi' },
-        { role: 'activity', content: '' },
-        { role: 'assistant', content: 'Hello' },
-      ]),
-    ).toEqual([
-      { role: 'user', text: 'Hi' },
-      { role: 'assistant', text: 'Hello' },
-    ]);
-  });
-
-  it('keeps the latest forty', () => {
-    const many = Array.from({ length: 50 }, (_, index) => ({
-      role: 'user' as const,
-      content: String(index),
-    }));
-    const history = botHistory(many);
-    expect(history).toHaveLength(40);
-    expect(history[0].text).toBe('10');
-  });
-});
-
 describe('events from Oppenheimer', () => {
   const event = {
     role: 'event' as const,
     content: 'Ana denied: Start Claude Code\nTheir note: no',
   };
-
-  it('reads an event back on the person’s side, marked as Oppenheimer’s, never as their words', () => {
-    const [read] = botHistory([event]);
-    expect(read.role).toBe('user');
-    expect(read.text).toMatch(/^\[A note from Oppenheimer, not a message from the person\]\n/);
-    expect(read.text).toContain('Their note: no');
-  });
 
   it('asks a turn an event opened to report back and not to route around a denial', () => {
     const prompt = botTurnPrompt(event);

@@ -1,4 +1,5 @@
 export {
+  type BotCompletionRequest,
   type BotEffort,
   BotEngine,
   type BotEngineEvent,

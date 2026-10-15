@@ -91,6 +91,26 @@ worker runs it and streams what happens back to the chat.
   hosts, each online or not. The block is added to the message the model
   is sent and never stored: the message kept is what the person wrote, so
   a later turn reads it back without a stale clock.
+- **A turn is sent a token budget of history, with a summary of what
+  falls out** (2026-10-15). It used to be the last 40 messages, and
+  anything older was dropped without a word. Now a turn gets the
+  conversation's summary, when there is one, as the first history entry
+  (marked as Oppenheimer's record, not instructions, and kept out of the
+  system prompt so the prompt stays stable), then the newest messages after
+  the summary's cutoff that fit 24,000 tokens with it, counted as a token
+  per four characters. When a turn ends and the messages the summary does
+  not cover pass one and a half times that budget, a job on the
+  `bot-summaries` queue folds the oldest of them into the summary until
+  about half the budget is left (at most 32,000 tokens a call; a longer
+  backlog takes several), with the bot's own provider, model and key and
+  no tools (`BotEngine.complete`). The summarizer keeps decisions, facts
+  about the person and their work, ids and names, open tasks and the
+  bot's promises, drops small talk, and treats the conversation as data,
+  not instructions. The summary is one row per bot,
+  `bot_conversation_summary`, written conditionally on the version it was
+  read at and only ever forward, so two jobs racing never move it back.
+  The chat is unchanged: it reads every stored message; only what the
+  model is sent changes.
 - **A turn acts as its owner.** Everything a turn reads or does beyond the
   bot's own rows goes through the owner's scope, resolved fresh for each
   turn: the bot sees what they see now, and nothing once they leave the
@@ -371,7 +391,8 @@ eight colours (`AV_COLORS`).
   `bot_document_revision` (append-only, author you or the bot),
   `bot_memory_fact`; from slice 2 `model_provider_credential`, `bot_turn`
   and `bot_message`; from slice 3 `bot_tool_permission` and
-  `bot_approval`. Workspace-scoped like automations, with the `Bot`
+  `bot_approval`; for long conversations `bot_conversation_summary`.
+  Workspace-scoped like automations, with the `Bot`
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
   the only code that imports either SDK.
@@ -382,7 +403,8 @@ eight colours (`AV_COLORS`).
   `bot_message` of kind activity in the chat, carrying who changed what,
   from what to what, and it is undone by hand.
 - **Worker:** a BullMQ queue `bot-turns`, processed in the API process for
-  now; the same image can run it alone when turns need their own
+  now (beside it `bot-approvals`, an approved call, and `bot-summaries`, a
+  conversation's summary); the same image can run it alone when turns need their own
   container. It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
 - **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
@@ -446,6 +468,10 @@ The decisions it produced:
   hit. It moved to a `<turn_context>` block at the start of each turn's
   message, which the prompt names as Oppenheimer's and authoritative. It
   replaces that part of the line above.
+- 2026-10-15: **history is a token budget, with a stored summary of
+  what falls out**, replacing the last 40 messages (§2): a long
+  conversation keeps its early facts and decisions instead of losing
+  them silently, and short messages no longer cap it at 40.
 - 2026-10-15: **a Needs input card ends the turn that raised it.** The
   decision runs the stored call (on a yes) and gives the bot a new turn,
   opened by an *event* message, rather than holding a turn open while the

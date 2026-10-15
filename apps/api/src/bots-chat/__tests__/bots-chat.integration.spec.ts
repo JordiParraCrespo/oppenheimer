@@ -27,15 +27,19 @@ import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resol
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotApprovalMapper } from '../bot-approval.mapper';
+import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
+import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
+import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
+import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -47,8 +51,10 @@ import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
  * conversation and history, Stop's conditional writes, the cascade from the
  * bot, and a turn's context read in its own workspace only; Needs input
  * cards: one waiting per bot, decided once however many decide at once, the
- * event that opens a decision's turn, and the cascade. The schema is the
- * migrations'.
+ * event that opens a decision's turn, and the cascade; a conversation's
+ * summary: one write of two racing ones wins, the cutoff never moves back,
+ * and a turn's history and the summarizer's read start after it to the
+ * microsecond. The schema is the migrations'.
  */
 describe('bots chat (integration)', () => {
   let pg: StartedTestContainer;
@@ -60,6 +66,7 @@ describe('bots chat (integration)', () => {
   let turns: BotTurnRepository;
   let messages: BotMessageRepository;
   let approvals: BotApprovalRepository;
+  let summaries: BotConversationSummaryRepository;
   let organizationId: string;
   let userId: string;
 
@@ -98,6 +105,7 @@ describe('bots chat (integration)', () => {
         BotTurnOrmEntity,
         BotMessageOrmEntity,
         BotApprovalOrmEntity,
+        BotConversationSummaryOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -142,6 +150,11 @@ describe('bots chat (integration)', () => {
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
+    );
+    summaries = new BotConversationSummaryRepository(
+      dataSource.getRepository(BotConversationSummaryOrmEntity),
+      new OutboxService(dataSource),
+      new BotConversationSummaryMapper(),
     );
   }, 180000);
 
@@ -347,7 +360,7 @@ describe('bots chat (integration)', () => {
       'Staging is devbox.',
       'And production?',
     ]);
-    const history = await messages.findHistory(organizationId, bot.id, second.turn.id, 40);
+    const history = await messages.findHistory(organizationId, bot.id, second.turn.id, null, 40);
     expect(history.map((message) => message.content)).toEqual([
       'What is staging?',
       'Staging is devbox.',
@@ -404,6 +417,7 @@ describe('bots chat (integration)', () => {
       documents,
       memory,
       messages,
+      summaries,
       credentials,
       sealer,
       owners,
@@ -612,5 +626,160 @@ describe('bots chat (integration)', () => {
         [organizationId, bot.id, turn.id],
       ),
     ).rejects.toMatchObject({ driverError: { constraint: 'CHK_bot_message_event' } });
+  });
+  /** A bot with `count` messages, alternating yours and its, one turn each pair; oldest first. */
+  async function talked(bot: BotEntity, count: number): Promise<BotMessageEntity[]> {
+    const stored: BotMessageEntity[] = [];
+    for (let index = 0; index < count; index += 2) {
+      const { turn, message } = sent(bot, `Question ${index}`);
+      await turns.enqueue(turn, message, null);
+      const running = (await turns.findForRun(turn.id)).unwrap();
+      running.start(new Date());
+      await turns.claim(running);
+      const answer = BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: turn.id,
+        role: 'assistant',
+        content: `Answer ${index}`,
+        steps: [],
+        position: 1,
+      });
+      await messages.insert(answer);
+      running.end('completed', new Date());
+      await turns.finish(running, null);
+      stored.push(message, answer);
+    }
+    // The ids, and the times as the database stored them.
+    return messages.findUncovered(bot.organizationId, bot.id, null, 100);
+  }
+
+  function summaryOf(
+    bot: BotEntity,
+    through: BotMessageEntity,
+    content: string,
+    version: number,
+  ): BotConversationSummaryEntity {
+    return BotConversationSummaryEntity.create({
+      id: bot.id,
+      props: {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        content,
+        coversThroughMessageId: through.id,
+        coversThroughCreatedAt: through.createdAt,
+        version,
+      },
+    });
+  }
+
+  it('stores one first summary of two racing jobs: the other writes nothing', async () => {
+    const bot = await create('Summarized');
+    const conversation = await talked(bot, 6);
+    const first = (content: string) =>
+      BotConversationSummaryEntity.first({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        content,
+        through: conversation[3],
+      });
+    const [a, b] = [first('Written by A'), first('Written by B')];
+    const outcomes = await Promise.all([summaries.save(a), summaries.save(b)]);
+    expect(outcomes.filter(Boolean)).toHaveLength(1);
+    const winner = outcomes[0] ? a : b;
+    expect(winner.versionAtLoad).toBe(1);
+    expect((outcomes[0] ? b : a).versionAtLoad).toBe(0);
+    const stored = (await summaries.findForBot(organizationId, bot.id)).unwrap();
+    expect(stored).toMatchObject({
+      content: winner.content,
+      coversThroughMessageId: conversation[3].id,
+      versionAtLoad: 1,
+    });
+  });
+
+  it('lets one of two revisions read at the same version win, and the loser change nothing', async () => {
+    for (let round = 0; round < 10; round++) {
+      const bot = await create(`Racing ${round}`);
+      const conversation = await talked(bot, 8);
+      const seed = BotConversationSummaryEntity.first({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        content: 'Seed',
+        through: conversation[1],
+      });
+      expect(await summaries.save(seed)).toBe(true);
+      const a = (await summaries.findForBot(organizationId, bot.id)).unwrap();
+      const b = (await summaries.findForBot(organizationId, bot.id)).unwrap();
+      a.revise('Through five', conversation[5]);
+      b.revise('Through three', conversation[3]);
+      const outcomes = await Promise.all([summaries.save(a), summaries.save(b)]);
+      expect(outcomes.filter(Boolean)).toHaveLength(1);
+      const stored = (await summaries.findForBot(organizationId, bot.id)).unwrap();
+      const winner = outcomes[0] ? a : b;
+      expect(stored).toMatchObject({
+        content: winner.content,
+        coversThroughMessageId: winner.coversThroughMessageId,
+        versionAtLoad: 2,
+      });
+    }
+  });
+
+  it('never moves the cutoff back, even from the version it was read at', async () => {
+    const bot = await create('Forward');
+    const conversation = await talked(bot, 6);
+    expect(await summaries.save(summaryOf(bot, conversation[3], 'Through three', 0))).toBe(true);
+    // A writer with the current version but an older cutoff.
+    expect(await summaries.save(summaryOf(bot, conversation[1], 'Through one', 1))).toBe(false);
+    // And one that names the cutoff it already has.
+    expect(await summaries.save(summaryOf(bot, conversation[3], 'Again', 1))).toBe(false);
+    const stored = (await summaries.findForBot(organizationId, bot.id)).unwrap();
+    expect(stored).toMatchObject({ content: 'Through three', versionAtLoad: 1 });
+  });
+
+  it('refuses a cutoff that is another bot’s message', async () => {
+    const bot = await create('Mine');
+    const other = await create('Other');
+    const theirs = await talked(other, 2);
+    await talked(bot, 2);
+    expect(await summaries.save(summaryOf(bot, theirs[1], 'Stolen', 0))).toBe(false);
+    expect((await summaries.findForBot(organizationId, bot.id)).isNone()).toBe(true);
+  });
+
+  it('reads history and what is uncovered from just after the cutoff, to the microsecond', async () => {
+    const bot = await create('Cutoff');
+    const conversation = await talked(bot, 6);
+    expect(await summaries.save(summaryOf(bot, conversation[2], 'Through two', 0))).toBe(true);
+    const uncovered = await messages.findUncovered(organizationId, bot.id, conversation[2].id, 100);
+    expect(uncovered.map((message) => message.id)).toEqual(
+      conversation.slice(3).map((message) => message.id),
+    );
+    const { turn, message } = sent(bot, 'Next');
+    await turns.enqueue(turn, message, null);
+    const history = await messages.findHistory(
+      organizationId,
+      bot.id,
+      turn.id,
+      conversation[2].id,
+      100,
+    );
+    expect(history.map((item) => item.content)).toEqual(['Answer 2', 'Question 4', 'Answer 4']);
+  });
+
+  it('stages a summarizing job on the outbox', async () => {
+    await dataSource.query(`DELETE FROM outbox_message WHERE topic = 'bot-summaries'`);
+    const bot = await create('Staged');
+    await summaries.stageSummarize(organizationId, bot.id, 'corr-1');
+    const rows: { payload: { organizationId: string; botId: string } }[] = await dataSource.query(
+      `SELECT payload FROM outbox_message WHERE topic = 'bot-summaries'`,
+    );
+    expect(rows.map((row) => row.payload)).toEqual([{ organizationId, botId: bot.id }]);
+  });
+
+  it('deletes a bot’s summary with it', async () => {
+    const bot = await create('Gone');
+    const conversation = await talked(bot, 2);
+    await summaries.save(summaryOf(bot, conversation[1], 'Bye', 0));
+    await bots.delete(bot);
+    expect((await summaries.findForBot(organizationId, bot.id)).isNone()).toBe(true);
   });
 });

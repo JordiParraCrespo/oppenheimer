@@ -1,4 +1,4 @@
-import type { BotMessageRole } from '@oppenheimer/shared';
+import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';
 
 /** One of our tools the turn offers, as the model will see it. */
@@ -103,34 +103,6 @@ function firstSentence(text: string): string {
   return end === -1 ? trimmed : trimmed.slice(0, end + 1);
 }
 
-/** A message as the next turn reads it back. */
-export interface HistoryMessage {
-  role: BotMessageRole;
-  content: string;
-}
-
-/** How many of the latest messages a turn reads back. */
-export const BOT_HISTORY_MESSAGES = 40;
-
-/**
- * The conversation a turn continues: your messages, the bot's text and the
- * events Oppenheimer told it (an approval decided), oldest first, the latest
- * `BOT_HISTORY_MESSAGES` of them. An event is read back as a note on your
- * side, marked as Oppenheimer's so it is never taken for your words. Activity
- * lines are the bot's own working and are not read back.
- */
-export function botHistory(
-  messages: readonly HistoryMessage[],
-): { role: 'user' | 'assistant'; text: string }[] {
-  return messages
-    .filter((message) => message.role !== 'activity' && message.content.trim())
-    .slice(-BOT_HISTORY_MESSAGES)
-    .map((message) => {
-      if (message.role === 'event') return { role: 'user', text: eventNote(message.content) };
-      return { role: message.role === 'user' ? 'user' : 'assistant', text: message.content };
-    });
-}
-
 /**
  * What a turn is asked: your message as you wrote it, or, for a turn an event
  * opened, the event with what to do about it.
@@ -141,8 +113,4 @@ export function botTurnPrompt(opening: HistoryMessage | null): string {
   return `${eventNote(opening.content)}
 
 This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.`;
-}
-
-function eventNote(content: string): string {
-  return `[A note from Oppenheimer, not a message from the person]\n${content}`;
 }

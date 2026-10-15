@@ -19,13 +19,15 @@ import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory
 import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
-import { BOT_MESSAGE_REPOSITORY, OWNER_HOSTS } from '../bots-chat.di-tokens';
-import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import {
-  BOT_HISTORY_MESSAGES,
-  botHistory,
-  composeBotSystemPrompt,
-} from '../domain/bot-prompt.policy';
+  BOT_CONVERSATION_SUMMARY_REPOSITORY,
+  BOT_MESSAGE_REPOSITORY,
+  OWNER_HOSTS,
+} from '../bots-chat.di-tokens';
+import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
+import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
+import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
+import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
@@ -48,7 +50,8 @@ export const BOT_TURN_MAX_STEPS = 20;
 /**
  * Everything a turn needs, read when it starts: the bot as it is now (its
  * soul, instructions and memory become the system prompt, the same from turn
- * to turn while they are), the conversation before this turn, the
+ * to turn while they are), the conversation before this turn (its summary,
+ * then the newest messages after it that fit the history budget), the
  * workspace's key for the turn's provider, opened, and this turn's message,
  * opened by the moment it runs in: the sender's time, the bot's home host and
  * the owner's hosts, read in the owner's scope. The bot's own
@@ -62,6 +65,8 @@ export class BotTurnContextResolver {
     @Inject(BOT_DOCUMENT_REPOSITORY) private readonly documents: BotDocumentRepositoryPort,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
+    @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
+    private readonly summaries: BotConversationSummaryRepositoryPort,
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
     private readonly credentials: ModelProviderCredentialRepositoryPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
@@ -83,10 +88,18 @@ export class BotTurnContextResolver {
     }
     const credential = stored.unwrap();
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
+    const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
+    const summary = summarized.isSome() ? summarized.unwrap() : null;
     const [documents, facts, earlier, hosts] = await Promise.all([
       this.documents.findAllForTurn(turn.organizationId, bot.id),
       this.memory.findAllForTurn(turn.organizationId, bot.id),
-      this.messages.findHistory(turn.organizationId, bot.id, turn.id, BOT_HISTORY_MESSAGES),
+      this.messages.findHistory(
+        turn.organizationId,
+        bot.id,
+        turn.id,
+        summary?.coversThroughMessageId ?? null,
+        BOT_HISTORY_READ_MAX,
+      ),
       this.hostsOf(owner, turn.id),
     ]);
     // An owner who can no longer act leaves the bot nothing to act through.
@@ -122,7 +135,7 @@ export class BotTurnContextResolver {
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner ? this.toolbox.catalog(turn.credentialScopes) : [],
       }),
-      history: botHistory(earlier),
+      history: botHistory(earlier, summary?.content ?? null),
       message: withTurnContext(
         composeTurnContext({
           now,

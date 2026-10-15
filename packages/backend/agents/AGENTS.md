@@ -11,7 +11,7 @@ SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`). Designed in
 
 ```
 src/
-├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine
+├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine (run, complete)
 ├── bot-engine.factory.ts  # createBotEngine: routes by provider
 ├── fake-bot-engine.ts     # FakeBotEngine, for the API's tests
 ├── turn.ts                # guardTurn (the stream contract), runTool, key scrubbing

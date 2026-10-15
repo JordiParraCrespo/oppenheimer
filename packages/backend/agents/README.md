@@ -40,6 +40,17 @@ for await (const event of engine.run({
 }
 ```
 
+For text the caller keeps rather than a chat turn (a conversation's
+summary), `complete` asks for one answer with no tool at all, ours or the
+engine's, no history and one model round trip, through `run` and its
+contract. It resolves to the text, or rejects with the turn's reason:
+
+```ts
+const summary = await engine.complete({
+  provider, apiKey, model, systemPrompt, message, signal, scratchDir,
+});
+```
+
 **Keys are passed per call and never read from the environment.** The
 package reads no `ANTHROPIC_*`, `OPENAI_*` or other provider variable, and
 it never logs a key; an error or a tool result that echoes one has it
