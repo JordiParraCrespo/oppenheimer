@@ -14,10 +14,11 @@ import {
   type BotAvatarColor,
   type BotPermission,
   type BotProvider,
+  botModelOf,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { Placement } from './bot.types';
-import { botEffortFor, isBotModel } from './bot-launch.policy';
+import { resolveBotEngine } from './bot-launch.policy';
 
 export interface BotProps {
   organizationId: string;
@@ -88,8 +89,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   private pendingPlacement: Placement | null = null;
   /**
    * The columns an edit set, and only those: two edits made at once from the
-   * console (the model, then the effort) each write what they changed, so the
-   * later never puts back what the earlier changed from its stale copy.
+   * console (the colour, then the model) each write what they changed, so the
+   * later never puts back what the earlier changed from its stale copy. The
+   * provider, model and effort are one setting and are written together.
    */
   private readonly edited = new Set<BotEditedField>();
 
@@ -194,40 +196,18 @@ export class BotEntity extends AggregateRoot<BotProps> {
       props.learnAutomatically = changes.learnAutomatically;
       edited.add('learnAutomatically');
     }
-    if (changes.provider !== undefined && changes.provider !== props.provider) {
-      // Another provider starts from its own defaults: its default model and
-      // that model's own effort, unless the same edit names them.
-      props.provider = changes.provider;
-      props.model = null;
-      props.effort = null;
-      edited.add('provider');
-      edited.add('model');
-    }
-    if (changes.model !== undefined) {
-      props.model = changes.model;
-      edited.add('model');
-    }
-    if (changes.effort !== undefined) props.effort = changes.effort;
     if (
       changes.provider !== undefined ||
       changes.model !== undefined ||
       changes.effort !== undefined
     ) {
-      this.settleEffort();
+      // The three are one setting: each is valid only for the others, so they
+      // are resolved and written together.
+      Object.assign(props, resolveBotEngine(props, changes));
+      edited.add('provider').add('model').add('effort');
     }
     this.setUpdatedAt(new Date());
     this.validate();
-  }
-
-  /**
-   * The model/effort rule ({@link botEffortFor}): the effort recorded is one the
-   * model offers, else none, and the CLI's default runs. Applied whenever the
-   * model or the effort changes, and the effort is then written either way,
-   * because a new model alone can unset it.
-   */
-  private settleEffort(): void {
-    this.props.effort = botEffortFor(this.props.provider, this.props.model, this.props.effort);
-    this.edited.add('effort');
   }
 
   /**
@@ -275,7 +255,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (!BOT_PROVIDERS.includes(props.provider)) {
       throw new ArgumentInvalidException(`${props.provider} is not a bot provider`);
     }
-    if (!isBotModel(props.provider, props.model)) {
+    if (botModelOf(props.provider, props.model) === undefined) {
       throw new ArgumentInvalidException(`${props.model} is not a ${props.provider} model`);
     }
     if (!Number.isInteger(props.position) || props.position < 0) {

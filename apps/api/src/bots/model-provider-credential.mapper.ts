@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotProvider } from '@oppenheimer/shared';
+import { BOT_PROVIDERS, type BotProvider } from '@oppenheimer/shared';
 import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialEntity } from './domain/model-provider-credential.entity';
 import { ModelProviderCredentialResponseDto } from './dtos/model-provider-credential.response.dto';
@@ -51,8 +51,22 @@ export class ModelProviderCredentialMapper
     return dto;
   }
 
+  /**
+   * Every provider a bot can run on, in catalog order, each from the workspace's
+   * stored key when it has one and as "no key" when it has none.
+   */
+  toResponseList(
+    credentials: readonly ModelProviderCredentialEntity[],
+  ): ModelProviderCredentialResponseDto[] {
+    const byProvider = new Map(credentials.map((row) => [row.provider, row]));
+    return BOT_PROVIDERS.map((provider) => {
+      const credential = byProvider.get(provider);
+      return credential ? this.toResponse(credential) : this.toMissingResponse(provider);
+    });
+  }
+
   /** A provider with no key stored. */
-  toMissingResponse(provider: BotProvider): ModelProviderCredentialResponseDto {
+  private toMissingResponse(provider: BotProvider): ModelProviderCredentialResponseDto {
     const dto = new ModelProviderCredentialResponseDto();
     dto.provider = provider;
     dto.configured = false;
