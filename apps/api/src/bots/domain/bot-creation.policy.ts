@@ -1,8 +1,5 @@
 import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
-import { BOT_PERMISSIONS, type BotPermission, botSoulFor } from '@oppenheimer/shared';
-import type { BotEntity } from './bot.entity';
-import type { BotActor } from './bot.types';
-import { BotDocumentEntity } from './bot-document.entity';
+import { BOT_PERMISSIONS, type BotPermission } from '@oppenheimer/shared';
 
 /** The level a bot made in the console starts at: Approve for me. */
 export const BOT_DEFAULT_PERMISSION: BotPermission = 'auto';
@@ -44,31 +41,4 @@ export class BotLooserThanCreatorException extends ArgumentInvalidException {
   constructor() {
     super('A bot cannot create a bot looser than its own level');
   }
-}
-
-/**
- * A new bot's two documents at revision 1: the `SOUL.md` given, else the
- * template that says its name, and the `INSTRUCTIONS.md` given, else empty.
- */
-export function firstBotDocuments(
-  bot: BotEntity,
-  actor: BotActor,
-  given: { soul?: string; instructions?: string },
-): BotDocumentEntity[] {
-  return [
-    BotDocumentEntity.initial({
-      organizationId: bot.organizationId,
-      botId: bot.id,
-      name: 'soul',
-      content: given.soul ?? botSoulFor(bot.name),
-      actor,
-    }),
-    BotDocumentEntity.initial({
-      organizationId: bot.organizationId,
-      botId: bot.id,
-      name: 'instructions',
-      content: given.instructions ?? '',
-      actor,
-    }),
-  ];
 }

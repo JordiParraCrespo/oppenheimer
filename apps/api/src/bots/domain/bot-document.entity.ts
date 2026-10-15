@@ -11,6 +11,7 @@ import {
   BOT_REVISION_NOTE_MAX,
   type BotAuthor,
   type BotDocumentName,
+  botSoulFor,
 } from '@oppenheimer/shared';
 import { authorOf, type BotActor, type BotDocumentRevision } from './bot.types';
 
@@ -85,6 +86,30 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
     document.validate();
     document.pending = document.revisionRecord('', null);
     return document;
+  }
+
+  /**
+   * A new bot's two documents at revision 1: the `SOUL.md` given, else the
+   * template that says its name, and the `INSTRUCTIONS.md` given, else empty.
+   */
+  static firstOf(
+    bot: { organizationId: string; id: string; name: string },
+    actor: BotActor,
+    given: { soul?: string; instructions?: string },
+  ): BotDocumentEntity[] {
+    const contents = {
+      soul: given.soul ?? botSoulFor(bot.name),
+      instructions: given.instructions ?? '',
+    };
+    return BOT_DOCUMENT_NAMES.map((name) =>
+      BotDocumentEntity.initial({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        name,
+        content: contents[name],
+        actor,
+      }),
+    );
   }
 
   get organizationId(): string {

@@ -13,9 +13,9 @@ import { BotEntity } from '../../domain/bot.entity';
 import { userActor } from '../../domain/bot.types';
 import {
   BotLooserThanCreatorException,
-  firstBotDocuments,
   permissionForBotMadeBy,
 } from '../../domain/bot-creation.policy';
+import { BotDocumentEntity } from '../../domain/bot-document.entity';
 import { avatarColorFor, uniqueBotName } from '../../domain/bot-naming.policy';
 import { BotErrors } from '../../domain/bots.errors';
 import { CreateBotCommand } from './create-bot.command';
@@ -76,7 +76,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       createdByBotId: command.creatorBotId,
       idempotencyKey: command.idempotencyKey,
     });
-    const documents = firstBotDocuments(bot, userActor(scope.userId), command);
+    const documents = BotDocumentEntity.firstOf(bot, userActor(scope.userId), command);
     const outcome = await this.bots.insert(bot, documents, creator);
     if (outcome === 'group-missing') throw new AppError(BotErrors.GROUP_NOT_FOUND);
     if (outcome === 'creator-changed') throw new BotLooserThanCreatorException();
