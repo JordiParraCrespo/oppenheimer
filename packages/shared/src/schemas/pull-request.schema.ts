@@ -83,6 +83,16 @@ export const mergePullRequestSchema = z.object({
 });
 export type MergePullRequestDto = z.infer<typeof mergePullRequestSchema>;
 
+/**
+ * `POST /pulls/…/review-session`: start a review session on one of the
+ * caller's hosts. What it checks out and what the agent starts on are the
+ * pull request's, decided by the API.
+ */
+export const startReviewSessionSchema = z.object({
+  hostId: z.string().uuid(),
+});
+export type StartReviewSessionDto = z.infer<typeof startReviewSessionSchema>;
+
 /** `PUT /pulls/repositories/…`: watch a repository, or stop. */
 export const setRepositoryWatchSchema = z.object({
   watching: z.boolean(),

@@ -13544,6 +13544,115 @@
         "tags": ["Pull requests"]
       }
     },
+    "/api/v1/pulls/review-sessions": {
+      "get": {
+        "description": "The 100 newest review sessions the caller started and has not closed, with the pull request each one reviews: the Pull requests sidebar’s For review list and each pull request’s Chat tab.",
+        "operationId": "findReviewSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewSessionDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s review sessions",
+        "tags": ["Pull requests"]
+      }
+    },
     "/api/v1/pulls/repositories/{installationId}/{githubRepoId}": {
       "put": {
         "description": "A watched repository’s open pull requests are in the queue’s Watching scope and the analytics. No repository is watched until switched on.",
@@ -14607,6 +14716,164 @@
           }
         ],
         "summary": "Merge a pull request",
+        "tags": ["Pull requests"]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/review-session": {
+      "post": {
+        "description": "Starts Claude Code on one of the caller’s hosts, in a worktree of the pull request’s head branch, on a prompt that reads the diff, opens with two or three lines and waits. The session is filed under the pull request (its Chat tab, the For review list) and left out of the Sessions list.",
+        "operationId": "startReviewSession",
+        "parameters": [
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Send one. A retry after a lost response returns the session already started.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartReviewSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSessionStartedResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PULLS_002 — The pull request comes from a fork",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 / GITHUB_015 — Rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_016 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Review a pull request in a session",
         "tags": ["Pull requests"]
       }
     },
@@ -22111,6 +22378,64 @@
         },
         "required": ["installationId", "githubRepoId", "fullName", "private", "watching"]
       },
+      "ReviewSessionDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The installation that reaches the repository."
+          },
+          "githubRepoId": {
+            "type": "number"
+          },
+          "number": {
+            "type": "number"
+          },
+          "repository": {
+            "type": "string",
+            "example": "acme-labs/xrp-mobile",
+            "description": "As it was when the session started."
+          },
+          "title": {
+            "type": "string",
+            "description": "The pull request’s title when the session started."
+          },
+          "headRef": {
+            "type": "string",
+            "example": "fix/wallet-empty-state"
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["starting", "open", "failed"],
+            "description": "The session’s stored lifecycle."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "sessionId",
+          "installationId",
+          "githubRepoId",
+          "number",
+          "repository",
+          "title",
+          "headRef",
+          "hostId",
+          "state",
+          "createdAt"
+        ]
+      },
       "SetRepositoryWatchRequest": {
         "type": "object",
         "properties": {
@@ -22276,6 +22601,10 @@
           "baseRef": {
             "type": "string"
           },
+          "fromFork": {
+            "type": "boolean",
+            "description": "Whether the head branch is in another repository (a fork), which a session cannot check out yet."
+          },
           "state": {
             "type": "string",
             "enum": ["open", "merged", "closed"]
@@ -22333,6 +22662,7 @@
           "htmlUrl",
           "body",
           "baseRef",
+          "fromFork",
           "state",
           "changedFiles",
           "folders",
@@ -22546,6 +22876,33 @@
             "default": "squash"
           }
         }
+      },
+      "StartReviewSessionRequest": {
+        "type": "object",
+        "properties": {
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["hostId"]
+      },
+      "ReviewSessionStartedResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hints": {
+            "description": "What the control plane could not do just now: `host_offline` when the session waits for its host.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["sessionId", "hints"]
       },
       "LivenessResponseDto": {
         "type": "object",

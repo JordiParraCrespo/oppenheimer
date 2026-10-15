@@ -269,6 +269,12 @@ export class PullRequestDetailResponseDto extends PullRequestRowDto {
   @ApiProperty()
   baseRef!: string;
 
+  @ApiProperty({
+    description:
+      'Whether the head branch is in another repository (a fork), which a session cannot check out yet.',
+  })
+  fromFork!: boolean;
+
   @ApiProperty({ enum: ['open', 'merged', 'closed'] })
   state!: 'open' | 'merged' | 'closed';
 

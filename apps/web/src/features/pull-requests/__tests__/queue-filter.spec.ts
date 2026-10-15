@@ -54,9 +54,10 @@ describe('the queue filters', () => {
 });
 
 describe('the pull request’s view in the address', () => {
-  it('opens a link that still names the Briefing on the description', () => {
+  it('opens a link that still names the Briefing, or no view it has, on the description', () => {
     expect(pullRequestSearchSchema.parse({ view: 'briefing' })).toEqual({ view: undefined });
+    expect(pullRequestSearchSchema.parse({ view: 'summary' })).toEqual({ view: undefined });
     expect(pullRequestSearchSchema.parse({ view: 'changes' })).toEqual({ view: 'changes' });
-    expect(pullRequestSearchSchema.parse({ view: 'chat' })).toEqual({ view: undefined });
+    expect(pullRequestSearchSchema.parse({ view: 'chat' })).toEqual({ view: 'chat' });
   });
 });

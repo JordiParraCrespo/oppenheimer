@@ -7,4 +7,10 @@ export const PullRequestsErrors = {
     message: 'Pull requests belong to a workspace',
     httpStatus: 400,
   },
+  /** A host fetches branches of the base repository; a fork's head is not one of them. */
+  REVIEW_FROM_FORK: {
+    code: 'PULLS_002',
+    message: 'A pull request from a fork cannot be reviewed in a session yet',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

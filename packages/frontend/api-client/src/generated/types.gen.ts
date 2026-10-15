@@ -2703,6 +2703,31 @@ export type WatchedRepositoryDto = {
     watching: boolean;
 };
 
+export type ReviewSessionDto = {
+    sessionId: string;
+    /**
+     * The installation that reaches the repository.
+     */
+    installationId: string;
+    githubRepoId: number;
+    number: number;
+    /**
+     * As it was when the session started.
+     */
+    repository: string;
+    /**
+     * The pull request’s title when the session started.
+     */
+    title: string;
+    headRef: string;
+    hostId: string;
+    /**
+     * The session’s stored lifecycle.
+     */
+    state: 'starting' | 'open' | 'failed';
+    createdAt: string;
+};
+
 export type SetRepositoryWatchRequest = {
     watching: boolean;
 };
@@ -2779,6 +2804,10 @@ export type PullRequestDetailResponseDto = {
      */
     body: string;
     baseRef: string;
+    /**
+     * Whether the head branch is in another repository (a fork), which a session cannot check out yet.
+     */
+    fromFork: boolean;
     state: 'open' | 'merged' | 'closed';
     changedFiles: number;
     /**
@@ -2862,6 +2891,18 @@ export type AddPullRequestCommentRequest = {
 
 export type MergePullRequestRequest = {
     method?: 'squash' | 'merge' | 'rebase';
+};
+
+export type StartReviewSessionRequest = {
+    hostId: string;
+};
+
+export type ReviewSessionStartedResponseDto = {
+    sessionId: string;
+    /**
+     * What the control plane could not do just now: `host_offline` when the session waits for its host.
+     */
+    hints: Array<string>;
 };
 
 export type LivenessResponseDto = {
@@ -9525,6 +9566,58 @@ export type FindWatchedRepositoriesResponses = {
 
 export type FindWatchedRepositoriesResponse = FindWatchedRepositoriesResponses[keyof FindWatchedRepositoriesResponses];
 
+export type FindReviewSessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/pulls/review-sessions';
+};
+
+export type FindReviewSessionsErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindReviewSessionsError = FindReviewSessionsErrors[keyof FindReviewSessionsErrors];
+
+export type FindReviewSessionsResponses = {
+    200: Array<ReviewSessionDto>;
+};
+
+export type FindReviewSessionsResponse = FindReviewSessionsResponses[keyof FindReviewSessionsResponses];
+
 export type SetRepositoryWatchData = {
     body: SetRepositoryWatchRequest;
     path: {
@@ -9971,6 +10064,66 @@ export type MergePullRequestResponses = {
 };
 
 export type MergePullRequestResponse = MergePullRequestResponses[keyof MergePullRequestResponses];
+
+export type StartReviewSessionData = {
+    body: StartReviewSessionRequest;
+    headers?: {
+        /**
+         * Send one. A retry after a lost response returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/review-session';
+};
+
+export type StartReviewSessionErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * PULLS_002 — The pull request comes from a fork
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 / GITHUB_015 — Rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartReviewSessionError = StartReviewSessionErrors[keyof StartReviewSessionErrors];
+
+export type StartReviewSessionResponses = {
+    201: ReviewSessionStartedResponseDto;
+};
+
+export type StartReviewSessionResponse = StartReviewSessionResponses[keyof StartReviewSessionResponses];
 
 export type CheckData = {
     body?: never;

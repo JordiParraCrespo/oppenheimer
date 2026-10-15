@@ -437,6 +437,13 @@ earlier note:
   the activity timeline, the Briefing and the Merge confidence
   score are gone; watched repositories are set in Settings only
   (`next-steps/0.2-pull-requests.md`, "The screens as built").
+  On 2026-10-14 the review session came back without the review agent:
+  a pull request's **Chat** tab starts Claude Code on one of the reader's
+  hosts, in a worktree of the head branch, on a prompt that opens with a
+  two-or-three-line take and waits, and then shows its terminal with an
+  input line under it; review sessions are listed under **For review** in
+  the Pull requests sidebar and never under Sessions. That is §4's *Check
+  out in a session* decided as 0.2.
 - `versions/mvp/10-api-modules-and-data-model.md` held a project to at
   least one repository, and the console would not save one without (the
   2026-09-26 line above). On 2026-10-14 the owner allowed a project with
