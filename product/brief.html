@@ -110,7 +110,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h2 id="thesis">Thesis</h2>
 <p>Do not build an agent framework. Build a thin product over agents we do not own. The unit of the product is a real PTY on a real machine, shown in a browser. Every coding agent that runs in a terminal is supported by construction, with zero adapters.</p>
-<div class="verdict"><p><strong>The platform owns three things:</strong> the terminal experience, the fleet of machines and workspaces, and the board that shows what every session is doing. It does not own the agent loop, the model credential, or a plugin marketplace.</p></div>
+<div class="verdict"><p><strong>The platform owns three things:</strong> the terminal experience, the fleet of machines and workspaces, and the board that shows what every session is doing. It does not own a session's agent loop or model credential, nor a plugin marketplace: the agent in a session runs on the host under the user's own login. Bots are the one exception: a bot's loop runs in Oppenheimer, on the workspace's provider keys, stored encrypted and never sent to a host (<a href="#bots">Bots</a>).</p></div>
 <p>Software development only for the MVP. Other verticals wait until the core loop is boring.</p>
 
 <h2 id="lessons">What OpenClaw and Orca taught us</h2>
@@ -680,7 +680,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 
 <h2 id="bots">Bots</h2>
-<p>The Employees section: bots you talk to, each with a soul, instructions and memory kept in Oppenheimer with every change a revision. A bot's loop runs in Oppenheimer on the Claude Agent SDK (Anthropic, GLM) or the OpenAI Agents SDK (OpenAI), with the workspace's encrypted keys; it works through Oppenheimer's tools as its owner, each tool Allow, Ask or Off by the owner's choice, and sends real work to sessions on a host. Bots edit themselves, ask each other and create bots (<code>versions/mvp/25-bots.md</code>).</p>
+<p>The Employees section: bots you talk to, whose loop runs in Oppenheimer on the model provider's agent SDK and which send real work to sessions on a host. The design is <code>versions/mvp/25-bots.md</code>.</p>
 
 <h2 id="layout">Workspace layout</h2>
 <p>Two places on a host: the runner's home <code>~/.oppenheimer/</code> (keys, state, logs) and the work folder, <code>~/oppenheimer/</code> unless chosen at install. What the runner makes lives in the work folder, named by ids that never change; a folder session runs anywhere else on the host and leaves it as it is (<code>versions/mvp/24-session-places.md</code>).</p>
@@ -693,7 +693,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <div>      repos/</div>
   <div>        <span class="g">acme--xrp-mobile.git/</span>  <span class="d"># bare store, found by GitHub id</span></div>
   <div>        .spares/              <span class="d"># the pre-built worktree that makes a create instant</span></div>
-  <div>      agents/               <span class="d"># agents' homes, the Employees slice</span></div>
+  <div>      agents/               <span class="d"># reserved; bots live in Oppenheimer, not on hosts (25)</span></div>
   <div>      sessions/</div>
   <div>        <span class="g">bold-otter-3f9a7k/</span>     <span class="d"># .oppenheimer/meta.json + one checkout per repository</span></div>
 </div>
