@@ -175,11 +175,9 @@ export class BotsRepository {
     return toTurn(data);
   }
 
-  /** The chat, live. This dials; `dispose()` closes it. */
+  /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */
   openStream(id: string): BotStream {
-    const stream = new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
-    stream.open();
-    return stream;
+    return new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
   }
 
   @MapApiError(BotsErrors.FETCH_LIST_FAILED)

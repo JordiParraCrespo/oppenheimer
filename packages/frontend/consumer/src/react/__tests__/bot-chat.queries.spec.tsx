@@ -1,38 +1,63 @@
 import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
-import type { BotStreamEvent } from '@oppenheimer/shared/schemas/bot';
+import type { BotStreamEvent, BotTurnStatus } from '@oppenheimer/shared/schemas/bot';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
-import type { BotStreamStatus } from '../../modules/bots';
+import {
+  BotConversationEntity,
+  BotMessageEntity,
+  type BotStreamStatus,
+  BotTurnEntity,
+} from '../../modules/bots';
 import { useBotLiveText } from '../bot-chat.queries';
 import { fakeKernel } from './fake-kernel';
 
-/** A bot stream the spec drives by hand, and a conversation read the spec settles by hand. */
+const CONVERSATION = ['bots', 'detail', 'bot-1', 'conversation'];
+const at = new Date('2026-10-01T10:00:00Z');
+
+/** The conversation as a read returns it: turn `t1` in `status`, with these stored replies. */
+function read(status: BotTurnStatus, ...replies: string[]): BotConversationEntity {
+  return new BotConversationEntity(
+    replies.map(
+      (content, index) => new BotMessageEntity(`m${index}`, 't1', 'assistant', content, [], at),
+    ),
+    [new BotTurnEntity('t1', status, 'anthropic', 'm', null, 0, 0, false, at, at, null)],
+  );
+}
+
+/**
+ * A bot stream the spec drives by hand. Reads never fetch: the spec records
+ * what was invalidated and lands each read itself with `land`.
+ */
 function setup() {
   let status: (status: BotStreamStatus) => void = () => {};
   let event: (event: BotStreamEvent) => void = () => {};
+  const order: string[] = [];
   const stream = {
     onStatus: (listener: typeof status) => {
+      order.push('onStatus');
       status = listener;
       listener('down');
       return () => {};
     },
     onEvent: (listener: typeof event) => {
+      order.push('onEvent');
       event = listener;
       return () => {};
     },
+    open: vi.fn(() => order.push('open')),
     dispose: vi.fn(),
   };
   const openStream = vi.fn(() => stream);
-  const app = fakeKernel({ [TOKENS.BotsRepository]: { openStream } });
+  const findConversation = vi.fn(() => new Promise<never>(() => {}));
+  const app = fakeKernel({ [TOKENS.BotsRepository]: { openStream, findConversation } });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const reads: (() => void)[] = [];
+  queryClient.setQueryData(CONVERSATION, read('running'));
   const invalidated: unknown[][] = [];
-  vi.spyOn(queryClient, 'invalidateQueries').mockImplementation((filters) => {
+  vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(async (filters) => {
     invalidated.push([...(filters?.queryKey ?? [])]);
-    return new Promise<void>((resolve) => reads.push(resolve));
   });
   function wrapper({ children }: { children: ReactNode }) {
     return (
@@ -43,30 +68,29 @@ function setup() {
   }
   return {
     stream,
+    order,
     openStream,
     wrapper,
     invalidated,
     status: (next: BotStreamStatus) => act(() => status(next)),
     send: (next: BotStreamEvent) => act(() => event(next)),
-    /** Every conversation read asked for so far comes back. */
-    settle: () =>
+    /** A conversation read lands; the query cache tells its readers on the next tick. */
+    land: (conversation: BotConversationEntity) =>
       act(async () => {
-        for (const resolve of reads.splice(0)) resolve();
+        queryClient.setQueryData(CONVERSATION, conversation);
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }),
   };
 }
 
-const text = (turnId: string, value: string): BotStreamEvent => ({
-  type: 'text',
-  turnId,
-  text: value,
-});
+const text = (value: string): BotStreamEvent => ({ type: 'text', turnId: 't1', text: value });
 
 describe('useBotLiveText', () => {
-  it('opens the bot’s stream while mounted, and closes it after', () => {
+  it('opens the bot’s stream once it listens, and closes it after', () => {
     const chat = setup();
     const { unmount } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
     expect(chat.openStream).toHaveBeenCalledWith('bot-1');
+    expect(chat.order).toEqual(['onStatus', 'onEvent', 'open']);
     unmount();
     expect(chat.stream.dispose).toHaveBeenCalled();
   });
@@ -75,14 +99,16 @@ describe('useBotLiveText', () => {
     const chat = setup();
     renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
     await chat.status('live');
-    expect(chat.invalidated).toEqual([['bots', 'detail', 'bot-1', 'conversation']]);
+    await chat.status('down');
+    await chat.status('live');
+    expect(chat.invalidated).toEqual([CONVERSATION, CONVERSATION]);
   });
 
   it('gathers a turn’s text as it streams', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('t1', 'Hel'));
-    await chat.send(text('t1', 'lo'));
+    await chat.send(text('Hel'));
+    await chat.send(text('lo'));
     expect(result.current).toEqual({ t1: 'Hello' });
   });
 
@@ -94,21 +120,34 @@ describe('useBotLiveText', () => {
   it('keeps text live until the read that stores it lands, then only what came after', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('t1', 'First.'));
-    await chat.send({ type: 'message', turnId: 't1', messageId: 'm1' });
-    await chat.send(text('t1', ' Second'));
+    await chat.send(text('First.'));
+    await chat.send({ type: 'message', turnId: 't1', messageId: 'm0' });
+    await chat.send(text(' Second'));
+    expect(chat.invalidated).toEqual([CONVERSATION]);
     expect(result.current).toEqual({ t1: 'First. Second' });
-    await chat.settle();
-    expect(result.current).toEqual({ t1: ' Second' });
+    await chat.land(read('running', 'First.'));
+    expect(result.current).toEqual({ t1: 'Second' });
   });
 
-  it('forgets a turn once it has ended and its read has landed, and reads the bot list again', async () => {
+  /** Codex's finding: clearing on `ready` dropped a reply that had no stored message yet. */
+  it('keeps a partial reply across a reconnect', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('t1', 'Done'));
+    await chat.status('live');
+    await chat.send(text('Partial rep'));
+    await chat.status('down');
+    await chat.status('live');
+    expect(result.current).toEqual({ t1: 'Partial rep' });
+  });
+
+  it('draws nothing of a turn once the read shows it ended, and reads the bot list again', async () => {
+    const chat = setup();
+    const { result } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
+    await chat.send(text('Done'));
     await chat.send({ type: 'turn', turnId: 't1', status: 'completed' });
     expect(chat.invalidated).toContainEqual(['bots', 'list']);
-    await chat.settle();
+    expect(result.current).toEqual({ t1: 'Done' });
+    await chat.land(read('completed', 'Done'));
     expect(result.current).toEqual({});
   });
 });

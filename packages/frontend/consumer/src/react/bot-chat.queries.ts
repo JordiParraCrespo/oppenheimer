@@ -9,6 +9,15 @@ import {
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type { BotConversationEntity, BotTurnEntity } from '../modules/bots/bot-conversation.entity';
+import {
+  appendBotText,
+  type BotLiveText,
+  type BotTextBuffers,
+  botLiveText,
+  forgetEndedBotTurns,
+  markBotStreamGap,
+  NO_BOT_TEXT,
+} from '../modules/bots/live-text';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
 
@@ -81,67 +90,62 @@ export function useCancelBotTurn(
   });
 }
 
-/** What a turn has written that is not in the stored conversation yet, by turn id. */
-export type BotLiveText = Readonly<Record<string, string>>;
-
-const NONE: BotLiveText = {};
+export type { BotLiveText };
 
 /**
  * The chat, live, while the screen is up: the text each running turn is
- * writing, and the conversation read again the moment a message is stored or
- * a turn moves. Each time the stream comes up (the first connect included),
- * the conversation is read once for what the gap may have missed.
+ * writing that the stored conversation does not hold yet. The stream's text
+ * is kept as it arrived ({@link BotTextBuffers}); what is drawn is derived
+ * from it and the conversation in render ({@link botLiveText}), so a read
+ * landing early or late never draws stored text twice or drops it.
  *
- * A turn's text arrives as pieces. A stored message takes the pieces before
- * it, so once the conversation that holds it is read, they leave the live
- * text: what remains is only what is still being written.
+ * The conversation is read again the moment a message is stored or a turn
+ * moves, and each time the stream comes up (the first connect included) for
+ * what the gap may have missed.
  */
 export function useBotLiveText(id: string): BotLiveText {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-  const [live, setLive] = useState<{ id: string; text: BotLiveText }>({ id, text: NONE });
+  const { data: conversation } = useSuspenseBotConversation(id);
+  const [streamed, setStreamed] = useState<{ id: string; buffers: BotTextBuffers }>({
+    id,
+    buffers: NO_BOT_TEXT,
+  });
 
   // Subscribes to the bot's stream, an outside system, while the chat is open.
   useEffect(() => {
     const stream = app.bots.openStream(id);
-    /** Every piece each turn has streamed, and how much of it is stored. */
-    const written = new Map<string, { text: string; stored: number }>();
-    const publish = () => {
-      const text: Record<string, string> = {};
-      for (const [turnId, turn] of written) {
-        const rest = turn.text.slice(turn.stored);
-        if (rest) text[turnId] = rest;
-      }
-      setLive({ id, text });
-    };
+    const key = botsKeys.conversation(id);
+    const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
+      setStreamed((current) => {
+        const buffers = next(current.id === id ? current.buffers : NO_BOT_TEXT);
+        // Memory only: an ended turn is not drawn whether or not it is dropped here.
+        const kept = forgetEndedBotTurns(
+          buffers,
+          queryClient.getQueryData<BotConversationEntity>(key),
+        );
+        return current.id === id && kept === current.buffers ? current : { id, buffers: kept };
+      });
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
       const now = status === 'live';
       if (now && !up) {
-        written.clear();
-        publish();
+        update(markBotStreamGap);
         void refetchChat(queryClient, id, false);
       }
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
-      const turn = written.get(event.turnId) ?? { text: '', stored: 0 };
-      written.set(event.turnId, turn);
       if (event.type === 'text') {
-        turn.text += event.text;
-        publish();
+        update((buffers) => appendBotText(buffers, event.turnId, event.text));
         return;
       }
-      const upTo = turn.text.length;
       const ended =
         event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
-      void refetchChat(queryClient, id, ended).then(() => {
-        turn.stored = Math.max(turn.stored, upTo);
-        if (ended) written.delete(event.turnId);
-        publish();
-      });
+      void refetchChat(queryClient, id, ended);
     });
+    stream.open();
     return () => {
       offStatus();
       offEvent();
@@ -149,5 +153,5 @@ export function useBotLiveText(id: string): BotLiveText {
     };
   }, [app, queryClient, id]);
 
-  return live.id === id ? live.text : NONE;
+  return botLiveText(streamed.id === id ? streamed.buffers : NO_BOT_TEXT, conversation);
 }
