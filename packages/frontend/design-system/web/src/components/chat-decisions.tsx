@@ -24,6 +24,8 @@ import { IconButton } from './icon-button';
  */
 function DecisionCard({
   slot,
+  shape = 'card',
+  status,
   title,
   aside,
   onPick,
@@ -32,6 +34,10 @@ function DecisionCard({
   children,
 }: {
   slot: string;
+  /** `fused`: open at the bottom, to sit on the composer's top edge. */
+  shape?: 'card' | 'fused';
+  /** A line over the title (the waiting state and why). */
+  status?: React.ReactNode;
   title: React.ReactNode;
   aside?: React.ReactNode;
   onPick?: (index: number) => void;
@@ -52,8 +58,13 @@ function DecisionCard({
           onPick(n - 1);
         }
       }}
-      className={cn('flex flex-col gap-2.5 rounded-lg border border-border-subtle bg-card px-3.5 py-3', className)}
+      className={cn(
+        'flex flex-col gap-2.5 border border-border-subtle bg-card px-3.5',
+        shape === 'card' ? 'rounded-lg py-3' : 'animate-appear rounded-t-lg border-b-0 pt-3 pb-2.5',
+        className,
+      )}
     >
+      {status}
       <div className="flex items-start gap-3">
         <span className="flex-1 text-[15px] leading-[1.35] font-medium text-fg">{title}</span>
         {aside}
@@ -116,15 +127,7 @@ function ChoiceRow({
 
 type Choice = { label: React.ReactNode; description?: React.ReactNode; tone?: 'default' | 'primary' | 'danger' };
 
-function ApprovalPanel({
-  title,
-  tool,
-  position,
-  detail,
-  choices,
-  onChoose,
-  className,
-}: {
+type ApprovalProps = {
   /** "Run this command?" */
   title: React.ReactNode;
   /** Who asks, after the title in subtle ink ("Bash"). */
@@ -136,10 +139,25 @@ function ApprovalPanel({
   choices: readonly Choice[];
   onChoose: (index: number) => void;
   className?: string;
-}) {
+};
+
+function Approval({
+  slot,
+  shape,
+  status,
+  title,
+  tool,
+  position,
+  detail,
+  choices,
+  onChoose,
+  className,
+}: ApprovalProps & { slot: string; shape: 'card' | 'fused'; status?: React.ReactNode }) {
   return (
     <DecisionCard
-      slot="approval-panel"
+      slot={slot}
+      shape={shape}
+      status={status}
       title={
         <>
           {title} {tool ? <span className="ml-1 text-[13px] font-normal text-fg-subtle">{tool}</span> : null}
@@ -171,6 +189,39 @@ function ApprovalPanel({
         ))}
       </div>
     </DecisionCard>
+  );
+}
+
+function ApprovalPanel(props: ApprovalProps) {
+  return <Approval slot="approval-panel" shape="card" {...props} />;
+}
+
+/**
+ * ComposerApproval — the same request fused onto the composer's top edge
+ * (`Composer above`), where a bot's chat asks while the composer stays to
+ * answer it another way ("Or tell Release Bot what to do instead"). Over the
+ * title a 12.5px line says it is waiting: an amber dot and `waiting` ("Needs
+ * input") on the left, `reason` ("Ask for approval is on") on the right.
+ */
+function ComposerApproval({
+  waiting = 'Needs input',
+  reason,
+  ...props
+}: ApprovalProps & { waiting?: React.ReactNode; reason?: React.ReactNode }) {
+  return (
+    <Approval
+      slot="composer-approval"
+      shape="fused"
+      status={
+        <div className="flex items-center gap-2 text-[12.5px] text-fg-muted">
+          <span aria-hidden className="size-1.5 shrink-0 rounded-pill bg-warning" />
+          {waiting}
+          <span className="flex-1" />
+          {reason}
+        </div>
+      }
+      {...props}
+    />
   );
 }
 
@@ -281,5 +332,5 @@ function QuestionPanel({
   );
 }
 
-export { ApprovalApp, ApprovalCommand, ApprovalFile, ApprovalPanel, ChoiceRow, QuestionPanel };
+export { ApprovalApp, ApprovalCommand, ApprovalFile, ApprovalPanel, ChoiceRow, ComposerApproval, QuestionPanel };
 export type { Choice, QuestionLabels };

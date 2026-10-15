@@ -51,7 +51,7 @@ export function startDefaults(
 export function toStartSession(
   values: StartSessionValues,
   project: ProjectEntity,
-): Omit<CreateSessionInput, 'projectId'> | null {
+): (CreateSessionInput & { projectId?: never }) | null {
   const repository = project.repositories.find((row) => row.id === values.repositoryId);
   if (!repository) return null;
   const githubRepoId = Number(repository.githubRepoId);

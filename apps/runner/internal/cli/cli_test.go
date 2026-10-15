@@ -18,7 +18,7 @@ import (
 func TestResolvePathsKeepsTheUsersCodeOutOfTheRunnerHome(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv(cli.EnvHome, filepath.Join(home, ".oppenheimer"))
-	t.Setenv(cli.EnvWorkspaces, filepath.Join(home, "oppenheimer-ai", "workspaces"))
+	t.Setenv(cli.EnvWorkspaces, filepath.Join(home, "oppenheimer"))
 
 	paths, err := cli.ResolvePaths()
 	if err != nil {

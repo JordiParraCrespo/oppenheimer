@@ -18,4 +18,12 @@ export class InvitationRepository implements InvitationRepositoryPort {
     const row = await this.invitations.findOne({ where: { id: invitationId } });
     return row ? Some(OrganizationMapper.toInvitation(row)) : None;
   }
+
+  async reopen(invitationId: string): Promise<void> {
+    await this.invitations.update({ id: invitationId, status: 'accepted' }, { status: 'pending' });
+  }
+
+  async markAccepted(invitationId: string): Promise<void> {
+    await this.invitations.update({ id: invitationId, status: 'pending' }, { status: 'accepted' });
+  }
 }

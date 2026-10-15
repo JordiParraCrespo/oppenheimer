@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { type UseFormReturn, useForm } from 'react-hook-form';
-import { initialDraft, type NewSessionDraft, rememberDraft } from '../lib/new-session-draft';
+import { rememberedFolder } from '../lib/folder-memory';
+import {
+  type DraftSeed,
+  initialDraft,
+  type NewSessionDraft,
+  REMEMBERED_FIELDS,
+  rememberDraft,
+} from '../lib/new-session-draft';
 
 /**
  * The New session draft as one React Hook Form store. The section never reads
@@ -16,24 +23,43 @@ export type NewSessionDraftForm = UseFormReturn<NewSessionDraft>;
 
 export const NewSessionFormContext = createContext<NewSessionDraftForm | null>(null);
 
-/** Create the draft's store, seeded from the last visit and remembering this one. */
-export function useNewSessionForm(): NewSessionDraftForm {
-  const [defaultValues] = useState(initialDraft);
+/**
+ * Create the draft's store, seeded from the last visit (and from the address,
+ * when it names a place, a host or an agent) and remembering this one.
+ */
+export function useNewSessionForm(seed?: DraftSeed): NewSessionDraftForm {
+  const [defaultValues] = useState(() => initialDraft(seed));
   const form = useForm<NewSessionDraft>({ defaultValues });
 
-  // `localStorage`: the five remembered fields are written out as they change.
+  // `localStorage`: the remembered fields are written out as they change.
   // `subscribe` rather than `useWatch`, so remembering a pick does not
   // re-render the section that owns the form.
-  const { subscribe } = form;
+  const { subscribe, getValues, setValue } = form;
   useEffect(
     () =>
       subscribe({
-        name: ['projectId', 'hostId', 'agent', 'model', 'efforts'],
+        name: [...REMEMBERED_FIELDS],
         formState: { values: true },
         callback: ({ values }) => rememberDraft(values),
       }),
     [subscribe],
   );
+
+  // The form store: a folder is a path on one machine, so a host pick takes
+  // that host's last folder, or none. Only a change of host does: the host
+  // chip writes the same id again when an address names it.
+  useEffect(() => {
+    let host = getValues('hostId');
+    return subscribe({
+      name: ['hostId'],
+      formState: { values: true },
+      callback: ({ values }) => {
+        if (values.hostId === host) return;
+        host = values.hostId ?? null;
+        setValue('folder', host ? (rememberedFolder(host)?.path ?? null) : null);
+      },
+    });
+  }, [subscribe, getValues, setValue]);
 
   return form;
 }

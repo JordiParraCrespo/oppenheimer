@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
@@ -37,12 +37,33 @@ export function useCalendarEvents<TData = CalendarEventEntity[]>(
   range: CalendarRange,
   options?: Omit<UseQueryOptions<CalendarEventEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
   return useQuery<CalendarEventEntity[], Error, TData>({
-    queryKey: calendarKeys.eventRange(range),
-    queryFn: () => app.calendar.findEvents(range),
+    ...useCalendarEventsQuery(range),
     ...options,
   });
+}
+
+/**
+ * {@link useCalendarEvents} under a Suspense `QueryState`; `select` for one
+ * of them, as there.
+ */
+export function useSuspenseCalendarEvents<TData = CalendarEventEntity[]>(
+  range: CalendarRange,
+  select?: (rows: CalendarEventEntity[]) => TData,
+) {
+  return useSuspenseQuery<CalendarEventEntity[], Error, TData>({
+    ...useCalendarEventsQuery(range),
+    ...(select ? { select } : {}),
+  });
+}
+
+/** The month's events read, for both hooks over it: the key and the fetch, once. */
+function useCalendarEventsQuery(range: CalendarRange) {
+  const app = useConsumerApp();
+  return {
+    queryKey: calendarKeys.eventRange(range),
+    queryFn: () => app.calendar.findEvents(range),
+  };
 }
 
 /** The viewer's Google accounts, oldest first; `select` for one of them or a count. */
@@ -52,12 +73,24 @@ export function useGoogleCalendarConnections<TData = GoogleCalendarConnectionEnt
     'queryKey' | 'queryFn'
   >,
 ) {
-  const app = useConsumerApp();
   return useQuery<GoogleCalendarConnectionEntity[], Error, TData>({
-    queryKey: calendarKeys.googleConnections(),
-    queryFn: () => app.calendar.findGoogleConnections(),
+    ...useGoogleConnectionsQuery(),
     ...options,
   });
+}
+
+/** {@link useGoogleCalendarConnections} for a section under a Suspense `QueryState`. */
+export function useSuspenseGoogleCalendarConnections() {
+  return useSuspenseQuery<GoogleCalendarConnectionEntity[], Error>(useGoogleConnectionsQuery());
+}
+
+/** The Google accounts read, for both hooks over it: the key and the fetch, once. */
+function useGoogleConnectionsQuery() {
+  const app = useConsumerApp();
+  return {
+    queryKey: calendarKeys.googleConnections(),
+    queryFn: () => app.calendar.findGoogleConnections(),
+  };
 }
 
 /**

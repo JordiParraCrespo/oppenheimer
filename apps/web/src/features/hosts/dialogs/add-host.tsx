@@ -15,7 +15,9 @@ import { usePairing } from '../hooks/use-pairing';
 
 /**
  * Add a host, pairing a machine without leaving the console
- * (`product/versions/mvp/05-screens.md`), behind the host chip's foot row. The
+ * (`product/versions/mvp/05-screens.md`), behind the host chip's foot row:
+ * the same agent-first column as onboarding's step at the dialog's sizes
+ * (`design/version1/SessionsConsole.dc.html`, the 2026-10-13 export). The
  * footer's primary arms on a **registered** host rather than an online one,
  * unlike onboarding's Continue (`usePairing`'s two rules). On a deployment
  * that cannot pair, the dialog explains and offers only Close. Settings pairs
@@ -43,19 +45,17 @@ export function AddHostDialog({
         </DialogHeader>
 
         <DialogBody>
-          <div className="flex flex-col gap-4.5">
-            <PairingGate availability={availability}>
-              <PairingChrome
-                pairing={pairing ?? null}
-                expiresAt={expiresAt}
-                expired={expired}
-                onRegenerate={regenerate}
-                busy={isPending}
-                host={host}
-                error={error}
-              />
-            </PairingGate>
-          </div>
+          <PairingGate availability={availability}>
+            <PairingChrome
+              pairing={pairing ?? null}
+              expiresAt={expiresAt}
+              expired={expired}
+              onRegenerate={regenerate}
+              busy={isPending}
+              host={host}
+              error={error}
+            />
+          </PairingGate>
         </DialogBody>
 
         <DialogFooter>

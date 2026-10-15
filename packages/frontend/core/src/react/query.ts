@@ -3,8 +3,12 @@ import {
   type QueryKey,
   type UseQueryOptions,
   type UseQueryResult,
+  type UseSuspenseQueryOptions,
+  type UseSuspenseQueryResult,
   useQueries as useTanstackQueries,
   useQuery as useTanstackQuery,
+  useSuspenseQueries as useTanstackSuspenseQueries,
+  useSuspenseQuery as useTanstackSuspenseQuery,
 } from '@tanstack/react-query';
 import { shareEntities } from './share-entities';
 
@@ -34,3 +38,34 @@ export const useQueries = ((options: { queries: readonly object[] }) =>
     ...options,
     queries: options.queries.map((query) => ({ structuralSharing: shareEntities, ...query })),
   } as never)) as typeof useTanstackQueries;
+
+/**
+ * TanStack Query's `useSuspenseQuery`, sharing entities as {@link useQuery}
+ * does. The component that calls it suspends until the first answer and
+ * throws a first failure to the nearest error boundary, so `data` is never
+ * `undefined`: loading and failure are drawn by the kit's `QueryState` with
+ * no `query` around it. A later failure over data already drawn does not
+ * throw; it is `error` on the result, for the reader to show beside the data.
+ */
+export function useSuspenseQuery<
+  TQueryFnData = unknown,
+  TError = DefaultError,
+  TData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey,
+>(
+  options: UseSuspenseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+): UseSuspenseQueryResult<TData, TError> {
+  return useTanstackSuspenseQuery({ structuralSharing: shareEntities, ...options });
+}
+
+/**
+ * TanStack Query's `useSuspenseQueries`, each entry sharing entities as
+ * {@link useQuery} does. For a section that draws several reads at once: the
+ * entries fetch side by side and the section suspends until every one has
+ * answered, where two `useSuspenseQuery` calls would fetch one after the other.
+ */
+export const useSuspenseQueries = ((options: { queries: readonly object[] }) =>
+  useTanstackSuspenseQueries({
+    ...options,
+    queries: options.queries.map((query) => ({ structuralSharing: shareEntities, ...query })),
+  } as never)) as typeof useTanstackSuspenseQueries;

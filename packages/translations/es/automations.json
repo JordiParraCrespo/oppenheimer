@@ -171,8 +171,8 @@
     "failed": "Fallidas",
     "runs_one": "{{count}} ejecución",
     "runs_other": "{{count}} ejecuciones",
-    "runs_many": "{{count}} ejecuciones",
-    "loadFailed": "No se ha podido cargar el historial de ejecuciones."
+    "loadFailed": "No se ha podido cargar el historial de ejecuciones.",
+    "runs_many": "{{count}} ejecuciones"
   },
   "runs": {
     "all": "Todas",
@@ -209,9 +209,11 @@
     "duplicate": "Duplicar",
     "delete": "Eliminar automatización",
     "resumeAction": "Reanudar",
-    "notFound": "Esta automatización no existe o se eliminó."
+    "notFound": "Esta automatización no existe o se eliminó.",
+    "loadFailed": "No se pudo cargar esta automatización."
   },
   "editor": {
+    "loadFailed": "No se han podido cargar tus proyectos y hosts.",
     "newTitle": "Nueva automatización",
     "editTitle": "Editar automatización",
     "steps": {

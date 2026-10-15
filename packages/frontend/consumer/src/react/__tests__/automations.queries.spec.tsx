@@ -1,20 +1,20 @@
 import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { type Query, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { type ReactNode, Suspense, useDeferredValue } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { AutomationEntity, RunPage } from '../../modules/automations/automation.entity';
 import {
   automationsKeys,
-  useAutomation,
-  useAutomationRuns,
   useAutomations,
   useCreateAutomation,
   useDeleteAutomation,
   useDuplicateAutomation,
   useRunAutomation,
   useSetAutomationPaused,
+  useSuspenseAutomation,
+  useSuspenseAutomationRuns,
   useTriggerPreview,
   useUpdateAutomation,
 } from '../automations.queries';
@@ -66,7 +66,12 @@ function setup(
       </QueryClientProvider>
     );
   }
-  return { wrapper, queryClient };
+  // A Suspense read renders nothing until it answers: `result.current` is
+  // null until then.
+  function suspended({ children }: { children: ReactNode }) {
+    return wrapper({ children: <Suspense>{children}</Suspense> });
+  }
+  return { wrapper, suspended, queryClient };
 }
 
 /** The interval the query would poll at for the data it holds now. */
@@ -129,45 +134,31 @@ describe('useAutomations', () => {
   });
 });
 
-describe('useAutomations and useAutomation', () => {
+describe('useAutomations and useSuspenseAutomation', () => {
   it('opens an automation from the list without asking for it again', async () => {
     const findById = vi.fn();
-    const { wrapper } = setup(
+    const { wrapper, suspended } = setup(
       { findAll: vi.fn().mockResolvedValue([automation('a-1'), automation('a-2')]), findById },
       { defaultOptions: defaultQueryClientOptions(60_000) },
     );
     const { result: list } = renderHook(() => useAutomations(), { wrapper });
     await waitFor(() => expect(list.current.isSuccess).toBe(true));
 
-    const { result: detail } = renderHook(() => useAutomation('a-2'), { wrapper });
+    const { result: detail } = renderHook(() => useSuspenseAutomation('a-2'), {
+      wrapper: suspended,
+    });
 
     expect(detail.current.data).toBe(list.current.data?.[1]);
     expect(findById).not.toHaveBeenCalled();
   });
 });
 
-describe('useAutomation', () => {
-  it('asks for nothing until there is an id', async () => {
-    const findById = vi.fn().mockResolvedValue(automation('a-1'));
-    const { wrapper } = setup({ findById });
-    const { result, rerender } = renderHook(({ id }) => useAutomation(id), {
-      wrapper,
-      initialProps: { id: undefined as string | undefined },
-    });
-
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(findById).not.toHaveBeenCalled();
-
-    rerender({ id: 'a-1' });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(findById).toHaveBeenCalledWith('a-1');
-  });
-
+describe('useSuspenseAutomation', () => {
   it('polls only while the automation is running', async () => {
     const findById = vi.fn().mockResolvedValue(automation('a-1', true));
-    const { wrapper, queryClient } = setup({ findById });
-    const { result } = renderHook(() => useAutomation('a-1'), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const { suspended, queryClient } = setup({ findById });
+    const { result } = renderHook(() => useSuspenseAutomation('a-1'), { wrapper: suspended });
+    await waitFor(() => expect(result.current?.isSuccess).toBe(true));
 
     expect(pollInterval(queryClient, automationsKeys.detail('a-1'))).toBe(
       LIVE_POLL.liveRun.interval,
@@ -178,12 +169,14 @@ describe('useAutomation', () => {
   });
 });
 
-describe('useAutomationRuns', () => {
+describe('useSuspenseAutomationRuns', () => {
   it('polls while a run on the page is queued or running', async () => {
     const findRuns = vi.fn().mockResolvedValue(page(new Run('r-1', false), new Run('r-2', true)));
     const { wrapper, queryClient } = setup({ findRuns });
-    const { result } = renderHook(() => useAutomationRuns({ page: 1 }), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const { result } = renderHook(() => useSuspenseAutomationRuns({ page: 1 }), {
+      wrapper: ({ children }) => wrapper({ children: <Suspense>{children}</Suspense> }),
+    });
+    await waitFor(() => expect(result.current?.isSuccess).toBe(true));
 
     const key = automationsKeys.runList({ page: 1 });
     expect(pollInterval(queryClient, key)).toBe(LIVE_POLL.liveRun.interval);
@@ -192,12 +185,11 @@ describe('useAutomationRuns', () => {
     expect(pollInterval(queryClient, key)).toBe(false);
   });
 
-  it('keeps the previous page on screen while the next one loads', async () => {
+  it('keeps the previous page on screen while the next one loads, read through a deferred filter', async () => {
     let answerNext: (value: RunPage) => void = () => {};
-    const firstPage = page(new Run('r-1', false));
     const findRuns = vi
       .fn()
-      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(page(new Run('r-1', false)))
       .mockImplementationOnce(
         () =>
           new Promise<RunPage>((resolve) => {
@@ -205,20 +197,32 @@ describe('useAutomationRuns', () => {
           }),
       );
     const { wrapper } = setup({ findRuns });
-    const { result, rerender } = renderHook(({ n }) => useAutomationRuns({ page: n }), {
-      wrapper,
-      initialProps: { n: 1 },
-    });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    // The runs table's shape: the filter is deferred, so the next page renders
+    // in the background and the one on screen stays until it answers.
+    function Runs({ n }: { n: number }) {
+      const settled = useDeferredValue(n);
+      const { data } = useSuspenseAutomationRuns({ page: settled });
+      return <p>{data.items.map((run) => run.id).join(',')}</p>;
+    }
+    const { rerender } = render(
+      <Suspense fallback={<p>loading</p>}>
+        <Runs n={1} />
+      </Suspense>,
+      { wrapper },
+    );
+    expect(await screen.findByText('r-1')).toBeTruthy();
 
-    rerender({ n: 2 });
+    rerender(
+      <Suspense fallback={<p>loading</p>}>
+        <Runs n={2} />
+      </Suspense>,
+    );
     await waitFor(() => expect(findRuns).toHaveBeenCalledTimes(2));
-    expect(result.current.data?.items[0]?.id).toBe('r-1');
-    expect(result.current.isPlaceholderData).toBe(true);
+    expect(screen.getByText('r-1')).toBeTruthy();
+    expect(screen.queryByText('loading')).toBeNull();
 
     act(() => answerNext(page(new Run('r-9', false))));
-    await waitFor(() => expect(result.current.data?.items[0]?.id).toBe('r-9'));
-    expect(result.current.isPlaceholderData).toBe(false);
+    expect(await screen.findByText('r-9')).toBeTruthy();
   });
 });
 
@@ -367,12 +371,15 @@ describe('automation writes', () => {
           answerStale = resolve;
         }),
       );
-    const { wrapper, queryClient } = setup({ findById, pause: vi.fn().mockResolvedValue(saved) });
+    const { suspended, queryClient } = setup({
+      findById,
+      pause: vi.fn().mockResolvedValue(saved),
+    });
     const { result } = renderHook(
-      () => ({ detail: useAutomation('a-1'), paused: useSetAutomationPaused() }),
-      { wrapper },
+      () => ({ detail: useSuspenseAutomation('a-1'), paused: useSetAutomationPaused() }),
+      { wrapper: suspended },
     );
-    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current?.detail.isSuccess).toBe(true));
     act(() => void queryClient.refetchQueries({ queryKey: reads.detail }));
     await waitFor(() => expect(findById).toHaveBeenCalledTimes(2));
 

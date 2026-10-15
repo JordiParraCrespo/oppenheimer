@@ -19,6 +19,8 @@ function session(lifecycle: SessionEntity['lifecycle'], state: SessionEntity['st
     null,
     [],
     new Date('2026-10-01T00:00:00Z'),
+    'worktree',
+    null,
   );
 }
 

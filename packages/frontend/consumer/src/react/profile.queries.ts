@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQuery,
+  usersKeys,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type {
   ChangeEmailDto,
   ChangeOwnPasswordDto,
@@ -33,13 +38,18 @@ export const profileKeys = {
 export function useMyProfile(
   options?: Omit<UseQueryOptions<ProfileEntity, Error>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
+  return useQuery({ ...useMyProfileQuery(), ...options });
+}
 
-  return useQuery({
-    queryKey: profileKeys.me(),
-    queryFn: () => app.profile.get(),
-    ...options,
-  });
+/** {@link useMyProfile} for a section under a Suspense `QueryState`: `data` is always the profile. */
+export function useSuspenseMyProfile() {
+  return useSuspenseQuery<ProfileEntity, Error>(useMyProfileQuery());
+}
+
+/** What the profile read is, for both hooks over it: the key and the fetch, once. */
+function useMyProfileQuery() {
+  const app = useConsumerApp();
+  return { queryKey: profileKeys.me(), queryFn: () => app.profile.get() };
 }
 
 /**
@@ -105,15 +115,15 @@ export function useChangeOwnPassword(
   });
 }
 
-export function useProfileSessions(
-  options?: Omit<UseQueryOptions<UserSessionEntity[], Error>, 'queryKey' | 'queryFn'>,
-) {
+/**
+ * The browsers signed in to the account, read under a Suspense `QueryState`:
+ * `data` is always the devices.
+ */
+export function useSuspenseProfileSessions() {
   const app = useConsumerApp();
-
-  return useQuery({
+  return useSuspenseQuery<UserSessionEntity[], Error>({
     queryKey: profileKeys.sessions(),
     queryFn: () => app.profile.getSessions(),
-    ...options,
   });
 }
 

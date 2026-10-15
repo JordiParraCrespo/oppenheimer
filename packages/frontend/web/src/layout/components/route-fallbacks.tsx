@@ -35,7 +35,9 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
 /**
  * A thrown render error, with the one action that has ever fixed one: try
  * again. `router.invalidate()` re-runs the failed match rather than reloading,
- * so a network failure costs a retry, not the whole app's state. `error` is
+ * so a network failure costs a retry, not the whole app's state. Drawn by a
+ * Suspense `QueryState.Error`, `onRetry` is that boundary's reset instead:
+ * invalidating the router would not remount a read the boundary caught. `error` is
  * `unknown`, as a route's `errorComponent` is handed, so it assigns without a
  * cast.
  *
@@ -45,7 +47,7 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
  * carries neither and gets the fallback sentence, since the resolver would
  * read its missing status as the connection's fault.
  */
-export function RouteError({ error }: { error: unknown }) {
+export function RouteError({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const { t } = useTranslation();
   const router = useRouter();
   const resolveError = useErrorMessage();
@@ -68,7 +70,7 @@ export function RouteError({ error }: { error: unknown }) {
           : null
       }
       action={
-        <Button variant="secondary" onClick={() => router.invalidate()}>
+        <Button variant="secondary" onClick={onRetry ?? (() => router.invalidate())}>
           {t('errors.unexpected.retry')}
         </Button>
       }

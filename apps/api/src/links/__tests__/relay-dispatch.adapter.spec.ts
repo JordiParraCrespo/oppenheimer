@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import {
   type RunnerCapability,
+  repositoryPrepareSchema,
   sessionCreateSchema,
   sessionImageSchema,
 } from '@oppenheimer/shared/protocol';
@@ -19,6 +20,8 @@ import { RelayDispatchAdapter } from '../infrastructure/relay-dispatch.adapter';
 const ORG = 'b8a4c2d0-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
 const PROJECT = 'c9b5d3e1-2f30-4b4c-9d5e-6f708192a3b4';
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
+/** What the launch factory reads off the workspace. */
+const NAMES = { organizationSlug: 'jordi', workspaceId: ORG };
 
 function session(agent: 'claude-code' | 'shell' = 'claude-code'): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
@@ -71,7 +74,7 @@ describe('RelayDispatchAdapter', () => {
   it('answers host_offline, and sends nothing, when the host holds no link', async () => {
     const { adapter, link } = harness(false);
     const outcome = await adapter.create(session(), {
-      organizationSlug: 'jordi',
+      ...NAMES,
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
     });
     expect(outcome).toEqual({ delivered: false, hints: ['host_offline'] });
@@ -82,7 +85,7 @@ describe('RelayDispatchAdapter', () => {
     const { adapter, link } = harness(true);
     const entity = session();
     const outcome = await adapter.create(entity, {
-      organizationSlug: 'jordi',
+      ...NAMES,
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
       prompt: 'Fix the wallet list empty state',
     });
@@ -91,7 +94,13 @@ describe('RelayDispatchAdapter', () => {
     const parsed = sessionCreateSchema.parse(message);
     expect(parsed.sessionId).toBe(entity.id);
     expect(parsed.organizationSlug).toBe('jordi');
+    // The work folder's level under the account the host is paired with
+    // (24 §2); the account itself is the pairing's, never the frame's.
+    expect(parsed.workspaceId).toBe(ORG);
+    expect(message).not.toHaveProperty('accountId');
     expect(parsed.sessionSlug).toBe('bold-otter-3f9a7k');
+    expect(parsed.branch).toBe('oppenheimer/xrp-mobile/bold-otter-3f9a7k');
+    expect(parsed.folder).toBeUndefined();
     // The conversation is the session's own id: it is what lets the agent's
     // transcript be reopened once the pane is gone.
     expect(parsed.launch).toEqual({ permission: 'ask', conversation: entity.id });
@@ -101,10 +110,70 @@ describe('RelayDispatchAdapter', () => {
     ]);
   });
 
+  describe('a session in a folder on the host', () => {
+    const inFolder = () =>
+      WorkSessionEntity.request({
+        organizationId: ORG,
+        projectId: PROJECT,
+        createdByUserId: 'user-1',
+        hostId: HOST,
+        slug: 'bold-otter-3f9a7k',
+        agent: 'claude-code',
+        folder: '/home/jordi/notes',
+      });
+
+    it('sends the folder, and no branch and no checkouts, to a runner that takes it', async () => {
+      const { adapter, link } = harness(true, ['session.folder']);
+      const entity = inFolder();
+
+      const outcome = await adapter.create(entity, NAMES);
+
+      expect(outcome).toEqual({ delivered: true, hints: [] });
+      const parsed = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(parsed).toMatchObject({
+        sessionId: entity.id,
+        workspaceId: ORG,
+        folder: '/home/jordi/notes',
+        checkouts: [],
+        cwdCheckoutId: null,
+      });
+      expect(parsed.branch).toBeUndefined();
+    });
+
+    it('sends nothing to a runner that did not say it takes one', async () => {
+      // An older runner would refuse a create with no checkouts; the row stays
+      // starting, and an updated runner's hello is sent it.
+      const { adapter, link } = harness(true, ['session.image']);
+
+      expect(await adapter.create(inFolder(), NAMES)).toEqual({
+        delivered: false,
+        hints: ['not_supported'],
+      });
+      expect(link.send).not.toHaveBeenCalled();
+    });
+  });
+
+  it('names the workspace on a prepare', () => {
+    const { adapter, link } = harness(true, ['repository.prepare']);
+
+    const outcome = adapter.prepare(HOST, {
+      workspaceId: ORG,
+      githubRepoId: 42,
+      repositoryFullName: 'acme/xrp-mobile',
+      baseBranch: 'main',
+      sealed: 'c2VhbGVk',
+      expiresAt: new Date('2026-10-14T12:00:00Z'),
+    });
+
+    expect(outcome).toEqual({ delivered: true, hints: [] });
+    const sent = repositoryPrepareSchema.strict().parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+    expect(sent).toMatchObject({ workspaceId: ORG, githubRepoId: 42 });
+  });
+
   it('sends a blank terminal with no permission level', async () => {
     const { adapter, link } = harness(true);
     await adapter.create(session('shell'), {
-      organizationSlug: 'jordi',
+      ...NAMES,
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
     });
     const [message] = vi.mocked(link.send).mock.calls[0];
@@ -132,7 +201,7 @@ describe('RelayDispatchAdapter', () => {
     const { adapter, link } = harness(true);
     const entity = session();
     const outcome = await adapter.addCheckout(entity, entity.checkouts[0], {
-      organizationSlug: 'jordi',
+      ...NAMES,
       branch: 'x',
     });
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
@@ -204,7 +273,7 @@ describe('RelayDispatchAdapter', () => {
   describe('a first task with images', () => {
     const imageId = '5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d';
     const spec = {
-      organizationSlug: 'jordi',
+      ...NAMES,
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
       prompt: 'Match this screenshot',
       images: [{ imageId, mediaType: 'image/png' as const }],

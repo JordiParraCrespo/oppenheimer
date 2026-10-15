@@ -5,6 +5,7 @@ import { authKeys } from '../auth.queries';
 /** A product query key: any feature the kernel does not know about persists by default. */
 const organizationsList = ['organizations', 'list'] as const;
 
+import { PERSIST_META } from '../persist-meta';
 import {
   cacheOwnerKey,
   createQueryPersistOptions,
@@ -16,9 +17,13 @@ import {
 import { usersKeys } from '../users.queries';
 
 /** A real `Query` in the given state — dehydration reads `state` and `queryKey`. */
-function query(queryKey: QueryKey, status: QueryState['status'] = 'success'): Query {
+function query(
+  queryKey: QueryKey,
+  status: QueryState['status'] = 'success',
+  meta?: Record<string, unknown>,
+): Query {
   const client = new QueryClient();
-  const q = client.getQueryCache().build(client, { queryKey });
+  const q = client.getQueryCache().build(client, { queryKey, meta });
 
   if (status === 'success') q.setState({ status: 'success', data: { ok: true } });
   if (status === 'error') q.setState({ status: 'error', error: new Error('boom') });
@@ -29,11 +34,19 @@ function query(queryKey: QueryKey, status: QueryState['status'] = 'success'): Qu
 describe('shouldDehydrateQuery', () => {
   it('persists ordinary feature queries', () => {
     expect(shouldDehydrateQuery(query(organizationsList))).toBe(true);
-    expect(shouldDehydrateQuery(query(usersKeys.me()))).toBe(true);
   });
 
   it('never persists the auth session or credential data', () => {
     expect(shouldDehydrateQuery(query(authKeys.session()))).toBe(false);
+  });
+
+  // The record names the person: their email and name stay out of storage,
+  // while the permissions the nav reads on a warm start opt back in.
+  it('keeps the signed-in user out of storage but not their permissions', () => {
+    expect(shouldDehydrateQuery(query(usersKeys.me()))).toBe(false);
+    expect(shouldDehydrateQuery(query(usersKeys.permissions(), 'success', PERSIST_META))).toBe(
+      true,
+    );
   });
 
   // Profile and session results are entities. A restored session turns its
@@ -59,7 +72,7 @@ describe('createQueryPersistOptions', () => {
     const options = createQueryPersistOptions('1.2.3');
 
     expect(options.maxAge).toBe(QUERY_PERSIST_MAX_AGE);
-    expect(options.buster).toBe('1.2.3:3');
+    expect(options.buster).toBe('1.2.3:4');
     const { shouldDehydrateQuery: dehydrate } = options.dehydrateOptions;
     expect(dehydrate(query(authKeys.session()))).toBe(false);
     expect(dehydrate(query(organizationsList))).toBe(true);

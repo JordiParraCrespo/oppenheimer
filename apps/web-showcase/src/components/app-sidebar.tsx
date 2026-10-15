@@ -27,7 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <div className="flex h-10 items-center justify-between gap-2.5 px-2">
-          <Wordmark product="Design" />
+          <Wordmark />
           <span className="figures text-micro text-sidebar-muted">{TOC_COUNT}</span>
         </div>
       </SidebarHeader>

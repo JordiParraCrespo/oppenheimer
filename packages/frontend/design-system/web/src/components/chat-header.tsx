@@ -22,7 +22,8 @@ import { IconButton } from './icon-button';
  *   previous, next and "2 / 7 results".
  * - `ChatEmptyState`: an empty thread: the statement at 34px display, the
  *   composer, and under it the tray of what the run will use (project,
- *   environment, branch), each a quiet `ChatTrayButton`.
+ *   environment, branch), each a quiet `ChatTrayButton`. Centred, it opens a
+ *   new bot's chat over the templates it can start from.
  */
 function ChatHeader({
   leading,
@@ -235,19 +236,33 @@ function ThreadFindBar({
 function ChatEmptyState({
   title,
   tray,
+  align = 'start',
   className,
   children,
 }: {
   title: React.ReactNode;
+  /** `center`: the statement centred over what follows, 24px apart (a new bot, over its templates). */
+  align?: 'start' | 'center';
   /** `ChatTrayButton`s under the composer. */
   tray?: React.ReactNode;
   className?: string;
-  /** The composer. */
+  /** The composer, or what to start from (`TemplateTiles`). */
   children: React.ReactNode;
 }) {
   return (
-    <div data-slot="chat-empty-state" className={cn('flex w-full flex-col gap-3.5', className)}>
-      <h2 className="m-0 font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.022em] text-balance text-fg">{title}</h2>
+    <div
+      data-slot="chat-empty-state"
+      data-align={align}
+      className={cn('flex w-full flex-col', align === 'center' ? 'gap-6' : 'gap-3.5', className)}
+    >
+      <h2
+        className={cn(
+          'm-0 font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.022em] text-balance text-fg',
+          align === 'center' && 'text-center',
+        )}
+      >
+        {title}
+      </h2>
       {children}
       {tray ? <div className="flex flex-wrap gap-0.5 text-[13px]">{tray}</div> : null}
     </div>

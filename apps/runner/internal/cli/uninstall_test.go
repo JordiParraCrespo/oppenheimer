@@ -90,7 +90,7 @@ func hostApp(t *testing.T, terminals sessionsapp.Terminals, worktrees *fake.Work
 	}}
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
-		Store: &sessionStore{}, Layout: sessionsdomain.Layout{Root: workspaces},
+		Store: &sessionStore{}, Places: fake.NewPlaces(), Layout: sessionsdomain.Layout{Root: workspaces},
 	})
 	if err != nil {
 		t.Fatal(err)

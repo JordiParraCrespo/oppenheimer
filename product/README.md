@@ -375,6 +375,12 @@ earlier note:
   link, to watch or to type, for anyone, any account or named people
   (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
   as its creator's, so it opens nothing they could not.
+- `versions/mvp/21-session-share-links.md` built sharing on 2026-10-08 as
+  bearer links (anyone signed out, any account, or named people; the
+  secret shown once). On 2026-10-13 it was rebuilt to the `ShareSession`
+  design: one share per session at one address, named people or anyone
+  signed in, write for named people for a day at most. The note keeps the
+  links under Superseded.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06
@@ -408,3 +414,46 @@ earlier note:
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
+- `versions/mvp/05-screens.md` had onboarding's Add a host step and the
+  console's Add a host dialog lead with Copy install command and Copy
+  agent prompt, the instruction behind an Inspect fold and one status
+  line. Since 2026-10-13 both lead with the agent prompt (Copy prompt, the
+  text behind a fold), fold the command behind "Install manually instead"
+  and show a Connection list: Runner installed, then Host connected. The
+  export's Tools on PATH row waits for the wire to carry a host's tools.
+  Settings' Add a host page keeps the panel with both forms.
+- `next-steps/0.2-pull-requests.md` (version 1 scope, 2026-10-05) put a
+  summary agent's brief on every pull request, and the 2026-10-05 frames
+  opened one on a Briefing with a lane switcher and a review session. On
+  2026-10-13 the owner took the 2026-10-13 frames without their chat,
+  review agent or Employees: a pull request is **Description and
+  Changes**, the description is the author's own beside the rail (merge
+  status, comments, reviews, checks), and there is no generated summary
+  until the chat comes (0.7). The frame's status strip above the
+  description was built and dropped the next day for the rail. The queue filters by repository,
+  Difficulty, Checks and Waiting in a fixed order (Deep first, then the
+  longest wait); Submit review splits **Approve** from **Approve and
+  merge**, which turns on GitHub's auto-merge when it cannot merge yet;
+  the activity timeline, the Briefing and the Merge confidence
+  score are gone; watched repositories are set in Settings only
+  (`next-steps/0.2-pull-requests.md`, "The screens as built").
+- `versions/mvp/10-api-modules-and-data-model.md` held a project to at
+  least one repository, and the console would not save one without (the
+  2026-09-26 line above). On 2026-10-14 the owner allowed a project with
+  no repository: it is a place for tasks, milestones, memory and sessions,
+  and folder and terminal sessions need none. A project that holds
+  repositories still offers a default among them (`PROJECTS_006`). The
+  Unassigned project keeps that name.
+- `versions/mvp/05-screens.md` opened New session on the `full`
+  permission level every visit and never remembered it. On 2026-10-14 the
+  owner made it open on `auto` and remember the last level picked, like
+  the other chips.
+- `versions/mvp/00-scope.md` made every session a worktree, the blank
+  terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
+  2026-10-14 the owner made the place a choice, a new worktree or a folder
+  already on the host, and moved the runner's work to `~/oppenheimer/`
+  as `<account>/<workspace>/{repos, agents, sessions}`
+  (`versions/mvp/24-session-places.md`). The same day the account level's
+  name was settled as the id the runner receives when it is paired
+  (`POST /hosts/register` answers it), so `session.create` and
+  `repository.prepare` carry the workspace only (24 §2, §5).

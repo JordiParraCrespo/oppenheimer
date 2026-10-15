@@ -1,4 +1,7 @@
+import { QueryState } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { BoardSkeleton } from '../components/board-skeleton';
 import { StartSessionDialog } from '../dialogs/start-session';
 import { TaskDialog } from '../dialogs/task';
 import { useNewTaskShortcut } from '../hooks/use-new-task-shortcut';
@@ -12,9 +15,11 @@ const board = getRouteApi('/_authenticated/plan/');
 /**
  * Plan's board (the 2026-10-13 `Tasks` frame): the header, the Project and
  * Milestone filters, the four columns, and the two dialogs the address opens.
- * Each part reads what it draws; this screen only lays them out.
+ * Each part reads what it draws; this screen lays them out and draws the
+ * columns' placeholder and first failure.
  */
 export function BoardScreen() {
+  const { t } = useTranslation();
   const navigate = board.useNavigate();
   const openNew = () => navigate({ search: (previous) => ({ ...previous, task: NEW_TASK }) });
   useNewTaskShortcut(openNew);
@@ -25,7 +30,15 @@ export function BoardScreen() {
     <div className="flex flex-col gap-7">
       <BoardHeader onNew={openNew} />
       <PlanFilters milestone />
-      <BoardColumns />
+      <QueryState>
+        <QueryState.Pending>
+          <BoardSkeleton />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('tasks.board.loadFailed')} />
+        <QueryState.Data>
+          <BoardColumns />
+        </QueryState.Data>
+      </QueryState>
       <TaskDialog />
       <StartSessionDialog />
     </div>

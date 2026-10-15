@@ -41,11 +41,11 @@ and `09-runner-install-and-update.md`. Five of them exist:
 
 | Context | What it owns |
 | ------- | ------------ |
-| `host` | the inventory: platform (macOS, Debian, Ubuntu), `git`/`tmux`/`claude`, disk, and the conditions that make a host unusable |
+| `host` | the inventory: platform (macOS, Debian, Ubuntu), `git`/`tmux`/`claude`, disk, and the conditions that make a host unusable; the folder picker's listing (`fs.list`) |
 | `pairing` | the registration token, the Ed25519 host key, `config.json`, the boot JWT every dial is signed with |
 | `service` | the launchd agent and the systemd user unit, rendered and controlled |
 | `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
-| `sessions` | the lifecycle: mirror and worktree, the tmux session and its windows, the screen classifier, adoption after a restart, close |
+| `sessions` | the lifecycle: the work folder (bare stores, session folders and their markers, 24 §2), worktree or folder sessions, the tmux session and its windows, the screen classifier, adoption after a restart, close |
 
 `sessions/adapters/manifest` is the one adapter whose behaviour is **data**:
 one JSON manifest per agent (bundled with `go:embed`, overridable from

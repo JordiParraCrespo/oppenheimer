@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@oppenheimer/design-system-web/badge';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { Chip } from '@oppenheimer/design-system-web/chip';
 import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
@@ -11,7 +12,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@oppenheimer/design-system-web/dialog';
-import { PlayIcon } from '@oppenheimer/design-system-web/icons';
+import { EyeIcon, PlayIcon } from '@oppenheimer/design-system-web/icons';
 import { Kbd } from '@oppenheimer/design-system-web/kbd';
 import { SessionPaneBack, SessionPaneHeader } from '@oppenheimer/design-system-web/session-pane-header';
 import { dotVariants } from '@oppenheimer/design-system-web/status-dot';
@@ -22,6 +23,7 @@ import {
   TerminalPrompt,
   TerminalScrollback,
 } from '@oppenheimer/design-system-web/terminal';
+import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import * as React from 'react';
 
 import { COLUMNS, TODAY } from './plan-fixtures';
@@ -97,7 +99,7 @@ export function PlanDialogsDemo() {
               <dt className="col-span-1 text-fg-muted">Status</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
                 {COLUMNS.map((c) => (
-                  <Chip key={c.id} variant="solid" selected={status === c.id} onClick={() => setStatus(c.id)} icon={<span className={dotVariants({ state: TASK_STATUS_STATE[c.id] })} />}>
+                  <Chip key={c.id} variant="solid" size="md" selected={status === c.id} onClick={() => setStatus(c.id)} icon={<span className={dotVariants({ state: TASK_STATUS_STATE[c.id] })} />}>
                     {c.label}
                   </Chip>
                 ))}
@@ -166,7 +168,7 @@ export function PlanDialogsDemo() {
               <dt className="col-span-1 text-fg-muted">Agent</dt>
               <dd className="col-span-3 m-0 flex flex-wrap gap-1.5">
                 {['Claude Code', 'Codex', 'OpenCode'].map((a) => (
-                  <Chip key={a} variant="solid" selected={agent === a} onClick={() => setAgent(a)}>
+                  <Chip key={a} variant="solid" size="md" selected={agent === a} onClick={() => setAgent(a)}>
                     {a}
                   </Chip>
                 ))}
@@ -175,7 +177,7 @@ export function PlanDialogsDemo() {
               <dd className="col-span-3 m-0 flex flex-col gap-1.5">
                 <span className="flex flex-wrap gap-1.5">
                   {['Opus 4.6', 'Sonnet 4.6', 'Haiku 4.5'].map((m) => (
-                    <Chip key={m} variant="solid" selected={model === m} onClick={() => setModel(m)}>
+                    <Chip key={m} variant="solid" size="md" selected={model === m} onClick={() => setModel(m)}>
                       {m}
                     </Chip>
                   ))}
@@ -238,6 +240,21 @@ export function SessionPaneHeaderDemo() {
       </div>
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         <SessionPaneHeader state="failed" name="retriever eval" stateLabel="Failed" meta="codex · gpt-5 · atlas" />
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border-subtle">
+        <SessionPaneHeader
+          state="running"
+          name="fix-auth-redirect"
+          stateLabel="Running"
+          back={<Wordmark size={14} />}
+          meta="Ends in 23h 41m"
+          actions={
+            <Badge variant="neutral">
+              <EyeIcon />
+              View only
+            </Badge>
+          }
+        />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
 import { AppError } from '@oppenheimer/frontend-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SessionsRepository } from '../sessions.repository';
+import { SessionsRepository, toCreateSessionRequest } from '../sessions.repository';
 
 vi.mock('@oppenheimer/api-client', () => ({
   heyApiSdk: { findSessions: vi.fn(), findSessionEvents: vi.fn(), closeSession: vi.fn() },
@@ -26,6 +26,8 @@ function session(id: string) {
     agentSessionId: null,
     lastEventAt: null,
     stoppedAt: null,
+    place: 'worktree',
+    folderPath: null,
     checkouts: [],
     hints: [],
     createdAt: '2026-09-28T10:00:00.000Z',
@@ -132,5 +134,35 @@ describe('SessionsRepository.findStartLog', () => {
     expect(entries.map((entry) => entry.seq)).toEqual([1, 2, 3, 4, 5]);
     // The agent step settled it: no third page is asked for.
     expect(heyApiSdk.findSessionEvents).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * A session runs in its checkouts or in a folder, never both
+ * (`product/versions/mvp/24-session-places.md`): the API refuses a body that
+ * carries the two, so a folder create must not grow an empty `checkouts`.
+ */
+describe('toCreateSessionRequest', () => {
+  it('sends a folder session with its folder and no checkouts', () => {
+    expect(
+      toCreateSessionRequest({ hostId: 'host-1', agent: 'shell', folder: '/home/jordi' }),
+    ).toEqual({ hostId: 'host-1', agent: 'shell', folder: '/home/jordi' });
+  });
+
+  it('sends a worktree session with its checkouts and no folder', () => {
+    const body = toCreateSessionRequest({
+      hostId: 'host-1',
+      agent: 'claude-code',
+      checkouts: [{ installationId: 'inst-1', githubRepoId: 42 }],
+      prompt: 'Fix it',
+    });
+
+    expect(body).toEqual({
+      hostId: 'host-1',
+      agent: 'claude-code',
+      checkouts: [{ installationId: 'inst-1', githubRepoId: 42 }],
+      prompt: 'Fix it',
+    });
+    expect(body).not.toHaveProperty('folder');
   });
 });

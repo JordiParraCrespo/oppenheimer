@@ -7,7 +7,7 @@ import { Badge } from '@oppenheimer/design-system-web/badge';
 import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
-import { ChevronLeftIcon, ClockIcon, EllipsisIcon, PencilIcon, WebhookIcon, XIcon } from '@oppenheimer/design-system-web/icons';
+import { ChevronLeftIcon, ClockIcon, EllipsisIcon, LockIcon, PencilIcon, PlusIcon, WebhookIcon, XIcon } from '@oppenheimer/design-system-web/icons';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { RoutineCard } from '@oppenheimer/design-system-web/routine-card';
 import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web/segmented-control';
@@ -17,6 +17,7 @@ import {
   SettingsListRow,
 } from '@oppenheimer/design-system-web/settings-group';
 import { SettingsTopBar } from '@oppenheimer/design-system-web/settings-shell';
+import { SidebarEmptyCard, SidebarProjectHeader } from '@oppenheimer/design-system-web/sidebar';
 import { Switch } from '@oppenheimer/design-system-web/switch';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
@@ -24,26 +25,72 @@ import { GroupHead, Spec } from './page-shell';
 
 /* ── BotItem ─────────────────────────────────────────────────────────────── */
 
+const BUILT_IN = [
+  { id: 'plan', name: 'Plan Bot', initials: 'PB', age: '1h', preview: 'Friday’s milestone has two tasks left.' },
+  { id: 'github', name: 'GitHub Bot', initials: 'GB', age: '5h', preview: '3 pull requests wait on review.' },
+];
+
+function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string) => void }) {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <>
+      <SidebarProjectHeader
+        tone="eyebrow"
+        name="Built-in"
+        count={BUILT_IN.length}
+        open={open}
+        onOpenChange={setOpen}
+        marker={<LockIcon aria-label="Built-in bots cannot be moved or renamed" />}
+      />
+      {open ? (
+        <div className="px-1.5"><BotList>
+          {BUILT_IN.map((bot) => (
+            <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => onPick(bot.id)} />
+          ))}
+        </BotList></div>
+      ) : null}
+    </>
+  );
+}
+
 export function BotItemsDemo() {
   const [active, setActive] = React.useState('release');
+  const [open, setOpen] = React.useState(true);
   const bots = [
     { id: 'release', name: 'Release Bot', initials: 'RB', age: '2m', preview: 'The stop path now reaches the tool layer.', live: true },
+    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', age: '6m', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
     { id: 'quota', name: 'Quota Bot', initials: 'QB', age: '1d', preview: 'You: Added a banner to the workspace page' },
-    { id: 'research', name: 'Research Bot', initials: 'RS', age: '4d', preview: 'Only one of the three propagates the signal.' },
     { id: 'new', name: 'New Bot', initials: 'NB', age: '3h', preview: 'What would you most like help with?', unread: true },
   ];
   return (
-    <div className="w-72 rounded-lg bg-sidebar p-1.5">
-      <BotList>
-        {bots.map((bot) => (
-          <BotItem
-            key={bot.id}
-            {...bot}
-            active={bot.id === active}
-            onClick={() => setActive(bot.id)}
-          />
-        ))}
-      </BotList>
+    <div className="flex flex-wrap items-start gap-6">
+      <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar py-1.5">
+        <SidebarProjectHeader tone="eyebrow" name="Engineering" count={bots.length} open={open} onOpenChange={setOpen} />
+        {open ? (
+          <div className="px-1.5"><BotList>
+            {bots.map((bot) => (
+              <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => setActive(bot.id)} />
+            ))}
+          </BotList></div>
+        ) : null}
+        <BuiltInGroup active={active} onPick={setActive} />
+      </div>
+      <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar pb-1.5">
+        <SidebarEmptyCard
+          title="No bots yet"
+          action={
+            <Button variant="secondary" size="sm">
+              <PlusIcon />
+              New bot
+            </Button>
+          }
+        >
+          A bot you make appears here. Start from a template, or describe the work in the chat.
+        </SidebarEmptyCard>
+        <div className="mt-2">
+          <BuiltInGroup active="" onPick={() => {}} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -258,7 +305,7 @@ export function EmployeesSection() {
         id="botitem"
         title="BotItem"
         meta="bot-item.tsx"
-        desc="An employee in the sidebar, read like a conversation: a 36px photo (initials in ink until it loads) with a green dot on its corner while the bot works, the name and the age in mono, then the last message in muted ink. Unread sets the name at 600, the preview in full ink and a blue dot at the end; the open chat rests on the selected wash. 14px radius, rows 2px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
+        desc="An employee in the sidebar, read like a conversation: a 36px photo (initials in ink until it loads) with a green dot on its corner while the bot works, the name and the age in mono, then the last message in muted ink. Unread sets the name at 600, the preview in full ink and a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 14px radius, rows 2px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
         code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} age="2m" live active /></BotList>`}
       >
         <BotItemsDemo />

@@ -11,7 +11,7 @@ import { SessionReconciliationResolver } from '../session-reconciliation.resolve
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
 
-function session(state: 'starting' | 'open'): WorkSessionEntity {
+function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
     organizationId: 'org',
     projectId: 'project',
@@ -19,6 +19,7 @@ function session(state: 'starting' | 'open'): WorkSessionEntity {
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
+    folder,
   });
   if (state === 'open') {
     entity.recordEvent({ seq: 2, kind: 'session.started', payload: {}, occurredAt: new Date() });
@@ -54,10 +55,25 @@ describe('SessionReconciliationResolver', () => {
     expect(outcome).toEqual({ redispatched: [owed.id], stopped: [] });
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
+      workspaceId: 'org',
       branch: 'oppenheimer/bold-otter-3f9a7k',
       prompt: 'fix it',
     });
     expect(h.sessions.appendEvents).not.toHaveBeenCalled();
+  });
+
+  it('dispatches a folder session again with no branch of ours', async () => {
+    // A folder runs on whatever branch it is on; naming one would be a branch
+    // the runner has nothing to do with.
+    const owed = session('starting', '/home/jordi/notes');
+    const h = harness([{ session: owed }]);
+
+    await h.resolver.reconcile(HOST, 'run-1', []);
+
+    expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
+      organizationSlug: 'jordi',
+      workspaceId: 'org',
+    });
   });
 
   it('sends the first task’s images again with it, by the ids the log recorded', async () => {

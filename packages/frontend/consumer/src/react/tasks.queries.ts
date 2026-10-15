@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -12,24 +12,27 @@ import {
   type MilestoneEntity,
   type MilestoneInput,
   TaskEntity,
-  type TaskFilter,
   type TaskInput,
   type TaskMove,
 } from '../modules/tasks/task.entity';
 import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks/tasks.repository';
 import { useConsumerApp } from './context';
-import { sessionsKeys } from './sessions.queries';
+import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
+import { useProjectListQuery } from './projects.queries';
+import { sessionsKeys, useSessionListPoll, useSessionListQuery } from './sessions.queries';
 
+/**
+ * One list, the whole board: every column, count and card reads it, and a
+ * session's tasks are a `select` over it. A filtered read would be a second
+ * leaf with its own segment, not an object `{}` would fuzzy-match.
+ */
 export const tasksKeys = {
   all: ['tasks'] as const,
   lists: () => [...tasksKeys.all, 'list'] as const,
-  list: (filter: TaskFilter) => [...tasksKeys.lists(), filter] as const,
+  list: () => [...tasksKeys.lists()] as const,
   milestones: () => [...tasksKeys.all, 'milestones'] as const,
   milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
 };
-
-/** The whole board, which every column, count and card reads. */
-const BOARD: TaskFilter = {};
 
 /**
  * Every task on the board, in board order. One read serves the columns, the
@@ -38,12 +41,35 @@ const BOARD: TaskFilter = {};
 export function useTasks<TData = TaskEntity[]>(
   options?: Omit<UseQueryOptions<TaskEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
-  return useQuery<TaskEntity[], Error, TData>({
-    queryKey: tasksKeys.list(BOARD),
-    queryFn: () => app.tasks.findAll(BOARD),
-    ...options,
+  return useQuery<TaskEntity[], Error, TData>({ ...useTaskListQuery(), ...options });
+}
+
+/**
+ * Start session's three reads under a Suspense `QueryState`: the tasks, the
+ * projects and the hosts with their presence, polled while the dialog is
+ * open. They fetch side by side; `error` is the first refetch that failed
+ * over data already drawn.
+ */
+export function useSuspenseStartSession() {
+  const [tasks, projects, hosts] = useSuspenseQueries({
+    queries: [
+      useTaskListQuery(),
+      useProjectListQuery(),
+      { ...useHostListQuery(), ...useHostPresencePoll(true) },
+    ],
   });
+  return {
+    tasks: tasks.data,
+    projects: projects.data,
+    hosts: hosts.data,
+    error: tasks.error ?? projects.error ?? hosts.error,
+  };
+}
+
+/** The tasks read, for both hooks over it: the key and the fetch, once. */
+function useTaskListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: tasksKeys.list(), queryFn: () => app.tasks.findAll() };
 }
 
 /** The tasks a session is on: the session header's "Back to task", derived from the board. */
@@ -59,12 +85,57 @@ export function useSessionTasks(sessionId: string | undefined) {
 export function useMilestones<TData = MilestoneEntity[]>(
   options?: Omit<UseQueryOptions<MilestoneEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
-  return useQuery<MilestoneEntity[], Error, TData>({
-    queryKey: tasksKeys.milestoneList(),
-    queryFn: () => app.tasks.findMilestones(),
-    ...options,
+  return useQuery<MilestoneEntity[], Error, TData>({ ...useMilestoneListQuery(), ...options });
+}
+
+/**
+ * The task dialog's and the milestones timeline's three reads under a
+ * Suspense `QueryState`: the tasks, the projects they are filed under and the
+ * milestones, fetched side by side. `error` is the first refetch that failed
+ * over data already drawn.
+ */
+export function useSuspensePlan() {
+  const [tasks, projects, milestones] = useSuspenseQueries({
+    queries: [useTaskListQuery(), useProjectListQuery(), useMilestoneListQuery()],
   });
+  return {
+    tasks: tasks.data,
+    projects: projects.data,
+    milestones: milestones.data,
+    error: tasks.error ?? projects.error ?? milestones.error,
+  };
+}
+
+/**
+ * The board's reads under a Suspense `QueryState`: the tasks, and what a card
+ * names beside its title — its project, its milestone, its session and that
+ * session's host — fetched side by side. `error` is the first refetch that
+ * failed over data already drawn.
+ */
+export function useSuspenseTaskBoard() {
+  const [tasks, projects, milestones, sessions, hosts] = useSuspenseQueries({
+    queries: [
+      useTaskListQuery(),
+      useProjectListQuery(),
+      useMilestoneListQuery(),
+      { ...useSessionListQuery(), ...useSessionListPoll() },
+      useHostListQuery(),
+    ],
+  });
+  return {
+    tasks: tasks.data,
+    projects: projects.data,
+    milestones: milestones.data,
+    sessions: sessions.data,
+    hosts: hosts.data,
+    error: tasks.error ?? projects.error ?? milestones.error ?? sessions.error ?? hosts.error,
+  };
+}
+
+/** The milestones read, for every hook over it: the key and the fetch, once. */
+function useMilestoneListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: tasksKeys.milestoneList(), queryFn: () => app.tasks.findMilestones() };
 }
 
 /**
@@ -78,13 +149,11 @@ async function settleTask(
   queryClient: QueryClient,
   id: string,
   task: TaskEntity | null,
-  previous = queryClient
-    .getQueryData<TaskEntity[]>(tasksKeys.list(BOARD))
-    ?.find((row) => row.id === id),
+  previous = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list())?.find((row) => row.id === id),
 ) {
-  const boardKnown = queryClient.getQueryData(tasksKeys.list(BOARD)) !== undefined;
-  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD), exact: true });
-  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) => {
+  const boardKnown = queryClient.getQueryData(tasksKeys.list()) !== undefined;
+  if (boardKnown) await queryClient.cancelQueries({ queryKey: tasksKeys.list(), exact: true });
+  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) => {
     if (!rows) return rows;
     const rest = rows.filter((row) => row.id !== id);
     return task ? [...rest, task] : rest;
@@ -152,10 +221,10 @@ export function useMoveTask(
       // Written before anything is awaited: the board lets go of its drag order in the
       // drop's own handler, and a read that lands later shows the card back home for a
       // frame. Cancelling first reverts a read on its way now, so it cannot undo this.
-      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list(BOARD) });
-      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list(BOARD));
+      const cancelled = queryClient.cancelQueries({ queryKey: tasksKeys.list() });
+      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list());
       const previous = rows?.find((row) => row.id === move.id);
-      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (current) =>
+      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (current) =>
         current?.map((row) => (row.id === move.id ? provisionallyMoved(row, move, current) : row)),
       );
       await cancelled;
@@ -164,11 +233,11 @@ export function useMoveTask(
     onError: (error, move, context, mutation) => {
       const previous = context?.previous;
       if (previous) {
-        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(BOARD), (rows) =>
+        queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) =>
           rows?.map((row) => (row.id === previous.id ? previous : row)),
         );
       }
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.list(BOARD) });
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.list() });
       return options?.onError?.(error, move, context, mutation);
     },
   });

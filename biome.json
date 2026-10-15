@@ -61,6 +61,7 @@
       "!**/playwright-report",
       "!**/blob-report",
       "!**/test-results",
+      "!scripts/evals/*/results",
       "!**/node-compile-cache",
       "!**/.agents",
       "!**/*.md",

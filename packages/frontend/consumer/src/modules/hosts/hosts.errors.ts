@@ -21,4 +21,8 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_004',
     message: 'Failed to rename the host',
   },
+  FETCH_FOLDERS_FAILED: {
+    code: 'HOSTS_CLIENT_005',
+    message: 'Failed to list the folders on the host',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

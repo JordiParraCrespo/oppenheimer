@@ -957,6 +957,10 @@ export type HostRegistrationResponseDto = {
      */
     hostId: string;
     /**
+     * The account the host is paired with, its owner. The runner names the top level of its work folder by it.
+     */
+    accountId: string;
+    /**
      * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
      */
     fingerprint: string;
@@ -1320,7 +1324,7 @@ export type ProjectResponseDto = {
      */
     defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
     /**
-     * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.
+     * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
     isUnassigned: boolean;
     createdAt: string;
@@ -1352,7 +1356,7 @@ export type UpdateProjectRequest = {
 };
 
 export type FindSharedSessionRequest = {
-    token: string;
+    slug: string;
 };
 
 export type SharedSessionResponseDto = {
@@ -1370,7 +1374,7 @@ export type SharedSessionResponseDto = {
 };
 
 export type IssueSharedAttachTicketRequest = {
-    token: string;
+    slug: string;
 };
 
 export type AttachTicketResponseDto = {
@@ -1460,6 +1464,14 @@ export type SessionResponseDto = {
      * The coding agent this session runs.
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    /**
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).
+     */
+    place: 'worktree' | 'folder';
+    /**
+     * The absolute path on the host a folder session runs in. Null for a worktree session.
+     */
+    folderPath?: string | null;
     launch: SessionLaunchResponseDto;
     /**
      * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
@@ -1521,13 +1533,12 @@ export type CreateSessionRequest = {
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
-    checkouts: [
-        {
-            installationId: string;
-            githubRepoId: number;
-            baseBranch?: string;
-        }
-    ];
+    checkouts?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
+    folder?: string;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -1596,66 +1607,55 @@ export type IssueAttachTicketRequest = {
     window?: number;
 };
 
-export type ShareLinkResponseDto = {
+export type SetSessionSharePeopleRequest = {
+    people: Array<string>;
+};
+
+export type SessionShareOwnerResponseDto = {
+    id: string;
+    name: string;
+    email: string;
+};
+
+export type SessionShareResponseDto = {
     id: string;
     sessionId: string;
+    /**
+     * The share’s address, `/s/<slug>`. It opens nothing on its own: a guest signs in, and is on `people` unless `audience` is `link`.
+     */
+    slug: string;
+    /**
+     * `people`, only the accounts on `people`; `link`, anyone signed in with the address.
+     */
+    audience: 'people' | 'link';
     /**
      * `read` watches the terminal; `write` types into it, as the person who shared it.
      */
     access: 'read' | 'write';
     /**
-     * `anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`.
-     */
-    audience: 'anyone' | 'accounts' | 'people';
-    /**
      * Emails; empty unless `audience` is `people`.
      */
     people: Array<string>;
-    label?: string | null;
-    expiresAt?: string | null;
-    revokedAt?: string | null;
     /**
-     * Neither revoked nor expired.
+     * No expiry when `null`.
      */
-    live: boolean;
-    createdAt: string;
+    expiresAt?: string | null;
+    /**
+     * Who shared it, while their account is active.
+     */
+    sharedBy?: SessionShareOwnerResponseDto | null;
+    updatedAt: string;
 };
 
-export type CreateShareLinkRequest = {
+export type SessionShareStateResponseDto = {
+    share?: SessionShareResponseDto | null;
+};
+
+export type PutSessionShareRequest = {
+    audience: 'people' | 'link';
     access: 'read' | 'write';
-    audience: 'anyone' | 'accounts' | 'people';
     people?: Array<string>;
-    lifetime?: '1h' | '1d' | '7d' | '30d' | null;
-    label?: string;
-};
-
-export type CreatedShareLinkResponseDto = {
-    id: string;
-    sessionId: string;
-    /**
-     * `read` watches the terminal; `write` types into it, as the person who shared it.
-     */
-    access: 'read' | 'write';
-    /**
-     * `anyone` with the link; `accounts`, anyone signed in; `people`, only the accounts on `people`.
-     */
-    audience: 'anyone' | 'accounts' | 'people';
-    /**
-     * Emails; empty unless `audience` is `people`.
-     */
-    people: Array<string>;
-    label?: string | null;
-    expiresAt?: string | null;
-    revokedAt?: string | null;
-    /**
-     * Neither revoked nor expired.
-     */
-    live: boolean;
-    createdAt: string;
-    /**
-     * The link’s secret. Shown once and never again: only its digest is stored. The console puts it in the URL fragment, `/shared#<token>`.
-     */
-    token: string;
+    lifetime: '1h' | '8h' | '24h' | '7d' | null;
 };
 
 export type PrepareSessionRequest = {
@@ -1688,6 +1688,60 @@ export type RenameSessionRequest = {
 
 export type MoveSessionRequest = {
     projectId: string;
+};
+
+export type HostFolderEntryResponseDto = {
+    /**
+     * The directory’s name.
+     */
+    name: string;
+    /**
+     * Its absolute path on the host: the listed folder joined with the name.
+     */
+    path: string;
+    /**
+     * The branch its checkout is on, when it is a git repository.
+     */
+    branch?: string | null;
+};
+
+export type HostRecentFolderResponseDto = {
+    /**
+     * Its absolute path on the host.
+     */
+    path: string;
+    /**
+     * When the caller last started a session in it.
+     */
+    lastUsedAt: string;
+};
+
+export type HostFoldersResponseDto = {
+    /**
+     * The directory listed, absolute and cleaned.
+     */
+    path: string;
+    /**
+     * Its parent; null at the root.
+     */
+    parent?: string | null;
+    /**
+     * The home directory of the user the runner runs as, so a client can show `~`.
+     */
+    home: string;
+    /**
+     * The listed directory’s own branch, when it is a git repository.
+     */
+    branch?: string | null;
+    entries: Array<HostFolderEntryResponseDto>;
+    /**
+     * More directories were there than `entries` carries.
+     */
+    truncated: boolean;
+    /**
+     * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
+     */
+    recent: Array<HostRecentFolderResponseDto>;
 };
 
 export type AutomationRepositoryResponseDto = {
@@ -2164,13 +2218,12 @@ export type StartTaskSessionRequest = {
         agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
         projectId?: string;
         name?: string;
-        checkouts: [
-            {
-                installationId: string;
-                githubRepoId: number;
-                baseBranch?: string;
-            }
-        ];
+        checkouts?: Array<{
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }>;
+        folder?: string;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -2663,7 +2716,7 @@ export type PullRequestChecksDto = {
 };
 
 export type PullRequestGateDto = {
-    id: 'checks' | 'conflicts' | 'review' | 'merge';
+    id: 'checks' | 'conflicts' | 'merge';
     state: 'done' | 'failed' | 'pending';
 };
 
@@ -2779,7 +2832,7 @@ export type PullRequestActivityItemDto = {
 };
 
 export type SubmitPullRequestReviewRequest = {
-    verdict: 'comment' | 'approve' | 'request_changes';
+    verdict: 'comment' | 'approve' | 'approve_and_merge' | 'request_changes';
     body?: string;
     comments?: Array<{
         path: string;
@@ -2791,9 +2844,13 @@ export type SubmitPullRequestReviewRequest = {
 
 export type ReviewSubmittedResponseDto = {
     /**
-     * Merged now; false for a comment, a change request, or an approval GitHub would not merge yet.
+     * Merged now; false for a comment, a change request, an approval alone, or an approve-and-merge GitHub would not merge yet.
      */
     merged: boolean;
+    /**
+     * Approve and merge only: GitHub will merge it once its required checks pass. False when the repository does not allow auto-merge, so it waits.
+     */
+    autoMerge: boolean;
 };
 
 export type AddPullRequestCommentRequest = {
@@ -6999,7 +7056,7 @@ export type FindSharedSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * SESSIONS_021 — Share link not found
+     * SESSIONS_021 — Not shared
      */
     404: ProblemDetailsDto;
     /**
@@ -7033,7 +7090,7 @@ export type IssueSharedAttachTicketErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * SESSIONS_021 — Share link not found
+     * SESSIONS_021 — Not shared
      */
     404: ProblemDetailsDto;
     /**
@@ -7145,7 +7202,7 @@ export type CreateSessionErrors = {
     /**
      * SESSIONS_017 — The host’s runner takes no images
      *
-     * SESSIONS_011 — The host's runner is older than the agent picked
+     * SESSIONS_011 / SESSIONS_025 — The host's runner is older than the agent, or than folder sessions
      *
      * SESSIONS_006 — That project is archived
      */
@@ -7305,16 +7362,50 @@ export type IssueAttachTicketResponses = {
 
 export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
 
-export type FindShareLinksData = {
+export type SetSessionSharePeopleData = {
+    body: SetSessionSharePeopleRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/share/people';
+};
+
+export type SetSessionSharePeopleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_021 — Not shared
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type SetSessionSharePeopleError = SetSessionSharePeopleErrors[keyof SetSessionSharePeopleErrors];
+
+export type SetSessionSharePeopleResponses = {
+    200: SessionShareResponseDto;
+};
+
+export type SetSessionSharePeopleResponse = SetSessionSharePeopleResponses[keyof SetSessionSharePeopleResponses];
+
+export type StopSessionShareData = {
     body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/sessions/{id}/share-links';
+    url: '/api/v1/sessions/{id}/share';
 };
 
-export type FindShareLinksErrors = {
+export type StopSessionShareErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7329,24 +7420,56 @@ export type FindShareLinksErrors = {
     404: ProblemDetailsDto;
 };
 
-export type FindShareLinksError = FindShareLinksErrors[keyof FindShareLinksErrors];
+export type StopSessionShareError = StopSessionShareErrors[keyof StopSessionShareErrors];
 
-export type FindShareLinksResponses = {
-    200: Array<ShareLinkResponseDto>;
+export type StopSessionShareResponses = {
+    204: void;
 };
 
-export type FindShareLinksResponse = FindShareLinksResponses[keyof FindShareLinksResponses];
+export type StopSessionShareResponse = StopSessionShareResponses[keyof StopSessionShareResponses];
 
-export type CreateShareLinkData = {
-    body: CreateShareLinkRequest;
+export type FindSessionShareData = {
+    body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/sessions/{id}/share-links';
+    url: '/api/v1/sessions/{id}/share';
 };
 
-export type CreateShareLinkErrors = {
+export type FindSessionShareErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindSessionShareError = FindSessionShareErrors[keyof FindSessionShareErrors];
+
+export type FindSessionShareResponses = {
+    200: SessionShareStateResponseDto;
+};
+
+export type FindSessionShareResponse = FindSessionShareResponses[keyof FindSessionShareResponses];
+
+export type PutSessionShareData = {
+    body: PutSessionShareRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/share';
+};
+
+export type PutSessionShareErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7362,55 +7485,18 @@ export type CreateShareLinkErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_024 — Too many share links
-     *
      * SESSIONS_005 — That session is closed
      */
     409: ProblemDetailsDto;
 };
 
-export type CreateShareLinkError = CreateShareLinkErrors[keyof CreateShareLinkErrors];
+export type PutSessionShareError = PutSessionShareErrors[keyof PutSessionShareErrors];
 
-export type CreateShareLinkResponses = {
-    201: CreatedShareLinkResponseDto;
+export type PutSessionShareResponses = {
+    200: SessionShareResponseDto;
 };
 
-export type CreateShareLinkResponse = CreateShareLinkResponses[keyof CreateShareLinkResponses];
-
-export type RevokeShareLinkData = {
-    body?: never;
-    path: {
-        id: string;
-        linkId: string;
-    };
-    query?: never;
-    url: '/api/v1/sessions/{id}/share-links/{linkId}';
-};
-
-export type RevokeShareLinkErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * SESSIONS_021 — Share link not found
-     *
-     * SESSIONS_001 — Session not found
-     */
-    404: ProblemDetailsDto;
-};
-
-export type RevokeShareLinkError = RevokeShareLinkErrors[keyof RevokeShareLinkErrors];
-
-export type RevokeShareLinkResponses = {
-    204: void;
-};
-
-export type RevokeShareLinkResponse = RevokeShareLinkResponses[keyof RevokeShareLinkResponses];
+export type PutSessionShareResponse = PutSessionShareResponses[keyof PutSessionShareResponses];
 
 export type PasteSessionImageData = {
     body: {
@@ -7523,6 +7609,10 @@ export type PrepareSessionData = {
 };
 
 export type PrepareSessionErrors = {
+    /**
+     * SESSIONS_002 — No active workspace
+     */
+    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7812,6 +7902,59 @@ export type MoveSessionResponses = {
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
+
+export type FindHostFoldersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * An absolute path on the host. Omit for the home directory.
+         */
+        path?: string;
+    };
+    url: '/api/v1/hosts/{id}/folders';
+};
+
+export type FindHostFoldersErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * SESSIONS_030 — Not readable
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 / SESSIONS_028 — Host or folder not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_026 — Runner cannot list
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_029 — Not a folder
+     */
+    422: ProblemDetailsDto;
+    /**
+     * SESSIONS_027 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindHostFoldersError = FindHostFoldersErrors[keyof FindHostFoldersErrors];
+
+export type FindHostFoldersResponses = {
+    200: HostFoldersResponseDto;
+};
+
+export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
 
 export type FindAutomationsData = {
     body?: never;

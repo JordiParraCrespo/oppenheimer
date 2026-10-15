@@ -22,7 +22,7 @@ func spareClient(t *testing.T) (*gitadapter.Client, domain.Layout) {
 }
 
 func spareOf(layout domain.Layout) string {
-	return filepath.Join(filepath.Dir(layout.Worktree(repo, "x")), ".spare")
+	return layout.Spare(layout.Store(repo))
 }
 
 func head(t *testing.T, dir, rev string) string {
@@ -37,7 +37,7 @@ func TestACreateLeavesASpareAndTheNextOneTakesItAtTheBaseAsItIsNow(t *testing.T)
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.Add(ctx, repo, layout.Worktree(repo, "one"), "oppenheimer/one", "main", true); err != nil {
+	if err := c.Add(ctx, repo, checkout(layout, "one"), "oppenheimer/one", "main", true); err != nil {
 		t.Fatalf("first add: %v", err)
 	}
 	c.Wait()
@@ -55,7 +55,7 @@ func TestACreateLeavesASpareAndTheNextOneTakesItAtTheBaseAsItIsNow(t *testing.T)
 		t.Fatal(err)
 	}
 
-	two := layout.Worktree(repo, "two")
+	two := checkout(layout, "two")
 	if err := c.Add(ctx, repo, two, "oppenheimer/two", "main", true); err != nil {
 		t.Fatalf("second add: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestACreateLeavesASpareAndTheNextOneTakesItAtTheBaseAsItIsNow(t *testing.T)
 	if got := strings.TrimSpace(git(t, two, "rev-parse", "--abbrev-ref", "HEAD")); got != "oppenheimer/two" {
 		t.Fatalf("branch = %q", got)
 	}
-	if got, want := head(t, two, "HEAD"), head(t, layout.Mirror(repo), "origin/main"); got != want {
+	if got, want := head(t, two, "HEAD"), head(t, layout.Store(repo), "origin/main"); got != want {
 		t.Fatalf("cut from %s, want the base as fetched, %s", got, want)
 	}
 	if out := git(t, two, "status", "--porcelain", "--untracked-files=no"); out != "" {
@@ -88,12 +88,16 @@ func TestAClaimCutShortIsFinishedByTheNextAttempt(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.Add(ctx, repo, layout.Worktree(repo, "one"), "oppenheimer/one", "main", true); err != nil {
+	if err := c.Add(ctx, repo, checkout(layout, "one"), "oppenheimer/one", "main", true); err != nil {
 		t.Fatal(err)
 	}
 	c.Wait()
-	two := layout.Worktree(repo, "two")
-	git(t, layout.Mirror(repo), "worktree", "move", spareOf(layout), two)
+	two := checkout(layout, "two")
+	// The session's folder is made before its checkout (Places.MakeSession).
+	if err := os.MkdirAll(filepath.Dir(two), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	git(t, layout.Store(repo), "worktree", "move", spareOf(layout), two)
 
 	if err := c.Add(ctx, repo, two, "oppenheimer/two", "main", true); err != nil {
 		t.Fatalf("add after a cut-short claim: %v", err)
@@ -122,7 +126,7 @@ func TestSomethingUnknownAtTheSparePathIsLeftAlone(t *testing.T) {
 	}
 
 	for _, name := range []string{"one", "two"} {
-		if err := c.Add(ctx, repo, layout.Worktree(repo, name), "oppenheimer/"+name, "main", true); err != nil {
+		if err := c.Add(ctx, repo, checkout(layout, name), "oppenheimer/"+name, "main", true); err != nil {
 			t.Fatalf("add %s: %v", name, err)
 		}
 		c.Wait()
@@ -140,7 +144,7 @@ func TestSparesAreOffUnlessAskedFor(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.Add(ctx, repo, layout.Worktree(repo, "one"), "oppenheimer/one", "main", true); err != nil {
+	if err := c.Add(ctx, repo, checkout(layout, "one"), "oppenheimer/one", "main", true); err != nil {
 		t.Fatal(err)
 	}
 	c.Wait()
@@ -159,7 +163,7 @@ func TestASpareOnDiskIsTakenByANewRunner(t *testing.T) {
 	if err := first.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	if err := first.Add(ctx, repo, layout.Worktree(repo, "one"), "oppenheimer/one", "main", true); err != nil {
+	if err := first.Add(ctx, repo, checkout(layout, "one"), "oppenheimer/one", "main", true); err != nil {
 		t.Fatal(err)
 	}
 	first.Wait()
@@ -169,7 +173,7 @@ func TestASpareOnDiskIsTakenByANewRunner(t *testing.T) {
 	second := gitadapter.New(gitadapter.Options{Layout: layout, Spares: true})
 	t.Cleanup(second.Wait)
 
-	two := layout.Worktree(repo, "two")
+	two := checkout(layout, "two")
 	if err := second.Add(ctx, repo, two, "oppenheimer/two", "main", true); err != nil {
 		t.Fatalf("add: %v", err)
 	}
@@ -198,7 +202,7 @@ func TestAPrepareLeavesASpareTheFirstCreateTakes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	one := layout.Worktree(repo, "one")
+	one := checkout(layout, "one")
 	if err := c.Add(ctx, repo, one, "oppenheimer/one", "main", true); err != nil {
 		t.Fatalf("add: %v", err)
 	}

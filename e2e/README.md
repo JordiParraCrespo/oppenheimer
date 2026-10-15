@@ -38,6 +38,17 @@ holds the rule there. Run it after any change to the session terminal, the
 typeahead or the terminal's font and cursor:
 `pnpm --filter @oppenheimer/e2e e2e:terminal`.
 
+The **`screens` project** is not a test: it is the camera for a pull request
+that changes what the console looks like. With the stack up `--web`, it signs
+in as a fresh account and photographs every route `SCREENS` names, light and
+dark, into `.screenshots/` (git-ignored) with a `manifest.json` naming the
+commit. It only exists when `SCREENS` is set, so no other run selects it.
+The `local-stack` skill's "Show a visual change" step is how it is used:
+
+```bash
+pnpm screens --phone /sessions anon:/login   # from the root: scripts/stack/screens.mjs
+```
+
 ## The two stubs, and what they are for
 
 Two of the console's surfaces talk to something this repository does not own,
@@ -267,5 +278,6 @@ e2e/
     ├── fleet/      # real runners: machines, link loss, adoption, one link per
     │               # host, flow control, the console on a live session
     ├── netsim/     # the typing bench: relay vs direct over simulated links
+    ├── screens/    # the console photographed for a pull request (SCREENS=…)
     └── web/        # the same journeys through apps/web in Chromium
 ```

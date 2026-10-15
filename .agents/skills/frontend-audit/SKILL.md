@@ -148,8 +148,10 @@ come up empty, so run it on every file in scope that returns JSX:
    slots the caller should compose instead. Not `U6`: a boolean that reports
    the state of the same thing (`pending`, `disabled`, `open`), and a function
    child or render prop that hands down data the caller does not have
-   (`QueryState.Data`, `DiffView`'s `renderAnnotation`). A section that
-   draws a read's four states without `QueryState` is `U1`.
+   (`QueryState.Error`'s failure and retry, `DiffView`'s `renderAnnotation`).
+   A section that draws a read's loading and failure without `QueryState`,
+   or reads through `useQuery` where a `useSuspense…` hook would draw it, is
+   `U1`.
 
 ### Evidence bar
 

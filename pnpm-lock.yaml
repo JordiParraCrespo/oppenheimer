@@ -1068,6 +1068,9 @@ importers:
       posthog-js:
         specifier: ^1.432.0
         version: 1.432.0(@types/react@19.2.14)(preact-render-to-string@6.6.5(preact@11.0.0-beta.0))(react@19.2.3)
+      react-error-boundary:
+        specifier: ^6.1.6
+        version: 6.1.6(@types/react@19.2.14)(react@19.2.3)
     devDependencies:
       '@oppenheimer/tsconfig':
         specifier: workspace:^
@@ -10929,6 +10932,15 @@ packages:
     resolution: {integrity: sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==}
     peerDependencies:
       react: 19.2.3
+
+  react-error-boundary@6.1.6:
+    resolution: {integrity: sha512-CDXPnXDGyFIbkwaaJ6u+xgsRmJhSi6YdgUDW1vnyKHfXp1a9pfAlM+ZET2CDu80/A+8iRcmXN0NSY9BCCoWP5A==}
+    peerDependencies:
+      '@types/react': 19.2.14
+      react: 19.2.3
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
@@ -23644,6 +23656,12 @@ snapshots:
     dependencies:
       react: 19.2.3
       scheduler: 0.27.0
+
+  react-error-boundary@6.1.6(@types/react@19.2.14)(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+    optionalDependencies:
+      '@types/react': 19.2.14
 
   react-fast-compare@3.2.2: {}
 

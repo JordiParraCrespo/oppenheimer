@@ -95,7 +95,7 @@ export function ProjectEditorDialog({
   const { showAlert } = useServerFieldErrors(form, failure);
 
   function submit(values: ProjectFormValues) {
-    if (projectBlock(values.name, values.rows, { holdsNone: fixed })) return;
+    if (projectBlock(values.name, values.rows)) return;
     const input = projectInputOf(values, { fixed });
     if (project) update.mutate({ id: project.id, input });
     else
@@ -169,12 +169,7 @@ export function ProjectEditorDialog({
             <Button type="button" variant="secondary" onClick={onClose} disabled={pending}>
               {t('common.cancel')}
             </Button>
-            <ProjectSaveButton
-              control={control}
-              editing={editing}
-              fixed={fixed}
-              pending={pending}
-            />
+            <ProjectSaveButton control={control} editing={editing} pending={pending} />
           </DialogFooter>
         </form>
       </DialogContent>

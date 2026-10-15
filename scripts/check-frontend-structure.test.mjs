@@ -374,14 +374,42 @@ test('a QueryState missing a rung is reported with its file and line', () => {
   const { report } = check({
     'src/features/things/sections/no-error.tsx': `export function ThingList({ things }: { things: Source }) {
   return (
-    <QueryState query={things}>
+    <QueryState>
       <QueryState.Pending>loading</QueryState.Pending>
-      <QueryState.Data of={things}>{(rows) => rows.join()}</QueryState.Data>
+      <QueryState.Data><ThingRows /></QueryState.Data>
     </QueryState>
   );
 }
 `,
   });
   assert.match(report, /sections\/no-error\.tsx:3: <QueryState> without QueryState\.Error —/);
+});
+test('a Suspense read that draws no ErrorAlert for a later failure is reported', () => {
+  const rows = (alert) => `import { useSuspenseThings } from '@oppenheimer/frontend-consumer/react';
+export function ThingRows() {
+  const { data, error } = useSuspenseThings();
+  return (
+    <ul>
+      ${alert ? "<ErrorAlert error={error} fallback='failed' />" : ''}
+      {data.map((thing) => <li key={thing}>{thing}</li>)}
+    </ul>
+  );
+}
+`;
+  const reasoned = rows(false).replace(
+    '  const { data, error }',
+    '  // A refetch that fails is not drawn here: the rows are a snapshot.\n  const { data, error }',
+  );
+  const { report } = check({
+    'src/features/things/sections/silent-rows.tsx': rows(false),
+    'src/features/things/sections/thing-rows.tsx': rows(true),
+    'src/features/things/sections/snapshot-rows.tsx': reasoned,
+  });
+  assert.match(
+    report,
+    /sections\/silent-rows\.tsx: reads through useSuspenseThings and draws no ErrorAlert/,
+  );
+  assert.doesNotMatch(report, /sections\/thing-rows\.tsx/);
+  assert.doesNotMatch(report, /sections\/snapshot-rows\.tsx/);
 });
 // oppenheimer:end web

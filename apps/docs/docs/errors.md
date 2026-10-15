@@ -373,8 +373,12 @@ stores a fresh one.
 
 `GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
 protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
-request waits. Approving answers `200` with `merged: false` instead of this
-code, because the approval itself landed.
+request waits. Approve and merge answers `200` with `merged: false` instead of
+this code, because the approval itself landed; it then asks GitHub to merge it
+once the required checks pass (`autoMerge: true`), or leaves it waiting when
+the repository does not allow auto-merge (`autoMerge: false`). If GitHub refuses that
+request for another reason, the answer is `GITHUB_015` for a rate limit and
+`GITHUB_009` otherwise; the approval has still landed.
 
 `GITHUB_015` is GitHub's rate limit: the primary hourly budget of an
 installation, a user token or the App, or a secondary limit. GitHub refuses
@@ -411,7 +415,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
-| `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
 
@@ -423,10 +427,11 @@ project" is a question only the module that owns sessions can answer, asked over
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
 
-`PROJECTS_006` is a repository list a project cannot hold: none, none offered by
-default, one repository twice, more than twenty, or a blank base branch. The
+`PROJECTS_006` is a repository list a project cannot hold: repositories with none
+offered by default, one repository twice, more than twenty, or a blank base branch. The
 `detail` names which. The request schema refuses the same bodies earlier; this is the
-project holding its own invariants whatever the caller.
+project holding its own invariants whatever the caller. An empty list is not
+one of them: a project may hold no repository.
 
 `PROJECTS_007` should never be seen: the last slug a new project tries carries part
 of its own id. It is reported rather than retried.
@@ -470,21 +475,41 @@ are never reissued.
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 | `SESSIONS_019` <a id="sessions_019" /> | An attached file is no longer waiting           | 410  |
 | `SESSIONS_020` <a id="sessions_020" /> | Too many files are waiting to be sent           | 429  |
-| `SESSIONS_021` <a id="sessions_021" /> | That share link does not open anything          | 404  |
-| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this share link                 | 401  |
-| `SESSIONS_023` <a id="sessions_023" /> | This share link is not shared with you          | 403  |
-| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold | 409 |
+| `SESSIONS_021` <a id="sessions_021" /> | That session is not shared, or no longer        | 404  |
+| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this shared session             | 401  |
+| `SESSIONS_023` <a id="sessions_023" /> | This session is not shared with you             | 403  |
+| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold (no longer raised) | 409 |
+| `SESSIONS_025` <a id="sessions_025" /> | This host's runner cannot start a session in a folder | 409 |
+| `SESSIONS_026` <a id="sessions_026" /> | This host's runner cannot list its folders      | 409  |
+| `SESSIONS_027` <a id="sessions_027" /> | The host is offline, so its folders cannot be listed | 503 |
+| `SESSIONS_028` <a id="sessions_028" /> | That folder does not exist on the host          | 404  |
+| `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
+| `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
+| `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
 
-`SESSIONS_021`–`SESSIONS_024` belong to share links
-(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_021` is one answer for
-a secret that was never issued, a link revoked or expired, and a link to a closed
-session: the holder can only ask for a new one either way. `SESSIONS_022` and
-`SESSIONS_023` are apart because each has its own next step — sign in, or ask to be
-named; a list of people matches a verified email only. `SESSIONS_024` is twenty live
-links on one session.
+`SESSIONS_021`–`SESSIONS_023` belong to sharing a session
+(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_022` comes first, for
+anybody signed out, before the address is looked up, so a signed-out caller learns
+nothing about it. `SESSIONS_021` is one answer for an address that was never shared,
+a share stopped or expired, and a share of a closed session: the guest can only ask
+for it to be shared again either way. `SESSIONS_023` is apart because its next step
+is its own — ask to be named; a list of people matches a verified email only.
+`SESSIONS_024` was twenty live share links on one session; since 2026-10-13 a
+session has one share, and the code stays reserved so it is never reused.
+
+`SESSIONS_025`–`SESSIONS_031` belong to sessions in a folder already on the host
+(`product/versions/mvp/24-session-places.md`). `025` is a create with a `folder` for a
+host whose live runner did not announce `session.folder`: it would refuse a session with
+no checkouts, and updating the runner is the fix. A host with no link right now is not
+refused: the session is recorded and its next hello is sent it. `026`–`031` answer the
+folder picker, `GET /hosts/{id}/folders`, which asks the host's runner live and caches
+nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to the host,
+`031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
+`FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
+a runner gives reads as `030`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -667,7 +692,7 @@ Neither reaches a person. `INBOUND_002` is a webhook delivery without GitHub's
 The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
-`HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
+`HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
@@ -694,6 +719,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
+| `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
+| `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -719,6 +747,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
+| `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
+| `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

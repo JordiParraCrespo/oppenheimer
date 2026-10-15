@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { hostFactsSchema, hostNameSchema } from './primitives.js';
+import { hostFactsSchema, hostNameSchema, hostPathSchema } from './primitives.js';
 
 /**
  * A host belongs to a **person**, not a workspace: one laptop is paired once
@@ -94,3 +94,14 @@ export const hostTimelineQuerySchema = z.object({
 });
 
 export type HostTimelineQueryDto = z.infer<typeof hostTimelineQuerySchema>;
+
+/**
+ * `GET /hosts/{id}/folders`: one directory on the host for the folder picker,
+ * listed by its runner (`product/versions/mvp/24-session-places.md` §4).
+ * Absent `path` is the home directory of the user the runner runs as.
+ */
+export const hostFoldersQuerySchema = z.object({
+  path: hostPathSchema.optional(),
+});
+
+export type HostFoldersQuery = z.infer<typeof hostFoldersQuerySchema>;

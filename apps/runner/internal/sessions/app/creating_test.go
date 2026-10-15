@@ -22,7 +22,7 @@ type gatedGit struct {
 	clones  []string // the session each clone ran for
 }
 
-func (g *gatedGit) Ensure(ctx context.Context, repo, remote, ref string) error {
+func (g *gatedGit) Ensure(ctx context.Context, repo domain.Repository, remote, ref string) error {
 	g.mu.Lock()
 	g.clones = append(g.clones, domain.SessionOf(ctx))
 	g.mu.Unlock()
@@ -39,7 +39,7 @@ func gatedService(t *testing.T, err error) (*app.Service, *gatedGit, *memoryStor
 	store := &memoryStore{}
 	svc, newErr := app.New(app.Options{
 		Terminals: fake.NewTerminals(), Worktrees: git, Classifier: manifest.New(manifest.Options{}),
-		Store: store, Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+		Store: store, Places: fake.NewPlaces(), Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
 	})
 	if newErr != nil {
 		t.Fatal(newErr)
@@ -65,7 +65,7 @@ func TestCreateFetchesTheBranchItsWorktreeIsMadeFrom(t *testing.T) {
 			git := fake.NewWorktrees()
 			svc, err := app.New(app.Options{
 				Terminals: fake.NewTerminals(), Worktrees: git, Classifier: manifest.New(manifest.Options{}),
-				Store: &memoryStore{}, Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+				Store: &memoryStore{}, Places: fake.NewPlaces(), Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -219,7 +219,7 @@ func TestAnAttachWaitsForThePaneRatherThanBeingRefused(t *testing.T) {
 	terminals := &gatedTerminals{Terminals: fake.NewTerminals(), release: make(chan struct{})}
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
-		Store: &memoryStore{}, Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+		Store: &memoryStore{}, Places: fake.NewPlaces(), Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
 	})
 	if err != nil {
 		t.Fatal(err)

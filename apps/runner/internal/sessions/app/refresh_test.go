@@ -127,7 +127,7 @@ func newRefreshHarness(t *testing.T) *refreshHarness {
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
 		Store: store, Publisher: events,
-		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+		Places: fake.NewPlaces(), Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
 	})
 	if err != nil {
 		t.Fatal(err)

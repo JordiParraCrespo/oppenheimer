@@ -41,10 +41,10 @@
     },
     "host": {
       "title": "Add your first host",
-      "description": "Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.",
+      "description": "Paste this prompt into the coding agent on the machine you want sessions on — a cloud VM, a build box, or your workstation. It installs the runner and connects it. Nothing is exposed to the internet.",
       "defaultName": "My first host",
       "skip": "Skip for now",
-      "skipNote": "You can pair a machine later. Sessions need one before they can run."
+      "skipNote": "You can add a host later from any new session."
     },
     "ready": {
       "title": "You're all set",

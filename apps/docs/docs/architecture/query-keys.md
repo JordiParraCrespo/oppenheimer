@@ -12,9 +12,11 @@ patterns from TkDodo (a TanStack Query maintainer).
 
 This guide explains the rules and shows how to write a compliant **query key
 factory**. The reference implementations live in
-`packages/frontend/core/src/react/users.queries.ts` (lists, details, filters)
-and `packages/frontend/consumer/src/react/installations.queries.ts` (resources
-nested under a detail).
+`packages/frontend/consumer/src/react/sessions.queries.ts` (lists, details,
+something nested under a detail) and
+`packages/frontend/consumer/src/react/installations.queries.ts` (a
+`list` / `detail` ladder repeated under a detail). The `usersKeys` below is
+the shape of the pattern, not a factory in the code.
 
 ## The rules
 
@@ -127,8 +129,12 @@ queryClient.invalidateQueries({ queryKey: usersKeys.detail(id) });
 ```
 
 A mutation hook writes the entity the server answered with and invalidates
-what it appears in — never `all`, which would mark the row just written stale
-and fetch it again. The update goes through `withCacheOnSuccess` from
+what it appears in — not `all`, which would mark the row just written stale
+and fetch it again. The exception is a write that changes every read of the
+feature, and says so beside the call: watching a repository moves the pull
+request queue, the details and the period's numbers alike
+(`useInvalidatePullRequests`), and moving or deleting a milestone moves its
+tasks along with it. The update goes through `withCacheOnSuccess` from
 `@oppenheimer/frontend-core/react`, which runs it before the caller's
 `onSuccess`; written inline beside `...options`, the spread order decides
 whether it runs at all:
@@ -247,13 +253,20 @@ What that policy encodes:
 - **`gcTime` ≥ `maxAge`** — a query garbage-collected from memory is never
   written to storage. Leaving `gcTime` at its 5-minute default would silently
   persist almost nothing, which is why `defaultQueryClientOptions` sets it.
-- **`buster` = app version** — a release that changes a response shape starts
-  from an empty cache instead of hydrating entries the new code misreads.
+- **`buster` = app version plus a policy revision** — a release that changes
+  a response shape starts from an empty cache instead of hydrating entries the
+  new code misreads, and bumping `QUERY_PERSIST_REVISION` drops a cache the
+  policy no longer allows before the next release.
 - **A per-feature deny-list** (`shouldDehydrateQuery`) — this is where the key
   convention pays off, since the first segment of every key names the feature:
   - `auth` is never persisted. The session query is `staleTime: Infinity`, so a
     restored entry would look fresh forever and `restoreSession()` would never
     run — the app would render as signed in with no session behind it.
+  - `users` is never persisted either: the signed-in user's record carries
+    their email and name. `useMyPermissions` opts its read back in with
+    `meta: PERSIST_META` (`@oppenheimer/frontend-core/react`, the one typed
+    opt-in), which `shouldDehydrateQuery` honours inside a denied feature: it
+    names no one, and the nav reads it on a warm start.
   - The consumer's own records (`sessions`, `hosts`, `projects`, `profile`…)
     are never persisted — the product names them in
     `CONSUMER_NON_PERSISTED_FEATURES`. They name machines, repositories and

@@ -1,16 +1,9 @@
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  FieldDescription,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
+import { Button, FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
-import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { ProjectDialogShell } from '../components/project-dialog-shell';
+import { SavedProject } from '../sections/saved-project';
 import { ProjectEditorDialog } from './project-editor';
 
 /**
@@ -18,8 +11,10 @@ import { ProjectEditorDialog } from './project-editor';
  * 2026-09-27 export), opened from the project chip, the sidebar's plus and a
  * project header's cog.
  *
- * Without `projectId` it creates. The project is read here rather than handed
- * in because neither opener (the sidebar, the composer) holds the rows.
+ * Without `projectId` it creates. With one, the project is read under
+ * Suspense, because neither opener (the sidebar, the composer) holds the
+ * rows; until it answers, the frame holds its place, and a failed read is not
+ * a deleted project.
  */
 export function ProjectDialog({
   projectId,
@@ -31,39 +26,51 @@ export function ProjectDialog({
   onSaved: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
-  const projects = useProjects();
-  const project = projectId ? projects.data?.find((row) => row.id === projectId) : undefined;
-
-  if (projectId && !project) {
+  if (!projectId)
     return (
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent size="form" closeLabel={t('common.close')}>
-          <DialogHeader>
-            <DialogTitle>{t('projects.dialog.editTitle')}</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <div className="pb-7">
-              {projects.isPending ? (
-                <Skeleton className="h-30 w-full" />
-              ) : projects.isError ? (
-                // A failed read is not a deleted project.
-                <ErrorAlert error={projects.error} fallback={t('projects.dialog.loadFailed')} />
-              ) : (
-                <FieldDescription>{t('projects.dialog.gone')}</FieldDescription>
-              )}
-            </div>
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
+      <ProjectEditorDialog key="new" project={undefined} onClose={onClose} onSaved={onSaved} />
     );
-  }
 
   return (
-    <ProjectEditorDialog
-      key={project?.id ?? 'new'}
-      project={project}
-      onClose={onClose}
-      onSaved={onSaved}
-    />
+    <QueryState>
+      <QueryState.Pending>
+        <ProjectDialogShell onClose={onClose}>
+          <Skeleton className="h-30 w-full" />
+        </ProjectDialogShell>
+      </QueryState.Pending>
+      <QueryState.Error>
+        {(error, retry) => (
+          <ProjectDialogShell onClose={onClose}>
+            <ErrorAlert
+              error={error}
+              fallback={t('projects.dialog.loadFailed')}
+              action={
+                <Button variant="ghost" size="sm" onClick={retry}>
+                  {t('common.retry')}
+                </Button>
+              }
+            />
+          </ProjectDialogShell>
+        )}
+      </QueryState.Error>
+      <QueryState.Data>
+        <SavedProject projectId={projectId}>
+          {(project) =>
+            project ? (
+              <ProjectEditorDialog
+                key={project.id}
+                project={project}
+                onClose={onClose}
+                onSaved={onSaved}
+              />
+            ) : (
+              <ProjectDialogShell onClose={onClose}>
+                <FieldDescription>{t('projects.dialog.gone')}</FieldDescription>
+              </ProjectDialogShell>
+            )
+          }
+        </SavedProject>
+      </QueryState.Data>
+    </QueryState>
   );
 }

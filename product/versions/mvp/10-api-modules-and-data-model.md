@@ -200,6 +200,12 @@ by knowledge owned is what rules them out.
 
 ### The layout on a host
 
+**Replaced 2026-10-14 by 24 §2:** the work folder is `~/oppenheimer/`
+(chosen at install) and holds `<account-id>/<workspace-id>/{repos,
+agents, sessions}`, every level named by an id rather than a slug; the
+marker is a `.oppenheimer/` folder. The tree below is the 2026-09-26
+shape, kept for history.
+
 ```
 ~/oppenheimer-ai/
 │
@@ -866,9 +872,11 @@ there.
   replaced whole on every write, in one transaction with the project
   row, and a removed repository is a deleted row. Each repository is
   resolved live through `RepositoryAccessPort` on write (GitHub's 404 is
-  `GITHUB_010`). The aggregate holds at least one repository, at least
-  one of them a default, at most twenty, none twice, each with a base
-  (`PROJECTS_006`). A repository may sit in several projects. The
+  `GITHUB_010`). The aggregate holds at most twenty repositories, none
+  twice, each with a base, and a default among them whenever it holds
+  any (`PROJECTS_006`). It may hold none (2026-10-14): a project is a
+  place for tasks, memory and sessions before it is a set of
+  repositories, and a folder or terminal session needs none. A repository may sit in several projects. The
   defaults are offered to a new session, never applied, and there is no
   rule tying a session's checkouts to its project's repositories.
 

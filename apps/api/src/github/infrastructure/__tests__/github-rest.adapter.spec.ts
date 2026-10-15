@@ -465,3 +465,41 @@ describe('GitHub’s rate limit', () => {
     ]);
   });
 });
+
+describe('turning on auto-merge', () => {
+  const credential = { token: 'user-token', bucket: 'user:1' as const };
+  const enable = (answer: Answer) =>
+    new GithubPullsAdapter(new GithubHttp(configWith(), fakeFetch([answer]).impl)).enableAutoMerge(
+      credential,
+      'PR_node',
+      'squash',
+      'abc123',
+    );
+
+  it('answers true when GraphQL reports no error', async () => {
+    await expect(enable({ body: { data: { enablePullRequestAutoMerge: {} } } })).resolves.toBe(
+      true,
+    );
+  });
+
+  it('answers false for GitHub’s expected refusal: not allowed here, or mergeable now', async () => {
+    await expect(
+      enable({
+        body: {
+          errors: [
+            { type: 'UNPROCESSABLE', message: 'Auto merge is not allowed for this repository' },
+          ],
+        },
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it('answers a rate limit as GITHUB_015 and any other error as GITHUB_009, never as waiting', async () => {
+    await expect(
+      enable({ body: { errors: [{ type: 'RATE_LIMITED', message: 'API rate limit exceeded' }] } }),
+    ).rejects.toMatchObject({ code: 'GITHUB_015' });
+    await expect(
+      enable({ body: { errors: [{ type: 'FORBIDDEN', message: 'Resource not accessible' }] } }),
+    ).rejects.toMatchObject({ code: 'GITHUB_009' });
+  });
+});

@@ -17,4 +17,9 @@ var (
 	ErrWorkspaces          = problem.New("HOST_007", http.StatusBadRequest, "The workspaces directory is not usable")
 	ErrRunnerDirectory     = problem.New("HOST_008", http.StatusPreconditionFailed, "The runner's own directory is not safe to use")
 	ErrAgentUpdate         = problem.New("HOST_009", http.StatusFailedDependency, "An agent CLI could not be updated")
+	// The folder picker's listing (`fs.list`, 24 §4). The codes are the
+	// protocol's, named in packages/shared's fsListSchema.
+	ErrFolderNotFound   = problem.New("FS_001", http.StatusNotFound, "The folder does not exist")
+	ErrFolderNotDir     = problem.New("FS_002", http.StatusBadRequest, "The path is not a directory")
+	ErrFolderUnreadable = problem.New("FS_003", http.StatusForbidden, "The folder cannot be read")
 )

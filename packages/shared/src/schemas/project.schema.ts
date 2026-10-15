@@ -43,14 +43,18 @@ export type ProjectRepositoryInputDto = z.infer<typeof projectRepositoryInputSch
 
 /**
  * The repository list as a whole. It is replaced as a set on every write, in the
- * order given, so "at least one, at least one default, no repository twice" hold
- * after every call rather than after the last of several.
+ * order given, so "a default whenever there is a repository, no repository
+ * twice" hold after every call rather than after the last of several. It may be
+ * empty: a project is a place for tasks, memory and sessions before it is a set
+ * of repositories, and a folder or terminal session needs none.
  */
 export const projectRepositoriesSchema = z
   .array(projectRepositoryInputSchema)
-  .min(1)
   .max(MAX_PROJECT_REPOSITORIES)
-  .refine((repositories) => repositories.some((repository) => repository.isDefault))
+  .refine(
+    (repositories) =>
+      repositories.length === 0 || repositories.some((repository) => repository.isDefault),
+  )
   .refine(
     (repositories) =>
       new Set(repositories.map((repository) => repository.githubRepoId)).size ===
@@ -66,7 +70,7 @@ const projectFields = {
   defaultAgent: codingAgentSchema.nullable(),
 };
 
-/** `POST /projects`. Name and repositories are required; the defaults are not. */
+/** `POST /projects`. Name and repositories are required (the list may be empty); the defaults are not. */
 export const createProjectSchema = z.object({
   name: projectFields.name,
   repositories: projectFields.repositories,

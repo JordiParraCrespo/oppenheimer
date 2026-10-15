@@ -1,7 +1,7 @@
 import { OppenheimerProvider, usersKeys } from '@oppenheimer/frontend-core/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import {
@@ -9,9 +9,9 @@ import {
   useChangeOwnPassword,
   useDeleteAvatar,
   useMyProfile,
-  useProfileSessions,
   useRevokeOtherProfileSessions,
   useRevokeProfileSession,
+  useSuspenseProfileSessions,
   useUpdateMyProfile,
   useUploadAvatar,
 } from '../profile.queries';
@@ -84,12 +84,17 @@ describe('queries', () => {
     const sessions = [{ id: 'session-1' }];
     profile.getSessions.mockResolvedValue(sessions);
 
-    const { result } = renderHook(() => ({ me: useMyProfile(), sessions: useProfileSessions() }), {
-      wrapper,
-    });
+    // The devices read suspends: until it answers, nothing below the
+    // boundary renders and `result.current` is still null.
+    const { result } = renderHook(
+      () => ({ me: useMyProfile(), sessions: useSuspenseProfileSessions() }),
+      {
+        wrapper: ({ children }) => wrapper({ children: <Suspense>{children}</Suspense> }),
+      },
+    );
 
-    await waitFor(() => expect(result.current.sessions.data).toBe(sessions));
-    expect(result.current.me.data).toEqual({ id: 'user-1' });
+    await waitFor(() => expect(result.current?.sessions.data).toBe(sessions));
+    await waitFor(() => expect(result.current.me.data).toEqual({ id: 'user-1' }));
   });
 });
 

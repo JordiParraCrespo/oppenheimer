@@ -22,7 +22,7 @@ multi-line, so a grep for `export` misses most of them.
 | A failure inside a screen that still draws its chrome (a form, a section, a dialog) | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
 | A failure that is the whole screen (the app cannot start, a route threw) | the kit's `ScreenFailure` | an `ErrorAlert` alone on an empty canvas, a hand-built `EmptyState` |
 | A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
-| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` with its `Pending`, `Error`, `Empty` and `Data` slots (`Data of={query}` draws the root's own query, typed; `isEmpty` on the root for what counts as empty, `combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, an `Error` with a function child for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
+| A section that draws a read's loading and failure — every such read in the console | the kit's `QueryState` around it: `Pending`, `Error`, and a `Data` whose child is the section that calls the product package's `useSuspense…` hook, whose `data` is never `undefined`; an empty answer is the section's own branch. A first failure lands on `Error`, with Try again (a function child takes `(error, retry)` and wires its own button to `retry`); a later one is the hook's `error`, drawn by the section as an `ErrorAlert` beside the data, with no retry (`pnpm check:structure` fails a Suspense read with no `ErrorAlert`, unless a `// A refetch that fails is not drawn here: <why>` comment says the failure changes nothing on screen — a form seeded once, facets beside a list that says it). The boundary sits in the parent that already renders the section, so no prop is threaded through a wrapper; two swapped by a URL view take a `key` each. A key the URL moves (a scope, a range, a filter, a page) is read through `useDeferredValue` (`useMemo` it in its `hooks/` file when it is an object), so the page on screen stays while the next one loads; several reads one section draws are one `useSuspenseQueries` hook in the product package, so they fetch side by side | a hand-written ternary ladder, `useQuery` with its own `isPending` branch, a `<Suspense>` or an `ErrorBoundary` of the feature's own, a second retry in the rows, two `useSuspense…` calls in one component (they fetch one after the other). A read that draws no loading or failure of its own (a count in a head, a name in a row, a snapshot read in a handler) and a picker chip's options (below) stay `useQuery` |
 | A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
 | "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
 | A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
@@ -75,7 +75,9 @@ multi-line, so a grep for `export` misses most of them.
 | A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
 | The bar over a session's terminal | `SessionPaneHeader` (and `SessionPaneBack` from a task) | a row of spans over the `Terminal` |
 | The pull requests waiting on someone | `PullRequestTable` with `PullRequestRow`s (the lane a `Badge` `strong` / `soft`, checks and conflicts as `StatusDot` gate states, `MergeButton`) | a `RoutineTable`, a hand-built grid, a badge per lane |
-| A pull request's opening, numbers and way to merge | `PullRequestHeader`, `StatCard` (+ `StatBar`, `StatDelta`), `MergePath`, `Panel` | a `Card` of `div`s, a second step rail beside `Stepper` |
+| A pull request's opening | `PullRequestHeader` | a `Card` of `div`s |
+| Gates as one strip (the diff stat and files in `leading`, the gates, their actions) | `MergePath` | a `Card` of `div`s, a `Stepper` of gates |
+| A review period's numbers | `StatCard` (+ `StatBar`, `StatDelta`), `Panel` | a `Card` of `div`s |
 | Whether something may go ahead (checks, conflicts, a gate) | `StatusDot` with `passing` / `blocked` / `waiting` | a new state union, a coloured `Badge` |
 | One of a few described options (a review's verdict) | `RadioGroup` + `RadioGroupItem` | a list of `Button`s, a `SegmentedControl` |
 | Submitting a review | `ReviewDecision` in a `Popover` from `SubmitReviewButton` | a `Dialog`, a `DropdownMenu` of verdicts |
@@ -94,7 +96,8 @@ multi-line, so a grep for `export` misses most of them.
 | The period a page reports on | `DateRangePicker` | two `DatePicker`s |
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
 | Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `Card` per account |
-| An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it) | a `SessionItem` with an avatar |
+| An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it; `needsInput` when it waits on the reader) | a `SessionItem` with an avatar |
+| Employees' group heads, and the list before the first bot | `SidebarProjectHeader tone="eyebrow"` (`marker` for the Built-in lock); `SidebarEmptyCard` | an uppercase `span`, a `Callout` in the sidebar |
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
 | A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
@@ -102,11 +105,12 @@ multi-line, so a grep for `export` misses most of them.
 | The agent chat's transcript | `ChatTranscript` with `ChatUserMessage`, `TurnHeader`, `ChatReply`, `MessageTrail` | a `Card` per message, `Prose` alone |
 | What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow` | a `Disclosure` per call, a `CodeBlock` of the log |
 | A turn's files, plan, subagents, questions, objects | `ChangedFilesCard`, `ProposedPlanCard`, `SubagentRunCard`, `QuestionsPill`, `ContextCard` | a `Card` of `div`s, a `PullRequestRow` |
+| What a bot said to another bot, and the instructions it proposes for itself | `BotExchange` + `BotExchangeTurn`; `ProposedFile` + `ProposedFileLine` (`ProposedFileAction` for its quiet choices, `outcome` once decided) | a `ChatUserMessage`, a `DiffView` of one file |
 | A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
 | Panels on top of the chat composer, or one notice there | `ComposerStack` + `ComposerStackRow`, `ComposerTaskList`; `ComposerNotice` | a `Card` above the `Composer` |
-| A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel` | a `Dialog`, a `RadioGroup` |
+| A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel`; in a bot's chat, `ComposerApproval` in `Composer`'s `above` | a `Dialog`, a `RadioGroup`, an `ApprovalPanel` stacked over the composer |
 | Dictation, the context meter, the `/` and `@` menus | `VoiceRecorderBar`, `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
-| The chat's header, open threads, find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` | `SessionPaneHeader`, a tab strip of your own |
+| The chat's header, open threads, find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` (`align="center"` over `TemplateTiles` + `TemplateTile` for a new bot) | `SessionPaneHeader`, a tab strip of your own |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by
@@ -121,7 +125,7 @@ grows a prop for each part it might draw, or a boolean for each way it might
 look, is the shape this rule forbids.
 
 - **A part the caller draws is a child or a compound part.** A header, an
-  empty state, a placeholder, a row of actions: `<QueryState.Empty>…</…>`,
+  empty state, a placeholder, a row of actions: `<QueryState.Pending>…</…>`,
   never `empty={{ when, show }}`, `header={{ title, action }}` or a
   `renderFooter={() => …}` that receives nothing.
 - **A boolean that changes what a component is, is a second component or a
@@ -131,16 +135,15 @@ look, is the shape this rule forbids.
   boolean that reports the state of the same thing (`pending`, `disabled`,
   `open`, `active`) is not a mode, and stays a prop.
 - **A function child hands down data the caller does not have.**
-  `QueryState.Data` gets the rows, `QueryState.Error` the failure,
-  `RelativeTime` the words, `DiffView`'s `renderAnnotation` the annotation.
+  `QueryState.Error` gets the failure and its retry, `RelativeTime` the
+  words, `DiffView`'s `renderAnnotation` the annotation.
   A render prop with nothing to hand down is a slot, and a slot is a child.
 - **A read that can be switched off is a section rendered conditionally.**
   A query waiting on an input that may not exist yet (`skipToken`, a caller's
   `enabled`) is drawn by a section the parent renders only once the input
   does: `{id ? <AutomationDetail id={id} /> : <PickOne />}`, with `id: string`
-  all the way down. Never hand `QueryState` a switched-off query: it reads as
-  still loading, and its skeleton never goes away. Suspense asks for the same
-  shape, so a section written this way moves to it unchanged.
+  all the way down. A Suspense read cannot be switched off: its section is
+  the one the parent renders once the input exists.
 - **A compound's parts meet through the root's context**, never through props
   the caller threads from one part to the next. `QueryState`'s root decides
   the rung once and each slot reads it. In the kit and the design system the
@@ -322,6 +325,17 @@ in the same change.
 A screen wired to the API needs a spec in `e2e/tests/web/`. Conventions are in
 [`apps/web/AGENTS.md`](../../apps/web/AGENTS.md) and
 [`e2e/README.md`](../../e2e/README.md).
+
+## Every visual change is photographed
+
+A change that alters what the console shows is taken light and dark on the
+local stack, looked at, shown to the user and listed under `## Screenshots`
+in its pull request: the `local-stack` skill's "Show a visual change" step
+(`pnpm screens <route>...`). A component in the design system
+or the kit is photographed on a console route that renders it. The Stop
+hook `.agents/hooks/screenshot-guard.mjs` holds a task's end until the
+pictures are of the code as it is (`.agents/hooks/visual-change.mjs`
+defines what counts).
 
 ## Dead code
 

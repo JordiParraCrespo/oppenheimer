@@ -7,7 +7,6 @@
     "copy": "Copy",
     "loading": "Loading...",
     "or": "or",
-    "product": "Console",
     "relative": {
       "day": "{{count}}d",
       "hour": "{{count}}h",
@@ -18,6 +17,7 @@
       "year": "{{count}}y"
     },
     "dismiss": "Dismiss",
+    "retry": "Try again",
     "breadcrumb": "Breadcrumb",
     "dateField": {
       "none": "No date",
@@ -158,7 +158,7 @@
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
       "PROJECTS_004": "That project is archived, so no new work can go in it.",
       "PROJECTS_005": "That project still has sessions nobody has closed.",
-      "PROJECTS_006": "A project needs at least one repository, and at least one of them offered by default.",
+      "PROJECTS_006": "When a project holds repositories, at least one of them must be offered by default, none twice, each with a base branch.",
       "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
       "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
       "PULLS_001": "Choose a workspace before working with pull requests.",
@@ -252,10 +252,17 @@
       "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
       "GIT_005": "A git command on the host took too long and was stopped.",
       "CONSENT_CLIENT_002": "The server did not say where to send you next.",
-      "SESSIONS_021": "That share link doesn’t open anything. It may have expired or been revoked.",
-      "SESSIONS_022": "Sign in to open this share link.",
-      "SESSIONS_023": "This share link isn’t shared with you.",
-      "SESSIONS_024": "This session has as many share links as it can hold. Revoke one, then try again."
+      "SESSIONS_021": "That session isn’t shared, or not anymore. Ask whoever shared it to share it again.",
+      "SESSIONS_022": "Sign in to open this shared session.",
+      "SESSIONS_023": "This session isn’t shared with you.",
+      "SESSIONS_024": "This session has as many share links as it can hold. Revoke one, then try again.",
+      "SESSIONS_025": "This host’s runner can’t start a session in a folder. Update the runner on that host, then try again.",
+      "SESSIONS_026": "This host’s runner can’t list its folders. Update the runner on that host to pick a folder.",
+      "SESSIONS_027": "The host is offline, so its folders can’t be listed. Bring it back online and try again.",
+      "SESSIONS_028": "That folder doesn’t exist on the host.",
+      "SESSIONS_029": "That path is a file, not a folder.",
+      "SESSIONS_030": "That folder can’t be read on the host.",
+      "SESSIONS_031": "The host didn’t answer in time. Try again."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -451,10 +458,16 @@
           "label": "Check out the branch",
           "doing": "Creating the worktree…"
         },
+        "open": {
+          "label": "Open {{path}}",
+          "doing": "Resolving the path…",
+          "done": "Directory found"
+        },
         "agent": {
           "label": "Start {{agent}}",
           "doing": "Launching in tmux…",
-          "done": "Ready"
+          "done": "Ready",
+          "shell": "Start shell"
         }
       },
       "progressFailed": "Could not load how the start is going.",
@@ -469,7 +482,8 @@
       "descriptionNoBranch": "This session has stopped. Restarting brings the terminal back where it left off.",
       "restart": "Restart",
       "restarting": "Restarting",
-      "restartFailed": "The session could not be restarted."
+      "restartFailed": "The session could not be restarted.",
+      "deletedFolder": "This session was deleted. Its terminal ended, and the folder stays on the host as it is."
     },
     "new": {
       "title": "New session",
@@ -478,6 +492,7 @@
       "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
       "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
       "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
+      "subtitleFolder": "Opens a folder on the host as it is. Nothing is cloned and no branch is made.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -487,6 +502,17 @@
         "add": "Add host…",
         "offline": "Offline",
         "failed": "Could not load your hosts."
+      },
+      "where": {
+        "label": "Where the session runs",
+        "worktree": {
+          "label": "New worktree",
+          "description": "Clone a project repository onto a fresh branch"
+        },
+        "folder": {
+          "label": "Folder on host",
+          "description": "Open an existing directory as it is · nothing is cloned"
+        }
       },
       "project": {
         "label": "Project",
@@ -519,6 +545,27 @@
         "empty": "No branch matches.",
         "loading": "Loading branches…",
         "default": "Default"
+      },
+      "folder": {
+        "label": "Folder",
+        "placeholder": "Folder",
+        "input": "Folder path",
+        "inputPlaceholder": "~/path/to/folder",
+        "homeHint": "~ = {{home}}",
+        "loading": "Listing folders…",
+        "recent": "Recent on {{host}}",
+        "up": "Parent folder",
+        "crumbs": "Path",
+        "emptyMissing": "No folder at {{dir}} on {{host}}.",
+        "emptyFiltered": "No folder in {{dir}} starts with “{{fragment}}”.",
+        "emptyNone": "No subfolders. Use this one, or go back up.",
+        "footMissing": "Pick an existing folder. Nothing is created.",
+        "footRepository": "Git repository on {{branch}}. Opened as it is, no new branch.",
+        "footFolder": "Opened as it is. Nothing is cloned.",
+        "use": "Use {{name}}",
+        "useNone": "Use folder",
+        "noHost": "Pick a host first, then one of its folders.",
+        "failed": "Could not list the folders on this host."
       },
       "agent": {
         "label": "Agent and model",
@@ -562,7 +609,8 @@
         "removeAttachment": "Remove {{name}}",
         "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
         "attachTooMany": "A first task carries at most {{max}} files.",
-        "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file."
+        "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
+        "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
       "failed": "The session could not be created."
     },
@@ -646,7 +694,8 @@
       "deleting": "Deleting…",
       "failed": "The session could not be deleted.",
       "discard": "Also discard work that is not pushed",
-      "keeps": "Deleting stops if the session has work that is not pushed."
+      "keeps": "Deleting stops if the session has work that is not pushed.",
+      "descriptionFolder": "Ends the terminal. The folder stays as it is."
     },
     "filters": {
       "label": "Filter sessions",
@@ -670,63 +719,105 @@
       "name": "Name"
     },
     "share": {
-      "title": "Share “{{name}}”",
-      "description": "A link that opens this session’s terminal for someone outside your workspace, for as long as you can open it yourself, until it expires or you revoke it. They see everything the terminal shows, secrets and paths included, and revoking doesn’t take back what they have already seen.",
-      "access": "They can",
-      "read": "Watch",
-      "readHint": "See the terminal live. Nothing they type reaches it.",
-      "write": "Type",
-      "writeHint": "Type into the terminal: a shell on your host, as you.",
-      "readBadge": "Watch only",
-      "writeBadge": "Can type",
-      "audience": "Who can open it",
-      "people": "Only people I name",
-      "peopleHint": "They sign in with one of these verified emails.",
-      "accounts": "Anyone signed in",
-      "accountsHint": "Anyone with the link and an Oppenheimer account.",
-      "anyone": "Anyone with the link",
-      "anyoneHint": "No sign-in needed. Whoever has the link has the terminal.",
-      "emails": "Emails",
-      "emailsPlaceholder": "ada@example.com, grace@example.com",
-      "emailsHint": "Separate them with commas, spaces or new lines.",
-      "peopleInvalid": "Enter at least one email, and only emails.",
-      "lifetime": "Expires",
-      "lifetimes": {
-        "1h": "In 1 hour",
-        "1d": "In 1 day",
-        "7d": "In 7 days",
-        "30d": "In 30 days",
-        "never": "Never"
-      },
-      "lifetimeSearch": "Find an expiry",
-      "lifetimeNone": "No such expiry",
-      "lifetimeCapped": "Links that let anyone type expire within 7 days.",
-      "lifetimeTooLong": "A link that lets anyone type must expire within 7 days.",
-      "writeWarning": "Anyone who opens this link can run commands on your host as you. Prefer naming the people, and a short expiry.",
-      "writeNote": "The people you name can run commands on your host as you.",
-      "create": "Create link",
-      "creating": "Creating…",
-      "failed": "The link could not be created.",
-      "linkTitle": "Share link",
-      "onceOnly": "Copy it now: it is shown only once. If it is lost, revoke it and make another.",
-      "another": "Another link",
-      "live": "Active links",
-      "none": "No active links.",
-      "listFailed": "The links could not be loaded.",
-      "revoke": "Revoke",
-      "revoking": "Revoking…",
-      "revokeFailed": "The link could not be revoked.",
-      "until": "Until {{date}}",
-      "noExpiry": "No expiry",
+      "title": "Share session",
+      "managing": "Sharing",
+      "on": "on {{host}}",
+      "thisHost": "this host",
+      "loadFailed": "Could not load how this session is shared.",
+      "who": "Who",
       "audiences": {
-        "anyone": "Anyone with the link",
-        "accounts": "Anyone signed in"
-      }
+        "people": "Specific people",
+        "link": "Anyone with the link"
+      },
+      "peoplePlaceholder": "Name or email",
+      "peopleLabel": "People to share with",
+      "invite": "Invite {{email}}",
+      "inviteHint": "Outside this workspace · they sign in to open it",
+      "inviteEmpty": "Type a full email address to invite someone outside the workspace.",
+      "outside": "outside workspace",
+      "removePerson": "Remove {{name}}",
+      "peopleRequired": "Add at least one person.",
+      "linkHint": "Anyone who opens the link and signs in can watch. Link access is always view only.",
+      "permission": "Permission",
+      "access": {
+        "read": {
+          "label": "Can view",
+          "hint": "Watch the terminal live. Can’t type or stop the session."
+        },
+        "write": {
+          "label": "Can write",
+          "hint": "Send prompts and commands. They run as you."
+        }
+      },
+      "writeLocked": "Write access needs named people. Switch to “Specific people” to grant it.",
+      "writeWarningTitle": "{{who}} will act as you on {{host}}",
+      "writeWarningCount_one": "{{count}} person",
+      "writeWarningCount_other": "{{count}} people",
+      "writeWarningBody": "Everything they send runs with your credentials and your GitHub token. They can push, delete files and spend your quota.",
+      "writeAck": "I understand they act as me on this host",
+      "ackRequired": "Confirm you understand before giving write access.",
+      "duration": "For how long",
+      "lifetimes": {
+        "1h": "1 hour",
+        "8h": "8 hours",
+        "24h": "24 hours",
+        "7d": "7 days",
+        "never": "Never expires"
+      },
+      "endsRead": "Ends {{date}}. You can stop sharing any time.",
+      "endsWrite": "Ends {{date}}. Write access lasts 24 hours at most.",
+      "neverHint": "Does not expire. Access stays until you stop sharing.",
+      "submit": {
+        "people": "Share",
+        "link": "Create link",
+        "write": "Give write access"
+      },
+      "submitting": "Sharing…",
+      "failed": "The session could not be shared.",
+      "link": "Link",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "linkHintLink": "Anyone who signs in can watch. Never shows write controls.",
+      "linkHintPeople": "Only the people below can open it. Others see “You don’t have access”.",
+      "whoHasAccess": "Who has access",
+      "you": "{{email}} · you",
+      "roles": {
+        "owner": "Owner",
+        "read": "Can view",
+        "write": "Can write"
+      },
+      "anyoneRow": "Anyone with the link",
+      "anyoneRowHint": "Must sign in to open",
+      "removeAccess": "Remove access",
+      "expired": "ended",
+      "never": "never",
+      "stop": "Stop sharing",
+      "stopping": "Stopping…",
+      "addPeople": "Add people",
+      "addTitle": "Add people",
+      "addSubmit": "Add",
+      "addHint": "They get the same access as the people already on it: {{role}}, until the share ends.",
+      "done": "Done",
+      "updateFailed": "That change did not land. Try again.",
+      "status": {
+        "share": "Share",
+        "read": "Shared · view only",
+        "write": "Shared · can write",
+        "link": "link"
+      },
+      "statusTitle": "Share this session"
     },
     "shared": {
-      "watching": "Watching",
-      "typing": "You can type",
+      "viewOnly": "View only",
+      "canWrite": "Can edit",
+      "endsIn": "Ends in {{time}}",
+      "leave": "Leave",
       "sharedBy": "Shared by {{name}}",
+      "viewOnlyBy": "View only · shared by {{name}}",
+      "state": {
+        "live": "Running",
+        "stopped": "Stopped"
+      },
       "status": {
         "connecting": "Connecting…",
         "live": "Live",
@@ -737,27 +828,30 @@
         "stopped": "The session was stopped.",
         "resolved": "The session was closed.",
         "missing": "The session is gone.",
-        "unauthorized": "This link no longer opens the session.",
-        "forbidden": "This link no longer opens the session.",
+        "unauthorized": "This session is no longer shared with you.",
+        "forbidden": "This session is no longer shared with you.",
         "refused": "The host refused the terminal."
       },
       "gone": {
-        "title": "This link doesn’t open anything",
-        "body": "It may have expired or been revoked, or the session was closed. Ask whoever shared it for a new one."
+        "title": "This session isn’t shared",
+        "body": "It may have expired, or whoever shared it stopped sharing, or the session was closed. Ask them to share it again."
       },
       "signIn": {
         "title": "Sign in to open this session",
-        "body": "This link is shared with Oppenheimer accounts.",
+        "body": "Shared sessions open for Oppenheimer accounts.",
         "action": "Sign in"
       },
       "notInvited": {
-        "title": "This link isn’t shared with you",
-        "body": "It opens only for the people it names, by a verified email. Ask whoever shared it to add yours."
+        "title": "You don’t have access",
+        "body": "This session is shared with specific people, by a verified email. Ask whoever shared it to add yours."
       },
       "stopped": {
         "title": "This session is stopped",
-        "body": "Its terminal isn’t running. Whoever shared it can restart it, and this link will open it again."
+        "body": "Its terminal isn’t running. Whoever shared it can restart it, and this page will open it again."
       }
+    },
+    "screen": {
+      "loadFailed": "Couldn’t refresh this session."
     }
   },
   "automations": {
@@ -933,7 +1027,7 @@
       "failed": "Failed",
       "runs_one": "{{count}} run",
       "runs_other": "{{count}} runs",
-      "loadFailed": "Could not load the run history."
+      "loadFailed": "Couldn’t load the run history."
     },
     "runs": {
       "all": "All",
@@ -970,9 +1064,11 @@
       "duplicate": "Duplicate",
       "delete": "Delete automation",
       "resumeAction": "Resume",
-      "notFound": "This automation does not exist, or was deleted."
+      "notFound": "This automation does not exist, or was deleted.",
+      "loadFailed": "This automation could not be loaded."
     },
     "editor": {
+      "loadFailed": "Couldn’t load your projects and hosts.",
       "newTitle": "New automation",
       "editTitle": "Edit automation",
       "steps": {
@@ -1073,10 +1169,7 @@
       "title": "Pull requests",
       "views": "Views",
       "queue": "PR queue",
-      "analytics": "Analytics",
-      "repositories": "Repositories",
-      "allRepositories": "All repositories",
-      "noRepositories": "No watched repositories yet."
+      "analytics": "Analytics"
     },
     "queue": {
       "title": "PR queue",
@@ -1097,19 +1190,17 @@
       },
       "search": "Search title, repo, #number, author",
       "clearSearch": "Clear search",
-      "laneLabel": "Lane",
       "all": "All",
       "noMatch": "No pull request matches “{{query}}”.",
       "emptyTitle": "Nothing in this view",
       "emptyHint": "Pull requests opened by your sessions or teammates land here with a lane already picked.",
       "emptyWatchingTitle": "You are not watching any repositories",
-      "emptyWatchingHint": "Search for repositories with Watch repositories. Their open pull requests show up here.",
+      "emptyWatchingHint": "Pick the repositories to watch in Settings. Their open pull requests show up here.",
       "loadFailed": "Could not load pull requests.",
       "notConnectedTitle": "Connect GitHub to see pull requests",
       "notConnectedHint": "Install the GitHub App on the account that holds your repositories.",
       "connect": "Connect GitHub",
       "range": "{{first}}–{{last}} of {{total}}",
-      "openChanges": "Open changes",
       "review": "Review",
       "session": "Session",
       "merged": "Merged",
@@ -1127,21 +1218,27 @@
       "mergeButton": {
         "merge": "Merge",
         "confirm": "Confirm merge",
-        "cancel": "Cancel merge"
-      }
+        "cancel": "Cancel merge",
+        "confirmTitle": "Squash and merge into the base branch"
+      },
+      "repository": "Repository",
+      "allRepositories": "All repositories",
+      "noRepository": "No repository matches.",
+      "difficulty": "Difficulty",
+      "any": "Any",
+      "anyTime": "Any time",
+      "waits": {
+        "hour": "Under 1h",
+        "day": "1h – 1 day",
+        "older": "Over 1 day"
+      },
+      "noFilterMatch": "No pull request matches these filters.",
+      "configureWatched": "Configure watched repositories"
     },
     "lanes": {
       "deep": "Deep",
       "medium": "Medium",
       "quick": "Quick"
-    },
-    "laneReason": {
-      "risky_path": "Touches {{path}}, where a careful read pays.",
-      "large_change": "{{lines}} changed lines.",
-      "docs_tests_config": "Only docs, tests and configuration.",
-      "small_change": "A small change: {{lines}} lines in {{files}} files.",
-      "medium_change": "{{lines}} lines in {{files}} files.",
-      "files_unread": "GitHub did not give its files, so the lane is from its size alone ({{lines}} lines)."
     },
     "checks": {
       "passing": "Passing",
@@ -1172,13 +1269,14 @@
       "none": "No repositories to watch yet",
       "unwatch": "Stop watching {{name}}",
       "private": "Private",
-      "failed": "Could not update the watched repositories."
+      "failed": "Could not update the watched repositories.",
+      "empty": "Add a repository to start tracking its pull requests.",
+      "loadFailed": "Could not load the watched repositories."
     },
     "detail": {
       "back": "Back to the queue",
       "viewLabel": "View",
       "views": {
-        "briefing": "Briefing",
         "description": "Description",
         "changes": "Changes"
       },
@@ -1191,57 +1289,11 @@
         "draft": "Draft"
       },
       "into": "into",
-      "size": "Size",
-      "files": "Files",
-      "inFolders_one": "in {{count}} folder",
-      "inFolders_other": "in {{count}} folders",
-      "inFolders_many": "in {{count}} folders",
-      "checks": "Checks",
-      "conflicts": "Conflicts",
-      "mergesCleanly": "Merges cleanly into {{base}}",
-      "withBase": "With {{base}} · rebase before merging",
-      "noneWord": "None",
-      "pathToMerge": "Path to merge",
-      "gatesDone": "{{done}} of {{total}} done",
-      "gates": {
-        "checks": "Checks",
-        "conflicts": "Conflicts",
-        "review": "Review",
-        "merge": "Merge"
-      },
-      "gateMeta": {
-        "checks": {
-          "done": "All passing",
-          "failed": "{{failed}} failing",
-          "pending": "{{pending}} running"
-        },
-        "conflicts": {
-          "done": "Merges cleanly",
-          "failed": "Rebase on {{base}}",
-          "pending": "GitHub is checking"
-        },
-        "review": {
-          "done": "Approved",
-          "failed": "Changes requested",
-          "pending": "Waiting for review"
-        },
-        "merge": {
-          "done": "Merged",
-          "pending": "Squash into {{base}}"
-        }
-      },
-      "mergeNote": "Squash and merge into {{base}} as @{{login}}.",
-      "mergeNoteNoLogin": "Connect GitHub again so the merge is made in your name.",
-      "mergedInto": "Merged into {{base}}.",
-      "reviewChanges": "Review changes",
-      "brief": "Brief",
       "noDescription": "No description.",
       "copyCode": "Copy code",
       "codeCopied": "Copied",
-      "whatChanges": "What changes",
-      "risk": "Lane",
-      "where": "Mostly {{folders}}",
-      "reviewers": "Reviewers",
+      "editOnGithub": "Edit on GitHub",
+      "checks": "Checks",
       "noReviewers": "Nobody has reviewed it yet.",
       "reviewer": {
         "approved": "Approved",
@@ -1249,9 +1301,7 @@
         "commented": "Commented",
         "requested": "Requested"
       },
-      "opened": "{{author}} wants to merge {{head}} into {{base}}",
       "reviewsUnread": "GitHub did not return the reviews on this read.",
-      "filesUnread": "GitHub did not return the files on this read.",
       "rail": {
         "mergeStatus": "Merge status",
         "canMerge": "Can merge without conflicts",
@@ -1265,31 +1315,8 @@
         "noComments": "No comments",
         "commentCount_one": "{{count}} comment",
         "commentCount_other": "{{count}} comments",
-        "commentCount_many": "{{count}} comments"
-      },
-      "editOnGithub": "Edit on GitHub",
-      "activity": {
-        "title": "Activity",
-        "empty": "Nothing has happened here yet.",
-        "loadFailed": "Could not load the activity.",
-        "commits_one": "{{count}} commit",
-        "commits_other": "{{count}} commits",
-        "commits_many": "{{count}} commits",
-        "review": {
-          "approved": "{{author}} approved these changes",
-          "changes_requested": "{{author}} requested changes",
-          "commented": "{{author}} reviewed",
-          "dismissed": "{{author}}’s review was dismissed"
-        },
-        "event": {
-          "review_requested": "{{author}} requested a review from {{subject}}",
-          "merged": "{{author}} merged this pull request",
-          "closed": "{{author}} closed this pull request",
-          "reopened": "{{author}} reopened this pull request",
-          "ready_for_review": "{{author}} marked this ready for review",
-          "convert_to_draft": "{{author}} converted this to a draft",
-          "head_ref_force_pushed": "{{author}} force-pushed the branch"
-        }
+        "commentCount_many": "{{count}} comments",
+        "commentsFailed": "Could not load the comments."
       }
     },
     "review": {
@@ -1301,8 +1328,12 @@
           "description": "Post your comments without a verdict."
         },
         "approve": {
+          "label": "Approve",
+          "description": "Approves as you. You merge it later."
+        },
+        "approve_and_merge": {
           "label": "Approve and merge",
-          "description": "Approves as you and merges once GitHub allows it."
+          "description": "Approves as you and merges once required checks pass."
         },
         "request_changes": {
           "label": "Request changes",
@@ -1633,12 +1664,16 @@
       "online": "Runner connected",
       "mintFailed": "We could not create a registration token.",
       "installerDigest": "Installer SHA-256: {{digest}}",
-      "copyCommand": "Copy install command",
-      "copyPrompt": "Copy agent prompt",
-      "inspect": "Inspect command and prompt",
+      "copyPrompt": "Copy prompt",
       "format": "Install format",
       "command": "Command",
-      "agentPrompt": "Agent prompt"
+      "agentPrompt": "Agent prompt",
+      "manualLead": "Run this on the machine yourself instead:",
+      "connection": "Connection",
+      "installWaiting": "Waiting for the agent to run the install",
+      "installed": "Runner installed",
+      "connected": "Host connected",
+      "manual": "Install manually instead"
     },
     "add": {
       "title": "Add a host",
@@ -1657,7 +1692,7 @@
       },
       "crumbHosts": "Hosts",
       "done": "Done",
-      "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet."
+      "description": "Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet."
     },
     "settings": {
       "state": {
@@ -1687,7 +1722,9 @@
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
       "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
-      "removeFailed": "Could not remove this host. Try again."
+      "removeFailed": "Could not remove this host. Try again.",
+      "openTerminal": "Open terminal",
+      "openTerminalTitle": "Blank terminal in ~ on {{host}}"
     }
   },
   "settings": {
@@ -1696,7 +1733,8 @@
       "account": "Account",
       "workspace": "Workspace",
       "profile": "Profile",
-      "hosts": "Hosts"
+      "hosts": "Hosts",
+      "repositories": "Watched repositories"
     },
     "profile": {
       "title": "Profile",
@@ -1785,6 +1823,10 @@
       "empty": "No hosts yet",
       "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
       "failed": "The hosts could not be loaded."
+    },
+    "repositories": {
+      "title": "Watched repositories",
+      "description": "Open pull requests from these repositories show up in the Watching tab of the PR queue, even when nobody asked for your review."
     }
   },
   "nav": {
@@ -1876,10 +1918,10 @@
       },
       "host": {
         "title": "Add your first host",
-        "description": "Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.",
+        "description": "Paste this prompt into the coding agent on the machine you want sessions on — a cloud VM, a build box, or your workstation. It installs the runner and connects it. Nothing is exposed to the internet.",
         "defaultName": "My first host",
         "skip": "Skip for now",
-        "skipNote": "You can pair a machine later. Sessions need one before they can run."
+        "skipNote": "You can add a host later from any new session."
       },
       "ready": {
         "title": "You're all set",
@@ -2091,7 +2133,9 @@
     "reviewSubmitted": "Review submitted.",
     "reviewApprovedMerged": "Approved and merged.",
     "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
-    "reviewCommentPosted": "Comment posted."
+    "reviewCommentPosted": "Comment posted.",
+    "reviewApproved": "Approved.",
+    "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass."
   },
   "emails": {
     "common": {

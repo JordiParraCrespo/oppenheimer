@@ -62,6 +62,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useStartInstallation: () => ({ mutate: vi.fn(), isPending: false, error: null, reset: vi.fn() }),
   useRefreshInstallations: () => vi.fn(),
   useHosts: () => ({ data: [{ id: 'host-1', name: 'mac-studio' }], isPending: false }),
+  useSuspenseHosts: () => ({ data: [{ id: 'host-1', name: 'mac-studio' }], error: null }),
   useSessions: () => ({ data: 0 }),
 }));
 

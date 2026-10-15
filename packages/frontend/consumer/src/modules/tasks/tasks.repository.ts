@@ -60,7 +60,7 @@ function toMilestone(data: MilestoneResponseDto): MilestoneEntity {
  * by the API), and where the person saw the card.
  */
 export interface StartTaskSessionInput {
-  session: Omit<CreateSessionInput, 'projectId'>;
+  session: CreateSessionInput & { projectId?: never };
   seenStatus: TaskStatus;
   idempotencyKey: string;
 }
