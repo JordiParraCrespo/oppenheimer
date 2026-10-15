@@ -79,6 +79,17 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   summarize?(input: z.output<Input>, context: BotToolCallContext): Promise<string> | string;
   /**
+   * An asking tool's call as the card stores it, with every default it
+   * resolves from what may change while the card waits written out, so a
+   * yes runs what the card showed. The card's line is drawn from it, and a
+   * `BotToolRefusal` refuses the call before any card. Optional: without
+   * it the validated input is stored as given.
+   */
+  normalize?(
+    input: z.output<Input>,
+    context: BotToolCallContext,
+  ): Promise<z.output<Input>> | z.output<Input>;
+  /**
    * Answers labelled text, ids inline; a throw becomes an error result the
    * model reads. `context.approvalId` is set when it carries out an approval.
    */
@@ -186,8 +197,9 @@ function askingFirst<Input extends z.ZodType>(
 async function askOwner<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
   context: BotToolContext,
-  input: z.output<Input>,
+  given: z.output<Input>,
 ): Promise<string> {
+  const input = spec.normalize ? await spec.normalize(given, context) : given;
   const stored = asStoredInput(input);
   const summary = await summaryOf(spec, context, input, stored);
   const outcome = await context.approvals.request({

@@ -226,7 +226,8 @@ input is the name, description, soul, instructions, provider, model
   stricter of the creator's and the console's default, which is always
   Approve for me today. Full access asked by a bot under Approve for me is
   refused, never quietly lowered (`permissionForBotMadeBy`, held by the
-  tool and again by the command).
+  tool and again by the command, whose insert re-reads the creator's level
+  under a row lock and rolls back if it changed since the check).
 - **Group** is one of the owner's, by id or name; a bot cannot create a
   group.
 - **Once:** the creation is keyed (`bot."idempotencyKey"`, unique per
@@ -235,7 +236,10 @@ input is the name, description, soul, instructions, provider, model
   the bot the first one made; two racing ones make one.
 - A call the tool would refuse (a keyless provider, an unknown model or
   group, a looser permission) is refused before any card is raised, so the
-  person is never asked to approve what cannot run. The card reads
+  person is never asked to approve what cannot run. The card stores the
+  call with every default written out (provider, model, effort, level,
+  group by id), so a yes creates what the card showed even if the
+  creator's engine changed while it waited. The card reads
   `Create bot "Scout" on GLM GLM-5.3, in group Research: Finds papers`.
 
 Two named policies bound bots talking to bots. Both belong to the turn

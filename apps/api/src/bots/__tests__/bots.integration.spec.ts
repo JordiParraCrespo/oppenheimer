@@ -567,20 +567,44 @@ describe('bots (integration)', () => {
       );
     });
 
+    it('creates no looser child when the creator is lowered between the check and the write', async () => {
+      const ada = await create('Ada');
+      await dataSource.query(`UPDATE bot SET permission = 'full' WHERE id = $1`, [ada.id]);
+      // The owner lowers Ada to Approve for me after the handler checked her
+      // level (it reads the names it numbers by after the check), before the insert.
+      const lowering = Object.create(bots) as BotRepository;
+      lowering.namesIn = async (caller) => {
+        await dataSource.query(`UPDATE bot SET permission = 'auto' WHERE id = $1`, [ada.id]);
+        return bots.namesIn(caller);
+      };
+      const racing = new CreateBotCommandHandler(lowering, groups, {
+        assertUsable: async () => ({ probedTools: null }),
+      });
+      await expect(
+        racing.execute(
+          new CreateBotCommand({
+            scope: scope(),
+            input: { name: 'Scout', provider: 'glm' },
+            creatorBotId: ada.id,
+            permission: 'full',
+          }),
+        ),
+      ).rejects.toMatchObject({ code: 'GENERIC.ARGUMENT_INVALID' });
+      expect((await bots.findAll(scope())).map((bot) => bot.name)).toEqual(['Ada']);
+    });
+
     it('creates one bot for two racing creations with the same key, and both answer it', async () => {
       const ada = await create('Ada');
       const command = () =>
         new CreateBotCommand({
           scope: scope(),
           input: { name: 'Scout', provider: 'glm' },
-          byBot: {
-            creatorBotId: ada.id,
-            idempotencyKey: 'bot:approval:race',
-            model: null,
-            effort: null,
-            permission: 'auto',
-            instructions: 'Read papers.',
-          },
+          creatorBotId: ada.id,
+          idempotencyKey: 'bot:approval:race',
+          model: null,
+          effort: null,
+          permission: 'auto',
+          instructions: 'Read papers.',
         });
       const ids = await Promise.all([handler().execute(command()), handler().execute(command())]);
       expect(ids[0]).toBe(ids[1]);

@@ -9,7 +9,7 @@ import type { BotEntity } from '../../../domain/bot.entity';
 import { BotEntity as Bot } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
-import { type CreateBotByBot, CreateBotCommand } from '../create-bot.command';
+import { CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
 /**
@@ -135,7 +135,8 @@ describe('CreateBotCommandHandler', () => {
         provider: 'glm',
         permission,
       });
-    const byBot = (creator: Bot, overrides: Partial<CreateBotByBot> = {}): CreateBotByBot => ({
+    type Extras = Omit<ConstructorParameters<typeof CreateBotCommand>[0], 'scope' | 'input'>;
+    const extras = (creator: Bot, overrides: Partial<Extras> = {}): Extras => ({
       creatorBotId: creator.id,
       idempotencyKey: 'bot:approval:approval-1',
       model: 'glm-5.3',
@@ -152,7 +153,7 @@ describe('CreateBotCommandHandler', () => {
         new CreateBotCommand({
           scope: scope(),
           input: { name: 'Scout', provider: 'glm' },
-          byBot: byBot(creator, {
+          ...extras(creator, {
             permission: 'full',
             soul: 'You are Scout.',
             instructions: 'Read papers.',
@@ -176,6 +177,31 @@ describe('CreateBotCommandHandler', () => {
       expect(documents[0].pendingRevision?.authorUserId).toBe(userId);
     });
 
+    it('holds the insert to the creator’s level as checked, and refuses when it changed before the write', async () => {
+      const { handler, bots } = setup();
+      const creator = creatorOn('full');
+      bots.findOneById.mockResolvedValueOnce(Some(creator));
+      bots.insert.mockResolvedValueOnce('creator-changed');
+      await expect(
+        handler.execute(
+          new CreateBotCommand({
+            scope: scope(),
+            input: { name: 'Scout', provider: 'glm' },
+            ...extras(creator, { permission: 'full' }),
+          }),
+        ),
+      ).rejects.toMatchObject({ code: 'GENERIC.ARGUMENT_INVALID' });
+      expect(bots.insert.mock.calls[0][2]).toEqual({ botId: creator.id, permission: 'full' });
+    });
+
+    it('lets the console create with none of it: no creator check, no key lookup', async () => {
+      const { handler, bots } = setup();
+      await handler.execute(new CreateBotCommand({ scope: scope(), input: { name: 'Ana' } }));
+      expect(bots.findOneByIdempotencyKey).not.toHaveBeenCalled();
+      expect(bots.findOneById).not.toHaveBeenCalled();
+      expect(bots.insert.mock.calls[0][2]).toBeUndefined();
+    });
+
     it('refuses a level looser than the creator’s and writes nothing', async () => {
       const { handler, bots } = setup();
       const creator = creatorOn('auto');
@@ -185,7 +211,7 @@ describe('CreateBotCommandHandler', () => {
           new CreateBotCommand({
             scope: scope(),
             input: { name: 'Scout' },
-            byBot: byBot(creator, { permission: 'full' }),
+            ...extras(creator, { permission: 'full' }),
           }),
         ),
       ).rejects.toMatchObject({ code: 'GENERIC.ARGUMENT_INVALID' });
@@ -199,7 +225,7 @@ describe('CreateBotCommandHandler', () => {
           new CreateBotCommand({
             scope: scope(),
             input: { name: 'Scout' },
-            byBot: byBot(creatorOn('full')),
+            ...extras(creatorOn('full')),
           }),
         ),
       ).rejects.toMatchObject({ code: 'BOTS_001' });
@@ -214,7 +240,7 @@ describe('CreateBotCommandHandler', () => {
         new CreateBotCommand({
           scope: scope(),
           input: { name: 'Scout' },
-          byBot: byBot(creatorOn('auto')),
+          ...extras(creatorOn('auto')),
         }),
       );
       expect(id).toBe(earlier.id);
@@ -237,7 +263,7 @@ describe('CreateBotCommandHandler', () => {
         new CreateBotCommand({
           scope: scope(),
           input: { name: 'Scout', provider: 'glm' },
-          byBot: byBot(creator),
+          ...extras(creator),
         }),
       );
       expect(id).toBe(winner.id);

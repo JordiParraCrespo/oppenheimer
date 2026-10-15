@@ -134,7 +134,7 @@ function created(command: CreateBotCommand): BotEntity {
     props: {
       organizationId: 'org-1',
       createdByUserId: 'owner-1',
-      createdByBotId: command.byBot?.creatorBotId ?? null,
+      createdByBotId: command.creatorBotId ?? null,
       name: command.input.name ?? 'New Bot',
       description: command.input.description ?? '',
       avatarColor: BOT_AVATAR_COLORS[1],
@@ -142,9 +142,9 @@ function created(command: CreateBotCommand): BotEntity {
       position: 0,
       homeHostId: null,
       provider: command.input.provider ?? 'anthropic',
-      model: command.byBot?.model ?? null,
-      effort: command.byBot?.effort ?? null,
-      permission: command.byBot?.permission ?? 'auto',
+      model: command.model ?? null,
+      effort: command.effort ?? null,
+      permission: command.permission ?? 'auto',
       learnAutomatically: true,
     },
   });
@@ -222,7 +222,11 @@ describe('create_bot', () => {
         input: {
           name: 'Scout',
           description: 'Finds papers on retrieval and summarises them every Monday',
-          group: 'research',
+          provider: 'glm',
+          model: 'glm-5.3',
+          effort: 'high',
+          permission: 'auto',
+          group: research.id,
         },
         summary:
           'Create bot "Scout" on GLM GLM-5.3, in group Research: Finds papers on retrieval and summarises them every Monday',
@@ -258,7 +262,7 @@ describe('create_bot', () => {
       groupId: null,
       provider: 'glm',
     });
-    expect(command().byBot).toMatchObject({
+    expect(command()).toMatchObject({
       creatorBotId: SELF_ID,
       model: 'glm-5.3',
       effort: 'high',
@@ -277,15 +281,15 @@ describe('create_bot', () => {
     const { command, call } = creating('full');
     await call({ name: 'Scout', provider: 'anthropic' });
     expect(command().input.provider).toBe('anthropic');
-    expect(command().byBot).toMatchObject({ model: null, effort: null });
+    expect(command()).toMatchObject({ model: null, effort: null });
   });
 
   it('takes a model by its label as well as its id', async () => {
     const { command, call } = creating('full');
     await call({ name: 'Scout', model: 'glm-5.3', effort: 'low' });
-    expect(command().byBot).toMatchObject({ model: 'glm-5.3', effort: 'low' });
+    expect(command()).toMatchObject({ model: 'glm-5.3', effort: 'low' });
     await call({ name: 'Scout', model: 'GLM-5.3' });
-    expect(command(1).byBot?.model).toBe('glm-5.3');
+    expect(command(1).model).toBe('glm-5.3');
   });
 
   it('refuses a provider the workspace has no key for, naming the ones it can use, and creates nothing', async () => {
@@ -333,8 +337,8 @@ describe('create_bot', () => {
     const { command, call } = creating('full');
     await call({ name: 'Scout' });
     await call({ name: 'Scout', permission: 'full' });
-    expect(command(0).byBot?.permission).toBe('auto');
-    expect(command(1).byBot?.permission).toBe('full');
+    expect(command(0).permission).toBe('auto');
+    expect(command(1).permission).toBe('full');
   });
 
   it('refuses Full access to a bot made by one under Approve for me, raising no card', async () => {
@@ -353,12 +357,52 @@ describe('create_bot', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
+  it('stores the card’s defaults with the call, so a yes creates what the card showed after the creator moved on', async () => {
+    const asking = creating('auto');
+    await asking.call({ name: 'Scout' });
+    const stored = asking.approvals.request.mock.calls[0][0].input;
+    expect(stored).toEqual({
+      name: 'Scout',
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: 'high',
+      permission: 'auto',
+    });
+
+    // While the card waits, the creator moves to Anthropic.
+    const later = creating('auto');
+    later.queryBus.execute.mockImplementation(async (query: unknown) => {
+      if (query instanceof FindModelProviderCredentialsQuery) {
+        return [{ provider: 'glm' }, { provider: 'anthropic' }];
+      }
+      if (query instanceof FindBotQuery && query.botId === SELF_ID) {
+        const moved = creator('auto');
+        moved.edit({ provider: 'anthropic' });
+        return moved;
+      }
+      return created(later.command());
+    });
+    await later.approved(stored, 'approval-7');
+    expect(later.command().input.provider).toBe('glm');
+    expect(later.command()).toMatchObject({ model: 'glm-5.3', effort: 'high' });
+  });
+
+  it('stores the provider’s default model as null when the card showed it', async () => {
+    const { approvals, call } = creating('auto');
+    await call({ name: 'Scout', provider: 'anthropic' });
+    expect(approvals.request.mock.calls[0][0].input).toMatchObject({
+      provider: 'anthropic',
+      model: null,
+      effort: null,
+    });
+  });
+
   it('keys an approved call by its approval, so a retried job creates one bot', async () => {
     const { command, approved } = creating('auto');
     await approved({ name: 'Scout' }, 'approval-9');
     await approved({ name: 'Scout' }, 'approval-9');
-    expect(command(0).byBot?.idempotencyKey).toBe('bot:approval:approval-9');
-    expect(command(1).byBot?.idempotencyKey).toBe('bot:approval:approval-9');
+    expect(command(0).idempotencyKey).toBe('bot:approval:approval-9');
+    expect(command(1).idempotencyKey).toBe('bot:approval:approval-9');
   });
 
   it('keys a direct call by its turn and input: the same call twice is one bot, another is another', async () => {
@@ -366,7 +410,7 @@ describe('create_bot', () => {
     await call({ name: 'Scout' });
     await call({ name: 'Scout' });
     await call({ name: 'Scribe' });
-    const keys = [0, 1, 2].map((index) => command(index).byBot?.idempotencyKey);
+    const keys = [0, 1, 2].map((index) => command(index).idempotencyKey);
     expect(keys[0]).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
     expect(keys[1]).toBe(keys[0]);
     expect(keys[2]).not.toBe(keys[0]);

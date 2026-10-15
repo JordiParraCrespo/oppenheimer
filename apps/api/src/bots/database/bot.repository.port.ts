@@ -1,4 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { BotPermission } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { BotEntity } from '../domain/bot.entity';
 import type { BotDocumentEntity } from '../domain/bot-document.entity';
@@ -6,8 +7,15 @@ import type { BotDocumentEntity } from '../domain/bot-document.entity';
 /**
  * `missing`: the bot was deleted between the read and the write. `group-missing`: so was its new group.
  * `taken`: a creation's idempotency key already made a bot, so this one wrote nothing.
+ * `creator-changed`: the bot creating it was deleted, or its level changed, since it was checked.
  */
-export type BotWriteOutcome = 'saved' | 'missing' | 'group-missing' | 'taken';
+export type BotWriteOutcome = 'saved' | 'missing' | 'group-missing' | 'taken' | 'creator-changed';
+
+/** The creating bot as the caller checked it: the write holds only while it is still so. */
+export interface BotCreatorCheck {
+  botId: string;
+  permission: BotPermission;
+}
 
 /**
  * Reads take an {@link AccessScope}; writes take a bot the caller already read
@@ -31,8 +39,14 @@ export interface BotRepositoryPort {
   /**
    * The bot, last in its group, with its first documents and their first
    * revisions; `taken`, writing nothing, when its idempotency key already made one.
+   * With `creator`, the creating bot's row is locked for the write and must
+   * still hold the level checked; `creator-changed`, writing nothing, when not.
    */
-  insert(bot: BotEntity, documents: readonly BotDocumentEntity[]): Promise<BotWriteOutcome>;
+  insert(
+    bot: BotEntity,
+    documents: readonly BotDocumentEntity[],
+    creator?: BotCreatorCheck,
+  ): Promise<BotWriteOutcome>;
   save(bot: BotEntity): Promise<BotWriteOutcome>;
   /** The bot, its documents, their history and its memory. */
   delete(bot: BotEntity): Promise<void>;

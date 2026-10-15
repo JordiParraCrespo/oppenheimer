@@ -5,10 +5,8 @@ import {
   BOT_DOCUMENT_MAX,
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
-  BOT_PROVIDER_CATALOG,
   BOT_PROVIDERS,
   type BotProvider,
-  botModelOf,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
@@ -25,6 +23,8 @@ import {
   botCreatedAnswer,
   botCreationSummary,
   type CreateBotInput,
+  engineLabelOf,
+  explicitCreateBotInput,
   planBotCreation,
 } from '../bot-peer-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
@@ -86,11 +86,16 @@ export class BotPeerToolsFactory implements BotToolArea {
           .string()
           .min(1)
           .max(128)
+          .nullable()
           .optional()
           .describe(
-            "A model id or label the provider offers; yours on the same provider, else the provider's default.",
+            "A model id or label the provider offers; yours on the same provider when omitted, else the provider's default (also null).",
           ),
-        effort: z.enum(SESSION_EFFORTS).optional().describe('Only for a model that takes one.'),
+        effort: z
+          .enum(SESSION_EFFORTS)
+          .nullable()
+          .optional()
+          .describe("Only for a model that takes one; null is the model's own default."),
         permission: z
           .enum(BOT_PERMISSIONS)
           .optional()
@@ -104,6 +109,8 @@ export class BotPeerToolsFactory implements BotToolArea {
           .optional()
           .describe('An existing bot group, by name or id; ungrouped when omitted.'),
       }),
+      normalize: async (input, context) =>
+        explicitCreateBotInput(input, await this.plan(input, context)),
       summarize: async (input, context) => {
         const plan = await this.plan(input, context);
         return botCreationSummary(input.name, plan);
@@ -114,15 +121,13 @@ export class BotPeerToolsFactory implements BotToolArea {
           new CreateBotCommand({
             scope: context.owner,
             input: plan.body,
-            byBot: {
-              creatorBotId: context.botId,
-              idempotencyKey: idempotencyKeyOf(context.turnId, input, context.approvalId),
-              model: plan.model,
-              effort: plan.effort,
-              permission: plan.permission,
-              soul: plan.soul,
-              instructions: plan.instructions,
-            },
+            model: plan.model,
+            effort: plan.effort,
+            permission: plan.permission,
+            soul: plan.soul,
+            instructions: plan.instructions,
+            creatorBotId: context.botId,
+            idempotencyKey: idempotencyKeyOf(context.turnId, input, context.approvalId),
           }),
         );
         const bot = await this.queryBus.execute<FindBotQuery, BotEntity>(
@@ -188,7 +193,7 @@ export class BotPeerToolsFactory implements BotToolArea {
         return [
           `Bot ${bot.id} "${bot.name}"${bot.id === context.botId ? ' (you)' : ''}`,
           `- for: ${bot.description || '(no description)'}`,
-          `- runs on: ${engineOf(bot)}`,
+          `- runs on: ${engineLabelOf(bot.provider, bot.model)}`,
           `- home host: ${bot.homeHostId ?? 'none chosen'}`,
           `- last message: ${formatToolTime(bot.lastMessageAt, context.timeZone)}`,
         ].join('\n');
@@ -201,13 +206,8 @@ function summarizeBot(bot: BotEntity, context: BotToolCallContext): string {
   const you = bot.id === context.botId ? ' (you)' : '';
   const parts = [
     bot.description || 'no description',
-    engineOf(bot),
+    engineLabelOf(bot.provider, bot.model),
     `home host ${bot.homeHostId ?? 'none'}`,
   ];
   return `${bot.id} "${bot.name}"${you} [${parts.join('; ')}]`;
-}
-
-function engineOf(bot: BotEntity): string {
-  const model = botModelOf(bot.provider, bot.model);
-  return `${BOT_PROVIDER_CATALOG[bot.provider].label} ${model?.label ?? bot.model ?? 'default model'}`;
 }
