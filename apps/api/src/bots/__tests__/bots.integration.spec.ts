@@ -16,11 +16,15 @@ import { BotGroupOrmEntity } from '../database/bot-group.orm-entity';
 import { BotGroupRepository } from '../database/bot-group.repository';
 import { BotMemoryFactOrmEntity } from '../database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from '../database/bot-memory-fact.repository';
+import { ModelProviderCredentialOrmEntity } from '../database/model-provider-credential.orm-entity';
+import { ModelProviderCredentialRepository } from '../database/model-provider-credential.repository';
 import { BotEntity } from '../domain/bot.entity';
 import { userActor } from '../domain/bot.types';
 import { BotDocumentEntity } from '../domain/bot-document.entity';
 import { BotGroupEntity } from '../domain/bot-group.entity';
 import { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
+import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
+import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 
 /**
  * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
@@ -36,6 +40,7 @@ describe('bots (integration)', () => {
   let groups: BotGroupRepository;
   let documents: BotDocumentRepository;
   let memory: BotMemoryFactRepository;
+  let credentials: ModelProviderCredentialRepository;
   let organizationId: string;
   let userId: string;
 
@@ -71,6 +76,7 @@ describe('bots (integration)', () => {
         BotDocumentOrmEntity,
         BotDocumentRevisionOrmEntity,
         BotMemoryFactOrmEntity,
+        ModelProviderCredentialOrmEntity,
       ],
       synchronize: false,
     });
@@ -97,6 +103,10 @@ describe('bots (integration)', () => {
       dataSource.getRepository(BotMemoryFactOrmEntity),
       dataSource,
       new BotMemoryFactMapper(),
+    );
+    credentials = new ModelProviderCredentialRepository(
+      dataSource.getRepository(ModelProviderCredentialOrmEntity),
+      new ModelProviderCredentialMapper(),
     );
   }, 180000);
 
@@ -146,6 +156,7 @@ describe('bots (integration)', () => {
       avatarColor: 'mint',
       groupId: options.groupId ?? null,
       homeHostId: options.homeHostId ?? null,
+      provider: 'anthropic',
     });
     const docs = (['soul', 'instructions'] as const).map((documentName) =>
       BotDocumentEntity.initial({
@@ -425,5 +436,53 @@ describe('bots (integration)', () => {
       subject: 'Bot',
       conditions: { organizationId: '${activeOrganizationId}' },
     });
+  });
+
+  function credential(key: string, organization = organizationId) {
+    return ModelProviderCredentialEntity.createNew({
+      organizationId: organization,
+      provider: 'glm',
+      sealedKey: Buffer.from(`sealed:${key}`),
+      keyHint: key.slice(-4),
+      updatedByUserId: userId,
+    });
+  }
+
+  it('keeps one key per workspace and provider: a second put replaces the first', async () => {
+    await credentials.put(credential('first-key-1111'));
+    await credentials.put(credential('second-key-2222'));
+    const stored = await credentials.findAll(scope());
+    expect(stored).toHaveLength(1);
+    expect(stored[0]).toMatchObject({ provider: 'glm', keyHint: '2222' });
+    expect(stored[0].sealedKey.toString()).toBe('sealed:second-key-2222');
+  });
+
+  it("reads and deletes no other workspace's key", async () => {
+    const other = await insertOrganization();
+    await credentials.put(credential('theirs-9999', other));
+    expect(await credentials.findAll(scope())).toEqual([]);
+    expect((await credentials.findOne(scope(), 'glm')).isNone()).toBe(true);
+    expect(await credentials.delete(scope(), 'glm')).toBe(false);
+    expect(await credentials.findAll(scopeOf(other))).toHaveLength(1);
+  });
+
+  it('forgets a key on delete, and with its workspace', async () => {
+    await credentials.put(credential('mine-1234'));
+    expect(await credentials.delete(scope(), 'glm')).toBe(true);
+    expect(await credentials.findAll(scope())).toEqual([]);
+    await credentials.put(credential('mine-5678'));
+    await dataSource.query(`DELETE FROM organization WHERE id = $1`, [organizationId]);
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM model_provider_credential WHERE "organizationId" = $1`,
+      [organizationId],
+    );
+    expect(count).toBe(0);
+  });
+
+  it('refuses a provider the check does not list', async () => {
+    await credentials.put(credential('mine-1234'));
+    await expect(
+      dataSource.query(`UPDATE model_provider_credential SET provider = 'mistral'`),
+    ).rejects.toMatchObject({ constraint: 'CHK_model_provider_credential_provider' });
   });
 });

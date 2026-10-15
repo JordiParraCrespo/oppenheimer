@@ -16158,6 +16158,199 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/model-providers": {
+      "get": {
+        "description": "Every provider a bot can run on, in catalog order, each saying whether the workspace has a key for it and the key’s last four characters. Never the key.",
+        "operationId": "findModelProviderCredentials",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModelProviderCredentialResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workspace's model providers",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/model-providers/{provider}": {
+      "put": {
+        "description": "Sealed before it is stored, replacing the key there. It is never returned: the list answers only whether there is one and its last four characters.",
+        "operationId": "putModelProviderCredential",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutModelProviderCredentialRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Store the workspace's key for a model provider",
+        "tags": ["Bots"]
+      },
+      "delete": {
+        "description": "Its bots cannot answer until a key is stored again.",
+        "operationId": "deleteModelProviderCredential",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Forget the workspace's key for a model provider",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -24236,16 +24429,21 @@
             "nullable": true,
             "description": "The host its turns run on; null until one is chosen."
           },
+          "provider": {
+            "type": "string",
+            "enum": ["anthropic", "glm", "openai"],
+            "description": "Who answers it, and so which engine runs."
+          },
           "model": {
             "type": "string",
             "nullable": true,
-            "description": "A Claude Code model id; null runs Claude Code's default."
+            "description": "A model id the provider offers; null runs the provider's default."
           },
           "effort": {
             "type": "string",
             "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra", null],
             "nullable": true,
-            "description": "The effort level; null runs the model at the CLI's default."
+            "description": "The effort level; null runs the model at its own default."
           },
           "permission": {
             "type": "string",
@@ -24278,6 +24476,7 @@
           "groupId",
           "position",
           "homeHostId",
+          "provider",
           "model",
           "effort",
           "permission",
@@ -24312,6 +24511,10 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["anthropic", "glm", "openai"]
           }
         }
       },
@@ -24347,6 +24550,10 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["anthropic", "glm", "openai"]
           },
           "model": {
             "type": "string",
@@ -24577,6 +24784,41 @@
           }
         }
       },
+      "ModelProviderCredentialResponseDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["anthropic", "glm", "openai"]
+          },
+          "configured": {
+            "type": "boolean",
+            "description": "Whether the workspace has a key for this provider."
+          },
+          "keyHint": {
+            "type": "string",
+            "nullable": true,
+            "description": "The key's last four characters, so a person can tell which one is stored."
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": ["provider", "configured", "keyHint", "updatedAt"]
+      },
+      "PutModelProviderCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        },
+        "required": ["apiKey"]
+      },
       "LivenessResponseDto": {
         "type": "object",
         "properties": {
@@ -24611,6 +24853,10 @@
             "type": "boolean",
             "description": "Host pairing is configured (the runner release settings)."
           },
+          "bot_providers": {
+            "type": "boolean",
+            "description": "A workspace can store model provider keys, which bots run on."
+          },
           "github_app_install_url": {
             "type": "string",
             "nullable": true,
@@ -24624,6 +24870,7 @@
           "github_app",
           "google_calendar",
           "hosts",
+          "bot_providers",
           "github_app_install_url"
         ]
       },

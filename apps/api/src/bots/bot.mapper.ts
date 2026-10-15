@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotAvatarColor, BotPermission } from '@oppenheimer/shared';
+import type { BotAvatarColor, BotPermission, BotProvider } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotOrmEntity } from './database/bot.orm-entity';
 import { BotEntity } from './domain/bot.entity';
@@ -20,6 +20,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.groupId = entity.groupId;
     record.position = entity.position;
     record.homeHostId = entity.homeHostId;
+    record.provider = entity.provider;
     record.model = entity.model;
     record.effort = entity.effort;
     record.permission = entity.permission;
@@ -41,6 +42,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         groupId: record.groupId ?? null,
         position: record.position,
         homeHostId: record.homeHostId ?? null,
+        provider: record.provider as BotProvider,
         model: record.model ?? null,
         effort: (record.effort ?? null) as SessionEffort | null,
         permission: record.permission as BotPermission,
@@ -58,6 +60,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.groupId = entity.groupId;
     dto.position = entity.position;
     dto.homeHostId = entity.homeHostId;
+    dto.provider = entity.provider;
     dto.model = entity.model;
     dto.effort = entity.effort;
     dto.permission = entity.permission;

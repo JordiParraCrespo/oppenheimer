@@ -28,6 +28,7 @@ function setup() {
     avatarColor: 'mint',
     groupId: null,
     homeHostId: null,
+    provider: 'anthropic',
   });
   const bots = {
     findOneById: vi.fn<BotRepositoryPort['findOneById']>(async () => Some(bot)),

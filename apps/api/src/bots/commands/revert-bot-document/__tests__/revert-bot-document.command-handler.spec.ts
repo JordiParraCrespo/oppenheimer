@@ -29,6 +29,7 @@ function setup() {
     avatarColor: 'mint',
     groupId: null,
     homeHostId: null,
+    provider: 'anthropic',
   });
   const document = BotDocumentEntity.create({
     id: `${bot.id}:soul`,

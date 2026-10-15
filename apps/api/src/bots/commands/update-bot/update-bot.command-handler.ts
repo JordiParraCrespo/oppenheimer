@@ -15,7 +15,7 @@ import { UpdateBotCommand } from './update-bot.command';
 /**
  * Settings → Profile and Runs on, the composer's model, effort and approval
  * level, and the sidebar's drag: what changed is confirmed as the caller (a
- * group of the workspace, a host they may use, a Claude Code model) before
+ * group of the workspace, a host they may use, a model the provider offers) before
  * anything is written.
  */
 @CommandHandler(UpdateBotCommand)
@@ -38,9 +38,13 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
     if (input.homeHostId && input.homeHostId !== bot.homeHostId) {
       await this.hosts.assertUsable(scope, input.homeHostId);
     }
-    if (input.model !== undefined && !isBotModel(input.model)) {
+    // The model is checked against the provider the bot will have: a new
+    // provider with no model runs that provider's default.
+    const provider = input.provider ?? bot.provider;
+    const model = input.model !== undefined ? input.model : provider === bot.provider ? bot.model : null;
+    if (!isBotModel(provider, model)) {
       throw new AppError(BotErrors.MODEL_UNSUPPORTED, {
-        detail: `${input.model} is not a Claude Code model`,
+        detail: `${model} is not a ${provider} model`,
       });
     }
 
@@ -49,6 +53,7 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
       description: input.description,
       avatarColor: input.avatarColor,
       homeHostId: input.homeHostId,
+      provider: input.provider,
       model: input.model,
       effort: input.effort,
       permission: input.permission,

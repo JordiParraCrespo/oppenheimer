@@ -10,8 +10,10 @@ import {
   BOT_DESCRIPTION_MAX,
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
+  BOT_PROVIDERS,
   type BotAvatarColor,
   type BotPermission,
+  type BotProvider,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { Placement } from './bot.types';
@@ -30,7 +32,9 @@ export interface BotProps {
   position: number;
   /** The host its turns run on; null until one is chosen, or once it is removed. */
   homeHostId: string | null;
-  /** A Claude Code model id; null runs Claude Code's default. */
+  /** Who answers it, and so which engine runs its turns. */
+  provider: BotProvider;
+  /** A model id the provider offers; null runs the provider's default. */
   model: string | null;
   effort: SessionEffort | null;
   permission: BotPermission;
@@ -46,6 +50,7 @@ export interface CreateBotProps {
   avatarColor: BotAvatarColor;
   groupId: string | null;
   homeHostId: string | null;
+  provider: BotProvider;
 }
 
 export interface BotEdit {
@@ -53,6 +58,7 @@ export interface BotEdit {
   description?: string;
   avatarColor?: BotAvatarColor;
   homeHostId?: string | null;
+  provider?: BotProvider;
   model?: string | null;
   effort?: SessionEffort | null;
   permission?: BotPermission;
@@ -66,6 +72,7 @@ export type BotEditedField =
   | 'avatarColor'
   | 'groupId'
   | 'homeHostId'
+  | 'provider'
   | 'model'
   | 'effort'
   | 'permission'
@@ -90,7 +97,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
     return new BotEntity(create);
   }
 
-  /** A blank bot: Claude Code's default model, approve-for-me, learning on. Placed last in its group. */
+  /** A blank bot: its provider's default model, approve-for-me, learning on. Placed last in its group. */
   static createNew(props: CreateBotProps): BotEntity {
     const bot = new BotEntity({
       id: randomUUID(),
@@ -103,6 +110,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
         groupId: props.groupId,
         position: 0,
         homeHostId: props.homeHostId,
+        provider: props.provider,
         model: null,
         effort: null,
         permission: 'auto',
@@ -138,6 +146,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get homeHostId(): string | null {
     return this.props.homeHostId;
   }
+  get provider(): BotProvider {
+    return this.props.provider;
+  }
+
   get model(): string | null {
     return this.props.model;
   }
@@ -182,12 +194,27 @@ export class BotEntity extends AggregateRoot<BotProps> {
       props.learnAutomatically = changes.learnAutomatically;
       edited.add('learnAutomatically');
     }
+    if (changes.provider !== undefined && changes.provider !== props.provider) {
+      // Another provider starts from its own defaults: its default model and
+      // that model's own effort, unless the same edit names them.
+      props.provider = changes.provider;
+      props.model = null;
+      props.effort = null;
+      edited.add('provider');
+      edited.add('model');
+    }
     if (changes.model !== undefined) {
       props.model = changes.model;
       edited.add('model');
     }
     if (changes.effort !== undefined) props.effort = changes.effort;
-    if (changes.model !== undefined || changes.effort !== undefined) this.settleEffort();
+    if (
+      changes.provider !== undefined ||
+      changes.model !== undefined ||
+      changes.effort !== undefined
+    ) {
+      this.settleEffort();
+    }
     this.setUpdatedAt(new Date());
     this.validate();
   }
@@ -199,7 +226,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
    * because a new model alone can unset it.
    */
   private settleEffort(): void {
-    this.props.effort = botEffortFor(this.props.model, this.props.effort);
+    this.props.effort = botEffortFor(this.props.provider, this.props.model, this.props.effort);
     this.edited.add('effort');
   }
 
@@ -245,8 +272,11 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (!BOT_PERMISSIONS.includes(props.permission)) {
       throw new ArgumentInvalidException(`${props.permission} is not a bot's approval level`);
     }
-    if (!isBotModel(props.model)) {
-      throw new ArgumentInvalidException(`${props.model} is not a Claude Code model`);
+    if (!BOT_PROVIDERS.includes(props.provider)) {
+      throw new ArgumentInvalidException(`${props.provider} is not a bot provider`);
+    }
+    if (!isBotModel(props.provider, props.model)) {
+      throw new ArgumentInvalidException(`${props.model} is not a ${props.provider} model`);
     }
     if (!Number.isInteger(props.position) || props.position < 0) {
       throw new ArgumentInvalidException('A position is a whole number from 0');

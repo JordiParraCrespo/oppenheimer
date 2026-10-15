@@ -15,11 +15,12 @@ const newBot = (overrides: Partial<Parameters<typeof BotEntity.createNew>[0]> = 
     avatarColor: 'mint',
     groupId: null,
     homeHostId: null,
+    provider: 'anthropic',
     ...overrides,
   });
 
 describe('BotEntity', () => {
-  it('is born blank: Claude Code’s default model, approve-for-me, learning on, placed last', () => {
+  it('is born blank: its provider’s default model, approve-for-me, learning on, placed last', () => {
     const bot = newBot();
     expect(bot).toMatchObject({
       model: null,
@@ -55,8 +56,23 @@ describe('BotEntity', () => {
     expect(bot.effort).toBeNull();
   });
 
-  it('refuses a model Claude Code does not list', () => {
-    expect(() => newBot().edit({ model: 'gpt-5' })).toThrow();
+  it('refuses a model its provider does not offer', () => {
+    expect(() => newBot().edit({ model: 'gpt-5.6-sol' })).toThrow();
+    expect(() => newBot({ provider: 'glm' }).edit({ model: 'claude-opus-5-5' })).toThrow();
+  });
+
+  it('runs the new provider’s default model, with no effort, when only the provider changes', () => {
+    const bot = newBot();
+    bot.edit({ model: 'claude-opus-5-5', effort: 'high' });
+    bot.edit({ provider: 'openai' });
+    expect(bot).toMatchObject({ provider: 'openai', model: null, effort: null });
+    expect([...bot.editedFields]).toEqual(expect.arrayContaining(['provider', 'model', 'effort']));
+  });
+
+  it('takes a provider and one of its models in one edit', () => {
+    const bot = newBot();
+    bot.edit({ provider: 'openai', model: 'gpt-5.6-terra', effort: 'high' });
+    expect(bot).toMatchObject({ provider: 'openai', model: 'gpt-5.6-terra', effort: 'high' });
   });
 
   it('refuses a blank name', () => {

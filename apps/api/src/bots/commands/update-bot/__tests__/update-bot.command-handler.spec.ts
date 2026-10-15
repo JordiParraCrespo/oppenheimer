@@ -33,6 +33,7 @@ function setup() {
     avatarColor: 'mint',
     groupId: null,
     homeHostId: null,
+    provider: 'anthropic',
   });
   bot.placed(0);
   const bots = {

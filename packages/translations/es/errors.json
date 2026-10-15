@@ -171,6 +171,8 @@
     "BOTS_008": "Ese dato no existe o ya se ha olvidado.",
     "BOTS_009": "Este bot recuerda todo lo que puede. Haz que olvide algo primero.",
     "BOTS_010": "Un bot no puede funcionar con ese modelo.",
+    "BOTS_011": "Los proveedores de modelos no están configurados en este servidor, así que los bots aún no pueden responder.",
+    "BOTS_012": "Ese proveedor de modelos no existe.",
     "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
     "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
     "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",

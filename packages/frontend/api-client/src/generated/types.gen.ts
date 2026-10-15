@@ -2926,11 +2926,15 @@ export type BotResponseDto = {
      */
     homeHostId: string | null;
     /**
-     * A Claude Code model id; null runs Claude Code's default.
+     * Who answers it, and so which engine runs.
+     */
+    provider: 'anthropic' | 'glm' | 'openai';
+    /**
+     * A model id the provider offers; null runs the provider's default.
      */
     model: string | null;
     /**
-     * The effort level; null runs the model at the CLI's default.
+     * The effort level; null runs the model at its own default.
      */
     effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     /**
@@ -2955,6 +2959,7 @@ export type CreateBotRequest = {
     avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
     groupId?: string | null;
     homeHostId?: string | null;
+    provider?: 'anthropic' | 'glm' | 'openai';
 };
 
 export type UpdateBotRequest = {
@@ -2964,6 +2969,7 @@ export type UpdateBotRequest = {
     groupId?: string | null;
     position?: number;
     homeHostId?: string | null;
+    provider?: 'anthropic' | 'glm' | 'openai';
     model?: string | null;
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
@@ -3051,6 +3057,23 @@ export type UpdateBotGroupRequest = {
     position?: number;
 };
 
+export type ModelProviderCredentialResponseDto = {
+    provider: 'anthropic' | 'glm' | 'openai';
+    /**
+     * Whether the workspace has a key for this provider.
+     */
+    configured: boolean;
+    /**
+     * The key's last four characters, so a person can tell which one is stored.
+     */
+    keyHint: string | null;
+    updatedAt: string | null;
+};
+
+export type PutModelProviderCredentialRequest = {
+    apiKey: string;
+};
+
 export type LivenessResponseDto = {
     /**
      * Always `ok`: the process answered.
@@ -3079,6 +3102,10 @@ export type CapabilitiesResponseDto = {
      * Host pairing is configured (the runner release settings).
      */
     hosts: boolean;
+    /**
+     * A workspace can store model provider keys, which bots run on.
+     */
+    bot_providers: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -10883,6 +10910,104 @@ export type UpdateBotGroupResponses = {
 };
 
 export type UpdateBotGroupResponse = UpdateBotGroupResponses[keyof UpdateBotGroupResponses];
+
+export type FindModelProviderCredentialsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/model-providers';
+};
+
+export type FindModelProviderCredentialsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindModelProviderCredentialsError = FindModelProviderCredentialsErrors[keyof FindModelProviderCredentialsErrors];
+
+export type FindModelProviderCredentialsResponses = {
+    200: Array<ModelProviderCredentialResponseDto>;
+};
+
+export type FindModelProviderCredentialsResponse = FindModelProviderCredentialsResponses[keyof FindModelProviderCredentialsResponses];
+
+export type DeleteModelProviderCredentialData = {
+    body?: never;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}';
+};
+
+export type DeleteModelProviderCredentialErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteModelProviderCredentialError = DeleteModelProviderCredentialErrors[keyof DeleteModelProviderCredentialErrors];
+
+export type DeleteModelProviderCredentialResponses = {
+    204: void;
+};
+
+export type DeleteModelProviderCredentialResponse = DeleteModelProviderCredentialResponses[keyof DeleteModelProviderCredentialResponses];
+
+export type PutModelProviderCredentialData = {
+    body: PutModelProviderCredentialRequest;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}';
+};
+
+export type PutModelProviderCredentialErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PutModelProviderCredentialError = PutModelProviderCredentialErrors[keyof PutModelProviderCredentialErrors];
+
+export type PutModelProviderCredentialResponses = {
+    204: void;
+};
+
+export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
 
 export type CheckData = {
     body?: never;
