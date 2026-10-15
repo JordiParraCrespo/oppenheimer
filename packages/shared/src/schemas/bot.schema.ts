@@ -343,6 +343,10 @@ export const decideBotApprovalSchema = z.object({
 });
 export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
 
+/** What the console's Deny asks for: the note alone, optional. */
+export const denyBotApprovalSchema = decideBotApprovalSchema.pick({ note: true });
+export type DenyBotApprovalDto = z.infer<typeof denyBotApprovalSchema>;
+
 /** `GET /bots/:id/approvals`: newest first, every status unless one is named. */
 export const findBotApprovalsSchema = z.object({
   status: z.enum(BOT_APPROVAL_STATUSES).optional(),

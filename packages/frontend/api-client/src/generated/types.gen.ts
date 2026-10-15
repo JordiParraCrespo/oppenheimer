@@ -11265,7 +11265,9 @@ export type FindBotApprovalsData = {
     path: {
         id: string;
     };
-    query?: never;
+    query?: {
+        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    };
     url: '/api/v1/bots/{id}/approvals';
 };
 

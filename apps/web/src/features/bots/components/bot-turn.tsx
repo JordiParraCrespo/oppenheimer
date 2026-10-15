@@ -3,6 +3,7 @@ import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, botModelOf } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { BotActivity } from '@/features/bots/components/bot-activity';
+import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotTurnHeader } from '@/features/bots/components/bot-turn-header';
 import type { ChatTurnBlock } from '@/features/bots/lib/chat-turns';
@@ -20,11 +21,15 @@ export function BotTurn({ block, live }: { block: ChatTurnBlock; live: string | 
   const time = dateFormatter(locale, { timeStyle: 'short' });
   return (
     <div className="flex flex-col gap-4">
-      {block.asked.map((message) => (
-        <ChatUserMessage key={message.id} time={time.format(message.createdAt)}>
-          <span className="whitespace-pre-wrap">{message.content}</span>
-        </ChatUserMessage>
-      ))}
+      {block.asked.map((message) =>
+        message.role === 'event' ? (
+          <BotEventLine key={message.id} content={message.content} />
+        ) : (
+          <ChatUserMessage key={message.id} time={time.format(message.createdAt)}>
+            <span className="whitespace-pre-wrap">{message.content}</span>
+          </ChatUserMessage>
+        ),
+      )}
       {turn ? (
         <BotTurnHeader
           turn={turn}

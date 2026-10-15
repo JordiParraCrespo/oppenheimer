@@ -4,7 +4,13 @@ import type {
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { chatTurns, replyParagraphs, toolTarget, turnDurationMs } from '../lib/chat-turns';
+import {
+  chatTurns,
+  eventLine,
+  replyParagraphs,
+  toolTarget,
+  turnDurationMs,
+} from '../lib/chat-turns';
 
 /** How the chat reads the stored conversation: as turns, each your message and the bot's work. */
 
@@ -74,5 +80,27 @@ describe('toolTarget', () => {
     expect(toolTarget({ command: 'ls\npwd' })).toBe('ls');
     expect(toolTarget({ query: 'x'.repeat(100) })).toBe(`${'x'.repeat(80)}…`);
     expect(toolTarget({ limit: 3 })).toBeUndefined();
+  });
+});
+
+describe('events from Oppenheimer', () => {
+  it('opens its turn like your message does, apart from the bot’s answer', () => {
+    const [block] = chatTurns(
+      conversation([message('e1', 't1', 'event'), message('m2', 't1', 'assistant')], [turn('t1')]),
+    );
+    expect(block.asked.map((row) => row.id)).toEqual(['e1']);
+    expect(block.answer.map((row) => row.id)).toEqual(['m2']);
+  });
+
+  it('reads a decision as its first line and how it went', () => {
+    expect(eventLine('Ana approved: Start Claude Code\nIt ran: Started s-1.')).toEqual({
+      headline: 'Ana approved: Start Claude Code',
+      outcome: 'approved',
+    });
+    expect(eventLine('Ana approved: Start it\nIt ran and failed: Host offline.').outcome).toBe(
+      'failed',
+    );
+    expect(eventLine('Ana denied: Start it\nTheir note: no').outcome).toBe('denied');
+    expect(eventLine('Something else').outcome).toBeNull();
   });
 });

@@ -9,9 +9,10 @@ import {
   Version,
 } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { BOT_APPROVAL_STATUSES } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -45,6 +46,7 @@ export class FindBotApprovalsHttpController {
     description:
       'Its Needs input cards, newest first, at most 50: `?status=pending` is the one waiting for you (a bot has one at most).',
   })
+  @ApiQuery({ name: 'status', required: false, enum: BOT_APPROVAL_STATUSES })
   @ApiResponse({ status: 200, type: BotApprovalResponseDto, isArray: true })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
   async find(

@@ -77,7 +77,20 @@
       }
     },
     "saveFailed": "No se ha podido cambiar el bot.",
-    "loadFailed": "No se ha podido cargar este bot."
+    "loadFailed": "No se ha podido cargar este bot.",
+    "approval": {
+      "needsInput": "Necesita tu respuesta",
+      "title": "{{name}} quiere hacer esto",
+      "detail": "Se ejecuta una vez, en tu nombre, cuando lo apruebas. Si escribes a {{name}} en su lugar, la solicitud se descarta.",
+      "approve": "Aprobar",
+      "approving": "Aprobando…",
+      "deny": "Denegar",
+      "denying": "Denegando…",
+      "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
+      "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
+      "cancel": "Cancelar",
+      "failed": "No se pudo responder a la solicitud."
+    }
   },
   "settings": {
     "back": "Volver al chat",

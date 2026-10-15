@@ -30,4 +30,6 @@ export const BotsErrors = {
   FETCH_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_019', message: 'Failed to load the chat' },
   SEND_FAILED: { code: 'BOTS_CLIENT_020', message: 'Failed to send the message' },
   STOP_FAILED: { code: 'BOTS_CLIENT_021', message: 'Failed to stop the turn' },
+  FETCH_APPROVALS_FAILED: { code: 'BOTS_CLIENT_022', message: 'Failed to load the approvals' },
+  DECIDE_APPROVAL_FAILED: { code: 'BOTS_CLIENT_023', message: 'Failed to answer the request' },
 } as const satisfies Record<string, ErrorDefinition>;

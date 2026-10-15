@@ -9,6 +9,7 @@ export interface ChatTurnBlock {
   turnId: string;
   /** `undefined` only for a turn older than the page the API answered with. */
   turn: BotTurnEntity | undefined;
+  /** What opened it: your message, or an event Oppenheimer told the bot for you. */
   asked: BotMessageEntity[];
   answer: BotMessageEntity[];
 }
@@ -26,7 +27,8 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
   };
   for (const message of conversation.messages) {
     const block = blockOf(message.turnId);
-    (message.role === 'user' ? block.asked : block.answer).push(message);
+    const opens = message.role === 'user' || message.role === 'event';
+    (opens ? block.asked : block.answer).push(message);
   }
   for (const turn of conversation.turns) blockOf(turn.id);
   return [...blocks.values()];
@@ -59,4 +61,24 @@ export function toolTarget(input: Record<string, unknown>): string | undefined {
   if (!first) return undefined;
   const line = first.trim().split('\n')[0] ?? '';
   return line.length > TARGET_MAX ? `${line.slice(0, TARGET_MAX)}…` : line;
+}
+
+/** How a decision event ended, as its first line says it. */
+export type EventOutcome = 'approved' | 'denied' | 'failed' | null;
+
+/**
+ * An event as one trace line: its first line ("Ana approved: …"), and how
+ * the decision went. The rest (the call's answer, the note) is the bot's to
+ * report.
+ */
+export function eventLine(content: string): { headline: string; outcome: EventOutcome } {
+  const [headline = '', ...rest] = content.split('\n');
+  const outcome: EventOutcome = /^.+? denied: /.test(headline)
+    ? 'denied'
+    : /^.+? approved: /.test(headline)
+      ? rest.some((line) => line.startsWith('It ran and failed'))
+        ? 'failed'
+        : 'approved'
+      : null;
+  return { headline, outcome };
 }

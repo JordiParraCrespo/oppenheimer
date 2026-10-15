@@ -77,7 +77,20 @@
       }
     },
     "saveFailed": "Could not change the bot.",
-    "loadFailed": "Could not load this bot."
+    "loadFailed": "Could not load this bot.",
+    "approval": {
+      "needsInput": "Needs input",
+      "title": "{{name}} wants to do this",
+      "detail": "It runs once, as you, when you approve. Writing to {{name}} instead dismisses the request.",
+      "approve": "Approve",
+      "approving": "Approving…",
+      "deny": "Deny",
+      "denying": "Denying…",
+      "noteLabel": "What should {{name}} do instead?",
+      "notePlaceholder": "Optional: why not, or what to do instead",
+      "cancel": "Cancel",
+      "failed": "Could not answer the request."
+    }
   },
   "settings": {
     "back": "Back to the chat",
