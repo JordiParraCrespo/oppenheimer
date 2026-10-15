@@ -8,7 +8,7 @@ import { BotLookupResolver } from '../../application/bot-lookup.resolver';
 import { BOT_GROUP_REPOSITORY, BOT_REPOSITORY } from '../../bots.di-tokens';
 import type { BotRepositoryPort } from '../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
-import { isBotModel } from '../../domain/bot-launch.policy';
+import { BotModelUnsupportedException } from '../../domain/bot-launch.policy';
 import { BotErrors } from '../../domain/bots.errors';
 import { UpdateBotCommand } from './update-bot.command';
 
@@ -38,28 +38,22 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
     if (input.homeHostId && input.homeHostId !== bot.homeHostId) {
       await this.hosts.assertUsable(scope, input.homeHostId);
     }
-    // The model is checked against the provider the bot will have: a new
-    // provider with no model runs that provider's default.
-    const provider = input.provider ?? bot.provider;
-    const model =
-      input.model !== undefined ? input.model : provider === bot.provider ? bot.model : null;
-    if (!isBotModel(provider, model)) {
-      throw new AppError(BotErrors.MODEL_UNSUPPORTED, {
-        detail: `${model} is not a ${provider} model`,
+    try {
+      bot.edit({
+        name: input.name,
+        description: input.description,
+        avatarColor: input.avatarColor,
+        homeHostId: input.homeHostId,
+        provider: input.provider,
+        model: input.model,
+        effort: input.effort,
+        permission: input.permission,
+        learnAutomatically: input.learnAutomatically,
       });
+    } catch (error) {
+      if (!(error instanceof BotModelUnsupportedException)) throw error;
+      throw new AppError(BotErrors.MODEL_UNSUPPORTED, { detail: error.message });
     }
-
-    bot.edit({
-      name: input.name,
-      description: input.description,
-      avatarColor: input.avatarColor,
-      homeHostId: input.homeHostId,
-      provider: input.provider,
-      model: input.model,
-      effort: input.effort,
-      permission: input.permission,
-      learnAutomatically: input.learnAutomatically,
-    });
     bot.moveTo(input.groupId === undefined ? bot.groupId : input.groupId, input.position);
 
     const outcome = await this.bots.save(bot);
