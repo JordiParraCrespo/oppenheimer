@@ -244,6 +244,7 @@
       "BOTS_014": "That turn doesn't exist.",
       "BOTS_015": "That approval doesn't exist.",
       "BOTS_016": "That request was already answered.",
+      "BOTS_017": "Add a key for that provider before making it the default.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
