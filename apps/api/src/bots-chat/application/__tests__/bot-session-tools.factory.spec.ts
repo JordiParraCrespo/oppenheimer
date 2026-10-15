@@ -140,7 +140,7 @@ describe('BotSessionToolsFactory', () => {
     expect(first).toBe(second);
   });
 
-  it('refuses a repository the project does not hold, naming the ones it does, starting nothing', async () => {
+  it('refuses a repository the project does not hold, as an error naming the ones it does, starting nothing', async () => {
     const { commandBus, call } = setup('full');
     const result = await call('start_session', {
       task: 'x',
@@ -149,6 +149,8 @@ describe('BotSessionToolsFactory', () => {
     });
     expect(result.content).toContain('The project has no repository acme/other');
     expect(result.content).toContain('acme/xrp-mobile');
+    // An error, so an approved call that refuses ends failed rather than approved.
+    expect(result.isError).toBe(true);
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 

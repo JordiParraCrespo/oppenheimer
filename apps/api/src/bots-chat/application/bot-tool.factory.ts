@@ -231,8 +231,16 @@ function describeIssues(error: z.ZodError): string {
     .join('; ');
 }
 
-/** A failure in words the model can act on: our catalog's code, title and detail. */
+/**
+ * A tool's own refusal: nothing was done, and the words say what to ask or
+ * fix. Thrown rather than returned, so the call ends as an error (an approved
+ * call that refuses ends `failed`, not `approved`).
+ */
+export class BotToolRefusal extends Error {}
+
+/** A failure in words the model can act on: a refusal's words, or our catalog's code, title and detail. */
 export function describeToolFailure(error: unknown): string {
+  if (error instanceof BotToolRefusal) return error.message;
   if (error instanceof AppError) {
     return `${error.code}: ${error.title}.${error.detail ? ` ${error.detail}` : ''}`;
   }

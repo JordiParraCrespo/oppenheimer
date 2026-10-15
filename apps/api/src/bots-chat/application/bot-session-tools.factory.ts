@@ -20,6 +20,7 @@ import {
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
@@ -89,7 +90,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       run: async (input, context) => {
         const project = input.project_id ? await this.project(context, input.project_id) : null;
         const plan = planSession(input, project, context.homeHostId);
-        if ('refusal' in plan) return plan.refusal;
+        if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
         const { body, hostId } = plan;
         const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
           new CreateSessionCommand({
