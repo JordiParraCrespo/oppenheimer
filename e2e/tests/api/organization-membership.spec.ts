@@ -23,6 +23,12 @@ test.describe('deleting an organization', () => {
       [organizationId],
     );
     expect(roles).toBe(0);
+    // Every workspace is made with an Unassigned project; it goes with it.
+    const [{ projects }] = await query<{ projects: number }>(
+      `SELECT count(*)::int AS projects FROM "project" WHERE "organizationId" = $1`,
+      [organizationId],
+    );
+    expect(projects).toBe(0);
     const sessions = await query<{ activeOrganizationId: string | null }>(
       `SELECT "activeOrganizationId" FROM "session" WHERE "userId" = $1`,
       [userId],
