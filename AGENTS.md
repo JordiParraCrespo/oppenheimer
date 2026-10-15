@@ -61,6 +61,7 @@ oppenheimer/
 ├── packages/
 │   ├── auth/             # Shared Better Auth config + client helpers (@oppenheimer/auth)
 │   ├── backend/
+│   │   ├── agents/       # The bot engines: Claude Agent SDK + OpenAI Agents SDK behind one port (@oppenheimer/backend-agents)
 │   │   ├── authz/        # Authorization kernel: grants, policies (@oppenheimer/backend-authz)
 │   │   ├── cache/        # Redis cache abstraction (@oppenheimer/backend-cache)
 │   │   ├── core/         # Errors, filters, pipes, interceptors (@oppenheimer/backend-core)
@@ -337,6 +338,7 @@ packages/backend/email    → used by api
 packages/backend/i18n     → used by api (bundles from packages/translations)
 packages/backend/cache    → used by api
 packages/backend/llm      → used by api
+packages/backend/agents   → used by api (bots; the only code that imports an agent SDK)
 packages/backend/storage  → used by api
 packages/backend/queue    → used by api
 packages/translations     → used by web, frontend/web, api (email copy via backend/i18n)
