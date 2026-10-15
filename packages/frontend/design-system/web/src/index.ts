@@ -99,6 +99,13 @@ export {
   ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
+export type { ChatCodeBlockLabels } from './components/chat-elements';
+export {
+  ChatCodeBlock,
+  ChatMarker,
+  ChatSuggestion,
+  ChatSuggestions,
+} from './components/chat-elements';
 export type { ThreadFindLabels } from './components/chat-header';
 export {
   ChatEmptyState,
@@ -128,7 +135,17 @@ export {
   StreamingCaret,
   TurnHeader,
 } from './components/chat-transcript';
-export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from './components/chat-work';
+export {
+  ReasoningRow,
+  ToolCallGroup,
+  ToolCallLive,
+  ToolCallRow,
+  Trace,
+  TraceLive,
+  TraceNote,
+  TraceOutput,
+  TraceStep,
+} from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';

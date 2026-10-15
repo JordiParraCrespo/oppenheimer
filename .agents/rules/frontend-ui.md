@@ -105,10 +105,11 @@ multi-line, so a grep for `export` misses most of them.
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
 | The bar over one thing's own settings | `SettingsTopBar` | a `PageHeader`, a hand-built header |
 | The agent chat's transcript | `ChatTranscript` with `ChatUserMessage`, `TurnHeader`, `ChatReply`, `MessageTrail` | a `Card` per message, `Prose` alone |
-| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow` | a `Disclosure` per call, a `CodeBlock` of the log |
+| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow`; in a bot's chat, a `Trace` of `TraceStep`s (each opening to a `TraceOutput` or `TraceNote`) and `TraceLive` while it runs | a `Disclosure` per call, a `CodeBlock` of the log |
+| A note between turns, next steps to offer, a fenced block in a bot's reply | `ChatMarker` (a day is a `TranscriptDivider`), `ChatSuggestions` + `ChatSuggestion`, `ChatCodeBlock` through the kit's `Markdown` `code` slot | a `Callout`, a row of `Button`s, a `CodeBlock` |
 | A turn's files, plan, subagents, questions, objects | `ChangedFilesCard`, `ProposedPlanCard`, `SubagentRunCard`, `QuestionsPill`, `ContextCard` | a `Card` of `div`s, a `PullRequestRow` |
 | What a bot said to another bot, and the instructions it proposes for itself | `BotExchange` + `BotExchangeTurn`; `ProposedFile` + `ProposedFileLine` (`ProposedFileAction` for its quiet choices, `outcome` once decided) | a `ChatUserMessage`, a `DiffView` of one file |
-| A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
+| A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` (`round` for a bot chat's way back to the latest turn) | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
 | Panels on top of the chat composer, or one notice there | `ComposerStack` + `ComposerStackRow`, `ComposerTaskList`; `ComposerNotice` | a `Card` above the `Composer` |
 | A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel`; in a bot's chat, `ComposerApproval` in `Composer`'s `above` | a `Dialog`, a `RadioGroup`, an `ApprovalPanel` stacked over the composer |
 | Dictation, the context meter, the `/` and `@` menus | `VoiceRecorderBar`, `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |

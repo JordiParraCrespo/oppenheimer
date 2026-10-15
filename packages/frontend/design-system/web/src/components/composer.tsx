@@ -59,6 +59,11 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * `above` fuses something the run is waiting on to the field's top edge (a
  * `ComposerApproval`): it brings its own top radius and hairline, and the
  * field squares its top to meet it, so the two read as one box.
+ *
+ * `variant="chat"` is a bot's composer (Bots): a card at the 28px radius
+ * with no border until it takes focus (the plain border then, no ring), the
+ * text at 15px growing from two lines to eight, and a 34px send; while busy
+ * the send is the stop, a small square on the ink.
  */
 function Composer({
   value,
@@ -80,6 +85,7 @@ function Composer({
   scope,
   above,
   minRows = 3,
+  variant = 'prompt',
   inputRef,
   labels,
   className,
@@ -116,6 +122,8 @@ function Composer({
   /** What the run waits on, fused to the field's top edge (`ComposerApproval`). */
   above?: React.ReactNode;
   minRows?: number;
+  /** `chat`: a bot's composer, the 28px card that grows from two lines to eight (Bots). */
+  variant?: 'prompt' | 'chat';
   /** The textarea, for a caller that moves focus into it (on open, after a suggestion fills it). */
   inputRef?: React.Ref<HTMLTextAreaElement>;
   /** The icon buttons' accessible names; any left out stay in English. */
@@ -126,6 +134,7 @@ function Composer({
   const emptyAllowed = allowEmpty && !attachments?.length;
   const canSend = (emptyAllowed || value.trim().length > 0) && !disabled && !blocked;
   const reasonId = React.useId();
+  const chat = variant === 'chat';
 
   function submit() {
     if (busy) return onStop?.();
@@ -145,8 +154,12 @@ function Composer({
       data-disabled={disabled || undefined}
       data-tabbed={scope ? '' : undefined}
       data-above={above ? '' : undefined}
+      data-variant={variant}
       className={cn(
-        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+        'flex flex-col border transition-[border-color,box-shadow] duration-fast ease-standard data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+        chat
+          ? 'rounded-xl border-transparent bg-card has-focus-visible:border-border'
+          : 'rounded-lg border-field-border bg-field has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring',
         className,
       )}
       {...props}
@@ -165,8 +178,10 @@ function Composer({
         // 112px (`.op-composer__input`); `rows` stays for the no-`field-sizing`
         // fallback.
         className={cn(
-          'field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] py-4 text-fg outline-none placeholder:text-field-placeholder',
-          scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
+          'field-sizing-content w-full resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder',
+          chat
+            ? 'max-h-52 min-h-18 px-5 pt-4 pb-2 text-[15px] leading-[1.55] tracking-[-0.011em]'
+            : cn('max-h-[40svh] px-[18px] py-4', scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose'),
         )}
       />
       {attachments && attachments.length > 0 ? (
@@ -189,7 +204,7 @@ function Composer({
           ))}
         </div>
       ) : null}
-      <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
+      <div data-slot="composer-foot" className={cn('flex items-center', chat ? 'gap-1 px-3 pb-3' : 'gap-1.5 px-2.5 pb-2.5')}>
         {onAttach ? (
           <IconButton
             aria-label={label.attach}
@@ -228,12 +243,20 @@ function Composer({
           size="sm"
           onClick={submit}
           disabled={!busy && !blocked && !canSend}
-          className="size-8 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-primary"
+          className={cn(
+            'aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-primary',
+            chat ? 'ml-1 size-8.5' : 'size-8',
+            chat && busy && 'bg-fg text-background hover:bg-fg hover:text-background',
+          )}
         >
           {busy ? (
-            <SquareIcon className="size-3.5 fill-current" />
+            chat ? (
+              <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
+            ) : (
+              <SquareIcon className="size-3.5 fill-current" />
+            )
           ) : (
-            <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
+            <ArrowUpIcon className={chat ? 'size-4' : 'size-[15px]'} strokeWidth={2.2} />
           )}
         </IconButton>
         {blocked ? (

@@ -908,9 +908,10 @@
       "actions": "Bot options",
       "settings": "Settings",
       "delete": "Delete bot",
-      "helloTitle": "Hi, I’m {{name}}",
-      "helloBlank": "What would you most like help with? Tell me the job and I will write my own instructions from it.",
-      "hello": "What should we work on? Start from one of these, or write your own.",
+      "helloBlank": "{{name}} is ready. Tell it what job to do.",
+      "helloBlankNote": "Or type below. A new bot starts blank and proposes its own instructions.",
+      "startFrom": "Start from a template",
+      "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
       "send": "Send",
       "stop": "Stop",
@@ -926,50 +927,41 @@
       "copyMessage": "Copy message",
       "copyReply": "Copy reply",
       "toLatest": "Jump to latest",
+      "switchedModel": "Switched to <model>{{model}}</model>",
+      "tokens_one": "{{tokens}} token",
+      "tokens_other": "{{tokens}} tokens",
       "turn": {
         "queued": "Waiting",
         "thinking": "Thinking",
-        "working": "Working",
+        "writing": "Writing",
         "stopped": "Stopped"
       },
       "activity": {
         "searched": "Searched the web",
         "searchedFor": "Searched the web for “{{query}}”",
-        "searchedTimes_one": "Searched the web {{count}} time",
-        "searchedTimes_other": "Searched the web {{count}} times",
         "searching": "Searching the web",
         "searchingFor": "Searching the web for “{{query}}”",
         "planned": "Updated its plan",
         "planning": "Updating its plan",
         "using": "Using {{name}}",
-        "toolTimes_one": "{{name}} ×{{count}}",
-        "toolTimes_other": "{{name}} ×{{count}}",
-        "steps_one": "{{count}} step",
-        "steps_other": "{{count}} steps",
-        "failed": "{{count}} failed",
-        "stepFailed": "failed",
-        "running": "running"
+        "stepFailed": "failed"
       },
       "suggest": {
         "task": {
           "research": {
             "name": "Research a topic",
-            "description": "Search the web and sum up what it finds",
             "prompt": "Search the web and give me a short summary, with sources, of "
           },
           "summarise": {
             "name": "Summarise something",
-            "description": "Paste a text and get its key points",
             "prompt": "Summarise this in five bullet points:\n\n"
           },
           "draft": {
             "name": "Draft a message",
-            "description": "An email, a post or a reply",
             "prompt": "Draft a short, friendly message to "
           },
           "plan": {
             "name": "Make a plan",
-            "description": "Break a goal into steps",
             "prompt": "Make a step-by-step plan to "
           }
         },

@@ -22,6 +22,22 @@ import { cn } from '../lib/utils';
  *   the verb and target breathing, the elapsed time.
  * - `ReasoningRow`: "Thought for 9s", folded; open, the thinking reads in
  *   the muted tone behind a hairline.
+ *
+ * A bot's chat draws its work as a trace instead (Bots, AI Elements): a
+ * line per step at the reply's own 15px, in muted ink, that opens to what
+ * the step returned.
+ *
+ * - `Trace`: the steps of one run of work, a list.
+ * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated), a
+ *   mono meta ("14 results", "2 failed"), and, when it has children, the
+ *   chevron that opens them. `tone="danger"` sets the line in red (a
+ *   failed command). Open, its children hang under the title.
+ * - `TraceOutput`: what a step returned, on the card at the 14px radius:
+ *   mono 12.5px lines, numbered, scrolling past 256px.
+ * - `TraceNote`: a step's words (the thinking, a plan), muted at 14px.
+ * - `TraceLive`: the run in flight, after the last step: a spinner, what it
+ *   is doing now breathing ("Searching abortSignal", "Writing"), the
+ *   elapsed time in mono.
  */
 function ToolCallGroup({
   summary,
@@ -178,4 +194,136 @@ function ReasoningRow({
   );
 }
 
-export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow };
+function Trace({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="trace" role="list" className={cn('flex flex-col', className)} {...props} />;
+}
+
+const TRACE_LINE =
+  '-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-2.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted data-[tone=danger]:text-danger';
+
+function TraceStep({
+  icon,
+  title,
+  meta,
+  tone = 'default',
+  defaultOpen = false,
+  className,
+  children,
+}: {
+  /** The step's glyph, drawn at 16px. */
+  icon: React.ReactNode;
+  /** "Searched abortSignal", "Failed to run pnpm test". */
+  title: React.ReactNode;
+  /** "14 results", "2 failed", a `DiffStat`; in mono. */
+  meta?: React.ReactNode;
+  /** `danger`: the step failed, its line in red. */
+  tone?: 'default' | 'danger';
+  defaultOpen?: boolean;
+  className?: string;
+  /** What it returned (`TraceOutput`, `TraceNote`); present, the line opens to it. */
+  children?: React.ReactNode;
+}) {
+  const line = (
+    <>
+      <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
+        {icon}
+      </span>
+      <span className="min-w-0 truncate">{title}</span>
+      {meta ? (
+        <span
+          className={cn(
+            'figures flex shrink-0 gap-1.5 font-mono text-[12px]',
+            tone === 'danger' ? 'text-danger' : 'text-fg-subtle',
+          )}
+        >
+          {meta}
+        </span>
+      ) : null}
+    </>
+  );
+  if (!children) {
+    return (
+      <div data-slot="trace-step" role="listitem" data-tone={tone} className={cn('flex flex-col', className)}>
+        <div data-tone={tone} className={TRACE_LINE}>
+          {line}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Fold
+      data-slot="trace-step"
+      role="listitem"
+      data-tone={tone}
+      defaultOpen={defaultOpen}
+      className={cn('flex flex-col', className)}
+    >
+      <FoldTrigger
+        data-tone={tone}
+        className={cn(
+          TRACE_LINE,
+          'transition-colors duration-instant data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.75',
+        )}
+      >
+        {line}
+      </FoldTrigger>
+      <FoldPanel className="pl-6.5">{children}</FoldPanel>
+    </Fold>
+  );
+}
+
+function TraceOutput({ className, children }: { className?: string; children: string }) {
+  const lines = children.replace(/\n$/, '').split('\n');
+  return (
+    <div data-slot="trace-output" className={cn('mt-0.5 mb-2.5 overflow-hidden rounded-md bg-card', className)}>
+      <div className="max-h-64 overflow-auto py-3 font-mono text-[12.5px] leading-[1.65]">
+        {lines.map((text, index) => (
+          // A step's output never reorders: a line's place is its identity.
+          // biome-ignore lint/suspicious/noArrayIndexKey: see above
+          <div key={index} className="flex min-w-max">
+            <span aria-hidden className="figures w-10 shrink-0 pr-3.5 text-right text-fg-subtle select-none">
+              {index + 1}
+            </span>
+            <span className="pr-4 whitespace-pre-wrap text-fg">{text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TraceNote({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="trace-note"
+      className={cn('mb-2 text-[14px] leading-[1.6] whitespace-pre-wrap text-pretty text-fg-muted', className)}
+      {...props}
+    />
+  );
+}
+
+function TraceLive({
+  elapsed,
+  className,
+  children,
+}: {
+  /** "12s", "00:12", in mono. */
+  elapsed?: React.ReactNode;
+  className?: string;
+  /** What the run is doing now: "Thinking", "Searching abortSignal", "Writing". */
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="trace-live"
+      role="status"
+      className={cn('flex min-h-8.5 items-center gap-2.5 text-[15px] tracking-[-0.011em] text-fg-muted', className)}
+    >
+      <LoaderIcon aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
+      <span className="min-w-0 truncate motion-safe:animate-shimmer">{children}</span>
+      {elapsed ? <span className="figures shrink-0 font-mono text-[12px] text-fg-subtle">{elapsed}</span> : null}
+    </div>
+  );
+}
+
+export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow, Trace, TraceLive, TraceNote, TraceOutput, TraceStep };

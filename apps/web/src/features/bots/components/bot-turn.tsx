@@ -2,45 +2,45 @@ import {
   ChatErrorAction,
   ChatErrorBanner,
   ChatUserMessage,
+  IconButton,
   MessageTrail,
 } from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
-import type { BotEntity } from '@oppenheimer/frontend-consumer';
-import { dateFormatter, formatElapsed, useLocale } from '@oppenheimer/frontend-web';
+import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, botModelOf } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
-import { BotActivity } from '@/features/bots/components/bot-activity';
 import { BotReply } from '@/features/bots/components/bot-reply';
-import { BotTurnByline } from '@/features/bots/components/bot-turn-byline';
+import { BotTrace } from '@/features/bots/components/bot-trace';
+import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import {
   type ChatTurnBlock,
+  compactTokens,
   replyText,
-  turnDurationMs,
   turnPhase,
 } from '@/features/bots/lib/chat-turns';
+import { runningStep } from '@/features/bots/lib/tool-activity';
 
 /**
- * One turn of the chat (`25-bots.md` §3): your message as a bubble on the
- * right, its time and a copy button on hover; then the bot's answer across
- * the column under its face and name: what it did, a quiet line per run of
- * tool calls, and what it said, as markdown, the words it is still writing
- * with the write head after them. Before the first word the byline says it
- * is thinking. Once it has ended, a trail under it copies the answer and
- * says how it went (its model, how long it took, Stopped when someone
- * pressed Stop); a failure says why, with Retry on the newest turn.
+ * One turn of the chat, as the Bots frame draws it (`25-bots.md` §3): your
+ * message as a bubble on the right, its time and copy on hover; then the
+ * bot's answer unboxed across the column: a quiet trace line per tool call,
+ * each opening to what it returned, and what it said, as markdown, the
+ * words it is still writing with the write head after them. While it runs,
+ * a live line says what it is doing, with its clock. Once it has ended, a
+ * trail copies the answer, offers Retry on the newest turn, and says its
+ * model and the tokens it took (Stopped first when someone pressed Stop); a
+ * failure says why, with Retry beside it.
  */
 export function BotTurn({
   block,
-  bot,
   live,
   onRetry,
   retrying = false,
 }: {
   block: ChatTurnBlock;
-  bot: Pick<BotEntity, 'name' | 'initials' | 'avatarColor'>;
   live: string | undefined;
-  /** Sends your last message again; only the newest turn, when it failed. */
+  /** Sends your last message again; only the newest turn, once it has ended. */
   onRetry?: () => void;
   retrying?: boolean;
 }) {
@@ -49,57 +49,47 @@ export function BotTurn({
   const { turn } = block;
   const time = dateFormatter(locale, { timeStyle: 'short' });
   const phase = turn ? turnPhase(turn, block.answer.length > 0 || Boolean(live)) : null;
-  const settled = phase === 'completed' || phase === 'cancelled' || phase === 'failed';
+  const active = turn?.isActive ?? false;
   const text = replyText(block);
-  const duration = turn ? turnDurationMs(turn) : null;
+  const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const meta = turn
     ? [
         phase === 'cancelled' ? t('bots.chat.turn.stopped') : null,
         botModelOf(turn.provider, turn.model)?.label ?? turn.model,
-        duration === null ? null : formatElapsed(duration),
+        tokens > 0 ? t('bots.chat.tokens', { count: tokens, tokens: compactTokens(tokens) }) : null,
       ]
         .filter(Boolean)
         .join(' · ')
     : undefined;
 
   return (
-    <div className="flex flex-col gap-4 not-first:pt-4">
+    <div className="flex flex-col gap-4.5">
       {block.asked.map((message) => (
         <ChatUserMessage
           key={message.id}
-          actions={
-            <>
-              <span className="figures pr-1 font-mono text-micro">
-                {time.format(message.createdAt)}
-              </span>
-              <CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />
-            </>
-          }
+          time={time.format(message.createdAt)}
+          actions={<CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />}
         >
-          <span className="whitespace-pre-wrap">{message.content}</span>
+          {message.content}
         </ChatUserMessage>
       ))}
-      <div
-        data-slot="bot-turn"
-        data-phase={phase ?? undefined}
-        className="group/reply flex flex-col gap-3"
-      >
-        <BotTurnByline
-          name={bot.name}
-          initials={bot.initials}
-          color={bot.avatarColor}
-          phase={phase}
-          since={turn?.startedAt ?? null}
-          time={settled && turn?.endedAt ? time.format(turn.endedAt) : undefined}
-        />
+      <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (
-            <BotActivity key={message.id} steps={message.steps} />
+            <BotTrace key={message.id} steps={message.steps} />
           ) : (
             <BotReply key={message.id} content={message.content} />
           ),
         )}
         {live ? <BotReply content={live} streaming /> : null}
+        {turn && active ? (
+          <BotTurnLive
+            queued={turn.status === 'queued'}
+            step={runningStep(block.answer)}
+            writing={Boolean(live)}
+            since={turn.startedAt}
+          />
+        ) : null}
         {turn && phase === 'failed' ? (
           <ChatErrorBanner
             title={t('bots.chat.failed', { provider: BOT_PROVIDER_CATALOG[turn.provider].label })}
@@ -116,10 +106,24 @@ export function BotTurn({
             {turn.error ?? t('bots.chat.failedUnknown')}
           </ChatErrorBanner>
         ) : null}
-        {settled ? (
+        {turn && !active ? (
           <MessageTrail
             actions={
-              text ? <CopyTextButton text={text} label={t('bots.chat.copyReply')} /> : undefined
+              <>
+                {text ? <CopyTextButton text={text} label={t('bots.chat.copyReply')} /> : null}
+                {onRetry && phase !== 'failed' ? (
+                  <IconButton
+                    size="xs"
+                    shape="square"
+                    aria-label={t('bots.chat.retry')}
+                    title={t('bots.chat.retry')}
+                    disabled={retrying}
+                    onClick={onRetry}
+                  >
+                    <RotateCcw aria-hidden />
+                  </IconButton>
+                ) : null}
+              </>
             }
             meta={meta}
           />

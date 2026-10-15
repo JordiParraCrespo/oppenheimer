@@ -17,15 +17,26 @@ function codeNodes(nodes: CodeNode[], prefix: string): ReactNode[] {
   });
 }
 
+/**
+ * Code as written, its syntax coloured for `language` (highlight.js's common
+ * set) as spans, the plain text when the language is not one it knows. For
+ * a caller that draws the block around it (`ChatCodeBlock`).
+ */
+export function HighlightedCode({ code, language }: { code: string; language?: string }) {
+  const highlighted = highlightCode(code, language);
+  return <>{highlighted ? codeNodes(highlighted, 'code') : code}</>;
+}
+
 /** A fenced block: the code as written, its syntax coloured, a copy button in its corner. */
 export function MarkdownCode({ code, language }: { code: string; language?: string }) {
   const { t } = useTranslation();
   const { copied, copy } = useCopy(code);
-  const highlighted = highlightCode(code, language);
   return (
     <div className="relative">
       <pre data-language={language || undefined}>
-        <code>{highlighted ? codeNodes(highlighted, 'code') : code}</code>
+        <code>
+          <HighlightedCode code={code} language={language} />
+        </code>
       </pre>
       <IconButton
         size="xs"

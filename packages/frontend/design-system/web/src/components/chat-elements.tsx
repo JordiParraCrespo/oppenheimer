@@ -1,0 +1,112 @@
+'use client';
+
+import { CheckIcon, CopyIcon } from 'lucide-react';
+import type * as React from 'react';
+
+import { useCopy } from '../hooks/use-copy';
+import { cn } from '../lib/utils';
+import { IconButton } from './icon-button';
+
+/**
+ * The agent chat's smaller parts (AI Elements), for a bot's chat.
+ *
+ * - `ChatMarker`: a note between turns at 13px muted, its 14px glyph first
+ *   and a mono figure after ("Context compacted 142k → 18k tokens",
+ *   "Switched to GPT-5.2 Codex for the next turn"). A day boundary is a
+ *   `TranscriptDivider`.
+ * - `ChatSuggestions` + `ChatSuggestion`: next steps offered as 34px pills
+ *   on a hairline, wrapping; one tap fills the composer.
+ * - `ChatCodeBlock`: a fenced block in a reply, on the card at the 18px
+ *   radius: the language over the code with the copy button at its end,
+ *   then the code at 13.5px mono on 1.7, its lines numbered in the gutter,
+ *   scrolling sideways rather than wrapping.
+ */
+function ChatMarker({
+  icon,
+  meta,
+  className,
+  children,
+}: {
+  icon?: React.ReactNode;
+  /** A figure after the words, in mono ("142k → 18k tokens"). */
+  meta?: React.ReactNode;
+  className?: string;
+  /** The note; a name in it (a model) takes full ink in a `strong`. */
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="chat-marker"
+      className={cn(
+        'flex items-center gap-2 text-[13px] text-fg-muted [&_strong]:font-normal [&_strong]:text-fg [&>svg]:size-3.5 [&>svg]:shrink-0',
+        className,
+      )}
+    >
+      {icon}
+      <span className="min-w-0">{children}</span>
+      {meta ? <span className="figures font-mono text-[12px] text-fg-subtle">{meta}</span> : null}
+    </div>
+  );
+}
+
+function ChatSuggestions({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="chat-suggestions" className={cn('flex flex-wrap gap-2', className)} {...props} />;
+}
+
+function ChatSuggestion({ className, ...props }: Omit<React.ComponentProps<'button'>, 'type'>) {
+  return (
+    <button
+      type="button"
+      data-slot="chat-suggestion"
+      className={cn(
+        'inline-flex h-8.5 items-center gap-1.5 rounded-pill border border-border px-3.5 text-[13.5px] text-fg outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:text-fg-muted',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+type ChatCodeBlockLabels = { copy: string; copied: string };
+
+function ChatCodeBlock({
+  code,
+  language,
+  labels,
+  className,
+  children,
+}: {
+  /** The code as written: what Copy copies and what the gutter counts. */
+  code: string;
+  /** The fence's language, over the code; "text" when it names none. */
+  language?: string;
+  labels?: Partial<ChatCodeBlockLabels>;
+  className?: string;
+  /** The code drawn (highlighted spans); the text itself when left out. */
+  children?: React.ReactNode;
+}) {
+  const label = { copy: 'Copy code', copied: 'Copied', ...labels };
+  const { copied, copy } = useCopy(code);
+  const lines = code.replace(/\n$/, '').split('\n').length;
+  return (
+    <div data-slot="chat-code-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
+      <div className="flex items-center gap-2 pt-3 pr-2.5 pl-5.5">
+        <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-fg">{language || 'text'}</span>
+        <IconButton size="sm" aria-label={copied ? label.copied : label.copy} title={copied ? label.copied : label.copy} onClick={copy}>
+          {copied ? <CheckIcon /> : <CopyIcon />}
+        </IconButton>
+      </div>
+      <div className="flex overflow-x-auto pt-2 pb-4.5 font-mono text-[13.5px] leading-[1.7]">
+        <pre aria-hidden className="figures m-0 w-11 shrink-0 pr-3.5 text-right font-mono text-fg-subtle select-none">
+          {Array.from({ length: lines }, (_, index) => index + 1).join('\n')}
+        </pre>
+        <pre className="m-0 min-w-0 flex-1 pr-5.5 font-mono text-fg">
+          <code>{children ?? code}</code>
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+export { ChatCodeBlock, ChatMarker, ChatSuggestion, ChatSuggestions };
+export type { ChatCodeBlockLabels };

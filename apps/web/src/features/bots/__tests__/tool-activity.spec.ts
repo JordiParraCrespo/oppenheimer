@@ -1,6 +1,6 @@
+import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import {
-  activityPhrases,
   humaniseToolName,
   planItems,
   runningStep,
@@ -11,8 +11,7 @@ import {
 /**
  * How the chat words a bot's tool calls: plain verbs, never the tools' own
  * names. The regressions this guards: "WebSearch" or "mcp__oppenheimer__x"
- * on screen, a run of searches read as one search for the first query, and
- * a settled line still saying a call is running.
+ * on screen, a running call drawn as done, and a plan drawn as raw JSON.
  */
 
 const call = (name: string, input: Record<string, unknown> = {}) => ({ name, input });
@@ -28,9 +27,10 @@ describe('toolAction', () => {
 
   it('reads the to-do list as the plan, and any other tool by its name in words', () => {
     expect(toolAction(call('TodoWrite', { todos: [] }))).toEqual({ kind: 'plan' });
-    expect(toolAction(call('mcp__oppenheimer__read_document'))).toEqual({
+    expect(toolAction(call('mcp__oppenheimer__read_document', { name: 'notes.md' }))).toEqual({
       kind: 'tool',
       label: 'Read document',
+      target: 'notes.md',
     });
   });
 });
@@ -44,33 +44,18 @@ describe('humaniseToolName', () => {
   });
 });
 
-describe('activityPhrases', () => {
-  it('folds calls in a row that did the same thing into one counted phrase', () => {
-    expect(
-      activityPhrases([
-        call('WebSearch', { query: 'a' }),
-        call('WebSearch', { query: 'b' }),
-        call('TodoWrite'),
-        call('TodoWrite'),
-        call('read_document'),
-        call('WebSearch', { query: 'c' }),
-      ]),
-    ).toEqual([
-      // Two searches are no longer one query: the phrase drops it.
-      { kind: 'search', query: undefined, count: 2 },
-      { kind: 'plan', count: 2 },
-      { kind: 'tool', label: 'Read document', count: 1 },
-      { kind: 'search', query: 'c', count: 1 },
-    ]);
-  });
-});
-
 describe('runningStep', () => {
-  it('is the call with no output yet, and nothing once every call answered', () => {
-    const done = { output: 'ok' };
-    const open = { output: null };
-    expect(runningStep([done, open])).toBe(open);
-    expect(runningStep([done, { output: '' }])).toBeUndefined();
+  const activity = (outputs: (string | null)[]) =>
+    ({
+      role: 'activity',
+      steps: outputs.map((output, index) => ({ callId: String(index), output })),
+    }) as unknown as BotMessageEntity;
+
+  it('is the last call with no output yet, across the turn’s runs, and nothing once all answered', () => {
+    const running = runningStep([activity(['ok']), activity(['ok', null])]);
+    expect(running?.callId).toBe('1');
+    expect(runningStep([activity(['ok', ''])])).toBeUndefined();
+    expect(runningStep([{ role: 'assistant' } as BotMessageEntity])).toBeUndefined();
   });
 });
 

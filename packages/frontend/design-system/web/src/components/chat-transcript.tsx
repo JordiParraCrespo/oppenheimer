@@ -12,9 +12,9 @@ import { cn } from '../lib/utils';
  * unboxed prose on the left, each agent turn opened by a `TurnHeader`.
  *
  * - `ChatTranscript`: the column; turns 20px apart.
- * - `ChatUserMessage`: the person's turn, a card at 82% of the column with
- *   the 18px radius at 15px; attachments sit above it, the time and its
- *   actions (copy, edit) under it, the actions on hover.
+ * - `ChatUserMessage`: the person's turn, a bubble at 80% of the column with
+ *   the 28px radius at 15px, its line breaks kept (Bots); attachments sit
+ *   above it, the time and its actions (copy, edit) under it, on hover.
  * - `ChatAttachment`: a file on a turn, a 44px card with the type's glyph
  *   on a 32px tile, the name over its size in mono; `icon` alone is the
  *   preview tile.
@@ -52,19 +52,15 @@ function ChatUserMessage({
   attachments?: React.ReactNode;
 }) {
   return (
-    <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1', className)} {...props}>
+    <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
       {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
-      <div className="max-w-[82%] rounded-lg bg-card px-3.5 py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-pretty text-fg">
+      <div className="max-w-[80%] rounded-xl bg-card px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
         {children}
       </div>
       {time || actions ? (
-        <div className="flex items-center gap-0.5 text-fg-subtle">
-          {time ? <span className="figures pr-1.5 font-mono text-[11px]">{time}</span> : null}
-          {actions ? (
-            <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
-              {actions}
-            </span>
-          ) : null}
+        <div className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
+          {time ? <span className="figures pr-1 font-mono text-[11px]">{time}</span> : null}
+          {actions}
         </div>
       ) : null}
     </div>
@@ -283,9 +279,9 @@ function TurnHeader({
  * column, its blocks 12px apart. Pass the rendered markdown as children; it
  * styles the elements the way `Prose` does at a chat's scale: headings a step
  * or two over the text, lists with muted markers, links in the link blue,
- * a quote behind a 2px rule, code blocks bordered on the card with room on
- * the right for a copy button, and tables full width on hairlines, each
- * scrolling sideways in its own box when it is wider than the column.
+ * a quote behind a 2px rule, inline code on the card, and tables full width
+ * on hairlines, each scrolling sideways in its own box when it is wider
+ * than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
  */
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -306,9 +302,8 @@ function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
         '[&_a]:text-link [&_a]:underline-offset-2 [&_a:hover]:underline',
         '[&_img]:block [&_img]:h-auto [&_img]:max-h-[min(60vh,32rem)] [&_img]:max-w-full [&_img]:rounded-sm',
         '[&_summary]:cursor-pointer [&_summary]:font-medium',
-        // Inline code, then blocks
-        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-hover-surface [&_:not(pre)>code]:px-1.25 [&_:not(pre)>code]:py-px [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
-        '[&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-card [&_pre]:py-3 [&_pre]:ps-3.5 [&_pre]:pe-10 [&_pre]:font-mono [&_pre]:text-[12.5px] [&_pre]:leading-[1.6] [&_pre]:tracking-normal',
+        // Inline code, on the card (a fenced block is a `ChatCodeBlock`)
+        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-card [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
         // Tables
         '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[13.5px] [&_table]:leading-normal [&_table]:tabular-nums',
         '[&_th]:border-b [&_th]:border-border-strong [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-start [&_th]:font-semibold',

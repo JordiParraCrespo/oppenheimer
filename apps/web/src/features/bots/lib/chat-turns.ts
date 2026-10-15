@@ -62,12 +62,46 @@ export function replyText(block: ChatTurnBlock): string {
 }
 
 /**
- * What Retry sends again: the last thing you said in the newest turn, when
- * that turn failed. Only the newest: retrying an older failure would answer
- * a question the chat has moved past.
+ * What Retry sends again: the last thing you said in the newest turn, once
+ * that turn has ended (answered, stopped or failed). Only the newest:
+ * retrying an older one would answer a question the chat has moved past.
  */
 export function retryContent(blocks: readonly ChatTurnBlock[]): string | null {
   const last = blocks.at(-1);
-  if (last?.turn?.status !== 'failed') return null;
+  if (!last?.turn || last.turn.isActive) return null;
   return last.asked.at(-1)?.content ?? null;
+}
+
+/** A token count the way the trail prints it: "840", "3.1k", "12k". */
+export function compactTokens(count: number): string {
+  if (count < 1000) return String(count);
+  const thousands = count / 1000;
+  return `${thousands < 10 ? thousands.toFixed(1).replace(/\.0$/, '') : Math.round(thousands)}k`;
+}
+
+/** When a turn was asked: your first message in it, else the turn's own start. */
+function askedAt(block: ChatTurnBlock): Date | undefined {
+  return block.asked[0]?.createdAt ?? block.turn?.createdAt;
+}
+
+/**
+ * The markers before a turn (AI Elements' Marker): the day, when it is not
+ * the day the turn before was asked on; the model, when the turn runs on
+ * another than the turn before. The first turn has neither.
+ */
+export function markersBefore(
+  blocks: readonly ChatTurnBlock[],
+  index: number,
+): { day: Date | null; model: BotTurnEntity | null } {
+  const block = blocks[index];
+  const previous = index > 0 ? blocks[index - 1] : undefined;
+  if (!block || !previous) return { day: null, model: null };
+  const at = askedAt(block);
+  const before = askedAt(previous);
+  const day = at && before && at.toDateString() !== before.toDateString() ? at : null;
+  const { turn } = block;
+  const prior = previous.turn;
+  const model =
+    turn && prior && (turn.model !== prior.model || turn.provider !== prior.provider) ? turn : null;
+  return { day, model };
 }

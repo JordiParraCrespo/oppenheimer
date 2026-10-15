@@ -24,7 +24,9 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await signInAs(page, owner.user);
 
   await page.goto(`/bots/${bot.id}`);
-  await expect(page.getByText('What would you most like help with?')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+  ).toBeVisible();
   const box = page.getByPlaceholder('Message Fruit Bot');
   await box.fill('Reply with exactly the word: pineapple');
   await page.getByRole('button', { name: 'Send' }).click();

@@ -63,6 +63,7 @@ export function BotComposer({
         }}
       />
       <Composer
+        variant="chat"
         value={draft}
         onValueChange={setDraft}
         inputRef={field}

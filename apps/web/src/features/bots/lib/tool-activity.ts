@@ -1,11 +1,12 @@
-import type { BotToolStep } from '@oppenheimer/frontend-consumer';
+import type { BotMessageEntity, BotToolStep } from '@oppenheimer/frontend-consumer';
 
 /**
- * How the chat words a bot's tool calls (`25-bots.md` §3): the chat is what
- * the bot says, so its work reads as one quiet line per run of calls in
- * plain verbs ("Searched the web for “bun vs node” · Updated its plan"),
- * never as the tools' own names. The words are the caller's (`t()`); this
- * says which phrase each call is and what it was pointed at.
+ * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
+ * trace): a line per call in plain verbs ("Searched the web for “bun vs
+ * node”", "Updated its plan"), never the tools' own names, and, while one
+ * runs, what it is doing now ("Searching the web for …"). The words are the
+ * caller's (`t()`); this says which kind of call each is and what it was
+ * pointed at.
  */
 
 /** What one call did, as the chat says it. */
@@ -14,11 +15,8 @@ export type ToolAction =
   | { kind: 'search'; query: string | undefined }
   /** The bot's to-do list, written again. */
   | { kind: 'plan' }
-  /** Any other tool, by its name in words ("Read document"). */
-  | { kind: 'tool'; label: string };
-
-/** One phrase of a run's line: an action and how many calls in a row it covers. */
-export type ActivityPhrase = ToolAction & { count: number };
+  /** Any other tool, by its name in words ("Read document") and what it was given. */
+  | { kind: 'tool'; label: string; target: string | undefined };
 
 /** The provider-run web search, as each engine names it. */
 const SEARCH_TOOLS = new Set(['websearch', 'web_search', 'web_search_preview']);
@@ -26,6 +24,8 @@ const SEARCH_TOOLS = new Set(['websearch', 'web_search', 'web_search_preview']);
 const PLAN_TOOLS = new Set(['todowrite', 'todo_write']);
 /** How an MCP tool's name reaches the chat: `mcp__<server>__<tool>`. */
 const MCP_PREFIX = /^mcp__[^_]+(?:_[^_]+)*__/;
+
+const TARGET_MAX = 80;
 
 /**
  * A tool's name as words: the MCP prefix dropped, `snake_case`, `kebab-case`
@@ -48,54 +48,6 @@ function textOf(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
 }
 
-/** What a call did, read from its tool's name and its input. */
-export function toolAction(step: Pick<BotToolStep, 'name' | 'input'>): ToolAction {
-  const key = step.name.replace(MCP_PREFIX, '').toLowerCase();
-  if (SEARCH_TOOLS.has(key)) {
-    const query = textOf(step.input.query);
-    return { kind: 'search', query: query === undefined ? undefined : oneLine(query) };
-  }
-  if (PLAN_TOOLS.has(key)) return { kind: 'plan' };
-  return { kind: 'tool', label: humaniseToolName(step.name) };
-}
-
-function sameAction(a: ToolAction, b: ToolAction): boolean {
-  if (a.kind !== b.kind) return false;
-  return a.kind !== 'tool' || (b.kind === 'tool' && a.label === b.label);
-}
-
-/**
- * A run of calls as the phrases of its line, in the order they were made:
- * calls in a row that did the same thing are one phrase with their count
- * (three searches are "Searched the web 3 times"), and one search keeps its
- * query.
- */
-export function activityPhrases(
-  steps: readonly Pick<BotToolStep, 'name' | 'input'>[],
-): ActivityPhrase[] {
-  const phrases: ActivityPhrase[] = [];
-  for (const step of steps) {
-    const action = toolAction(step);
-    const last = phrases.at(-1);
-    if (last && sameAction(last, action)) {
-      last.count += 1;
-      if (last.kind === 'search') last.query = undefined;
-      continue;
-    }
-    phrases.push({ ...action, count: 1 });
-  }
-  return phrases;
-}
-
-/** The call still running in a run, if one is: it has no output yet. */
-export function runningStep<T extends Pick<BotToolStep, 'output'>>(
-  steps: readonly T[],
-): T | undefined {
-  return [...steps].reverse().find((step) => step.output === null);
-}
-
-const TARGET_MAX = 80;
-
 /** A text's first line, cut short. */
 function oneLine(text: string): string {
   const line = text.split('\n')[0] ?? '';
@@ -111,13 +63,30 @@ export function toolTarget(input: Record<string, unknown>): string | undefined {
   return first === undefined ? undefined : oneLine(first);
 }
 
+/** What a call did, read from its tool's name and its input. */
+export function toolAction(step: Pick<BotToolStep, 'name' | 'input'>): ToolAction {
+  const key = step.name.replace(MCP_PREFIX, '').toLowerCase();
+  if (SEARCH_TOOLS.has(key)) {
+    const query = textOf(step.input.query);
+    return { kind: 'search', query: query === undefined ? undefined : oneLine(query) };
+  }
+  if (PLAN_TOOLS.has(key)) return { kind: 'plan' };
+  return { kind: 'tool', label: humaniseToolName(step.name), target: toolTarget(step.input) };
+}
+
+/** The call still running in a turn's work, if one is: the last with no output yet. */
+export function runningStep(answer: readonly BotMessageEntity[]): BotToolStep | undefined {
+  const steps = answer.flatMap((message) => (message.role === 'activity' ? message.steps : []));
+  return [...steps].reverse().find((step) => step.output === null);
+}
+
 /** One item of the bot's to-do list, as a plan call wrote it. */
 export interface PlanItem {
   text: string;
   state: 'pending' | 'active' | 'done';
 }
 
-/** The to-do list a plan call wrote, for its row's fold; empty when the input holds none. */
+/** The to-do list a plan call wrote, for its line's fold; empty when the input holds none. */
 export function planItems(input: Record<string, unknown>): PlanItem[] {
   const todos = Array.isArray(input.todos) ? input.todos : [];
   return todos.flatMap((todo): PlanItem[] => {

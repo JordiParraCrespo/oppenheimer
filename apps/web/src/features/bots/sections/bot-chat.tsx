@@ -79,11 +79,11 @@ export function BotChat({ botId }: { botId: string }) {
           </QueryState.Pending>
           <QueryState.Error fallback={t('bots.chat.loadFailed')} />
           <QueryState.Data>
-            <BotTranscript bot={bot} />
+            <BotTranscript botId={bot.id} name={bot.name} />
           </QueryState.Data>
         </QueryState>
       </BotChatScroller>
-      <div className="px-5 pb-5">
+      <div className="px-5 pb-4">
         <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
           <ErrorAlert
             error={update.error}

@@ -18,7 +18,19 @@ type Heading = 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
  * against, and the write head for text still being written, which goes
  * after the last words (`tail`, the innermost block that ends the source).
  */
-type Context = { base: string | undefined; tail: MarkdownToken | null; caret: ReactNode };
+type Context = {
+  base: string | undefined;
+  tail: MarkdownToken | null;
+  caret: ReactNode;
+  code: ((block: MarkdownCodeBlock) => ReactNode) | undefined;
+};
+
+/** A fenced block, for a caller that draws its own (`code`). */
+export interface MarkdownCodeBlock {
+  code: string;
+  /** The fence's language, when it names one. */
+  language: string | undefined;
+}
 
 /**
  * The block whose words end the source: the last paragraph, heading or
@@ -142,7 +154,13 @@ function node(token: MarkdownToken, ctx: Context, key: string): ReactNode {
     case 'image':
       return image(token.href, decodeEntities(token.text), ctx, key);
     case 'code':
-      return <MarkdownCode key={key} code={token.text} language={token.lang} />;
+      return ctx.code ? (
+        <Fragment key={key}>
+          {ctx.code({ code: token.text, language: token.lang || undefined })}
+        </Fragment>
+      ) : (
+        <MarkdownCode key={key} code={token.text} language={token.lang} />
+      );
     case 'blockquote':
       return <blockquote key={key}>{children()}</blockquote>;
     case 'list': {
@@ -201,17 +219,20 @@ export function Markdown({
   source,
   base,
   caret,
+  code,
 }: {
   source: string;
   base?: string;
   /** A write head (`StreamingCaret`) after the last words, for text still being written. */
   caret?: ReactNode;
+  /** Draws a fenced block (a chat's `ChatCodeBlock`); left out, the block is plain with a copy button. */
+  code?: (block: MarkdownCodeBlock) => ReactNode;
 }) {
   const tokens = parseMarkdown(source);
   const tail = caret ? tailOf(tokens) : null;
   return (
     <>
-      {render(tokens, { base, tail, caret }, 'md')}
+      {render(tokens, { base, tail, caret, code }, 'md')}
       {caret && !tail ? caret : null}
     </>
   );
