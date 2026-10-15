@@ -62,8 +62,11 @@ worker runs it and streams what happens back to the chat.
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
-  Claude Code is the loop, compaction, web search and fetch, and
-  subagents; real work on files goes to a session on a host (§4.2).
+  Claude Code is the loop, compaction and web search; real work on files
+  goes to a session on a host (§4.2). Its `WebFetch` and subagents are off
+  too (2026-10-15): the first fetched any address it was given, the
+  server's loopback and private network included, and bots used the second
+  to go looking through the server's disk.
 - **Keys stay in Oppenheimer.** A workspace stores one key per provider,
   encrypted (Settings → Model providers). The worker reads it for the
   turn and hands it to the engine; it is never written to a host, never
@@ -190,8 +193,9 @@ a time (§2).
 ### 4.7 Work and the web
 | Tool | Does | Default |
 |------|------|---------|
-| `delegate` | A subagent for a long job; the bot keeps talking and the result arrives as a message | auto |
-| `web_search` / `web_fetch` | From the engine | auto |
+| `delegate` | A subagent for a long job; the bot keeps talking and the result arrives as a message. Ours, not the engine's: Claude Code's subagents are off | auto |
+| `web_search` | From the engine (the provider runs it) | auto |
+| `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones, with a time limit | auto |
 | `ask_user` | A question card with options | auto |
 
 ### 4.8 Never given to a bot
@@ -314,3 +318,9 @@ The decisions it produced:
   2026-10-14's "*Ask for approval* comes with slice 4".
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
+- 2026-10-15: **the engine's `WebFetch` and subagents are off.** Battle
+  tests found `WebFetch` reaching the server's loopback with no
+  private-address check, and bots sending subagents through the server's
+  disk whenever they lacked a tool. `web_fetch` and `delegate` come back as
+  our own tools (§4.7). It replaces the first slice's "keeps web fetch and
+  subagents".

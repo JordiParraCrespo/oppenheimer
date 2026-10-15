@@ -268,8 +268,23 @@ describe('ClaudeBotEngine', () => {
       const options = seen.options as Options;
       expect(options.tools).toEqual(BUILT_IN_TOOLS);
       expect(options.tools).not.toContain('Bash');
-      expect(options.disallowedTools).toEqual(
-        expect.arrayContaining(['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep']),
+      // WebFetch reached the server's own loopback and private network, and
+      // subagents (Agent, or Task by its other name) searched the server's disk.
+      expect(options.tools).not.toContain('WebFetch');
+      expect(options.tools).not.toContain('Agent');
+      expect(options.disallowedTools).toEqual(DISALLOWED_TOOLS);
+      expect(DISALLOWED_TOOLS).toEqual(
+        expect.arrayContaining([
+          'Bash',
+          'Read',
+          'Write',
+          'Edit',
+          'Glob',
+          'Grep',
+          'WebFetch',
+          'Agent',
+          'Task',
+        ]),
       );
       for (const kept of BUILT_IN_TOOLS) expect(DISALLOWED_TOOLS).not.toContain(kept);
       expect(options.allowedTools).toEqual([...BUILT_IN_TOOLS, 'mcp__oppenheimer__remember']);

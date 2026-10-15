@@ -9,10 +9,13 @@ import { qualifiedToolName, TOOL_SERVER_NAME } from './claude-tool-server';
 export const GLM_BASE_URL = 'https://api.z.ai/api/anthropic';
 
 /**
- * The Claude Code tools a bot keeps: web search and fetch, subagents and a
- * to-do list. Nothing that touches the control plane's shell or files.
+ * The Claude Code tools a bot keeps: web search, which the provider runs on
+ * its side, and a to-do list. Nothing that runs on the control plane and
+ * reaches past it: WebFetch fetched whatever address it was handed, the
+ * server's own loopback and private network included, and subagents were
+ * how a bot went looking through the server's disk.
  */
-export const BUILT_IN_TOOLS = ['WebSearch', 'WebFetch', 'Agent', 'TodoWrite'];
+export const BUILT_IN_TOOLS = ['WebSearch', 'TodoWrite'];
 
 /**
  * Removed outright, so that nothing (a subagent, a settings file, a future
@@ -20,6 +23,9 @@ export const BUILT_IN_TOOLS = ['WebSearch', 'WebFetch', 'Agent', 'TodoWrite'];
  * belt to its braces.
  */
 export const DISALLOWED_TOOLS = [
+  'WebFetch',
+  'Agent',
+  'Task',
   'Bash',
   'BashOutput',
   'KillShell',

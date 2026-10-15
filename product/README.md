@@ -473,3 +473,6 @@ earlier note:
   action before it runs, and made it the level review sessions start at.
 - `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
   on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
+- Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
+  2026-10-15 both were turned off: the fetch reached the server's private
+  network, and subagents searched the server's disk (25, "Decided").
