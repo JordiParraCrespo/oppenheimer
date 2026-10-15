@@ -3100,7 +3100,7 @@ export type BotToolStepResponseDto = {
 export type BotMessageResponseDto = {
     id: string;
     turnId: string;
-    role: 'user' | 'assistant' | 'activity';
+    role: 'user' | 'assistant' | 'activity' | 'event';
     /**
      * The text; empty for an activity line.
      */
@@ -3146,6 +3146,45 @@ export type BotConversationResponseDto = {
 export type SendBotMessageRequest = {
     content: string;
     timeZone?: string;
+};
+
+export type BotApprovalResponseDto = {
+    id: string;
+    /**
+     * The turn whose tool call asked.
+     */
+    turnId: string;
+    /**
+     * The tool, as the bot knows it (`start_session`).
+     */
+    tool: string;
+    /**
+     * The call exactly as it will run on a yes.
+     */
+    input: {
+        [key: string]: unknown;
+    };
+    /**
+     * What will happen, in words.
+     */
+    summary: string;
+    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    /**
+     * What the call answered when it ran on a yes; null before, and for a no.
+     */
+    result: string | null;
+    /**
+     * What the person added to a no.
+     */
+    note: string | null;
+    decidedByUserId: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+};
+
+export type DecideBotApprovalRequest = {
+    decision: 'approve' | 'deny';
+    note?: string;
 };
 
 export type LivenessResponseDto = {
@@ -11220,6 +11259,77 @@ export type StreamBotResponses = {
      */
     200: unknown;
 };
+
+export type FindBotApprovalsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/approvals';
+};
+
+export type FindBotApprovalsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotApprovalsError = FindBotApprovalsErrors[keyof FindBotApprovalsErrors];
+
+export type FindBotApprovalsResponses = {
+    200: Array<BotApprovalResponseDto>;
+};
+
+export type FindBotApprovalsResponse = FindBotApprovalsResponses[keyof FindBotApprovalsResponses];
+
+export type DecideBotApprovalData = {
+    body: DecideBotApprovalRequest;
+    path: {
+        id: string;
+        approvalId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/approvals/{approvalId}/decision';
+};
+
+export type DecideBotApprovalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_015 — Approval not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_016 — The approval was already decided
+     */
+    409: ProblemDetailsDto;
+};
+
+export type DecideBotApprovalError = DecideBotApprovalErrors[keyof DecideBotApprovalErrors];
+
+export type DecideBotApprovalResponses = {
+    201: BotApprovalResponseDto;
+};
+
+export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
 
 export type CheckData = {
     body?: never;
