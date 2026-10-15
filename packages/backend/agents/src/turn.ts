@@ -34,6 +34,62 @@ function scrubTurnText(text: string, request: Pick<BotTurnRequest, 'apiKey' | 's
   return redactPath(redactSecret(text, request.apiKey), request.scratchDir);
 }
 
+/**
+ * Streamed text, redacted across chunk boundaries: a chunk's tail that could
+ * be the start of the key or the scratch directory is held back until the
+ * next chunk shows whether it is, so a secret split over two deltas never
+ * goes out in halves.
+ */
+class DeltaScrubber {
+  private held = '';
+  private readonly secrets: string[];
+
+  constructor(private readonly request: Pick<BotTurnRequest, 'apiKey' | 'scratchDir'>) {
+    this.secrets = [request.apiKey, request.scratchDir].filter((secret) => secret.length >= 4);
+  }
+
+  /** What of `text` (after what was held) can go out now. */
+  push(text: string): string {
+    const scrubbed = scrubTurnText(this.held + text, this.request);
+    const keep = this.heldTail(scrubbed);
+    this.held = scrubbed.slice(scrubbed.length - keep);
+    return scrubbed.slice(0, scrubbed.length - keep);
+  }
+
+  /** What is still held: the stream moved on, so it is not the start of a secret. */
+  flush(): string {
+    const rest = this.held;
+    this.held = '';
+    return rest;
+  }
+
+  /** The length of the longest tail of `text` that begins one of the secrets. */
+  private heldTail(text: string): number {
+    let longest = 0;
+    for (const secret of this.secrets) {
+      for (let length = Math.min(secret.length - 1, text.length); length > longest; length--) {
+        if (secret.startsWith(text.slice(text.length - length))) {
+          longest = length;
+          break;
+        }
+      }
+    }
+    return longest;
+  }
+}
+
+/** A tool's input with the key and the scratch directory taken out of every string in it. */
+function scrubInput(input: unknown, request: BotTurnRequest): unknown {
+  if (typeof input === 'string') return scrubTurnText(input, request);
+  if (Array.isArray(input)) return input.map((item) => scrubInput(item, request));
+  if (input && typeof input === 'object') {
+    return Object.fromEntries(
+      Object.entries(input).map(([key, value]) => [key, scrubInput(value, request)]),
+    );
+  }
+  return input;
+}
+
 /** An error's text, redacted and cut to a length a chat can show. */
 export function scrubSecret(text: string, secret: string): string {
   const scrubbed = redactSecret(text, secret);
@@ -50,9 +106,10 @@ export function toAsync<T>(source: AsyncIterable<T> | Iterable<T>): AsyncIterabl
 /** An event with the key and the scratch directory taken out of every text it carries. */
 function scrubEvent(event: BotEngineEvent, request: BotTurnRequest): BotEngineEvent {
   switch (event.type) {
-    case 'text.delta':
     case 'text.done':
       return { ...event, text: scrubTurnText(event.text, request) };
+    case 'tool.started':
+      return { ...event, input: scrubInput(event.input, request) };
     case 'tool.finished':
       return { ...event, output: scrubTurnText(event.output, request) };
     default:
@@ -93,8 +150,9 @@ export async function runTool(
  * Holds every engine to the stream contract: nothing is thrown, the turn
  * ends with exactly one `done` and nothing follows it, an abort ends it
  * with `cancelled` at once (without waiting for the engine to notice), no
- * error text carries the request's API key, and no text, tool output or
- * error carries the turn's scratch directory.
+ * error text carries the request's API key, and no text, tool input, tool
+ * output or error carries the key or the turn's scratch directory, streamed
+ * text included, however the engine splits it into deltas.
  */
 export async function* guardTurn(
   request: BotTurnRequest,
@@ -106,6 +164,7 @@ export async function* guardTurn(
     return;
   }
 
+  const deltas = new DeltaScrubber(request);
   let iterator: AsyncIterator<BotEngineEvent> | undefined;
   let onAbort: (() => void) | undefined;
   const aborted = new Promise<'aborted'>((resolve) => {
@@ -129,6 +188,13 @@ export async function* guardTurn(
         return;
       }
       const event = next.value;
+      if (event.type === 'text.delta') {
+        const text = deltas.push(event.text);
+        if (text) yield { type: 'text.delta', text };
+        continue;
+      }
+      const held = deltas.flush();
+      if (held) yield { type: 'text.delta', text: held };
       if (event.type === 'done') {
         if (signal.aborted) yield CANCELLED;
         else if (event.error !== undefined)

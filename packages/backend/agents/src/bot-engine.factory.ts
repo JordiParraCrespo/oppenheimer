@@ -30,3 +30,15 @@ export function createBotEngine(): BotEngine {
   const claude = new ClaudeBotEngine();
   return new ProviderBotEngine({ anthropic: claude, glm: claude, openai: new OpenAiBotEngine() });
 }
+
+/**
+ * What a provider's engine lets a bot do on its own, beside the tools the
+ * request brings, in words for the prompt. The Claude engine keeps web
+ * search (run on the provider's side) and a to-do list (`BUILT_IN_TOOLS`);
+ * the OpenAI engine runs the request's tools and nothing else.
+ */
+export function engineCapabilities(provider: BotProvider): readonly string[] {
+  return provider === 'openai'
+    ? []
+    : ['Search the web (web search).', 'Keep a short to-do list of your own steps for this turn.'];
+}

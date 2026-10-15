@@ -1,5 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { BotEffort, BotTurnRequest } from '@oppenheimer/backend-agents';
+import {
+  type BotEffort,
+  type BotTurnRequest,
+  engineCapabilities,
+} from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import {
@@ -93,6 +97,7 @@ export class BotTurnContextResolver {
         facts: [...facts].reverse().map((fact) => fact.content),
         now,
         timeZone: turn.timeZone,
+        engineCapabilities: engineCapabilities(turn.provider),
         homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
         hosts,
         tools: [],

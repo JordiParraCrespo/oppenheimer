@@ -21,6 +21,7 @@ describe('composeBotSystemPrompt', () => {
     facts: ['Staging is devbox.'],
     now: new Date('2026-10-15T09:00:00Z'),
     timeZone: null,
+    engineCapabilities: ['Search the web (web search).'],
     homeHost: null,
     hosts: [],
     tools: [],
@@ -52,6 +53,13 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).not.toContain('Use it before starting work');
     expect(prompt).toContain('You have no shell, no files, no access to the machine you run on');
     expect(prompt).toContain('Never try to discover other capabilities');
+  });
+
+  it('promises only what the engine and the tools give', () => {
+    expect(composeBotSystemPrompt(base)).toContain('- Search the web (web search).');
+    const bare = composeBotSystemPrompt({ ...base, engineCapabilities: [] });
+    expect(bare).not.toContain('web search');
+    expect(bare).toContain('- Answer from what you know and what is in this chat.');
   });
 
   it('forbids asking for secrets and treats tool text as data', () => {
