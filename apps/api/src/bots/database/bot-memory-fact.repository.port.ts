@@ -5,6 +5,8 @@ import type { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
 export interface BotMemoryFactRepositoryPort {
   /** A bot's facts, newest first. */
   findAll(scope: AccessScope, botId: string): Promise<BotMemoryFactEntity[]>;
+  /** A bot's facts, newest first, for a turn the worker runs in the bot's workspace. */
+  findAllForTurn(organizationId: string, botId: string): Promise<BotMemoryFactEntity[]>;
   findOneById(
     scope: AccessScope,
     botId: string,

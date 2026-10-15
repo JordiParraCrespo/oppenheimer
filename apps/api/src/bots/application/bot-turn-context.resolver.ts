@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { BotEffort, BotTurnRequest } from '@oppenheimer/backend-agents';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_DOCUMENT_REPOSITORY,
@@ -33,8 +32,9 @@ export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir'>;
  * Everything a turn needs, read when it starts: the bot as it is now (its
  * soul, instructions and memory become the system prompt), the conversation
  * before this turn, this turn's message, and the workspace's key for the
- * turn's provider, opened. Read as the workspace: a bot is the workspace's,
- * and the worker acts for the turn, not for a person's request.
+ * turn's provider, opened. Every read names the turn's workspace: a bot is
+ * the workspace's, and the worker acts for the turn, not for a person, so
+ * there is no person's scope to read through.
  */
 @Injectable()
 export class BotTurnContextResolver {
@@ -49,8 +49,7 @@ export class BotTurnContextResolver {
   ) {}
 
   async resolve(turn: BotTurnEntity, message: string, now: Date): Promise<BotTurnContext> {
-    const scope = workspaceScope(turn);
-    const found = await this.bots.findOneById(scope, turn.botId);
+    const found = await this.bots.findForTurn(turn.organizationId, turn.botId);
     if (found.isNone()) throw new AppError(BotErrors.NOT_FOUND);
     const bot = found.unwrap();
     const stored = await this.credentials.findForRun(turn.organizationId, turn.provider);
@@ -59,8 +58,8 @@ export class BotTurnContextResolver {
     }
     const credential = stored.unwrap();
     const [documents, facts, earlier] = await Promise.all([
-      this.documents.findAll(scope, bot.id),
-      this.memory.findAll(scope, bot.id),
+      this.documents.findAllForTurn(turn.organizationId, bot.id),
+      this.memory.findAllForTurn(turn.organizationId, bot.id),
       this.messages.findHistory(turn.organizationId, bot.id, turn.id, BOT_HISTORY_MESSAGES),
     ]);
     const documentText = (name: string) =>
@@ -83,15 +82,4 @@ export class BotTurnContextResolver {
       tools: [],
     };
   }
-}
-
-/** The tenant clause alone: a bot and its parts are the workspace's, readable by its own work. */
-function workspaceScope(turn: BotTurnEntity): AccessScope {
-  return {
-    userId: turn.requestedByUserId ?? '',
-    organizationId: turn.organizationId,
-    teamIds: [],
-    grants: new Map(),
-    bypass: false,
-  };
 }

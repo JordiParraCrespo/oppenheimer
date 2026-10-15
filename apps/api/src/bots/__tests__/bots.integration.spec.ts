@@ -4,6 +4,7 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
@@ -33,6 +34,7 @@ import { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
+import type { ProviderKeySealerPort } from '../infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 
 /**
@@ -694,5 +696,52 @@ describe('bots (integration)', () => {
       [bot.id],
     );
     expect(Number(count)).toBe(0);
+  });
+
+  function contextResolver(): BotTurnContextResolver {
+    const sealer: ProviderKeySealerPort = {
+      isConfigured: () => true,
+      seal: (plaintext) => Buffer.from(`sealed:${plaintext}`),
+      open: (sealed) => sealed.toString().replace(/^sealed:/, ''),
+    };
+    return new BotTurnContextResolver(bots, documents, memory, messages, credentials, sealer);
+  }
+
+  it("reads a turn's bot, documents and memory in the turn's workspace, and never another's", async () => {
+    const other = await insertOrganization();
+    const theirs = await create('Theirs', { organization: other });
+    await memory.insert(
+      BotMemoryFactEntity.createNew({
+        organizationId: other,
+        botId: theirs.id,
+        content: 'their secret',
+        actor: userActor(userId),
+      }),
+      50,
+    );
+    await credentials.put(credential('my-key-1234'));
+    await credentials.put(credential('their-key-5678', other));
+    // A turn of this workspace that names the other workspace's bot.
+    const stray = BotTurnEntity.queue({
+      organizationId,
+      botId: theirs.id,
+      requestedByUserId: userId,
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+    });
+    await expect(contextResolver().resolve(stray, 'Hi', new Date())).rejects.toMatchObject({
+      code: 'BOTS_001',
+    });
+    expect((await bots.findForTurn(organizationId, theirs.id)).isNone()).toBe(true);
+    expect(await documents.findAllForTurn(organizationId, theirs.id)).toEqual([]);
+    expect(await memory.findAllForTurn(organizationId, theirs.id)).toEqual([]);
+
+    const mine = await create('Mine');
+    const { turn } = sent(mine, 'Hi');
+    const context = await contextResolver().resolve(turn, 'Hi', new Date());
+    expect(context.apiKey).toBe('my-key-1234');
+    expect(context.systemPrompt).toContain('You are Mine.');
+    expect(context.systemPrompt).not.toContain('their secret');
   });
 });
