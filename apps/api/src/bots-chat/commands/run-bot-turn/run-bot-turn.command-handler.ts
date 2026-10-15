@@ -17,7 +17,7 @@ import {
   BOT_MESSAGE_REPOSITORY,
   BOT_STREAM,
   BOT_TURN_REPOSITORY,
-} from '../../bots.di-tokens';
+} from '../../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';

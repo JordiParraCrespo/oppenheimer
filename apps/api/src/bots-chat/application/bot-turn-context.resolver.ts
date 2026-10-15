@@ -4,24 +4,24 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
-  BOT_MESSAGE_REPOSITORY,
   BOT_REPOSITORY,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
-} from '../bots.di-tokens';
-import type { BotRepositoryPort } from '../database/bot.repository.port';
-import type { BotDocumentRepositoryPort } from '../database/bot-document.repository.port';
-import type { BotMemoryFactRepositoryPort } from '../database/bot-memory-fact.repository.port';
+} from '../../bots/bots.di-tokens';
+import type { BotRepositoryPort } from '../../bots/database/bot.repository.port';
+import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
+import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
+import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
+import { BotErrors } from '../../bots/domain/bots.errors';
+import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
+import { BOT_MESSAGE_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
-import type { ModelProviderCredentialRepositoryPort } from '../database/model-provider-credential.repository.port';
 import {
   BOT_HISTORY_MESSAGES,
   botHistory,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
-import { BotErrors } from '../domain/bots.errors';
-import type { ProviderKeySealerPort } from '../infrastructure/provider-key-sealer.port';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 

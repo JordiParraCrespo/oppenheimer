@@ -7,6 +7,7 @@ import type { BotRepositoryPort } from '../database/bot.repository.port';
 import type { BotEntity } from '../domain/bot.entity';
 import { isBotDocumentName } from '../domain/bot-document.entity';
 import { BotErrors } from '../domain/bots.errors';
+import type { BotLookupPort } from './bot-lookup.port';
 
 /**
  * What every route under `/bots/:id` asks first: the bot, through the caller's
@@ -14,7 +15,7 @@ import { BotErrors } from '../domain/bots.errors';
  * the document routes, a document name that is one of the two.
  */
 @Injectable()
-export class BotLookupResolver {
+export class BotLookupResolver implements BotLookupPort {
   constructor(
     @Inject(BOT_REPOSITORY)
     private readonly bots: BotRepositoryPort,

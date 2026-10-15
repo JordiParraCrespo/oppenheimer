@@ -1,9 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { requireFound } from '@oppenheimer/backend-core';
-import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots.di-tokens';
+import { BotErrors } from '../../../bots/domain/bots.errors';
+import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { BotErrors } from '../../domain/bots.errors';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { CancelBotTurnCommand } from './cancel-bot-turn.command';
 

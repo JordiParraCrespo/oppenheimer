@@ -5,12 +5,11 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { BOT_ACTIVE_TURN_STATUSES, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
+import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
-import { BotResource } from '../bots.resource';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
-import { violated } from './bot.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type { BotTurnRepositoryPort } from './bot-turn.repository.port';
@@ -18,8 +17,12 @@ import type { BotTurnRepositoryPort } from './bot-turn.repository.port';
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 
-const UNIQUE_VIOLATION = '23505';
-const ONE_RUNNING = 'UQ_bot_turn_running';
+/** The claim broke `UQ_bot_turn_running`: another turn of the bot is running. */
+function isRunningTaken(error: unknown): boolean {
+  const own = error as { code?: string; constraint?: string };
+  const driver = (error as { driverError?: typeof own }).driverError ?? own;
+  return driver.code === '23505' && driver.constraint === 'UQ_bot_turn_running';
+}
 
 @Injectable()
 export class BotTurnRepository
@@ -102,7 +105,7 @@ export class BotTurnRepository
       turn.markPersisted();
       return 'claimed';
     } catch (error) {
-      if (violated(error, UNIQUE_VIOLATION, ONE_RUNNING)) return 'busy';
+      if (isRunningTaken(error)) return 'busy';
       throw error;
     }
   }

@@ -2,20 +2,20 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { botDefaultModel } from '@oppenheimer/shared';
-import { BotLookupResolver } from '../../application/bot-lookup.resolver';
+import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import {
-  BOT_STREAM,
-  BOT_TURN_REPOSITORY,
+  BOT_LOOKUP,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
-} from '../../bots.di-tokens';
+} from '../../../bots/bots.di-tokens';
+import type { ModelProviderCredentialRepositoryPort } from '../../../bots/database/model-provider-credential.repository.port';
+import { BotErrors } from '../../../bots/domain/bots.errors';
+import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
+import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
-import { BotErrors } from '../../domain/bots.errors';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
-import type { ProviderKeySealerPort } from '../../infrastructure/provider-key-sealer.port';
 import { SendBotMessageCommand } from './send-bot-message.command';
 
 /**
@@ -29,7 +29,7 @@ export class SendBotMessageCommandHandler
   implements ICommandHandler<SendBotMessageCommand, string>
 {
   constructor(
-    private readonly lookup: BotLookupResolver,
+    @Inject(BOT_LOOKUP) private readonly lookup: BotLookupPort,
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
     private readonly credentials: ModelProviderCredentialRepositoryPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,

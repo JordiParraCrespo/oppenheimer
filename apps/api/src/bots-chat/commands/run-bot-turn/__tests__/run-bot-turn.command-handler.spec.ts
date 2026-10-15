@@ -6,12 +6,12 @@ import {
 } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
+import { BotErrors } from '../../../../bots/domain/bots.errors';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
-import { BotErrors } from '../../../domain/bots.errors';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from '../run-bot-turn.command';
 import { RunBotTurnCommandHandler } from '../run-bot-turn.command-handler';

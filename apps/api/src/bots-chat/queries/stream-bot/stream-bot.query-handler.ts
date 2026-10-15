@@ -2,8 +2,9 @@ import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { BotStreamEvent } from '@oppenheimer/shared';
 import { Observable } from 'rxjs';
-import { BotLookupResolver } from '../../application/bot-lookup.resolver';
-import { BOT_STREAM } from '../../bots.di-tokens';
+import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
+import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
+import { BOT_STREAM } from '../../bots-chat.di-tokens';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { StreamBotQuery } from './stream-bot.query';
 
@@ -28,7 +29,7 @@ export class StreamBotQueryHandler
   implements IQueryHandler<StreamBotQuery, Observable<BotStreamFrame>>
 {
   constructor(
-    private readonly lookup: BotLookupResolver,
+    @Inject(BOT_LOOKUP) private readonly lookup: BotLookupPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
   ) {}
 

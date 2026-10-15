@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
-import type { BotLookupResolver } from '../../../application/bot-lookup.resolver';
+import type { BotLookupResolver } from '../../../../bots/application/bot-lookup.resolver';
+import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
+import { BotEntity } from '../../../../bots/domain/bot.entity';
+import type { ProviderKeySealerPort } from '../../../../bots/infrastructure/provider-key-sealer.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../../database/model-provider-credential.repository.port';
-import { BotEntity } from '../../../domain/bot.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
-import type { ProviderKeySealerPort } from '../../../infrastructure/provider-key-sealer.port';
 import { SendBotMessageCommand } from '../send-bot-message.command';
 import { SendBotMessageCommandHandler } from '../send-bot-message.command-handler';
 

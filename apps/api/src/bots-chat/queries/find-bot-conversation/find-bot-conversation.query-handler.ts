@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { BotLookupResolver } from '../../application/bot-lookup.resolver';
-import { BOT_MESSAGE_REPOSITORY, BOT_TURN_REPOSITORY } from '../../bots.di-tokens';
+import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
+import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
+import { BOT_MESSAGE_REPOSITORY, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import type { BotMessageEntity } from '../../domain/bot-message.entity';
@@ -23,7 +24,7 @@ export class FindBotConversationQueryHandler
   implements IQueryHandler<FindBotConversationQuery, BotConversation>
 {
   constructor(
-    private readonly lookup: BotLookupResolver,
+    @Inject(BOT_LOOKUP) private readonly lookup: BotLookupPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
   ) {}

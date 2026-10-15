@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { BOT_TURN_REPOSITORY } from '../bots.di-tokens';
+import { BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 
 /** How long a running turn waits between two looks for Stop. */
