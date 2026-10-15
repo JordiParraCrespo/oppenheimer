@@ -18,6 +18,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.provider = entity.provider;
     record.model = entity.model;
     record.effort = entity.effort;
+    record.timeZone = entity.timeZone;
     record.error = entity.error;
     record.inputTokens = entity.inputTokens;
     record.outputTokens = entity.outputTokens;
@@ -40,6 +41,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         provider: record.provider as BotProvider,
         model: record.model,
         effort: (record.effort ?? null) as SessionEffort | null,
+        timeZone: record.timeZone ?? null,
         error: record.error ?? null,
         inputTokens: record.inputTokens,
         outputTokens: record.outputTokens,

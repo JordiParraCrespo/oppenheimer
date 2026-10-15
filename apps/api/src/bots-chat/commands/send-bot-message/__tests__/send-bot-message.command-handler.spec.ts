@@ -51,8 +51,11 @@ function setup(options: { key?: boolean; sealer?: boolean } = {}) {
   return { handler, turns, bot };
 }
 
-const send = (handler: SendBotMessageCommandHandler, botId: string) =>
-  handler.execute(new SendBotMessageCommand({ scope, botId, content: 'Ship it' }));
+const send = (
+  handler: SendBotMessageCommandHandler,
+  botId: string,
+  timeZone: string | null = null,
+) => handler.execute(new SendBotMessageCommand({ scope, botId, content: 'Ship it', timeZone }));
 
 describe('SendBotMessageCommandHandler', () => {
   it('queues a turn on the bot’s provider and default model, with the message first', async () => {
@@ -66,6 +69,13 @@ describe('SendBotMessageCommandHandler', () => {
       position: 0,
       turnId: turn.id,
     });
+  });
+
+  it('keeps the sender’s time zone on the turn, so the bot is told their time', async () => {
+    const { handler, turns, bot } = setup();
+    await send(handler, bot.id, 'Europe/Madrid');
+    const [turn] = vi.mocked(turns.enqueue).mock.calls[0];
+    expect(turn.timeZone).toBe('Europe/Madrid');
   });
 
   it('refuses with BOTS_013 when the workspace has no key for the provider, queuing nothing', async () => {

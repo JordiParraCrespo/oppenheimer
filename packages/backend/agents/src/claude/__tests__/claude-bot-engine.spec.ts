@@ -369,6 +369,25 @@ describe('ClaudeBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'max_steps' });
   });
 
+  it('never hands back the turn’s scratch directory, in text or in a tool’s answer', async () => {
+    const leaked = join(scratchDir, 'work');
+    scripted(() => [
+      delta(`I run in ${leaked}`),
+      assistant([{ type: 'text', text: `I run in ${leaked}` }]),
+      assistant([{ type: 'tool_use', id: 'toolu_1', name: 'TodoWrite', input: {} }]),
+      toolResults([{ type: 'tool_result', tool_use_id: 'toolu_1', content: `saved in ${leaked}` }]),
+      success(),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(JSON.stringify(events)).not.toContain(scratchDir);
+    expect(events).toContainEqual({ type: 'text.done', text: 'I run in [workspace]/work' });
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'tool.finished', output: 'saved in [workspace]/work' }),
+    );
+  });
+
   it('fails with the API error, not as bot text, and never with the key in it', async () => {
     scripted(() => [
       assistant([{ type: 'text', text: `API Error: 401 invalid x-api-key ${KEY}` }], {

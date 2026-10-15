@@ -6,6 +6,7 @@ import {
   type SessionEffort,
   type SessionPermission,
 } from '../agents/catalog.js';
+import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
  * Bot shapes (`product/versions/mvp/25-bots.md`, slice 1): a bot, the sidebar
@@ -291,6 +292,11 @@ export const BOT_CONVERSATION_PAGE_DEFAULT = 100;
 /** `POST /bots/:id/messages`: what you say to the bot. */
 export const sendBotMessageSchema = z.object({
   content: z.string().trim().min(1).max(BOT_MESSAGE_MAX),
+  /**
+   * The sender's IANA time zone, from their browser. The turn tells the bot
+   * the time there, so "tomorrow at 9" means the sender's 9. UTC when absent.
+   */
+  timeZone: z.string().min(1).max(64).refine(isValidTimeZone).optional(),
 });
 export type SendBotMessageDto = z.infer<typeof sendBotMessageSchema>;
 

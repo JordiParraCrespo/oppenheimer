@@ -21,6 +21,19 @@ export function redactSecret(text: string, secret: string): string {
   return secret.length >= 4 ? text.split(secret).join('[redacted]') : text;
 }
 
+/**
+ * `text` with the turn's scratch directory replaced: the path names the
+ * machine the control plane runs on, and a bot has no business repeating it.
+ */
+export function redactPath(text: string, path: string): string {
+  return path.length >= 4 ? text.split(path).join('[workspace]') : text;
+}
+
+/** What a turn's events may carry: the key and the scratch directory, both redacted. */
+function scrubTurnText(text: string, request: Pick<BotTurnRequest, 'apiKey' | 'scratchDir'>) {
+  return redactPath(redactSecret(text, request.apiKey), request.scratchDir);
+}
+
 /** An error's text, redacted and cut to a length a chat can show. */
 export function scrubSecret(text: string, secret: string): string {
   const scrubbed = redactSecret(text, secret);
@@ -32,6 +45,19 @@ export function toAsync<T>(source: AsyncIterable<T> | Iterable<T>): AsyncIterabl
   return (async function* () {
     yield* source;
   })();
+}
+
+/** An event with the key and the scratch directory taken out of every text it carries. */
+function scrubEvent(event: BotEngineEvent, request: BotTurnRequest): BotEngineEvent {
+  switch (event.type) {
+    case 'text.delta':
+    case 'text.done':
+      return { ...event, text: scrubTurnText(event.text, request) };
+    case 'tool.finished':
+      return { ...event, output: scrubTurnText(event.output, request) };
+    default:
+      return event;
+  }
 }
 
 export function failed(error: string): DoneEvent {
@@ -66,8 +92,9 @@ export async function runTool(
 /**
  * Holds every engine to the stream contract: nothing is thrown, the turn
  * ends with exactly one `done` and nothing follows it, an abort ends it
- * with `cancelled` at once (without waiting for the engine to notice), and
- * no error text carries the request's API key.
+ * with `cancelled` at once (without waiting for the engine to notice), no
+ * error text carries the request's API key, and no text, tool output or
+ * error carries the turn's scratch directory.
  */
 export async function* guardTurn(
   request: BotTurnRequest,
@@ -105,14 +132,19 @@ export async function* guardTurn(
       if (event.type === 'done') {
         if (signal.aborted) yield CANCELLED;
         else if (event.error !== undefined)
-          yield { ...event, error: scrubSecret(event.error, request.apiKey) };
+          yield {
+            ...event,
+            error: scrubSecret(redactPath(event.error, request.scratchDir), request.apiKey),
+          };
         else yield event;
         return;
       }
-      yield event;
+      yield scrubEvent(event, request);
     }
   } catch (error) {
-    yield signal.aborted ? CANCELLED : failed(scrubSecret(describeError(error), request.apiKey));
+    yield signal.aborted
+      ? CANCELLED
+      : failed(scrubSecret(redactPath(describeError(error), request.scratchDir), request.apiKey));
   } finally {
     if (onAbort) signal.removeEventListener('abort', onAbort);
     // Lets the engine release what it holds; a generator still busy with a

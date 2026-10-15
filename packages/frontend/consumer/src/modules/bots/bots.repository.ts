@@ -155,11 +155,15 @@ export class BotsRepository {
     return toConversation(data);
   }
 
-  /** Says `content` to the bot: a turn, queued behind any it has not finished. */
+  /**
+   * Says `content` to the bot: a turn, queued behind any it has not finished.
+   * The browser's time zone goes with it, so the bot tells the time where you are.
+   */
   @MapApiError(BotsErrors.SEND_FAILED)
   async sendMessage(id: string, content: string): Promise<BotTurnEntity> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const data = await unwrapBody(
-      heyApiSdk.sendBotMessage({ path: { id }, body: { content } }),
+      heyApiSdk.sendBotMessage({ path: { id }, body: { content, timeZone } }),
       BotsErrors.SEND_FAILED,
     );
     return toTurn(data);

@@ -37,7 +37,13 @@ export class SendBotMessageCommandHandler
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
   ) {}
 
-  async execute({ scope, botId, content, metadata }: SendBotMessageCommand): Promise<string> {
+  async execute({
+    scope,
+    botId,
+    content,
+    timeZone,
+    metadata,
+  }: SendBotMessageCommand): Promise<string> {
     const bot = await this.lookup.bot(scope, botId);
     if (!this.sealer.isConfigured()) throw new AppError(BotErrors.PROVIDERS_NOT_CONFIGURED);
     if ((await this.credentials.findOne(scope, bot.provider)).isNone()) {
@@ -53,6 +59,7 @@ export class SendBotMessageCommandHandler
       provider: bot.provider,
       model: bot.model ?? botDefaultModel(bot.provider).id,
       effort: bot.effort,
+      timeZone,
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,

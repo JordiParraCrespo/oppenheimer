@@ -7,13 +7,13 @@ import { CANCEL_POLL_MS, TurnCancelWatchFactory } from '../turn-cancel-watch.fac
  * aborting the signal, and a stopped watch reading nothing more. The turn's
  * runner using it is the handler spec's.
  */
-function setup(isCancelRequested: () => Promise<boolean>) {
+function setup(isCancelRequested: () => Promise<boolean>, timeLimitMs?: number) {
   const turns = { isCancelRequested: vi.fn(isCancelRequested) } satisfies Pick<
     BotTurnRepositoryPort,
     'isCancelRequested'
   >;
   const factory = new TurnCancelWatchFactory(turns as unknown as BotTurnRepositoryPort);
-  return { turns, watch: factory.watch('turn-1') };
+  return { turns, watch: factory.watch('turn-1', timeLimitMs) };
 }
 
 describe('TurnCancelWatchFactory', () => {
@@ -35,6 +35,24 @@ describe('TurnCancelWatchFactory', () => {
     const reads = turns.isCancelRequested.mock.calls.length;
     await vi.advanceTimersByTimeAsync(CANCEL_POLL_MS * 5);
     expect(turns.isCancelRequested).toHaveBeenCalledTimes(reads);
+  });
+
+  it('aborts a turn that runs past its time limit, and says it was the limit', async () => {
+    const { watch } = setup(async () => false, CANCEL_POLL_MS * 4);
+    await vi.advanceTimersByTimeAsync(CANCEL_POLL_MS * 4 - 1);
+    expect(watch.signal.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(watch.signal.aborted).toBe(true);
+    expect(watch.timedOut).toBe(true);
+  });
+
+  it('reports Stop as Stop, not as the limit, when Stop comes first', async () => {
+    let asked = false;
+    const { watch } = setup(async () => asked, CANCEL_POLL_MS * 4);
+    asked = true;
+    await vi.advanceTimersByTimeAsync(CANCEL_POLL_MS * 8);
+    expect(watch.signal.aborted).toBe(true);
+    expect(watch.timedOut).toBe(false);
   });
 
   it('keeps looking after a read fails', async () => {

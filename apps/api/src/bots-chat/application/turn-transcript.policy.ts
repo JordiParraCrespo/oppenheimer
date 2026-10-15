@@ -5,7 +5,7 @@ import {
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import { BOT_TURN_TIME_LIMIT_MS, type BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** What one engine event asks the runner to do. */
 export type TranscriptWrite =
@@ -72,9 +72,17 @@ export class TurnTranscript {
     return this.outcome;
   }
 
-  /** Ends the turn as the engine said it ended; running out of steps still completes it. */
-  endTurn(now: Date): void {
+  /**
+   * Ends the turn as the engine said it ended; running out of steps still
+   * completes it. A turn stopped by its time limit failed, and says so: what
+   * it wrote before is kept.
+   */
+  endTurn(now: Date, timedOut = false): void {
     const { reason, error, inputTokens, outputTokens } = this.outcome;
+    if (timedOut && reason === 'cancelled') {
+      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, inputTokens, outputTokens });
+      return;
+    }
     const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
     this.turn.end(status, now, { error, inputTokens, outputTokens });
   }
@@ -116,6 +124,9 @@ export class TurnTranscript {
     });
   }
 }
+
+/** Why a turn the time limit stopped failed, in words a person can act on. */
+export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes, the limit for one turn. Ask for a smaller step, or split the request.`;
 
 /** A turn's failure in words a person can act on: the catalog's for ours, the engine's otherwise. */
 export function failureReasonOf(error: unknown): string {

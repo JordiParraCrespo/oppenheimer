@@ -74,14 +74,14 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     const watch = this.cancelWatch.watch(turn.id);
     let scratchDir: string | undefined;
     try {
-      scratchDir = await mkdtemp(join(tmpdir(), 'oppenheimer-bot-turn-'));
+      scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
       const prompt = (await this.messages.findPrompt(turn.organizationId, turn.id)) ?? '';
       const context = await this.context.resolve(turn, prompt, new Date());
       const transcript = new TurnTranscript(turn);
       for await (const event of this.engine.run({ ...context, signal: watch.signal, scratchDir })) {
         for (const write of transcript.apply(event)) await this.apply(turn, write);
       }
-      transcript.endTurn(new Date());
+      transcript.endTurn(new Date(), watch.timedOut);
     } catch (error) {
       turn.end('failed', new Date(), { error: failureReasonOf(error) });
       if (!(error instanceof AppError)) {

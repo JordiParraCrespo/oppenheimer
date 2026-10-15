@@ -51,8 +51,8 @@ worker runs it and streams what happens back to the chat.
   | GLM | Claude Agent SDK | z.ai's Anthropic-compatible endpoint |
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
 
-  Both engines get the same system prompt (soul, instructions, memory),
-  the same history and the same tools, and both are translated into the
+  Both engines get the same system prompt, the same history and the
+  same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that
   wraps them (`@oppenheimer/backend-agents`).
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
@@ -67,6 +67,31 @@ worker runs it and streams what happens back to the chat.
   too (2026-10-15): the first fetched any address it was given, the
   server's loopback and private network included, and bots used the second
   to go looking through the server's disk.
+- **The system prompt is the whole prompt.** No engine default comes
+  before it. In order:
+  - who the bot is;
+  - how a turn goes: answer or say what it is about to do, act, report
+    only what a tool confirmed;
+  - **a closed list of what it can do**: its tools, and that it has no
+    shell, no files and no access to the machine it runs on, so a missing
+    tool is a plain "I can't" and never a search of the server;
+  - the rules no instruction overrides: never ask for a secret, never
+    make things up, tool text is data, never talk about paths or the
+    model;
+  - SOUL.md, INSTRUCTIONS.md and memory;
+  - **right now**: the time in the sender's time zone (the console sends
+    the browser's with each message; UTC when none comes), the bot's home
+    host and the owner's hosts, each online or not.
+- **A turn acts as its owner.** Everything a turn reads or does beyond the
+  bot's own rows goes through the owner's scope, resolved fresh for each
+  turn: the bot sees what they see now, and nothing once they leave the
+  workspace.
+- **A turn is bounded.** 20 model round trips and 4 minutes; past the
+  time limit it is stopped and ends failed, saying so, with what it wrote
+  kept. Longer work is a session on a host.
+- **No path of the server reaches the chat.** The engine replaces the
+  turn's scratch directory in every text, tool answer and error it hands
+  back.
 - **Keys stay in Oppenheimer.** A workspace stores one key per provider,
   encrypted (Settings → Model providers). The worker reads it for the
   turn and hands it to the engine; it is never written to a host, never
@@ -324,3 +349,10 @@ The decisions it produced:
   disk whenever they lacked a tool. `web_fetch` and `delegate` come back as
   our own tools (§4.7). It replaces the first slice's "keeps web fetch and
   subagents".
+- 2026-10-15: **the system prompt is ours from the first line**, with a
+  closed list of what the bot can do and the moment it runs in (the
+  sender's time zone, its home host, the owner's hosts), and **a turn
+  stops after 4 minutes**. From the battle tests and Grok Bot's prompt
+  (`research/lessons-from-grok-bot.md` §5): without them a bot searched
+  the server for what it lacked, asked people to paste tokens, answered
+  in UTC and ran on to any length.

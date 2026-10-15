@@ -3145,6 +3145,7 @@ export type BotConversationResponseDto = {
 
 export type SendBotMessageRequest = {
     content: string;
+    timeZone?: string;
 };
 
 export type LivenessResponseDto = {

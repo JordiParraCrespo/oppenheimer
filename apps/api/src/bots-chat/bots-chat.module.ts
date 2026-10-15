@@ -3,7 +3,9 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
 import { BotsModule } from '../bots/bots.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
+import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotMessageMapper } from './bot-message.mapper';
@@ -65,6 +67,8 @@ const queryHandlers: Provider[] = [
     // The `bot-turns` queue the outbox stages each due turn on.
     QueueModule,
     BotsModule,
+    // A turn acts as the bot's owner, who must still be a member.
+    OrganizationsModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -73,6 +77,7 @@ const queryHandlers: Provider[] = [
     BotTurnMapper,
     BotMessageMapper,
     BotTurnContextResolver,
+    BotOwnerScopeResolver,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
