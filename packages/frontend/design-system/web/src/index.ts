@@ -137,6 +137,7 @@ export {
   StreamingCaret,
   TurnHeader,
 } from './components/chat-transcript';
+export type { TraceOutputLabels } from './components/chat-work';
 export {
   ReasoningRow,
   ToolCallGroup,
@@ -148,7 +149,6 @@ export {
   TraceOutput,
   TraceStep,
 } from './components/chat-work';
-export type { TraceOutputLabels } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
