@@ -1,4 +1,4 @@
-import { type RefObject, useEffect } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 
 /** How close to the bottom counts as reading the latest, in pixels. */
 const NEAR_BOTTOM_PX = 80;
@@ -6,13 +6,16 @@ const NEAR_BOTTOM_PX = 80;
 /**
  * Keeps a scrolling chat on its latest line while the reader is there: when
  * what is inside `content` grows (a message lands, a reply streams) and the
- * reader was at the bottom, the scroller follows it down. Someone scrolled up
+ * reader was at the bottom, `scroller` follows it down. Someone scrolled up
  * to read stays where they are. The first layout opens at the bottom.
  */
-export function useStickToBottom(
-  scroller: RefObject<HTMLElement | null>,
-  content: RefObject<HTMLElement | null>,
-): void {
+export function useStickToBottom(): {
+  scroller: RefObject<HTMLDivElement | null>;
+  content: RefObject<HTMLDivElement | null>;
+} {
+  const scroller = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+
   // Watches the transcript's size, a DOM measurement outside React.
   useEffect(() => {
     const box = scroller.current;
@@ -38,5 +41,7 @@ export function useStickToBottom(
       box.removeEventListener('scroll', onScroll);
       observer.disconnect();
     };
-  }, [scroller, content]);
+  }, []);
+
+  return { scroller, content };
 }

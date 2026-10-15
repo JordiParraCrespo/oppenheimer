@@ -10,7 +10,7 @@ import { PanelLeft } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseBot, useUpdateBotOptimistically } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { BotEngineChips } from '@/features/bots/components/bot-engine-chips';
@@ -41,9 +41,7 @@ export function BotChat({ botId }: { botId: string }) {
   const { data: bot, error } = useSuspenseBot(botId);
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
-  const scroller = useRef<HTMLDivElement>(null);
-  const content = useRef<HTMLDivElement>(null);
-  useStickToBottom(scroller, content);
+  const { scroller, content } = useStickToBottom();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
