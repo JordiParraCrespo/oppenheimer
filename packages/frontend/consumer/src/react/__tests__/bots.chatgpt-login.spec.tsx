@@ -16,7 +16,13 @@ import { fakeKernel } from './fake-kernel';
  * fresh code is only ever asked for on `restart`.
  */
 const login = (flowId: string) =>
-  new ChatgptLoginEntity(flowId, 'ABCD-1234', 'https://auth.openai.com/codex/device', 5, new Date());
+  new ChatgptLoginEntity(
+    flowId,
+    'ABCD-1234',
+    'https://auth.openai.com/codex/device',
+    5,
+    new Date(),
+  );
 
 function setup(poll: (flowId: string) => Promise<string>) {
   let minted = 0;
