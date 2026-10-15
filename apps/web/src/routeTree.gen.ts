@@ -47,6 +47,7 @@ import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
@@ -260,6 +261,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsModelProvidersRoute =
+  AuthenticatedSettingsModelProvidersRouteImport.update({
+    id: '/model-providers',
+    path: '/model-providers',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsProfileRoute =
   AuthenticatedSettingsProfileRouteImport.update({
     id: '/profile',
@@ -368,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
@@ -413,6 +421,7 @@ export interface FileRoutesByTo {
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
@@ -466,6 +475,7 @@ export interface FileRoutesById {
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
     | '/onboarding/'
@@ -563,6 +574,7 @@ export interface FileRouteTypes {
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
     | '/onboarding'
@@ -615,6 +627,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
     | '/_auth/onboarding/'
@@ -916,6 +929,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/model-providers': {
+      id: '/_authenticated/settings/model-providers'
+      path: '/model-providers'
+      fullPath: '/settings/model-providers'
+      preLoaderRoute: typeof AuthenticatedSettingsModelProvidersRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/profile': {
       id: '/_authenticated/settings/profile'
       path: '/profile'
@@ -1110,6 +1130,7 @@ const AuthenticatedPullsRouteWithChildren =
   AuthenticatedPullsRoute._addFileChildren(AuthenticatedPullsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -1118,6 +1139,8 @@ interface AuthenticatedSettingsRouteChildren {
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsModelProvidersRoute:
+    AuthenticatedSettingsModelProvidersRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsRepositoriesRoute:
     AuthenticatedSettingsRepositoriesRoute,

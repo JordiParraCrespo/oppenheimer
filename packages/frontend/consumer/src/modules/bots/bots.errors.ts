@@ -21,4 +21,10 @@ export const BotsErrors = {
   SAVE_FACT_FAILED: { code: 'BOTS_CLIENT_013', message: 'Failed to save the fact' },
   DELETE_FACT_FAILED: { code: 'BOTS_CLIENT_014', message: 'Failed to delete the fact' },
   CLEAR_MEMORY_FAILED: { code: 'BOTS_CLIENT_015', message: 'Failed to clear the memory' },
+  FETCH_PROVIDERS_FAILED: {
+    code: 'BOTS_CLIENT_016',
+    message: 'Failed to load the model providers',
+  },
+  SAVE_PROVIDER_KEY_FAILED: { code: 'BOTS_CLIENT_017', message: 'Failed to save the key' },
+  DELETE_PROVIDER_KEY_FAILED: { code: 'BOTS_CLIENT_018', message: 'Failed to remove the key' },
 } as const satisfies Record<string, ErrorDefinition>;

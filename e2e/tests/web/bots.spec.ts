@@ -144,3 +144,49 @@ async function getBot(
   expect(response.status()).toBe(200);
   return (await response.json()) as { avatarColor: string; homeHostId: string | null };
 }
+
+test('a model provider key from Settings, and a bot moved onto it from the chat', async ({
+  page,
+}) => {
+  const owner = await provisionedUser('botkeys');
+  await signInAs(page, owner.user);
+
+  await page.goto('/settings/model-providers');
+  await expect(page.getByRole('heading', { name: 'Model providers', level: 1 })).toBeVisible();
+  const glm = page.getByTestId('model-provider').filter({ hasText: 'GLM' });
+  await expect(glm).toContainText('No key');
+
+  // The key goes in a dialog and comes back only as its last four characters.
+  await glm.getByRole('button', { name: 'Add key' }).click();
+  const dialog = page.getByRole('dialog', { name: 'GLM key' });
+  await dialog.getByLabel('API key').fill('zai-e2e-secret-4821');
+  await dialog.getByRole('button', { name: 'Save key' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(glm).toContainText('Key ending in 4821');
+  await expect(page.getByText('zai-e2e-secret-4821')).toHaveCount(0);
+
+  // A bot's model button lists every provider's models; GLM-5.3 moves it there.
+  const created = await owner.api.post('/api/v1/bots', { data: { name: 'Glm Bot' } });
+  const botId = ((await created.json()) as { id: string }).id;
+  await page.goto(`/bots/${botId}`);
+  await page.getByRole('button', { name: 'Model' }).click();
+  await page.getByRole('menuitem', { name: 'GLM' }).click();
+  await page.getByRole('option', { name: 'GLM-5.3' }).click();
+  await expect(page.getByRole('button', { name: 'Model' })).toContainText('GLM-5.3');
+  await expect
+    .poll(
+      async () =>
+        (
+          (await (await owner.api.get(`/api/v1/bots/${botId}`)).json()) as {
+            provider: string;
+          }
+        ).provider,
+    )
+    .toBe('glm');
+
+  // Remove forgets it.
+  await page.goto('/settings/model-providers');
+  await glm.getByRole('button', { name: 'Remove the GLM key' }).click();
+  await expect(glm).toContainText('No key');
+  await owner.api.dispose();
+});

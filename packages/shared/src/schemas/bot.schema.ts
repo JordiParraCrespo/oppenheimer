@@ -117,7 +117,12 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
       id: 'glm',
       label: 'GLM',
       models: Object.freeze([
-        Object.freeze({ id: 'glm-5.3', label: 'GLM-5.3', default: true as const, effort: GLM_LEVELS }),
+        Object.freeze({
+          id: 'glm-5.3',
+          label: 'GLM-5.3',
+          default: true as const,
+          effort: GLM_LEVELS,
+        }),
       ]),
     }),
     openai: Object.freeze({

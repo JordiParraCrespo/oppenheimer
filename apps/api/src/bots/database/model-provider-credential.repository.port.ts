@@ -6,7 +6,10 @@ import type { ModelProviderCredentialEntity } from '../domain/model-provider-cre
 export interface ModelProviderCredentialRepositoryPort {
   /** The workspace's stored keys, one per provider at most. */
   findAll(scope: AccessScope): Promise<ModelProviderCredentialEntity[]>;
-  findOne(scope: AccessScope, provider: BotProvider): Promise<Option<ModelProviderCredentialEntity>>;
+  findOne(
+    scope: AccessScope,
+    provider: BotProvider,
+  ): Promise<Option<ModelProviderCredentialEntity>>;
   /** Stores it, replacing the workspace's key for that provider when there is one. */
   put(credential: ModelProviderCredentialEntity): Promise<void>;
   /** Whether there was a key to remove. */

@@ -57,7 +57,7 @@ export class BotResponseDto {
 
   @ApiProperty({
     ...nullableEnum(SESSION_EFFORTS),
-    description: "The effort level; null runs the model at its own default.",
+    description: 'The effort level; null runs the model at its own default.',
   })
   effort!: SessionEffort | null;
 

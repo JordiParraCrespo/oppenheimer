@@ -18,6 +18,7 @@ function bot(name: string) {
     null,
     0,
     null,
+    'anthropic',
     null,
     'medium',
     'auto',

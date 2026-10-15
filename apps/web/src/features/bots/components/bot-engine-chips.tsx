@@ -1,41 +1,46 @@
 import { AgentModelSelect, EffortPicker } from '@oppenheimer/design-system-web';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
+import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import {
-  BOT_AGENT,
-  botAgentOptions,
   botEffort,
-  botModel,
+  botEngineValue,
+  botProviderOptions,
   effortStops,
+  providerOfMark,
 } from '@/features/bots/lib/bot-engine';
 
 /**
- * The composer's engine, for a bot: Claude Code's models (a bot runs nothing
- * else) and, when the model has a notion of it, how hard it thinks. Each pick
- * is the bot's from then on; the caller saves it.
+ * The composer's engine, for a bot: every provider's models, grouped by
+ * provider (a pick sets both), and, when the model has a notion of it, how
+ * hard it thinks. Each pick is the bot's from then on; the caller saves it.
  */
 export function BotEngineChips({
+  provider,
   model,
   effort,
   disabled,
   onModelChange,
   onEffortChange,
 }: {
+  provider: BotProvider;
   model: string | null;
   effort: SessionEffort | null;
   disabled?: boolean;
-  onModelChange: (model: string | null) => void;
+  onModelChange: (next: { provider: BotProvider; model: string | null }) => void;
   onEffortChange: (effort: SessionEffort) => void;
 }) {
   const { t } = useTranslation();
-  const levels = botEffort(model, effort);
+  const levels = botEffort(provider, model, effort);
 
   return (
     <>
       <AgentModelSelect
-        agents={botAgentOptions()}
-        value={{ agent: BOT_AGENT, model: botModel(model) }}
-        onValueChange={(next) => onModelChange(next.model)}
+        agents={botProviderOptions()}
+        value={botEngineValue(provider, model)}
+        onValueChange={(next) =>
+          onModelChange({ provider: providerOfMark(next.agent), model: next.model })
+        }
         disabled={disabled}
         aria-label={t('bots.chat.model')}
         searchPlaceholder={t('bots.chat.searchModels')}

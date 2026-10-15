@@ -7,8 +7,9 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
  * a blank bot created, renamed, grouped and given a home host; its soul and
  * instructions edited, refused over a stale revision and reverted; its memory
  * taught, reworded, forgotten and cleared; and the bot deleted with all of it.
- * Another workspace sees none of it. No runner is involved: a bot has no
- * runtime yet.
+ * Another workspace sees none of it. The workspace's model provider keys:
+ * stored, replaced, never shown, forgotten; and a bot moved to another
+ * provider. No runner is involved.
  */
 
 interface Bot {
@@ -18,6 +19,7 @@ interface Bot {
   groupId: string | null;
   position: number;
   homeHostId: string | null;
+  provider: string;
   model: string | null;
   effort: string | null;
   permission: string;
@@ -207,6 +209,51 @@ test.describe('Bots', () => {
     });
     const remaining = await ok<Bot[]>(await api.get('/api/v1/bots'));
     expect(remaining.map((bot) => bot.id)).toEqual([second.id]);
+    await api.dispose();
+  });
+
+  test('a workspace keeps one key per model provider, and never shows it', async () => {
+    const { api } = await signedUpContext('botproviders');
+    type Provider = { provider: string; configured: boolean; keyHint: string | null };
+    const list = () => api.get('/api/v1/model-providers');
+
+    const empty = await ok<Provider[]>(await list());
+    expect(empty).toEqual([
+      { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null },
+      { provider: 'glm', configured: false, keyHint: null, updatedAt: null },
+      { provider: 'openai', configured: false, keyHint: null, updatedAt: null },
+    ]);
+
+    const secret = `zai-${randomUUID()}-wxyz`;
+    await ok(await api.put('/api/v1/model-providers/glm', { data: { apiKey: secret } }), 204);
+    await ok(
+      await api.put('/api/v1/model-providers/glm', { data: { apiKey: `${secret}-9876` } }),
+      204,
+    );
+    const stored = await list();
+    expect(await stored.text()).not.toContain(secret);
+    const glm = (await ok<Provider[]>(stored)).find((row) => row.provider === 'glm');
+    expect(glm).toMatchObject({ configured: true, keyHint: '9876' });
+
+    await expectProblemDocument(
+      await api.put('/api/v1/model-providers/mistral', { data: { apiKey: secret } }),
+      { status: 404, code: 'BOTS_012' },
+    );
+
+    // A bot moves to the provider and runs its default model.
+    const bot = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
+    const moved = await ok<{ provider: string; model: string | null }>(
+      await api.patch(`/api/v1/bots/${bot.id}`, { data: { provider: 'glm' } }),
+    );
+    expect(moved).toMatchObject({ provider: 'glm', model: null });
+    await expectProblemDocument(
+      await api.patch(`/api/v1/bots/${bot.id}`, { data: { model: 'claude-opus-5-5' } }),
+      { status: 422, code: 'BOTS_010' },
+    );
+
+    await ok(await api.delete('/api/v1/model-providers/glm'), 204);
+    const after = await ok<Provider[]>(await list());
+    expect(after.every((row) => !row.configured)).toBe(true);
     await api.dispose();
   });
 });

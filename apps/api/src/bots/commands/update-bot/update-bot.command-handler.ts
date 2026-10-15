@@ -41,7 +41,8 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
     // The model is checked against the provider the bot will have: a new
     // provider with no model runs that provider's default.
     const provider = input.provider ?? bot.provider;
-    const model = input.model !== undefined ? input.model : provider === bot.provider ? bot.model : null;
+    const model =
+      input.model !== undefined ? input.model : provider === bot.provider ? bot.model : null;
     if (!isBotModel(provider, model)) {
       throw new AppError(BotErrors.MODEL_UNSUPPORTED, {
         detail: `${model} is not a ${provider} model`,

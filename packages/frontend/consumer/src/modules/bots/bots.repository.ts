@@ -5,9 +5,10 @@ import {
   type BotMemoryFactResponseDto,
   type BotResponseDto,
   heyApiSdk,
+  type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
-import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
+import type { BotDocumentName, BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { injectable } from 'inversify';
 import {
   BotDocumentEntity,
@@ -15,6 +16,7 @@ import {
   BotEntity,
   BotGroupEntity,
   BotMemoryFactEntity,
+  ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotInput,
 } from './bot.entity';
@@ -29,6 +31,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     dto.groupId,
     dto.position,
     dto.homeHostId,
+    dto.provider,
     dto.model,
     dto.effort,
     dto.permission,
@@ -36,6 +39,15 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
     new Date(dto.lastActivityAt),
+  );
+}
+
+function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntity {
+  return new ModelProviderEntity(
+    dto.provider,
+    dto.configured,
+    dto.keyHint,
+    dto.updatedAt ? new Date(dto.updatedAt) : null,
   );
 }
 
@@ -232,5 +244,31 @@ export class BotsRepository {
   @MapApiError(BotsErrors.CLEAR_MEMORY_FAILED)
   async clearMemory(id: string): Promise<void> {
     await unwrap(heyApiSdk.clearBotMemory({ path: { id } }), BotsErrors.CLEAR_MEMORY_FAILED);
+  }
+
+  @MapApiError(BotsErrors.FETCH_PROVIDERS_FAILED)
+  async findModelProviders(): Promise<ModelProviderEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findModelProviderCredentials(),
+      BotsErrors.FETCH_PROVIDERS_FAILED,
+    );
+    return data.map(toProvider);
+  }
+
+  /** Stores the workspace's key for `provider`, replacing the one there. The key is never read back. */
+  @MapApiError(BotsErrors.SAVE_PROVIDER_KEY_FAILED)
+  async putModelProviderKey(provider: BotProvider, apiKey: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
+      BotsErrors.SAVE_PROVIDER_KEY_FAILED,
+    );
+  }
+
+  @MapApiError(BotsErrors.DELETE_PROVIDER_KEY_FAILED)
+  async removeModelProviderKey(provider: BotProvider): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteModelProviderCredential({ path: { provider } }),
+      BotsErrors.DELETE_PROVIDER_KEY_FAILED,
+    );
   }
 }

@@ -5,11 +5,11 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';
+import { BotErrors } from '../../domain/bots.errors';
 import {
   keyHintOf,
   ModelProviderCredentialEntity,
 } from '../../domain/model-provider-credential.entity';
-import { BotErrors } from '../../domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../infrastructure/provider-key-sealer.port';
 import { PutModelProviderCredentialCommand } from './put-model-provider-credential.command';
 
@@ -30,7 +30,11 @@ export class PutModelProviderCredentialCommandHandler
     private readonly credentials: ModelProviderCredentialRepositoryPort,
   ) {}
 
-  async execute({ scope, provider, apiKey }: PutModelProviderCredentialCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    provider,
+    apiKey,
+  }: PutModelProviderCredentialCommand): Promise<AggregateID> {
     const known = this.providers.provider(provider);
     if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
     this.providers.assertConfigured();

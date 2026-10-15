@@ -49,10 +49,10 @@ export class ModelProviderCredentialRepository
       .insert()
       .into(ModelProviderCredentialOrmEntity)
       .values(this.mapper.toPersistence(credential))
-      .orUpdate(['sealedKey', 'keyHint', 'updatedByUserId', 'updatedAt'], [
-        'organizationId',
-        'provider',
-      ])
+      .orUpdate(
+        ['sealedKey', 'keyHint', 'updatedByUserId', 'updatedAt'],
+        ['organizationId', 'provider'],
+      )
       .execute();
   }
 
