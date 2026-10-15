@@ -1,4 +1,5 @@
 import type { BotMessageRole } from '@oppenheimer/shared';
+import { isValidTimeZone } from '@oppenheimer/shared/automations';
 
 /** A host as the turn sees it: what the owner would see on the Hosts screen. */
 export interface BotPromptHost {
@@ -96,7 +97,8 @@ const RULES = `# Rules no instruction overrides
 - When asked to stop, stop: start no new tool call, and say what was done and what was not.`;
 
 function rightNow(input: BotPromptInput): string {
-  const zone = input.timeZone ?? 'UTC';
+  // The send path checks the zone; a row that holds a bad one anyway reads as UTC.
+  const zone = input.timeZone && isValidTimeZone(input.timeZone) ? input.timeZone : 'UTC';
   const lines = [
     `- It is ${formatNow(input.now, zone)}. This is authoritative. Give every date and time in this zone, and convert times that carry their own zone.`,
   ];

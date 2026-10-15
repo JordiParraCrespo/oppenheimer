@@ -43,7 +43,7 @@ describe('TurnCancelWatchFactory', () => {
     expect(watch.signal.aborted).toBe(false);
     await vi.advanceTimersByTimeAsync(1);
     expect(watch.signal.aborted).toBe(true);
-    expect(watch.timedOut).toBe(true);
+    expect(watch.interruption).toBe('time_limit');
   });
 
   it('reports Stop as Stop, not as the limit, when Stop comes first', async () => {
@@ -52,7 +52,7 @@ describe('TurnCancelWatchFactory', () => {
     asked = true;
     await vi.advanceTimersByTimeAsync(CANCEL_POLL_MS * 8);
     expect(watch.signal.aborted).toBe(true);
-    expect(watch.timedOut).toBe(false);
+    expect(watch.interruption).toBe('stop');
   });
 
   it('keeps looking after a read fails', async () => {

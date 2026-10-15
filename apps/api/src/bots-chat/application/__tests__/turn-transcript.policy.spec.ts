@@ -88,7 +88,7 @@ describe('TurnTranscript', () => {
       { type: 'text.delta', text: 'Working on it' },
       { type: 'done', reason: 'cancelled' },
     ].flatMap((event) => transcript.apply(event as BotEngineEvent));
-    transcript.endTurn(new Date(), true);
+    transcript.endTurn(new Date(), 'time_limit');
     expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
     expect(subject.status).toBe('failed');
     expect(subject.error).toBe(TIME_LIMIT_ERROR);
@@ -99,7 +99,7 @@ describe('TurnTranscript', () => {
     subject.start(new Date());
     const transcript = new TurnTranscript(subject);
     transcript.apply({ type: 'done', reason: 'cancelled' });
-    transcript.endTurn(new Date(), false);
+    transcript.endTurn(new Date(), 'stop');
     expect(subject.status).toBe('cancelled');
     expect(subject.error).toBeNull();
   });
