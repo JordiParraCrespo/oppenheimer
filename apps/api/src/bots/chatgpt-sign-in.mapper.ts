@@ -66,6 +66,7 @@ export class ChatgptSignInMapper {
       userCode: flow.userCode,
       organizationId: flow.organizationId,
       expiresAt: flow.expiresAt.getTime(),
+      intervalSeconds: flow.intervalSeconds,
     });
   }
 
@@ -73,8 +74,10 @@ export class ChatgptSignInMapper {
   loginFlowOf(text: string): ChatgptLoginFlow | null {
     const record = recordOf(text);
     const strings = stringsOf(record, ['deviceAuthId', 'userCode', 'organizationId'] as const);
-    if (!strings || typeof record.expiresAt !== 'number') return null;
-    return { ...strings, expiresAt: new Date(record.expiresAt) };
+    const { expiresAt, intervalSeconds } = record;
+    if (!strings || typeof expiresAt !== 'number') return null;
+    if (typeof intervalSeconds !== 'number' || !(intervalSeconds > 0)) return null;
+    return { ...strings, expiresAt: new Date(expiresAt), intervalSeconds };
   }
 
   /** What the console gets to show a started sign-in: never the device code's own id, except sealed. */

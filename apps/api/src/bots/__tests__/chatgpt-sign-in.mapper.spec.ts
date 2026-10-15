@@ -27,6 +27,7 @@ describe('ChatgptSignInMapper', () => {
       userCode: 'ABCD-1234',
       organizationId: randomUUID(),
       expiresAt: new Date('2026-10-15T12:15:00.000Z'),
+      intervalSeconds: 5,
     };
     expect(mapper.loginFlowOf(mapper.toLoginFlow(flow))).toEqual(flow);
     const { organizationId: _, ...withoutWorkspace } = flow;

@@ -9,6 +9,8 @@ export interface ChatgptLoginFlow {
   userCode: string;
   organizationId: string;
   expiresAt: Date;
+  /** The pace ChatGPT asked polls to keep, in seconds; the API holds every client to it. */
+  intervalSeconds: number;
 }
 
 /** How long a device code is polled for: the Codex CLI gives up after fifteen minutes. */

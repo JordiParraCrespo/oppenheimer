@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { CacheService } from '@oppenheimer/backend-cache';
 import type { ChatgptCredentialResolver } from '../../../application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from '../../../application/model-provider.resolver';
 import { ChatgptSignInMapper } from '../../../chatgpt-sign-in.mapper';
@@ -18,7 +19,8 @@ import { PollChatgptLoginCommandHandler } from '../poll-chatgpt-login.command-ha
  * approved one is stored for the poller's workspace, and a sign-in that lapsed,
  * was started in another workspace, was tampered with or that ChatGPT refused
  * answers BOTS_016 without storing anything (and, but for the refusal, without
- * asking ChatGPT).
+ * asking ChatGPT). ChatGPT is asked once per interval it set for the code,
+ * however fast a client polls.
  */
 const organizationId = randomUUID();
 const scope = (org: string | null = organizationId): AccessScope => ({
@@ -54,6 +56,7 @@ function flowId(overrides: { organizationId?: string; expiresAt?: Date } = {}): 
     userCode: 'ABCD-1234',
     organizationId: overrides.organizationId ?? organizationId,
     expiresAt: overrides.expiresAt ?? new Date(Date.now() + 60_000),
+    intervalSeconds: 5,
   });
   return sealer.seal(flow).toString('base64url');
 }
@@ -61,14 +64,24 @@ function flowId(overrides: { organizationId?: string; expiresAt?: Date } = {}): 
 function setup(poll: () => Promise<ChatgptDevicePoll>) {
   const auth: Pick<ChatgptAuthPort, 'pollDeviceCode'> = { pollDeviceCode: vi.fn(poll) };
   const chatgpt: Pick<ChatgptCredentialResolver, 'connect'> = { connect: vi.fn() };
+  // A real setIfAbsent's answer: true for the first call per key while it lives.
+  const paced = new Set<string>();
+  const cache: Pick<CacheService, 'setIfAbsent'> = {
+    setIfAbsent: vi.fn(async (key: string) => {
+      if (paced.has(key)) return false;
+      paced.add(key);
+      return true;
+    }),
+  };
   const handler = new PollChatgptLoginCommandHandler(
     new ModelProviderResolver(sealer),
     auth as ChatgptAuthPort,
     sealer,
     mapper,
     chatgpt as ChatgptCredentialResolver,
+    cache as CacheService,
   );
-  return { handler, auth, chatgpt };
+  return { handler, auth, chatgpt, cache };
 }
 
 const command = (id: string, s = scope()) => new PollChatgptLoginCommand({ scope: s, flowId: id });
@@ -107,5 +120,16 @@ describe('PollChatgptLoginCommandHandler', () => {
     });
     await expect(handler.execute(command(flowId()))).rejects.toMatchObject({ code: 'BOTS_016' });
     expect(chatgpt.connect).not.toHaveBeenCalled();
+  });
+
+  it('asks ChatGPT once per interval of the code, and answers pending in between', async () => {
+    const { handler, auth, cache } = setup(async () => ({ status: 'pending' }));
+    const id = flowId();
+    await expect(handler.execute(command(id))).resolves.toBe(false);
+    await expect(handler.execute(command(id))).resolves.toBe(false);
+    expect(auth.pollDeviceCode).toHaveBeenCalledTimes(1);
+    const [key, , ttl] = vi.mocked(cache.setIfAbsent).mock.calls[0];
+    expect(key).not.toContain('device-placeholder');
+    expect(ttl).toBe(5);
   });
 });

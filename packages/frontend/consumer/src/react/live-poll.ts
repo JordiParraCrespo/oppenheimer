@@ -33,7 +33,9 @@ import { useStreamCovers } from './workspace-stream-status';
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
  * - `chatgptLogin`: whether the person approved a ChatGPT sign-in code on
  *   OpenAI's page, which they do in another tab: it keeps going in the
- *   background. Five seconds is the pace ChatGPT's device flow asks for.
+ *   background. Five seconds is the pace ChatGPT's device flow usually asks
+ *   for; when it asks for a slower one, the API answers the faster polls
+ *   "pending" without asking ChatGPT, so this interval never sets the pace.
  * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
  *   back while a session's terminal waits on it. A reader who left the tab is
  *   redialled by the terminal's own visibility wake, so it still pauses.

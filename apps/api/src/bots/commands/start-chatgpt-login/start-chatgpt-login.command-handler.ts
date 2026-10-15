@@ -39,6 +39,7 @@ export class StartChatgptLoginCommandHandler
       userCode: code.userCode,
       organizationId: scope.organizationId,
       expiresAt,
+      intervalSeconds: code.intervalSeconds,
     });
     const flowId = this.sealer.seal(flow).toString('base64url');
     return this.mapper.toLoginResponse(flowId, code, expiresAt);
