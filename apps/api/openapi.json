@@ -16275,6 +16275,16 @@
               }
             }
           },
+          "422": {
+            "description": "BOTS_017 — ChatGPT connects by signing in, not with a key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "BOTS_011 — Model providers are not configured on this server",
             "content": {
@@ -16348,6 +16358,198 @@
           }
         ],
         "summary": "Forget the workspace's key for a model provider",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/model-providers/chatgpt/login": {
+      "post": {
+        "description": "ChatGPT's device code flow, as the Codex CLI runs it: the person types `userCode` on `verificationUrl` and the console polls with `flowId` until the sign-in is stored. Bots on the `chatgpt` provider then run on that ChatGPT subscription.",
+        "operationId": "startChatgptLogin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatgptLoginResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "BOTS_019 — ChatGPT's sign-in is busy",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "BOTS_020 — ChatGPT's sign-in could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start signing the workspace in to ChatGPT",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/model-providers/chatgpt/login/poll": {
+      "post": {
+        "description": "Asks ChatGPT whether the person approved the code. `connected` means the sign-in is stored as the workspace's ChatGPT credential; `pending` means poll again after the interval.",
+        "operationId": "pollChatgptLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PollChatgptLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatgptLoginStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "BOTS_018 — The ChatGPT sign-in expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "BOTS_019 — ChatGPT's sign-in is busy",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "BOTS_020 — ChatGPT's sign-in could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check on a ChatGPT sign-in",
         "tags": ["Bots"]
       }
     },
@@ -24892,7 +25094,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"],
+            "enum": ["anthropic", "glm", "openai", "chatgpt"],
             "description": "Who answers it, and so which engine runs."
           },
           "model": {
@@ -24981,7 +25183,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           }
         }
       },
@@ -25020,7 +25222,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           },
           "model": {
             "type": "string",
@@ -25256,7 +25458,7 @@
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           },
           "configured": {
             "type": "boolean",
@@ -25285,6 +25487,54 @@
           }
         },
         "required": ["apiKey"]
+      },
+      "ChatgptLoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "flowId": {
+            "type": "string",
+            "description": "The sign-in, sealed: opaque to the console, handed back on every poll."
+          },
+          "userCode": {
+            "type": "string",
+            "description": "The code the person types on `verificationUrl`."
+          },
+          "verificationUrl": {
+            "type": "string",
+            "description": "OpenAI's page where the code is typed."
+          },
+          "intervalSeconds": {
+            "type": "number",
+            "description": "How long to wait between polls, in seconds."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the code stops working."
+          }
+        },
+        "required": ["flowId", "userCode", "verificationUrl", "intervalSeconds", "expiresAt"]
+      },
+      "PollChatgptLoginRequest": {
+        "type": "object",
+        "properties": {
+          "flowId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        },
+        "required": ["flowId"]
+      },
+      "ChatgptLoginStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "connected"]
+          }
+        },
+        "required": ["status"]
       },
       "BotToolStepResponseDto": {
         "type": "object",
@@ -25388,7 +25638,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           },
           "model": {
             "type": "string",

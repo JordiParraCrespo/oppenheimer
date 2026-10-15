@@ -54,7 +54,7 @@ export class SummarizeBotConversationCommandHandler
     botId,
     metadata,
   }: SummarizeBotConversationCommand): Promise<void> {
-    const target = await this.access.ownModel(organizationId, botId);
+    const target = await this.access.ownModel(organizationId, botId, new Date());
     if (!target) return;
     const found = await this.summaries.findForBot(organizationId, botId);
     const summary = found.isSome() ? found.unwrap() : null;

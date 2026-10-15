@@ -1,17 +1,17 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
+import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
 import type { BotRepositoryPort } from '../../../bots/database/bot.repository.port';
 import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../../bots/database/bot-memory-fact.repository.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../../bots/database/model-provider-credential.repository.port';
-import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
+import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
@@ -46,10 +46,7 @@ function setup(
   };
   const access = new BotModelAccessResolver(
     { findForTurn: async () => Some(bot) } as unknown as BotRepositoryPort,
-    {
-      findForRun: async () => Some({ sealedKey: Buffer.from('k') }),
-    } as unknown as ModelProviderCredentialRepositoryPort,
-    { isConfigured: () => true, open: () => 'key' } as unknown as ProviderKeySealerPort,
+    { forTurn: async () => ({ apiKey: 'key' }) } satisfies TurnCredentialsPort,
   );
   const resolver = new BotTurnContextResolver(
     access,
@@ -64,6 +61,7 @@ function setup(
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
     { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
+    {} as BotApprovalRequestFactory,
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({

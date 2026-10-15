@@ -43,11 +43,11 @@ export const BOT_TURN_MAX_STEPS = 20;
  * soul, instructions and memory become the system prompt, the same from turn
  * to turn while they are), the conversation before this turn (its summary,
  * then the newest messages after it that fit the history budget), the
- * workspace's key for the turn's provider, opened, and this turn's message,
- * opened by the moment it runs in: the sender's time, the bot's home host and
- * the owner's hosts, read in the owner's scope. The bot's own
- * rows are read by the turn's workspace; what the owner can reach is read
- * as the owner, so the bot sees no more than they do.
+ * credential the turn's provider runs on (a key, or a refreshed sign-in),
+ * and this turn's message, opened by the moment it runs in: the sender's
+ * time, the bot's home host and the owner's hosts, read in the owner's
+ * scope. The bot's own rows are read by the turn's workspace; what the owner
+ * can reach is read as the owner, so the bot sees no more than they do.
  */
 @Injectable()
 export class BotTurnContextResolver {
@@ -68,7 +68,7 @@ export class BotTurnContextResolver {
 
   async resolve(turn: BotTurnEntity, message: string, now: Date): Promise<BotTurnContext> {
     const bot = await this.access.bot(turn.organizationId, turn.botId);
-    const apiKey = await this.access.apiKey(turn.organizationId, turn.provider);
+    const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
@@ -105,7 +105,7 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     return {
       provider: turn.provider,
-      apiKey,
+      ...credential,
       model: turn.model,
       effort: ENGINE_EFFORTS.includes(turn.effort ?? '') ? (turn.effort as BotEffort) : null,
       systemPrompt: composeBotSystemPrompt({

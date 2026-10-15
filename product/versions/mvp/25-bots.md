@@ -50,6 +50,7 @@ worker runs it and streams what happens back to the chat.
   | Anthropic | Claude Agent SDK | Anthropic's API |
   | GLM | Claude Agent SDK | z.ai's Anthropic-compatible endpoint |
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
+  | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
 
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
@@ -129,6 +130,26 @@ worker runs it and streams what happens back to the chat.
   encrypted (Settings → Model providers). The worker reads it for the
   turn and hands it to the engine; it is never written to a host, never
   returned by the API, and never logged.
+- **ChatGPT runs on a subscription, not a key** (2026-10-15). Connect
+  ChatGPT signs the workspace in the way the Codex CLI and OpenClaw do:
+  OpenAI's device code flow on the Codex CLI's public client (the
+  browser-redirect flow only ever lands on `localhost:1455`, which a hosted
+  console cannot receive). The person types a one-time code on OpenAI's
+  page; the console polls a sealed handle the API gave it, so the API keeps
+  nothing while it waits. What is stored, sealed like a key, is the
+  sign-in's access and refresh tokens and the account they act for. A turn
+  calls `https://chatgpt.com/backend-api/codex/responses` with the account
+  header, `store: false` and its reasoning sent back encrypted. The worker
+  refreshes the token when a turn finds it about to lapse, one refresh per
+  workspace at a time (turns on the same replica share it; one on another
+  replica fails at once rather than wait), written only over the tokens it
+  read; a refresh
+  ChatGPT refuses removes the sign-in, and the bot answers that it has no
+  key. Usage counts against the subscription's limits, not API billing.
+  The route is not a published API: OpenAI may change the client, the
+  headers or the path, and OpenClaw's docs are the reference for what it
+  allows (they state OpenAI supports subscription sign-in in external
+  tools).
 - **Streaming.** The worker publishes the turn's progress (text as it is
   written, tool steps, the end) on a per-bot channel; the console reads it
   over Server-Sent Events while the chat is open and re-reads the stored
@@ -453,6 +474,10 @@ The decisions it produced:
   2026-10-14's "*Ask for approval* comes with slice 4".
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
+- 2026-10-15: **ChatGPT is a fourth provider**, on the OpenAI engine,
+  signed in with a ChatGPT subscription instead of a key (§2). It adds to
+  2026-10-15's three providers rather than replacing one: OpenAI on an API
+  key stays.
 - 2026-10-15: **the engine's `WebFetch` and subagents are off.** Battle
   tests found `WebFetch` reaching the server's loopback with no
   private-address check, and bots sending subagents through the server's

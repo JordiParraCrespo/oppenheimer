@@ -1,7 +1,8 @@
 # @oppenheimer/backend-agents — Agent Instructions
 
 The engines a bot's turn runs on: one `BotEngine` port over the Claude Agent
-SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`). Designed in
+SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`, and `chatgpt`,
+the same engine pointed at ChatGPT's Codex backend on a subscription sign-in). Designed in
 `product/versions/mvp/25-bots.md` §2.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) and

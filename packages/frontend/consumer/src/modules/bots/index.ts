@@ -4,6 +4,8 @@ export {
   BotEntity,
   BotGroupEntity,
   BotMemoryFactEntity,
+  type ChatgptLoginEntity,
+  type ChatgptLoginState,
   documentConflictRevision,
   type SaveBotDocumentInput,
   type UpdateBotInput,

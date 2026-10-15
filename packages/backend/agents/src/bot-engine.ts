@@ -1,5 +1,8 @@
-/** Who answers a bot's turn. `glm` is z.ai's Anthropic-compatible endpoint. */
-export type BotProvider = 'anthropic' | 'glm' | 'openai';
+/**
+ * Who answers a bot's turn. `glm` is z.ai's Anthropic-compatible endpoint;
+ * `chatgpt` is a ChatGPT subscription, through the backend the Codex CLI uses.
+ */
+export type BotProvider = 'anthropic' | 'glm' | 'openai' | 'chatgpt';
 
 /** How hard the model thinks. Each engine maps it to what its SDK takes. */
 export type BotEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
@@ -20,8 +23,13 @@ export interface BotEngineTool {
 
 export interface BotTurnRequest {
   provider: BotProvider;
-  /** Passed per call; the package never reads a key from the environment. */
+  /**
+   * Passed per call; the package never reads a key from the environment. For
+   * `chatgpt` it is the ChatGPT sign-in's access token, refreshed by the caller.
+   */
   apiKey: string;
+  /** The ChatGPT account the access token acts for. Required for `chatgpt`, ignored otherwise. */
+  accountId?: string;
   /** Overrides the provider's default endpoint. */
   baseUrl?: string;
   model: string;
@@ -88,6 +96,7 @@ export type BotCompletionRequest = Pick<
   BotTurnRequest,
   | 'provider'
   | 'apiKey'
+  | 'accountId'
   | 'baseUrl'
   | 'model'
   | 'effort'

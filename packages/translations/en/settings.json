@@ -115,7 +115,8 @@
     "providers": {
       "anthropic": "Claude models, through Anthropic’s API.",
       "glm": "GLM models, through z.ai.",
-      "openai": "GPT models, through OpenAI’s API."
+      "openai": "GPT models, through OpenAI’s API.",
+      "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key."
     },
     "dialog": {
       "title": "{{provider}} key",
@@ -124,6 +125,26 @@
       "save": "Save key",
       "saving": "Saving…",
       "failed": "Couldn’t save the key."
+    },
+    "signedIn": "Signed in · account ending in {{hint}}",
+    "notConnected": "Not connected",
+    "connect": "Connect ChatGPT",
+    "reconnect": "Sign in again",
+    "disconnect": "Disconnect",
+    "disconnectLabel": "Disconnect {{provider}}",
+    "chatgpt": {
+      "title": "Connect ChatGPT",
+      "description": "Sign in to ChatGPT and bots on ChatGPT run on your subscription, not on API billing.",
+      "step": "Open OpenAI’s sign-in page and enter this code:",
+      "open": "Open sign-in page",
+      "codeTitle": "One-time code",
+      "waiting": "Waiting for you to approve the sign-in…",
+      "expires": "The code works for 15 minutes.",
+      "expired": "This code expired. Get a new one to try again.",
+      "newCode": "Get a new code",
+      "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
+      "done": "Done",
+      "failed": "Couldn’t sign in to ChatGPT."
     }
   }
 }

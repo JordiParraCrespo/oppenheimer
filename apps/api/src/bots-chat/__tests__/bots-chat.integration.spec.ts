@@ -4,6 +4,8 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
+import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
 import { BotMemoryFactMapper } from '../../bots/bot-memory-fact.mapper';
@@ -23,6 +25,7 @@ import { BotMemoryFactEntity } from '../../bots/domain/bot-memory-fact.entity';
 import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
+import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
@@ -411,11 +414,13 @@ describe('bots chat (integration)', () => {
       seal: (plaintext) => Buffer.from(`sealed:${plaintext}`),
       open: (sealed) => sealed.toString().replace(/^sealed:/, ''),
     };
+    // A key provider's turn never asks the ChatGPT resolver.
+    const chatgpt = {} as ChatgptCredentialResolver;
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
     const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
     return new BotTurnContextResolver(
-      new BotModelAccessResolver(bots, credentials, sealer),
+      new BotModelAccessResolver(bots, new TurnCredentialsResolver(credentials, sealer, chatgpt)),
       documents,
       memory,
       messages,
@@ -423,6 +428,7 @@ describe('bots chat (integration)', () => {
       owners,
       hosts,
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
+      {} as BotApprovalRequestFactory,
     );
   }
 
