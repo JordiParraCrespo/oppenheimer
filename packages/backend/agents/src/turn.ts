@@ -16,9 +16,14 @@ export function describeError(error: unknown): string {
   }
 }
 
-/** `text` with every occurrence of `secret` replaced, so an error can be stored and shown. */
+/** `text` with every occurrence of `secret` replaced, so it can be stored and shown. */
+export function redactSecret(text: string, secret: string): string {
+  return secret.length >= 4 ? text.split(secret).join('[redacted]') : text;
+}
+
+/** An error's text, redacted and cut to a length a chat can show. */
 export function scrubSecret(text: string, secret: string): string {
-  const scrubbed = secret.length >= 4 ? text.split(secret).join('[redacted]') : text;
+  const scrubbed = redactSecret(text, secret);
   return scrubbed.length > MAX_ERROR_LENGTH ? `${scrubbed.slice(0, MAX_ERROR_LENGTH)}…` : scrubbed;
 }
 
@@ -36,21 +41,26 @@ export function failed(error: string): DoneEvent {
 /**
  * Runs one of our tools for the model. A throw, or a result that is not the
  * contract's shape, becomes an error result the model reads; it never ends
- * the turn.
+ * the turn. The result is what both the model and `tool.finished` see, so
+ * the request's key is redacted from it here, before either does: a tool
+ * failure can echo a key the way a provider error can.
  */
 export async function runTool(
   tool: BotEngineTool,
   input: unknown,
-  signal: AbortSignal,
+  context: { signal: AbortSignal; apiKey: string },
 ): Promise<{ content: string; isError: boolean }> {
+  let content: string;
+  let isError: boolean;
   try {
-    const result = await tool.run(input, { signal });
-    const content =
-      typeof result?.content === 'string' ? result.content : String(result?.content ?? '');
-    return { content, isError: result?.isError === true };
+    const result = await tool.run(input, { signal: context.signal });
+    content = typeof result?.content === 'string' ? result.content : String(result?.content ?? '');
+    isError = result?.isError === true;
   } catch (error) {
-    return { content: describeError(error) || 'The tool failed.', isError: true };
+    content = describeError(error) || 'The tool failed.';
+    isError = true;
   }
+  return { content: redactSecret(content, context.apiKey), isError };
 }
 
 /**

@@ -87,6 +87,34 @@ export function scratchDirs(scratchDir: string): ScratchDirs {
   };
 }
 
+/**
+ * The variables through which Claude Code picks a model on its own: the
+ * main loop, the small model it uses for housekeeping, the tier aliases a
+ * subagent may name (`haiku`, `sonnet`, `opus`, `fable`) and a subagent's
+ * or workflow's default. Read from Claude Code 2.1.300, the binary
+ * `@anthropic-ai/claude-agent-sdk` 0.3.300 ships; recheck the list when the
+ * SDK is upgraded (`strings` on the binary, `grep _MODEL`).
+ */
+export const MODEL_VARIABLES = [
+  'ANTHROPIC_MODEL',
+  'ANTHROPIC_DEFAULT_MODEL',
+  'ANTHROPIC_SMALL_FAST_MODEL',
+  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+  'ANTHROPIC_DEFAULT_SONNET_MODEL',
+  'ANTHROPIC_DEFAULT_OPUS_MODEL',
+  'ANTHROPIC_DEFAULT_FABLE_MODEL',
+  'CLAUDE_CODE_SUBAGENT_MODEL',
+  'CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL',
+] as const;
+
+/**
+ * Sets every model Claude Code would pick on its own to the bot's model:
+ * the endpoint may serve nothing else, and the bot's owner chose this one.
+ */
+export function pinAllModels(env: Record<string, string>, model: string): void {
+  for (const name of MODEL_VARIABLES) env[name] = model;
+}
+
 /** The whole environment of the Claude Code subprocess, built from nothing. */
 export function claudeEnv(
   request: Pick<BotTurnRequest, 'provider' | 'apiKey' | 'baseUrl' | 'model'>,
@@ -108,16 +136,8 @@ export function claudeEnv(
     DISABLE_AUTOUPDATER: '1',
     DISABLE_TELEMETRY: '1',
     DISABLE_ERROR_REPORTING: '1',
-    // Every model Claude Code would pick on its own (the small model for
-    // housekeeping, a subagent's default) is the bot's model: the endpoint
-    // may serve nothing else, and the bot's owner chose this one.
-    ANTHROPIC_MODEL: request.model,
-    ANTHROPIC_SMALL_FAST_MODEL: request.model,
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: request.model,
-    ANTHROPIC_DEFAULT_SONNET_MODEL: request.model,
-    ANTHROPIC_DEFAULT_OPUS_MODEL: request.model,
-    CLAUDE_CODE_SUBAGENT_MODEL: request.model,
   });
+  pinAllModels(env, request.model);
   if (request.provider === 'glm') {
     env.ANTHROPIC_BASE_URL = request.baseUrl ?? GLM_BASE_URL;
     env.ANTHROPIC_AUTH_TOKEN = request.apiKey;
@@ -158,7 +178,6 @@ export function claudeOptions(
   request: BotTurnRequest,
   dirs: ScratchDirs,
   toolServer: McpServer,
-  abortController: AbortController,
   onStderr: (data: string) => void,
 ): Options {
   const ourTools = request.tools.map((tool) => qualifiedToolName(tool.name));
@@ -182,7 +201,6 @@ export function claudeOptions(
     includePartialMessages: true,
     maxTurns: request.maxSteps ?? DEFAULT_MAX_STEPS,
     ...(request.effort ? { effort: request.effort } : {}),
-    abortController,
     stderr: onStderr,
   };
 }

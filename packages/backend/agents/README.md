@@ -42,8 +42,9 @@ for await (const event of engine.run({
 
 **Keys are passed per call and never read from the environment.** The
 package reads no `ANTHROPIC_*`, `OPENAI_*` or other provider variable, and
-it never logs a key; an error that echoes one has it replaced with
-`[redacted]` before it leaves the engine.
+it never logs a key; an error or a tool result that echoes one has it
+replaced with `[redacted]` before it leaves the engine, and a tool result
+before the model reads it.
 
 ## The event contract
 
@@ -98,13 +99,17 @@ image must install the one for its platform.
 ## Testing
 
 `FakeBotEngine` is for the API's tests. Give it a script per request; it
-replays the events under the same contract, runs a tool the script calls
-(and reports its real output), and ends a script with no `done` as
-`completed`:
+replays the events under the same contract and ends a script with no `done`
+as `completed`. A script never reports a tool's end: every scripted
+`tool.started` is followed by the fake's own `tool.finished`, from the
+call's `result` when the script gives one, otherwise from running the
+request's tool of that name (an unknown name is an error result, as on a
+real engine):
 
 ```ts
 const engine = new FakeBotEngine(() => [
   { type: 'tool.started', callId: 'c1', name: 'remember', input: { fact: 'likes tea' } },
+  { type: 'tool.started', callId: 'c2', name: 'WebSearch', input: {}, result: { output: 'hits' } },
   { type: 'text.done', text: 'Noted.' },
 ]);
 ```
