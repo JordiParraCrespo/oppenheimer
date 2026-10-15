@@ -464,3 +464,8 @@ earlier note:
   name was settled as the id the runner receives when it is paired
   (`POST /hosts/register` answers it), so `session.create` and
   `repository.prepare` carry the workspace only (24 §2, §5).
+- `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
+  milestone bar on to ten days past its last milestone, which read as the
+  bar overshooting the dates. On 2026-10-15 the owner had it end on the last
+  milestone's day, as a timeline bar does in Notion; the three-week lead-in
+  before the first milestone or today stays (23 §1).

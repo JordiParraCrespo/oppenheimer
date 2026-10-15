@@ -11,8 +11,8 @@ const PX = 16;
 const DAY = 864e5;
 /** A project's track starts three weeks before its first milestone (or today)… */
 const LEAD_DAYS = 21;
-/** …and runs ten days past its last. */
-const TAIL_DAYS = 10;
+/** …and ends on its last milestone's day, with room for that diamond's half (px). */
+const TAIL_PX = 12;
 /** The timeline keeps two weeks of room past the earliest and the latest track… */
 const MARGIN_DAYS = 14;
 /** …and always shows six weeks ahead of today. */
@@ -85,7 +85,7 @@ function daysBetween(a: Date, b: Date) {
 
 /**
  * Where everything sits: each project's span (three weeks before its first
- * milestone or today, to ten days past its last), the timeline's start on a
+ * milestone or today, to the day of its last), the timeline's start on a
  * Monday two weeks before the earliest span, its end six weeks past today
  * at least, and the week and month marks between.
  */
@@ -98,7 +98,7 @@ function layout(rows: TimelineRow[], today: IsoDate, locale: string) {
       return {
         row: r,
         from: new Date(Math.min(Math.min(...dues), +now) - LEAD_DAYS * DAY),
-        to: new Date(Math.max(...dues) + TAIL_DAYS * DAY),
+        to: new Date(Math.max(...dues)),
       };
     });
   const earliest = new Date(Math.min(+now, ...spans.map((s) => +s.from)) - MARGIN_DAYS * DAY);
@@ -220,7 +220,7 @@ function MilestoneMarker({
  *   as an inverted mono pill with a line through every row.
  * - **Row** (112px): the project's name with its folder and its done share,
  *   over a 30px track on the card from three weeks before its first
- *   milestone (or today) to ten days past its last.
+ *   milestone (or today) to the day of its last, ending on that diamond.
  * - **Milestone**: a 10px diamond on the track at its due day, its name under
  *   it. Open is the card with a muted stroke; done fills muted; under the
  *   pointer or focus it fills in ink, grows to 1.2 and shows a card with the
@@ -333,7 +333,7 @@ function MilestoneTimeline({
           <div key={row.id} className="relative h-28">
             {/* The name rides its track: it sticks to the left edge while the
                 track is scrolled past it, and leaves with the track's end. */}
-            <div className="absolute top-4.5" style={{ left: xOf(from), width: xOf(to) - xOf(from) }}>
+            <div className="absolute top-4.5" style={{ left: xOf(from), width: xOf(to) - xOf(from) + TAIL_PX }}>
               <button
                 type="button"
                 onClick={() => onOpenRow?.(row.id)}
@@ -346,7 +346,7 @@ function MilestoneTimeline({
             </div>
             <div
               className="absolute top-12 h-7.5 rounded-sm border border-border-subtle bg-card"
-              style={{ left: xOf(from), width: xOf(to) - xOf(from) }}
+              style={{ left: xOf(from), width: xOf(to) - xOf(from) + TAIL_PX }}
             />
             {row.milestones.map((m) => (
               <MilestoneMarker
