@@ -1,17 +1,8 @@
-import type { CreateSessionDto, SessionPermissionDto } from '@oppenheimer/shared';
+import type { CreateSessionDto } from '@oppenheimer/shared';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 
 /** The agent a review session runs. */
 const REVIEW_AGENT = 'claude-code' as const;
-
-/**
- * The permission level a review session runs at. A review reads and runs
- * (`git diff`, tests) but must not edit, and the catalog's levels cannot say
- * that: `auto` is Claude Code's `acceptEdits`, which still prompts on every
- * command, so the review takes `full` and the prompt rules out edits, commits
- * and pushes. A level for Claude Code's own `auto` mode would replace this.
- */
-const REVIEW_PERMISSION: SessionPermissionDto = 'full';
 
 /** What a review session needs to know of the pull request it reviews. */
 export interface ReviewedPullRequest {
@@ -44,7 +35,9 @@ export function reviewPrompt(pull: ReviewedPullRequest): string {
 /**
  * The session a review asks for: Claude Code on its default model, in a
  * worktree cut from the head branch on the picked host, on the review prompt.
- * It runs without permission prompts (`REVIEW_PERMISSION`).
+ * It runs at `auto`, Claude Code's auto mode: no prompt on every `git diff`
+ * or test run, but each action is checked before it runs, since a pull
+ * request's own text reaches the agent.
  */
 export function reviewSessionInput(pull: ReviewedPullRequest, hostId: string): CreateSessionDto {
   const models = CODING_AGENTS[REVIEW_AGENT].models;
@@ -61,7 +54,7 @@ export function reviewSessionInput(pull: ReviewedPullRequest, hostId: string): C
       },
     ],
     cwdGithubRepoId: pull.githubRepoId,
-    launch: { model, permission: REVIEW_PERMISSION },
+    launch: { model, permission: 'auto' },
     prompt: reviewPrompt(pull),
   };
 }

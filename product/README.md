@@ -464,3 +464,10 @@ earlier note:
   name was settled as the id the runner receives when it is paired
   (`POST /hosts/register` answers it), so `session.create` and
   `repository.prepare` carry the workspace only (24 §2, §5).
+- The agent catalog mapped Claude Code's `auto` level to
+  `--permission-mode acceptEdits`, which prompts on every shell command,
+  and review sessions launched at `ask` (both left open in
+  `versions/mvp/16-automations-architecture.md` and
+  `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
+  Claude Code's own auto mode (`--permission-mode auto`), which checks each
+  action before it runs, and made it the level review sessions start at.
