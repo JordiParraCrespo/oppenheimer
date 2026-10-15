@@ -3,6 +3,8 @@ import type { Mapper } from '@oppenheimer/backend-ddd';
 import { BOT_EVENT_OUTCOMES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
+import type { SummarizableMessage } from './domain/bot-summary.policy';
+import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotMessageResponseDto } from './dtos/bot-message.response.dto';
 
 @Injectable()
@@ -63,6 +65,18 @@ export class BotMessageMapper
     dto.event = entity.event ? { ...entity.event } : null;
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
+  }
+
+  /** A stored message as the summary weighs it, with whether its turn (in `turnStatus`) has ended. */
+  toSummarizable(record: BotMessageOrmEntity, turnStatus: unknown): SummarizableMessage {
+    const message = this.toDomain(record);
+    return {
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      createdAt: message.createdAt,
+      turnEnded: ENDED_TURN_STATUSES.some((status) => status === turnStatus),
+    };
   }
 }
 

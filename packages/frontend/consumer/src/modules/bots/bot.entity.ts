@@ -174,3 +174,29 @@ export class ModelProviderEntity {
     public readonly updatedAt: Date | null,
   ) {}
 }
+
+/**
+ * A ChatGPT sign-in in progress: the code the person types on OpenAI's page,
+ * and the sealed handle the console polls with. Nothing in it is a credential
+ * the console could use; the tokens stay on the server.
+ */
+export class ChatgptLoginEntity {
+  constructor(
+    public readonly flowId: string,
+    public readonly userCode: string,
+    public readonly verificationUrl: string,
+    public readonly intervalSeconds: number,
+    public readonly expiresAt: Date,
+  ) {}
+}
+
+/** Where a ChatGPT sign-in stands, as the dialog draws it. */
+export type ChatgptLoginState = 'pending' | 'connected' | 'expired';
+
+/** The code the API answers a poll of a lapsed or refused sign-in with. */
+const CHATGPT_LOGIN_EXPIRED = 'BOTS_018';
+
+/** Whether `error` is the API saying the sign-in being polled is over, and a new one is needed. */
+export function isChatgptLoginExpired(error: unknown): boolean {
+  return (error as Partial<AppError> | null)?.code === CHATGPT_LOGIN_EXPIRED;
+}

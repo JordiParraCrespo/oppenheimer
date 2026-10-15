@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { DataSource, type EntityManager, In, Repository } from 'typeorm';
+import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
 import type { BotMessageRepositoryPort } from './bot-message.repository.port';
+import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 
 /** How much of a message the sidebar's line keeps. */
 const PREVIEW_MAX = 200;
@@ -76,10 +78,11 @@ export class BotMessageRepository
     organizationId: string,
     botId: string,
     turnId: string,
+    afterMessageId: string | null,
     limit: number,
   ): Promise<BotMessageEntity[]> {
     // IDX_bot_message_bot: the bot's messages before this turn was sent.
-    const records = await this.repository
+    const query = this.repository
       .createQueryBuilder('message')
       .where('message.organizationId = :organizationId AND message.botId = :botId', {
         organizationId,
@@ -89,13 +92,62 @@ export class BotMessageRepository
       .andWhere(`message.role <> 'activity'`)
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
-      )
+      );
+    const records = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .take(limit)
       .getMany();
     return records.reverse().map((record) => this.mapper.toDomain(record));
   }
+
+  async findUncovered(
+    organizationId: string,
+    botId: string,
+    afterMessageId: string | null,
+    limit: number,
+  ): Promise<SummarizableMessage[]> {
+    // IDX_bot_message_bot, read forwards from the cutoff; each message's turn
+    // by its primary key, for whether it has ended.
+    const query = this.repository
+      .createQueryBuilder('message')
+      .innerJoin(
+        BotTurnOrmEntity,
+        'turn',
+        'turn.organizationId = message.organizationId AND turn.id = message.turnId',
+      )
+      .addSelect('turn.status', 'turnStatus')
+      .where('message.organizationId = :organizationId AND message.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere(`message.role <> 'activity'`);
+    const { entities, raw } = await after(query, afterMessageId)
+      .orderBy('message.createdAt', 'ASC')
+      .addOrderBy('message.position', 'ASC')
+      .addOrderBy('message.id', 'ASC')
+      .limit(limit)
+      .getRawAndEntities<{ turnStatus: string }>();
+    return entities.map((record, index) =>
+      this.mapper.toSummarizable(record, raw[index]?.turnStatus),
+    );
+  }
+}
+
+/**
+ * Only the messages stored after `afterMessageId`, compared on the stored
+ * time itself so the cutoff keeps the database's microseconds; every message
+ * when there is no cutoff.
+ */
+function after(
+  query: SelectQueryBuilder<BotMessageOrmEntity>,
+  afterMessageId: string | null,
+): SelectQueryBuilder<BotMessageOrmEntity> {
+  if (!afterMessageId) return query;
+  return query.andWhere(
+    `message.createdAt > (SELECT c."createdAt" FROM bot_message c WHERE c."organizationId" = :organizationId AND c.id = :afterMessageId)`,
+    { afterMessageId },
+  );
 }
 
 /**

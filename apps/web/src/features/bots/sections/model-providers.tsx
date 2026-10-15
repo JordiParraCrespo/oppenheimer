@@ -8,14 +8,18 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatgptLoginDialog } from '../dialogs/chatgpt-login';
 import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
 
 /**
  * The providers, one row each: what it serves, whether the workspace has a
  * key (its last four characters), and Add key or Replace and Remove. The key
- * is typed in a dialog and never comes back. Read under Suspense, in the
- * screen's `QueryState`. A server with no sealing key can store none, so the
- * three are drawn disabled, the screen's warning as their reason.
+ * is typed in a dialog and never comes back. ChatGPT takes no key: its row
+ * signs in to a ChatGPT subscription (Connect ChatGPT, Sign in again,
+ * Disconnect), and says which account by its last characters. Read under
+ * Suspense, in the screen's `QueryState`. A server with no sealing key can
+ * store none, so the buttons are drawn disabled, the screen's warning as
+ * their reason.
  */
 export function ModelProviders() {
   const { t } = useTranslation();
@@ -36,7 +40,8 @@ export function ModelProviders() {
       />
       <SettingsGroup>
         {providers.map((row) => {
-          const label = BOT_PROVIDER_CATALOG[row.provider].label;
+          const { label, auth } = BOT_PROVIDER_CATALOG[row.provider];
+          const signIn = auth === 'sign_in';
           return (
             <SettingsListRow
               key={row.provider}
@@ -45,8 +50,17 @@ export function ModelProviders() {
               meta={t(`settings.modelProviders.providers.${row.provider}`)}
               kind={
                 row.configured && row.keyHint
-                  ? t('settings.modelProviders.keyEnding', { hint: row.keyHint })
-                  : t('settings.modelProviders.noKey')
+                  ? t(
+                      signIn
+                        ? 'settings.modelProviders.signedIn'
+                        : 'settings.modelProviders.keyEnding',
+                      { hint: row.keyHint },
+                    )
+                  : t(
+                      signIn
+                        ? 'settings.modelProviders.notConnected'
+                        : 'settings.modelProviders.noKey',
+                    )
               }
               actions={
                 <>
@@ -54,13 +68,22 @@ export function ModelProviders() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      aria-label={t('settings.modelProviders.removeLabel', { provider: label })}
+                      aria-label={t(
+                        signIn
+                          ? 'settings.modelProviders.disconnectLabel'
+                          : 'settings.modelProviders.removeLabel',
+                        { provider: label },
+                      )}
                       pending={remove.isPending && remove.variables === row.provider}
                       disabled={unavailable}
                       title={unavailableReason}
                       onClick={() => remove.mutate(row.provider)}
                     >
-                      {t('settings.modelProviders.remove')}
+                      {t(
+                        signIn
+                          ? 'settings.modelProviders.disconnect'
+                          : 'settings.modelProviders.remove',
+                      )}
                     </Button>
                   ) : null}
                   <Button
@@ -70,9 +93,15 @@ export function ModelProviders() {
                     title={unavailableReason}
                     onClick={() => setEditing(row.provider)}
                   >
-                    {row.configured
-                      ? t('settings.modelProviders.replace')
-                      : t('settings.modelProviders.add')}
+                    {t(
+                      signIn
+                        ? row.configured
+                          ? 'settings.modelProviders.reconnect'
+                          : 'settings.modelProviders.connect'
+                        : row.configured
+                          ? 'settings.modelProviders.replace'
+                          : 'settings.modelProviders.add',
+                    )}
                   </Button>
                 </>
               }
@@ -82,7 +111,9 @@ export function ModelProviders() {
           );
         })}
       </SettingsGroup>
-      {editing ? (
+      {editing === 'chatgpt' ? (
+        <ChatgptLoginDialog onClose={() => setEditing(null)} />
+      ) : editing ? (
         <ModelProviderKeyDialog provider={editing} onClose={() => setEditing(null)} />
       ) : null}
     </>

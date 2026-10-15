@@ -8,8 +8,9 @@ import { PutModelProviderCredentialCommandHandler } from '../put-model-provider-
 
 /**
  * Storing a provider key: it is sealed before the repository sees it, with
- * only its last four characters beside it; an unknown provider, a server with
- * no sealing key and a caller with no workspace are refused with nothing written.
+ * only its last four characters beside it; an unknown provider, ChatGPT (which
+ * signs in instead), a server with no sealing key and a caller with no
+ * workspace are refused with nothing written.
  */
 const scope = (organizationId: string | null = randomUUID()): AccessScope => ({
   userId: randomUUID(),
@@ -49,6 +50,12 @@ describe('PutModelProviderCredentialCommandHandler', () => {
   it('refuses a provider the catalog does not list with BOTS_012, and writes nothing', async () => {
     const { handler, credentials } = setup();
     await expect(handler.execute(command('mistral'))).rejects.toMatchObject({ code: 'BOTS_012' });
+    expect(credentials.put).not.toHaveBeenCalled();
+  });
+
+  it('refuses a key for ChatGPT, which connects by signing in, with BOTS_017, and writes nothing', async () => {
+    const { handler, credentials } = setup();
+    await expect(handler.execute(command('chatgpt'))).rejects.toMatchObject({ code: 'BOTS_017' });
     expect(credentials.put).not.toHaveBeenCalled();
   });
 

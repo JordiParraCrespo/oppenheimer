@@ -76,4 +76,6 @@ export const QUEUE_NAMES = {
   BOT_TURNS: 'bot-turns',
   /** Carry out a call its bot's owner approved, then queue the turn that reports it. */
   BOT_APPROVALS: 'bot-approvals',
+  /** Fold a bot's oldest messages into its conversation summary, once they pass the history budget. */
+  BOT_SUMMARIES: 'bot-summaries',
 } as const;

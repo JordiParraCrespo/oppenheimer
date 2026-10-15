@@ -442,10 +442,14 @@ describe('bots (integration)', () => {
     });
   });
 
-  function credential(key: string, organization = organizationId) {
+  function credential(
+    key: string,
+    organization = organizationId,
+    provider: 'glm' | 'chatgpt' = 'glm',
+  ) {
     return ModelProviderCredentialEntity.createNew({
       organizationId: organization,
-      provider: 'glm',
+      provider,
       sealedKey: Buffer.from(`sealed:${key}`),
       keyHint: key.slice(-4),
       updatedByUserId: userId,
@@ -488,6 +492,34 @@ describe('bots (integration)', () => {
     await expect(
       dataSource.query(`UPDATE model_provider_credential SET provider = 'mistral'`),
     ).rejects.toMatchObject({ constraint: 'CHK_model_provider_credential_provider' });
+  });
+
+  it("rotates a sign-in's secret only over the one it read: a second refresh loses", async () => {
+    await credentials.put(credential('signin-aaaa', organizationId, 'chatgpt'));
+    const read = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    const raced = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+
+    expect(
+      await credentials.replaceSecretIfUnchanged(read, Buffer.from('sealed:signin-bbbb'), 'bbbb'),
+    ).toBe(true);
+    expect(
+      await credentials.replaceSecretIfUnchanged(raced, Buffer.from('sealed:signin-cccc'), 'cccc'),
+    ).toBe(false);
+    const stored = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    expect(stored.sealedKey.toString()).toBe('sealed:signin-bbbb');
+    expect(stored.keyHint).toBe('bbbb');
+  });
+
+  it('removes a refused sign-in only while it is the one read, never a newer one', async () => {
+    await credentials.put(credential('signin-aaaa', organizationId, 'chatgpt'));
+    const stale = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    await credentials.put(credential('signin-dddd', organizationId, 'chatgpt'));
+
+    expect(await credentials.deleteIfUnchanged(stale)).toBe(false);
+    expect((await credentials.findForRun(organizationId, 'chatgpt')).isSome()).toBe(true);
+    const current = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    expect(await credentials.deleteIfUnchanged(current)).toBe(true);
+    expect((await credentials.findForRun(organizationId, 'chatgpt')).isNone()).toBe(true);
   });
 
   describe('made by a bot', () => {

@@ -2928,7 +2928,7 @@ export type BotResponseDto = {
     /**
      * Who answers it, and so which engine runs.
      */
-    provider: 'anthropic' | 'glm' | 'openai';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
     /**
      * A model id the provider offers; null runs the provider's default.
      */
@@ -2967,7 +2967,7 @@ export type CreateBotRequest = {
     avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
     groupId?: string | null;
     homeHostId?: string | null;
-    provider?: 'anthropic' | 'glm' | 'openai';
+    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
 };
 
 export type UpdateBotRequest = {
@@ -2977,7 +2977,7 @@ export type UpdateBotRequest = {
     groupId?: string | null;
     position?: number;
     homeHostId?: string | null;
-    provider?: 'anthropic' | 'glm' | 'openai';
+    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
     model?: string | null;
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
@@ -3066,7 +3066,7 @@ export type UpdateBotGroupRequest = {
 };
 
 export type ModelProviderCredentialResponseDto = {
-    provider: 'anthropic' | 'glm' | 'openai';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
     /**
      * Whether the workspace has a key for this provider.
      */
@@ -3080,6 +3080,37 @@ export type ModelProviderCredentialResponseDto = {
 
 export type PutModelProviderCredentialRequest = {
     apiKey: string;
+};
+
+export type ChatgptLoginResponseDto = {
+    /**
+     * The sign-in, sealed: opaque to the console, handed back on every poll.
+     */
+    flowId: string;
+    /**
+     * The code the person types on `verificationUrl`.
+     */
+    userCode: string;
+    /**
+     * OpenAI's page where the code is typed.
+     */
+    verificationUrl: string;
+    /**
+     * How long to wait between polls, in seconds.
+     */
+    intervalSeconds: number;
+    /**
+     * When the code stops working.
+     */
+    expiresAt: string;
+};
+
+export type PollChatgptLoginRequest = {
+    flowId: string;
+};
+
+export type ChatgptLoginStatusResponseDto = {
+    status: 'pending' | 'connected';
 };
 
 export type BotToolStepResponseDto = {
@@ -3133,7 +3164,7 @@ export type BotMessageResponseDto = {
 export type BotTurnResponseDto = {
     id: string;
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
-    provider: 'anthropic' | 'glm' | 'openai';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
     /**
      * The model it runs on, fixed when it was sent.
      */
@@ -11130,6 +11161,10 @@ export type PutModelProviderCredentialErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * BOTS_017 — ChatGPT connects by signing in, not with a key
+     */
+    422: ProblemDetailsDto;
+    /**
      * BOTS_011 — Model providers are not configured on this server
      */
     503: ProblemDetailsDto;
@@ -11142,6 +11177,94 @@ export type PutModelProviderCredentialResponses = {
 };
 
 export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
+
+export type StartChatgptLoginData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/model-providers/chatgpt/login';
+};
+
+export type StartChatgptLoginErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_019 — ChatGPT's sign-in is busy
+     */
+    429: ProblemDetailsDto;
+    /**
+     * BOTS_020 — ChatGPT's sign-in could not be reached
+     */
+    502: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartChatgptLoginError = StartChatgptLoginErrors[keyof StartChatgptLoginErrors];
+
+export type StartChatgptLoginResponses = {
+    200: ChatgptLoginResponseDto;
+};
+
+export type StartChatgptLoginResponse = StartChatgptLoginResponses[keyof StartChatgptLoginResponses];
+
+export type PollChatgptLoginData = {
+    body: PollChatgptLoginRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/model-providers/chatgpt/login/poll';
+};
+
+export type PollChatgptLoginErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_018 — The ChatGPT sign-in expired
+     */
+    410: ProblemDetailsDto;
+    /**
+     * BOTS_019 — ChatGPT's sign-in is busy
+     */
+    429: ProblemDetailsDto;
+    /**
+     * BOTS_020 — ChatGPT's sign-in could not be reached
+     */
+    502: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PollChatgptLoginError = PollChatgptLoginErrors[keyof PollChatgptLoginErrors];
+
+export type PollChatgptLoginResponses = {
+    200: ChatgptLoginStatusResponseDto;
+};
+
+export type PollChatgptLoginResponse = PollChatgptLoginResponses[keyof PollChatgptLoginResponses];
 
 export type FindBotConversationData = {
     body?: never;

@@ -309,6 +309,35 @@ describe('OpenAiBotEngine', () => {
     expect(done.error).not.toContain(KEY);
   });
 
+  it('marks a 429 as a rate limit, with the reset its Retry-After gives', async () => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(new Error('429 Rate limit reached'), {
+        status: 429,
+        headers: new Headers({ 'retry-after': '30' }),
+      });
+    });
+    const before = Date.now();
+
+    const events = await collect(new OpenAiBotEngine().run(request()));
+
+    const done = events.at(-1) as { reason: string; rateLimit?: { resetAt: Date | null } };
+    expect(done.reason).toBe('failed');
+    expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 30_000);
+  });
+
+  it('leaves any other failure unmarked', async () => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(new Error('500 server error'), { status: 500 });
+    });
+
+    const done = (await collect(new OpenAiBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed' });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
   it('fails when the run cannot start', async () => {
     sdk.state.run = () => {
       throw new Error('connect ECONNREFUSED');

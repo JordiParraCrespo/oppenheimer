@@ -117,8 +117,29 @@ function scrubEvent(event: BotEngineEvent, request: BotTurnRequest): BotEngineEv
   }
 }
 
-export function failed(error: string): DoneEvent {
-  return { type: 'done', reason: 'failed', error };
+export function failed(error: string, rateLimit?: { resetAt: Date | null }): DoneEvent {
+  return rateLimit
+    ? { type: 'done', reason: 'failed', error, rateLimit }
+    : { type: 'done', reason: 'failed', error };
+}
+
+/**
+ * When a rate-limit refusal says the provider may be called again: from
+ * `retry-after-ms`, or `retry-after` in seconds or as an HTTP date; null
+ * when neither is there or readable.
+ */
+export function resetFromHeaders(
+  read: (name: string) => string | null | undefined,
+  now = Date.now(),
+): Date | null {
+  const ms = Number(read('retry-after-ms'));
+  if (Number.isFinite(ms) && ms > 0) return new Date(now + ms);
+  const after = read('retry-after');
+  if (!after) return null;
+  const seconds = Number(after);
+  if (Number.isFinite(seconds)) return seconds >= 0 ? new Date(now + seconds * 1_000) : null;
+  const at = Date.parse(after);
+  return Number.isNaN(at) ? null : new Date(at);
 }
 
 /**

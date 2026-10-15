@@ -192,3 +192,41 @@ test('a model provider key from Settings, and a bot moved onto it from the chat'
   await expect(glm).toContainText('No key');
   await owner.api.dispose();
 });
+
+test('ChatGPT signs in from Settings with a device code, not a key', async ({ page }) => {
+  const owner = await provisionedUser('botchatgpt');
+  await signInAs(page, owner.user);
+  // The two routes that reach OpenAI answer here: the console's half of the
+  // flow is what this covers; the API's is its own specs'.
+  await page.route('**/api/v1/model-providers/chatgpt/login', (route) =>
+    route.fulfill({
+      json: {
+        flowId: 'flow-e2e',
+        userCode: 'E2E1-CODE',
+        verificationUrl: 'https://auth.openai.com/codex/device',
+        intervalSeconds: 1,
+        expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      },
+    }),
+  );
+  let polls = 0;
+  await page.route('**/api/v1/model-providers/chatgpt/login/poll', (route) =>
+    route.fulfill({ json: { status: ++polls < 2 ? 'pending' : 'connected' } }),
+  );
+
+  await page.goto('/settings/model-providers');
+  const chatgpt = page.getByTestId('model-provider').filter({ hasText: 'ChatGPT' });
+  await expect(chatgpt).toContainText('Not connected');
+  await chatgpt.getByRole('button', { name: 'Connect ChatGPT' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Connect ChatGPT' });
+  await expect(dialog.getByTestId('chatgpt-user-code')).toContainText('E2E1-CODE');
+  await expect(dialog.getByRole('link', { name: 'Open sign-in page' })).toHaveAttribute(
+    'href',
+    'https://auth.openai.com/codex/device',
+  );
+  await expect(dialog).toContainText('Signed in. Bots on ChatGPT now run on this subscription.');
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(dialog).toBeHidden();
+  await owner.api.dispose();
+});

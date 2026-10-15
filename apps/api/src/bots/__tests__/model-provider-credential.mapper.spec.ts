@@ -34,6 +34,7 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
       { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null },
       { provider: 'glm', configured: true, keyHint: '12ab', updatedAt: updatedAt.toISOString() },
       { provider: 'openai', configured: true, keyHint: '9f3a', updatedAt: updatedAt.toISOString() },
+      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null },
     ]);
   });
 });
