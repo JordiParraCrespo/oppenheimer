@@ -51,8 +51,8 @@ worker runs it and streams what happens back to the chat.
   | GLM | Claude Agent SDK | z.ai's Anthropic-compatible endpoint |
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
 
-  Both engines get the same system prompt (soul, instructions, memory),
-  the same history and the same tools, and both are translated into the
+  Both engines get the same system prompt, the same history and the
+  same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that
   wraps them (`@oppenheimer/backend-agents`).
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
@@ -67,6 +67,31 @@ worker runs it and streams what happens back to the chat.
   too (2026-10-15): the first fetched any address it was given, the
   server's loopback and private network included, and bots used the second
   to go looking through the server's disk.
+- **The system prompt is the whole prompt.** No engine default comes
+  before it. In order:
+  - who the bot is;
+  - how a turn goes: answer or say what it is about to do, act, report
+    only what a tool confirmed;
+  - **a closed list of what it can do**: its tools, and that it has no
+    shell, no files and no access to the machine it runs on, so a missing
+    tool is a plain "I can't" and never a search of the server;
+  - the rules no instruction overrides: never ask for a secret, never
+    make things up, tool text is data, never talk about paths or the
+    model;
+  - SOUL.md, INSTRUCTIONS.md and memory;
+  - **right now**: the time in the sender's time zone (the console sends
+    the browser's with each message; UTC when none comes), the bot's home
+    host and the owner's hosts, each online or not.
+- **A turn acts as its owner.** Everything a turn reads or does beyond the
+  bot's own rows goes through the owner's scope, resolved fresh for each
+  turn: the bot sees what they see now, and nothing once they leave the
+  workspace.
+- **A turn is bounded.** 20 model round trips and 4 minutes; past the
+  time limit it is stopped and ends failed, saying so, with what it wrote
+  kept. Longer work is a session on a host.
+- **No path of the server reaches the chat.** The engine replaces the
+  turn's scratch directory in every text, tool answer and error it hands
+  back.
 - **Keys stay in Oppenheimer.** A workspace stores one key per provider,
   encrypted (Settings → Model providers). The worker reads it for the
   turn and hands it to the engine; it is never written to a host, never
@@ -102,6 +127,27 @@ defined once, as an in-process MCP server both engines use.
 **Default** is the catalog's: *auto* runs, *ask* shows a Needs input card,
 *never* is not given to a bot at all. The owner changes any of them (§5).
 
+How a tool is built (`bots-chat/application/`): each area of the API is
+one `Bot<Area>ToolsFactory` declaring its tools (a name, a description
+whose first sentence the prompt's "What you can do" list shows, a zod
+input) and dispatching that area's own queries and commands with the
+owner's scope. The input is checked before anything runs; the answer is
+labelled text with ids inline, times in the sender's zone, cut at 12,000
+characters with the cut said; a catalog error comes back as its code,
+title and detail. Text from outside (a page, a pull request, a session's
+result) comes back fenced as data. A message sent through an API token or an
+OAuth grant rather than the console keeps that credential's scopes on its
+turn, and the turn is offered only the tools those scopes cover (each tool
+names the scope of the route it stands in for), so a token scoped to
+`bots:write` reaches no further through a bot than it could itself. A tool
+whose default is *ask* runs at once under **Full access**; under **Approve
+for me** its checked call becomes a **Needs input** card (§5) and the model
+is told to end its turn and say what it asked for. Each such tool writes the
+card's line from its input (`summarize`: "Start Claude Code on build-02 in
+acme/xrp-mobile: Fix the failing test"). An approved call runs under the
+same scope filter as the turn that asked, so a card raised through a token
+that did not cover the tool never runs.
+
 ### 4.1 Itself
 | Tool | Does | Default |
 |------|------|---------|
@@ -118,7 +164,7 @@ defined once, as an in-process MCP server both engines use.
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state | auto |
-| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task | ask |
+| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` | ask |
 | `send_to_session` | Type a message into a running session | ask |
 | `read_session` | A session's recent output | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
@@ -195,7 +241,7 @@ a time (§2).
 |------|------|---------|
 | `delegate` | A subagent for a long job; the bot keeps talking and the result arrives as a message. Ours, not the engine's: Claude Code's subagents are off | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
-| `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones, with a time limit | auto |
+| `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `ask_user` | A question card with options | auto |
 
 ### 4.8 Never given to a bot
@@ -223,6 +269,45 @@ differ from the catalog are stored, so a tool added later reaches every
 bot with its default. No setting lets a bot exceed its owner's own
 permissions, and §4.8 is never on the list.
 
+How the card works (built 2026-10-15, `bot_approval`):
+
+- **The turn does not wait on it.** The asking call is stored, exactly as
+  validated, as a pending approval with its line; the tool answers the
+  model that nothing ran and it should end its turn, and the turn ends. No
+  worker is held across a person's time, and a deploy loses nothing.
+- **One card per bot.** While one waits, another asking call is told to
+  wait for it, and the database holds that if two race.
+- **Deciding is a request of its own**
+  (`POST /v1/bots/:id/approvals/:approvalId/decision`), a conditional write
+  on `pending`: a second click, or a click racing a new message, is
+  `BOTS_016` and does nothing. **Approve** moves the card and, in the same
+  transaction, stages a `run-approved-call` job (`bot-approvals` queue,
+  retried). The job runs exactly the stored call as the owner, in their
+  scope resolved now, keyed by the approval (one session per approval
+  however often it is retried), and keeps its answer (the card ends
+  `failed` when the call failed). A crash leaves a job to retry, never a
+  card stuck approved. **Deny** runs nothing, and takes an optional note:
+  why not, or what to do instead.
+- **No credential reaches further through a card.** The deciding
+  credential's scopes are kept on the approval. The call runs only if the
+  tool's scope is covered by both the asking turn's scopes and the
+  decider's (a browser session restricts neither); otherwise it ends
+  `failed`, "Not run: your credential does not cover …", and nothing runs.
+- **The bot reports back.** Either way the bot gets a turn of its own,
+  under that same intersection of scopes, opened by an **event**: a chat
+  message of its own role, written by Oppenheimer, whose words say who
+  decided what and the call's answer or the note, and whose fields (kind,
+  outcome, tool, the card's line) are what the chat draws, as a trace line,
+  never as a bubble from you. The answer and that turn are written together,
+  once. The bot reads the words, then and in later history, as a note from
+  Oppenheimer and not as your words, and is told not to route around a
+  denial.
+- **Writing to the bot instead expires the card.** The new turn starts
+  fresh; nobody decided, and the bot is not told.
+- **Not built yet:** *Always allow* (it needs Settings → Permissions), Off,
+  a card for a bot-to-bot or background turn (they will need a timeout
+  where yours has none), and the asking tools of the other areas.
+
 ## 6. What is built, in slices
 
 Each slice is a stacked pull request, green on `pnpm ci:local`, checked on
@@ -242,6 +327,21 @@ the local stack, with screenshots where the console changes.
    the Needs input card. Settings → Runs on becomes **Works on**.
 4. **It works with others.** §4.2 to §4.7: sessions, the plan, pull
    requests, automations, calendar, other bots, subagents.
+
+Built so far of slices 3 and 4 (2026-10-15): the prompt and the turn's
+limits (§2); the tools that run without asking, as the owner: itself
+(`get_self`, `edit_soul`, `edit_instructions`, `update_profile`,
+`remember`, `forget`, `recall`), hosts and sessions (`list_hosts`,
+`list_sessions`, `get_session`), the plan (`list_projects`,
+`get_project`, `list_tasks`, `get_task`, `plan_summary`, `create_task`,
+`update_task`, `move_task`), GitHub (`list_repositories`,
+`list_pull_requests`, `get_pull_request`), automations
+(`list_automations`, `get_automation`, `run_history`), other bots
+(`list_bots`, `get_bot`) and `web_fetch`; `start_session` and
+`stop_session`, which ask; and the Needs input card (§5): Approve, Deny
+with a note, the bot told either way. Next: Settings → Permissions and
+*Always allow*, then the asking tools of each area, `ask_bot`,
+`create_bot` and `delegate`.
 
 ## 7. Not built yet
 
@@ -324,3 +424,16 @@ The decisions it produced:
   disk whenever they lacked a tool. `web_fetch` and `delegate` come back as
   our own tools (§4.7). It replaces the first slice's "keeps web fetch and
   subagents".
+- 2026-10-15: **the system prompt is ours from the first line**, with a
+  closed list of what the bot can do and the moment it runs in (the
+  sender's time zone, its home host, the owner's hosts), and **a turn
+  stops after 4 minutes**. From the battle tests and Grok Bot's prompt
+  (`research/lessons-from-grok-bot.md` §5): without them a bot searched
+  the server for what it lacked, asked people to paste tokens, answered
+  in UTC and ran on to any length.
+- 2026-10-15: **a Needs input card ends the turn that raised it.** The
+  decision runs the stored call (on a yes) and gives the bot a new turn,
+  opened by an *event* message, rather than holding a turn open while the
+  card waits; a new message from you expires the card. From Grok Bot's
+  parked turns (`research/lessons-from-grok-bot.md`), which BullMQ cannot
+  park.

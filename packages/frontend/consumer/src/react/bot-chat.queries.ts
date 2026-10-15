@@ -49,10 +49,16 @@ export function useBotActiveTurn(id: string): BotTurnEntity | null {
   return data ?? null;
 }
 
-/** The chat read again; when a turn has ended, the bot too (its last activity moved). */
+/**
+ * The chat read again; when a turn has ended, the bot too (its last activity
+ * moved) and its Needs input card (the turn may have raised one).
+ */
 function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Promise<unknown> {
   const reads = [queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) })];
-  if (ended) reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
+  if (ended) {
+    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
+    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));
+  }
   return Promise.all(reads);
 }
 
@@ -133,12 +139,17 @@ export function useBotLiveText(id: string): BotLiveText {
       if (now && !up) {
         update(markBotStreamGap);
         void refetchChat(queryClient, id, false);
+        void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
       }
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
       if (event.type === 'text') {
         update((buffers) => appendBotText(buffers, event.turnId, event.text));
+        return;
+      }
+      if (event.type === 'approval') {
+        void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
         return;
       }
       const ended =

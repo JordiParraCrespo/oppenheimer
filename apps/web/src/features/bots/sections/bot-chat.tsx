@@ -17,6 +17,7 @@ import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotEngineChips } from '@/features/bots/components/bot-engine-chips';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
+import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotTranscript } from './bot-transcript';
 
@@ -85,6 +86,7 @@ export function BotChat({ botId }: { botId: string }) {
       </BotChatScroller>
       <div className="px-5 pb-4">
         <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
+          <BotApprovalCard botId={bot.id} name={bot.name} />
           <ErrorAlert
             error={update.error}
             fallback={t('bots.chat.saveFailed')}

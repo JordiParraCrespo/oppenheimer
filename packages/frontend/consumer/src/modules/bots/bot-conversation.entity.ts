@@ -1,4 +1,10 @@
-import type { BotMessageRole, BotProvider, BotTurnStatus } from '@oppenheimer/shared/schemas/bot';
+import type {
+  BotApprovalStatus,
+  BotMessageEvent,
+  BotMessageRole,
+  BotProvider,
+  BotTurnStatus,
+} from '@oppenheimer/shared/schemas/bot';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -13,7 +19,8 @@ export interface BotToolStep {
 
 /**
  * One line of a bot's chat (`product/versions/mvp/25-bots.md` §3): your
- * message, the bot's text, or an activity line holding a run of tool calls.
+ * message, the bot's text, an activity line holding a run of tool calls, or
+ * an event: what Oppenheimer told the bot for you (an approval decided).
  */
 export class BotMessageEntity {
   constructor(
@@ -24,6 +31,8 @@ export class BotMessageEntity {
     public readonly content: string,
     public readonly steps: readonly BotToolStep[],
     public readonly createdAt: Date,
+    /** What an event says happened, for the chat to draw; `null` on every other role. */
+    public readonly event: BotMessageEvent | null = null,
   ) {}
 }
 
@@ -71,5 +80,28 @@ export class BotConversationEntity {
 
   turn(id: string): BotTurnEntity | undefined {
     return this.turns.find((turn) => turn.id === id);
+  }
+}
+
+/**
+ * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call the bot
+ * asked to make, waiting for you, or what you decided about it.
+ */
+export class BotApprovalEntity {
+  constructor(
+    public readonly id: string,
+    public readonly turnId: string,
+    /** The tool, as the bot knows it (`start_session`). */
+    public readonly tool: string,
+    /** What will happen, in words. */
+    public readonly summary: string,
+    public readonly status: BotApprovalStatus,
+    /** What the call answered when it ran; `null` before, and for a no. */
+    public readonly result: string | null,
+    public readonly createdAt: Date,
+  ) {}
+
+  get isPending(): boolean {
+    return this.status === 'pending';
   }
 }

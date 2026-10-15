@@ -9,6 +9,7 @@ import { RotateCcw } from '@oppenheimer/design-system-web/icons';
 import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, botModelOf } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotTrace } from '@/features/bots/components/bot-trace';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
@@ -64,16 +65,20 @@ export function BotTurn({
 
   return (
     <div className="flex flex-col gap-4.5">
-      {block.asked.map((message) => (
-        <ChatUserMessage
-          key={message.id}
-          data-message-id={message.id}
-          time={time.format(message.createdAt)}
-          actions={<CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />}
-        >
-          {message.content}
-        </ChatUserMessage>
-      ))}
+      {block.asked.map((message) =>
+        message.role === 'event' ? (
+          <BotEventLine key={message.id} message={message} />
+        ) : (
+          <ChatUserMessage
+            key={message.id}
+            data-message-id={message.id}
+            time={time.format(message.createdAt)}
+            actions={<CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />}
+          >
+            {message.content}
+          </ChatUserMessage>
+        ),
+      )}
       <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (

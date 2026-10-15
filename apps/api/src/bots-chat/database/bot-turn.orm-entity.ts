@@ -53,6 +53,14 @@ export class BotTurnOrmEntity {
   @Column({ type: 'varchar', length: 16, nullable: true })
   effort!: string | null;
 
+  /** The sender's IANA time zone; null means UTC. */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  timeZone!: string | null;
+
+  /** The sending credential's scopes; null for a browser session. Read whole, never filtered. */
+  @Column({ type: 'jsonb', nullable: true })
+  credentialScopes!: string[] | null;
+
   @Column({ type: 'varchar', length: BOT_TURN_ERROR_MAX, nullable: true })
   error!: string | null;
 

@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BOT_MESSAGE_ROLES, type BotMessageRole } from '@oppenheimer/shared';
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_MESSAGE_ROLES,
+  type BotEventOutcome,
+  type BotMessageRole,
+} from '@oppenheimer/shared';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
 /** One tool call in an activity line. */
@@ -24,7 +29,22 @@ export class BotToolStepResponseDto {
   isError!: boolean;
 }
 
-/** One thing the chat draws: your message, the bot's text, or an activity line. */
+/** What an event says happened: an approval decided, how, and the card's line. */
+export class BotMessageEventResponseDto {
+  @ApiProperty({ enum: ['approval'] })
+  kind!: 'approval';
+
+  @ApiProperty({ enum: BOT_EVENT_OUTCOMES })
+  outcome!: BotEventOutcome;
+
+  @ApiProperty({ description: 'The tool the decided call was for.' })
+  tool!: string;
+
+  @ApiProperty({ description: "The card's line: what the call does, in words." })
+  summary!: string;
+}
+
+/** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -40,6 +60,13 @@ export class BotMessageResponseDto {
 
   @ApiProperty({ type: BotToolStepResponseDto, isArray: true })
   steps!: BotToolStepResponseDto[];
+
+  @ApiProperty({
+    type: BotMessageEventResponseDto,
+    nullable: true,
+    description: 'What an event says happened; null on every other role.',
+  })
+  event!: BotMessageEventResponseDto | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

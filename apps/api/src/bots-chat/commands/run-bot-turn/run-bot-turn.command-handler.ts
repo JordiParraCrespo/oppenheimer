@@ -20,6 +20,7 @@ import {
 } from '../../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { botTurnPrompt } from '../../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from './run-bot-turn.command';
@@ -74,14 +75,14 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     const watch = this.cancelWatch.watch(turn.id);
     let scratchDir: string | undefined;
     try {
-      scratchDir = await mkdtemp(join(tmpdir(), 'oppenheimer-bot-turn-'));
-      const prompt = (await this.messages.findPrompt(turn.organizationId, turn.id)) ?? '';
+      scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
+      const prompt = botTurnPrompt(await this.messages.findOpening(turn.organizationId, turn.id));
       const context = await this.context.resolve(turn, prompt, new Date());
       const transcript = new TurnTranscript(turn);
       for await (const event of this.engine.run({ ...context, signal: watch.signal, scratchDir })) {
         for (const write of transcript.apply(event)) await this.apply(turn, write);
       }
-      transcript.endTurn(new Date());
+      transcript.endTurn(new Date(), watch.interruption);
     } catch (error) {
       turn.end('failed', new Date(), { error: failureReasonOf(error) });
       if (!(error instanceof AppError)) {

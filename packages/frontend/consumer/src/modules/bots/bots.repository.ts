@@ -1,4 +1,5 @@
 import {
+  type BotApprovalResponseDto,
   type BotConversationResponseDto,
   type BotDocumentResponseDto,
   type BotDocumentRevisionResponseDto,
@@ -11,7 +12,11 @@ import {
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
-import type { BotDocumentName, BotProvider } from '@oppenheimer/shared/schemas/bot';
+import type {
+  BotApprovalDecision,
+  BotDocumentName,
+  BotProvider,
+} from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import {
@@ -25,6 +30,7 @@ import {
   type UpdateBotInput,
 } from './bot.entity';
 import {
+  BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
   type BotToolStep,
@@ -109,6 +115,7 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     dto.content,
     steps,
     new Date(dto.createdAt),
+    dto.event ? { ...dto.event } : null,
   );
 }
 
@@ -125,6 +132,18 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     new Date(dto.createdAt),
     dto.startedAt ? new Date(dto.startedAt) : null,
     dto.endedAt ? new Date(dto.endedAt) : null,
+  );
+}
+
+function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
+  return new BotApprovalEntity(
+    dto.id,
+    dto.turnId,
+    dto.tool,
+    dto.summary,
+    dto.status,
+    dto.result,
+    new Date(dto.createdAt),
   );
 }
 
@@ -155,11 +174,15 @@ export class BotsRepository {
     return toConversation(data);
   }
 
-  /** Says `content` to the bot: a turn, queued behind any it has not finished. */
+  /**
+   * Says `content` to the bot: a turn, queued behind any it has not finished.
+   * The browser's time zone goes with it, so the bot tells the time where you are.
+   */
   @MapApiError(BotsErrors.SEND_FAILED)
   async sendMessage(id: string, content: string): Promise<BotTurnEntity> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const data = await unwrapBody(
-      heyApiSdk.sendBotMessage({ path: { id }, body: { content } }),
+      heyApiSdk.sendBotMessage({ path: { id }, body: { content, timeZone } }),
       BotsErrors.SEND_FAILED,
     );
     return toTurn(data);
@@ -173,6 +196,37 @@ export class BotsRepository {
       BotsErrors.STOP_FAILED,
     );
     return toTurn(data);
+  }
+
+  /** The card the bot waits on, if any: at most one is pending. */
+  @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
+  async findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotApprovals({ path: { id }, query: { status: 'pending' } }),
+      BotsErrors.FETCH_APPROVALS_FAILED,
+    );
+    return data[0] ? toApproval(data[0]) : null;
+  }
+
+  /**
+   * Answers a card: `approve` runs the call the bot asked for, `deny` runs
+   * nothing; either way the bot is told, with the note, and reports back.
+   */
+  @MapApiError(BotsErrors.DECIDE_APPROVAL_FAILED)
+  async decideApproval(
+    id: string,
+    approvalId: string,
+    decision: BotApprovalDecision,
+    note?: string,
+  ): Promise<BotApprovalEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.decideBotApproval({
+        path: { id, approvalId },
+        body: { decision, ...(note?.trim() ? { note: note.trim() } : {}) },
+      }),
+      BotsErrors.DECIDE_APPROVAL_FAILED,
+    );
+    return toApproval(data);
   }
 
   /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */

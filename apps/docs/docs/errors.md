@@ -630,6 +630,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
 | `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
 | `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
+| `BOTS_015` <a id="bots_015" />       | Approval not found                           | 404  |
+| `BOTS_016` <a id="bots_016" />       | The approval was already decided             | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -659,6 +661,11 @@ model provider's key, so no bot can answer. `BOTS_012` is a provider other than
 store one in Settings → Model providers. A turn that finds the key gone when
 it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
 or not in the caller's workspace.
+
+`BOTS_015` is an approval (a Needs input card) that is not this bot's, or not
+in the caller's workspace. `BOTS_016` is a decision on one that was already
+approved, denied, or expired because a new message was sent to the bot: read
+the approvals again; the card is gone.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

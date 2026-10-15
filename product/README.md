@@ -476,3 +476,7 @@ earlier note:
 - Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
   2026-10-15 both were turned off: the fetch reached the server's private
   network, and subagents searched the server's disk (25, "Decided").
+- Note 25's system prompt was the bot's soul, instructions and memory. On
+  2026-10-15 it became ours from the first line, with a closed list of
+  what the bot can do and the sender's time, home host and hosts, and a
+  turn stops after 4 minutes (25, "Decided").

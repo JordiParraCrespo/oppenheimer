@@ -13,7 +13,8 @@ import {
 @Entity('bot_message')
 @Index('IDX_bot_message_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('IDX_bot_message_turn', ['organizationId', 'turnId', 'position'])
-@Check('CHK_bot_message_role', `"role" IN ('user', 'assistant', 'activity')`)
+@Check('CHK_bot_message_role', `"role" IN ('user', 'assistant', 'activity', 'event')`)
+@Check('CHK_bot_message_event', `("role" = 'event') = ("event" IS NOT NULL)`)
 @Check('CHK_bot_message_position', `"position" >= 0`)
 export class BotMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -40,6 +41,10 @@ export class BotMessageOrmEntity {
 
   @Column({ type: 'integer', default: 0 })
   position!: number;
+
+  /** What an event says happened (`BotMessageEvent`), read whole; null on anything else. */
+  @Column({ type: 'jsonb', nullable: true })
+  event!: Record<string, unknown> | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

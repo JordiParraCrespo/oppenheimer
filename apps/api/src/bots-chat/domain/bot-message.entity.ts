@@ -5,7 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import { BOT_MESSAGE_ROLES, type BotMessageRole } from '@oppenheimer/shared';
+import { BOT_MESSAGE_ROLES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
 
 /** One tool call in an activity line, as the chat opens it to. */
 export interface BotToolStep {
@@ -32,6 +32,8 @@ export interface BotMessageProps {
   steps: BotToolStep[];
   /** Its place in its turn, from 0. */
   position: number;
+  /** What an event says happened, for the chat; an event has one, nothing else does. */
+  event?: BotMessageEvent | null;
 }
 
 /** One thing the chat draws (`25-bots.md` §3). */
@@ -67,6 +69,9 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   get position(): number {
     return this.props.position;
   }
+  get event(): BotMessageEvent | null {
+    return this.props.event ?? null;
+  }
 
   public validate(): void {
     const { props } = this;
@@ -75,6 +80,9 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
     }
     if (!BOT_MESSAGE_ROLES.includes(props.role)) {
       throw new ArgumentInvalidException(`${props.role} is not a message role`);
+    }
+    if ((props.role === 'event') !== Boolean(props.event)) {
+      throw new ArgumentInvalidException('An event says what happened, and only an event does');
     }
     if (props.role !== 'activity' && !props.content) {
       throw new ArgumentInvalidException('A message says something');

@@ -11,8 +11,8 @@ export interface BotMessageRepositoryPort {
   saveSteps(message: BotMessageEntity): Promise<void>;
   /** The bot's newest `limit` messages, oldest first. */
   findConversation(scope: AccessScope, botId: string, limit: number): Promise<BotMessageEntity[]>;
-  /** A turn's own message: what you sent it. */
-  findPrompt(organizationId: string, turnId: string): Promise<string | null>;
+  /** The message that opened a turn: what you sent it, or the event Oppenheimer told it. */
+  findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null>;
   /** What a turn reads back: the bot's newest `limit` messages before `turnId`'s, oldest first. */
   findHistory(
     organizationId: string,
