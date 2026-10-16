@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
@@ -8,8 +8,10 @@ import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
+import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type { BotTurnRepositoryPort } from './bot-turn.repository.port';
@@ -38,6 +40,8 @@ export class BotTurnRepository
     private readonly outbox: OutboxService,
     private readonly mapper: BotTurnMapper,
     private readonly messages: BotMessageMapper,
+    @Inject(BOT_CONVERSATION_REPOSITORY)
+    private readonly conversations: BotConversationRepositoryPort,
   ) {
     super();
   }
@@ -140,6 +144,29 @@ export class BotTurnRepository
     });
     return Boolean(record?.cancelRequestedAt);
   }
+
+  clearConversation(
+    organizationId: string,
+    botId: string,
+  ): Promise<'cleared' | 'busy' | 'missing'> {
+    return this.outbox.transaction(async (manager) => {
+      // The lock a send takes: no turn can be queued between the check and the deletes.
+      if (!(await lockBot(manager, { organizationId, botId }))) return 'missing';
+      // IDX_bot_turn_active.
+      const [{ active }]: { active: number }[] = await manager.query(
+        `SELECT count(*)::int AS active FROM bot_turn
+          WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
+        [organizationId, botId],
+      );
+      if (active > 0) return 'busy';
+      await this.conversations.deleteWithin(manager, organizationId, botId);
+      await manager.query(`DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2`, [
+        organizationId,
+        botId,
+      ]);
+      return 'cleared';
+    });
+  }
 }
 
 /**
@@ -177,7 +204,10 @@ export async function enqueueWithin(
  * turn is due. `FOR NO KEY UPDATE` leaves the bot's turns free to reference
  * it. Whether the bot is still there.
  */
-async function lockBot(manager: EntityManager, turn: BotTurnEntity): Promise<boolean> {
+async function lockBot(
+  manager: EntityManager,
+  turn: Pick<BotTurnEntity, 'organizationId' | 'botId'>,
+): Promise<boolean> {
   const bot: unknown[] = await manager.query(
     `SELECT id FROM bot WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
     [turn.organizationId, turn.botId],

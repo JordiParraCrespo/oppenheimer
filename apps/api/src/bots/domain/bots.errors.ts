@@ -123,4 +123,10 @@ export const BotErrors = {
     message: 'The ChatGPT sign-in is being refreshed',
     httpStatus: 409,
   },
+  /** Clear history while a turn is queued or running: the turn would write into a conversation that is gone. */
+  CONVERSATION_BUSY: {
+    code: 'BOTS_022',
+    message: 'The bot has a turn queued or running',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

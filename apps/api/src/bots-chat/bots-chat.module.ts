@@ -27,6 +27,7 @@ import { BotMessageMapper } from './bot-message.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
 import {
   BOT_APPROVAL_REPOSITORY,
+  BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
   BOT_MESSAGE_REPOSITORY,
@@ -37,6 +38,8 @@ import {
 } from './bots-chat.di-tokens';
 import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-bot-turn.command-handler';
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
+import { ClearBotConversationCommandHandler } from './commands/clear-bot-conversation/clear-bot-conversation.command-handler';
+import { ClearBotConversationHttpController } from './commands/clear-bot-conversation/clear-bot-conversation.http.controller';
 import { DecideBotApprovalCommandHandler } from './commands/decide-bot-approval/decide-bot-approval.command-handler';
 import { DecideBotApprovalHttpController } from './commands/decide-bot-approval/decide-bot-approval.http.controller';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
@@ -46,6 +49,7 @@ import { SendBotMessageHttpController } from './commands/send-bot-message/send-b
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
+import { BotConversationRepository } from './database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from './database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
@@ -58,6 +62,8 @@ import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
+import { ExportBotConversationHttpController } from './queries/export-bot-conversation/export-bot-conversation.http.controller';
+import { ExportBotConversationQueryHandler } from './queries/export-bot-conversation/export-bot-conversation.query-handler';
 import { FindBotApprovalQueryHandler } from './queries/find-bot-approval/find-bot-approval.query-handler';
 import { FindBotApprovalsHttpController } from './queries/find-bot-approvals/find-bot-approvals.http.controller';
 import { FindBotApprovalsQueryHandler } from './queries/find-bot-approvals/find-bot-approvals.query-handler';
@@ -68,7 +74,9 @@ import { StreamBotHttpController } from './queries/stream-bot/stream-bot.http.co
 import { StreamBotQueryHandler } from './queries/stream-bot/stream-bot.query-handler';
 
 const httpControllers = [
+  ExportBotConversationHttpController,
   FindBotConversationHttpController,
+  ClearBotConversationHttpController,
   SendBotMessageHttpController,
   CancelBotTurnHttpController,
   StreamBotHttpController,
@@ -79,6 +87,7 @@ const httpControllers = [
 const commandHandlers: Provider[] = [
   SendBotMessageCommandHandler,
   CancelBotTurnCommandHandler,
+  ClearBotConversationCommandHandler,
   RunBotTurnCommandHandler,
   DecideBotApprovalCommandHandler,
   RunApprovedCallCommandHandler,
@@ -88,6 +97,7 @@ const commandHandlers: Provider[] = [
 const queryHandlers: Provider[] = [
   FindBotTurnQueryHandler,
   FindBotConversationQueryHandler,
+  ExportBotConversationQueryHandler,
   StreamBotQueryHandler,
   FindBotApprovalQueryHandler,
   FindBotApprovalsQueryHandler,
@@ -150,6 +160,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_APPROVAL_REPOSITORY, useClass: BotApprovalRepository },
+    { provide: BOT_CONVERSATION_REPOSITORY, useClass: BotConversationRepository },
     { provide: BOT_CONVERSATION_SUMMARY_REPOSITORY, useClass: BotConversationSummaryRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },

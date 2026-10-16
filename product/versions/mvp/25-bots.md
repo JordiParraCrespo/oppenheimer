@@ -27,8 +27,8 @@ it lives.
 | What it remembers | Rows, one fact each, with where it came from | Settings → Memory |
 | Its provider, model and effort | Columns on `bot` | The chat's composer |
 | What it may do, tool by tool | Rows that differ from the catalog default | Settings → Permissions |
-| Where its sessions run by default | `bot.homeHostId` | Settings → Works on |
-| The conversation | Turns and messages | The chat |
+| Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
+| The conversation | Turns and messages | The chat; Settings → Profile counts, exports and clears it |
 
 **A new bot.** Created blank, a bot takes the next of twenty first names
 the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
@@ -561,6 +561,20 @@ The decisions it produced:
   card waits; a new message from you expires the card. From Grok Bot's
   parked turns (`research/lessons-from-grok-bot.md`), which BullMQ cannot
   park.
+- 2026-10-16: **the page is Home host, and bot settings save with Save.**
+  Read as "Runs on", the page looked like where the bot runs, which is
+  always Oppenheimer; it is where `start_session` puts a session when no
+  machine is named, and *No home host* has the bot ask. A pick, on Home
+  host or Profile (colour and sidebar group included), is a draft until
+  Save. It replaces slice 3's "Settings → Runs on becomes Works on"; the
+  old address redirects.
+- 2026-10-16: **chat history is exported and cleared from Profile.**
+  Export downloads the whole chat as Markdown (`GET
+  /bots/:id/conversation/export`, every message as a line of NDJSON, read
+  and written a page at a time);
+  Clear history (`DELETE /bots/:id/conversation`) erases the turns,
+  messages, cards and summary in one transaction, keeps the soul,
+  instructions and memory, and is refused while a turn works (`BOTS_022`).
 - 2026-10-16: **a blank bot is born with a first name and sets itself up
   in its first chat** (§1). It replaces "New Bot" and a one-line "ask
   what job": a sidebar of "New Bot 2, New Bot 3" told bots apart by

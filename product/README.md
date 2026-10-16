@@ -471,6 +471,9 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
+- On 2026-10-16 the owner dropped the review session's input row, which
+  doubled the agent's own prompt; the Chat tab is now the plain session
+  pane (`next-steps/0.2-pull-requests.md`).
 - `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
   on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
 - Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
@@ -495,6 +498,13 @@ earlier note:
   a `bot-summaries` job writes with the bot's own model once they pass the
   budget with headroom (25 §2, "Decided"). The chat still shows every
   message.
+- Note 25 named a bot's last settings page Runs on (Works on from slice
+  3), and its picks, the colour and sidebar group on Profile included,
+  saved on the click. On 2026-10-16 the owner, testing it, read Runs on as
+  where the bot runs: the page is **Home host** now, says the bot always
+  runs in Oppenheimer and the home host is only where its sessions start
+  when no machine is named, offers No home host, and every bot settings
+  page saves a draft with Save (25 §1, "Decided").
 - Note 25 named a blank bot "New Bot" and had it ask for its job in one
   line. On 2026-10-16 a blank bot takes the next of twenty first names
   ("Juno", "Milo"…), and its first chat walks it through learning one

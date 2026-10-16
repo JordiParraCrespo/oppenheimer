@@ -164,7 +164,7 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
-      "runsOn": "Runs on"
+      "homeHost": "Home host"
     },
     "profile": {
       "title": "Profile",
@@ -191,6 +191,17 @@
       "created": "Created",
       "history": "Chat history",
       "noMessages": "No messages yet.",
+      "messages_one": "{{count}} message · last {{date}}",
+      "messages_other": "{{count}} messages · last {{date}}",
+      "exporting": "Exporting…",
+      "exportFailed": "Could not export the chat.",
+      "exportedAt": "Exported {{date}}",
+      "you": "You",
+      "oppenheimer": "Oppenheimer",
+      "clearTitle": "Clear the chat history?",
+      "clearBody": "Every message of this chat is erased, with any request still waiting on you. The bot keeps its soul, instructions and memory.",
+      "clearing": "Clearing…",
+      "clearFailed": "Could not clear the chat history.",
       "export": "Export",
       "clear": "Clear history",
       "discard": "Discard",
@@ -257,15 +268,21 @@
       "forgetFailed": "Could not forget the fact.",
       "loadFailed": "Could not load what the bot remembers."
     },
-    "runsOn": {
-      "title": "Runs on",
-      "subtitle": "The machine the bot works on.",
-      "homeHost": "Home host",
+    "homeHost": {
+      "title": "Home host",
+      "subtitle": "Your bot always runs in Oppenheimer. When it starts a coding session and you haven't named a machine, the session runs here.",
+      "machines": "Machines",
+      "none": "No home host",
+      "noneHint": "The bot asks which machine to use each time it starts a session.",
       "online": "Online",
       "offline": "Offline",
       "noHosts": "No hosts yet",
-      "noHostsBody": "A bot runs on a machine you own. Add one, then pick it here.",
+      "noHostsBody": "A bot starts its coding sessions on a machine you own. Add one, then pick it here.",
       "addHost": "Add a host",
+      "discard": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
       "failed": "Could not change the home host.",
       "hostsFailed": "Could not load your hosts."
     }

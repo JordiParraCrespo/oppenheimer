@@ -167,7 +167,7 @@
       "profile": "Perfil",
       "instructions": "Instrucciones",
       "memory": "Memoria",
-      "runsOn": "Dónde se ejecuta"
+      "homeHost": "Máquina principal"
     },
     "profile": {
       "title": "Perfil",
@@ -194,6 +194,18 @@
       "created": "Creado",
       "history": "Historial del chat",
       "noMessages": "Aún no hay mensajes.",
+      "messages_one": "{{count}} mensaje · el último el {{date}}",
+      "messages_other": "{{count}} mensajes · el último el {{date}}",
+      "messages_many": "{{count}} mensajes · el último el {{date}}",
+      "exporting": "Exportando…",
+      "exportFailed": "No se ha podido exportar el chat.",
+      "exportedAt": "Exportado el {{date}}",
+      "you": "Tú",
+      "oppenheimer": "Oppenheimer",
+      "clearTitle": "¿Borrar el historial del chat?",
+      "clearBody": "Se borran todos los mensajes de este chat, con cualquier solicitud que aún espere tu respuesta. El bot conserva su alma, sus instrucciones y su memoria.",
+      "clearing": "Borrando…",
+      "clearFailed": "No se ha podido borrar el historial del chat.",
       "export": "Exportar",
       "clear": "Borrar historial",
       "discard": "Descartar",
@@ -260,15 +272,21 @@
       "forgetFailed": "No se ha podido olvidar el dato.",
       "loadFailed": "No se ha podido cargar lo que recuerda el bot."
     },
-    "runsOn": {
-      "title": "Dónde se ejecuta",
-      "subtitle": "La máquina en la que trabaja el bot.",
-      "homeHost": "Máquina principal",
+    "homeHost": {
+      "title": "Máquina principal",
+      "subtitle": "Tu bot siempre se ejecuta en Oppenheimer. Cuando inicia una sesión de código y no has indicado una máquina, la sesión se ejecuta aquí.",
+      "machines": "Máquinas",
+      "none": "Sin máquina principal",
+      "noneHint": "El bot pregunta qué máquina usar cada vez que inicia una sesión.",
       "online": "En línea",
       "offline": "Desconectada",
       "noHosts": "Aún no hay máquinas",
-      "noHostsBody": "Un bot se ejecuta en una máquina tuya. Añade una y elígela aquí.",
+      "noHostsBody": "Un bot inicia sus sesiones de código en una máquina tuya. Añade una y elígela aquí.",
       "addHost": "Añadir una máquina",
+      "discard": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
       "failed": "No se ha podido cambiar la máquina principal.",
       "hostsFailed": "No se han podido cargar tus máquinas."
     }

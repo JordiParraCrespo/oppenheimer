@@ -3193,6 +3193,10 @@ export type BotConversationResponseDto = {
      * The turns those messages belong to, and any still queued or running; oldest first.
      */
     turns: Array<BotTurnResponseDto>;
+    /**
+     * How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.
+     */
+    messageCount: number;
 };
 
 export type SendBotMessageRequest = {
@@ -11265,6 +11269,75 @@ export type PollChatgptLoginResponses = {
 };
 
 export type PollChatgptLoginResponse = PollChatgptLoginResponses[keyof PollChatgptLoginResponses];
+
+export type ExportBotConversationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/conversation/export';
+};
+
+export type ExportBotConversationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ExportBotConversationError = ExportBotConversationErrors[keyof ExportBotConversationErrors];
+
+export type ExportBotConversationResponses = {
+    /**
+     * One `BotMessageResponseDto` per line, oldest first
+     */
+    200: unknown;
+};
+
+export type ClearBotConversationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/conversation';
+};
+
+export type ClearBotConversationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_022 — A turn is queued or running
+     */
+    409: ProblemDetailsDto;
+};
+
+export type ClearBotConversationError = ClearBotConversationErrors[keyof ClearBotConversationErrors];
+
+export type ClearBotConversationResponses = {
+    204: void;
+};
+
+export type ClearBotConversationResponse = ClearBotConversationResponses[keyof ClearBotConversationResponses];
 
 export type FindBotConversationData = {
     body?: never;

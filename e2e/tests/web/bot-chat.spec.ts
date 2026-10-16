@@ -48,4 +48,21 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await expect(
     page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }),
   ).toContainText(/pineapple/i);
+
+  // Profile's chat history: the two messages, exported as Markdown, then cleared.
+  await page.goto(`/bots/${bot.id}/settings/profile`);
+  await expect(page.getByText(/^2 messages · last /)).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^fruit-bot-chat-\d{4}-\d{2}-\d{2}\.md$/);
+  await page.getByRole('button', { name: 'Clear history' }).click();
+  const confirm = page.getByRole('alertdialog', { name: 'Clear the chat history?' });
+  await confirm.getByRole('button', { name: 'Clear history' }).click();
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText('No messages yet.')).toBeVisible();
+  await page.goto(`/bots/${bot.id}`);
+  await expect(
+    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+  ).toBeVisible();
 });
