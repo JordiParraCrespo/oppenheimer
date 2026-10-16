@@ -44,10 +44,10 @@ test.describe('Bots', () => {
     test.setTimeout(120_000);
     const { api, userId } = await signedUpContext('bots');
 
-    // A blank bot is "New Bot"; the second one is numbered.
+    // A blank bot takes the next first name; the second one gets the one after.
     const first = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
     expect(first).toMatchObject({
-      name: 'New Bot',
+      name: 'Juno',
       groupId: null,
       position: 0,
       homeHostId: null,
@@ -56,7 +56,7 @@ test.describe('Bots', () => {
       learnAutomatically: true,
     });
     const second = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
-    expect(second).toMatchObject({ name: 'New Bot 2', position: 1 });
+    expect(second).toMatchObject({ name: 'Milo', position: 1 });
     expect(second.avatarColor).not.toBe(first.avatarColor);
 
     // Its documents: a soul that says its name, empty instructions, both revision 1.
@@ -65,7 +65,7 @@ test.describe('Bots', () => {
       ['soul', 1],
       ['instructions', 1],
     ]);
-    expect(documents[0].content).toContain('You are New Bot.');
+    expect(documents[0].content).toContain('You are Juno.');
     expect(documents[1].content).toBe('');
 
     // Rename and choose a model and effort. A home host is only one the caller

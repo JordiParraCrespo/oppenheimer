@@ -495,3 +495,8 @@ earlier note:
   a `bot-summaries` job writes with the bot's own model once they pass the
   budget with headroom (25 §2, "Decided"). The chat still shows every
   message.
+- Note 25 named a blank bot "New Bot" and had it ask for its job in one
+  line. On 2026-10-16 a blank bot takes the next of twenty first names
+  ("Juno", "Milo"…), and its first chat walks it through learning one
+  job, writing its own INSTRUCTIONS.md and description, and offering a
+  first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).

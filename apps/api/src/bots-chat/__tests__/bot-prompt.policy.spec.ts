@@ -32,11 +32,29 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('- Staging is devbox.');
   });
 
-  it('asks for the job while INSTRUCTIONS.md is empty, and carries it once written', () => {
-    expect(composeBotSystemPrompt(base)).toContain('You have no instructions yet');
+  it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
+    expect(composeBotSystemPrompt(base)).toContain('# Getting started');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
-    expect(written).not.toContain('You have no instructions yet');
+    expect(written).not.toContain('# Getting started');
+  });
+
+  it('has a new bot set itself up only with the tools its turn offers', () => {
+    const tool = (name: string) => ({ name, description: `${name}.` });
+    const equipped = composeBotSystemPrompt({
+      ...base,
+      tools: ['get_self', 'edit_instructions', 'update_profile', 'remember'].map(tool),
+    });
+    expect(equipped).toContain(
+      'with `edit_instructions` (read its revision with `get_self` first)',
+    );
+    expect(equipped).toContain('Set your description with `update_profile`');
+    expect(equipped).toContain('with `remember`');
+
+    const bare = composeBotSystemPrompt(base);
+    expect(bare).toContain('paste it in Settings → Instructions');
+    expect(bare).not.toContain('`update_profile`');
+    expect(bare).not.toContain('`remember`');
   });
 
   it('closes the list of what it can do, and lists our tools by their first sentence', () => {

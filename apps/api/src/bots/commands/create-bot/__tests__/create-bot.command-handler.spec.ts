@@ -60,13 +60,19 @@ function setup(names: string[] = []) {
 }
 
 describe('CreateBotCommandHandler', () => {
-  it('names a blank bot "New Bot", numbered past the ones the workspace has, on the next colour', async () => {
-    const { handler, written } = setup(['New Bot', 'Release manager']);
+  it('gives a blank bot a first name the workspace does not have yet, on the next colour', async () => {
+    const { handler, written } = setup(['Wren', 'Release manager']);
     await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
     const { bot } = written();
-    expect(bot.name).toBe('New Bot 2');
+    expect(bot.name).toBe('Iris');
     expect(bot.avatarColor).toBe(BOT_AVATAR_COLORS[2]);
     expect(bot.createdByUserId).toBe(userId);
+  });
+
+  it('numbers a name it is given when the workspace already has it', async () => {
+    const { handler, written } = setup(['Scout']);
+    await handler.execute(new CreateBotCommand({ scope: scope(), input: { name: 'Scout' } }));
+    expect(written().bot.name).toBe('Scout 2');
   });
 
   it('writes a soul that says its name and empty instructions, both at revision 1 by the caller', async () => {
