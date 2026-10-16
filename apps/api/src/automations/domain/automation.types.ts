@@ -8,6 +8,14 @@ import type {
   TriggerSource,
 } from '@oppenheimer/shared/automations';
 
+/**
+ * What a run of an automation becomes once its guards let it through
+ * (`26-bot-routines.md` §3). Every automation starts a session today; a bot
+ * routine is the next kind, each carried out by its own `AutomationRunTarget`.
+ */
+export const AUTOMATION_RUN_TARGET_KINDS = ['session'] as const;
+export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[number];
+
 /** One repository an automation works in, as the revision snapshots it. */
 export interface AutomationRepository {
   /** Our installation row: what a session's checkout and its token mint name. */

@@ -1,6 +1,7 @@
 # 26 — Bot routines: how a bot wakes on its own
 
-**Proposed, 2026-10-16; the owner's questions are under "Open".** Note 25
+**Proposed, 2026-10-16; the owner's questions are under "Open". Built so
+far: slice A** (§8), the run-target port with the session target behind it. Note 25
 builds a bot that only works when you write to it. This note is how it
 works when you do not: on a schedule (its heartbeat), on an event, or
 when work it started finishes. The 2026-10-13 export already draws it:
