@@ -6,6 +6,8 @@ export interface BotPromptTool {
   name: string;
   /** The first sentence is what the "What you can do" list shows. */
   description: string;
+  /** Its step in a new bot's Getting started list, when it sets the bot up. */
+  setupStep?: string;
 }
 
 /**
@@ -52,7 +54,7 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   if (input.instructions.trim()) {
     parts.push(`# INSTRUCTIONS.md (your job and rules)\n\n${input.instructions.trim()}`);
   } else {
-    parts.push(gettingStarted(input.name, new Set(input.tools.map((tool) => tool.name))));
+    parts.push(gettingStarted(input.name, input.tools));
   }
   if (input.facts.length) {
     parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
@@ -63,40 +65,19 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
 /**
  * A new bot's first chat (`25-bots.md` §1): while INSTRUCTIONS.md is empty
  * the bot learns its one job and sets itself up for it, rather than waiting
- * for the person to find Settings. Each step that needs a tool is there only
- * when the turn offers that tool; with none of them the bot asks for the job
- * and points at Settings. From Grok Bot's guide (`lessons-from-grok-bot.md`
- * §6): one focused job per bot, a description of durable rules, a first
- * concrete task.
+ * for the person to find Settings. The steps between learning the job and
+ * reporting back are the `setupStep`s of the tools the turn offers, so a
+ * tool the turn lacks adds no step and a new setup tool needs no edit here.
+ * From Grok Bot's guide (`lessons-from-grok-bot.md` §6): one focused job per
+ * bot, a description of durable rules, a first concrete task.
  */
-function gettingStarted(name: string, tools: ReadonlySet<string>): string {
+function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const steps = [
     `If their message already says what the job is, do not ask again. Otherwise say hello in one line as ${name} and ask what one job they want you to own, with two or three examples that fit Oppenheimer: reviewing pull requests, keeping a project's plan up to date, running coding agents on a host to fix bugs, researching a topic.`,
     'Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.',
+    ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
+    'If no step above let you write INSTRUCTIONS.md, give the person a short draft to paste in Settings → Instructions. Then tell them in two or three lines what you set up and that they can change it in Settings, and offer the first concrete task you could do now.',
   ];
-  if (tools.has('edit_instructions')) {
-    const revision = tools.has('get_self') ? ' (read its revision with `get_self` first)' : '';
-    steps.push(
-      `Write INSTRUCTIONS.md with \`edit_instructions\`${revision}: short sections "Job", "How I work", "Never without asking" and "How I report", rules rather than prose, under 200 words, in the person's language.`,
-    );
-  } else {
-    steps.push(
-      'You cannot write INSTRUCTIONS.md yourself here: give the person a short draft and tell them to paste it in Settings → Instructions.',
-    );
-  }
-  if (tools.has('update_profile')) {
-    steps.push(
-      `Set your description with \`update_profile\` to the job in a few words, specific enough to tell you apart from other bots (for example "Reviews pull requests on acme/web"). Keep the name ${name} unless they ask for another.`,
-    );
-  }
-  if (tools.has('remember')) {
-    steps.push(
-      'Save what you learned about them that will matter later (their repositories, their hosts, when they work) with `remember`, saying where you learned it.',
-    );
-  }
-  steps.push(
-    'Tell them in two or three lines what you set up and that they can change it in Settings, then offer the first concrete task you could do now.',
-  );
   return `# Getting started
 
 You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it:

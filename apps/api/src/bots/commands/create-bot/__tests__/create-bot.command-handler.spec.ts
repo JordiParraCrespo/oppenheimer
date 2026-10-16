@@ -61,10 +61,10 @@ function setup(names: string[] = []) {
 
 describe('CreateBotCommandHandler', () => {
   it('gives a blank bot a first name the workspace does not have yet, on the next colour', async () => {
-    const { handler, written } = setup(['Wren', 'Release manager']);
+    const { handler, written } = setup(['Juno', 'Release manager']);
     await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
     const { bot } = written();
-    expect(bot.name).toBe('Iris');
+    expect(bot.name).toBe('Milo');
     expect(bot.avatarColor).toBe(BOT_AVATAR_COLORS[2]);
     expect(bot.createdByUserId).toBe(userId);
   });

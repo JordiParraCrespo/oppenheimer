@@ -12,13 +12,13 @@ import {
  * create handler's spec covers that it asks; this is the whole rule.
  */
 describe('firstNameFor', () => {
-  it('walks the first names in order as a workspace makes bots', () => {
-    expect(firstNameFor([])).toBe(BOT_FIRST_NAMES[0]);
-    expect(firstNameFor(['Release manager'])).toBe(BOT_FIRST_NAMES[1]);
+  it('gives the first name the workspace does not have, compared without case', () => {
+    expect(firstNameFor(['Release manager'])).toBe(BOT_FIRST_NAMES[0]);
+    expect(firstNameFor([` ${BOT_FIRST_NAMES[0].toUpperCase()} `])).toBe(BOT_FIRST_NAMES[1]);
   });
 
-  it('skips a name the workspace already has, compared without case', () => {
-    expect(firstNameFor(['x', ` ${BOT_FIRST_NAMES[2].toUpperCase()} `])).toBe(BOT_FIRST_NAMES[3]);
+  it("gives a deleted bot's name back before moving on down the list", () => {
+    expect(firstNameFor([BOT_FIRST_NAMES[1], BOT_FIRST_NAMES[2]])).toBe(BOT_FIRST_NAMES[0]);
   });
 
   it('numbers a name once every first name is taken', () => {

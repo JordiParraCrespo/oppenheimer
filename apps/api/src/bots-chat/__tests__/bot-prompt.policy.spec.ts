@@ -39,22 +39,20 @@ describe('composeBotSystemPrompt', () => {
     expect(written).not.toContain('# Getting started');
   });
 
-  it('has a new bot set itself up only with the tools its turn offers', () => {
-    const tool = (name: string) => ({ name, description: `${name}.` });
+  it('lists the setup steps of the tools its turn offers, and points at Settings without them', () => {
     const equipped = composeBotSystemPrompt({
       ...base,
-      tools: ['get_self', 'edit_instructions', 'update_profile', 'remember'].map(tool),
+      tools: [
+        { name: 'get_self', description: 'Reads you.' },
+        { name: 'edit_instructions', description: 'Rewrites it.', setupStep: 'Write it down.' },
+        { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
+      ],
     });
-    expect(equipped).toContain(
-      'with `edit_instructions` (read its revision with `get_self` first)',
-    );
-    expect(equipped).toContain('Set your description with `update_profile`');
-    expect(equipped).toContain('with `remember`');
+    expect(equipped).toMatch(/3\. Write it down\.\n4\. Remember them\.\n5\. If no step above/);
 
-    const bare = composeBotSystemPrompt(base);
-    expect(bare).toContain('paste it in Settings → Instructions');
-    expect(bare).not.toContain('`update_profile`');
-    expect(bare).not.toContain('`remember`');
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n3\. If no step above .*Settings → Instructions/,
+    );
   });
 
   it('closes the list of what it can do, and lists our tools by their first sentence', () => {

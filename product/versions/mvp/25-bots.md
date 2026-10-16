@@ -43,9 +43,11 @@ never to do without asking, how to report); one focused job, a bot per
 unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
 asking, How I report), set the description to the job, remember what it
 learned about the person, and say in two or three lines what it set up and
-the first task it could do now. Each step that needs a tool is in the
-prompt only when the turn offers that tool; without `edit_instructions`
-it drafts the instructions for the person to paste in Settings.
+the first task it could do now. The steps that need a tool are the tools'
+own (`setupStep` on the tool's spec), listed only when the turn offers the
+tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
+person to paste in Settings. Names are given first-free, so a deleted
+bot's name is the next one handed out.
 
 Postgres is the source of truth for all of it. A bot changes what it is
 and what it knows only through Oppenheimer's tools (§4), and every change

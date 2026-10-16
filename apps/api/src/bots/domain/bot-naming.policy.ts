@@ -32,18 +32,14 @@ export const BOT_FIRST_NAMES = [
 
 /**
  * The name of a bot created without one: the first of `BOT_FIRST_NAMES` the
- * workspace does not have, starting from the one its bot count points at, so
- * a workspace's bots walk the list in order. Once every name is taken the
- * list starts over, numbered ("Juno 2").
+ * workspace does not have, so a new workspace's bots walk the list in order
+ * and a deleted bot's name is the next one given. Once every name is taken,
+ * the first is numbered ("Juno 2").
  */
 export function firstNameFor(taken: readonly string[]): string {
   const used = new Set(taken.map((name) => name.trim().toLowerCase()));
-  const start = taken.length % BOT_FIRST_NAMES.length;
-  for (let i = 0; i < BOT_FIRST_NAMES.length; i++) {
-    const name = BOT_FIRST_NAMES[(start + i) % BOT_FIRST_NAMES.length];
-    if (!used.has(name.toLowerCase())) return name;
-  }
-  return uniqueBotName(BOT_FIRST_NAMES[start], taken);
+  const free = BOT_FIRST_NAMES.find((name) => !used.has(name.toLowerCase()));
+  return free ?? uniqueBotName(BOT_FIRST_NAMES[0], taken);
 }
 
 /** A new bot's name: the one asked for, numbered if taken, or the next first name. */
