@@ -158,8 +158,9 @@ show, not the scheduler itself. Ideas only; the design they fed is
   running locally where that is safe; scheduled ones may not.
 
 What 26 takes: routines as automations with a bot as the target, the
-spread schedule, the spend guard, durable wakes with a ledger, and
-routines from templates starting paused. What it does differently: one
-inbound command for every wake rather than a reason per path, quiet
-turns that do not count as unread, and the owner's permissions as the
-ceiling, as in 25.
+spread schedule, and routines from templates starting paused. What it
+does differently: a routine's run is a queued turn of the bot, so the
+turn queue is the durable record and there is no wake ledger beside it;
+"when a session ends" is a trigger like any other rather than a watcher;
+no spend guard yet, the run budget holds the cost; and the owner's
+permissions are the ceiling, as in 25.
