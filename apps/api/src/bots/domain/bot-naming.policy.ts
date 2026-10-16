@@ -46,8 +46,13 @@ export function firstNameFor(taken: readonly string[]): string {
   return uniqueBotName(BOT_FIRST_NAMES[start], taken);
 }
 
+/** A new bot's name: the one asked for, numbered if taken, or the next first name. */
+export function nameForNewBot(asked: string | undefined, taken: readonly string[]): string {
+  return asked ? uniqueBotName(asked, taken) : firstNameFor(taken);
+}
+
 /**
- * The name a new bot gets: the one asked for, or the next free "Name 2",
+ * The name a new bot gets when one is asked for: that one, or the next free "Name 2",
  * "Name 3"… when the workspace already has it (compared without case, as a
  * person reads the sidebar). The base is shortened so the number always fits.
  * Two creates at the same instant may both pick the same number; names are not
