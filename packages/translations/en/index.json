@@ -907,7 +907,6 @@
     },
     "landing": {
       "titleEmpty": "Make your first bot.",
-      "title": "Pick a bot, or make a new one.",
       "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
     },
     "chat": {

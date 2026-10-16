@@ -909,7 +909,6 @@
     },
     "landing": {
       "titleEmpty": "Crea tu primer bot.",
-      "title": "Elige un bot o crea uno nuevo.",
       "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {

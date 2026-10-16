@@ -12,7 +12,7 @@ import {
   botProviderOptions,
   providerOfMark,
 } from '../lib/bot-engine';
-import { botSections } from '../lib/bot-groups';
+import { botSections, firstBot } from '../lib/bot-groups';
 import { revisionNote } from '../lib/revision-note';
 
 /**
@@ -133,5 +133,18 @@ describe('botProviderOptions', () => {
   it("keeps the bot's own provider when it has no key, so its model still shows", () => {
     expect(groups(botProviderOptions(['openai'], 'glm'))).toEqual(['glm', 'openai']);
     expect(groups(botProviderOptions([], 'anthropic'))).toEqual(['anthropic']);
+  });
+});
+
+describe('firstBot', () => {
+  it('is the bot the sidebar draws first: the first group by position, then Ungrouped', () => {
+    const groups = [group('later', 1), group('first', 0)];
+    const bots = [bot('loose', null, 0), bot('b', 'first', 1), bot('a', 'first', 0)];
+    expect(firstBot(bots, groups)?.id).toBe('a');
+    expect(firstBot([bot('loose', null, 0)], groups)?.id).toBe('loose');
+  });
+
+  it('is undefined for a workspace with no bots, which keeps the greeting', () => {
+    expect(firstBot([], [group('g', 0)])).toBeUndefined();
   });
 });
