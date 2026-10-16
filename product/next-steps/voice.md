@@ -122,10 +122,39 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
   shape as `@oppenheimer/backend-llm`. If a second app ever needs it, it
   moves into a `packages/backend/speech` package; until then it stays in
   the module.
-  - **OpenAI-compatible `/audio/transcriptions`** first. One adapter
-    covers OpenAI (`gpt-4o-transcribe`), Groq (`whisper-large-v3-turbo`,
-    fast and cheap) and a self-hosted `faster-whisper` or `whisper.cpp`
-    server, by base URL.
+  - **The workspace's ChatGPT sign-in** first (decided 2026-10-16).
+    Settings → Model providers already signs a workspace in to ChatGPT
+    for bots (`../versions/mvp/25-bots.md` §2), and
+    `ChatgptCredentialResolver` in `apps/api/src/bots/` stores, seals
+    and refreshes that sign-in. Voice reuses it rather than asking for a
+    second credential. The bots module exports the resolver behind a
+    small port (`ChatgptAccessPort`: access token and account id,
+    refreshed), so the voice module never reads bots' tables. The adapter
+    posts the clip as multipart to ChatGPT's own dictation route,
+    `https://chatgpt.com/backend-api/transcribe`, the one the Codex CLI's
+    push-to-talk uses: the access token as bearer, `chatgpt-account-id`,
+    and `originator: oppenheimer`, the same honest identity the ChatGPT
+    bot engine sends. The backend picks the speech model; the route
+    takes no model and, as far as known clients show, no vocabulary
+    prompt, so the vocabulary hint moves wholly into the polish step.
+    - **What this trades.** The route is internal and undocumented. It
+      can change or vanish without notice, it rejects API keys, it has
+      answered some clients with a Cloudflare challenge, and it spends
+      the subscription's own allowance. Slice 0 checks that it answers a
+      server that says who it is. If it only answers clients that pose
+      as the Codex app, that is a stop: Oppenheimer does not impersonate
+      another client, and the key adapter below takes over.
+    - **Failure is visible.** A refusal or a changed response maps to
+      `VOICE_PROVIDER_UNAVAILABLE`; a lapsed sign-in maps to the same
+      "sign in again in Settings → Model providers" the bots use.
+  - **OpenAI-compatible `/audio/transcriptions`**, with a key, as the
+    fallback and for deployments with no sign-in. One adapter covers
+    OpenAI (`gpt-4o-mini-transcribe`, `gpt-4o-transcribe`), Groq
+    (`whisper-large-v3-turbo`) and a self-hosted `faster-whisper` or
+    `whisper.cpp` server, by base URL.
+  - **Which one runs** is decided per workspace on each request: its
+    ChatGPT sign-in when it has one, else the deployment's key, else
+    `none`.
   - **`none`**: the mic is hidden. This is the default when no key is
     set, so a fresh clone still boots (the same rule as OAuth in
     `api-config.md`).
@@ -139,9 +168,15 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 - New error codes (`VOICE_AUDIO_TOO_LONG`, `VOICE_UNSUPPORTED_FORMAT`,
   `VOICE_PROVIDER_UNAVAILABLE`, `VOICE_RATE_LIMITED`) get rows in
   `apps/docs/docs/errors.md`.
-- Env: `VOICE_STT_PROVIDER`, `VOICE_STT_BASE_URL`, `VOICE_STT_API_KEY`,
-  `VOICE_STT_MODEL` and `VOICE_POLISH_MODEL` in the root `.env.example`,
-  each with a note.
+- Env, for the fallback only: `VOICE_STT_BASE_URL`, `VOICE_STT_API_KEY`
+  and `VOICE_STT_MODEL` in the root `.env.example`, each with a note.
+  The ChatGPT path needs no env beyond what bots already need (the
+  provider key sealer).
+- **Polish runs on the same sign-in.** With a ChatGPT sign-in, the
+  polish call goes through ChatGPT's Codex backend with
+  `BotEngine.complete` from `@oppenheimer/backend-agents`, the way bot
+  conversation summaries do, so one sign-in covers both steps. Without
+  one it uses `LlmService`.
 - The intent step is not in this module: it is
   `POST /v1/sessions/proposals` (text in, `{ proposal }` out,
   `sessions:write`) in `apps/api/src/sessions/`, which already knows the
@@ -188,6 +223,10 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
   cancel instead of sending.
   - We store none of it: audio and transcripts are never written to
     storage or logs, and only the prompt you send is kept.
+  - On the ChatGPT sign-in, both providers are OpenAI under the
+    signed-in person's ChatGPT account, so that account's ChatGPT data
+    controls apply rather than API retention terms. The first-use notice
+    says so in those words.
   - Hosted providers are configured only under terms that exclude
     training and keep retention to the minimum they offer (zero data
     retention where the account has it). The slice 0 spike records
@@ -205,12 +244,15 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 - **Cost.** At Whisper-class prices (about $0.006 per minute, less on
   Groq) plus one small LLM call, a 20-second prompt costs well under a
   cent. The limiter's per-user bucket is what caps abuse.
+  On the ChatGPT sign-in there is no per-minute bill: dictation draws
+  on the subscription's own limits, and a limit reached is a
+  `VOICE_RATE_LIMITED` with the reset ChatGPT names.
 
 ## Slices
 
 | # | Slice | Ships | Done when |
 |---|-------|-------|-----------|
-| 0 | Spike (1–2 days) | `microphone=(self)`; record in Chrome, Safari and Firefox; the OpenAI-compatible adapter behind a hidden endpoint; measured latency for a 15 s clip on Groq vs OpenAI vs self-hosted; 20 real prompts scored raw vs polished | The provider is chosen with numbers, and stop-to-text is under ~1.5 s at p50 |
+| 0 | Spike (1–2 days) | `microphone=(self)`; record in Chrome, Safari and Firefox; the ChatGPT sign-in adapter behind a hidden endpoint, called with `originator: oppenheimer`; whether the route answers it at all; measured latency for a 15 s clip on it vs OpenAI with a key; 20 real prompts scored raw vs polished | The ChatGPT route works without posing as another client, or the key fallback is chosen with numbers, and stop-to-text is under ~1.5 s at p50 |
 | 1 | Dictate the prompt | The `voice` module (transcribe and polish), `useDictation`, `DictateButton` in the new-session composer, the flag, the scope, the error codes, screenshots | You can speak a prompt into a new session and send it |
 | 2 | Set up from the prompt | `POST /v1/sessions/proposals` in the sessions module, the intent extraction with closed lists, the form prefilled with guesses highlighted | Most fields come out right on a set of spoken setups (the eval below) |
 | 3 | Dictate everywhere | Task dialog, task composer, terminal paste, the hold-to-talk hotkey, a personal dictionary (words and replacements) | Talking to a running agent works the way the composer does |
@@ -221,7 +263,10 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 - **Unit:** the `useDictation` state machine with a fake
   `MediaRecorder`; handler tests for the command with a fake
   `SpeechToTextPort` and `LlmService` (`testing-backend.md`).
-- **Adapter:** the OpenAI-compatible adapter against a recorded HTTP
+- **Adapter:** the ChatGPT adapter against a recorded response,
+  including a refused token (sign in again) and a changed response shape
+  (`VOICE_PROVIDER_UNAVAILABLE`, never a crash); the OpenAI-compatible
+  adapter against a recorded HTTP
   fixture, including a `429` that pauses the bucket.
 - **e2e:** Playwright can feed Chromium a fake microphone
   (`--use-file-for-fake-audio-capture` with a WAV in `e2e/fixtures`)
@@ -237,12 +282,11 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 
 1. Which version does this land in? It is small enough to sit beside
    0.7 (terminal and chat), and it makes 0.5 (mobile) much better.
-2. Provider: Groq's hosted Whisper (fastest and cheapest), OpenAI
-   (best accuracy on code words), or a self-hosted `faster-whisper` on
-   the dev server (private, ~€0)? Slice 0 decides with numbers, but
-   which matters most to you?
-3. Languages: English only, or Spanish and Catalan as well? Whisper
+2. Languages: English only, or Spanish and Catalan as well? Whisper
    handles all three, but the polish prompt and the eval need each one.
-4. Should it ever start the session without a click (say, hold the
+3. Should it ever start the session without a click (say, hold the
    hotkey and finish with "go")? This note says no for now.
-5. Bring your own key per workspace, or one deployment-wide key?
+4. The ChatGPT route's terms: is a subscription's dictation route fair
+   to call from a server for the person who signed in? The bots already
+   make that call for the Codex backend; voice should follow whatever
+   that decision is.

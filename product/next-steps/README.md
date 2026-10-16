@@ -73,3 +73,8 @@ where these land is the first open question below.
   Setting up a session from what was said is the sessions module's
   `POST /v1/sessions/proposals`, which takes any text, so the voice
   endpoint stays audio in and text out.
+- 2026-10-16: voice transcribes on the workspace's ChatGPT sign-in
+  (Settings → Model providers), through ChatGPT's dictation route, with
+  an OpenAI-compatible key as the fallback. The route is undocumented;
+  if it only answers clients posing as the Codex app, the fallback
+  takes over.
