@@ -43,4 +43,12 @@ export interface BotTurnRepositoryPort {
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;
   /** Whether Stop was pressed on this turn. */
   isCancelRequested(turnId: string): Promise<boolean>;
+
+  /**
+   * Clear history: the bot's summary, approvals (a pending one ends with the
+   * conversation), messages and turns, and its sidebar line, in one
+   * transaction under the lock a send takes. `busy`, and nothing deleted,
+   * while one of its turns is queued or running; `missing` when the bot is gone.
+   */
+  clearConversation(organizationId: string, botId: string): Promise<'cleared' | 'busy' | 'missing'>;
 }

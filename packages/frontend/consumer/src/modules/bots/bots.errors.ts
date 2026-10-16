@@ -40,4 +40,6 @@ export const BotsErrors = {
     code: 'BOTS_CLIENT_025',
     message: 'Failed to check the ChatGPT sign-in',
   },
+  EXPORT_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_026', message: 'Failed to export the chat' },
+  CLEAR_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_027', message: 'Failed to clear the chat' },
 } as const satisfies Record<string, ErrorDefinition>;

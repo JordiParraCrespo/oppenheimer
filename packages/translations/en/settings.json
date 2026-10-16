@@ -126,7 +126,7 @@
       "saving": "Saving…",
       "failed": "Couldn’t save the key."
     },
-    "signedIn": "Signed in · account ending in {{hint}}",
+    "signedIn": "Signed in · {{hint}}",
     "notConnected": "Not connected",
     "connect": "Connect ChatGPT",
     "reconnect": "Sign in again",

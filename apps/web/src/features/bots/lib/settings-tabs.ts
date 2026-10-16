@@ -25,9 +25,9 @@ export const BOT_SETTINGS_TABS = [
     Icon: Database,
   },
   {
-    slug: 'runs-on',
-    to: '/bots/$botId/settings/runs-on',
-    labelKey: 'bots.settings.tabs.runsOn',
+    slug: 'home-host',
+    to: '/bots/$botId/settings/home-host',
+    labelKey: 'bots.settings.tabs.homeHost',
     Icon: Terminal,
   },
 ] as const;

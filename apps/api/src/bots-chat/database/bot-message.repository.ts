@@ -65,6 +65,38 @@ export class BotMessageRepository
     return records.reverse().map((record) => this.mapper.toDomain(record));
   }
 
+  async countConversation(scope: AccessScope, botId: string): Promise<number> {
+    // IDX_bot_message_bot.
+    return this.scopedQuery(scope)
+      .andWhere('message.botId = :botId', { botId })
+      .andWhere(`message.role <> 'activity'`)
+      .getCount();
+  }
+
+  async findExportPage(
+    scope: AccessScope,
+    botId: string,
+    after: BotMessageEntity | null,
+    limit: number,
+  ): Promise<BotMessageEntity[]> {
+    // IDX_bot_message_bot, read forwards; the cursor is the stored row's own
+    // time, so a page boundary keeps the database's microseconds.
+    const query = this.scopedQuery(scope).andWhere('message.botId = :botId', { botId });
+    if (after) {
+      query.andWhere(
+        `(message.createdAt, message.position, message.id) > (SELECT c."createdAt", c."position", c.id FROM bot_message c WHERE c."organizationId" = :cursorOrganizationId AND c.id = :afterId)`,
+        { cursorOrganizationId: after.organizationId, afterId: after.id },
+      );
+    }
+    const records = await query
+      .orderBy('message.createdAt', 'ASC')
+      .addOrderBy('message.position', 'ASC')
+      .addOrderBy('message.id', 'ASC')
+      .take(limit)
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   async findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null> {
     // IDX_bot_message_turn.
     const record = await this.repository.findOne({

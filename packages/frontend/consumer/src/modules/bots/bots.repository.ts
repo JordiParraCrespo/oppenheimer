@@ -161,7 +161,11 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
 }
 
 function toConversation(dto: BotConversationResponseDto): BotConversationEntity {
-  return new BotConversationEntity(dto.messages.map(toMessage), dto.turns.map(toTurn));
+  return new BotConversationEntity(
+    dto.messages.map(toMessage),
+    dto.turns.map(toTurn),
+    dto.messageCount,
+  );
 }
 
 /**
@@ -185,6 +189,25 @@ export class BotsRepository {
       BotsErrors.FETCH_CONVERSATION_FAILED,
     );
     return toConversation(data);
+  }
+
+  /** The whole chat, oldest first, for an export: the chat's own read holds only the newest. */
+  @MapApiError(BotsErrors.EXPORT_CONVERSATION_FAILED)
+  async exportConversation(id: string): Promise<BotMessageEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.exportBotConversation({ path: { id } }),
+      BotsErrors.EXPORT_CONVERSATION_FAILED,
+    );
+    return data.messages.map(toMessage);
+  }
+
+  /** Clear history: the chat is erased; soul, instructions and memory stay. */
+  @MapApiError(BotsErrors.CLEAR_CONVERSATION_FAILED)
+  async clearConversation(id: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.clearBotConversation({ path: { id } }),
+      BotsErrors.CLEAR_CONVERSATION_FAILED,
+    );
   }
 
   /**

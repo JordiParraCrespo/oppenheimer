@@ -8,10 +8,9 @@ import { BotAvatarColor } from './bot-avatar-color';
 import { BotGroupSelect } from './bot-group-select';
 
 /**
- * The Profile card: the name and description the save row commits, and the
- * colour and sidebar group, which save as they are picked. This owns the
- * form's save; each picker owns its own, so a refused colour does not read
- * as a refused name.
+ * The Profile card: name, description, colour and sidebar group, one draft
+ * saved together by the card's Save, like every bot settings page. The
+ * colour and the group are rows that bind their own field of the form.
  */
 export function BotProfileCard({ bot }: { bot: BotEntity }) {
   const { t } = useTranslation();
@@ -21,7 +20,12 @@ export function BotProfileCard({ bot }: { bot: BotEntity }) {
 
   return (
     <BotProfileForm
-      values={{ name: bot.name, description: bot.description }}
+      values={{
+        name: bot.name,
+        description: bot.description,
+        avatarColor: bot.avatarColor,
+        groupId: bot.groupId,
+      }}
       pending={save.isPending}
       saved={saved}
       error={save.error ? resolveError(save.error, t('bots.settings.profile.failed')) : undefined}
@@ -31,8 +35,12 @@ export function BotProfileCard({ bot }: { bot: BotEntity }) {
       }}
       onDiscard={() => save.reset()}
     >
-      <BotAvatarColor bot={bot} />
-      <BotGroupSelect bot={bot} />
+      {(control) => (
+        <>
+          <BotAvatarColor bot={bot} control={control} />
+          <BotGroupSelect botId={bot.id} control={control} />
+        </>
+      )}
     </BotProfileForm>
   );
 }

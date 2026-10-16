@@ -11,8 +11,8 @@ import { provisionedUser, reloadFromServer, signInAs } from '../../support/web';
  * sidebar, greeted in its chat (which says its provider needs a key first), renamed and
  * recoloured on Profile, moved into a new sidebar group, its INSTRUCTIONS.md
  * edited and reverted, a fact added, reworded and forgotten, a home host
- * picked, and deleted. The host is paired but no runner dials in: Runs on is
- * about what the control plane holds.
+ * picked and saved, and deleted. The host is paired but no runner dials in:
+ * Home host is about what the control plane holds.
  */
 
 const toast = (page: Page, text: string) =>
@@ -57,10 +57,17 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
   await expect(page.getByRole('banner').getByText('Release Bot')).toBeVisible();
+  // Chat history: nothing said yet, so nothing to export or clear.
+  await expect(page.getByText('No messages yet.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Clear history' })).toBeDisabled();
 
-  // A colour applies as it is picked, and is the server's after a reload.
+  // A colour is a draft until Save, then the server's, and still after a reload.
   await page.getByRole('button', { name: 'Coral' }).click();
   await expect(page.getByRole('button', { name: 'Coral' })).toHaveAttribute('aria-pressed', 'true');
+  expect((await getBot(owner.api, botId)).avatarColor).not.toBe('coral');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
   await expect.poll(async () => (await getBot(owner.api, botId)).avatarColor).toBe('coral');
   await reloadFromServer(page);
   await expect(page.getByRole('button', { name: 'Coral' })).toHaveAttribute('aria-pressed', 'true');
@@ -116,14 +123,23 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   await fact.getByRole('button', { name: /^Forget/ }).click();
   await expect(page.getByText('No facts yet. Add one below.')).toBeVisible();
 
-  // Runs on: the paired host, offline, picked as the home host.
-  await page.getByRole('link', { name: 'Runs on' }).click();
+  // Home host: none yet; the paired host, offline, picked as a draft, cancelled, then saved.
+  await page.getByRole('link', { name: 'Home host' }).click();
+  await expect(page).toHaveURL(new RegExp(`/bots/${botId}/settings/home-host$`));
+  await expect(page.getByRole('radio', { name: /No home host/ })).toBeChecked();
   const host = page.getByRole('radio', { name: /build-01/ });
   await expect(page.getByText(/Offline/)).toBeVisible();
   await host.click();
   await expect(host).toBeChecked();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('radio', { name: /No home host/ })).toBeChecked();
+  await host.click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
   await expect.poll(async () => (await getBot(owner.api, botId)).homeHostId).not.toBeNull();
-  await reloadFromServer(page);
+  // The page's old address still opens it.
+  await page.goto(`/bots/${botId}/settings/runs-on`);
+  await expect(page).toHaveURL(new RegExp(`/bots/${botId}/settings/home-host$`));
   await expect(page.getByRole('radio', { name: /build-01/ })).toBeChecked();
 
   // Delete bot, behind its confirm, from the settings' menu: back to the list.

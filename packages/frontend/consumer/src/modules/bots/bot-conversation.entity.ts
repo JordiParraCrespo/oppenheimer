@@ -67,7 +67,14 @@ export class BotConversationEntity {
     public readonly messages: readonly BotMessageEntity[],
     /** Oldest first; any still queued or running are among them. */
     public readonly turns: readonly BotTurnEntity[],
+    /** How many messages the chat holds in all, past this window; activity lines not counted. */
+    public readonly messageCount: number,
   ) {}
+
+  /** When the newest message was written; `null` for an empty chat. */
+  get lastMessageAt(): Date | null {
+    return this.messages.at(-1)?.createdAt ?? null;
+  }
 
   /** The turn Stop applies to: the running one, else the oldest queued. */
   get activeTurn(): BotTurnEntity | null {

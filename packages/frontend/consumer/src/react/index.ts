@@ -22,14 +22,18 @@ export {
   useDecideBotApproval,
 } from './bot-approvals.queries';
 export {
+  type BotHistory,
   type BotLiveText,
   type CancelBotTurnVariables,
   type SendBotMessageVariables,
   useBotActiveTurn,
   useBotLiveText,
   useCancelBotTurn,
+  useClearBotConversation,
+  useExportBotConversation,
   useSendBotMessage,
   useSuspenseBotConversation,
+  useSuspenseBotHistory,
 } from './bot-chat.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {

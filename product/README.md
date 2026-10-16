@@ -495,3 +495,10 @@ earlier note:
   a `bot-summaries` job writes with the bot's own model once they pass the
   budget with headroom (25 §2, "Decided"). The chat still shows every
   message.
+- Note 25 named a bot's last settings page Runs on (Works on from slice
+  3), and its picks, the colour and sidebar group on Profile included,
+  saved on the click. On 2026-10-16 the owner, testing it, read Runs on as
+  where the bot runs: the page is **Home host** now, says the bot always
+  runs in Oppenheimer and the home host is only where its sessions start
+  when no machine is named, offers No home host, and every bot settings
+  page saves a draft with Save (25 §1, "Decided").

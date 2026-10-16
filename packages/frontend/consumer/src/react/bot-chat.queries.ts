@@ -8,7 +8,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { BotConversationEntity, BotTurnEntity } from '../modules/bots/bot-conversation.entity';
+import type {
+  BotConversationEntity,
+  BotMessageEntity,
+  BotTurnEntity,
+} from '../modules/bots/bot-conversation.entity';
 import {
   appendBotText,
   type BotLiveText,
@@ -32,6 +36,57 @@ export function useSuspenseBotConversation(id: string) {
   return useSuspenseQuery<BotConversationEntity, Error>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
+  });
+}
+
+/** What Settings says of a chat: how many messages it holds, the newest's time, whether a turn works. */
+export interface BotHistory {
+  messageCount: number;
+  lastMessageAt: Date | null;
+  /** A turn is queued or running: Clear history is refused until it ends. */
+  busy: boolean;
+}
+
+/** The chat read as Settings → Profile's history row draws it, under a Suspense `QueryState`. */
+export function useSuspenseBotHistory(id: string) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<BotConversationEntity, Error, BotHistory>({
+    queryKey: botsKeys.conversation(id),
+    queryFn: () => app.bots.findConversation(id),
+    select: (conversation) => ({
+      messageCount: conversation.messageCount,
+      lastMessageAt: conversation.lastMessageAt,
+      busy: conversation.activeTurn !== null,
+    }),
+  });
+}
+
+/** Export: the whole chat, oldest first, read once when asked for. */
+export function useExportBotConversation(
+  options?: UseMutationOptions<BotMessageEntity[], Error, string>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (id: string) => app.bots.exportConversation(id),
+    ...options,
+  });
+}
+
+/**
+ * Clear history. The chat, its card, the sidebar's last line and the bot's
+ * own read are read again, all empty of it now.
+ */
+export function useClearBotConversation(options?: UseMutationOptions<void, Error, string>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => app.bots.clearConversation(id),
+    ...withCacheOnSuccess(options, (_data, id) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
+        queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
+      ]),
+    ),
   });
 }
 

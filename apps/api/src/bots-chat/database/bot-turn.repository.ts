@@ -140,6 +140,47 @@ export class BotTurnRepository
     });
     return Boolean(record?.cancelRequestedAt);
   }
+
+  clearConversation(
+    organizationId: string,
+    botId: string,
+  ): Promise<'cleared' | 'busy' | 'missing'> {
+    return this.outbox.transaction(async (manager) => {
+      // The lock a send takes: no turn can be queued between the check and the deletes.
+      if (!(await lockBot(manager, { organizationId, botId }))) return 'missing';
+      // IDX_bot_turn_active.
+      const [{ active }]: { active: number }[] = await manager.query(
+        `SELECT count(*)::int AS active FROM bot_turn
+          WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
+        [organizationId, botId],
+      );
+      if (active > 0) return 'busy';
+      const params = [organizationId, botId];
+      // Each by its bot index; children first, so no row is left to a cascade.
+      await manager.query(
+        `DELETE FROM bot_conversation_summary WHERE "organizationId" = $1 AND "botId" = $2`,
+        params,
+      );
+      await manager.query(
+        `DELETE FROM bot_approval WHERE "organizationId" = $1 AND "botId" = $2`,
+        params,
+      );
+      await manager.query(
+        `DELETE FROM bot_message WHERE "organizationId" = $1 AND "botId" = $2`,
+        params,
+      );
+      await manager.query(
+        `DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2`,
+        params,
+      );
+      await manager.query(
+        `UPDATE bot SET "lastMessageAt" = NULL, "lastMessagePreview" = NULL
+          WHERE "organizationId" = $1 AND id = $2`,
+        params,
+      );
+      return 'cleared';
+    });
+  }
 }
 
 /**
@@ -177,7 +218,10 @@ export async function enqueueWithin(
  * turn is due. `FOR NO KEY UPDATE` leaves the bot's turns free to reference
  * it. Whether the bot is still there.
  */
-async function lockBot(manager: EntityManager, turn: BotTurnEntity): Promise<boolean> {
+async function lockBot(
+  manager: EntityManager,
+  turn: Pick<BotTurnEntity, 'organizationId' | 'botId'>,
+): Promise<boolean> {
   const bot: unknown[] = await manager.query(
     `SELECT id FROM bot WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
     [turn.organizationId, turn.botId],
