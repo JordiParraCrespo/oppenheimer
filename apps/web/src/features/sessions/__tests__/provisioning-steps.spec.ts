@@ -119,3 +119,45 @@ describe('failureReason', () => {
     expect(failureReason(null, t, catalog)).toBeNull();
   });
 });
+
+/**
+ * A folder session clones nothing and makes no branch
+ * (`product/versions/mvp/24-session-places.md` §3): its start reads host,
+ * open the folder, start — never a clone or a worktree it does not do.
+ */
+describe('provisioningSteps for a folder session', () => {
+  const folder = { ...context, folder: '/home/jordi/code/atlas' };
+
+  it('draws the host, the folder and the agent, and no clone or worktree', () => {
+    const steps = provisioningSteps(
+      [
+        step('host', 'done'),
+        step('clone', 'pending'),
+        step('worktree', 'pending'),
+        step('agent', 'pending'),
+      ],
+      folder,
+      t,
+    );
+
+    expect(steps.map((row) => row.id)).toEqual(['host', 'open', 'agent']);
+    expect(steps[1]?.label).toContain('"path":"/home/jordi/code/atlas"');
+    expect(steps[1]?.state).toBe('running');
+  });
+
+  it('marks the folder open once the agent is starting', () => {
+    const [, open] = provisioningSteps([step('host', 'done'), step('agent', 'running')], folder, t);
+    expect(open?.state).toBe('done');
+    expect(open?.meta).toBe('sessions.provisioning.steps.open.done');
+  });
+
+  it('starts a shell for the blank terminal', () => {
+    const steps = provisioningSteps(
+      [step('host', 'pending'), step('agent', 'pending')],
+      { ...folder, shell: true },
+      t,
+    );
+    expect(steps.at(-1)?.label).toBe('sessions.provisioning.steps.agent.shell');
+    expect(steps[1]?.state).toBe('pending');
+  });
+});

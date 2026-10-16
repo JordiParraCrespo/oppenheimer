@@ -88,6 +88,7 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (domain.Identi
 	}
 	identity := domain.Identity{
 		HostID:          resp.HostID,
+		AccountID:       resp.AccountID,
 		Name:            in.Name,
 		ControlPlaneURL: url,
 		Fingerprint:     resp.Fingerprint,

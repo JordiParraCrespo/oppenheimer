@@ -20,6 +20,12 @@ const REJECTION_DETAIL =
 /** What the machine is told, and what it pins from then on. */
 export interface RegisterHostResult {
   hostId: string;
+  /**
+   * The account the host is now paired with, its owner. The runner keeps it
+   * and names the top level of its work folder by it (24 §2), so no command
+   * the control plane sends it later has to say whose the work is.
+   */
+  accountId: string;
   fingerprint: string;
   channel: string;
   releaseBaseUrl: string;
@@ -73,12 +79,13 @@ export class RegisterHostCommandHandler
         ),
     });
 
-    const hostId = registered.isSome()
-      ? registered.unwrap().id
+    const host = registered.isSome()
+      ? registered.unwrap()
       : await this.hostFromRetry(tokenHash, fingerprint);
 
     return {
-      hostId,
+      hostId: host.id,
+      accountId: host.ownerUserId,
       fingerprint: controlPlaneFingerprint,
       channel: this.release.channel,
       releaseBaseUrl: this.release.releaseBaseUrl ?? '',
@@ -91,7 +98,7 @@ export class RegisterHostCommandHandler
    * received: it proves that by presenting the key the spent token already
    * paired, and gets back the host it created the first time.
    */
-  private async hostFromRetry(tokenHash: string, fingerprint: string): Promise<string> {
+  private async hostFromRetry(tokenHash: string, fingerprint: string): Promise<HostEntity> {
     const found = await this.tokens.findOneByHash(tokenHash);
     const redeemedHostId = found.isSome() ? found.unwrap().redeemedHostId : null;
     if (!redeemedHostId) throw this.rejected();
@@ -99,7 +106,7 @@ export class RegisterHostCommandHandler
     const host = await this.hosts.findOneByIdForMachine(redeemedHostId);
     if (host.isNone() || !host.unwrap().hasFingerprint(fingerprint)) throw this.rejected();
 
-    return host.unwrap().id;
+    return host.unwrap();
   }
 
   private rejected(): AppError {

@@ -40,7 +40,12 @@ func (c Channel) Valid() bool { return c == ChannelStable || c == ChannelBeta }
 // the config is printed by `runner status` and the key never is.
 type Identity struct {
 	HostID string `json:"hostId"`
-	Name   string `json:"name"`
+	// AccountID is the Oppenheimer account this host is paired with, as the
+	// registration answered it. The work folder's top level is named by it
+	// (24 §2), so no command has to say whose the work is. Empty for an
+	// identity written before registration answered it.
+	AccountID string `json:"accountId,omitempty"`
+	Name      string `json:"name"`
 	// ControlPlaneURL is the only origin this runner will speak to.
 	ControlPlaneURL string `json:"controlPlaneUrl"`
 	// Fingerprint pins the control plane's public key (F6).

@@ -23,7 +23,9 @@ import { IconButton } from './icon-button';
  *   dot in its tone, the line, at most one action or the dismiss.
  * - `FloatingChip`: a 28px pill that floats over the transcript while what
  *   it points to is scrolled away ("2 running ↑", Jump to latest); its
- *   `notice` form is a quiet wash with no shadow ("Watching CI on #668").
+ *   `notice` form is a quiet wash with no shadow ("Watching CI on #668");
+ *   its `round` form is a bot chat's way back to the latest turn, a 34px
+ *   circle around one glyph (Bots), named by its `aria-label`.
  */
 function TranscriptDivider({
   icon,
@@ -183,7 +185,21 @@ function FloatingChip({
   variant = 'button',
   className,
   ...props
-}: React.ComponentProps<'button'> & { variant?: 'button' | 'notice' }) {
+}: React.ComponentProps<'button'> & { variant?: 'button' | 'notice' | 'round' }) {
+  if (variant === 'round') {
+    return (
+      <button
+        type="button"
+        data-slot="floating-chip"
+        data-variant="round"
+        className={cn(
+          'inline-flex size-8.5 items-center justify-center rounded-pill border border-border-subtle bg-card text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-4',
+          className,
+        )}
+        {...props}
+      />
+    );
+  }
   if (variant === 'notice') {
     const { type: _, ...rest } = props;
     return (

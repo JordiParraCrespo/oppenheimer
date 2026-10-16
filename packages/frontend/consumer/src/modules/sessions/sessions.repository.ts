@@ -86,6 +86,8 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.stoppedAt ? new Date(data.stoppedAt) : null,
     data.hints ?? [],
     new Date(data.createdAt),
+    data.place,
+    data.folderPath ?? null,
   );
 }
 
@@ -106,8 +108,14 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
   return {
     hostId: input.hostId,
     agent: input.agent,
-    checkouts: input.checkouts,
-    ...(input.cwdGithubRepoId !== undefined ? { cwdGithubRepoId: input.cwdGithubRepoId } : {}),
+    ...(input.folder !== undefined
+      ? { folder: input.folder }
+      : {
+          checkouts: input.checkouts,
+          ...(input.cwdGithubRepoId !== undefined
+            ? { cwdGithubRepoId: input.cwdGithubRepoId }
+            : {}),
+        }),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
     ...(input.attachmentIds?.length ? { attachmentIds: input.attachmentIds } : {}),

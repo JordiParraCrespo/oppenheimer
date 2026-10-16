@@ -398,6 +398,10 @@ and keeps nothing of a pull request but which repositories the caller watches.
 | Code                               | Title                                | HTTP |
 | ---------------------------------- | ------------------------------------ | ---- |
 | `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
+| `PULLS_002` <a id="pulls_002" /> | A pull request from a fork cannot be reviewed in a session yet | 409  |
+
+`PULLS_002` answers a review session started on a pull request whose head
+branch is in a fork: a host fetches the base repository's branches only.
 
 ## Projects
 
@@ -479,6 +483,13 @@ are never reissued.
 | `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this shared session             | 401  |
 | `SESSIONS_023` <a id="sessions_023" /> | This session is not shared with you             | 403  |
 | `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold (no longer raised) | 409 |
+| `SESSIONS_025` <a id="sessions_025" /> | This host's runner cannot start a session in a folder | 409 |
+| `SESSIONS_026` <a id="sessions_026" /> | This host's runner cannot list its folders      | 409  |
+| `SESSIONS_027` <a id="sessions_027" /> | The host is offline, so its folders cannot be listed | 503 |
+| `SESSIONS_028` <a id="sessions_028" /> | That folder does not exist on the host          | 404  |
+| `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
+| `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
+| `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -492,6 +503,17 @@ for it to be shared again either way. `SESSIONS_023` is apart because its next s
 is its own — ask to be named; a list of people matches a verified email only.
 `SESSIONS_024` was twenty live share links on one session; since 2026-10-13 a
 session has one share, and the code stays reserved so it is never reused.
+
+`SESSIONS_025`–`SESSIONS_031` belong to sessions in a folder already on the host
+(`product/versions/mvp/24-session-places.md`). `025` is a create with a `folder` for a
+host whose live runner did not announce `session.folder`: it would refuse a session with
+no checkouts, and updating the runner is the fix. A host with no link right now is not
+refused: the session is recorded and its next hello is sent it. `026`–`031` answer the
+folder picker, `GET /hosts/{id}/folders`, which asks the host's runner live and caches
+nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to the host,
+`031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
+`FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
+a runner gives reads as `030`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -586,6 +608,85 @@ on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
 `overlapping`, the rate caps, `missed`), and a reason that would repeat every time
 pauses the automation with a `pausedReason`.
 
+## Bots
+
+A bot is a worker you talk to: who it is, its soul and instructions with their
+history, and what it remembers, kept in the API; its turns run on its home host.
+See `product/versions/mvp/25-bots.md`.
+
+| Code                                 | Title                                        | HTTP |
+| ------------------------------------ | -------------------------------------------- | ---- |
+| `BOTS_001` <a id="bots_001" />       | Bot not found                                | 404  |
+| `BOTS_002` <a id="bots_002" />       | Bots belong to an organization               | 400  |
+| `BOTS_003` <a id="bots_003" />       | Bot group not found                          | 404  |
+| `BOTS_004` <a id="bots_004" />       | A group with that name already exists        | 409  |
+| `BOTS_005` <a id="bots_005" />       | Bot document not found                       | 404  |
+| `BOTS_006` <a id="bots_006" />       | The document was changed since it was loaded | 409  |
+| `BOTS_007` <a id="bots_007" />       | Revision not found                           | 404  |
+| `BOTS_008` <a id="bots_008" />       | Memory fact not found                        | 404  |
+| `BOTS_009` <a id="bots_009" />       | The bot remembers as much as it can          | 422  |
+| `BOTS_010` <a id="bots_010" />       | That model cannot run a bot                  | 422  |
+| `BOTS_011` <a id="bots_011" />       | Model providers are not configured on this server | 503 |
+| `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
+| `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
+| `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
+| `BOTS_015` <a id="bots_015" />       | Approval not found                           | 404  |
+| `BOTS_016` <a id="bots_016" />       | The approval was already decided             | 409  |
+| `BOTS_017` <a id="bots_017" />       | ChatGPT connects by signing in, not with a key | 422 |
+| `BOTS_018` <a id="bots_018" />       | The ChatGPT sign-in expired                  | 410  |
+| `BOTS_019` <a id="bots_019" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
+| `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
+| `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
+
+`BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
+another workspace.
+
+`BOTS_004` compares names without case: "Engineering" and "engineering" are one
+group.
+
+`BOTS_005` is a document name other than `soul` and `instructions`, the two a bot
+has.
+
+`BOTS_006` is optimistic concurrency: a save carries the `baseRevision` the editor
+loaded, and a save over a newer one is refused rather than silently winning. When
+the save was stale, the problem's `revision` extension is the revision that is
+current now. Reload and save again.
+
+`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
+turn. Forget one first.
+
+`BOTS_010` is a model id the bot's provider does not offer
+(`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.
+
+`BOTS_011` is a server with no `BOTS_PROVIDER_KEY`: no workspace can store a
+model provider's key, so no bot can answer. `BOTS_012` is a provider other than
+`anthropic`, `glm`, `openai` or `chatgpt` in `/model-providers/:provider`.
+
+`BOTS_013` is a message to a bot whose provider has no key in the workspace;
+store one in Settings → Model providers. A turn that finds the key gone when
+it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
+or not in the caller's workspace.
+
+`BOTS_015` is an approval (a Needs input card) that is not this bot's, or not
+in the caller's workspace. `BOTS_016` is a decision on one that was already
+approved, denied, or expired because a new message was sent to the bot: read
+the approvals again; the card is gone.
+
+`BOTS_017` to `BOTS_021` are the ChatGPT provider, which runs on a sign-in to a
+ChatGPT subscription instead of a key. `BOTS_017` is `PUT
+/model-providers/chatgpt`: sign in with `POST /model-providers/chatgpt/login`
+instead. `BOTS_018` is a poll of a sign-in that is past its fifteen minutes,
+that ChatGPT refused, or that was started in another workspace; start again.
+`BOTS_019` is OpenAI's sign-in server refusing for rate (or too many calls to it
+waiting), with `Retry-After`. `BOTS_020` is that server not answering, or
+answering something unusable. A ChatGPT sign-in that ChatGPT later refuses to
+refresh is removed, and the bot's next turn fails with `BOTS_013`. `BOTS_021`
+is a turn that needed the token refreshed while another API replica was
+refreshing it; it fails at once rather than wait, and the next message runs on
+the refreshed token.
+
+A home host the caller may not use answers `HOSTS_001`, as a session's does.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or
@@ -674,7 +775,7 @@ Neither reaches a person. `INBOUND_002` is a webhook delivery without GitHub's
 The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
-`HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
+`HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
@@ -701,6 +802,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
+| `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
+| `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -726,6 +830,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
+| `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
+| `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

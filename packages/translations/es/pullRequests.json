@@ -3,7 +3,10 @@
     "title": "Pull requests",
     "views": "Vistas",
     "queue": "Cola de PR",
-    "analytics": "Analítica"
+    "analytics": "Analítica",
+    "forReview": "Para revisar",
+    "searchReviews": "Buscar sesiones de revisión",
+    "clearSearch": "Borrar búsqueda"
   },
   "queue": {
     "title": "Cola de PR",
@@ -112,7 +115,8 @@
     "viewLabel": "Vista",
     "views": {
       "description": "Descripción",
-      "changes": "Cambios"
+      "changes": "Cambios",
+      "chat": "Chat"
     },
     "openOnGithub": "Abrir en GitHub",
     "loadFailed": "No se pudo cargar la pull request.",
@@ -124,8 +128,6 @@
     },
     "into": "en",
     "noDescription": "Sin descripción.",
-    "copyCode": "Copiar código",
-    "codeCopied": "Copiado",
     "editOnGithub": "Editar en GitHub",
     "checks": "Checks",
     "noReviewers": "Nadie la ha revisado todavía.",
@@ -186,7 +188,6 @@
     "optional": "Opcional"
   },
   "changes": {
-    "back": "Volver",
     "layout": "Disposición",
     "unified": "Unificada",
     "split": "Dividida",
@@ -250,5 +251,23 @@
     "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez.",
     "weekOf": "Semana del {{date}}",
     "hoverWeek": "Pasa por una semana"
+  },
+  "reviewSession": {
+    "start": "Iniciar sesión de revisión",
+    "starting": "Iniciando…",
+    "host": "Host",
+    "search": "Buscar hosts…",
+    "empty": "Ningún host coincide.",
+    "offline": "sin conexión",
+    "noHost": "No hay ningún host en línea. Arranca el runner en una de tus máquinas.",
+    "fork": "Viene de un fork, que una sesión todavía no puede descargar.",
+    "failed": "No se pudo iniciar la sesión de revisión.",
+    "title": "Revisa este pull request en una sesión",
+    "description": "Claude Code arranca en uno de tus hosts en un worktree de {{branch}}, lee el diff y empieza con dos o tres líneas. Luego pregúntale lo que quieras.",
+    "bar": "revisión · {{repository}} #{{number}}",
+    "close": "Mostrar el pull request",
+    "loadFailed": "No se pudo cargar la sesión de revisión.",
+    "composer": "Pregunta al agente de revisión o ejecuta un comando",
+    "listFailed": "No se pudieron cargar tus sesiones de revisión."
   }
 }

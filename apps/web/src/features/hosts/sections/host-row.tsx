@@ -1,8 +1,10 @@
-import { HostCard } from '@oppenheimer/design-system-web';
+import { Button, HostCard } from '@oppenheimer/design-system-web';
+import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRenameHost } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HostActionsMenu } from '../components/host-actions-menu';
@@ -13,6 +15,10 @@ import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
 /**
  * One host on Settings (`design/version1/Settings.dc.html`): its dot, name
  * and meta line, its state and when it was last seen, and the ellipsis.
+ *
+ * An online host offers **Open terminal**: New session as a folder session in
+ * the host's home with the blank terminal, started on arrival
+ * (`product/versions/mvp/24-session-places.md` §3).
  *
  * The row owns what its menu opens — the inline rename and the remove dialog —
  * because the menu's content unmounts when it closes, and nothing above a row
@@ -87,11 +93,35 @@ export function HostRow({ host }: { host: HostEntity }) {
           ) : null
         }
         action={
-          <HostActionsMenu
-            name={host.name}
-            onRename={() => setRenaming(true)}
-            onRemove={() => setRemoving(true)}
-          />
+          <span className="flex items-center gap-2">
+            {host.online ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                title={t('hosts.settings.openTerminalTitle', { host: host.name })}
+                render={
+                  <Link
+                    to="/sessions/new"
+                    search={{
+                      where: 'folder',
+                      host: host.id,
+                      path: '~',
+                      agent: 'shell',
+                      start: true,
+                    }}
+                  />
+                }
+              >
+                <SquareTerminal />
+                {t('hosts.settings.openTerminal')}
+              </Button>
+            ) : null}
+            <HostActionsMenu
+              name={host.name}
+              onRename={() => setRenaming(true)}
+              onRemove={() => setRemoving(true)}
+            />
+          </span>
         }
       />
       {removing ? <RemoveHostDialog host={host} onClose={() => setRemoving(false)} /> : null}

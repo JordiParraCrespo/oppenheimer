@@ -1,8 +1,9 @@
 'use client';
 
 import { ArrowUpIcon, ChevronDownIcon, MicIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 
+import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
@@ -59,6 +60,9 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * `above` fuses something the run is waiting on to the field's top edge (a
  * `ComposerApproval`): it brings its own top radius and hairline, and the
  * field squares its top to meet it, so the two read as one box.
+ *
+ * A bot's composer is `ChatComposer`, which shares the send rules and the
+ * send button with this one.
  */
 function Composer({
   value,
@@ -68,6 +72,7 @@ function Composer({
   busy = false,
   disabled = false,
   sendBlockedReason,
+  allowEmpty = false,
   placeholder = 'Describe a task or ask a question',
   attachments,
   onRemoveAttachment,
@@ -91,6 +96,12 @@ function Composer({
   disabled?: boolean;
   /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
   sendBlockedReason?: string;
+  /**
+   * Send with nothing written: what is sent needs no text (a blank terminal).
+   * Holds only while no file is attached: a file rides a written task, so the
+   * text is required again as soon as one is.
+   */
+  allowEmpty?: boolean;
   placeholder?: string;
   attachments?: ComposerAttachment[];
   onRemoveAttachment?: (id: string) => void;
@@ -112,141 +123,127 @@ function Composer({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const blocked = !busy && sendBlockedReason !== undefined;
-  const canSend = value.trim().length > 0 && !disabled && !blocked;
-  const reasonId = React.useId();
+  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+    value,
+    busy,
+    disabled,
+    sendBlockedReason,
+    allowEmpty,
+    attachmentCount: attachments?.length,
+    onSubmit,
+    onStop,
+  });
 
-  function submit() {
-    if (busy) return onStop?.();
-    if (canSend) onSubmit(value);
-  }
-
-  function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      submit();
-    }
-  }
-
-  const field = (
-    <div
-      data-slot="composer"
-      data-disabled={disabled || undefined}
-      data-tabbed={scope ? '' : undefined}
-      data-above={above ? '' : undefined}
-      className={cn(
-        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
-        className,
-      )}
-      {...props}
-    >
-      <textarea
-        data-slot="composer-input"
-        value={value}
-        onChange={(event) => onValueChange(event.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder={placeholder}
-        disabled={disabled}
-        rows={minRows}
-        // `min-h`, not `rows`: `field-sizing-content` overrides `rows`, so an
-        // empty composer would collapse to one line. The floor is the export's
-        // 112px (`.op-composer__input`); `rows` stays for the no-`field-sizing`
-        // fallback.
-        className={cn(
-          'field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] py-4 text-fg outline-none placeholder:text-field-placeholder',
-          scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
-        )}
-      />
-      {attachments && attachments.length > 0 ? (
-        <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
-          {attachments.map((file) => (
-            <span
-              key={file.id}
-              className="flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.25 text-xs text-fg-muted"
-            >
-              <span className="truncate">{file.name}</span>
-              <button
-                type="button"
-                aria-label={label.removeAttachment(file.name)}
-                onClick={() => onRemoveAttachment?.(file.id)}
-                className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
-              >
-                <XIcon className="size-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
-      <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
-        {onAttach ? (
-          <IconButton
-            aria-label={label.attach}
-            size="sm"
-            shape="square"
-            onClick={onAttach}
-            className="size-[30px]"
-          >
-            <PaperclipIcon className="size-[15px]" />
-          </IconButton>
-        ) : null}
-        {tools}
-        <span className="flex-1" />
-        {engine}
-        {onRecord ? (
-          <IconButton
-            aria-label={recording ? label.stopRecording : label.dictate}
-            aria-pressed={recording}
-            size="sm"
-            shape="square"
-            onClick={onRecord}
-            className={cn(
-              'size-[30px]',
-              recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
-            )}
-          >
-            <MicIcon className="size-[15px]" />
-          </IconButton>
-        ) : null}
-        <IconButton
-          aria-label={busy ? label.stop : label.send}
-          aria-disabled={blocked || undefined}
-          aria-describedby={blocked ? reasonId : undefined}
-          title={blocked ? sendBlockedReason : undefined}
-          variant="primary"
-          size="sm"
-          onClick={submit}
-          disabled={!busy && !blocked && !canSend}
-          className="size-8 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-primary"
-        >
-          {busy ? (
-            <SquareIcon className="size-3.5 fill-current" />
-          ) : (
-            <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
-          )}
-        </IconButton>
-        {blocked ? (
-          <span id={reasonId} className="sr-only">
-            {sendBlockedReason}
-          </span>
-        ) : null}
-      </div>
-    </div>
-  );
-
-  if (!above && !scope) return field;
   return (
-    <div data-slot="composer-stack" className="flex flex-col">
-      {above}
-      {scope ? (
-        <div
-          data-slot="composer-scope"
-          className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
-        >
-          {scope}
+    <ComposerFrame
+      above={above}
+      band={
+        scope ? (
+          <div
+            data-slot="composer-scope"
+            className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
+          >
+            {scope}
+          </div>
+        ) : undefined
+      }
+    >
+      <div
+        data-slot="composer"
+        data-disabled={disabled || undefined}
+        data-tabbed={scope ? '' : undefined}
+        data-above={above ? '' : undefined}
+        className={cn(
+          'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+          className,
+        )}
+        {...props}
+      >
+        <textarea
+          data-slot="composer-input"
+          value={value}
+          onChange={(event) => onValueChange(event.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          rows={minRows}
+          // `min-h`, not `rows`: `field-sizing-content` overrides `rows`, so an
+          // empty composer would collapse to one line. The floor is the export's
+          // 112px (`.op-composer__input`); `rows` stays for the no-`field-sizing`
+          // fallback.
+          className={cn(
+            'field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] py-4 text-fg outline-none placeholder:text-field-placeholder',
+            scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
+          )}
+        />
+        {attachments && attachments.length > 0 ? (
+          <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
+            {attachments.map((file) => (
+              <span
+                key={file.id}
+                className="flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.25 text-xs text-fg-muted"
+              >
+                <span className="truncate">{file.name}</span>
+                <button
+                  type="button"
+                  aria-label={label.removeAttachment(file.name)}
+                  onClick={() => onRemoveAttachment?.(file.id)}
+                  className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
+                >
+                  <XIcon className="size-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
+          {onAttach ? (
+            <IconButton
+              aria-label={label.attach}
+              size="sm"
+              shape="square"
+              onClick={onAttach}
+              className="size-[30px]"
+            >
+              <PaperclipIcon className="size-[15px]" />
+            </IconButton>
+          ) : null}
+          {tools}
+          <span className="flex-1" />
+          {engine}
+          {onRecord ? (
+            <IconButton
+              aria-label={recording ? label.stopRecording : label.dictate}
+              aria-pressed={recording}
+              size="sm"
+              shape="square"
+              onClick={onRecord}
+              className={cn(
+                'size-[30px]',
+                recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
+              )}
+            >
+              <MicIcon className="size-[15px]" />
+            </IconButton>
+          ) : null}
+          <ComposerSendButton
+            busy={busy}
+            blocked={blocked}
+            canSend={canSend}
+            sendBlockedReason={sendBlockedReason}
+            labels={label}
+            onClick={submit}
+            className="size-8"
+          >
+            {busy ? (
+              <SquareIcon className="size-3.5 fill-current" />
+            ) : (
+              <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
+            )}
+          </ComposerSendButton>
         </div>
-      ) : null}
-      {field}
-    </div>
+      </div>
+    </ComposerFrame>
   );
 }
 

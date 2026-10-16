@@ -35,5 +35,6 @@
   "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
   "reviewCommentPosted": "Comment posted.",
   "reviewApproved": "Approved.",
-  "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass."
+  "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass.",
+  "botDeleted": "“{{name}}” deleted."
 }

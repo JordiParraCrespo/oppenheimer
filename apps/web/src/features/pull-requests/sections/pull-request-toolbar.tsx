@@ -1,5 +1,4 @@
 import {
-  Button,
   type DiffLayout,
   DiffStat,
   IconButton,
@@ -12,16 +11,12 @@ import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  DEFAULT_PULL_REQUEST_VIEW,
-  PULL_REQUEST_VIEWS,
-  type PullRequestView,
-} from '../lib/pull-request-search';
+import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
 
 /**
  * The bar over a pull request, its one header: back to the queue and its
- * two views, GitHub, and Submit review. On Changes the views give way to
- * Back and the diff's layout. Submit review is the screen's, which holds the
+ * three views, GitHub, and Submit review. The views stay the same on every
+ * view; Changes adds the diff's layout beside them. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.
  */
 export function PullRequestToolbar({
@@ -46,51 +41,42 @@ export function PullRequestToolbar({
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
+      <IconButton
+        size="sm"
+        aria-label={t('pullRequests.detail.back')}
+        render={<Link to="/pulls" search={queue ?? {}} />}
+      >
+        <ChevronLeft />
+      </IconButton>
+      <SegmentedControl
+        size="md"
+        value={view}
+        onValueChange={(next) => onViewChange(next as PullRequestView)}
+        aria-label={t('pullRequests.detail.viewLabel')}
+      >
+        {PULL_REQUEST_VIEWS.map((value) => (
+          <SegmentedControlItem key={value} value={value}>
+            {t(`pullRequests.detail.views.${value}`)}
+            {value === 'changes' && pull ? (
+              <DiffStat additions={pull.additions} deletions={pull.deletions} />
+            ) : null}
+          </SegmentedControlItem>
+        ))}
+      </SegmentedControl>
       {view === 'changes' ? (
-        <>
-          <Button variant="ghost" size="sm" onClick={() => onViewChange(DEFAULT_PULL_REQUEST_VIEW)}>
-            <ChevronLeft />
-            {t('pullRequests.changes.back')}
-          </Button>
-          <SegmentedControl
-            value={layout}
-            onValueChange={(next) => onLayoutChange(next as DiffLayout)}
-            aria-label={t('pullRequests.changes.layout')}
-          >
-            <SegmentedControlItem value="unified">
-              {t('pullRequests.changes.unified')}
-            </SegmentedControlItem>
-            <SegmentedControlItem value="split">
-              {t('pullRequests.changes.split')}
-            </SegmentedControlItem>
-          </SegmentedControl>
-        </>
-      ) : (
-        <>
-          <IconButton
-            size="sm"
-            aria-label={t('pullRequests.detail.back')}
-            render={<Link to="/pulls" search={queue ?? {}} />}
-          >
-            <ChevronLeft />
-          </IconButton>
-          <SegmentedControl
-            size="md"
-            value={view}
-            onValueChange={(next) => onViewChange(next as PullRequestView)}
-            aria-label={t('pullRequests.detail.viewLabel')}
-          >
-            {PULL_REQUEST_VIEWS.map((value) => (
-              <SegmentedControlItem key={value} value={value}>
-                {t(`pullRequests.detail.views.${value}`)}
-                {value === 'changes' && pull ? (
-                  <DiffStat additions={pull.additions} deletions={pull.deletions} />
-                ) : null}
-              </SegmentedControlItem>
-            ))}
-          </SegmentedControl>
-        </>
-      )}
+        <SegmentedControl
+          value={layout}
+          onValueChange={(next) => onLayoutChange(next as DiffLayout)}
+          aria-label={t('pullRequests.changes.layout')}
+        >
+          <SegmentedControlItem value="unified">
+            {t('pullRequests.changes.unified')}
+          </SegmentedControlItem>
+          <SegmentedControlItem value="split">
+            {t('pullRequests.changes.split')}
+          </SegmentedControlItem>
+        </SegmentedControl>
+      ) : null}
       <span className="flex-1" />
       {pull ? (
         <IconButton

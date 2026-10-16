@@ -11,12 +11,14 @@ import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TerminalComposer } from '../components/terminal-composer';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
+import { submitLine } from '../lib/terminal-submit';
 import { HostLinkFix } from './host-link-fix';
 import { SessionShareButton } from './session-share-button';
 
@@ -47,11 +49,18 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItem,
+  composer,
 }: {
   sessionId: string;
   hostId: string;
   /** Drawn first in the status bar: the session's task, when the route has one. */
   statusItem?: ReactNode;
+  /**
+   * An input row under the grid, with this placeholder: a line sent to the
+   * agent on Enter, as if typed at its prompt. A pull request's review
+   * session has one ("Ask the review agent, or run a command").
+   */
+  composer?: string;
 }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
@@ -64,7 +73,7 @@ export function SessionTerminal({
     hostId,
     snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
   });
-  const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
+  const { containerRef, status, hasOutput, ended, retryNow, awaySince, send } = terminal;
   const phase = hostLinkPhaseOf({
     status,
     away: awaySince !== null,
@@ -139,6 +148,10 @@ export function SessionTerminal({
               />
             )}
           </div>
+        ) : null}
+
+        {composer ? (
+          <TerminalComposer placeholder={composer} onSubmit={(text) => submitLine(send, text)} />
         ) : null}
 
         {phase ? (

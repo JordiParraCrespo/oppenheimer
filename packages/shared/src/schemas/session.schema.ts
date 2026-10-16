@@ -14,6 +14,7 @@ import {
   displayNameSchema,
   githubRepoIdSchema,
   gitRefSchema,
+  hostPathSchema,
   installationIdSchema,
   promptSchema,
 } from './primitives.js';
@@ -89,6 +90,17 @@ export const sessionCheckoutInputSchema = z.object({
 
 export type SessionCheckoutInputDto = z.infer<typeof sessionCheckoutInputSchema>;
 
+/**
+ * Where a session runs (`product/versions/mvp/24-session-places.md`): a new
+ * `worktree` the runner makes for each checkout, or a `folder` already on the
+ * host, where nothing is cloned or written and closing only ends the terminal.
+ */
+export const SESSION_PLACES = ['worktree', 'folder'] as const;
+export type SessionPlace = (typeof SESSION_PLACES)[number];
+export const sessionPlaceSchema = z.enum(SESSION_PLACES);
+
+export { hostPathSchema };
+
 /** How many repositories a session may check out: one, until runners make several. */
 export const MAX_SESSION_CHECKOUTS = 1;
 
@@ -102,12 +114,17 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * Exactly one in the MVP: a runner makes one worktree per session and
-   * cannot launch one with no git, so a second repository, or none, is refused
-   * here, before a row is written and the first prompt spent on a session no
-   * host can make (#56, 00, 10).
+   * A worktree session's repositories: one in the MVP, because a runner makes
+   * one worktree per session, so a second is refused here before a row is
+   * written (#56, 00, 10). None with `folder`.
    */
-  checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
+  checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS).default([]),
+  /**
+   * A folder session: an absolute path to a folder already on the host. The
+   * agent starts there; nothing is cloned or written (24 §3). Exactly one of
+   * `folder` and `checkouts` is given.
+   */
+  folder: hostPathSchema.optional(),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
@@ -140,6 +157,10 @@ const createSessionFields = z.object({
  * question, it is an unsatisfiable body.
  */
 export const createSessionSchema = createSessionFields
+  /** A session runs in its checkouts or in a folder: exactly one of the two. */
+  .refine((value) => (value.folder === undefined) === value.checkouts.length > 0, {
+    path: ['folder'],
+  })
   .refine(
     (value) =>
       value.cwdGithubRepoId === undefined ||

@@ -5,7 +5,7 @@ import {
   SidebarListHead,
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
-import { useSuspenseAutomationsAndProjects } from '@oppenheimer/frontend-consumer/react';
+import { useSuspenseAutomationsByProject } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -26,7 +26,7 @@ import { AutomationGroup } from './automation-group';
  */
 export function AutomationsSidebarList() {
   const { t } = useTranslation();
-  const { automations, projects: everyProject, error } = useSuspenseAutomationsAndProjects();
+  const { automations, projects: everyProject, error } = useSuspenseAutomationsByProject();
   const projects = everyProject.filter((row) => !row.isUnassigned);
   const [closed, setClosed] = useState<string[]>([]);
   const [query, setQuery] = useState('');

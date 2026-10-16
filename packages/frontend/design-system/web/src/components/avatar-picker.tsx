@@ -17,13 +17,118 @@ type AvatarOption = {
   caption?: string;
 };
 
-/** A bot's photo in ink: initials until the image loads, never a tint. */
-function BotAvatar({ option, size }: { option: Pick<AvatarOption, 'image' | 'initials'>; size: number }) {
+/** The eight colours a bot's initials sit on (the export's `AV_COLORS`), by key. */
+const AVATAR_COLORS = ['mint', 'tangerine', 'snow', 'sky', 'lilac', 'lemon', 'coral', 'moss'] as const;
+type AvatarColor = (typeof AVATAR_COLORS)[number];
+
+/** Written out so Tailwind sees every class; the hues are `--avatar-*` in `globals.css`. */
+const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
+  mint: 'bg-avatar-mint',
+  tangerine: 'bg-avatar-tangerine',
+  snow: 'bg-avatar-snow',
+  sky: 'bg-avatar-sky',
+  lilac: 'bg-avatar-lilac',
+  lemon: 'bg-avatar-lemon',
+  coral: 'bg-avatar-coral',
+  moss: 'bg-avatar-moss',
+};
+
+/**
+ * A bot's face: its photo, or its initials until one loads. With `color` the
+ * initials sit in dark ink on that avatar colour (a bot with no photo, which
+ * is every bot until there is a set we may use); without it, in ink on the
+ * control fill, never a tint.
+ */
+function BotAvatar({
+  option,
+  size,
+  color,
+}: {
+  option: Pick<AvatarOption, 'image' | 'initials'>;
+  size: number;
+  color?: AvatarColor;
+}) {
   return (
-    <Avatar size={size} className="bg-control font-semibold tracking-[-0.01em] text-fg">
+    <Avatar
+      size={size}
+      data-color={color}
+      className={cn(
+        'font-semibold tracking-[-0.01em]',
+        color
+          ? cn(AVATAR_COLOR_CLASS[color], 'text-avatar-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]')
+          : 'bg-control text-fg',
+      )}
+    >
       {option.image ? <AvatarImage src={option.image} alt="" /> : null}
       <AvatarFallback>{option.initials}</AvatarFallback>
     </Avatar>
+  );
+}
+
+/**
+ * AvatarColorPicker — a bot's colour, on BotSettings' Profile: the 72px
+ * initials on the current colour with the bot's name under it, then the eight
+ * colours as 32px swatches in a row, the picked one ringed in ink with the
+ * card's gap inside the ring. Arrow keys move through the row. A pick applies
+ * at once; the caller saves it.
+ */
+function AvatarColorPicker({
+  value,
+  onValueChange,
+  initials,
+  name,
+  colorNames,
+  label = 'Colour',
+  disabled,
+  className,
+}: {
+  value: AvatarColor;
+  onValueChange: (value: AvatarColor) => void;
+  initials: string;
+  /** The bot's name, under the preview. */
+  name?: React.ReactNode;
+  /** Each colour's accessible name ("Mint"); the caller's language. */
+  colorNames: Record<AvatarColor, string>;
+  label?: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <div data-slot="avatar-color-picker" className={cn('flex items-center gap-10', className)}>
+      <div className="flex shrink-0 flex-col items-center gap-2">
+        <BotAvatar option={{ initials }} size={72} color={value} />
+        {name ? <span className="max-w-30 truncate text-[14px]">{name}</span> : null}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <span className="text-[12px] text-fg-muted">{label}</span>
+        <ToggleGroupPrimitive
+          value={[value]}
+          disabled={disabled}
+          onValueChange={(next) => {
+            const picked = next.find((v) => v !== value);
+            if (typeof picked === 'string' && (AVATAR_COLORS as readonly string[]).includes(picked)) {
+              onValueChange(picked as AvatarColor);
+            }
+          }}
+          aria-label={label}
+          className="flex flex-wrap gap-3"
+        >
+          {AVATAR_COLORS.map((color) => (
+            <TogglePrimitive
+              key={color}
+              value={color}
+              aria-label={colorNames[color]}
+              title={colorNames[color]}
+              className={cn(
+                'size-8 rounded-pill shadow-[inset_0_0_0_1px_var(--border-subtle)] outline-none transition-shadow duration-instant focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+                'data-pressed:shadow-[0_0_0_2px_var(--card),0_0_0_4px_var(--fg)]',
+                AVATAR_COLOR_CLASS[color],
+              )}
+            />
+          ))}
+        </ToggleGroupPrimitive>
+      </div>
+    </div>
   );
 }
 
@@ -132,5 +237,5 @@ function AvatarPicker({
   );
 }
 
-export { AvatarPicker, BotAvatar };
-export type { AvatarOption };
+export { AvatarColorPicker, AvatarPicker, BotAvatar };
+export type { AvatarColor, AvatarOption };

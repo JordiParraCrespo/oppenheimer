@@ -25,6 +25,7 @@ import {
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
+import type { NewSessionDraft } from './new-session-draft';
 
 // The key a picker's row is named by is the console's, kept in the product
 // package; re-exported so the chips beside this file read one vocabulary.
@@ -203,6 +204,51 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
     const ref = parseRepositoryKey(selected.id);
     return ref ? [{ ...ref, baseBranch: selected.branch }] : [];
   });
+}
+
+/**
+ * Whether the draft names somewhere to run, as the create would carry it: one
+ * repository `toCheckouts` keeps for a new worktree, a folder for a folder
+ * session (`product/versions/mvp/24-session-places.md`).
+ */
+export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folder'>): boolean {
+  return draft.where === 'folder' ? draft.folder !== null : toCheckouts(draft.scope).length > 0;
+}
+
+/**
+ * The draft as `POST /sessions` takes it, or null while it cannot be sent: no
+ * host, or no place. A folder session carries its folder and no checkouts; a
+ * worktree session its one checkout and no folder — never both. The project
+ * is the caller's to have checked against the workspace's list: an id it
+ * leaves out lands the session in Unassigned.
+ */
+export function toCreateInput(
+  draft: Pick<
+    NewSessionDraft,
+    | 'where'
+    | 'hostId'
+    | 'projectId'
+    | 'scope'
+    | 'folder'
+    | 'agent'
+    | 'model'
+    | 'permission'
+    | 'efforts'
+  >,
+  extras: { prompt: string; attachmentIds: readonly string[] },
+): CreateSessionInput | null {
+  if (!draft.hostId) return null;
+  const common = {
+    hostId: draft.hostId,
+    agent: draft.agent,
+    ...(draft.projectId ? { projectId: draft.projectId } : {}),
+    launch: toLaunchInput(draft),
+    ...(extras.prompt ? { prompt: extras.prompt } : {}),
+    ...(extras.attachmentIds.length > 0 ? { attachmentIds: [...extras.attachmentIds] } : {}),
+  };
+  if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
+  const [checkout] = toCheckouts(draft.scope);
+  return checkout ? { ...common, checkouts: [checkout] } : null;
 }
 
 /**

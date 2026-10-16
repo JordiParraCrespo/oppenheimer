@@ -58,6 +58,7 @@ describe('ConsoleRail', () => {
       'nav.plan',
       'nav.pullRequests',
       'nav.sessions',
+      'nav.employees',
       'nav.automations',
     ]);
   });

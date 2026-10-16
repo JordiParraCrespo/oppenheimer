@@ -22,6 +22,8 @@ export function usePrepareDraft(form: NewSessionDraftForm): void {
   useEffect(() => {
     const asked = new Set<string>();
     const prepare = (values: Partial<NewSessionDraft>) => {
+      // A folder session clones nothing, so there is nothing to get ready.
+      if (values.where === 'folder') return;
       const [checkout] = toCheckouts(values.scope ?? []);
       if (!values.hostId || !checkout) return;
       const key = [
@@ -36,7 +38,7 @@ export function usePrepareDraft(form: NewSessionDraftForm): void {
     };
     prepare(getValues());
     return subscribe({
-      name: ['hostId', 'scope'],
+      name: ['where', 'hostId', 'scope'],
       formState: { values: true },
       callback: ({ values }) => prepare(values),
     });

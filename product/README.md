@@ -437,6 +437,13 @@ earlier note:
   the activity timeline, the Briefing and the Merge confidence
   score are gone; watched repositories are set in Settings only
   (`next-steps/0.2-pull-requests.md`, "The screens as built").
+  On 2026-10-14 the review session came back without the review agent:
+  a pull request's **Chat** tab starts Claude Code on one of the reader's
+  hosts, in a worktree of the head branch, on a prompt that opens with a
+  two-or-three-line take and waits, and then shows its terminal with an
+  input line under it; review sessions are listed under **For review** in
+  the Pull requests sidebar and never under Sessions. That is §4's *Check
+  out in a session* decided as 0.2.
 - `versions/mvp/10-api-modules-and-data-model.md` held a project to at
   least one repository, and the console would not save one without (the
   2026-09-26 line above). On 2026-10-14 the owner allowed a project with
@@ -444,3 +451,47 @@ earlier note:
   and folder and terminal sessions need none. A project that holds
   repositories still offers a default among them (`PROJECTS_006`). The
   Unassigned project keeps that name.
+- `versions/mvp/05-screens.md` opened New session on the `full`
+  permission level every visit and never remembered it. On 2026-10-14 the
+  owner made it open on `auto` and remember the last level picked, like
+  the other chips.
+- `versions/mvp/00-scope.md` made every session a worktree, the blank
+  terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
+  2026-10-14 the owner made the place a choice, a new worktree or a folder
+  already on the host, and moved the runner's work to `~/oppenheimer/`
+  as `<account>/<workspace>/{repos, agents, sessions}`
+  (`versions/mvp/24-session-places.md`). The same day the account level's
+  name was settled as the id the runner receives when it is paired
+  (`POST /hosts/register` answers it), so `session.create` and
+  `repository.prepare` carry the workspace only (24 §2, §5).
+- The agent catalog mapped Claude Code's `auto` level to
+  `--permission-mode acceptEdits`, which prompts on every shell command,
+  and review sessions launched at `ask` (both left open in
+  `versions/mvp/16-automations-architecture.md` and
+  `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
+  Claude Code's own auto mode (`--permission-mode auto`), which checks each
+  action before it runs, and made it the level review sessions start at.
+- `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
+  on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
+- Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
+  2026-10-15 both were turned off: the fetch reached the server's private
+  network, and subagents searched the server's disk (25, "Decided").
+- Note 25's system prompt was the bot's soul, instructions and memory. On
+  2026-10-15 it became ours from the first line, with a closed list of
+  what the bot can do and the sender's time, home host and hosts, and a
+  turn stops after 4 minutes (25, "Decided").
+- Note 25 ran bots on three providers, each on a workspace's API key. On
+  2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
+  through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
+  (25, §2 and "Decided").
+- Note 25's system prompt ended with the moment the turn ran in: the
+  sender's time, the home host and the hosts. On 2026-10-15 that moved to
+  a `<turn_context>` block opening each turn's message, so the system
+  prompt is the same bytes every turn and the provider's prompt cache
+  hits (25, "Decided").
+- Note 25 sent a turn the bot's last 40 messages and dropped everything
+  older without a word. On 2026-10-15 history became a token budget
+  (24,000 tokens) opened by a stored summary of the older messages, which
+  a `bot-summaries` job writes with the bot's own model once they pass the
+  budget with headroom (25 §2, "Decided"). The chat still shows every
+  message.

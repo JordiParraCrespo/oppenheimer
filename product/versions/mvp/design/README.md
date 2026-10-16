@@ -26,6 +26,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer |
 | [`SessionsConsole (where)`](version1/SessionsConsole%20(where).dc.html) | The console with where a session runs as a choice: a new worktree, a folder on the host, or a blank terminal; projects that hold folder sessions only |
+| [`SessionsConsole (cloud)`](version1/SessionsConsole%20(cloud).dc.html) | `SessionsConsole (where)` with Cloud beside Hosts: a session or an automation launched as a cloud agent (Cursor, or Claude Code on claude.ai/code) |
 | [`ShareSession`](version1/ShareSession.dc.html) | A shared session as the person it was shared with sees it — a View only or Can edit badge, and Leave; the Share dialog, the link and who has access are still in the frame |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
@@ -37,6 +38,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 | [`Chat Components`](version1/Chat%20Components.dc.html) | Inventory of the agent chat — transcript, work and tools, cards, dividers and status, the composer and what sits above it, decisions, header, find and empty state |
+| [`AI Elements`](version1/AI%20Elements.dc.html) | The rest of the agent chat — markers, attachments, suggestions, a questionnaire, a confirmation, plan, subagent, sources and citations, test results, stack trace, file tree, queue and context |
 
 States inside the onboarding screens are live: the workspace address checks
 availability as you type, GitHub flips to connected, the host registers after a
@@ -158,6 +160,16 @@ project from the task editor, with `version1/assets/icons/trash-2.svg`.
 The repository picker in `SessionsConsole` widens and drops the mono
 face, and Plan's rail icon becomes `layers` on every console frame.
 
+The 2026-10-15 export adds `AI Elements`, the parts of the agent chat
+`Chat Components` did not draw, and `SessionsConsole (cloud)`, which puts
+Cloud beside Hosts in New session's Where: a session or an automation can
+run as a cloud agent instead of on a host. Cursor's cloud agent opens in
+Cursor and keeps its status synced; Claude Code on claude.ai/code opens
+as a link and reports no status after launch. Folder sessions are not
+available in cloud. In `Bots` a trace step opens to its output (test
+results, a failed command), and the transcript can jump to the latest
+turn and stop a run.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
@@ -257,6 +269,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
+- Cloud sessions in `SessionsConsole (cloud)` are in no note either:
+  `../00-scope.md` keeps agents beyond the catalog, Cursor among them,
+  out of the MVP, and every session in the notes runs on a host.
 - Employees (`Bots`, `BotSettings`, the rail item) are in no note. The
   nearest is the product's own agent, 0.6
   (`../../../next-steps/0.6-mcp-cli-and-agent.md`); the frames decide none

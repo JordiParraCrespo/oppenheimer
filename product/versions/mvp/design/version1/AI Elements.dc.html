@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+html,body{margin:0;background:var(--background,#000)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes op-spin{to{transform:rotate(360deg)}}
+@keyframes op-chat-shimmer{0%,100%{opacity:.55}50%{opacity:1}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--background);color:var(--fg);font-family:var(--font-sans);font-size:14px">
+<div style="max-width:1120px;margin:0 auto;padding:56px 32px 120px;box-sizing:border-box;display:flex;flex-direction:column;gap:40px">
+
+<header style="display:flex;flex-direction:column;gap:12px;max-width:760px">
+<span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Bots · AI elements</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:40px;font-weight:600;letter-spacing:-0.024em;line-height:1.08">The rest of the agent chat.</h1>
+<p style="margin:0;font-size:15px;line-height:1.55;color:var(--fg-muted);text-wrap:pretty">Patterns from the October 2026 AI Elements release, redrawn in Oppenheimer. The bot chat already uses the six below; everything on this page is new and not yet wired into it.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:4px">
+<sc-for list="{{ inBots }}" as="c" hint-placeholder-count="6"><a href="./Bots.dc.html" style="height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:980px;background:var(--hover-surface);color:var(--fg);font-size:13px;text-decoration:none"><span style="display:flex;color:var(--success)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span>{{ c }}</a></sc-for>
+</div>
+</header>
+
+<!-- Marker -->
+<section id="marker" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Marker</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Notes and dividers between turns: compaction, model switches, a day boundary.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:18px">
+<div role="separator" style="display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--fg-subtle)"><span style="flex:1;height:1px;background:var(--border-subtle)"></span>Yesterday<span style="flex:1;height:1px;background:var(--border-subtle)"></span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="14" hint-size="14px,14px"></x-import>Context compacted<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">142k → 18k tokens</span></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="14" hint-size="14px,14px"></x-import>Switched to <span style="color:var(--fg)">GPT-5.2 Codex</span> for the next turn</div>
+</div>
+</section>
+
+<!-- Attachment + Suggestion -->
+<section id="attachment" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Attachment</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Files that come with a message. They sit above the bubble and in the composer before sending.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px">
+<sc-for list="{{ files }}" as="f" hint-placeholder-count="3">
+<span style="display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 14px 0 6px;border-radius:14px;background:var(--card);font-size:13px"><span style="width:36px;height:36px;border-radius:10px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ f.icon }}" size="15" hint-size="15px,15px"></x-import></span><span style="display:flex;flex-direction:column;gap:1px"><span>{{ f.name }}</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ f.meta }}</span></span></span>
+</sc-for>
+</div>
+<div style="max-width:80%;padding:12px 20px;box-sizing:border-box;background:var(--card);border-radius:28px;font-size:15px;line-height:1.55;letter-spacing:-0.011em">Here is the trace from the stuck run and the gateway log.</div>
+</div>
+</section>
+
+<section id="suggestion" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Suggestion</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Next steps the agent offers after a reply. One tap fills the composer.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3"><button type="button" onClick="{{ s.pick }}" style="height:34px;padding:0 14px;border:1px solid var(--border);border-radius:980px;background:none;color:var(--fg);font:inherit;font-size:13.5px;cursor:pointer" style-hover="background:var(--hover-surface)">{{ s.label }}</button></sc-for>
+</div>
+<sc-if value="{{ picked }}"><div style="padding:12px 20px;border-radius:28px;background:var(--card);font-size:15px;color:var(--fg);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">{{ picked }}</div></sc-if>
+</div>
+</section>
+
+<!-- Questionnaire -->
+<section id="questionnaire" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Questionnaire</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">The agent asks before it continues. Numbered answers, keyboard first, with a free-text fallback.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px">
+<sc-if value="{{ qOpen }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:18px 20px 14px;border-radius:18px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span>Needs input<span style="flex:1"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">1 of 2</span></div>
+<span style="font-size:15px;font-weight:500;line-height:1.4">Which branch should the cancel fix land on?</span>
+<div style="display:flex;flex-direction:column;gap:2px;margin:0 -8px">
+<sc-for list="{{ qOpts }}" as="o" hint-placeholder-count="3">
+<button type="button" onClick="{{ o.pick }}" aria-pressed="{{ o.onS }}" style="display:flex;align-items:flex-start;gap:12px;padding:8px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="flex:none;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:980px;border:1px solid {{ o.ring }};color:var(--fg-muted);font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums">{{ o.n }}</span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">{{ o.label }}</span><span style="font-size:13px;color:var(--fg-muted)">{{ o.desc }}</span></span></button>
+</sc-for>
+</div>
+<input value="{{ qOther }}" onChange="{{ onQOther }}" placeholder="Or type something else" style="height:42px;padding:0 14px;box-sizing:border-box;border:1px solid var(--border-subtle);border-radius:10px;outline:0;background:var(--background);color:var(--fg);font:inherit;font-size:14px">
+<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:12.5px;color:var(--fg-subtle)">Press 1–3, or Enter to send</span><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ qSkip }}">Skip</button><button class="op-btn op-btn--secondary op-btn--sm" type="button" disabled="{{ qBlocked }}" onClick="{{ qSend }}">Continue</button></div>
+</div>
+</sc-if>
+<sc-if value="{{ qDone }}">
+<div style="display:flex;flex-direction:column;gap:10px;animation:op-rise 180ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:10px;min-height:34px;font-size:15px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="16" hint-size="16px,16px"></x-import>Answered<span style="color:var(--fg)">{{ qAnswer }}</span></div>
+<button type="button" onClick="{{ qReset }}" style="align-self:flex-start;height:28px;padding:0 10px;margin-left:-10px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">Ask again</button>
+</div>
+</sc-if>
+</div>
+</section>
+
+<!-- Confirmation -->
+<section id="confirmation" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Confirmation</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">An inline approval for one tool call. It collapses into a trace line once decided.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px">
+<sc-if value="{{ cPending }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:16px 20px;border-radius:18px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:10px;font-size:15px"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="16" hint-size="16px,16px"></x-import></span><span style="flex:1;font-weight:500">Run a migration on staging?</span><span style="font-size:13px;color:var(--fg-subtle)">Bash</span></div>
+<pre style="margin:0;padding:10px 14px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word">pnpm db:migrate --env staging</pre>
+<span style="font-size:13px;line-height:1.5;color:var(--fg-muted)">Adds two columns to <code style="padding:2px 6px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:0.86em">runs</code>. Reversible with <code style="padding:2px 6px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:0.86em">db:rollback</code>.</span>
+<div style="display:flex;justify-content:flex-end;gap:8px"><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ cDeny }}">Deny</button><button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ cApprove }}">Approve</button></div>
+</div>
+</sc-if>
+<sc-if value="{{ cDecided }}">
+<div style="display:flex;flex-direction:column;gap:4px;animation:op-rise 180ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:10px;min-height:34px;font-size:15px;color:{{ cColor }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ cIcon }}" size="16" hint-size="16px,16px"></x-import>{{ cLabel }}</div>
+<button type="button" onClick="{{ cReset }}" style="align-self:flex-start;height:28px;padding:0 10px;margin-left:-10px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">Reset</button>
+</div>
+</sc-if>
+</div>
+</section>
+
+<!-- Plan -->
+<section id="plan" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Plan</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Steps agreed before the agent edits files, ticked off as it works. Started by /plan.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px">
+<div style="display:flex;flex-direction:column;border-radius:18px;background:var(--card);overflow:hidden">
+<button type="button" onClick="{{ planToggle }}" aria-expanded="{{ planOpenS }}" style="display:flex;align-items:center;gap:10px;padding:14px 16px 14px 20px;border:0;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer">
+<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500">Wire cancel through the gateway</span><span style="font-size:13px;color:var(--fg-muted)">{{ planSummary }}</span></span>
+<span style="width:64px;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ planPct }};background:var(--fg-muted);border-radius:980px;transition:width 400ms cubic-bezier(.4,0,.2,1)"></span></span>
+<span style="display:flex;color:var(--fg-subtle);transform:{{ planChev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="15" hint-size="15px,15px"></x-import></span>
+</button>
+<sc-if value="{{ planOpen }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;padding:0 20px 14px">
+<sc-for list="{{ planSteps }}" as="p" hint-placeholder-count="5">
+<div style="display:flex;align-items:flex-start;gap:12px;padding:6px 0">
+<span style="flex:none;display:flex;padding-top:2px;color:{{ p.iconColor }};animation:{{ p.anim }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ p.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+<span style="flex:1;min-width:0;font-size:14px;line-height:1.5;color:{{ p.color }};text-decoration:{{ p.strike }}">{{ p.text }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<!-- Subagent -->
+<section id="subagent" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Subagent</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Work handed to another bot. One trace line that opens into that bot's own steps and its answer.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column">
+<sc-for list="{{ subs }}" as="a" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column">
+<button type="button" onClick="{{ a.toggle }}" aria-expanded="{{ a.openS }}" style="align-self:flex-start;max-width:100%;display:inline-flex;align-items:center;gap:10px;min-height:34px;margin-left:-8px;padding:0 8px;border:0;border-radius:10px;background:none;color:var(--fg-muted);font:inherit;font-size:15px;letter-spacing:-0.011em;cursor:pointer" style-hover="color:var(--fg)">
+<span style="flex:none;display:flex;animation:{{ a.anim }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ a.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.title }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ a.meta }}</span>
+<span style="flex:none;display:flex;transform:{{ a.chev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></span>
+</button>
+<sc-if value="{{ a.open }}">
+<div style="display:flex;flex-direction:column;margin:0 0 8px 7px;padding-left:18px;border-left:1px solid var(--border-subtle);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ a.steps }}" as="s"><div style="display:flex;align-items:center;gap:10px;min-height:30px;font-size:14px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="14" hint-size="14px,14px"></x-import><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.text }}</span></div></sc-for>
+<sc-if value="{{ a.answer }}"><p style="margin:6px 0 4px;font-size:14px;line-height:1.6;color:var(--fg);text-wrap:pretty">{{ a.answer }}</p></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+
+<!-- Chain of thought + Sources -->
+<section id="sources" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Chain of thought, sources and citations</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Searches with the pages they found, then numbered citations in the reply. Hover a number to see the source.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:column">
+<button type="button" onClick="{{ cotToggle }}" aria-expanded="{{ cotOpenS }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:10px;min-height:34px;margin-left:-8px;padding:0 8px;border:0;border-radius:10px;background:none;color:var(--fg-muted);font:inherit;font-size:15px;cursor:pointer" style-hover="color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="16" hint-size="16px,16px"></x-import>Used 3 sources<span style="display:flex;transform:{{ cotChev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></span></button>
+<sc-if value="{{ cotOpen }}">
+<div style="display:flex;flex-direction:column;gap:8px;padding:4px 0 6px 26px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import>Searched <span style="color:var(--fg)">AbortSignal propagation across fetch and streams</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ sources }}" as="s" hint-placeholder-count="3"><a href="{{ s.href }}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:980px;background:var(--card);color:var(--fg);font-size:12.5px;text-decoration:none" style-hover="background:var(--control-hover)"><span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ s.n }}</span>{{ s.host }}</a></sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+<p style="margin:0;font-size:15px;line-height:1.6;letter-spacing:-0.011em;text-wrap:pretty">An aborted signal rejects the pending fetch with an AbortError<sc-for list="{{ cite1 }}" as="c"><span onMouseEnter="{{ c.enter }}" onMouseLeave="{{ c.leave }}" style="position:relative;display:inline-flex;margin:0 2px;vertical-align:1px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:980px;background:var(--hover-surface);font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);cursor:default">{{ c.n }}</span><sc-if value="{{ c.open }}"><span style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:280px;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);font-size:13px;line-height:1.45;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><span style="font-weight:500">{{ c.title }}</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ c.host }}</span><span style="color:var(--fg-muted)">{{ c.quote }}</span></span></sc-if></span></sc-for>, but a stream that is already being read only stops at the next chunk<sc-for list="{{ cite2 }}" as="c"><span onMouseEnter="{{ c.enter }}" onMouseLeave="{{ c.leave }}" style="position:relative;display:inline-flex;margin:0 2px;vertical-align:1px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:980px;background:var(--hover-surface);font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);cursor:default">{{ c.n }}</span><sc-if value="{{ c.open }}"><span style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:280px;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);font-size:13px;line-height:1.45;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><span style="font-weight:500">{{ c.title }}</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ c.host }}</span><span style="color:var(--fg-muted)">{{ c.quote }}</span></span></sc-if></span></sc-for>. That is why the gateway waits up to 5s before marking the run stopped.</p>
+</div>
+</section>
+
+<!-- Test results -->
+<section id="tests" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Test results</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">A test run summarised as numbers. Failures expand to their assertion.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px">
+<div style="display:flex;flex-direction:column;gap:12px;padding:16px 20px;border-radius:18px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="16" hint-size="16px,16px"></x-import></span><span style="font-family:var(--font-mono);font-size:13px">pnpm test runner</span><span style="flex:1"></span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">6.21s</span></div>
+<div style="display:flex;height:6px;gap:2px;border-radius:980px;overflow:hidden"><span style="flex:38;background:var(--success)"></span><span style="flex:2;background:var(--danger)"></span><span style="flex:1;background:var(--fg-subtle)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--fg-muted)"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">38</span>passed</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger)"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">2</span>failed</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:980px;background:var(--fg-subtle)"></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">1</span>skipped</span></div>
+<div style="display:flex;flex-direction:column;margin:0 -8px">
+<sc-for list="{{ fails }}" as="f" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column">
+<button type="button" onClick="{{ f.toggle }}" aria-expanded="{{ f.openS }}" style="display:flex;align-items:center;gap:10px;min-height:32px;padding:0 8px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--danger)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.name }}</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ f.file }}</span><span style="display:flex;color:var(--fg-subtle);transform:{{ f.chev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ f.open }}"><pre style="margin:2px 8px 8px 32px;padding:10px 14px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--fg);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">{{ f.err }}</pre></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Stack trace -->
+<section id="stack" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Stack trace</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">A thrown error with your frames first. Library frames fold away.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px">
+<div style="display:flex;flex-direction:column;border-radius:18px;background:var(--card);overflow:hidden">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:14px 12px 10px 20px"><span style="display:flex;padding-top:2px;color:var(--danger)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="16" hint-size="16px,16px"></x-import></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:var(--font-mono);font-size:13px;color:var(--danger)">TypeError</span><span style="font-size:14px;line-height:1.45">Cannot read properties of undefined (reading 'abort')</span></span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy stack trace" onClick="{{ copyStack }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ stackCopyIcon }}" size="13" hint-size="13px,13px"></x-import></button></div>
+<div style="display:flex;flex-direction:column;padding:4px 0 12px;font-family:var(--font-mono);font-size:12.5px;line-height:1.7">
+<sc-for list="{{ frames }}" as="fr" hint-placeholder-count="3"><div style="display:flex;gap:12px;padding:0 20px;color:{{ fr.color }}"><span style="flex:none;min-width:0">at {{ fr.fn }}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:{{ fr.fileColor }}">{{ fr.file }}</span></div></sc-for>
+<button type="button" onClick="{{ stackToggle }}" style="align-self:flex-start;margin:4px 0 0 12px;height:26px;padding:0 8px;border:0;border-radius:980px;background:none;color:var(--fg-subtle);font-family:var(--font-sans);font-size:12.5px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">{{ stackToggleLabel }}</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- File tree -->
+<section id="tree" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">File tree</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">What a turn changed, by folder. Lines added and removed per file.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px">
+<div style="display:flex;flex-direction:column;padding:8px;border-radius:18px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:8px;padding:6px 10px 8px;font-size:13px;color:var(--fg-muted)"><span style="flex:1">4 files changed</span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums"><span style="color:var(--success)">+71</span> <span style="color:var(--danger)">−12</span></span></div>
+<sc-for list="{{ tree }}" as="n" hint-placeholder-count="6">
+<button type="button" onClick="{{ n.toggle }}" style="display:flex;align-items:center;gap:8px;height:30px;padding:0 10px 0 {{ n.indent }};border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:{{ n.cursor }}" style-hover="background:var(--hover-surface)">
+<span style="display:flex;width:12px;color:var(--fg-subtle);transform:{{ n.chev }};transition:transform 140ms cubic-bezier(.4,0,.2,1);opacity:{{ n.chevOp }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="12" hint-size="12px,12px"></x-import></span>
+<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ n.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ n.font }};font-size:{{ n.size }}">{{ n.name }}</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums"><span style="color:var(--success)">{{ n.add }}</span> <span style="color:var(--danger)">{{ n.del }}</span></span>
+<span style="width:14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:{{ n.statusColor }}">{{ n.status }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</section>
+
+<!-- Queue + Context -->
+<section id="queue" style="display:flex;flex-wrap:wrap;gap:16px 48px;padding-top:32px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1 1 200px;max-width:260px;display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Queue and context</span><span style="font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Messages typed while the agent works wait above the composer. The meter opens a breakdown of what fills the window.</span></div>
+<div style="flex:3 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column">
+<sc-if value="{{ hasQueue }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:2px;margin:0 12px;padding:8px;border-radius:18px 18px 0 0;background:var(--hover-surface)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 4px;font-size:12.5px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="13" hint-size="13px,13px"></x-import><span style="flex:1">{{ queueLabel }}</span><span style="color:var(--fg-subtle)">Sends after this turn</span></div>
+<sc-for list="{{ queue }}" as="q" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:8px;min-height:32px;padding:0 4px 0 8px;border-radius:10px;font-size:14px" style-hover="background:var(--hover-surface)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ q.text }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Send now" title="Send now" onClick="{{ q.now }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="13" hint-size="13px,13px"></x-import></button><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Remove" onClick="{{ q.remove }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></div></sc-for>
+</div>
+</sc-if>
+<div style="position:relative;border-radius:28px;background:var(--card)">
+<div style="padding:16px 20px 8px;font-size:15px;color:var(--fg-subtle)">Message Release Bot</div>
+<div style="display:flex;align-items:center;gap:6px;padding:0 12px 12px">
+<span style="width:34px;height:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:980px;color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="16" hint-size="16px,16px"></x-import></span>
+<span style="flex:1"></span>
+<button type="button" onClick="{{ ctxToggle }}" aria-expanded="{{ ctxOpenS }}" style="display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ ctxBg }};color:var(--fg-subtle);font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><span style="width:28px;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:38%;background:var(--fg-muted)"></span></span>38%</button>
+<span style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:980px;background:var(--fg);color:var(--background)"><span style="width:10px;height:10px;border-radius:2px;background:currentColor"></span></span>
+<sc-if value="{{ ctxOpen }}">
+<div style="position:absolute;right:12px;bottom:calc(100% + 8px);z-index:20;width:300px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-size:13.5px;font-weight:500">Context window</span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">76.4k / 200k</span></div>
+<div style="display:flex;height:6px;gap:2px;border-radius:980px;overflow:hidden;background:var(--hover-surface)"><sc-for list="{{ ctxParts }}" as="c"><span style="flex:{{ c.flex }};background:{{ c.color }}"></span></sc-for><span style="flex:62"></span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ ctxParts }}" as="c" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="width:7px;height:7px;border-radius:980px;background:{{ c.color }}"></span><span style="flex:1;color:var(--fg-muted)">{{ c.label }}</span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ c.v }}</span></div></sc-for></div>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ ctxToggle }}">Compact now</button>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</section>
+
+
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;}}">
+class Component extends DCLogic {
+  state = { picked: '', q: null, qOther: '', qDone: false, conf: null, planOpen: true, subOpen: { a: true }, cotOpen: true, cite: null, failOpen: { 0: true }, stackAll: false, stackCopied: false, treeClosed: {}, queue: ['Also show Cancelling on the run row', 'Then open the PR against release/2.4'], ctxOpen: false };
+  renderVals() {
+    const s = this.state, theme = this.props.theme ?? 'dark';
+    const qList = [
+      { label: 'main', desc: 'Ships with the next deploy' },
+      { label: 'release/2.4', desc: 'Backport for the public beta' },
+      { label: 'A new branch', desc: 'synara/cancel-path, PR later' },
+    ];
+    const answer = s.qOther.trim() || (s.q !== null ? qList[s.q].label : '');
+    const plan = [
+      { st: 'done', text: 'Give each step its own AbortController in runner/step.ts' },
+      { st: 'done', text: 'Fan out abort from gateway/cancel.ts with a 5s grace period' },
+      { st: 'run', text: 'Show Cancelling on the run row while steps settle' },
+      { st: 'todo', text: 'Add tests for a tool that ignores the signal' },
+      { st: 'todo', text: 'Open the pull request and link the task' },
+    ];
+    const nDone = plan.filter(p => p.st === 'done').length;
+    const subs = [
+      { k: 'a', icon: 'bot', title: 'Asked Plan Bot which task this fixes', meta: '4s', steps: [{ icon: 'search', text: 'Searched tasks for "cancel"' }, { icon: 'file-text', text: 'Read XRP Mobile · Public beta' }], answer: '"Stop cancels in-flight tool calls" in XRP Mobile, milestone Public beta. Owner: XRP Mobile agent.' },
+      { k: 'b', icon: 'loader', run: true, title: 'Research Bot is checking stream cancellation', meta: '12s', steps: [{ icon: 'globe', text: 'Searching WHATWG streams spec' }] },
+    ];
+    const SRC = [
+      { n: 1, host: 'developer.mozilla.org', href: 'https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal', title: 'AbortSignal', quote: 'Aborting rejects the promise with an AbortError DOMException.' },
+      { n: 2, host: 'streams.spec.whatwg.org', href: 'https://streams.spec.whatwg.org/', title: 'Streams Standard', quote: 'Cancellation takes effect at the next read.' },
+      { n: 3, host: 'nodejs.org', href: 'https://nodejs.org/api/globals.html#class-abortcontroller', title: 'Node.js AbortController', quote: 'Node implements the same AbortController as browsers.' },
+    ];
+    const cite = (i) => [{ ...SRC[i], open: s.cite === i, enter: () => this.setState({ cite: i }), leave: () => this.setState({ cite: null }) }];
+    const fails = [
+      { name: 'aborts a tool that ignores the signal', file: 'step.test.ts:41', err: 'Expected run.status to be "stopped"\nReceived "cancelling"\n\n  at runner/step.test.ts:52:31\n  timed out after 5012 ms' },
+      { name: 'releases the step after abort', file: 'step.test.ts:66', err: 'Expected run.liveSteps().length to be 0\nReceived 1' },
+    ];
+    const FR = [
+      { fn: 'cancelRun', file: 'gateway/cancel.ts:18:24', mine: true },
+      { fn: 'stopRun', file: 'console/actions.ts:92:9', mine: true },
+      { fn: 'async Promise.all', file: '(index 0)', mine: false },
+      { fn: 'processTicksAndRejections', file: 'node:internal/process/task_queues:95:5', mine: false },
+      { fn: 'Router.handle', file: 'node_modules/hono/dist/router.js:211:16', mine: false },
+      { fn: 'dispatch', file: 'node_modules/hono/dist/compose.js:29:23', mine: false },
+    ];
+    const frames = FR.filter(f => f.mine || s.stackAll).map(f => ({ ...f, color: f.mine ? 'var(--fg)' : 'var(--fg-subtle)', fileColor: f.mine ? 'var(--fg-muted)' : 'var(--fg-subtle)' }));
+    const TREE = [
+      { id: 'gateway', dir: true, depth: 0, name: 'gateway', add: '+17', del: '−3' },
+      { id: 'gateway/cancel.ts', parent: 'gateway', depth: 1, name: 'cancel.ts', add: '+17', del: '−3', status: 'M' },
+      { id: 'runner', dir: true, depth: 0, name: 'runner', add: '+54', del: '−9' },
+      { id: 'runner/step.ts', parent: 'runner', depth: 1, name: 'step.ts', add: '+48', del: '−9', status: 'M' },
+      { id: 'runner/step.test.ts', parent: 'runner', depth: 1, name: 'step.test.ts', add: '+6', del: '', status: 'A' },
+      { id: 'runner/legacy-stop.ts', parent: 'runner', depth: 1, name: 'legacy-stop.ts', add: '', del: '', status: 'D' },
+    ];
+    const tree = TREE.filter(n => !n.parent || !s.treeClosed[n.parent]).map(n => {
+      const closed = !!s.treeClosed[n.id];
+      return { ...n, indent: (10 + n.depth * 20) + 'px', icon: n.dir ? 'folder' : 'file-text', chev: n.dir && !closed ? 'rotate(90deg)' : 'none', chevOp: n.dir ? 1 : 0,
+        cursor: n.dir ? 'pointer' : 'default', font: n.dir ? 'var(--font-sans)' : 'var(--font-mono)', size: n.dir ? '13.5px' : '12.5px', status: n.status || '',
+        statusColor: n.status === 'A' ? 'var(--success)' : n.status === 'D' ? 'var(--danger)' : 'var(--fg-subtle)',
+        toggle: () => n.dir && this.setState(x => ({ treeClosed: { ...x.treeClosed, [n.id]: !x.treeClosed[n.id] } })) };
+    });
+    return {
+      theme,
+      inBots: ['Message', 'Bubble', 'Trace', 'Code block', 'Message scroller', 'Prompt input'],
+      files: [{ icon: 'file-text', name: 'run-trace.json', meta: '48 KB' }, { icon: 'terminal', name: 'gateway.log', meta: '1,204 lines' }, { icon: 'paperclip', name: 'Pasted text', meta: '212 lines' }],
+      suggestions: ['Open the pull request', 'Show the diff', 'Run the e2e suite'].map(l => ({ label: l, pick: () => this.setState({ picked: l }) })),
+      picked: s.picked,
+      qOpen: !s.qDone, qDone: s.qDone, qAnswer: answer || 'Skipped', qOther: s.qOther,
+      qOpts: qList.map((o, i) => ({ ...o, n: String(i + 1), onS: s.q === i ? 'true' : 'false', bg: s.q === i ? 'var(--selected-surface)' : 'transparent', ring: s.q === i ? 'var(--primary)' : 'var(--border)', pick: () => this.setState({ q: i, qOther: '' }) })),
+      onQOther: e => this.setState({ qOther: e.target.value }), qBlocked: !answer,
+      qSend: () => this.setState({ qDone: true }), qSkip: () => this.setState({ qDone: true, q: null, qOther: '' }), qReset: () => this.setState({ qDone: false, q: null, qOther: '' }),
+      cPending: !s.conf, cDecided: !!s.conf,
+      cLabel: s.conf === 'ok' ? 'Ran pnpm db:migrate --env staging' : 'You denied pnpm db:migrate --env staging',
+      cIcon: s.conf === 'ok' ? 'terminal' : 'x', cColor: s.conf === 'ok' ? 'var(--fg-muted)' : 'var(--danger)',
+      cApprove: () => this.setState({ conf: 'ok' }), cDeny: () => this.setState({ conf: 'no' }), cReset: () => this.setState({ conf: null }),
+      planOpen: s.planOpen, planOpenS: s.planOpen ? 'true' : 'false', planChev: s.planOpen ? 'rotate(180deg)' : 'none',
+      planToggle: () => this.setState(x => ({ planOpen: !x.planOpen })),
+      planSummary: nDone + ' of ' + plan.length + ' done · step 3 running', planPct: Math.round(nDone / plan.length * 100) + '%',
+      planSteps: plan.map(p => ({ text: p.text, icon: p.st === 'done' ? 'check-circle' : p.st === 'run' ? 'loader' : 'clock',
+        iconColor: p.st === 'done' ? 'var(--success)' : p.st === 'run' ? 'var(--fg)' : 'var(--fg-subtle)', anim: p.st === 'run' ? 'op-spin 900ms linear infinite' : 'none',
+        color: p.st === 'todo' ? 'var(--fg-muted)' : 'var(--fg)', strike: 'none' })),
+      subs: subs.map(a => { const o = !!s.subOpen[a.k]; return { ...a, answer: a.answer || '', open: o, openS: o ? 'true' : 'false', chev: o ? 'rotate(90deg)' : 'none', anim: a.run ? 'op-spin 900ms linear infinite' : 'none', toggle: () => this.setState(x => ({ subOpen: { ...x.subOpen, [a.k]: !x.subOpen[a.k] } })) }; }),
+      cotOpen: s.cotOpen, cotOpenS: s.cotOpen ? 'true' : 'false', cotChev: s.cotOpen ? 'rotate(90deg)' : 'none', cotToggle: () => this.setState(x => ({ cotOpen: !x.cotOpen })),
+      sources: SRC, cite1: cite(0), cite2: cite(1),
+      fails: fails.map((f, i) => { const o = !!s.failOpen[i]; return { ...f, open: o, openS: o ? 'true' : 'false', chev: o ? 'rotate(90deg)' : 'none', toggle: () => this.setState(x => ({ failOpen: { ...x.failOpen, [i]: !x.failOpen[i] } })) }; }),
+      frames, stackToggle: () => this.setState(x => ({ stackAll: !x.stackAll })), stackToggleLabel: s.stackAll ? 'Hide 4 library frames' : 'Show 4 library frames',
+      stackCopyIcon: s.stackCopied ? 'check' : 'copy',
+      copyStack: () => { try { navigator.clipboard.writeText(FR.map(f => 'at ' + f.fn + ' (' + f.file + ')').join('\n')); } catch (e) {} this.setState({ stackCopied: true }); setTimeout(() => this.setState({ stackCopied: false }), 1400); },
+      tree,
+      hasQueue: s.queue.length > 0, queueLabel: s.queue.length + ' queued',
+      queue: s.queue.map((t, i) => ({ text: t, remove: () => this.setState(x => ({ queue: x.queue.filter((_, j) => j !== i) })), now: () => this.setState(x => ({ queue: x.queue.filter((_, j) => j !== i) })) })),
+      ctxOpen: s.ctxOpen, ctxOpenS: s.ctxOpen ? 'true' : 'false', ctxBg: s.ctxOpen ? 'var(--hover-surface)' : 'transparent', ctxToggle: () => this.setState(x => ({ ctxOpen: !x.ctxOpen })),
+      ctxParts: [
+        { label: 'System and tools', v: '12.1k', flex: 6, color: 'var(--chart-1)' },
+        { label: 'Instructions', v: '3.4k', flex: 2, color: 'var(--chart-2)' },
+        { label: 'Messages', v: '22.8k', flex: 11, color: 'var(--chart-3)' },
+        { label: 'Tool output', v: '38.1k', flex: 19, color: 'var(--chart-4)' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

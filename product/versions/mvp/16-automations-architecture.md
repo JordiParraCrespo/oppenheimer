@@ -412,4 +412,6 @@ closed, its branch pushed, and the run reads "Archived".
   API key per run as the fallback.
 - `auto` for headless Claude Code: `acceptEdits` denies shell commands
   outside the allow rules; mapping it to the classifier mode instead is a
-  catalog change.
+  catalog change. *Decided 2026-10-15:* the catalog maps Claude Code's
+  `auto` to `--permission-mode auto`, the classifier mode, for every
+  session (`product/README.md`).

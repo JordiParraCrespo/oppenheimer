@@ -14,6 +14,7 @@
 html,body{margin:0;height:100%;background:var(--background,#000)}
 a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 @keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes op-spin{to{transform:rotate(360deg)}}
 @keyframes op-chat-pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes op-chat-shimmer{0%,100%{opacity:.55}50%{opacity:1}}
 [data-chatscroll]::-webkit-scrollbar{width:10px}[data-chatscroll]::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:980px;border:3px solid transparent;background-clip:content-box}
@@ -138,7 +139,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 </sc-if>
 
 <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:{{ stageJustify }};padding-bottom:{{ stagePad }}">
-<div data-chatscroll="true" ref="{{ scrollRef }}" style="flex:{{ scrollFlex }};min-height:0;overflow-y:auto;overflow-x:hidden">
+<div data-chatscroll="true" ref="{{ scrollRef }}" onScroll="{{ onChatScroll }}" style="flex:{{ scrollFlex }};min-height:0;overflow-y:auto;overflow-x:hidden">
 <sc-if value="{{ isEmpty }}">
 <div style="height:100%;box-sizing:border-box;padding:0 20px 24px;display:flex;align-items:flex-end;justify-content:center">
 <div style="width:100%;max-width:{{ colWidth }};display:flex;flex-direction:column;gap:24px">
@@ -158,33 +159,36 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </sc-if>
 <sc-if value="{{ hasThread }}" hint-placeholder-val="{{ true }}">
-<div style="max-width:{{ colWidth }};margin:0 auto;padding:28px 20px 40px;display:flex;flex-direction:column;gap:20px">
+<div style="max-width:{{ colWidth }};margin:0 auto;padding:28px 20px 40px;display:flex;flex-direction:column;gap:18px">
 <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="3">
 <div style="display:flex;flex-direction:column;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
 
 <sc-if value="{{ m.isUser }}">
-<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-<div style="max-width:82%;padding:10px 14px;box-sizing:border-box;background:var(--card);border-radius:18px;font-size:15px;line-height:1.55;letter-spacing:-0.011em;white-space:pre-wrap;word-break:break-word;text-wrap:pretty">{{ m.text }}</div>
-<span style="padding-right:6px;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.time }}</span>
+<div onMouseEnter="{{ m.enter }}" onMouseLeave="{{ m.leave }}" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:8px">
+<div style="max-width:80%;padding:12px 20px;box-sizing:border-box;background:var(--card);border-radius:28px;font-size:15px;line-height:1.55;letter-spacing:-0.011em;white-space:pre-wrap;word-break:break-word;text-wrap:pretty">{{ m.text }}</div>
+<div style="display:flex;align-items:center;gap:2px;color:var(--fg-subtle);opacity:{{ m.actOp }};transition:opacity 140ms cubic-bezier(.4,0,.2,1)"><span style="padding-right:4px;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums">{{ m.time }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy message" onClick="{{ m.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.copyIcon }}" size="13" hint-size="13px,13px"></x-import></button><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Edit message" onClick="{{ m.edit }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="13" hint-size="13px,13px"></x-import></button></div>
 </div>
 </sc-if>
 
 <sc-if value="{{ m.isWork }}">
-<div style="display:flex;flex-direction:column;gap:6px">
-<button type="button" onClick="{{ m.toggle }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:4px;margin-left:-8px;padding:4px 8px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">{{ m.label }}<span style="display:flex;transform:{{ m.chevRot }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></span></button>
-<sc-if value="{{ m.open }}">
-<div style="display:flex;flex-direction:column;padding:4px 0 4px 12px;margin-left:2px;border-left:1px solid var(--border-subtle);animation:op-rise 180ms cubic-bezier(.16,1,.3,1)">
+<div role="list" aria-label="Agent steps" style="display:flex;flex-direction:column;margin-bottom:-6px">
 <sc-for list="{{ m.steps }}" as="s" hint-placeholder-count="3">
-<div style="display:flex;align-items:center;gap:9px;min-height:28px;font-size:13px;color:var(--fg-muted)">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="13" hint-size="13px,13px"></x-import></span>
-<span style="flex:none">{{ s.verb }}</span>
-<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg)">{{ s.target }}</span>
-<sc-if value="{{ s.hasDiff }}"><span style="display:flex;gap:6px;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums"><span style="color:var(--success)">{{ s.add }}</span><span style="color:var(--danger)">{{ s.del }}</span></span></sc-if>
-<sc-if value="{{ s.hasMeta }}"><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ s.meta }}</span></sc-if>
-</div>
-</sc-for>
+<div role="listitem" style="display:flex;flex-direction:column">
+<button type="button" onClick="{{ s.toggle }}" aria-expanded="{{ s.openS }}" style="align-self:flex-start;max-width:100%;display:inline-flex;align-items:center;gap:10px;min-height:34px;margin-left:-8px;padding:0 8px;border:0;border-radius:10px;background:none;color:{{ s.titleColor }};font:inherit;font-size:15px;letter-spacing:-0.011em;text-align:left;cursor:{{ s.cursor }};transition:color 80ms cubic-bezier(.4,0,.2,1)" style-hover="color:{{ s.hoverColor }}">
+<span style="flex:none;display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title }}</span>
+<sc-if value="{{ s.hasDiff }}"><span style="flex:none;display:flex;gap:6px;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums"><span style="color:var(--success)">{{ s.add }}</span><span style="color:var(--danger)">{{ s.del }}</span></span></sc-if>
+<sc-if value="{{ s.hasMeta }}"><span style="flex:none;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:{{ s.metaColor }}">{{ s.meta }}</span></sc-if>
+<sc-if value="{{ s.expandable }}"><span style="flex:none;display:flex;transform:{{ s.chevRot }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></span></sc-if>
+</button>
+<sc-if value="{{ s.showNote }}"><p style="margin:0 0 8px;padding-left:26px;font-size:14px;line-height:1.6;color:var(--fg-muted);white-space:pre-wrap;text-wrap:pretty;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">{{ s.note }}</p></sc-if>
+<sc-if value="{{ s.showOut }}">
+<div style="margin:2px 0 10px 26px;border-radius:14px;background:var(--card);overflow:hidden;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="max-height:256px;overflow:auto;padding:12px 0;font-family:var(--font-mono);font-size:12.5px;line-height:1.65"><sc-for list="{{ s.lines }}" as="ln" hint-placeholder-count="3"><div style="display:flex;min-width:max-content;background:{{ ln.bg }}"><span style="flex:none;width:40px;padding-right:14px;box-sizing:border-box;text-align:right;color:var(--fg-subtle);font-variant-numeric:tabular-nums;user-select:none">{{ ln.n }}</span><sc-if value="{{ ln.hasSign }}"><span style="flex:none;width:14px;color:{{ ln.signColor }}">{{ ln.sign }}</span></sc-if><span style="padding-right:16px;white-space:{{ s.ws }}"><sc-for list="{{ ln.segs }}" as="g"><span style="color:{{ g.c }}">{{ g.t }}</span></sc-for></span></div></sc-for></div>
 </div>
 </sc-if>
+</div>
+</sc-for>
 </div>
 </sc-if>
 
@@ -192,16 +196,16 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div style="display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.6;letter-spacing:-0.011em">
 <sc-for list="{{ m.blocks }}" as="b" hint-placeholder-count="2">
 <div style="display:flex;flex-direction:column">
-<sc-if value="{{ b.isP }}"><p style="margin:0;text-wrap:pretty"><sc-for list="{{ b.segs }}" as="g"><sc-if value="{{ g.isCode }}"><code style="padding:1px 5px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:0.86em">{{ g.t }}</code></sc-if><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></p></sc-if>
+<sc-if value="{{ b.isP }}"><p style="margin:0;text-wrap:pretty"><sc-for list="{{ b.segs }}" as="g"><sc-if value="{{ g.isCode }}"><code style="padding:2px 6px;border-radius:6px;background:var(--card);font-family:var(--font-mono);font-size:0.86em;white-space:nowrap">{{ g.t }}</code></sc-if><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></p></sc-if>
 <sc-if value="{{ b.isList }}">
 <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
-<sc-for list="{{ b.items }}" as="it"><li style="text-wrap:pretty;padding-left:2px"><sc-for list="{{ it.segs }}" as="g"><sc-if value="{{ g.isCode }}"><code style="padding:1px 5px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:0.86em">{{ g.t }}</code></sc-if><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></li></sc-for>
+<sc-for list="{{ b.items }}" as="it"><li style="text-wrap:pretty;padding-left:2px"><sc-for list="{{ it.segs }}" as="g"><sc-if value="{{ g.isCode }}"><code style="padding:2px 6px;border-radius:6px;background:var(--card);font-family:var(--font-mono);font-size:0.86em;white-space:nowrap">{{ g.t }}</code></sc-if><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></li></sc-for>
 </ul>
 </sc-if>
 <sc-if value="{{ b.isCodeBlock }}">
-<div style="border-radius:14px;background:var(--card);overflow:hidden">
-<div style="display:flex;align-items:center;height:32px;padding:0 6px 0 14px;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)"><span style="flex:1">{{ b.lang }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy code" onClick="{{ b.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ b.copyIcon }}" size="13" hint-size="13px,13px"></x-import></button></div>
-<pre style="margin:0;padding:2px 14px 14px;overflow-x:auto;font-family:var(--font-mono);font-size:12.5px;line-height:1.6;color:var(--fg)">{{ b.code }}</pre>
+<div style="margin:4px 0;border-radius:18px;background:var(--card);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:12px 10px 0 22px"><span style="flex:1;min-width:0;font-size:14px;font-weight:500;color:var(--fg)">{{ b.lang }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy code" title="Copy" onClick="{{ b.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ b.copyIcon }}" size="14" hint-size="14px,14px"></x-import></button></div>
+<div style="padding:8px 0 18px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.7"><sc-for list="{{ b.lines }}" as="ln" hint-placeholder-count="3"><div style="display:flex;min-width:max-content;background:{{ ln.bg }}"><span style="flex:none;width:44px;padding-right:14px;box-sizing:border-box;text-align:right;color:var(--fg-subtle);font-variant-numeric:tabular-nums;user-select:none">{{ ln.n }}</span><sc-if value="{{ ln.hasSign }}"><span style="flex:none;width:14px;color:{{ ln.signColor }}">{{ ln.sign }}</span></sc-if><span style="padding-right:22px;white-space:{{ b.ws }}"><sc-for list="{{ ln.segs }}" as="g"><span style="color:{{ g.c }}">{{ g.t }}</span></sc-for></span></div></sc-for></div>
 </div>
 </sc-if>
 </div>
@@ -232,7 +236,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 </sc-if>
 
 <sc-if value="{{ m.isDecision }}">
-<div style="display:flex;align-items:center;gap:8px;min-height:24px;font-size:13px;color:var(--fg-muted)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="13" hint-size="13px,13px"></x-import></span><span style="flex:none">{{ m.label }}</span><code style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg)">{{ m.detail }}</code><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.time }}</span></div>
+<div role="separator" aria-label="{{ m.label }}" style="display:flex;align-items:center;gap:10px;min-height:24px;font-size:12.5px;color:var(--fg-muted)"><span style="flex:1;height:1px;background:var(--border-subtle)"></span><span style="flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:6px"><span style="display:flex;color:{{ m.tone }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="12" hint-size="12px,12px"></x-import></span><span style="flex:none">{{ m.label }}</span><code style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px;color:var(--fg)">{{ m.detail }}</code><span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">· {{ m.time }}</span></span><span style="flex:1;height:1px;background:var(--border-subtle)"></span></div>
 </sc-if>
 
 <sc-if value="{{ m.isProposal }}">
@@ -254,10 +258,10 @@ textarea::placeholder{color:var(--fg-subtle)}
 </sc-for>
 
 <sc-if value="{{ running }}">
-<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)">
-<span style="display:flex;animation:op-chat-shimmer 1.4s cubic-bezier(.4,0,.2,1) infinite"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ liveIcon }}" size="13" hint-size="13px,13px"></x-import></span>
-<span style="animation:op-chat-shimmer 1.4s cubic-bezier(.4,0,.2,1) infinite">{{ liveLabel }}</span>
-<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ elapsed }}</span>
+<div role="status" style="display:flex;align-items:center;gap:10px;min-height:34px;font-size:15px;letter-spacing:-0.011em;color:var(--fg-muted)">
+<span style="flex:none;display:flex;animation:op-spin 900ms linear infinite"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="loader" size="16" hint-size="16px,16px"></x-import></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;animation:op-chat-shimmer 1.4s cubic-bezier(.4,0,.2,1) infinite">{{ liveLabel }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ elapsed }}</span>
 </div>
 </sc-if>
 </div>
@@ -266,6 +270,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 
 <div style="flex:none;padding:0 20px 16px">
 <div style="position:relative;max-width:{{ colWidth }};margin:0 auto">
+<sc-if value="{{ showJump }}"><button type="button" aria-label="Scroll to latest" onClick="{{ jumpDown }}" style="position:absolute;left:50%;bottom:calc(100% + 12px);z-index:15;transform:translateX(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-subtle);border-radius:980px;background:var(--card);color:var(--fg);cursor:pointer;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)" style-hover="background:var(--control-hover)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="16" hint-size="16px,16px"></x-import></button></sc-if>
 
 <sc-if value="{{ slashOpen }}">
 <div onClick="{{ stop }}" style="position:absolute;left:4px;right:4px;bottom:calc(100% + 8px);z-index:20;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
@@ -283,7 +288,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 </sc-if>
 
 <sc-if value="{{ hasPending }}">
-<div role="group" aria-label="Approval needed" style="padding:12px 14px 10px;border:1px solid {{ composerBorder }};border-bottom:0;border-radius:18px 18px 0 0;background:var(--card);display:flex;flex-direction:column;gap:10px;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<div role="group" aria-label="Approval needed" style="padding:16px 20px 10px;border:1px solid {{ composerBorder }};border-bottom:0;border-radius:28px 28px 0 0;background:var(--card);display:flex;flex-direction:column;gap:10px;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
 <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span>Needs input<span style="flex:1"></span><span>{{ pend.why }}</span></div>
 <span style="font-size:15px;font-weight:500;line-height:1.35">{{ pend.prompt }} <span style="margin-left:4px;font-size:13px;font-weight:400;color:var(--fg-subtle)">{{ pend.tool }}</span></span>
 <pre style="margin:0;padding:8px 10px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word">{{ pend.detail }}</pre>
@@ -295,9 +300,9 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </sc-if>
 <div style="border-radius:{{ composerRadius }};background:var(--card);border:1px solid {{ composerBorder }};border-top-color:{{ composerTop }};transition:border-color 140ms cubic-bezier(.4,0,.2,1)">
-<textarea ref="{{ taRef }}" value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKey }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" rows="{{ rows }}" placeholder="{{ placeholder }}" style="display:block;width:100%;box-sizing:border-box;padding:12px 14px 6px;border:0;outline:0;resize:none;background:none;color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.55;letter-spacing:-0.011em"></textarea>
-<div style="display:flex;align-items:center;gap:4px;padding:0 8px 8px 6px">
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Attach"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+<textarea ref="{{ taRef }}" value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKey }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" rows="{{ rows }}" placeholder="{{ placeholder }}" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px 8px;border:0;outline:0;resize:none;background:none;color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.55;letter-spacing:-0.011em"></textarea>
+<div style="display:flex;align-items:center;gap:4px;padding:0 12px 12px 12px">
+<button type="button" aria-label="Add context" title="Add context" style="flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin-right:4px;border:1px solid var(--border);border-radius:980px;background:var(--background);color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)" style-active="transform:scale(.975)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="16" hint-size="16px,16px"></x-import></button>
 
 <div style="position:relative">
 <button type="button" onClick="{{ toggleApproval }}" title="{{ approvalLabel }}" style="white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:980px;background:{{ approvalBg }};color:{{ approvalColor }};font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ approvalIcon }}" size="13" hint-size="13px,13px"></x-import><span style="display:{{ approvalTextDisplay }}">{{ approvalLabel }}</span><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
@@ -358,10 +363,10 @@ textarea::placeholder{color:var(--fg-subtle)}
 
 <button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Dictate"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="15" hint-size="15px,15px"></x-import></button>
 <sc-if value="{{ running }}">
-<button type="button" aria-label="Stop run" title="Stop run" onClick="{{ stopRun }}" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer" style-active="transform:scale(.975)"><span style="width:9px;height:9px;border-radius:2px;background:currentColor"></span></button>
+<button type="button" aria-label="Stop run" title="Stop run" onClick="{{ stopRun }}" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer" style-active="transform:scale(.975)"><span style="width:9px;height:9px;border-radius:2px;background:currentColor"></span></button>
 </sc-if>
 <sc-if value="{{ idle }}" hint-placeholder-val="{{ true }}">
-<button type="button" aria-label="Send" onClick="{{ send }}" disabled="{{ cantSend }}" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:980px;background:var(--primary);color:#fff;cursor:pointer;opacity:{{ sendOpacity }};transition:opacity 80ms" style-active="transform:scale(.975)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="15" hint-size="15px,15px"></x-import></button>
+<button type="button" aria-label="Send" onClick="{{ send }}" disabled="{{ cantSend }}" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;margin-left:4px;border:0;border-radius:980px;background:var(--primary);color:#fff;cursor:pointer;opacity:{{ sendOpacity }};transition:opacity 80ms" style-active="transform:scale(.975)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="16" hint-size="16px,16px"></x-import></button>
 </sc-if>
 </div>
 </div>
@@ -381,6 +386,22 @@ const parseInline = (s) => {
     last = m.index + tok.length;
   }
   if (last < s.length) out.push({ t: s.slice(last), k: 'p' });
+  return out;
+};
+const SYNTAX = new Set(['ts', 'tsx', 'js', 'jsx', 'javascript', 'typescript']);
+const KW = /^(const|let|var|await|async|return|function|export|import|from|new|if|else|for|of|in|try|catch|finally|throw|type|interface|default|class|extends|true|false|null|undefined)$/;
+const highlight = (line) => {
+  if (!line) return [{ t: ' ', c: 'var(--fg)' }];
+  const out = []; const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`[^`]*`)|(<\/?[A-Za-z][\w.]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([=+\-*!?:&|]+|=>)/g; let last = 0, m;
+  while ((m = re.exec(line))) {
+    if (m.index > last) out.push({ t: line.slice(last, m.index), c: 'var(--fg)' });
+    let c = 'var(--fg)';
+    if (m[1]) c = 'var(--term-dim)'; else if (m[2]) c = 'var(--term-success)'; else if (m[3]) c = 'var(--term-accent)'; else if (m[4]) c = 'var(--term-warning)';
+    else if (m[5]) { const after = line.slice(m.index + m[0].length); c = KW.test(m[5]) ? 'var(--term-danger)' : /^\s*\(/.test(after) ? 'var(--term-accent)' : /^[A-Z]/.test(m[5]) ? 'var(--term-warning)' : 'var(--fg)'; }
+    else if (m[6]) c = 'var(--term-danger)';
+    out.push({ t: m[0], c }); last = m.index + m[0].length;
+  }
+  if (last < line.length) out.push({ t: line.slice(last), c: 'var(--fg)' });
   return out;
 };
 const segsOf = (s) => parseInline(s).map(g => ({ t: g.t, isCode: g.k === 'c', isBold: g.k === 'b', isPlain: g.k === 'p' }));
@@ -414,12 +435,15 @@ const EFFORTS = [
 const T1 = [
   { role: 'user', time: '09:12', text: 'When a run is stopped from the console, in-flight tool calls keep running until they time out. Wire cancel through the agent gateway so the step actually aborts.' },
   { role: 'work', label: 'Worked for 1m 13s', steps: [
+    { icon: 'cpu', verb: 'Thought', target: '', meta: '4s', note: 'stopRun() only flips run.status. Tool calls already in flight never see it, so cancel has to reach the step itself — one AbortController per step, owned by the run.' },
     { icon: 'search', verb: 'Searched', target: 'abortSignal', meta: '14 results' },
     { icon: 'file-text', verb: 'Read', target: 'gateway/cancel.ts' },
     { icon: 'file-text', verb: 'Read', target: 'runner/step.ts' },
-    { icon: 'file-text', verb: 'Edited', target: 'runner/step.ts', add: '+42', del: '−8' },
-    { icon: 'file-text', verb: 'Edited', target: 'gateway/cancel.ts', add: '+17', del: '−3' },
-    { icon: 'terminal', verb: 'Ran', target: 'pnpm test runner', meta: '38 passed' },
+    { icon: 'file-text', verb: 'Edited', target: 'runner/step.ts', add: '+42', del: '−8', lang: 'diff', out: ' export async function runStep(run, step) {\n-  return tool.call(step.input);\n+  const ctrl = new AbortController();\n+  run.registerStep(step.id, ctrl);\n+  try {\n+    return await tool.call(step.input, { signal: ctrl.signal });\n+  } finally {\n+    run.releaseStep(step.id);\n+  }\n }' },
+    { icon: 'file-text', verb: 'Edited', target: 'gateway/cancel.ts', add: '+17', del: '−3', lang: 'diff', out: ' export async function cancelRun(run) {\n-  run.status = "stopped";\n+  for (const ctrl of run.liveSteps()) ctrl.abort();\n+  await run.settle({ timeoutMs: 5000 });\n+  run.status = "stopped";\n }' },
+    { icon: 'terminal', verb: 'Ran', target: 'pnpm test runner', meta: '2 failed', status: 'error', out: 'FAIL  runner/step.test.ts\n  ✕ aborts a tool that ignores the signal (5012 ms)\n  ✕ releases the step after abort\n\nTests: 2 failed, 36 passed, 38 total' },
+    { icon: 'file-text', verb: 'Edited', target: 'runner/step.ts', add: '+6', del: '−1' },
+    { icon: 'terminal', verb: 'Ran', target: 'pnpm test runner', meta: '40 passed', out: 'PASS  runner/step.test.ts\nPASS  gateway/cancel.test.ts\n\nTests: 40 passed, 40 total\nTime:  6.21 s' },
   ] },
   { role: 'b2b', dir: 'out', bot: 'Plan Bot', time: '09:13', text: 'Which task is the cancel-path fix linked to?', reply: '“Stop cancels in-flight tool calls” in XRP Mobile, milestone Public beta. Owner: XRP Mobile agent.' },
   { role: 'assistant', meta: 'Claude Sonnet 4.6 · 3.1k tokens', md:
@@ -708,10 +732,19 @@ class Component extends DCLogic {
         drop: e => { if (g.readOnly) return; e.preventDefault(); const id = this._drag; this._drag = null; this.setState({ dropG: undefined }); if (id) { this.setThread(id, x => ({ ...x, group: g.id })); this.flash(g.id ? 'Moved to ' + g.name : 'Removed from group'); } } };
     }).filter(g => !g.hide);
 
+    const copyKey = (key, text) => { try { navigator.clipboard.writeText(text); } catch (e) {} this.setState({ copied: key }); setTimeout(() => this.setState(x => x.copied === key ? { copied: null } : null), 1400); };
+    const codeRows = (code, lang) => String(code).replace(/\n$/, '').split('\n').map((t, i) => {
+      const diff = lang === 'diff', c = diff ? t[0] : '', add = c === '+', del = c === '-';
+      const body = diff && (add || del || c === ' ') ? t.slice(1) : t;
+      const segs = SYNTAX.has(lang) || diff ? highlight(body) : [{ t: body || ' ', c: /^(FAIL|\s*✕)/.test(body) ? 'var(--term-danger)' : /^(PASS|\s*✓)/.test(body) ? 'var(--fg)' : 'var(--fg)' }];
+      return { n: i + 1, hasSign: diff, sign: add ? '+' : del ? '−' : '', segs,
+        bg: add ? 'color-mix(in oklch, var(--success) 12%, transparent)' : del ? 'color-mix(in oklch, var(--danger) 12%, transparent)' : 'transparent',
+        signColor: add ? 'var(--success)' : del ? 'var(--danger)' : 'var(--fg-subtle)' };
+    });
     const msgs = (t ? t.msgs : []).map(m => {
-      if (m.role === 'user') return { isUser: true, text: m.text, time: m.time };
+      if (m.role === 'user') { const ck = m.id + ':u'; return { isUser: true, text: m.text, time: m.time, actOp: s.hoverMsg === m.id ? 1 : 0, enter: () => this.setState({ hoverMsg: m.id }), leave: () => this.setState(x => x.hoverMsg === m.id ? { hoverMsg: null } : null), copyIcon: s.copied === ck ? 'check' : 'copy', copy: () => copyKey(ck, m.text), edit: () => { this.setState({ draft: m.text }); setTimeout(() => { const el = this.taRef.current; if (el) el.focus(); }, 20); } }; }
       if (m.role === 'b2b') { const out = m.dir === 'out'; return { isB2b: true, bot: m.bot, text: m.text, time: m.time, dirLabel: out ? 'Sent to' : 'From', rot: out ? 'none' : 'rotate(180deg)', replyRot: out ? 'rotate(180deg)' : 'none', hasReply: !!m.reply, reply: m.reply, replyLabel: out ? m.bot + ' replied' : 'Replied' }; }
-      if (m.role === 'decision') return { isDecision: true, label: m.label, detail: m.detail, time: m.time };
+      if (m.role === 'decision') return { isDecision: true, label: m.label, detail: m.detail, time: m.time, tone: /denied/.test(m.label) ? 'var(--danger)' : 'var(--fg-subtle)' };
       if (m.role === 'proposal') {
         const setP = st => this.setThread(s.active, th => ({ ...th, role: st === 'accepted' ? (m.job.length > 48 ? m.job.slice(0, 46).trim() + '…' : m.job) : th.role, msgs: th.msgs.map(x => x.id === m.id ? { ...x, status: st } : x) }));
         const pending = m.status === 'pending';
@@ -723,15 +756,28 @@ class Component extends DCLogic {
       }
       if (m.role === 'work') {
         const open = m.open ?? autoTrace;
-        return { isWork: true, label: m.label, open, chevRot: open ? 'rotate(90deg)' : 'none',
+        const os = m.openSteps || {}, n = m.steps.length, nErr = m.steps.filter(x => x.status === 'error').length;
+        return { isWork: true, label: m.label, open, openS: open ? 'true' : 'false', chevRot: open ? 'rotate(90deg)' : 'none',
+          summary: n + ' steps' + (nErr ? ' · ' + nErr + ' failed, recovered' : ''), doneLabel: 'Done',
           toggle: () => this.setThread(s.active, th => ({ ...th, msgs: th.msgs.map(x => x.id === m.id ? { ...x, open: !open } : x) })),
-          steps: m.steps.map(st => ({ ...st, hasDiff: !!st.add, hasMeta: !!st.meta && !st.add })) };
+          steps: m.steps.map((st, i) => {
+            const err = st.status === 'error', exp = !!(st.out || st.note), so = os[i] !== undefined ? !!os[i] : (exp && autoTrace), ck = m.id + ':s' + i;
+            const title = st.verb === 'Thought' ? 'Thought' : err && st.verb === 'Ran' ? 'Failed to run ' + st.target : st.verb + ' ' + st.target;
+            const out = st.out ? codeRows(st.out, st.lang) : [];
+            return { ...st, icon: st.verb === 'Thought' ? 'check-circle' : st.icon, title, ws: st.lang === 'diff' ? 'pre' : 'pre-wrap',
+              titleColor: err ? 'var(--danger)' : 'var(--fg-muted)', hoverColor: err ? 'var(--danger)' : exp ? 'var(--fg)' : 'var(--fg-muted)', hasDiff: !!st.add, hasMeta: !!st.meta && !st.add && st.verb !== 'Thought', expandable: exp, flat: !exp, open: so, openS: so ? 'true' : 'false',
+              cursor: exp ? 'pointer' : 'default', hoverBg: exp ? 'var(--hover-surface)' : 'transparent', chevRot: so ? 'rotate(90deg)' : 'none',
+              iconColor: err ? 'var(--danger)' : 'var(--fg-subtle)', verbColor: err ? 'var(--danger)' : 'var(--fg-muted)', metaColor: err ? 'var(--danger)' : 'var(--fg-subtle)',
+              railBg: 'var(--border-subtle)', showNote: so && !!st.note, showOut: so && !!st.out,
+              outTitle: st.lang === 'diff' ? st.target : '$ ' + st.target, outCount: out.length + (out.length === 1 ? ' line' : ' lines'), lines: out,
+              copyIcon: s.copied === ck ? 'check' : 'copy', copy: e => { e.stopPropagation(); copyKey(ck, st.out); },
+              toggle: () => exp && this.setThread(s.active, th => ({ ...th, msgs: th.msgs.map(x => x.id === m.id ? { ...x, openSteps: { ...(x.openSteps || {}), [i]: !so } } : x) })) };
+          }) };
       }
       const md = m.streaming ? m.md.slice(0, s.revealed) : m.md;
       const blocks = parseMd(md).map((b, bi) => {
         const key = m.id + ':' + bi;
-        if (b.type === 'code') return { isCodeBlock: true, lang: b.lang, code: b.code, copyIcon: s.copied === key ? 'check' : 'copy',
-          copy: () => { try { navigator.clipboard.writeText(b.code); } catch (e) {} this.setState({ copied: key }); setTimeout(() => this.setState(x => x.copied === key ? { copied: null } : null), 1400); } };
+        if (b.type === 'code') { const rows = codeRows(b.code, b.lang); return { isCodeBlock: true, ws: 'pre', lang: b.lang || 'text', code: b.code, lines: rows, count: rows.length + (rows.length === 1 ? ' line' : ' lines'), copyIcon: s.copied === key ? 'check' : 'copy', copy: () => copyKey(key, b.code) }; }
         if (b.type === 'list') return { isList: true, items: b.items.map(it => ({ segs: segsOf(it) })) };
         return { isP: true, segs: segsOf(b.text) };
       });
@@ -843,15 +889,18 @@ class Component extends DCLogic {
         opts: p.opts.map(o => ({ ...o, hasDesc: !!o.desc, desc: o.desc || '', on: (p.k === 'project' ? s.project : p.k === 'env' ? s.env : s.base) === o.v, pick: () => this.setState({ [p.k]: o.v, trayOpen: null }) })) })),
       title: t ? t.title : 'New chat', branch: '',
       hasThread: !!t && t.msgs.length > 0, isEmpty: !t || t.msgs.length === 0,
-      msgs, running: s.running, idle: !s.running, liveLabel, liveIcon, elapsed: secs + 's',
+      msgs, running: s.running, idle: !s.running, liveLabel, liveIcon, elapsed: secs + 's', liveStepLabel: s.streamId ? '' : plan ? 'Step ' + (s.liveStep + 1) + ' of ' + plan.length : '',
       scrollRef: this.scrollRef, taRef: this.taRef,
+      showJump: !!s.away && !!t && t.msgs.length > 0,
+      onChatScroll: e => { const el = e.currentTarget, away = el.scrollHeight - el.scrollTop - el.clientHeight > 120; if (away !== !!this.state.away) this.setState({ away }); },
+      jumpDown: () => { const el = this.scrollRef.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); },
       draft: s.draft, rows: Math.min(8, Math.max(2, lines)),
       placeholder: t ? (t.pending ? 'Or tell ' + t.title + ' what to do instead' : 'Message ' + t.title) : 'Message a new bot',
       onDraft: (e) => this.setState({ draft: e.target.value, slashIdx: 0 }),
       onKey: this.onKey, onFocus: () => this.setState({ focused: true }), onBlur: () => this.setState({ focused: false }),
-      composerBorder: s.focused ? 'var(--border)' : 'var(--border-subtle)',
-      composerRadius: t && t.pending ? '0 0 18px 18px' : '18px',
-      composerTop: t && t.pending ? 'var(--border-subtle)' : (s.focused ? 'var(--border)' : 'var(--border-subtle)'),
+      composerBorder: s.focused ? 'var(--border)' : 'transparent',
+      composerRadius: t && t.pending ? '0 0 28px 28px' : '28px',
+      composerTop: t && t.pending ? 'var(--border-subtle)' : (s.focused ? 'var(--border)' : 'transparent'),
       send: this.send, stopRun: this.stopRun, cantSend: !s.draft.trim(), sendOpacity: s.draft.trim() ? 1 : 0.4,
       slashOpen: !!sm, slashEmpty: !!sm && sm.length === 0,
       slashItems: (sm || []).map((c, i) => ({ ...c, bg: i === slashIdx ? 'var(--hover-surface)' : 'transparent', pick: () => this.pickCmd(c), hover: () => this.setState({ slashIdx: i }) })),

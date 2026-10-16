@@ -21,6 +21,7 @@ import { WorkSessionOrmEntity } from './work-session.orm-entity';
 import type {
   HostSessionRow,
   NewSessionEvent,
+  RecentFolder,
   SessionAppendOutcome,
   SessionCreateOutcome,
   SessionEventPage,
@@ -98,8 +99,9 @@ export class WorkSessionRepository
         `INSERT INTO "work_session"
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
-            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt", "origin")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt", "origin",
+            "place", "folderPath")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -128,6 +130,8 @@ export class WorkSessionRepository
           record.lastEventAt,
           record.stoppedAt,
           record.origin,
+          record.place,
+          record.folderPath,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
@@ -254,7 +258,8 @@ export class WorkSessionRepository
   }
 
   async findAllPaginated(scope: AccessScope, filters: SessionFilters): Promise<SessionListPage> {
-    const query = this.scopedQuery(scope);
+    // A pull request's review session is the Pull requests area's, listed there.
+    const query = this.scopedQuery(scope).andWhere(`session.origin <> 'review'`);
     if (filters.projectId) query.andWhere('session.projectId = :projectId', filters);
     if (filters.hostId) query.andWhere('session.hostId = :hostId', filters);
     if (filters.state) query.andWhere('session.state = :state', filters);
@@ -444,6 +449,26 @@ export class WorkSessionRepository
       events: page.map((record) => this.mapper.eventToDomain(record)),
       nextSeq: records.length > limit ? (page[page.length - 1]?.seq ?? null) : null,
     };
+  }
+
+  async findRecentFolders(
+    scope: AccessScope,
+    hostId: string,
+    userId: string,
+    limit: number,
+  ): Promise<RecentFolder[]> {
+    const rows: unknown[] = await this.scopedQuery(scope)
+      .andWhere('session.hostId = :hostId', { hostId })
+      .andWhere('session.createdByUserId = :userId', { userId })
+      .andWhere(`session.place = 'folder'`)
+      .select('session.folderPath', 'path')
+      .addSelect('MAX(session.createdAt)', 'lastUsedAt')
+      .groupBy('session.folderPath')
+      .orderBy('"lastUsedAt"', 'DESC')
+      .addOrderBy('session.folderPath', 'ASC')
+      .limit(limit)
+      .getRawMany();
+    return rows.map((row) => this.mapper.recentFolderOf(row));
   }
 
   async countUnresolvedForProject(scope: AccessScope, projectId: string): Promise<number> {

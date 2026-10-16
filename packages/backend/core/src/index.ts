@@ -1,4 +1,5 @@
 export type { Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
+export { openBlob, sealBlob } from './crypto/sealed-blob';
 export { likeContains } from './database/like-contains';
 export {
   ApiAuthProblemResponses,

@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'tasks' | 'calendar' | 'pulls' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'pulls' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -957,6 +957,10 @@ export type HostRegistrationResponseDto = {
      */
     hostId: string;
     /**
+     * The account the host is paired with, its owner. The runner names the top level of its work folder by it.
+     */
+    accountId: string;
+    /**
      * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
      */
     fingerprint: string;
@@ -1460,6 +1464,14 @@ export type SessionResponseDto = {
      * The coding agent this session runs.
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    /**
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).
+     */
+    place: 'worktree' | 'folder';
+    /**
+     * The absolute path on the host a folder session runs in. Null for a worktree session.
+     */
+    folderPath?: string | null;
     launch: SessionLaunchResponseDto;
     /**
      * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
@@ -1521,13 +1533,12 @@ export type CreateSessionRequest = {
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
-    checkouts: [
-        {
-            installationId: string;
-            githubRepoId: number;
-            baseBranch?: string;
-        }
-    ];
+    checkouts?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
+    folder?: string;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -1677,6 +1688,60 @@ export type RenameSessionRequest = {
 
 export type MoveSessionRequest = {
     projectId: string;
+};
+
+export type HostFolderEntryResponseDto = {
+    /**
+     * The directory’s name.
+     */
+    name: string;
+    /**
+     * Its absolute path on the host: the listed folder joined with the name.
+     */
+    path: string;
+    /**
+     * The branch its checkout is on, when it is a git repository.
+     */
+    branch?: string | null;
+};
+
+export type HostRecentFolderResponseDto = {
+    /**
+     * Its absolute path on the host.
+     */
+    path: string;
+    /**
+     * When the caller last started a session in it.
+     */
+    lastUsedAt: string;
+};
+
+export type HostFoldersResponseDto = {
+    /**
+     * The directory listed, absolute and cleaned.
+     */
+    path: string;
+    /**
+     * Its parent; null at the root.
+     */
+    parent?: string | null;
+    /**
+     * The home directory of the user the runner runs as, so a client can show `~`.
+     */
+    home: string;
+    /**
+     * The listed directory’s own branch, when it is a git repository.
+     */
+    branch?: string | null;
+    entries: Array<HostFolderEntryResponseDto>;
+    /**
+     * More directories were there than `entries` carries.
+     */
+    truncated: boolean;
+    /**
+     * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
+     */
+    recent: Array<HostRecentFolderResponseDto>;
 };
 
 export type AutomationRepositoryResponseDto = {
@@ -2153,13 +2218,12 @@ export type StartTaskSessionRequest = {
         agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
         projectId?: string;
         name?: string;
-        checkouts: [
-            {
-                installationId: string;
-                githubRepoId: number;
-                baseBranch?: string;
-            }
-        ];
+        checkouts?: Array<{
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }>;
+        folder?: string;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -2639,6 +2703,31 @@ export type WatchedRepositoryDto = {
     watching: boolean;
 };
 
+export type ReviewSessionDto = {
+    sessionId: string;
+    /**
+     * The installation that reaches the repository.
+     */
+    installationId: string;
+    githubRepoId: number;
+    number: number;
+    /**
+     * As it was when the session started.
+     */
+    repository: string;
+    /**
+     * The pull request’s title when the session started.
+     */
+    title: string;
+    headRef: string;
+    hostId: string;
+    /**
+     * The session’s stored lifecycle.
+     */
+    state: 'starting' | 'open' | 'failed';
+    createdAt: string;
+};
+
 export type SetRepositoryWatchRequest = {
     watching: boolean;
 };
@@ -2715,6 +2804,10 @@ export type PullRequestDetailResponseDto = {
      */
     body: string;
     baseRef: string;
+    /**
+     * Whether the head branch is in another repository (a fork), which a session cannot check out yet.
+     */
+    fromFork: boolean;
     state: 'open' | 'merged' | 'closed';
     changedFiles: number;
     /**
@@ -2800,6 +2893,352 @@ export type MergePullRequestRequest = {
     method?: 'squash' | 'merge' | 'rebase';
 };
 
+export type StartReviewSessionRequest = {
+    hostId: string;
+};
+
+export type ReviewSessionStartedResponseDto = {
+    sessionId: string;
+    /**
+     * What the control plane could not do just now: `host_offline` when the session waits for its host.
+     */
+    hints: Array<string>;
+};
+
+export type BotResponseDto = {
+    id: string;
+    name: string;
+    description: string;
+    /**
+     * The colour its initials are drawn on.
+     */
+    avatarColor: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    /**
+     * Its sidebar group; null is ungrouped.
+     */
+    groupId: string | null;
+    /**
+     * Its order inside its group, from 0.
+     */
+    position: number;
+    /**
+     * The host its turns run on; null until one is chosen.
+     */
+    homeHostId: string | null;
+    /**
+     * Who answers it, and so which engine runs.
+     */
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    /**
+     * A model id the provider offers; null runs the provider's default.
+     */
+    model: string | null;
+    /**
+     * The effort level; null runs the model at its own default.
+     */
+    effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
+    /**
+     * How far a turn may go without asking.
+     */
+    permission: 'auto' | 'full';
+    /**
+     * The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted.
+     */
+    createdByBotId: string | null;
+    /**
+     * Whether what it decides to remember is saved without asking.
+     */
+    learnAutomatically: boolean;
+    createdAt: string;
+    updatedAt: string;
+    /**
+     * Its last message, or when it last changed before it had one.
+     */
+    lastActivityAt: string;
+    /**
+     * The start of its last message, for the sidebar; null before the first.
+     */
+    lastMessagePreview: string | null;
+};
+
+export type CreateBotRequest = {
+    name?: string;
+    description?: string;
+    avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    groupId?: string | null;
+    homeHostId?: string | null;
+    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+};
+
+export type UpdateBotRequest = {
+    name?: string;
+    description?: string;
+    avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    groupId?: string | null;
+    position?: number;
+    homeHostId?: string | null;
+    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    model?: string | null;
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
+    permission?: 'auto' | 'full';
+    learnAutomatically?: boolean;
+};
+
+export type BotDocumentResponseDto = {
+    /**
+     * `SOUL.md` or `INSTRUCTIONS.md`.
+     */
+    name: 'soul' | 'instructions';
+    content: string;
+    /**
+     * Goes up on every saved change. Send it back as `baseRevision` to save over it.
+     */
+    revision: number;
+    updatedBy: 'user' | 'bot';
+    updatedByUserId: string | null;
+    updatedAt: string;
+};
+
+export type UpdateBotDocumentRequest = {
+    content: string;
+    baseRevision: number;
+    note?: string;
+};
+
+export type BotDocumentRevisionResponseDto = {
+    id: string;
+    name: 'soul' | 'instructions';
+    /**
+     * Revision 1 is the one the bot was created with.
+     */
+    revision: number;
+    content: string;
+    author: 'user' | 'bot';
+    authorUserId: string | null;
+    /**
+     * What the writer said about the change; may be empty.
+     */
+    note: string;
+    /**
+     * The revision whose content this one restored, when it is a revert.
+     */
+    revertedFrom: number | null;
+    createdAt: string;
+};
+
+export type BotMemoryFactResponseDto = {
+    id: string;
+    content: string;
+    /**
+     * Who wrote it last.
+     */
+    source: 'user' | 'bot';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateBotMemoryFactRequest = {
+    content: string;
+};
+
+export type UpdateBotMemoryFactRequest = {
+    content: string;
+};
+
+export type BotGroupResponseDto = {
+    id: string;
+    name: string;
+    /**
+     * Its order in the sidebar, from 0.
+     */
+    position: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateBotGroupRequest = {
+    name: string;
+};
+
+export type UpdateBotGroupRequest = {
+    name?: string;
+    position?: number;
+};
+
+export type ModelProviderCredentialResponseDto = {
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    /**
+     * Whether the workspace has a key for this provider.
+     */
+    configured: boolean;
+    /**
+     * The key's last four characters, so a person can tell which one is stored.
+     */
+    keyHint: string | null;
+    updatedAt: string | null;
+};
+
+export type PutModelProviderCredentialRequest = {
+    apiKey: string;
+};
+
+export type ChatgptLoginResponseDto = {
+    /**
+     * The sign-in, sealed: opaque to the console, handed back on every poll.
+     */
+    flowId: string;
+    /**
+     * The code the person types on `verificationUrl`.
+     */
+    userCode: string;
+    /**
+     * OpenAI's page where the code is typed.
+     */
+    verificationUrl: string;
+    /**
+     * How long to wait between polls, in seconds.
+     */
+    intervalSeconds: number;
+    /**
+     * When the code stops working.
+     */
+    expiresAt: string;
+};
+
+export type PollChatgptLoginRequest = {
+    flowId: string;
+};
+
+export type ChatgptLoginStatusResponseDto = {
+    status: 'pending' | 'connected';
+};
+
+export type BotToolStepResponseDto = {
+    callId: string;
+    /**
+     * The tool, as the bot knows it.
+     */
+    name: string;
+    /**
+     * The input the bot called it with.
+     */
+    input: {
+        [key: string]: unknown;
+    };
+    /**
+     * What it answered, cut short; null while it runs.
+     */
+    output: string | null;
+    isError: boolean;
+};
+
+export type BotMessageEventResponseDto = {
+    kind: 'approval';
+    outcome: 'approved' | 'denied' | 'failed';
+    /**
+     * The tool the decided call was for.
+     */
+    tool: string;
+    /**
+     * The card's line: what the call does, in words.
+     */
+    summary: string;
+};
+
+export type BotMessageResponseDto = {
+    id: string;
+    turnId: string;
+    role: 'user' | 'assistant' | 'activity' | 'event';
+    /**
+     * The text; empty for an activity line.
+     */
+    content: string;
+    steps: Array<BotToolStepResponseDto>;
+    /**
+     * What an event says happened; null on every other role.
+     */
+    event: BotMessageEventResponseDto | null;
+    createdAt: string;
+};
+
+export type BotTurnResponseDto = {
+    id: string;
+    status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    /**
+     * The model it runs on, fixed when it was sent.
+     */
+    model: string;
+    /**
+     * Why it failed; null otherwise.
+     */
+    error: string | null;
+    inputTokens: number;
+    outputTokens: number;
+    /**
+     * Stop was pressed and the worker has not ended it yet.
+     */
+    cancelRequested: boolean;
+    createdAt: string;
+    startedAt: string | null;
+    endedAt: string | null;
+};
+
+export type BotConversationResponseDto = {
+    /**
+     * Oldest first.
+     */
+    messages: Array<BotMessageResponseDto>;
+    /**
+     * The turns those messages belong to, and any still queued or running; oldest first.
+     */
+    turns: Array<BotTurnResponseDto>;
+};
+
+export type SendBotMessageRequest = {
+    content: string;
+    timeZone?: string;
+};
+
+export type BotApprovalResponseDto = {
+    id: string;
+    /**
+     * The turn whose tool call asked.
+     */
+    turnId: string;
+    /**
+     * The tool, as the bot knows it (`start_session`).
+     */
+    tool: string;
+    /**
+     * The call exactly as it will run on a yes.
+     */
+    input: {
+        [key: string]: unknown;
+    };
+    /**
+     * What will happen, in words.
+     */
+    summary: string;
+    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    /**
+     * What the call answered when it ran on a yes; null before, and for a no.
+     */
+    result: string | null;
+    /**
+     * What the person added to a no.
+     */
+    note: string | null;
+    decidedByUserId: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+};
+
+export type DecideBotApprovalRequest = {
+    decision: 'approve' | 'deny';
+    note?: string;
+};
+
 export type LivenessResponseDto = {
     /**
      * Always `ok`: the process answered.
@@ -2828,6 +3267,10 @@ export type CapabilitiesResponseDto = {
      * Host pairing is configured (the runner release settings).
      */
     hosts: boolean;
+    /**
+     * A workspace can store model provider keys, which bots run on.
+     */
+    bot_providers: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -7138,7 +7581,7 @@ export type CreateSessionErrors = {
     /**
      * SESSIONS_017 — The host’s runner takes no images
      *
-     * SESSIONS_011 — The host's runner is older than the agent picked
+     * SESSIONS_011 / SESSIONS_025 — The host's runner is older than the agent, or than folder sessions
      *
      * SESSIONS_006 — That project is archived
      */
@@ -7546,6 +7989,10 @@ export type PrepareSessionData = {
 
 export type PrepareSessionErrors = {
     /**
+     * SESSIONS_002 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -7834,6 +8281,59 @@ export type MoveSessionResponses = {
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
+
+export type FindHostFoldersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * An absolute path on the host. Omit for the home directory.
+         */
+        path?: string;
+    };
+    url: '/api/v1/hosts/{id}/folders';
+};
+
+export type FindHostFoldersErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * SESSIONS_030 — Not readable
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 / SESSIONS_028 — Host or folder not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_026 — Runner cannot list
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_029 — Not a folder
+     */
+    422: ProblemDetailsDto;
+    /**
+     * SESSIONS_027 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindHostFoldersError = FindHostFoldersErrors[keyof FindHostFoldersErrors];
+
+export type FindHostFoldersResponses = {
+    200: HostFoldersResponseDto;
+};
+
+export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
 
 export type FindAutomationsData = {
     body?: never;
@@ -9404,6 +9904,58 @@ export type FindWatchedRepositoriesResponses = {
 
 export type FindWatchedRepositoriesResponse = FindWatchedRepositoriesResponses[keyof FindWatchedRepositoriesResponses];
 
+export type FindReviewSessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/pulls/review-sessions';
+};
+
+export type FindReviewSessionsErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindReviewSessionsError = FindReviewSessionsErrors[keyof FindReviewSessionsErrors];
+
+export type FindReviewSessionsResponses = {
+    200: Array<ReviewSessionDto>;
+};
+
+export type FindReviewSessionsResponse = FindReviewSessionsResponses[keyof FindReviewSessionsResponses];
+
 export type SetRepositoryWatchData = {
     body: SetRepositoryWatchRequest;
     path: {
@@ -9850,6 +10402,1080 @@ export type MergePullRequestResponses = {
 };
 
 export type MergePullRequestResponse = MergePullRequestResponses[keyof MergePullRequestResponses];
+
+export type StartReviewSessionData = {
+    body: StartReviewSessionRequest;
+    headers?: {
+        /**
+         * Send one. A retry after a lost response returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        installationId: string;
+        githubRepoId: number;
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/review-session';
+};
+
+export type StartReviewSessionErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * PULLS_002 — The pull request comes from a fork
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 / GITHUB_015 — Rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartReviewSessionError = StartReviewSessionErrors[keyof StartReviewSessionErrors];
+
+export type StartReviewSessionResponses = {
+    201: ReviewSessionStartedResponseDto;
+};
+
+export type StartReviewSessionResponse = StartReviewSessionResponses[keyof StartReviewSessionResponses];
+
+export type FindBotsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bots';
+};
+
+export type FindBotsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindBotsError = FindBotsErrors[keyof FindBotsErrors];
+
+export type FindBotsResponses = {
+    200: Array<BotResponseDto>;
+};
+
+export type FindBotsResponse = FindBotsResponses[keyof FindBotsResponses];
+
+export type CreateBotData = {
+    body: CreateBotRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bots';
+};
+
+export type CreateBotErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * BOTS_003 — Bot group not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CreateBotError = CreateBotErrors[keyof CreateBotErrors];
+
+export type CreateBotResponses = {
+    201: BotResponseDto;
+};
+
+export type CreateBotResponse = CreateBotResponses[keyof CreateBotResponses];
+
+export type DeleteBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}';
+};
+
+export type DeleteBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotError = DeleteBotErrors[keyof DeleteBotErrors];
+
+export type DeleteBotResponses = {
+    204: void;
+};
+
+export type DeleteBotResponse = DeleteBotResponses[keyof DeleteBotResponses];
+
+export type FindBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}';
+};
+
+export type FindBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotError = FindBotErrors[keyof FindBotErrors];
+
+export type FindBotResponses = {
+    200: BotResponseDto;
+};
+
+export type FindBotResponse = FindBotResponses[keyof FindBotResponses];
+
+export type UpdateBotData = {
+    body: UpdateBotRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}';
+};
+
+export type UpdateBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * BOTS_003 — Bot group not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_010 — That model cannot run a bot
+     */
+    422: ProblemDetailsDto;
+};
+
+export type UpdateBotError = UpdateBotErrors[keyof UpdateBotErrors];
+
+export type UpdateBotResponses = {
+    200: BotResponseDto;
+};
+
+export type UpdateBotResponse = UpdateBotResponses[keyof UpdateBotResponses];
+
+export type FindBotDocumentsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/documents';
+};
+
+export type FindBotDocumentsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotDocumentsError = FindBotDocumentsErrors[keyof FindBotDocumentsErrors];
+
+export type FindBotDocumentsResponses = {
+    200: Array<BotDocumentResponseDto>;
+};
+
+export type FindBotDocumentsResponse = FindBotDocumentsResponses[keyof FindBotDocumentsResponses];
+
+export type UpdateBotDocumentData = {
+    body: UpdateBotDocumentRequest;
+    path: {
+        id: string;
+        name: 'soul' | 'instructions';
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/documents/{name}';
+};
+
+export type UpdateBotDocumentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_005 — Bot document not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_006 — The document was changed since it was loaded
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateBotDocumentError = UpdateBotDocumentErrors[keyof UpdateBotDocumentErrors];
+
+export type UpdateBotDocumentResponses = {
+    200: BotDocumentResponseDto;
+};
+
+export type UpdateBotDocumentResponse = UpdateBotDocumentResponses[keyof UpdateBotDocumentResponses];
+
+export type FindBotDocumentRevisionsData = {
+    body?: never;
+    path: {
+        id: string;
+        name: 'soul' | 'instructions';
+    };
+    query?: {
+        /**
+         * At most 100; 50 unless asked.
+         */
+        limit?: number;
+    };
+    url: '/api/v1/bots/{id}/documents/{name}/revisions';
+};
+
+export type FindBotDocumentRevisionsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_005 — Bot document not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotDocumentRevisionsError = FindBotDocumentRevisionsErrors[keyof FindBotDocumentRevisionsErrors];
+
+export type FindBotDocumentRevisionsResponses = {
+    200: Array<BotDocumentRevisionResponseDto>;
+};
+
+export type FindBotDocumentRevisionsResponse = FindBotDocumentRevisionsResponses[keyof FindBotDocumentRevisionsResponses];
+
+export type RevertBotDocumentData = {
+    body?: never;
+    path: {
+        id: string;
+        name: 'soul' | 'instructions';
+        revision: number;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/documents/{name}/revisions/{revision}/revert';
+};
+
+export type RevertBotDocumentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_007 — Revision not found
+     *
+     * BOTS_005 — Bot document not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_006 — The document was changed since it was loaded
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RevertBotDocumentError = RevertBotDocumentErrors[keyof RevertBotDocumentErrors];
+
+export type RevertBotDocumentResponses = {
+    200: BotDocumentResponseDto;
+};
+
+export type RevertBotDocumentResponse = RevertBotDocumentResponses[keyof RevertBotDocumentResponses];
+
+export type ClearBotMemoryData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory';
+};
+
+export type ClearBotMemoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ClearBotMemoryError = ClearBotMemoryErrors[keyof ClearBotMemoryErrors];
+
+export type ClearBotMemoryResponses = {
+    204: void;
+};
+
+export type ClearBotMemoryResponse = ClearBotMemoryResponses[keyof ClearBotMemoryResponses];
+
+export type FindBotMemoryData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory';
+};
+
+export type FindBotMemoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotMemoryError = FindBotMemoryErrors[keyof FindBotMemoryErrors];
+
+export type FindBotMemoryResponses = {
+    200: Array<BotMemoryFactResponseDto>;
+};
+
+export type FindBotMemoryResponse = FindBotMemoryResponses[keyof FindBotMemoryResponses];
+
+export type CreateBotMemoryFactData = {
+    body: CreateBotMemoryFactRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory';
+};
+
+export type CreateBotMemoryFactErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_009 — The bot remembers as much as it can
+     */
+    422: ProblemDetailsDto;
+};
+
+export type CreateBotMemoryFactError = CreateBotMemoryFactErrors[keyof CreateBotMemoryFactErrors];
+
+export type CreateBotMemoryFactResponses = {
+    201: BotMemoryFactResponseDto;
+};
+
+export type CreateBotMemoryFactResponse = CreateBotMemoryFactResponses[keyof CreateBotMemoryFactResponses];
+
+export type DeleteBotMemoryFactData = {
+    body?: never;
+    path: {
+        id: string;
+        factId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/{factId}';
+};
+
+export type DeleteBotMemoryFactErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_008 — Memory fact not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotMemoryFactError = DeleteBotMemoryFactErrors[keyof DeleteBotMemoryFactErrors];
+
+export type DeleteBotMemoryFactResponses = {
+    204: void;
+};
+
+export type DeleteBotMemoryFactResponse = DeleteBotMemoryFactResponses[keyof DeleteBotMemoryFactResponses];
+
+export type UpdateBotMemoryFactData = {
+    body: UpdateBotMemoryFactRequest;
+    path: {
+        id: string;
+        factId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/{factId}';
+};
+
+export type UpdateBotMemoryFactErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_008 — Memory fact not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateBotMemoryFactError = UpdateBotMemoryFactErrors[keyof UpdateBotMemoryFactErrors];
+
+export type UpdateBotMemoryFactResponses = {
+    200: BotMemoryFactResponseDto;
+};
+
+export type UpdateBotMemoryFactResponse = UpdateBotMemoryFactResponses[keyof UpdateBotMemoryFactResponses];
+
+export type FindBotGroupsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-groups';
+};
+
+export type FindBotGroupsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindBotGroupsError = FindBotGroupsErrors[keyof FindBotGroupsErrors];
+
+export type FindBotGroupsResponses = {
+    200: Array<BotGroupResponseDto>;
+};
+
+export type FindBotGroupsResponse = FindBotGroupsResponses[keyof FindBotGroupsResponses];
+
+export type CreateBotGroupData = {
+    body: CreateBotGroupRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-groups';
+};
+
+export type CreateBotGroupErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_004 — A group with that name already exists
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateBotGroupError = CreateBotGroupErrors[keyof CreateBotGroupErrors];
+
+export type CreateBotGroupResponses = {
+    201: BotGroupResponseDto;
+};
+
+export type CreateBotGroupResponse = CreateBotGroupResponses[keyof CreateBotGroupResponses];
+
+export type DeleteBotGroupData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bot-groups/{id}';
+};
+
+export type DeleteBotGroupErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_003 — Bot group not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotGroupError = DeleteBotGroupErrors[keyof DeleteBotGroupErrors];
+
+export type DeleteBotGroupResponses = {
+    204: void;
+};
+
+export type DeleteBotGroupResponse = DeleteBotGroupResponses[keyof DeleteBotGroupResponses];
+
+export type UpdateBotGroupData = {
+    body: UpdateBotGroupRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bot-groups/{id}';
+};
+
+export type UpdateBotGroupErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_003 — Bot group not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_004 — A group with that name already exists
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateBotGroupError = UpdateBotGroupErrors[keyof UpdateBotGroupErrors];
+
+export type UpdateBotGroupResponses = {
+    200: BotGroupResponseDto;
+};
+
+export type UpdateBotGroupResponse = UpdateBotGroupResponses[keyof UpdateBotGroupResponses];
+
+export type FindModelProviderCredentialsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/model-providers';
+};
+
+export type FindModelProviderCredentialsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindModelProviderCredentialsError = FindModelProviderCredentialsErrors[keyof FindModelProviderCredentialsErrors];
+
+export type FindModelProviderCredentialsResponses = {
+    200: Array<ModelProviderCredentialResponseDto>;
+};
+
+export type FindModelProviderCredentialsResponse = FindModelProviderCredentialsResponses[keyof FindModelProviderCredentialsResponses];
+
+export type DeleteModelProviderCredentialData = {
+    body?: never;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}';
+};
+
+export type DeleteModelProviderCredentialErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteModelProviderCredentialError = DeleteModelProviderCredentialErrors[keyof DeleteModelProviderCredentialErrors];
+
+export type DeleteModelProviderCredentialResponses = {
+    204: void;
+};
+
+export type DeleteModelProviderCredentialResponse = DeleteModelProviderCredentialResponses[keyof DeleteModelProviderCredentialResponses];
+
+export type PutModelProviderCredentialData = {
+    body: PutModelProviderCredentialRequest;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}';
+};
+
+export type PutModelProviderCredentialErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_017 — ChatGPT connects by signing in, not with a key
+     */
+    422: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PutModelProviderCredentialError = PutModelProviderCredentialErrors[keyof PutModelProviderCredentialErrors];
+
+export type PutModelProviderCredentialResponses = {
+    204: void;
+};
+
+export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
+
+export type StartChatgptLoginData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/model-providers/chatgpt/login';
+};
+
+export type StartChatgptLoginErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_019 — ChatGPT's sign-in is busy
+     */
+    429: ProblemDetailsDto;
+    /**
+     * BOTS_020 — ChatGPT's sign-in could not be reached
+     */
+    502: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartChatgptLoginError = StartChatgptLoginErrors[keyof StartChatgptLoginErrors];
+
+export type StartChatgptLoginResponses = {
+    200: ChatgptLoginResponseDto;
+};
+
+export type StartChatgptLoginResponse = StartChatgptLoginResponses[keyof StartChatgptLoginResponses];
+
+export type PollChatgptLoginData = {
+    body: PollChatgptLoginRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/model-providers/chatgpt/login/poll';
+};
+
+export type PollChatgptLoginErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_018 — The ChatGPT sign-in expired
+     */
+    410: ProblemDetailsDto;
+    /**
+     * BOTS_019 — ChatGPT's sign-in is busy
+     */
+    429: ProblemDetailsDto;
+    /**
+     * BOTS_020 — ChatGPT's sign-in could not be reached
+     */
+    502: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PollChatgptLoginError = PollChatgptLoginErrors[keyof PollChatgptLoginErrors];
+
+export type PollChatgptLoginResponses = {
+    200: ChatgptLoginStatusResponseDto;
+};
+
+export type PollChatgptLoginResponse = PollChatgptLoginResponses[keyof PollChatgptLoginResponses];
+
+export type FindBotConversationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/conversation';
+};
+
+export type FindBotConversationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotConversationError = FindBotConversationErrors[keyof FindBotConversationErrors];
+
+export type FindBotConversationResponses = {
+    200: BotConversationResponseDto;
+};
+
+export type FindBotConversationResponse = FindBotConversationResponses[keyof FindBotConversationResponses];
+
+export type SendBotMessageData = {
+    body: SendBotMessageRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/messages';
+};
+
+export type SendBotMessageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_013 — The bot's model provider has no key
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type SendBotMessageError = SendBotMessageErrors[keyof SendBotMessageErrors];
+
+export type SendBotMessageResponses = {
+    202: BotTurnResponseDto;
+};
+
+export type SendBotMessageResponse = SendBotMessageResponses[keyof SendBotMessageResponses];
+
+export type CancelBotTurnData = {
+    body?: never;
+    path: {
+        id: string;
+        turnId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/turns/{turnId}/cancel';
+};
+
+export type CancelBotTurnErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_014 — Turn not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CancelBotTurnError = CancelBotTurnErrors[keyof CancelBotTurnErrors];
+
+export type CancelBotTurnResponses = {
+    202: BotTurnResponseDto;
+};
+
+export type CancelBotTurnResponse = CancelBotTurnResponses[keyof CancelBotTurnResponses];
+
+export type StreamBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/stream';
+};
+
+export type StreamBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type StreamBotError = StreamBotErrors[keyof StreamBotErrors];
+
+export type StreamBotResponses = {
+    /**
+     * The event stream
+     */
+    200: unknown;
+};
+
+export type FindBotApprovalsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    };
+    url: '/api/v1/bots/{id}/approvals';
+};
+
+export type FindBotApprovalsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotApprovalsError = FindBotApprovalsErrors[keyof FindBotApprovalsErrors];
+
+export type FindBotApprovalsResponses = {
+    200: Array<BotApprovalResponseDto>;
+};
+
+export type FindBotApprovalsResponse = FindBotApprovalsResponses[keyof FindBotApprovalsResponses];
+
+export type DecideBotApprovalData = {
+    body: DecideBotApprovalRequest;
+    path: {
+        id: string;
+        approvalId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/approvals/{approvalId}/decision';
+};
+
+export type DecideBotApprovalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_015 — Approval not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_016 — The approval was already decided
+     */
+    409: ProblemDetailsDto;
+};
+
+export type DecideBotApprovalError = DecideBotApprovalErrors[keyof DecideBotApprovalErrors];
+
+export type DecideBotApprovalResponses = {
+    201: BotApprovalResponseDto;
+};
+
+export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
 
 export type CheckData = {
     body?: never;

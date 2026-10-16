@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionSkeleton } from '../components/session-skeleton';
 import { SessionPane } from '../sections/session-pane';
+import { SessionTerminal } from '../sections/session-terminal';
 
 /**
  * One session, in whichever state the URL lands on. The pane reads the
@@ -19,8 +20,14 @@ export function SessionScreen({
   sessionId,
   closed,
   statusItem,
+  composer,
 }: {
   sessionId: string;
+  /**
+   * An input row under the terminal, with this placeholder: a pull request's
+   * review session has one. The route composes it, as `statusItem`.
+   */
+  composer?: string;
   /**
    * A chip at the head of the terminal's status bar: the task this session is
    * on ("Back to task", `18-plan-product.md` §4). The route composes it, since
@@ -65,7 +72,18 @@ export function SessionScreen({
         }
       </QueryState.Error>
       <QueryState.Data>
-        <SessionPane sessionId={sessionId} closed={closed} statusItem={statusItem} />
+        <SessionPane
+          sessionId={sessionId}
+          closed={closed}
+          terminal={(session) => (
+            <SessionTerminal
+              sessionId={session.id}
+              hostId={session.hostId}
+              statusItem={statusItem}
+              composer={composer}
+            />
+          )}
+        />
       </QueryState.Data>
     </QueryState>
   );

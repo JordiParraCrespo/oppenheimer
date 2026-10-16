@@ -5,7 +5,8 @@
     "workspace": "Espacio de trabajo",
     "profile": "Perfil",
     "hosts": "Hosts",
-    "repositories": "Repositorios observados"
+    "repositories": "Repositorios observados",
+    "modelProviders": "Proveedores de modelos"
   },
   "profile": {
     "title": "Perfil",
@@ -98,5 +99,52 @@
   "repositories": {
     "title": "Repositorios observados",
     "description": "Las pull requests abiertas de estos repositorios aparecen en la pestaña Observando de la cola de PR, aunque nadie haya pedido tu revisión."
+  },
+  "modelProviders": {
+    "title": "Proveedores de modelos",
+    "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar.",
+    "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
+    "loadFailed": "No se pudieron cargar los proveedores de modelos.",
+    "keyEnding": "Clave que termina en {{hint}}",
+    "noKey": "Sin clave",
+    "add": "Añadir clave",
+    "replace": "Reemplazar",
+    "remove": "Quitar",
+    "removeLabel": "Quitar la clave de {{provider}}",
+    "removeFailed": "No se pudo quitar la clave.",
+    "providers": {
+      "anthropic": "Modelos Claude, a través de la API de Anthropic.",
+      "glm": "Modelos GLM, a través de z.ai.",
+      "openai": "Modelos GPT, a través de la API de OpenAI.",
+      "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API."
+    },
+    "dialog": {
+      "title": "Clave de {{provider}}",
+      "description": "Pega la clave de la API. Sustituye a la guardada y los bots de {{provider}} la usan desde su siguiente mensaje.",
+      "label": "Clave de la API",
+      "save": "Guardar clave",
+      "saving": "Guardando…",
+      "failed": "No se pudo guardar la clave."
+    },
+    "signedIn": "Sesión iniciada · cuenta que termina en {{hint}}",
+    "notConnected": "Sin conectar",
+    "connect": "Conectar ChatGPT",
+    "reconnect": "Volver a iniciar sesión",
+    "disconnect": "Desconectar",
+    "disconnectLabel": "Desconectar {{provider}}",
+    "chatgpt": {
+      "title": "Conectar ChatGPT",
+      "description": "Inicia sesión en ChatGPT y los bots de ChatGPT funcionarán con tu suscripción, no con la facturación de la API.",
+      "step": "Abre la página de inicio de sesión de OpenAI e introduce este código:",
+      "open": "Abrir la página de inicio de sesión",
+      "codeTitle": "Código de un solo uso",
+      "waiting": "Esperando a que apruebes el inicio de sesión…",
+      "expires": "El código funciona durante 15 minutos.",
+      "expired": "Este código ha caducado. Pide uno nuevo para volver a intentarlo.",
+      "newCode": "Pedir un código nuevo",
+      "connected": "Sesión iniciada. Los bots de ChatGPT ya funcionan con esta suscripción.",
+      "done": "Hecho",
+      "failed": "No se pudo iniciar sesión en ChatGPT."
+    }
   }
 }

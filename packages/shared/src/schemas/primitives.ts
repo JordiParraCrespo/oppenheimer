@@ -32,6 +32,8 @@ export const FIELD_BOUNDS = {
    * `prompt.first` entry rejected by the log, so nothing records the task.
    */
   prompt: { min: 1, maxBytes: 2 * 1024 },
+  /** An absolute path on a host: a folder session's folder, a folder picker's directory. */
+  hostPath: { min: 1, max: 4096 },
 } as const;
 
 /**
@@ -55,6 +57,13 @@ export const hostNameSchema = z
   .string()
   .min(FIELD_BOUNDS.hostName.min)
   .max(FIELD_BOUNDS.hostName.max);
+
+/** An absolute path on a host (macOS or Linux); what is there is the runner's to check. */
+export const hostPathSchema = z
+  .string()
+  .min(FIELD_BOUNDS.hostPath.min)
+  .max(FIELD_BOUNDS.hostPath.max)
+  .regex(/^\/[^\0]*$/);
 
 export const displayNameSchema = z
   .string()
@@ -166,7 +175,7 @@ export const hostFactsSchema = z.object({
     .array(hostToolSchema)
     .nullable()
     .transform((tools) => tools ?? []),
-  /** Where `~/oppenheimer-ai` lives on this host. May be empty before it is chosen. */
+  /** Where the work folder (`~/oppenheimer` by default) lives on this host. May be empty before it is chosen. */
   workspacePath: z.string(),
   /** Free bytes on the workspace filesystem. A JSON number; `uint64` in Go. */
   diskFreeBytes: z.number().int().min(0),

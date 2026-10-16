@@ -355,6 +355,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	if !slices.Equal(constants.Capabilities, []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilityAttachmentDirect,
+		link.CapabilitySessionFolder, link.CapabilityFsList,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

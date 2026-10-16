@@ -64,8 +64,8 @@ interface RawPull {
   state: 'open' | 'closed';
   merged_at: string | null;
   merged?: boolean;
-  head: { ref: string; sha: string };
-  base: { ref: string };
+  head: { ref: string; sha: string; repo?: { id: number } | null };
+  base: { ref: string; repo?: { id: number } };
   created_at: string;
   updated_at: string;
   closed_at: string | null;
@@ -159,6 +159,8 @@ export class GithubPullsAdapter implements GithubPullsPort {
       changedFiles: body.changed_files ?? 0,
       mergeable: body.mergeable ?? null,
       mergeableState: body.mergeable_state ?? 'unknown',
+      // A head whose repository is gone (a deleted fork) is a fork's too.
+      fromFork: body.head.repo?.id !== body.base.repo?.id,
     };
   }
 

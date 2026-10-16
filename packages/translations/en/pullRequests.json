@@ -3,7 +3,10 @@
     "title": "Pull requests",
     "views": "Views",
     "queue": "PR queue",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "forReview": "For review",
+    "searchReviews": "Search review sessions",
+    "clearSearch": "Clear search"
   },
   "queue": {
     "title": "PR queue",
@@ -112,7 +115,8 @@
     "viewLabel": "View",
     "views": {
       "description": "Description",
-      "changes": "Changes"
+      "changes": "Changes",
+      "chat": "Chat"
     },
     "openOnGithub": "Open on GitHub",
     "loadFailed": "Could not load the pull request.",
@@ -124,8 +128,6 @@
     },
     "into": "into",
     "noDescription": "No description.",
-    "copyCode": "Copy code",
-    "codeCopied": "Copied",
     "editOnGithub": "Edit on GitHub",
     "checks": "Checks",
     "noReviewers": "Nobody has reviewed it yet.",
@@ -186,7 +188,6 @@
     "optional": "Optional"
   },
   "changes": {
-    "back": "Back",
     "layout": "Layout",
     "unified": "Unified",
     "split": "Split",
@@ -250,5 +251,23 @@
     "capped": "Counted from the most recently closed pull requests: more closed this {{range}} than one read takes.",
     "weekOf": "Week of {{date}}",
     "hoverWeek": "Hover a week"
+  },
+  "reviewSession": {
+    "start": "Start review session",
+    "starting": "Starting…",
+    "host": "Host",
+    "search": "Search hosts…",
+    "empty": "No host matches.",
+    "offline": "offline",
+    "noHost": "No host is online. Start the runner on one of your machines.",
+    "fork": "It comes from a fork, which a session cannot check out yet.",
+    "failed": "Could not start the review session.",
+    "title": "Review this pull request in a session",
+    "description": "Claude Code starts on one of your hosts in a worktree of {{branch}}, reads the diff and opens with two or three lines. Then ask it anything.",
+    "bar": "review · {{repository}} #{{number}}",
+    "close": "Show the pull request",
+    "loadFailed": "Could not load the review session.",
+    "composer": "Ask the review agent, or run a command",
+    "listFailed": "Could not load your review sessions."
   }
 }

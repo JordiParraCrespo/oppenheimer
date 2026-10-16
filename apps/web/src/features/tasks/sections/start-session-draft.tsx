@@ -1,9 +1,6 @@
 import { Callout, DialogDescription, FieldDescription } from '@oppenheimer/design-system-web';
 import { shortName } from '@oppenheimer/frontend-consumer';
-import {
-  useStartTaskSession,
-  useSuspenseTasksProjectsHosts,
-} from '@oppenheimer/frontend-consumer/react';
+import { useStartTaskSession, useSuspenseStartSession } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
@@ -28,7 +25,7 @@ export function StartSessionDraft() {
   const { start } = board.useSearch();
   const navigate = board.useNavigate();
   const close = () => navigate({ search: (previous) => ({ ...previous, start: undefined }) });
-  const { tasks, projects, hosts, error } = useSuspenseTasksProjectsHosts();
+  const { tasks, projects, hosts, error } = useSuspenseStartSession();
   const task = tasks.find((row) => row.id === start);
   const project = projects.find((row) => row.id === task?.projectId);
   const [idempotencyKey] = useState(() => crypto.randomUUID());

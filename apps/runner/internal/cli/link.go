@@ -40,6 +40,7 @@ const (
 	laneHostUpdate    = "host:update"
 	laneHostPreflight = "host:preflight"
 	laneRepoPrepare   = "repo:"
+	laneFsList        = "fs:list"
 )
 
 // linkSender is the slice of the link the handler writes through, so a test
@@ -261,7 +262,7 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
-		link.CapabilityRepositoryPrepare,
+		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect)
@@ -472,10 +473,17 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case "repository.prepare":
 		var m link.RepositoryPrepare
 		if msg.Decode(&m) == nil {
-			// One lane per repository: a second pick of the same one waits for
-			// the first rather than racing it, and other repositories and
-			// every session go on meanwhile.
-			h.lanes.run(laneRepoPrepare+m.RepositoryFullName, func() { h.prepareRepository(h.life, m) })
+			// One lane per store, a repository in a workspace: a second pick
+			// of the same one waits for the first rather than racing it, and
+			// other stores and every session go on meanwhile.
+			h.lanes.run(laneRepoPrepare+m.WorkspaceID+"/"+m.RepositoryFullName, func() { h.prepareRepository(h.life, m) })
+		}
+	case link.TypeFsList:
+		var m link.FsList
+		if msg.Decode(&m) == nil {
+			// Off the read loop like any command, on a lane of its own: a
+			// slow disk delays the next listing, never a session.
+			h.lanes.run(laneFsList, func() { h.listFolders(m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

@@ -58,10 +58,15 @@ function SegmentedControl({
 
 function SegmentedControlItem({
   count,
+  mono = false,
   className,
   children,
   ...props
-}: TogglePrimitive.Props & { count?: React.ReactNode }) {
+}: TogglePrimitive.Props & {
+  count?: React.ReactNode;
+  /** The label is a name a machine reads (a file, `SOUL.md`): set in mono. */
+  mono?: boolean;
+}) {
   return (
     <TogglePrimitive
       data-slot="segmented-control-item"
@@ -69,6 +74,7 @@ function SegmentedControlItem({
         'inline-flex items-center gap-2 rounded-pill px-[9px] py-[3px] text-[11.5px] leading-normal whitespace-nowrap text-fg-muted outline-none transition-[background-color,color] duration-fast ease-standard hover:text-fg focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-card data-pressed:text-fg',
         'group-data-[size=md]/segmented:h-7 group-data-[size=md]/segmented:px-3.5 group-data-[size=md]/segmented:py-0 group-data-[size=md]/segmented:text-[13px] group-data-[size=md]/segmented:font-medium',
         'group-data-[size=lg]/segmented:h-8 group-data-[size=lg]/segmented:px-4 group-data-[size=lg]/segmented:py-0 group-data-[size=lg]/segmented:text-[13.5px] group-data-[size=lg]/segmented:font-medium',
+        mono && 'font-mono group-data-[size=md]/segmented:text-[12px] group-data-[size=md]/segmented:font-normal',
         className,
       )}
       {...props}

@@ -8,12 +8,14 @@ import { RedisHealthIndicator } from '../../health/infrastructure/redis-health.a
 import { LEGACY_REPLAY_MARKER } from '../../hosts/hosts.di-tokens';
 import type { LegacyReplayMarkerPort } from '../../hosts/infrastructure/legacy-replay-marker.port';
 import { RedisThrottlerStorage } from '../../throttling/infrastructure/redis-throttler.adapter';
-import { REDIS_CLIENT } from '../redis.di-tokens';
+import type { RedisPubSubPort } from '../infrastructure/redis-pub-sub.port';
+import { REDIS_CLIENT, REDIS_PUB_SUB } from '../redis.di-tokens';
 
 /**
  * The shared Redis connection, against a real Redis: the cache, the rate
  * limiter and the health probe run on one client, each keeps to its own
- * keyspace, and the client is gone once the app closes.
+ * keyspace, the live streams' pub/sub carries a message end to end, and the
+ * client is gone once the app closes.
  */
 describe('Redis (integration)', () => {
   let app: INestApplication;
@@ -142,6 +144,23 @@ describe('Redis (integration)', () => {
     await redis.set('host-assertion:jti:host-1:old-jti', '"x"', 'EX', 60);
     await expect(markers.isBurned('host-1', 'old-jti')).resolves.toBe(true);
     await expect(markers.isBurned('host-2', 'old-jti')).resolves.toBe(false);
+  });
+
+  it("carries the live streams' messages over one subscriber connection, and stops on unsubscribe", async () => {
+    const pubSub = app.get<RedisPubSubPort>(REDIS_PUB_SUB);
+    const heard: unknown[] = [];
+    const off = await pubSub.subscribe(
+      ['bots:stream:b-1'],
+      (payload) => heard.push(payload),
+      () => {
+        throw new Error('the connection went');
+      },
+    );
+    await pubSub.publish('bots:stream:b-1', { type: 'text', text: 'hi' });
+    await expect.poll(() => heard).toEqual([{ type: 'text', text: 'hi' }]);
+
+    off();
+    await expect.poll(async () => (await redis.pubsub('NUMSUB', 'bots:stream:b-1'))[1]).toBe(0);
   });
 
   it('reports Redis healthy through the shared client', async () => {

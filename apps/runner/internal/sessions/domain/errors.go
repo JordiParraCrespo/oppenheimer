@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -25,4 +26,21 @@ var (
 	// be on disk.
 	ErrGitAbandoned = problem.New("GIT_005", http.StatusServiceUnavailable, "A git command was abandoned before it finished")
 	ErrFile         = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The file cannot be given to the session")
+	// ErrFolderMissing and ErrFolderNotDirectory refuse a folder session
+	// whose folder went away, or was never a directory, between the picker
+	// and the create (24 §4).
+	ErrFolderMissing      = problem.New("SESS_006", http.StatusNotFound, "The session's folder is not on this host")
+	ErrFolderNotDirectory = problem.New("SESS_007", http.StatusBadRequest, "The session's folder is not a directory")
+)
+
+// Sentinels a Places adapter answers with; the use case maps them onto the
+// catalog.
+var (
+	// ErrNoSuchFolder is a path with nothing at it.
+	ErrNoSuchFolder = errors.New("no such folder")
+	// ErrNotADirectory is a path with something other than a directory at it.
+	ErrNotADirectory = errors.New("not a directory")
+	// ErrNotOurs is a folder whose marker names something else, or that has
+	// none: the runner did not make it for this session, so it never deletes it.
+	ErrNotOurs = errors.New("the folder is not this session's")
 )
