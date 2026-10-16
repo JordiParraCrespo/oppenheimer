@@ -25,9 +25,20 @@ const PROVIDER_OF_MARK: ReadonlyMap<string, BotProvider> = new Map(
   BOT_PROVIDERS.map((provider) => [BOT_PROVIDER_MARKS[provider], provider]),
 );
 
-/** The model button's groups: one per provider, with that provider's models. */
-export function botProviderOptions(): AgentOption[] {
-  return BOT_PROVIDERS.map((provider) => {
+/**
+ * The model button's groups: one per provider the workspace has a key or a
+ * sign-in for, with that provider's models, in catalog order. The bot's own
+ * provider is always there, set up or not, so the button still names its
+ * model; the composer says where to add the missing key.
+ */
+export function botProviderOptions(
+  configured: readonly BotProvider[],
+  current: BotProvider,
+): AgentOption[] {
+  const offered = BOT_PROVIDERS.filter(
+    (provider) => provider === current || configured.includes(provider),
+  );
+  return offered.map((provider) => {
     const definition = BOT_PROVIDER_CATALOG[provider];
     return {
       id: BOT_PROVIDER_MARKS[provider],

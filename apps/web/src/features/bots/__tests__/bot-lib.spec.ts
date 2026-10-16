@@ -5,7 +5,13 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { botEffort, botEngineValue, botModel, providerOfMark } from '../lib/bot-engine';
+import {
+  botEffort,
+  botEngineValue,
+  botModel,
+  botProviderOptions,
+  providerOfMark,
+} from '../lib/bot-engine';
 import { botSections } from '../lib/bot-groups';
 import { revisionNote } from '../lib/revision-note';
 
@@ -110,5 +116,22 @@ describe('revisionNote', () => {
     expect(revisionNote(revision({}), t)).toBe(
       'bots.settings.instructions.edited:{"file":"INSTRUCTIONS.md"}',
     );
+  });
+});
+
+describe('botProviderOptions', () => {
+  const groups = (options: ReturnType<typeof botProviderOptions>) =>
+    options.map((option) => providerOfMark(option.id));
+
+  it('offers only the providers the workspace has set up, in catalog order', () => {
+    expect(groups(botProviderOptions(['openai', 'anthropic'], 'anthropic'))).toEqual([
+      'anthropic',
+      'openai',
+    ]);
+  });
+
+  it("keeps the bot's own provider when it has no key, so its model still shows", () => {
+    expect(groups(botProviderOptions(['openai'], 'glm'))).toEqual(['glm', 'openai']);
+    expect(groups(botProviderOptions([], 'anthropic'))).toEqual(['anthropic']);
   });
 });
