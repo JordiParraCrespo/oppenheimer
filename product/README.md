@@ -471,11 +471,9 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
-- The 2026-10-14 review session drew the frame's input line under its
-  terminal ("Ask the review agent, or run a command"). On 2026-10-16 the
-  owner dropped it: Claude Code draws its own prompt in the grid, so the
-  pane had two inputs, and the review pane is now the session pane every
-  other session has (`next-steps/0.2-pull-requests.md`).
+- On 2026-10-16 the owner dropped the review session's input row, which
+  doubled the agent's own prompt; the Chat tab is now the plain session
+  pane (`next-steps/0.2-pull-requests.md`).
 - `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
   on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
 - Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
