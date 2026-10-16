@@ -16555,7 +16555,7 @@
     },
     "/api/v1/bots/{id}/conversation/export": {
       "get": {
-        "description": "Every message of the conversation, oldest first, streamed as it is read: `GET /bots/:id/conversation` holds only the newest.",
+        "description": "Every message of the conversation, oldest first, as newline-delimited JSON (`application/x-ndjson`): one message per line, each shaped as in `GET /bots/:id/conversation`, which holds only the newest. Lines are written as the chat is read, a page at a time, so a reader can handle each as it arrives.",
         "operationId": "exportBotConversation",
         "parameters": [
           {
@@ -16569,14 +16569,7 @@
         ],
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BotConversationExportResponseDto"
-                }
-              }
-            }
+            "description": "One `BotMessageResponseDto` per line, oldest first"
           },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
@@ -25762,19 +25755,6 @@
           }
         },
         "required": ["id", "turnId", "role", "content", "steps", "event", "createdAt"]
-      },
-      "BotConversationExportResponseDto": {
-        "type": "object",
-        "properties": {
-          "messages": {
-            "description": "Oldest first.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BotMessageResponseDto"
-            }
-          }
-        },
-        "required": ["messages"]
       },
       "BotTurnResponseDto": {
         "type": "object",

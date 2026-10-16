@@ -12,7 +12,7 @@ import {
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type {
   BotApprovalDecision,
   BotDocumentName,
@@ -40,6 +40,7 @@ import {
   BotTurnEntity,
 } from './bot-conversation.entity';
 import { BotsErrors } from './bots.errors';
+import { readNdjson } from './ndjson';
 import { BotStream } from './stream/bot-stream';
 
 function toBot(dto: BotResponseDto): BotEntity {
@@ -160,6 +161,15 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
   );
 }
 
+/** The export's lines as messages; a line that cannot be read fails the export. */
+async function* readMessages(body: ReadableStream<Uint8Array>): AsyncIterable<BotMessageEntity> {
+  try {
+    for await (const line of readNdjson(body)) yield toMessage(line as BotMessageResponseDto);
+  } catch (error) {
+    throw new AppError(BotsErrors.EXPORT_CONVERSATION_FAILED, { cause: error });
+  }
+}
+
 function toConversation(dto: BotConversationResponseDto): BotConversationEntity {
   return new BotConversationEntity(
     dto.messages.map(toMessage),
@@ -191,14 +201,18 @@ export class BotsRepository {
     return toConversation(data);
   }
 
-  /** The whole chat, oldest first, for an export: the chat's own read holds only the newest. */
+  /**
+   * The whole chat, oldest first, for an export: the chat's own read holds
+   * only the newest. The API sends one message per line, and each is handed
+   * on as it arrives, so the conversation is never held here as a whole.
+   */
   @MapApiError(BotsErrors.EXPORT_CONVERSATION_FAILED)
-  async exportConversation(id: string): Promise<BotMessageEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.exportBotConversation({ path: { id } }),
+  async exportConversation(id: string): Promise<AsyncIterable<BotMessageEntity>> {
+    const body = await unwrapBody(
+      heyApiSdk.exportBotConversation({ path: { id }, parseAs: 'stream' }),
       BotsErrors.EXPORT_CONVERSATION_FAILED,
     );
-    return data.messages.map(toMessage);
+    return readMessages(body as unknown as ReadableStream<Uint8Array>);
   }
 
   /** Clear history: the chat is erased; soul, instructions and memory stay. */

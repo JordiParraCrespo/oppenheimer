@@ -6,7 +6,7 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
  * §2): a message to a bot whose provider has no key is refused; with a GLM key
  * (`GLM_API_KEY`, a real one, so the turn calls z.ai) a message becomes a
  * turn the worker runs, and the bot's answer is in the conversation, which
- * exports whole and clears (refused while the turn works). The live half is
+ * exports whole, one message per line, and clears (refused while the turn works). The live half is
  * skipped without the key.
  */
 
@@ -33,7 +33,8 @@ test('a message to a bot whose provider has no key is refused, with nothing queu
   // An empty chat exports empty and clears to the same; another workspace's bot is not found.
   const exported = await api.get(`/api/v1/bots/${bot.id}/conversation/export`);
   expect(exported.status()).toBe(200);
-  expect(await exported.json()).toEqual({ messages: [] });
+  expect(exported.headers()['content-type']).toContain('application/x-ndjson');
+  expect(await exported.text()).toBe('');
   expect((await api.delete(`/api/v1/bots/${bot.id}/conversation`)).status()).toBe(204);
   await expectProblemDocument(
     await api.delete('/api/v1/bots/00000000-0000-4000-8000-000000000000/conversation'),
@@ -94,10 +95,11 @@ test('a GLM bot answers a message, end to end', async () => {
   expect(conversation).toMatchObject({ messageCount: 2 });
 
   // The export is the whole chat; Clear history erases it, and the sidebar's line with it.
-  const exported = (await (
-    await api.get(`/api/v1/bots/${bot.id}/conversation/export`)
-  ).json()) as Pick<Conversation, 'messages'>;
-  expect(exported.messages.map((message) => message.role)).toEqual(['user', 'assistant']);
+  const exported = (await (await api.get(`/api/v1/bots/${bot.id}/conversation/export`)).text())
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as Conversation['messages'][number]);
+  expect(exported.map((message) => message.role)).toEqual(['user', 'assistant']);
   expect((await api.delete(`/api/v1/bots/${bot.id}/conversation`)).status()).toBe(204);
   expect(await (await api.get(`/api/v1/bots/${bot.id}/conversation`)).json()).toEqual({
     messages: [],

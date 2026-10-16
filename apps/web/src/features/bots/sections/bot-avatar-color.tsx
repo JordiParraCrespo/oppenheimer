@@ -12,9 +12,12 @@ import type { BotProfileControl } from '@/features/bots/forms/bot-profile-form';
 export function BotAvatarColor({
   bot,
   control,
+  pending,
 }: {
   bot: Pick<BotEntity, 'initials' | 'name'>;
   control: BotProfileControl;
+  /** A save is in flight: the pick waits for it. */
+  pending: boolean;
 }) {
   const { t } = useTranslation();
   const { field } = useController({ control, name: 'avatarColor' });
@@ -24,6 +27,7 @@ export function BotAvatarColor({
       <AvatarColorPicker
         value={field.value}
         onValueChange={field.onChange}
+        disabled={pending}
         initials={bot.initials}
         name={bot.name}
         label={t('bots.settings.profile.color')}

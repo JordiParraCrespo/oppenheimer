@@ -25,6 +25,7 @@ export {
   type BotHistory,
   type BotLiveText,
   type CancelBotTurnVariables,
+  type ExportBotConversationVariables,
   type SendBotMessageVariables,
   useBotActiveTurn,
   useBotLiveText,

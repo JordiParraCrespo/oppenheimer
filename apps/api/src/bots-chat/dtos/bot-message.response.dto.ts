@@ -91,9 +91,3 @@ export class BotConversationResponseDto {
   })
   messageCount!: number;
 }
-
-/** `GET /bots/:id/conversation/export`: the whole chat, oldest first. */
-export class BotConversationExportResponseDto {
-  @ApiProperty({ type: BotMessageResponseDto, isArray: true, description: 'Oldest first.' })
-  messages!: BotMessageResponseDto[];
-}

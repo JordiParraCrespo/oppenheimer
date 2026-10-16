@@ -1,13 +1,16 @@
 import {
-  Button,
   RadioGroup,
   RadioGroupItem,
   SettingsForm,
-  SettingsSaveRow,
   StatusDot,
 } from '@oppenheimer/design-system-web';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
-import { ErrorAlert, type ResolvedErrorMessage, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  type ResolvedErrorMessage,
+  SettingsFormSaveRow,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { updateBotSchema } from '@oppenheimer/shared/schemas/bot';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -47,12 +50,10 @@ export function BotHomeHostForm({
   onDiscard: () => void;
 }) {
   const { t } = useTranslation();
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { isDirty },
-  } = useForm<BotHomeHostValues>({ resolver: useZodResolver(botHomeHostSchema), values });
+  const { control, handleSubmit, reset } = useForm<BotHomeHostValues>({
+    resolver: useZodResolver(botHomeHostSchema),
+    values,
+  });
 
   return (
     <SettingsForm
@@ -104,32 +105,21 @@ export function BotHomeHostForm({
           <ErrorAlert message={error.message} correlationId={error.correlationId} />
         </div>
       ) : null}
-      {isDirty ? (
-        <SettingsSaveRow>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={pending}
-            onClick={() => {
-              reset(values);
-              onDiscard();
-            }}
-          >
-            {t('bots.settings.homeHost.discard')}
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            pending={pending}
-            pendingLabel={t('bots.settings.homeHost.saving')}
-          >
-            {t('bots.settings.homeHost.save')}
-          </Button>
-        </SettingsSaveRow>
-      ) : saved ? (
-        <SettingsSaveRow role="status">{t('bots.settings.homeHost.saved')}</SettingsSaveRow>
-      ) : null}
+      <SettingsFormSaveRow
+        control={control}
+        pending={pending}
+        saved={saved}
+        labels={{
+          discard: t('bots.settings.homeHost.discard'),
+          save: t('bots.settings.homeHost.save'),
+          saving: t('bots.settings.homeHost.saving'),
+          saved: t('bots.settings.homeHost.saved'),
+        }}
+        onDiscard={() => {
+          reset(values);
+          onDiscard();
+        }}
+      />
     </SettingsForm>
   );
 }

@@ -61,13 +61,43 @@ export function useSuspenseBotHistory(id: string) {
   });
 }
 
-/** Export: the whole chat, oldest first, read once when asked for. */
+export interface ExportBotConversationVariables {
+  id: string;
+  /** What the file opens with. */
+  header: string;
+  /** One message as the file says it; an empty string leaves it out. */
+  chunk: (message: BotMessageEntity) => string;
+  /** The file's media type. */
+  type: string;
+}
+
+/** The file's pieces: the header, then each message's as it arrives. */
+async function piecesOf(
+  messages: AsyncIterable<BotMessageEntity>,
+  header: string,
+  chunk: (message: BotMessageEntity) => string,
+): Promise<string[]> {
+  const parts = [header];
+  for await (const message of messages) {
+    const piece = chunk(message);
+    if (piece) parts.push(piece);
+  }
+  return parts;
+}
+
+/**
+ * Export: the whole chat read once when asked for, each message turned into
+ * its piece of the file as it arrives, so the messages are never held
+ * together; the pieces become the file. The finished file is still a whole
+ * `Blob` in the browser, which is what a download needs.
+ */
 export function useExportBotConversation(
-  options?: UseMutationOptions<BotMessageEntity[], Error, string>,
+  options?: UseMutationOptions<Blob, Error, ExportBotConversationVariables>,
 ) {
   const app = useConsumerApp();
   return useMutation({
-    mutationFn: (id: string) => app.bots.exportConversation(id),
+    mutationFn: async ({ id, header, chunk, type }: ExportBotConversationVariables) =>
+      new Blob(await piecesOf(await app.bots.exportConversation(id), header, chunk), { type }),
     ...options,
   });
 }

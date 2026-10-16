@@ -15,7 +15,16 @@ const UNGROUPED = 'ungrouped';
  * beside the chat, which the hint links to. The groups are this picker's own
  * read: the card around it never waits on them.
  */
-export function BotGroupSelect({ botId, control }: { botId: string; control: BotProfileControl }) {
+export function BotGroupSelect({
+  botId,
+  control,
+  pending,
+}: {
+  botId: string;
+  control: BotProfileControl;
+  /** A save is in flight: the pick waits for it. */
+  pending: boolean;
+}) {
   const { t } = useTranslation();
   const { data: groups = [] } = useBotGroups();
   const { field } = useController({ control, name: 'groupId' });
@@ -35,6 +44,7 @@ export function BotGroupSelect({ botId, control }: { botId: string; control: Bot
     >
       <FieldSelect
         aria-label={t('bots.settings.profile.group')}
+        disabled={pending}
         value={field.value ?? UNGROUPED}
         onValueChange={(value) => field.onChange(value === UNGROUPED ? null : value)}
         options={[

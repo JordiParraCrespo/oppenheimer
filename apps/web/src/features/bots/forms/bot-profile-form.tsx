@@ -1,14 +1,17 @@
 import {
-  Button,
   Field,
   FieldError,
   FieldLabel,
   Input,
   SettingsForm,
-  SettingsSaveRow,
   Textarea,
 } from '@oppenheimer/design-system-web';
-import { ErrorAlert, type ResolvedErrorMessage, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  type ResolvedErrorMessage,
+  SettingsFormSaveRow,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { updateBotSchema } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { type Control, Controller, useForm } from 'react-hook-form';
@@ -66,12 +69,10 @@ export function BotProfileForm({
   const { t } = useTranslation();
   // Controlled fields, not `register`: the React Compiler keeps the ref
   // callbacks `register` hands out, so a reset would not reach the inputs.
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { isDirty },
-  } = useForm<BotProfileValues>({ resolver: useZodResolver(botProfileSchema), values });
+  const { control, handleSubmit, reset } = useForm<BotProfileValues>({
+    resolver: useZodResolver(botProfileSchema),
+    values,
+  });
 
   return (
     <SettingsForm
@@ -125,32 +126,21 @@ export function BotProfileForm({
           <ErrorAlert message={error.message} correlationId={error.correlationId} />
         </div>
       ) : null}
-      {isDirty ? (
-        <SettingsSaveRow>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={pending}
-            onClick={() => {
-              reset(values);
-              onDiscard();
-            }}
-          >
-            {t('bots.settings.profile.discard')}
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            pending={pending}
-            pendingLabel={t('bots.settings.profile.saving')}
-          >
-            {t('bots.settings.profile.save')}
-          </Button>
-        </SettingsSaveRow>
-      ) : saved ? (
-        <SettingsSaveRow role="status">{t('bots.settings.profile.saved')}</SettingsSaveRow>
-      ) : null}
+      <SettingsFormSaveRow
+        control={control}
+        pending={pending}
+        saved={saved}
+        labels={{
+          discard: t('bots.settings.profile.discard'),
+          save: t('bots.settings.profile.save'),
+          saving: t('bots.settings.profile.saving'),
+          saved: t('bots.settings.profile.saved'),
+        }}
+        onDiscard={() => {
+          reset(values);
+          onDiscard();
+        }}
+      />
     </SettingsForm>
   );
 }

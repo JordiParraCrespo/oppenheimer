@@ -1079,6 +1079,7 @@
         "noMessages": "Aún no hay mensajes.",
         "messages_one": "{{count}} mensaje · el último el {{date}}",
         "messages_other": "{{count}} mensajes · el último el {{date}}",
+        "messages_many": "{{count}} mensajes · el último el {{date}}",
         "exporting": "Exportando…",
         "exportFailed": "No se ha podido exportar el chat.",
         "exportedAt": "Exportado el {{date}}",

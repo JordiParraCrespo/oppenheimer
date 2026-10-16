@@ -3161,13 +3161,6 @@ export type BotMessageResponseDto = {
     createdAt: string;
 };
 
-export type BotConversationExportResponseDto = {
-    /**
-     * Oldest first.
-     */
-    messages: Array<BotMessageResponseDto>;
-};
-
 export type BotTurnResponseDto = {
     id: string;
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
@@ -11304,10 +11297,11 @@ export type ExportBotConversationErrors = {
 export type ExportBotConversationError = ExportBotConversationErrors[keyof ExportBotConversationErrors];
 
 export type ExportBotConversationResponses = {
-    200: BotConversationExportResponseDto;
+    /**
+     * One `BotMessageResponseDto` per line, oldest first
+     */
+    200: unknown;
 };
-
-export type ExportBotConversationResponse = ExportBotConversationResponses[keyof ExportBotConversationResponses];
 
 export type ClearBotConversationData = {
     body?: never;

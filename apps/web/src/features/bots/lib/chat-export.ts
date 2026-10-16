@@ -3,17 +3,17 @@ import type { TFunction } from 'i18next';
 import { toolAction } from './tool-activity';
 
 /**
- * Export (Settings → Profile): a bot's whole chat as a Markdown file. The
- * bot's name, then each message under who wrote it (you, the bot, or
- * Oppenheimer for an event line) and when, the bot's tool activity condensed
- * to one line per call in the words the chat uses. Every word is the
- * caller's `t`, and every time its `formatTime`, so the file reads in the
- * reader's language and time zone.
+ * Export (Settings → Profile): a bot's whole chat as a Markdown file, built
+ * a message at a time as the export streams in. The header is the bot's name
+ * and when it was exported; each message is a piece of its own under who
+ * wrote it (you, the bot, or Oppenheimer for an event line) and when, the
+ * bot's tool activity condensed to one line per call in the words the chat
+ * uses. Every word is the caller's `t`, and every time its `formatTime`, so
+ * the file reads in the reader's language and time zone. The pieces, joined
+ * after the header, are the file.
  */
-export interface ChatExport {
+export interface ChatExportWords {
   botName: string;
-  messages: readonly BotMessageEntity[];
-  exportedAt: Date;
   formatTime: (date: Date) => string;
   t: TFunction;
 }
@@ -48,23 +48,19 @@ function body(message: BotMessageEntity, t: TFunction): string {
   return message.content.trim();
 }
 
-export function chatExportMarkdown({
-  botName,
-  messages,
-  exportedAt,
-  formatTime,
-  t,
-}: ChatExport): string {
-  const blocks = [
-    `# ${botName}`,
-    `_${t('bots.settings.profile.exportedAt', { date: formatTime(exportedAt) })}_`,
-  ];
-  for (const message of messages) {
-    const text = body(message, t);
-    if (!text) continue;
-    blocks.push(`**${author(message, botName, t)}** · ${formatTime(message.createdAt)}\n\n${text}`);
-  }
-  return `${blocks.join('\n\n')}\n`;
+/** The file's opening: the bot's name and when it was exported. */
+export function chatExportHeader({ botName, formatTime, t }: ChatExportWords, exportedAt: Date) {
+  return `# ${botName}\n\n_${t('bots.settings.profile.exportedAt', { date: formatTime(exportedAt) })}_\n`;
+}
+
+/** One message's piece of the file, after a blank line; empty for a message with nothing to say. */
+export function chatExportChunk(
+  message: BotMessageEntity,
+  { botName, formatTime, t }: ChatExportWords,
+): string {
+  const text = body(message, t);
+  if (!text) return '';
+  return `\n**${author(message, botName, t)}** · ${formatTime(message.createdAt)}\n\n${text}\n`;
 }
 
 /** `<bot-name>-chat-<yyyy-mm-dd>.md`: the name as a slug, the day in the reader's time zone. */
@@ -72,7 +68,7 @@ export function chatExportFilename(botName: string, day: Date): string {
   const slug =
     botName
       .normalize('NFKD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'bot';

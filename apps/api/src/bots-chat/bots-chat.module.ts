@@ -27,6 +27,7 @@ import { BotMessageMapper } from './bot-message.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
 import {
   BOT_APPROVAL_REPOSITORY,
+  BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
   BOT_MESSAGE_REPOSITORY,
@@ -48,6 +49,7 @@ import { SendBotMessageHttpController } from './commands/send-bot-message/send-b
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
+import { BotConversationRepository } from './database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from './database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
@@ -158,6 +160,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_APPROVAL_REPOSITORY, useClass: BotApprovalRepository },
+    { provide: BOT_CONVERSATION_REPOSITORY, useClass: BotConversationRepository },
     { provide: BOT_CONVERSATION_SUMMARY_REPOSITORY, useClass: BotConversationSummaryRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },

@@ -10,9 +10,14 @@ import {
   Version,
 } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import {
+  ApiAuthProblemResponses,
+  ApiProblemResponse,
+  NDJSON_CONTENT_TYPE,
+  ndjsonLines,
+} from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -21,7 +26,6 @@ import { CurrentAccessScope } from '../../../authz/decorators/current-access-sco
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { BotMessageMapper } from '../../bot-message.mapper';
 import type { BotMessageEntity } from '../../domain/bot-message.entity';
-import { BotConversationExportResponseDto } from '../../dtos/bot-message.response.dto';
 import { ExportBotConversationQuery } from './export-bot-conversation.query';
 
 @ApiTags('Bots')
@@ -43,9 +47,10 @@ export class ExportBotConversationHttpController {
   @ApiOperation({
     summary: "Export a bot's whole chat",
     description:
-      'Every message of the conversation, oldest first, streamed as it is read: `GET /bots/:id/conversation` holds only the newest.',
+      'Every message of the conversation, oldest first, as newline-delimited JSON (`application/x-ndjson`): one message per line, each shaped as in `GET /bots/:id/conversation`, which holds only the newest. Lines are written as the chat is read, a page at a time, so a reader can handle each as it arrives.',
   })
-  @ApiResponse({ status: 200, type: BotConversationExportResponseDto })
+  @ApiProduces(NDJSON_CONTENT_TYPE)
+  @ApiResponse({ status: 200, description: 'One `BotMessageResponseDto` per line, oldest first' })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
   async export(
     @CurrentAccessScope() scope: AccessScope,
@@ -55,21 +60,9 @@ export class ExportBotConversationHttpController {
       ExportBotConversationQuery,
       AsyncIterable<BotMessageEntity[]>
     >(new ExportBotConversationQuery(scope, botId));
-    return new StreamableFile(Readable.from(this.json(pages)), {
-      type: 'application/json; charset=utf-8',
+    const lines = ndjsonLines(pages, (message) => this.mapper.toResponse(message));
+    return new StreamableFile(Readable.from(lines), {
+      type: `${NDJSON_CONTENT_TYPE}; charset=utf-8`,
     });
-  }
-
-  /** `{ "messages": [...] }`, written a page at a time. */
-  private async *json(pages: AsyncIterable<BotMessageEntity[]>): AsyncIterable<string> {
-    yield '{"messages":[';
-    let first = true;
-    for await (const page of pages) {
-      for (const message of page) {
-        yield `${first ? '' : ','}${JSON.stringify(this.mapper.toResponse(message))}`;
-        first = false;
-      }
-    }
-    yield ']}';
   }
 }

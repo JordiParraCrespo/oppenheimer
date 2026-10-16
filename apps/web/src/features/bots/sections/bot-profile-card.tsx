@@ -10,7 +10,9 @@ import { BotGroupSelect } from './bot-group-select';
 /**
  * The Profile card: name, description, colour and sidebar group, one draft
  * saved together by the card's Save, like every bot settings page. The
- * colour and the group are rows that bind their own field of the form.
+ * colour and the group are rows that bind their own field of the form, and
+ * wait while a save is in flight like the text fields do: a pick made then
+ * would be overwritten when the saved bot resets the form.
  */
 export function BotProfileCard({ bot }: { bot: BotEntity }) {
   const { t } = useTranslation();
@@ -37,8 +39,8 @@ export function BotProfileCard({ bot }: { bot: BotEntity }) {
     >
       {(control) => (
         <>
-          <BotAvatarColor bot={bot} control={control} />
-          <BotGroupSelect botId={bot.id} control={control} />
+          <BotAvatarColor bot={bot} control={control} pending={save.isPending} />
+          <BotGroupSelect botId={bot.id} control={control} pending={save.isPending} />
         </>
       )}
     </BotProfileForm>

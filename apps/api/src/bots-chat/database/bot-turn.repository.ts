@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
@@ -8,8 +8,10 @@ import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
+import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type { BotTurnRepositoryPort } from './bot-turn.repository.port';
@@ -38,6 +40,8 @@ export class BotTurnRepository
     private readonly outbox: OutboxService,
     private readonly mapper: BotTurnMapper,
     private readonly messages: BotMessageMapper,
+    @Inject(BOT_CONVERSATION_REPOSITORY)
+    private readonly conversations: BotConversationRepositoryPort,
   ) {
     super();
   }
@@ -155,29 +159,11 @@ export class BotTurnRepository
         [organizationId, botId],
       );
       if (active > 0) return 'busy';
-      const params = [organizationId, botId];
-      // Each by its bot index; children first, so no row is left to a cascade.
-      await manager.query(
-        `DELETE FROM bot_conversation_summary WHERE "organizationId" = $1 AND "botId" = $2`,
-        params,
-      );
-      await manager.query(
-        `DELETE FROM bot_approval WHERE "organizationId" = $1 AND "botId" = $2`,
-        params,
-      );
-      await manager.query(
-        `DELETE FROM bot_message WHERE "organizationId" = $1 AND "botId" = $2`,
-        params,
-      );
-      await manager.query(
-        `DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2`,
-        params,
-      );
-      await manager.query(
-        `UPDATE bot SET "lastMessageAt" = NULL, "lastMessagePreview" = NULL
-          WHERE "organizationId" = $1 AND id = $2`,
-        params,
-      );
+      await this.conversations.deleteWithin(manager, organizationId, botId);
+      await manager.query(`DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2`, [
+        organizationId,
+        botId,
+      ]);
       return 'cleared';
     });
   }

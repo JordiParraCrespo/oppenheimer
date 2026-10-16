@@ -548,7 +548,8 @@ The decisions it produced:
   old address redirects.
 - 2026-10-16: **chat history is exported and cleared from Profile.**
   Export downloads the whole chat as Markdown (`GET
-  /bots/:id/conversation/export`, every message, read a page at a time);
+  /bots/:id/conversation/export`, every message as a line of NDJSON, read
+  and written a page at a time);
   Clear history (`DELETE /bots/:id/conversation`) erases the turns,
   messages, cards and summary in one transaction, keeps the soul,
   instructions and memory, and is refused while a turn works (`BOTS_022`).

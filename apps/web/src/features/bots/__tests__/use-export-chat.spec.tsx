@@ -1,13 +1,14 @@
 import { BotMessageEntity } from '@oppenheimer/frontend-consumer';
+import type { ExportBotConversationVariables } from '@oppenheimer/frontend-consumer/react';
 import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useExportChat } from '../hooks/use-export-chat';
 
 /**
- * Export hands the browser one Markdown file named after the bot and the
- * day, built from the whole chat the export read returned. What breaks this:
- * a file built from the chat's window instead, or one the browser is never
- * handed.
+ * Export asks for the bot's whole chat with the file's header and a piece per
+ * message, and hands the browser the file it gets back, named after the bot
+ * and the day. What breaks this: a file never handed to the browser, or
+ * pieces that are not the chat's Markdown.
  */
 
 vi.mock('react-i18next', () => ({
@@ -15,12 +16,12 @@ vi.mock('react-i18next', () => ({
 }));
 
 const state = vi.hoisted(() => ({
-  onSuccess: undefined as ((messages: BotMessageEntity[]) => void) | undefined,
+  onSuccess: undefined as ((file: Blob) => void) | undefined,
   mutate: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useExportBotConversation: (options: { onSuccess: (messages: BotMessageEntity[]) => void }) => {
+  useExportBotConversation: (options: { onSuccess: (file: Blob) => void }) => {
     state.onSuccess = options.onSuccess;
     return { mutate: state.mutate, isPending: false, error: null, reset: vi.fn() };
   },
@@ -38,13 +39,9 @@ afterEach(() => {
 });
 
 describe('useExportChat', () => {
-  it('reads the whole chat of the bot, then saves it as <bot-name>-chat-<day>.md', async () => {
+  it('asks for the bot’s chat as Markdown pieces, then saves <bot-name>-chat-<day>.md', () => {
     vi.useFakeTimers({ now: new Date(2026, 9, 15, 10, 0), toFake: ['Date'] });
-    const created: Blob[] = [];
-    URL.createObjectURL = vi.fn((blob: Blob) => {
-      created.push(blob);
-      return 'blob:chat';
-    });
+    URL.createObjectURL = vi.fn(() => 'blob:chat');
     URL.revokeObjectURL = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
       this: HTMLAnchorElement,
@@ -55,16 +52,16 @@ describe('useExportChat', () => {
 
     const { result } = renderHook(() => useExportChat('bot-1', 'Release Bot'));
     result.current.exportChat();
-    expect(state.mutate).toHaveBeenCalledWith('bot-1');
+    const asked = state.mutate.mock.calls[0]?.[0] as ExportBotConversationVariables;
+    expect(asked.id).toBe('bot-1');
+    expect(asked.header).toContain('# Release Bot');
+    expect(asked.type).toContain('text/markdown');
+    const said = new BotMessageEntity('m1', 't1', 'user', 'What is staging?', [], new Date());
+    expect(asked.chunk(said)).toContain('What is staging?');
 
-    state.onSuccess?.([
-      new BotMessageEntity('m1', 't1', 'user', 'What is staging?', [], new Date()),
-    ]);
-
+    const file = new Blob(['# Release Bot']);
+    state.onSuccess?.(file);
     expect(click).toHaveBeenCalledOnce();
-    expect(created).toHaveLength(1);
-    const text = await created[0]?.text();
-    expect(text).toContain('# Release Bot');
-    expect(text).toContain('What is staging?');
+    expect(URL.createObjectURL).toHaveBeenCalledWith(file);
   });
 });

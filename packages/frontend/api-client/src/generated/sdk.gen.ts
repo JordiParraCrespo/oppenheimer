@@ -2482,7 +2482,7 @@ export const pollChatgptLogin = <ThrowOnError extends boolean = false>(options: 
 /**
  * Export a bot's whole chat
  *
- * Every message of the conversation, oldest first, streamed as it is read: `GET /bots/:id/conversation` holds only the newest.
+ * Every message of the conversation, oldest first, as newline-delimited JSON (`application/x-ndjson`): one message per line, each shaped as in `GET /bots/:id/conversation`, which holds only the newest. Lines are written as the chat is read, a page at a time, so a reader can handle each as it arrives.
  */
 export const exportBotConversation = <ThrowOnError extends boolean = false>(options: Options<ExportBotConversationData, ThrowOnError>): RequestResult<ExportBotConversationResponses, ExportBotConversationErrors, ThrowOnError> => (options.client ?? client).get<ExportBotConversationResponses, ExportBotConversationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

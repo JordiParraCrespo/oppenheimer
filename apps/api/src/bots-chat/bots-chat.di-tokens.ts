@@ -7,3 +7,5 @@ export const BOT_ENGINE = Symbol('BOT_ENGINE');
 export const WEB_PAGE = Symbol('WEB_PAGE');
 export const OWNER_HOSTS = Symbol('OWNER_HOSTS');
 export const BOT_CONVERSATION_SUMMARY_REPOSITORY = Symbol('BOT_CONVERSATION_SUMMARY_REPOSITORY');
+/** What is said to a bot, apart from its turns: Clear history's deletes, joined into the turn repository's transaction. */
+export const BOT_CONVERSATION_REPOSITORY = Symbol('BOT_CONVERSATION_REPOSITORY');
