@@ -438,6 +438,9 @@ before touching the payments repo"), daily caps, slash commands, voice,
 attachments, the context meter, project and user memory, a bot's engine
 running on a host of its own with the full Claude Code toolset.
 
+Routines, a bot waking on a schedule, an event or finished work, are
+designed in [26](26-bot-routines.md).
+
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
 eight colours (`AV_COLORS`).
