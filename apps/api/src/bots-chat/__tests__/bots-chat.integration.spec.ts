@@ -36,6 +36,7 @@ import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
+import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
@@ -143,6 +144,7 @@ describe('bots chat (integration)', () => {
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
+      new BotConversationRepository(),
     );
     messages = new BotMessageRepository(
       dataSource.getRepository(BotMessageOrmEntity),
@@ -832,5 +834,117 @@ describe('bots chat (integration)', () => {
     await summaries.save(summaryOf(bot, conversation[1], 'Bye', 0));
     await bots.delete(bot);
     expect((await summaries.findForBot(organizationId, bot.id)).isNone()).toBe(true);
+  });
+
+  /** Every row of the bot's conversation, by table. */
+  async function conversationRows(botId: string) {
+    const [row] = await dataSource.query(
+      `SELECT
+         (SELECT count(*)::int FROM bot_turn WHERE "botId" = $1) AS turns,
+         (SELECT count(*)::int FROM bot_message WHERE "botId" = $1) AS messages,
+         (SELECT count(*)::int FROM bot_approval WHERE "botId" = $1) AS approvals,
+         (SELECT count(*)::int FROM bot_conversation_summary WHERE "botId" = $1) AS summaries`,
+      [botId],
+    );
+    return row as { turns: number; messages: number; approvals: number; summaries: number };
+  }
+
+  /** A conversation with a summary and a pending card on an ended turn: everything Clear erases. */
+  async function fullConversation(bot: BotEntity) {
+    const conversation = await talked(bot, 4);
+    await summaries.save(summaryOf(bot, conversation[1], 'Earlier: two questions', 0));
+    const { turn, message } = sent(bot, 'Start it');
+    await turns.enqueue(turn, message, null);
+    const running = (await turns.findForRun(turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    const card = BotApprovalEntity.request({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      tool: 'start_session',
+      input: { task: 'Fix it' },
+      summary: 'Start Claude Code',
+    });
+    expect(await approvals.insertPending(card)).toBe('inserted');
+    running.end('completed', new Date());
+    expect(await turns.finish(running, null)).toBe(true);
+  }
+
+  it('clears every turn, message, card and summary of the bot, its sidebar line, and nothing of another bot', async () => {
+    const bot = await create('Cleared');
+    const other = await create('Kept');
+    await fullConversation(bot);
+    await fullConversation(other);
+    const before = await conversationRows(other.id);
+    expect(await conversationRows(bot.id)).toEqual({
+      turns: 3,
+      messages: 5,
+      approvals: 1,
+      summaries: 1,
+    });
+
+    expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
+
+    expect(await conversationRows(bot.id)).toEqual({
+      turns: 0,
+      messages: 0,
+      approvals: 0,
+      summaries: 0,
+    });
+    expect(await conversationRows(other.id)).toEqual(before);
+    const rows: { id: string; lastMessagePreview: string | null; lastMessageAt: Date | null }[] =
+      await dataSource.query(
+        `SELECT id, "lastMessagePreview", "lastMessageAt" FROM bot WHERE id = ANY($1)`,
+        [[bot.id, other.id]],
+      );
+    expect(rows.find((row) => row.id === bot.id)).toMatchObject({
+      lastMessagePreview: null,
+      lastMessageAt: null,
+    });
+    expect(rows.find((row) => row.id === other.id)?.lastMessagePreview).toBe('Start it');
+    // The bot itself, its documents and its memory stay.
+    expect((await documents.findAll(scope(), bot.id)).length).toBe(2);
+  });
+
+  it('refuses to clear while a turn is queued or running, and deletes nothing', async () => {
+    const bot = await create('Busy');
+    await talked(bot, 2);
+    const { turn, message } = sent(bot, 'Still working?');
+    await turns.enqueue(turn, message, null);
+    const before = await conversationRows(bot.id);
+    expect(await turns.clearConversation(organizationId, bot.id)).toBe('busy');
+    const running = (await turns.findForRun(turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    expect(await turns.clearConversation(organizationId, bot.id)).toBe('busy');
+    expect(await conversationRows(bot.id)).toEqual(before);
+  });
+
+  it('clears nothing for a bot in another workspace', async () => {
+    const bot = await create('Elsewhere');
+    await talked(bot, 2);
+    expect(await turns.clearConversation(await insertOrganization(), bot.id)).toBe('missing');
+    expect((await conversationRows(bot.id)).messages).toBe(2);
+  });
+
+  it('counts the whole chat and reads it all back a page at a time, oldest first', async () => {
+    const bot = await create('Long');
+    await talked(bot, 10);
+    expect(await messages.countConversation(scope(), bot.id)).toBe(10);
+    const read: string[] = [];
+    let after: BotMessageEntity | null = null;
+    for (;;) {
+      const page = await messages.findExportPage(scope(), bot.id, after, 3);
+      read.push(...page.map((message) => message.content));
+      if (page.length < 3) break;
+      after = page[page.length - 1] ?? null;
+    }
+    expect(read).toEqual(
+      [0, 2, 4, 6, 8].flatMap((index) => [`Question ${index}`, `Answer ${index}`]),
+    );
+    const other = await insertOrganization();
+    expect(await messages.countConversation(scopeOf(other), bot.id)).toBe(0);
+    expect(await messages.findExportPage(scopeOf(other), bot.id, null, 3)).toEqual([]);
   });
 });

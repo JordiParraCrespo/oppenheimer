@@ -3,21 +3,24 @@ import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotHomeHost } from '@/features/bots/sections/bot-home-host';
 
-/** `/bots/$botId/settings/runs-on`: the machine the bot works on. */
-export function BotRunsOnScreen({ botId }: { botId: string }) {
+/**
+ * `/bots/$botId/settings/home-host`: where the bot's coding sessions start
+ * when no machine is named. The bot itself always runs in Oppenheimer.
+ */
+export function BotHomeHostScreen({ botId }: { botId: string }) {
   const { t } = useTranslation();
 
   return (
     <>
       <SettingsTitle
-        title={t('bots.settings.runsOn.title')}
-        description={t('bots.settings.runsOn.subtitle')}
+        title={t('bots.settings.homeHost.title')}
+        description={t('bots.settings.homeHost.subtitle')}
       />
       <QueryState>
         <QueryState.Pending>
           <Skeleton shape="lg" className="h-36 w-full" />
         </QueryState.Pending>
-        <QueryState.Error fallback={t('bots.settings.runsOn.hostsFailed')} />
+        <QueryState.Error fallback={t('bots.settings.homeHost.hostsFailed')} />
         <QueryState.Data>
           <BotHomeHost botId={botId} />
         </QueryState.Data>

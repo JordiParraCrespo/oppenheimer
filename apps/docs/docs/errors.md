@@ -637,6 +637,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_019` <a id="bots_019" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
 | `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
 | `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
+| `BOTS_022` <a id="bots_022" />       | The bot has a turn queued or running         | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -684,6 +685,10 @@ refresh is removed, and the bot's next turn fails with `BOTS_013`. `BOTS_021`
 is a turn that needed the token refreshed while another API replica was
 refreshing it; it fails at once rather than wait, and the next message runs on
 the refreshed token.
+
+`BOTS_022` is `DELETE /bots/:id/conversation` while one of the bot's turns is
+queued or running: the turn would go on writing into a conversation that is
+gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

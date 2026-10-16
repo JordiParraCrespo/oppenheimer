@@ -84,4 +84,10 @@ export class BotConversationResponseDto {
       'The turns those messages belong to, and any still queued or running; oldest first.',
   })
   turns!: BotTurnResponseDto[];
+
+  @ApiProperty({
+    description:
+      'How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.',
+  })
+  messageCount!: number;
 }

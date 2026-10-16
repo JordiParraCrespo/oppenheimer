@@ -56,6 +56,7 @@ import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 import { Route as AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport } from './routes/_authenticated/automations_.$automationId.sessions.$sessionId'
 import { Route as AuthenticatedBotsBotIdSettingsIndexRouteImport } from './routes/_authenticated/bots_.$botId.settings/index'
+import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './routes/_authenticated/bots_.$botId.settings/home-host'
 import { Route as AuthenticatedBotsBotIdSettingsInstructionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/instructions'
 import { Route as AuthenticatedBotsBotIdSettingsMemoryRouteImport } from './routes/_authenticated/bots_.$botId.settings/memory'
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
@@ -315,6 +316,12 @@ const AuthenticatedBotsBotIdSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsHomeHostRoute =
+  AuthenticatedBotsBotIdSettingsHomeHostRouteImport.update({
+    id: '/home-host',
+    path: '/home-host',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedBotsBotIdSettingsInstructionsRoute =
   AuthenticatedBotsBotIdSettingsInstructionsRouteImport.update({
     id: '/instructions',
@@ -390,6 +397,7 @@ export interface FileRoutesByFullPath {
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
@@ -435,6 +443,7 @@ export interface FileRoutesByTo {
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
@@ -490,6 +499,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/_authenticated/automations_/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/_authenticated/bots_/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/_authenticated/bots_/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/_authenticated/bots_/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
@@ -543,6 +553,7 @@ export interface FileRouteTypes {
     | '/settings/hosts/new'
     | '/settings/hosts/'
     | '/automations/$automationId/sessions/$sessionId'
+    | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
     | '/bots/$botId/settings/profile'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/settings/hosts/new'
     | '/settings/hosts'
     | '/automations/$automationId/sessions/$sessionId'
+    | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
     | '/bots/$botId/settings/profile'
@@ -642,6 +654,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/hosts/'
     | '/_authenticated/automations_/$automationId/sessions/$sessionId'
+    | '/_authenticated/bots_/$botId/settings/home-host'
     | '/_authenticated/bots_/$botId/settings/instructions'
     | '/_authenticated/bots_/$botId/settings/memory'
     | '/_authenticated/bots_/$botId/settings/profile'
@@ -992,6 +1005,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/home-host': {
+      id: '/_authenticated/bots_/$botId/settings/home-host'
+      path: '/home-host'
+      fullPath: '/bots/$botId/settings/home-host'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsHomeHostRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/bots_/$botId/settings/instructions': {
       id: '/_authenticated/bots_/$botId/settings/instructions'
       path: '/instructions'
@@ -1155,6 +1175,7 @@ const AuthenticatedSettingsRouteWithChildren =
   )
 
 interface AuthenticatedBotsBotIdSettingsRouteChildren {
+  AuthenticatedBotsBotIdSettingsHomeHostRoute: typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   AuthenticatedBotsBotIdSettingsInstructionsRoute: typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   AuthenticatedBotsBotIdSettingsMemoryRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
@@ -1164,6 +1185,8 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
 
 const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSettingsRouteChildren =
   {
+    AuthenticatedBotsBotIdSettingsHomeHostRoute:
+      AuthenticatedBotsBotIdSettingsHomeHostRoute,
     AuthenticatedBotsBotIdSettingsInstructionsRoute:
       AuthenticatedBotsBotIdSettingsInstructionsRoute,
     AuthenticatedBotsBotIdSettingsMemoryRoute:

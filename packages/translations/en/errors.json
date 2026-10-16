@@ -182,6 +182,7 @@
     "BOTS_019": "ChatGPT's sign-in is busy. Try again in a moment.",
     "BOTS_020": "Couldn't reach ChatGPT's sign-in. Try again in a moment.",
     "BOTS_021": "The ChatGPT sign-in is being refreshed. Send your message again in a moment.",
+    "BOTS_022": "Stop the running turn first.",
     "CALENDAR_001": "That event doesn't exist, or it was deleted.",
     "CALENDAR_002": "Choose a workspace before working with the calendar.",
     "CALENDAR_003": "That's too many days to show at once.",

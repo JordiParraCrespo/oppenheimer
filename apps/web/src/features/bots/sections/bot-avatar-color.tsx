@@ -1,24 +1,33 @@
 import { AvatarColorPicker } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
-import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { BotProfileControl } from '@/features/bots/forms/bot-profile-form';
 
 /**
  * The bot's colour, a row of the Profile card: its initials on the colour
- * over its name, then the eight colours. A pick shows at once and saves; the
- * sidebar and the chat follow it.
+ * over its name, then the eight colours. A pick changes the card's draft;
+ * the sidebar and the chat follow once it is saved.
  */
-export function BotAvatarColor({ bot }: { bot: BotEntity }) {
+export function BotAvatarColor({
+  bot,
+  control,
+  pending,
+}: {
+  bot: Pick<BotEntity, 'initials' | 'name'>;
+  control: BotProfileControl;
+  /** A save is in flight: the pick waits for it. */
+  pending: boolean;
+}) {
   const { t } = useTranslation();
-  const update = useUpdateBot();
-  const color = (update.isPending && update.variables.input.avatarColor) || bot.avatarColor;
+  const { field } = useController({ control, name: 'avatarColor' });
 
   return (
     <div className="flex flex-col gap-3 border-t border-border-subtle px-5 py-5">
       <AvatarColorPicker
-        value={color}
-        onValueChange={(avatarColor) => update.mutate({ id: bot.id, input: { avatarColor } })}
+        value={field.value}
+        onValueChange={field.onChange}
+        disabled={pending}
         initials={bot.initials}
         name={bot.name}
         label={t('bots.settings.profile.color')}
@@ -32,11 +41,6 @@ export function BotAvatarColor({ bot }: { bot: BotEntity }) {
           coral: t('bots.settings.profile.colors.coral'),
           moss: t('bots.settings.profile.colors.moss'),
         }}
-      />
-      <ErrorAlert
-        error={update.error}
-        fallback={t('bots.settings.profile.failed')}
-        onDismiss={() => update.reset()}
       />
     </div>
   );

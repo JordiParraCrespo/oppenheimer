@@ -182,6 +182,7 @@
     "BOTS_019": "El inicio de sesión de ChatGPT está ocupado. Inténtalo de nuevo en un momento.",
     "BOTS_020": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
     "BOTS_021": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento.",
+    "BOTS_022": "Detén primero el turno en curso.",
     "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
     "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
     "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",

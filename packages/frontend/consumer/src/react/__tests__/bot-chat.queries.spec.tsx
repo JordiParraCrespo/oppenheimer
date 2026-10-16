@@ -25,6 +25,7 @@ function read(status: BotTurnStatus, ...replies: string[]): BotConversationEntit
       (content, index) => new BotMessageEntity(`m${index}`, 't1', 'assistant', content, [], at),
     ),
     [new BotTurnEntity('t1', status, 'anthropic', 'm', null, 0, 0, false, at, at, null)],
+    replies.length,
   );
 }
 
