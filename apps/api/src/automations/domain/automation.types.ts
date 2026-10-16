@@ -16,6 +16,14 @@ import type {
 export const AUTOMATION_RUN_TARGET_KINDS = ['session'] as const;
 export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[number];
 
+/**
+ * What a launched run became, as the run records it. A target that starts
+ * something other than a session adds its arm here, beside the column the run
+ * stores it in (`26-bot-routines.md` §3); the dispatcher passes it through
+ * without reading it, so nothing that dispatches changes.
+ */
+export type RunDispatchRef = { kind: 'session'; sessionId: string };
+
 /** One repository an automation works in, as the revision snapshots it. */
 export interface AutomationRepository {
   /** Our installation row: what a session's checkout and its token mint name. */

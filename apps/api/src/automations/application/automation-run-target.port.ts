@@ -1,7 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { AutomationPausedReason, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import type { AutomationEntity } from '../domain/automation.entity';
-import type { AutomationRunTargetKind } from '../domain/automation.types';
+import type { AutomationRunTargetKind, RunDispatchRef } from '../domain/automation.types';
 import type { AutomationLimits } from '../domain/automation-limits.policy';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import type { RunRefusal } from '../domain/run-refusal.policy';
@@ -20,12 +20,6 @@ export type RunTargetDecision<TInput> =
   | { kind: 'skip'; reason: AutomationSkipReason; pause: AutomationPausedReason | null }
   | { kind: 'defer'; until: Date }
   | { kind: 'launch'; input: TInput };
-
-/** What a launched run became, recorded on the run. */
-export interface RunDispatchRef {
-  kind: 'session';
-  sessionId: string;
-}
 
 /**
  * How a run of one kind of automation is carried out (`26-bot-routines.md`

@@ -10,13 +10,13 @@ import { CreateSessionCommand } from '../../sessions/commands/create-session/cre
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type {
   AutomationRunTargetPort,
-  RunDispatchRef,
   RunTargetContext,
   RunTargetDecision,
 } from '../application/automation-run-target.port';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AUTOMATION_RUN_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
+import type { RunDispatchRef } from '../domain/automation.types';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import { capacityGuard, diskGuard, firstRefusal, overlapGuard } from '../domain/fire-guard.policy';
 import { composeRunPrompt, type RunEventView, runCheckout } from '../domain/run-launch.policy';

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { AutomationPausedReason, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import type { AutomationEntity } from '../domain/automation.entity';
+import type { AutomationRunTargetKind, RunDispatchRef } from '../domain/automation.types';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import { firstRefusal, pausedGuard, staleGuard } from '../domain/fire-guard.policy';
+import type { RunRefusal } from '../domain/run-refusal.policy';
 import { AutomationLimitsResolver } from './automation-limits.resolver';
 import type { AutomationRunTargetPort, RunTargetContext } from './automation-run-target.port';
 import { AutomationRunTargetRegistry } from './automation-run-target.registry';
@@ -14,9 +16,11 @@ export type DispatchDecision =
   | { kind: 'expire' }
   | {
       kind: 'launch';
-      target: AutomationRunTargetPort;
-      context: RunTargetContext;
-      input: unknown;
+      target: AutomationRunTargetKind;
+      /** The target's launch, bound to what it decided to launch. */
+      launch: () => Promise<RunDispatchRef>;
+      /** What an error thrown by `launch` means for the run, in the target's terms. */
+      refusalOf: (error: unknown) => RunRefusal | null;
     };
 
 /**
@@ -52,11 +56,25 @@ export class RunDispatchResolver {
     const scope = await this.owners.resolve(automation.organizationId, automation.ownerUserId);
     if (!scope) return { kind: 'skip', reason: 'not_launchable', pause: 'owner_lost_access' };
 
-    const target = this.targets.get(automation.runTarget);
     const context: RunTargetContext = { run, automation, scope, limits, now };
-    const decision = await target.decide(context);
-    return decision.kind === 'launch'
-      ? { kind: 'launch', target, context, input: decision.input }
-      : decision;
+    return decideWith(this.targets.get(automation.runTarget), context);
   }
+}
+
+/**
+ * The target's decision, with a launch bound to its own input: the input's
+ * type is known only inside the target, so it never travels as `unknown`.
+ */
+async function decideWith<TInput>(
+  target: AutomationRunTargetPort<TInput>,
+  context: RunTargetContext,
+): Promise<DispatchDecision> {
+  const decision = await target.decide(context);
+  if (decision.kind !== 'launch') return decision;
+  return {
+    kind: 'launch',
+    target: target.kind,
+    launch: () => target.launch(context, decision.input),
+    refusalOf: (error) => target.refusalOf(error),
+  };
 }

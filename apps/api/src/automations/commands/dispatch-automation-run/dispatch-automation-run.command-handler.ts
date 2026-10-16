@@ -67,22 +67,21 @@ export class DispatchAutomationRunCommandHandler
   private async launch(
     run: AutomationRunEntity,
     automation: AutomationEntity,
-    { target, context, input }: Extract<DispatchDecision, { kind: 'launch' }>,
+    { target, launch, refusalOf }: Extract<DispatchDecision, { kind: 'launch' }>,
     now: Date,
     correlationId: string,
   ): Promise<string> {
     try {
-      const ref = await target.launch(context, input);
-      run.dispatched(ref.sessionId, automation.revision.id, new Date());
+      run.dispatched(await launch(), automation.revision.id, new Date());
       await this.runs.save(run, correlationId);
       return 'dispatched';
     } catch (error) {
-      const refusal = target.refusalOf(error);
+      const refusal = refusalOf(error);
       if (!refusal) throw error; // a fault, not a refusal: the queue retries it
       this.logger.warn({
         message: 'An automation run was refused at dispatch',
         runId: run.id,
-        target: target.kind,
+        target,
         code: (error as { code?: string }).code,
       });
       run.skip(refusal.reason);
