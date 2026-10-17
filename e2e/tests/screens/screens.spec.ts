@@ -67,11 +67,19 @@ function git(...args: string[]): string {
   }
 }
 
-/** The page has drawn: no request in flight, fonts loaded, no skeleton left. */
+/**
+ * The page has drawn: the app mounted, no request in flight, no skeleton left,
+ * fonts loaded. The mount comes first: `theme-init.js` sets the theme class
+ * before React runs, and "no skeleton" holds trivially on an empty `#root`, so
+ * without it a slow machine photographs a blank page in the right colours.
+ */
 async function settle(page: Page): Promise<void> {
+  await page.waitForFunction(() => document.getElementById('root')?.innerText.trim(), null, {
+    timeout: 30_000,
+  });
   await page.waitForLoadState('networkidle');
-  await page.evaluate(() => document.fonts.ready);
   await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 15_000 });
+  await page.evaluate(() => document.fonts.ready);
 }
 
 test('photographs the screens a change touches', async ({ browser }) => {
