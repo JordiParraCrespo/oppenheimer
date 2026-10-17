@@ -61,6 +61,7 @@
       "!**/playwright-report",
       "!**/blob-report",
       "!**/test-results",
+      "!e2e/tests/screens/local",
       "!scripts/evals/*/results",
       "!**/node-compile-cache",
       "!!**/.claude/worktrees",

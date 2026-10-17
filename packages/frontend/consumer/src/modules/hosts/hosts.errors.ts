@@ -25,4 +25,8 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_005',
     message: 'Failed to list the folders on the host',
   },
+  UPDATE_FAILED: {
+    code: 'HOSTS_CLIENT_006',
+    message: 'Failed to update the runner on the host',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

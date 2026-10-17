@@ -259,6 +259,19 @@ export function useRemoveHost(options?: UseMutationOptions<void, Error, string>)
 }
 
 /**
+ * Nothing to refresh on success: the version on the row changes only once the
+ * runner has restarted and said hello, which the list's own polling picks up.
+ */
+export function useUpdateHostRunner(options?: UseMutationOptions<void, Error, string>) {
+  const app = useConsumerApp();
+
+  return useMutation({
+    mutationFn: (id: string) => app.hosts.updateRunner(id),
+    ...options,
+  });
+}
+
+/**
  * The list is refreshed rather than patched: the row's status and counts come
  * back from the same read, so one source says what a host is.
  */

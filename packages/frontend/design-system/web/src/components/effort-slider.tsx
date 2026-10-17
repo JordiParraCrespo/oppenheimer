@@ -158,6 +158,7 @@ function EffortPicker<V extends string>({
   stops,
   value,
   onValueChange,
+  onOpenChange: onOpenChangeProp,
   label = 'Effort',
   fasterLabel = 'Faster',
   smarterLabel = 'Smarter',
@@ -168,6 +169,7 @@ function EffortPicker<V extends string>({
   stops: readonly EffortStop<V>[];
   value: V;
   onValueChange: (value: V) => void;
+  onOpenChange?: (open: boolean) => void;
   label?: string;
   fasterLabel?: string;
   smarterLabel?: string;
@@ -185,6 +187,7 @@ function EffortPicker<V extends string>({
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (!next) setHeld(null);
+    onOpenChangeProp?.(next);
   }
 
   return (

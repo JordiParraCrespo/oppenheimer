@@ -15,6 +15,17 @@ export function shortenPath(path: string, home: string | null | undefined): stri
 }
 
 /**
+ * A shown path short enough for a chip: the root, `…` for the folders in
+ * between, and the folder's own name. `~/code/jordi/atlas` → `~/…/atlas`.
+ */
+export function compactPath(path: string): string {
+  const root = path.startsWith('/') ? '/' : path.startsWith(`${HOME}/`) ? `${HOME}/` : '';
+  const parts = path.slice(root.length).split('/').filter(Boolean);
+  if (parts.length > 1) return `${root}…/${parts.at(-1)}`;
+  return path.length > 1 ? path.replace(/\/+$/, '') : path;
+}
+
+/**
  * `~/code` → `/home/jordi/code`. Undefined while a path under `~` waits on a
  * home nobody has reported yet.
  */

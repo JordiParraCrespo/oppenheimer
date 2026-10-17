@@ -312,7 +312,16 @@ putting the user's credentials on it.
 - **Manual control.** `runner update [--check] [--version x.y.z]
   [--pin|--unpin]` from the host, and an Update now button in the
   console that sends `host.update` over the link. Both go through the
-  same verification; neither is a way to run something unsigned. A
+  same verification; neither is a way to run something unsigned.
+  The console's is **Update runner** in a host card's menu on Settings →
+  Hosts (`POST /v1/hosts/{id}/update`), behind a confirm that says the
+  runner restarts and sessions keep running, off while the host is offline
+  (`HOSTS_008`). It sends no `version`, so the runner takes the newest
+  release on its channel now, skipping the safe window, and is left
+  unpinned; a pinned host refuses (`UPD_004`) and stays on its pin. The
+  answer is "sent", not "done": the row's runner version moves when the
+  runner reconnects, and does not when it was already current or the
+  update failed. A
   downgrade is allowed to a retained version at or above
   `min_supported`, with a warning.
 - **A managed install defers.** If the running binary is not under
