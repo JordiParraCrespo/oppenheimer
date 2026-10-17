@@ -5,7 +5,8 @@
     "workspace": "Workspace",
     "profile": "Profile",
     "hosts": "Hosts",
-    "repositories": "Watched repositories"
+    "repositories": "Watched repositories",
+    "modelProviders": "Model providers"
   },
   "profile": {
     "title": "Profile",
@@ -98,5 +99,52 @@
   "repositories": {
     "title": "Watched repositories",
     "description": "Open pull requests from these repositories show up in the Watching tab of the PR queue, even when nobody asked for your review."
+  },
+  "modelProviders": {
+    "title": "Model providers",
+    "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again.",
+    "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
+    "loadFailed": "Couldn’t load the model providers.",
+    "keyEnding": "Key ending in {{hint}}",
+    "noKey": "No key",
+    "add": "Add key",
+    "replace": "Replace",
+    "remove": "Remove",
+    "removeLabel": "Remove the {{provider}} key",
+    "removeFailed": "Couldn’t remove the key.",
+    "providers": {
+      "anthropic": "Claude models, through Anthropic’s API.",
+      "glm": "GLM models, through z.ai.",
+      "openai": "GPT models, through OpenAI’s API.",
+      "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key."
+    },
+    "dialog": {
+      "title": "{{provider}} key",
+      "description": "Paste the API key. It replaces the one stored, and bots on {{provider}} use it from their next message.",
+      "label": "API key",
+      "save": "Save key",
+      "saving": "Saving…",
+      "failed": "Couldn’t save the key."
+    },
+    "signedIn": "Signed in · {{hint}}",
+    "notConnected": "Not connected",
+    "connect": "Connect ChatGPT",
+    "reconnect": "Sign in again",
+    "disconnect": "Disconnect",
+    "disconnectLabel": "Disconnect {{provider}}",
+    "chatgpt": {
+      "title": "Connect ChatGPT",
+      "description": "Sign in to ChatGPT and bots on ChatGPT run on your subscription, not on API billing.",
+      "step": "Open OpenAI’s sign-in page and enter this code:",
+      "open": "Open sign-in page",
+      "codeTitle": "One-time code",
+      "waiting": "Waiting for you to approve the sign-in…",
+      "expires": "The code works for 15 minutes.",
+      "expired": "This code expired. Get a new one to try again.",
+      "newCode": "Get a new code",
+      "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
+      "done": "Done",
+      "failed": "Couldn’t sign in to ChatGPT."
+    }
   }
 }

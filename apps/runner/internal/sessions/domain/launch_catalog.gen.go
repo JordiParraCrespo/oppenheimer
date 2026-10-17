@@ -14,7 +14,7 @@ var launchCatalog = map[string]launchMap{
 		defaultModel: "claude-opus-5-5",
 		permission: map[string]launchLevel{
 			"ask":  {argv: []string{"--permission-mode", "manual"}},
-			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
+			"auto": {argv: []string{"--permission-mode", "auto"}},
 			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
 		},
 		effort: launchLevel{argv: []string{"--effort", "<effort>"}},

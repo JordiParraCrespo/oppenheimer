@@ -20,6 +20,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date and duration formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `SidebarSearchField` (a sidebar search box that keeps the half-typed word and hands its caller the settled one), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
+| `markdown` | `Markdown`: markdown someone else wrote (a pull request's description, a bot's reply) as elements, never raw HTML; fenced code coloured with a copy button, links to a new tab. The caller sets it in `Prose` or `ChatReply` | leaf |
 | `pairing` | `PairingChrome`, the agent-first column that pairs a machine with a pairing it is handed (onboarding and the Add a host dialog): the agent prompt's card, the token line with the manual install behind it, and the Connection list. Settings composes `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt as one tabbed panel) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
 | `layout` | `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState` | middle |
 | `shell` | `AppShell` (the sidebar, top bar, user menu and command palette are its parts), `SettingsSidebar`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), the nav types | top |
@@ -145,8 +146,8 @@ page. An app with only the sign-in half would call `redirectSignedIn` from its
 ## What `pnpm arch` enforces
 
 - `no-circular` — no import cycles, counting value imports only.
-- `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`
-  never import a middle or top concern.
+- `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`,
+  `markdown` never import a middle or top concern.
 - `middle-below-top` — `layout`, `pairing` never import `shell` or
   `auth`.
 - `concerns-meet-at-their-index` — a concern reaches another only through

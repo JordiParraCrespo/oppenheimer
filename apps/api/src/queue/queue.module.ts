@@ -1,7 +1,11 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
-import { DURABLE_JOB_OPTIONS, EMAIL_JOB_OPTIONS } from '../config/queue-options.config';
+import {
+  BOT_TURN_JOB_OPTIONS,
+  DURABLE_JOB_OPTIONS,
+  EMAIL_JOB_OPTIONS,
+} from '../config/queue-options.config';
 import { ProfileModule } from '../profile/profile.module';
 import { EmailJobMapper } from './email-job.mapper';
 import { EmailProcessor } from './infrastructure/email.processor';
@@ -26,6 +30,11 @@ import { EmailProcessor } from './infrastructure/email.processor';
       // each, and the retries are the queue's (see `DURABLE_JOB_OPTIONS`).
       { name: QUEUE_NAMES.INBOUND_EVENTS, defaultJobOptions: DURABLE_JOB_OPTIONS },
       { name: QUEUE_NAMES.AUTOMATION_RUNS, defaultJobOptions: DURABLE_JOB_OPTIONS },
+      { name: QUEUE_NAMES.BOT_TURNS, defaultJobOptions: BOT_TURN_JOB_OPTIONS },
+      // An approved call is keyed by its approval, so a retry runs it once.
+      { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS },
+      // A summary write is conditional on the version it read, so a retry never moves it back.
+      { name: QUEUE_NAMES.BOT_SUMMARIES, defaultJobOptions: DURABLE_JOB_OPTIONS },
       // Scheduler-driven queues (the automation tick, the daily purges): the
       // root defaults from `app.module.ts`.
       { name: QUEUE_NAMES.HOST_RETENTION },

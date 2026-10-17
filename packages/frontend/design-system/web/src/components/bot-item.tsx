@@ -5,7 +5,7 @@ import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
-import { BotAvatar } from './avatar-picker';
+import { type AvatarColor, BotAvatar } from './avatar-picker';
 import { useSortableControl } from './drag';
 
 function BotList({ className, ...props }: React.ComponentProps<'div'>) {
@@ -31,6 +31,7 @@ function BotItem({
   name,
   initials,
   image,
+  color,
   preview,
   age,
   live = false,
@@ -48,6 +49,8 @@ function BotItem({
   name: string;
   initials: string;
   image?: string;
+  /** The avatar colour the initials sit on, for a bot with no photo. */
+  color?: AvatarColor;
   /** The last message, one line. */
   preview?: React.ReactNode;
   /** Relative age, mono ("2m", "1d"). */
@@ -84,7 +87,7 @@ function BotItem({
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials }} size={36} />
+        <BotAvatar option={{ image, initials }} size={36} color={color} />
         {live ? (
           <span
             aria-hidden

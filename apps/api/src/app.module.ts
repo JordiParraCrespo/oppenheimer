@@ -32,11 +32,14 @@ import { auth } from './auth/infrastructure/better-auth.config';
 import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-storage.adapter';
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
+import { BotsModule } from './bots/bots.module';
+import { BotsChatModule } from './bots-chat/bots-chat.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
   automationsConfig,
+  botsConfig,
   calendarConfig,
   databaseConfig,
   emailConfig,
@@ -100,6 +103,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         llmConfig,
         sessionsConfig,
         automationsConfig,
+        botsConfig,
         calendarConfig,
         retentionConfig,
         throttlingConfig,
@@ -255,6 +259,8 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     TasksModule,
     CalendarModule,
     PullRequestsModule,
+    BotsModule,
+    BotsChatModule,
     RelayModule,
     HealthModule,
     QueueModule,

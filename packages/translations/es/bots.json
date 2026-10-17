@@ -1,0 +1,302 @@
+{
+  "sidebar": {
+    "new": "Nuevo bot",
+    "creating": "Creando…",
+    "createFailed": "No se ha podido crear el bot.",
+    "search": "Buscar bots",
+    "clearSearch": "Borrar búsqueda",
+    "noMatch": "Ningún bot coincide con «{{query}}».",
+    "ungrouped": "Sin grupo",
+    "emptyTitle": "Aún no hay bots",
+    "emptyBody": "Los bots que crees aparecen aquí. Crea uno, dile qué trabajo tiene que hacer y ajústalo en su configuración.",
+    "emptyGroup": "Aún no hay bots en este grupo.",
+    "noMessages": "Aún no hay mensajes",
+    "newGroup": "Nuevo grupo",
+    "groupName": "Nombre del grupo",
+    "groupActions": "Opciones de {{name}}",
+    "renameGroup": "Renombrar grupo",
+    "deleteGroup": "Eliminar grupo",
+    "groupFailed": "No se ha podido guardar el grupo.",
+    "rowActions": "Opciones del bot",
+    "settings": "Configuración",
+    "move": "Mover a un grupo",
+    "moveTitle": "Mover a",
+    "moveNone": "Aún no hay otro grupo",
+    "moveFailed": "No se ha podido mover el bot.",
+    "delete": "Eliminar bot",
+    "loadFailed": "No se han podido cargar tus bots."
+  },
+  "landing": {
+    "titleEmpty": "Crea tu primer bot.",
+    "title": "Elige un bot o crea uno nuevo.",
+    "note": "Un bot nuevo empieza en blanco. Dile qué trabajo tiene que hacer y ajústalo en su configuración."
+  },
+  "chat": {
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
+    "actions": "Opciones del bot",
+    "settings": "Configuración",
+    "delete": "Eliminar bot",
+    "helloBlank": "{{name}} está listo. Dile qué trabajo hacer.",
+    "startFrom": "Prueba a pedir",
+    "hello": "{{name}} está listo. ¿En qué trabajamos?",
+    "placeholder": "Escribe a {{name}}",
+    "send": "Enviar",
+    "stop": "Detener",
+    "noKey": "{{provider}} aún no tiene clave en este espacio de trabajo. Añade una para hablar con este bot.",
+    "addKey": "Añadir una clave",
+    "sendFailed": "No se pudo enviar el mensaje.",
+    "stopFailed": "No se pudo detener el turno.",
+    "failed": "{{provider}} no pudo terminar este turno",
+    "failedUnknown": "El turno terminó sin decir por qué.",
+    "errorDetails": "Mostrar detalles",
+    "errorLess": "Mostrar menos",
+    "retry": "Reintentar",
+    "copyMessage": "Copiar mensaje",
+    "copyReply": "Copiar respuesta",
+    "toLatest": "Ir a lo último",
+    "switchedModel": "Cambiado a <model>{{model}}</model>",
+    "tokens_one": "{{tokens}} token",
+    "tokens_many": "{{tokens}} tokens",
+    "tokens_other": "{{tokens}} tokens",
+    "turn": {
+      "queued": "Esperando",
+      "thinking": "Pensando",
+      "writing": "Escribiendo",
+      "stopped": "Detenido"
+    },
+    "activity": {
+      "searched": "Buscó en la web",
+      "searchedFor": "Buscó en la web «{{query}}»",
+      "searching": "Buscando en la web",
+      "searchingFor": "Buscando en la web «{{query}}»",
+      "planned": "Actualizó su plan",
+      "planning": "Actualizando su plan",
+      "using": "Usando {{name}}",
+      "stepFailed": "error",
+      "results_one": "{{count}} resultado",
+      "results_many": "{{count}} resultados",
+      "results_other": "{{count}} resultados",
+      "rawOutput": "Ver la salida completa",
+      "moreLines_one": "Ver {{count}} línea más",
+      "moreLines_many": "Ver {{count}} líneas más",
+      "moreLines_other": "Ver {{count}} líneas más",
+      "lessOutput": "Ver menos"
+    },
+    "suggest": {
+      "task": {
+        "research": {
+          "name": "Investigar un tema",
+          "prompt": "Busca en la web y dame un resumen breve, con fuentes, sobre "
+        },
+        "summarise": {
+          "name": "Resumir algo",
+          "prompt": "Resume esto en cinco viñetas:\n\n"
+        },
+        "draft": {
+          "name": "Redactar un mensaje",
+          "prompt": "Redacta un mensaje breve y cordial para "
+        },
+        "plan": {
+          "name": "Hacer un plan",
+          "prompt": "Haz un plan paso a paso para "
+        }
+      },
+      "job": {
+        "research": {
+          "name": "Asistente de investigación",
+          "description": "Encuentra y resume lo que le pido",
+          "prompt": "Sé mi asistente de investigación: cuando te dé un tema, busca en la web y dame un resumen breve con sus fuentes."
+        },
+        "writing": {
+          "name": "Compañero de escritura",
+          "description": "Pule mis borradores con mi propia voz",
+          "prompt": "Sé mi compañero de escritura: pule lo que escribo, propón una redacción más clara y mantén mi tono."
+        },
+        "planner": {
+          "name": "Planificador",
+          "description": "Convierte objetivos en próximos pasos",
+          "prompt": "Sé mi planificador: divide mis objetivos en pasos, lleva una lista de tareas y dime qué hacer a continuación."
+        },
+        "news": {
+          "name": "Resumen de noticias",
+          "description": "Lo último de lo que sigo",
+          "prompt": "Sé mi resumen de noticias: cuando te lo pida, busca en la web lo último sobre los temas que sigo y resúmelo en cinco viñetas."
+        }
+      }
+    },
+    "model": "Modelo",
+    "searchModels": "Buscar modelos…",
+    "noModel": "Ningún modelo coincide con «{{query}}».",
+    "permission": {
+      "label": "Nivel de aprobación",
+      "auto": {
+        "label": "Aprobar por mí",
+        "description": "Edita archivos y ejecuta comandos sin preguntar."
+      },
+      "full": {
+        "label": "Acceso total",
+        "description": "Todo, sin supervisión, en la máquina principal del bot."
+      }
+    },
+    "saveFailed": "No se ha podido cambiar el bot.",
+    "loadFailed": "No se ha podido cargar este bot.",
+    "approval": {
+      "needsInput": "Necesita tu respuesta",
+      "title": "{{name}} quiere hacer esto",
+      "detail": "Se ejecuta una vez, en tu nombre, cuando lo apruebas. Si escribes a {{name}} en su lugar, la solicitud se descarta.",
+      "approve": "Aprobar",
+      "approving": "Aprobando…",
+      "deny": "Denegar",
+      "denying": "Denegando…",
+      "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
+      "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
+      "cancel": "Cancelar",
+      "failed": "No se pudo responder a la solicitud."
+    },
+    "event": {
+      "approved": "Aprobaste: {{summary}}",
+      "denied": "Denegaste: {{summary}}",
+      "failed": "Aprobaste y falló: {{summary}}"
+    }
+  },
+  "settings": {
+    "back": "Volver al chat",
+    "openChat": "Abrir chat",
+    "navLabel": "Configuración del bot",
+    "loadFailed": "No se ha podido cargar este bot.",
+    "tabs": {
+      "profile": "Perfil",
+      "instructions": "Instrucciones",
+      "memory": "Memoria",
+      "homeHost": "Máquina principal"
+    },
+    "profile": {
+      "title": "Perfil",
+      "subtitle": "Quién es el bot y dónde aparece en la barra lateral.",
+      "name": "Nombre",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Qué hace, en una línea",
+      "color": "Color",
+      "colors": {
+        "mint": "Menta",
+        "tangerine": "Mandarina",
+        "snow": "Nieve",
+        "sky": "Cielo",
+        "lilac": "Lila",
+        "lemon": "Limón",
+        "coral": "Coral",
+        "moss": "Musgo"
+      },
+      "group": "Grupo de la barra lateral",
+      "groupHint": "Dónde aparece en la barra lateral de Empleados",
+      "newGroup": "Nuevo grupo en la barra lateral",
+      "searchGroups": "Buscar grupos…",
+      "noGroup": "Ningún grupo coincide con «{{query}}».",
+      "created": "Creado",
+      "history": "Historial del chat",
+      "noMessages": "Aún no hay mensajes.",
+      "messages_one": "{{count}} mensaje · el último el {{date}}",
+      "messages_other": "{{count}} mensajes · el último el {{date}}",
+      "messages_many": "{{count}} mensajes · el último el {{date}}",
+      "exporting": "Exportando…",
+      "exportFailed": "No se ha podido exportar el chat.",
+      "exportedAt": "Exportado el {{date}}",
+      "you": "Tú",
+      "oppenheimer": "Oppenheimer",
+      "clearTitle": "¿Borrar el historial del chat?",
+      "clearBody": "Se borran todos los mensajes de este chat, con cualquier solicitud que aún espere tu respuesta. El bot conserva su alma, sus instrucciones y su memoria.",
+      "clearing": "Borrando…",
+      "clearFailed": "No se ha podido borrar el historial del chat.",
+      "export": "Exportar",
+      "clear": "Borrar historial",
+      "discard": "Descartar",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "failed": "No se ha podido guardar el bot."
+    },
+    "instructions": {
+      "title": "Instrucciones",
+      "subtitle": "Los dos archivos que el bot lee antes de cada mensaje.",
+      "file": "Archivo",
+      "soulHint": "Personalidad y tono",
+      "instructionsHint": "Reglas que sigue en cada tarea",
+      "placeholder": "{{file}} está vacío.",
+      "discard": "Descartar",
+      "save": "Guardar revisión",
+      "saving": "Guardando…",
+      "saveFailed": "No se ha podido guardar la revisión.",
+      "conflict": "{{file}} se ha guardado en otro sitio mientras lo editabas y ahora está en la revisión {{revision}}. Recarga para verla; copia antes tu texto si quieres conservarlo.",
+      "reload": "Recargar",
+      "history": "Historial de revisiones",
+      "historyFailed": "No se ha podido cargar el historial de revisiones.",
+      "loadFailed": "No se han podido cargar las instrucciones.",
+      "you": "Tú",
+      "bot": "Bot",
+      "created": "Creado",
+      "edited": "{{file}} editado",
+      "reverted": "Revertido a la revisión {{revision}}",
+      "meta": "{{file}} · revisión {{revision}} · {{when}}",
+      "current": "Actual",
+      "revert": "Revertir",
+      "reverting": "Revirtiendo…",
+      "revertFailed": "No se ha podido revertir el archivo."
+    },
+    "memory": {
+      "title": "Memoria",
+      "subtitle": "Lo que el bot recuerda entre chats.",
+      "learn": "Aprender automáticamente",
+      "learnHint": "Guarda lo que aprende en el chat sin preguntar",
+      "learnFailed": "No se ha podido cambiar cómo aprende el bot.",
+      "facts_one": "Datos · {{count}}",
+      "facts_other": "Datos · {{count}}",
+      "clearAll": "Borrar todo",
+      "clearTitle_one": "¿Borrar {{count}} dato?",
+      "clearTitle_other": "¿Borrar los {{count}} datos?",
+      "clearBody": "El bot olvida todo lo que se le pidió recordar. Su alma y sus instrucciones se mantienen.",
+      "clearing": "Borrando…",
+      "clearFailed": "No se ha podido borrar la memoria.",
+      "empty": "Aún no hay datos. Añade uno abajo.",
+      "fact": "Dato",
+      "newFact": "Nuevo dato",
+      "add": "Añadir",
+      "addPlaceholder": "Añade un dato, p. ej. Prefiere squash merges",
+      "addedByYou": "Añadido por ti · {{date}}",
+      "editedByYou": "Editado por ti · {{date}}",
+      "learned": "Aprendido por el bot · {{date}}",
+      "edit": "Editar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "saveFailed": "No se ha podido guardar el dato.",
+      "forget": "Olvidar «{{fact}}»",
+      "forgetFailed": "No se ha podido olvidar el dato.",
+      "loadFailed": "No se ha podido cargar lo que recuerda el bot."
+    },
+    "homeHost": {
+      "title": "Máquina principal",
+      "subtitle": "Tu bot siempre se ejecuta en Oppenheimer. Cuando inicia una sesión de código y no has indicado una máquina, la sesión se ejecuta aquí.",
+      "machines": "Máquinas",
+      "none": "Sin máquina principal",
+      "noneHint": "El bot pregunta qué máquina usar cada vez que inicia una sesión.",
+      "online": "En línea",
+      "offline": "Desconectada",
+      "noHosts": "Aún no hay máquinas",
+      "noHostsBody": "Un bot inicia sus sesiones de código en una máquina tuya. Añade una y elígela aquí.",
+      "addHost": "Añadir una máquina",
+      "discard": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "failed": "No se ha podido cambiar la máquina principal.",
+      "hostsFailed": "No se han podido cargar tus máquinas."
+    }
+  },
+  "delete": {
+    "title": "¿Eliminar {{name}}?",
+    "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
+    "confirm": "Eliminar bot",
+    "pending": "Eliminando…",
+    "failed": "No se ha podido eliminar el bot."
+  }
+}

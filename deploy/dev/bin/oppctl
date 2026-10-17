@@ -586,11 +586,16 @@ cmd_setup() {
     log "wrote $CONFIG/host.env — fill it in"
   fi
   if [ ! -s "$CONFIG/api.env" ]; then
-    sed -e "s|@DB_PASSWORD@|$(cat "$CONFIG/db_password")|" \
-        -e "s|@BETTER_AUTH_SECRET@|$(openssl rand -base64 32)|" \
-        -e "s|@CONTROL_PLANE_SIGNING_KEY@|$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)|" \
-        -e "s|@GITHUB_USER_TOKEN_KEY@|$(openssl rand -base64 32)|" \
-        "$HERE/config/api.env.example" > "$CONFIG/api.env"
+    # Each 32-byte key is a placeholder in the example; a new one is a name here.
+    local fill=(
+      -e "s|@DB_PASSWORD@|$(cat "$CONFIG/db_password")|"
+      -e "s|@CONTROL_PLANE_SIGNING_KEY@|$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)|"
+    )
+    local key
+    for key in BETTER_AUTH_SECRET GITHUB_USER_TOKEN_KEY BOTS_PROVIDER_KEY; do
+      fill+=(-e "s|@$key@|$(openssl rand -base64 32)|")
+    done
+    sed "${fill[@]}" "$HERE/config/api.env.example" > "$CONFIG/api.env"
     chmod 0600 "$CONFIG/api.env"
     log "wrote $CONFIG/api.env with fresh secrets — set the hostname in it"
   fi

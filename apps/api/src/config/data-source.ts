@@ -15,6 +15,16 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { BotOrmEntity } from '../bots/database/bot.orm-entity';
+import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
+import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
+import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
+import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
+import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
+import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
+import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
+import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
@@ -38,6 +48,7 @@ import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-e
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { ReviewSessionOrmEntity } from '../pull-requests/database/review-session.orm-entity';
 import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-version.orm-entity';
@@ -110,6 +121,17 @@ export default new DataSource({
     CalendarConnectionOrmEntity,
     GithubUserGrantOrmEntity,
     WatchedRepositoryOrmEntity,
+    BotOrmEntity,
+    BotGroupOrmEntity,
+    BotDocumentOrmEntity,
+    BotDocumentRevisionOrmEntity,
+    BotMemoryFactOrmEntity,
+    ModelProviderCredentialOrmEntity,
+    BotTurnOrmEntity,
+    BotMessageOrmEntity,
+    BotApprovalOrmEntity,
+    BotConversationSummaryOrmEntity,
+    ReviewSessionOrmEntity,
     UserRoleOrmEntity,
     RoleCatalogVersionOrmEntity,
     UserRoleVersionOrmEntity,

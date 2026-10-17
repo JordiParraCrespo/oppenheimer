@@ -96,6 +96,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
+  <li><a href="#bots">Bots</a></li>
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
@@ -109,7 +110,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h2 id="thesis">Thesis</h2>
 <p>Do not build an agent framework. Build a thin product over agents we do not own. The unit of the product is a real PTY on a real machine, shown in a browser. Every coding agent that runs in a terminal is supported by construction, with zero adapters.</p>
-<div class="verdict"><p><strong>The platform owns three things:</strong> the terminal experience, the fleet of machines and workspaces, and the board that shows what every session is doing. It does not own the agent loop, the model credential, or a plugin marketplace.</p></div>
+<div class="verdict"><p><strong>The platform owns three things:</strong> the terminal experience, the fleet of machines and workspaces, and the board that shows what every session is doing. It does not own a session's agent loop or model credential, nor a plugin marketplace: the agent in a session runs on the host under the user's own login. Bots are the one exception: a bot's loop runs in Oppenheimer, on the workspace's provider keys, stored encrypted and never sent to a host (<a href="#bots">Bots</a>).</p></div>
 <p>Software development only for the MVP. Other verticals wait until the core loop is boring.</p>
 
 <h2 id="lessons">What OpenClaw and Orca taught us</h2>
@@ -678,6 +679,9 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 
 
+<h2 id="bots">Bots</h2>
+<p>The Employees section: bots you talk to, whose loop runs in Oppenheimer on the model provider's agent SDK and which send real work to sessions on a host. The loop runs on the control plane, so the SDK's own tools that reach it are off: no shell, no files, no fetch, no subagents. Fetching a page and handing work to another agent come back as tools of ours, public addresses only. Its prompt is ours: a closed list of what it can do and never asking for a secret, the same bytes every turn so the provider's prompt cache holds it; the sender's time, its home host and the owner's hosts open each turn's message instead; a turn is sent a token budget of history, opened by a summary of the older messages that its own model keeps up to date, so a long conversation keeps its early facts; a turn stops after 4 minutes. Its tools are thin wrappers over the API's own queries and commands, run as its owner: hosts and sessions, the plan, pull requests, automations, other bots, itself, and a fetch of public pages. A tool that reaches outside Oppenheimer (starting or stopping a session, creating a bot) asks first under Approve for me: its call becomes a Needs input card and the turn ends; Approve queues exactly that call, run as the owner and only within what both the asking turn's and the approver's credential cover; Deny runs nothing; either way the bot gets a turn that tells it, so it reports back. A bot it creates is yours, marked as created by it, on its provider and model unless told otherwise, and never looser than it: Approve for me unless it runs under Full access and asks for that. Its settings are drafts saved with Save: Home host is only where its sessions start when no machine is named, and Profile exports the whole chat as Markdown or clears it, while a turn is not working. The design is <code>versions/mvp/25-bots.md</code>.</p>
+
 <h2 id="layout">Workspace layout</h2>
 <p>Two places on a host: the runner's home <code>~/.oppenheimer/</code> (keys, state, logs) and the work folder, <code>~/oppenheimer/</code> unless chosen at install. What the runner makes lives in the work folder, named by ids that never change; a folder session runs anywhere else on the host and leaves it as it is (<code>versions/mvp/24-session-places.md</code>).</p>
 <div class="term">
@@ -689,7 +693,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <div>      repos/</div>
   <div>        <span class="g">acme--xrp-mobile.git/</span>  <span class="d"># bare store, found by GitHub id</span></div>
   <div>        .spares/              <span class="d"># the pre-built worktree that makes a create instant</span></div>
-  <div>      agents/               <span class="d"># agents' homes, the Employees slice</span></div>
+  <div>      agents/               <span class="d"># reserved; bots live in Oppenheimer, not on hosts (25)</span></div>
   <div>      sessions/</div>
   <div>        <span class="g">bold-otter-3f9a7k/</span>     <span class="d"># .oppenheimer/meta.json + one checkout per repository</span></div>
 </div>
@@ -750,7 +754,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 <div class="verdict"><p><strong>Decided 2026-10-02:</strong> the network work happens before Send (02 §5). Still open: a first session sent the instant its repository is picked is bounded by the shallow clone, 4 s on react and 12 s on vscode.</p></div>
 <h2 id="devday">Reviewing at the speed agents write</h2>
-<p>Research from 2026-09-27 (note 15): review, not writing, is now the bottleneck. Teams with high AI adoption merge far more PRs, while review time and PR size grow faster. The answer is to review faster, not to write less. Every PR lands in a lane. <strong>Auto</strong> PRs merge under a readable per-repository policy — docs, tests, formatting, safe bumps, refactors that provably change nothing — proven first in a dry run over the last 100 merged PRs. <strong>Quick</strong> PRs take one key in triage, with the brief on screen. <strong>Deep</strong> PRs get a <strong>review session</strong>, prepared on the developer's host before they open the PR: the checkout built, the affected checks run, the app started, a context pack of callers, history, rules and the author's transcript loaded, and a brief with its findings drafted as pending comments. Other tools read diffs; this one ran the code.</p>
+<p>Research from 2026-09-27 (note 15): review, not writing, is now the bottleneck. Teams with high AI adoption merge far more PRs, while review time and PR size grow faster. The answer is to review faster, not to write less. Every PR lands in a lane. <strong>Auto</strong> PRs merge under a readable per-repository policy — docs, tests, formatting, safe bumps, refactors that provably change nothing — proven first in a dry run over the last 100 merged PRs. <strong>Quick</strong> PRs take one key in triage, with the brief on screen. <strong>Deep</strong> PRs get a <strong>review session</strong>, prepared on the developer's host before they open the PR: the checkout built, the affected checks run, the app started, a context pack of callers, history, rules and the author's transcript loaded, and a brief with its findings drafted as pending comments. Other tools read diffs; this one ran the code. Its first step ships in 0.2 as the pull request's <strong>Chat</strong> tab: one press starts Claude Code in a worktree of its head branch on one of your hosts, in its auto mode (each action checked, nothing prompted), opening with a two-or-three-line take, and you ask it the rest from the tab. Review sessions are listed under For review, never among your sessions.</p>
 
 <h2 id="landscape">The landscape, September 2026</h2>
 <p>Note 16 (<code>research/developer-tools-landscape.md</code>) maps five groups: AI review (CodeRabbit, Greptile, Bugbot, Copilot, Codex, Claude, Macroscope, Baz…), agent consoles (Orca, Superset, Conductor, the Codex and Copilot apps, Cursor…), merge tools (gh-stack, Agent Merge, Graphite, Aviator, Trunk, Mergify), analytics (Swarmia, DX, Jellyfish, LinearB) and sandboxes (Modal, E2B, Daytona, Namespace). Almost every reviewer reads the diff and none makes running the code the review. Auto-approve by readable policy is real (Macroscope, Copilot), but nobody acts in the user's name after running the code. Worktree consoles are crowded and being commoditised, and two funded ones shut down. The open ground is a browser console over hosts you own and the PR back half: agent PRs wait 17.6 hours for review against 3.4 for unassisted ones (LinearB, 8.1M PRs).</p>

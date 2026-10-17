@@ -41,7 +41,7 @@ const AGENT_WINDOW = 0;
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
- * grid keeps the input.
+ * grid keeps the input. A pull request's review session is the same pane.
  */
 export function SessionTerminal({
   sessionId,

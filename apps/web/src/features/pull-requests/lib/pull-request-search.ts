@@ -1,7 +1,7 @@
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { z } from 'zod';
 
-export const PULL_REQUEST_VIEWS = ['description', 'changes'] as const;
+export const PULL_REQUEST_VIEWS = ['description', 'changes', 'chat'] as const;
 export type PullRequestView = (typeof PULL_REQUEST_VIEWS)[number];
 
 /**
@@ -18,7 +18,7 @@ export const pullRequestSearchSchema = z.object({
 });
 
 /** The view a pull request opens on, and the one its address leaves out. */
-export const DEFAULT_PULL_REQUEST_VIEW = 'description' satisfies PullRequestView;
+const DEFAULT_PULL_REQUEST_VIEW = 'description' satisfies PullRequestView;
 
 export function resolvePullRequestView(view: PullRequestView | undefined): PullRequestView {
   return view ?? DEFAULT_PULL_REQUEST_VIEW;
@@ -44,15 +44,17 @@ export function pullRequestLink(address: PullRequestAddress, view: PullRequestVi
 
 /**
  * The page each view is: the description an article with its rail at the
- * board's measure, the changes a diff as wide and as tall as the pane. The route
+ * board's measure, the changes a diff as wide and as tall as the pane, the
+ * chat the review session's terminal, which is the pane itself. The route
  * declares it from its search, so the shell frames every view and the bar
  * stays above them.
  */
 const PANE = {
   description: 'board',
   changes: 'fluid',
-} as const satisfies Record<PullRequestView, 'board' | 'fluid'>;
+  chat: 'full',
+} as const satisfies Record<PullRequestView, 'board' | 'fluid' | 'full'>;
 
-export function pullRequestPane(view: PullRequestView | undefined): 'board' | 'fluid' {
+export function pullRequestPane(view: PullRequestView | undefined): 'board' | 'fluid' | 'full' {
   return PANE[resolvePullRequestView(view)];
 }

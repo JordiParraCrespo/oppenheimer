@@ -32,6 +32,7 @@ import {
   type SessionLaunchFold,
 } from './domain/session-state.policy';
 import {
+  SESSION_ORIGINS,
   type SessionTurnFold,
   TURN_DRIVES,
   TURN_ORIGINS,
@@ -135,7 +136,9 @@ export class WorkSessionMapper
         folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
-        origin: record.origin === 'automation' ? 'automation' : 'person',
+        origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
+          ? record.origin
+          : 'person',
         // Loaded by the repository when it folds, under the row lock.
         latestTurn: null,
         ...this.foldOf(record),

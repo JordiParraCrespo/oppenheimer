@@ -72,4 +72,10 @@ export const QUEUE_NAMES = {
   AUTOMATION_RETENTION: 'automation-retention',
   /** The daily purge of delivered outbox rows past their retention. */
   OUTBOX_RETENTION: 'outbox-retention',
+  /** Run one bot turn on its provider's engine, then start the bot's next queued one. */
+  BOT_TURNS: 'bot-turns',
+  /** Carry out a call its bot's owner approved, then queue the turn that reports it. */
+  BOT_APPROVALS: 'bot-approvals',
+  /** Fold a bot's oldest messages into its conversation summary, once they pass the history budget. */
+  BOT_SUMMARIES: 'bot-summaries',
 } as const;

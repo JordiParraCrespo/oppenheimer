@@ -10,6 +10,7 @@ import type { Queue } from 'bullmq';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { configStub } from '../../config/__tests__/config-stub';
 import {
+  BOT_TURN_JOB_OPTIONS,
   DEFAULT_JOB_OPTIONS,
   DURABLE_JOB_OPTIONS,
   EMAIL_JOB_OPTIONS,
@@ -96,6 +97,9 @@ describe('queue registration', () => {
     it.each([
       [QUEUE_NAMES.EMAIL, EMAIL_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_RUNS, DURABLE_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_TURNS, BOT_TURN_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_APPROVALS, DURABLE_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_SUMMARIES, DURABLE_JOB_OPTIONS],
       // Scheduler-driven queues keep the root removal policy.
       [QUEUE_NAMES.HOST_RETENTION, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_SCHEDULES, DEFAULT_JOB_OPTIONS],

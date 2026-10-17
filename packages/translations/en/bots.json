@@ -1,0 +1,298 @@
+{
+  "sidebar": {
+    "new": "New bot",
+    "creating": "Creating…",
+    "createFailed": "Could not create the bot.",
+    "search": "Search bots",
+    "clearSearch": "Clear search",
+    "noMatch": "No bots match “{{query}}”.",
+    "ungrouped": "Ungrouped",
+    "emptyTitle": "No bots yet",
+    "emptyBody": "Bots you create appear here. Make one, tell it the job, and shape it in its settings.",
+    "emptyGroup": "No bots in this group yet.",
+    "noMessages": "No messages yet",
+    "newGroup": "New group",
+    "groupName": "Group name",
+    "groupActions": "Options for {{name}}",
+    "renameGroup": "Rename group",
+    "deleteGroup": "Delete group",
+    "groupFailed": "Could not save the group.",
+    "rowActions": "Bot options",
+    "settings": "Settings",
+    "move": "Move to group",
+    "moveTitle": "Move to",
+    "moveNone": "No other group yet",
+    "moveFailed": "Could not move the bot.",
+    "delete": "Delete bot",
+    "loadFailed": "Could not load your bots."
+  },
+  "landing": {
+    "titleEmpty": "Make your first bot.",
+    "title": "Pick a bot, or make a new one.",
+    "note": "A new bot starts blank. Tell it the job, and shape it in its settings."
+  },
+  "chat": {
+    "toggleSidebar": "Toggle sidebar",
+    "actions": "Bot options",
+    "settings": "Settings",
+    "delete": "Delete bot",
+    "helloBlank": "{{name}} is ready. Tell it what job to do.",
+    "startFrom": "Try asking",
+    "hello": "{{name}} is ready. What should we work on?",
+    "placeholder": "Message {{name}}",
+    "send": "Send",
+    "stop": "Stop",
+    "noKey": "{{provider}} has no key in this workspace yet. Add one to talk to this bot.",
+    "addKey": "Add a key",
+    "sendFailed": "Could not send the message.",
+    "stopFailed": "Could not stop the turn.",
+    "failed": "{{provider}} could not finish this turn",
+    "failedUnknown": "The turn ended without saying why.",
+    "errorDetails": "Show details",
+    "errorLess": "Show less",
+    "retry": "Retry",
+    "copyMessage": "Copy message",
+    "copyReply": "Copy reply",
+    "toLatest": "Jump to latest",
+    "switchedModel": "Switched to <model>{{model}}</model>",
+    "tokens_one": "{{tokens}} token",
+    "tokens_other": "{{tokens}} tokens",
+    "turn": {
+      "queued": "Waiting",
+      "thinking": "Thinking",
+      "writing": "Writing",
+      "stopped": "Stopped"
+    },
+    "activity": {
+      "searched": "Searched the web",
+      "searchedFor": "Searched the web for “{{query}}”",
+      "searching": "Searching the web",
+      "searchingFor": "Searching the web for “{{query}}”",
+      "planned": "Updated its plan",
+      "planning": "Updating its plan",
+      "using": "Using {{name}}",
+      "stepFailed": "failed",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "rawOutput": "Show raw output",
+      "moreLines_one": "Show {{count}} more line",
+      "moreLines_other": "Show {{count}} more lines",
+      "lessOutput": "Show less"
+    },
+    "suggest": {
+      "task": {
+        "research": {
+          "name": "Research a topic",
+          "prompt": "Search the web and give me a short summary, with sources, of "
+        },
+        "summarise": {
+          "name": "Summarise something",
+          "prompt": "Summarise this in five bullet points:\n\n"
+        },
+        "draft": {
+          "name": "Draft a message",
+          "prompt": "Draft a short, friendly message to "
+        },
+        "plan": {
+          "name": "Make a plan",
+          "prompt": "Make a step-by-step plan to "
+        }
+      },
+      "job": {
+        "research": {
+          "name": "Research assistant",
+          "description": "Finds and sums up what I ask about",
+          "prompt": "Be my research assistant: when I name a topic, search the web and give me a short summary with its sources."
+        },
+        "writing": {
+          "name": "Writing partner",
+          "description": "Tightens my drafts in my own voice",
+          "prompt": "Be my writing partner: tighten what I write, suggest clearer wording and keep my tone."
+        },
+        "planner": {
+          "name": "Planner",
+          "description": "Turns goals into next steps",
+          "prompt": "Be my planner: break my goals into steps, keep a to-do list and tell me what to do next."
+        },
+        "news": {
+          "name": "News digest",
+          "description": "The latest on what I follow",
+          "prompt": "Be my news digest: when I ask, search the web for the latest on the topics I follow and sum it up in five bullets."
+        }
+      }
+    },
+    "model": "Model",
+    "searchModels": "Search models…",
+    "noModel": "No model matches “{{query}}”.",
+    "permission": {
+      "label": "Approval level",
+      "auto": {
+        "label": "Approve for me",
+        "description": "Edits files and runs commands without asking."
+      },
+      "full": {
+        "label": "Full access",
+        "description": "Everything, unattended, on the bot’s home host."
+      }
+    },
+    "saveFailed": "Could not change the bot.",
+    "loadFailed": "Could not load this bot.",
+    "approval": {
+      "needsInput": "Needs input",
+      "title": "{{name}} wants to do this",
+      "detail": "It runs once, as you, when you approve. Writing to {{name}} instead dismisses the request.",
+      "approve": "Approve",
+      "approving": "Approving…",
+      "deny": "Deny",
+      "denying": "Denying…",
+      "noteLabel": "What should {{name}} do instead?",
+      "notePlaceholder": "Optional: why not, or what to do instead",
+      "cancel": "Cancel",
+      "failed": "Could not answer the request."
+    },
+    "event": {
+      "approved": "You approved: {{summary}}",
+      "denied": "You denied: {{summary}}",
+      "failed": "You approved, and it failed: {{summary}}"
+    }
+  },
+  "settings": {
+    "back": "Back to the chat",
+    "openChat": "Open chat",
+    "navLabel": "Bot settings",
+    "loadFailed": "Could not load this bot.",
+    "tabs": {
+      "profile": "Profile",
+      "instructions": "Instructions",
+      "memory": "Memory",
+      "homeHost": "Home host"
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "Who the bot is and where it sits in the sidebar.",
+      "name": "Name",
+      "description": "Description",
+      "descriptionPlaceholder": "What it does, in a line",
+      "color": "Colour",
+      "colors": {
+        "mint": "Mint",
+        "tangerine": "Tangerine",
+        "snow": "Snow",
+        "sky": "Sky",
+        "lilac": "Lilac",
+        "lemon": "Lemon",
+        "coral": "Coral",
+        "moss": "Moss"
+      },
+      "group": "Sidebar group",
+      "groupHint": "Where it appears in the Employees sidebar",
+      "newGroup": "New group in the sidebar",
+      "searchGroups": "Search groups…",
+      "noGroup": "No group matches “{{query}}”.",
+      "created": "Created",
+      "history": "Chat history",
+      "noMessages": "No messages yet.",
+      "messages_one": "{{count}} message · last {{date}}",
+      "messages_other": "{{count}} messages · last {{date}}",
+      "exporting": "Exporting…",
+      "exportFailed": "Could not export the chat.",
+      "exportedAt": "Exported {{date}}",
+      "you": "You",
+      "oppenheimer": "Oppenheimer",
+      "clearTitle": "Clear the chat history?",
+      "clearBody": "Every message of this chat is erased, with any request still waiting on you. The bot keeps its soul, instructions and memory.",
+      "clearing": "Clearing…",
+      "clearFailed": "Could not clear the chat history.",
+      "export": "Export",
+      "clear": "Clear history",
+      "discard": "Discard",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "failed": "Could not save the bot."
+    },
+    "instructions": {
+      "title": "Instructions",
+      "subtitle": "The two files the bot reads before every message.",
+      "file": "File",
+      "soulHint": "Personality and tone",
+      "instructionsHint": "Rules it follows on every task",
+      "placeholder": "{{file}} is empty.",
+      "discard": "Discard",
+      "save": "Save revision",
+      "saving": "Saving…",
+      "saveFailed": "Could not save the revision.",
+      "conflict": "{{file}} was saved somewhere else while you edited it, and is at revision {{revision}} now. Reload to see it; copy your text first if you want to keep it.",
+      "reload": "Reload",
+      "history": "Revision history",
+      "historyFailed": "Could not load the revision history.",
+      "loadFailed": "Could not load the instructions.",
+      "you": "You",
+      "bot": "Bot",
+      "created": "Created",
+      "edited": "Edited {{file}}",
+      "reverted": "Reverted to revision {{revision}}",
+      "meta": "{{file}} · revision {{revision}} · {{when}}",
+      "current": "Current",
+      "revert": "Revert",
+      "reverting": "Reverting…",
+      "revertFailed": "Could not revert the file."
+    },
+    "memory": {
+      "title": "Memory",
+      "subtitle": "What the bot remembers between chats.",
+      "learn": "Learn automatically",
+      "learnHint": "Save facts it picks up in chat without asking",
+      "learnFailed": "Could not change how the bot learns.",
+      "facts_one": "Facts · {{count}}",
+      "facts_other": "Facts · {{count}}",
+      "clearAll": "Clear all",
+      "clearTitle_one": "Clear {{count}} fact?",
+      "clearTitle_other": "Clear all {{count}} facts?",
+      "clearBody": "The bot forgets everything it was told to remember. Its soul and instructions stay.",
+      "clearing": "Clearing…",
+      "clearFailed": "Could not clear the memory.",
+      "empty": "No facts yet. Add one below.",
+      "fact": "Fact",
+      "newFact": "New fact",
+      "add": "Add",
+      "addPlaceholder": "Add a fact, e.g. Prefers squash merges",
+      "addedByYou": "Added by you · {{date}}",
+      "editedByYou": "Edited by you · {{date}}",
+      "learned": "Learned by the bot · {{date}}",
+      "edit": "Edit",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "saveFailed": "Could not save the fact.",
+      "forget": "Forget “{{fact}}”",
+      "forgetFailed": "Could not forget the fact.",
+      "loadFailed": "Could not load what the bot remembers."
+    },
+    "homeHost": {
+      "title": "Home host",
+      "subtitle": "Your bot always runs in Oppenheimer. When it starts a coding session and you haven't named a machine, the session runs here.",
+      "machines": "Machines",
+      "none": "No home host",
+      "noneHint": "The bot asks which machine to use each time it starts a session.",
+      "online": "Online",
+      "offline": "Offline",
+      "noHosts": "No hosts yet",
+      "noHostsBody": "A bot starts its coding sessions on a machine you own. Add one, then pick it here.",
+      "addHost": "Add a host",
+      "discard": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "failed": "Could not change the home host.",
+      "hostsFailed": "Could not load your hosts."
+    }
+  },
+  "delete": {
+    "title": "Delete {{name}}?",
+    "description": "The bot, its instructions, its memory and its conversation are removed for good.",
+    "confirm": "Delete bot",
+    "pending": "Deleting…",
+    "failed": "Could not delete the bot."
+  }
+}

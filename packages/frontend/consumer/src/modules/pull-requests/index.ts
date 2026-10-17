@@ -24,7 +24,9 @@ export {
   type ReadRefusal,
   type ReviewInput,
   type ReviewOutcome,
+  type ReviewSession,
   type ReviewVerdict,
+  reviews,
   type UnreadableRepository,
   type WatchedRepository,
 } from './pull-request.entity';
