@@ -1,7 +1,11 @@
 import { Button, Textarea } from '@oppenheimer/design-system-web';
 import { type BotDocumentEntity, documentConflictRevision } from '@oppenheimer/frontend-consumer';
-import { useReloadBotDocuments, useSaveBotDocument } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import {
+  useReloadBotDocuments,
+  useSaveBotDocument,
+  useVoiceDictation,
+} from '@oppenheimer/frontend-consumer/react';
+import { appendDictation, DictationField, ErrorAlert } from '@oppenheimer/frontend-web';
 import { BOT_DOCUMENT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +17,7 @@ import { DOCUMENT_FILE } from '@/features/bots/lib/document-files';
  * on; when somebody saved the file since, the API refuses it, and this says
  * which revision the file is at now and offers Reload, which opens the editor
  * on that one. The draft stays in the box until then, so it can be copied.
+ * The mic dictates onto the end of the draft.
  */
 export function BotDocumentEditor({
   botId,
@@ -28,18 +33,24 @@ export function BotDocumentEditor({
   const file = DOCUMENT_FILE[document.name];
   const dirty = draft !== document.content;
   const conflict = documentConflictRevision(save.error);
+  const voice = useVoiceDictation();
 
   return (
     <div className="flex flex-col gap-3">
-      <Textarea
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        maxLength={BOT_DOCUMENT_MAX}
-        spellCheck={false}
-        aria-label={file}
-        placeholder={t('bots.settings.instructions.placeholder', { file })}
-        variant="code"
-      />
+      <DictationField
+        voice={voice}
+        onText={(text) => setDraft((held) => appendDictation(held, text))}
+      >
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          maxLength={BOT_DOCUMENT_MAX}
+          spellCheck={false}
+          aria-label={file}
+          placeholder={t('bots.settings.instructions.placeholder', { file })}
+          variant="code"
+        />
+      </DictationField>
       {conflict !== null ? (
         <ErrorAlert
           message={t('bots.settings.instructions.conflict', { file, revision: conflict })}

@@ -330,6 +330,40 @@ Adding a provider is a class implementing `SpeechProvider` (with a gateway
 of its own behind an `UpstreamLimiter`), its id in `VOICE_PROVIDERS`, and its
 place in the registry's list.
 
+## Dictate everywhere as built (2026-10-17)
+
+The owner asked for dictation in every input someone writes prose into, as
+one shared piece rather than a copy per screen. This is the first half of
+slice 3: the fields; the terminal paste, the hold-to-talk hotkey and the
+personal dictionary stay for later.
+
+- **One piece, in three layers.**
+  - The design system draws it: `DictationButton` (the mic, red while it
+    records), `DictationFrame` (a plain field with the mic in its corner and
+    the recorder under it), `VoiceRecorderBar`. `Composer` and
+    `ChatComposer` take the mic in their foot row; `DiffCommentDraft` and
+    `ReviewDecision` take a `dictation` slot for the comment field they own.
+  - The platform kit records and wires it (`@oppenheimer/frontend-web`,
+    concern `dictation`): `useDictation({ voice, onText })` is one field's
+    recorder, trip to the API and last problem; `DictationField` is the whole
+    thing around a `Textarea`; `dictationSlots` fills a design-system slot;
+    `appendDictation` adds what was heard to the end of a field.
+  - The product package answers whether anyone can hear the workspace and
+    how: `useVoiceDictation(vocabulary?)` (the flag, `GET /voice/status`, the
+    transcription). One value serves every field on a screen.
+- **Where it is.** New session; a bot's chat, its SOUL.md and
+  INSTRUCTIONS.md, and the note on a Deny; the automation prompt; a task's
+  notes and the Start session prompt; a calendar event's notes; a comment on
+  a pull request's line and the review's comment. Names, titles, memory
+  facts and the bot description stay without a mic: they are a few words.
+- **A field adds to what it holds.** What is heard goes on the end of the
+  draft, a space between, to be read before it is sent or saved. A form field
+  takes it through `setValue`, so it stays the form's.
+- **The recorder keeps `ScriptProcessorNode`.** The slice-1 note said the
+  `AudioWorklet` would come with this move; it did not, because the worklet
+  needs its processor served as a module of its own and nothing in this
+  slice needed it. It stays deprecated-but-working, said in the code.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake

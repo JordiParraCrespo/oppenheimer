@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Gestionar el acceso a repositorios",
       "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+    },
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Detener la grabación",
+      "cancel": "Cancelar la grabación",
+      "waiting": "Esperando al micrófono…",
+      "transcribing": "Transcribiendo…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+      "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+      "failed": "No se ha podido transcribir la grabación."
     }
   },
   "validation": {
@@ -646,17 +656,7 @@
         "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
         "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
       },
-      "failed": "No se pudo crear la sesión.",
-      "dictation": {
-        "dictate": "Dictar",
-        "stop": "Detener la grabación",
-        "cancel": "Cancelar la grabación",
-        "waiting": "Esperando al micrófono…",
-        "transcribing": "Transcribiendo…",
-        "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
-        "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
-        "failed": "No se ha podido transcribir la grabación."
-      }
+      "failed": "No se pudo crear la sesión."
     },
     "session": {
       "status": {

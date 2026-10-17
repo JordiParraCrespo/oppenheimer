@@ -7,6 +7,7 @@ import type * as React from 'react';
 
 import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
+import { DictationFrame } from './chat-composer-extras';
 import { Button } from './button';
 import { DiffStat } from './diff-stat';
 import { FileIcon } from './file-icon';
@@ -283,6 +284,7 @@ function DiffCommentDraft({
   onAddSingle,
   onCancel,
   avatar,
+  dictation,
   labels = {},
   className,
 }: {
@@ -292,6 +294,8 @@ function DiffCommentDraft({
   onAddSingle?: () => void;
   onCancel: () => void;
   avatar?: React.ReactNode;
+  /** The mic and, while dictating, the recorder, for the comment (`DictationFrame`). */
+  dictation?: { mic?: React.ReactNode; recorder?: React.ReactNode };
   labels?: { placeholder?: string; addToReview?: string; addSingle?: string; hint?: string; cancel?: string };
   className?: string;
 }) {
@@ -301,18 +305,20 @@ function DiffCommentDraft({
       <div className="flex max-w-160 items-start gap-2.5">
         {avatar ? <span className="mt-1.5 shrink-0">{avatar}</span> : null}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <CommentField
-            rows={3}
-            value={value}
-            onValueChange={onValueChange}
-            placeholder={labels.placeholder ?? 'Leave a comment'}
-            // biome-ignore lint/a11y/noAutofocus: the field opens because the reader asked to comment.
-            autoFocus
-            onSubmit={onAddToReview}
-            onCancel={onCancel}
-            canSubmit={!empty}
-            className="min-h-19 bg-background"
-          />
+          <DictationFrame mic={dictation?.mic} recorder={dictation?.recorder}>
+            <CommentField
+              rows={3}
+              value={value}
+              onValueChange={onValueChange}
+              placeholder={labels.placeholder ?? 'Leave a comment'}
+              // biome-ignore lint/a11y/noAutofocus: the field opens because the reader asked to comment.
+              autoFocus
+              onSubmit={onAddToReview}
+              onCancel={onCancel}
+              canSubmit={!empty}
+              className="min-h-19 bg-background"
+            />
+          </DictationFrame>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" disabled={empty} onClick={onAddToReview}>
               {labels.addToReview ?? 'Add to review'}

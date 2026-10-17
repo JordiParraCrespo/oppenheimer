@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowUpIcon, ChevronDownIcon, MicIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import { cn } from '../lib/utils';
+import { DictationButton } from './chat-composer-extras';
 import { IconButton } from './icon-button';
 
 type ComposerAttachment = { id: string; name: string };
@@ -226,19 +227,11 @@ function Composer({
           <span className="flex-1" />
           {engine}
           {onRecord ? (
-            <IconButton
-              aria-label={recording ? label.stopRecording : label.dictate}
-              aria-pressed={recording}
-              size="sm"
-              shape="square"
+            <DictationButton
+              recording={recording}
               onClick={onRecord}
-              className={cn(
-                'size-[30px]',
-                recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
-              )}
-            >
-              <MicIcon className="size-[15px]" />
-            </IconButton>
+              labels={{ dictate: label.dictate, stop: label.stopRecording }}
+            />
           ) : null}
           <ComposerSendButton
             busy={busy}

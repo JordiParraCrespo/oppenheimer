@@ -1,9 +1,10 @@
 'use client';
 
-import { LoaderIcon, XIcon } from 'lucide-react';
+import { LoaderIcon, MicIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { IconButton } from './icon-button';
 
 /**
  * The chat composer's extras (Chat Components, Composer; Bots' foot row).
@@ -12,6 +13,11 @@ import { cn } from '../lib/utils';
  *   the recorder: a waveform growing in from the right over a dashed
  *   midline, the elapsed time in mono, cancel and the blue stop. Before the
  *   microphone answers it says so; after, "Transcribing…".
+ * - `DictationButton`: the mic, a 30px square, on the danger surface while
+ *   it records. Every field that takes dictation shows this one.
+ * - `DictationFrame`: a plain multi-line field that takes dictation: the
+ *   field with the mic in its bottom-right corner (the field keeps room for
+ *   it on the right), and the recorder under it while dictating.
  * - `ComposerContextMeter`: how full the model's context is, a 28px pill in
  *   mono with a 28×4 bar and the share; a click compacts the thread.
  * - `ComposerMenu`: what opens above the composer while typing `/` or `@`,
@@ -92,6 +98,62 @@ function VoiceRecorderBar({
       >
         <span aria-hidden className="size-2 rounded-[2px] bg-current" />
       </button>
+    </div>
+  );
+}
+
+function DictationButton({
+  recording = false,
+  onClick,
+  labels,
+  className,
+}: {
+  recording?: boolean;
+  onClick: () => void;
+  labels?: { dictate?: string; stop?: string };
+  className?: string;
+}) {
+  return (
+    <IconButton
+      data-slot="dictation-button"
+      aria-label={recording ? (labels?.stop ?? 'Stop recording') : (labels?.dictate ?? 'Dictate')}
+      aria-pressed={recording}
+      size="sm"
+      shape="square"
+      onClick={onClick}
+      className={cn(
+        'size-[30px]',
+        recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
+        className,
+      )}
+    >
+      <MicIcon className="size-[15px]" />
+    </IconButton>
+  );
+}
+
+function DictationFrame({
+  mic,
+  recorder,
+  children,
+  className,
+}: {
+  /** The `DictationButton`; absent, the field is drawn as it is. */
+  mic?: React.ReactNode;
+  /** While dictating, the `VoiceRecorderBar` (and anything said about it), under the field. */
+  recorder?: React.ReactNode;
+  /** The field: a `Textarea`, or a component that draws one. */
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div data-slot="dictation-frame" className={cn('flex flex-col gap-2', className)}>
+      {/* The mic stands clear of the field's resize grip, in the bottom-right corner. */}
+      <div className={cn('relative', mic && '[&_textarea]:pr-13')}>
+        {children}
+        {mic ? <div className="absolute right-4 bottom-1.5">{mic}</div> : null}
+      </div>
+      {recorder}
     </div>
   );
 }
@@ -217,4 +279,12 @@ function ComposerMenuItem({
   );
 }
 
-export { ComposerContextMeter, ComposerMenu, ComposerMenuGroup, ComposerMenuItem, VoiceRecorderBar };
+export {
+  ComposerContextMeter,
+  ComposerMenu,
+  ComposerMenuGroup,
+  ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
+  VoiceRecorderBar,
+};

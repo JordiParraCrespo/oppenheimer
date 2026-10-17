@@ -4,6 +4,7 @@ import {
   useDeleteTask,
   useSuspensePlan,
   useUpdateTask,
+  useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ConfirmDialog, ErrorAlert, notifySuccess } from '@oppenheimer/frontend-web';
@@ -25,6 +26,7 @@ import { TaskSessionsRow } from './task-sessions-row';
 export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () => void }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
+  const voice = useVoiceDictation();
   const today = useToday();
   const filter = useBoardFilter();
   const { tasks, projects, milestones, error } = useSuspensePlan();
@@ -78,6 +80,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
         milestones={milestones}
         today={today}
         sessions={task ? <TaskSessionsRow task={task} /> : null}
+        voice={voice}
         pending={pending}
         error={failure ? resolveError(failure, t('tasks.dialog.saveFailed')) : null}
         submitLabel={t(task ? 'tasks.dialog.save' : 'tasks.dialog.add')}

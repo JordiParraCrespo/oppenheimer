@@ -15,6 +15,7 @@ import type {
 import {
   useAddPullRequestComment,
   usePullRequestComments,
+  useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { notifySuccess, useTheme } from '@oppenheimer/frontend-web';
@@ -59,6 +60,7 @@ export function ChangesFile({
   const [collapsed, setCollapsed] = useState(false);
   const [viewed, setViewed] = useState(false);
   const [draft, setDraft] = useState<DraftLine | null>(null);
+  const voice = useVoiceDictation(() => [file.path]);
   const addSingle = useAddPullRequestComment({
     onSuccess: () => {
       setDraft(null);
@@ -102,6 +104,7 @@ export function ChangesFile({
           renderAnnotation={({ metadata }) =>
             metadata.kind === 'draft' && draft ? (
               <DraftComment
+                voice={voice}
                 adding={addSingle.isPending}
                 onCancel={() => setDraft(null)}
                 onAddToReview={(body) => {

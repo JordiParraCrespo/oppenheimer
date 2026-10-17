@@ -1,7 +1,8 @@
 import { DialogBody, DialogHeader, DialogTitle } from '@oppenheimer/design-system-web';
 import { parseRepositoryKey } from '@oppenheimer/frontend-consumer';
-import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { useProjects, useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import {
+  appendDictation,
   ErrorAlert,
   type ResolvedErrorMessage,
   useServerFieldErrors,
@@ -58,6 +59,7 @@ export function AutomationEditor({
   });
   // The task's fields the server refused are marked on the fields; the alert keeps the rest.
   const { showAlert } = useServerFieldErrors(form, failure);
+  const voice = useVoiceDictation();
 
   const repoIds = draftRepoIds(draft);
   const repositories = repoIds.map((id) => ({
@@ -120,6 +122,12 @@ export function AutomationEditor({
           <AutomationTaskFields
             register={form.register}
             errors={form.formState.errors}
+            voice={voice}
+            onDictatePrompt={(text) =>
+              form.setValue('prompt', appendDictation(form.getValues('prompt'), text), {
+                shouldDirty: true,
+              })
+            }
             autoFocus={!editing}
           />
         ) : step === 'trigger' ? (

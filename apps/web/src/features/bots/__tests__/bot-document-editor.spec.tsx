@@ -28,6 +28,7 @@ const reload = vi.hoisted(() => vi.fn());
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSaveBotDocument: () => save,
   useReloadBotDocuments: () => reload,
+  useVoiceDictation: () => ({ available: false, transcribe: vi.fn() }),
 }));
 
 const document = {

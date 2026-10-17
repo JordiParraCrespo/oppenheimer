@@ -223,8 +223,7 @@ export {
   useUpdateTask,
 } from './tasks.queries';
 export {
-  type TranscribeVoiceVariables,
-  useTranscribeVoice,
-  useVoiceStatus,
+  useVoiceDictation,
+  type VoiceDictation,
 } from './voice.queries';
 export { useWorkspaceEvents } from './workspace-events';

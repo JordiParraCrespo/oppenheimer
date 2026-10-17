@@ -6,7 +6,14 @@ import {
   Input,
   Textarea,
 } from '@oppenheimer/design-system-web';
-import { ErrorAlert, type ResolvedErrorMessage, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  appendDictation,
+  DictationField,
+  ErrorAlert,
+  type ResolvedErrorMessage,
+  useZodResolver,
+  type VoiceInput,
+} from '@oppenheimer/frontend-web';
 import { createTaskSchema, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import type { ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -19,7 +26,8 @@ import { TaskMilestoneRow } from './task-milestone-row';
 /**
  * The task dialog's form (`Tasks.dc.html`): the title and notes as the design
  * system's labelled fields, then the rows — Status, Project, Milestone, the sessions (the dialog's,
- * passed in), Due — and the footer. Enter in the title saves.
+ * passed in), Due — and the footer. Enter in the title saves. The notes can
+ * be dictated.
  */
 export function TaskForm({
   values,
@@ -27,6 +35,7 @@ export function TaskForm({
   milestones,
   today,
   sessions,
+  voice,
   pending,
   error,
   submitLabel,
@@ -40,6 +49,7 @@ export function TaskForm({
   today: string;
   /** The Sessions row, for a task that exists. */
   sessions: ReactNode;
+  voice: VoiceInput;
   pending: boolean;
   error: ResolvedErrorMessage | null;
   submitLabel: string;
@@ -72,12 +82,21 @@ export function TaskForm({
       </Field>
       <Field>
         <FieldLabel htmlFor="task-notes">{t('tasks.dialog.notesLabel')}</FieldLabel>
-        <Textarea
-          {...register('notes')}
-          id="task-notes"
-          rows={3}
-          placeholder={t('tasks.dialog.notesPlaceholder')}
-        />
+        <DictationField
+          voice={voice}
+          onText={(text) =>
+            setValue('notes', appendDictation(getValues('notes') ?? '', text), {
+              shouldDirty: true,
+            })
+          }
+        >
+          <Textarea
+            {...register('notes')}
+            id="task-notes"
+            rows={3}
+            placeholder={t('tasks.dialog.notesPlaceholder')}
+          />
+        </DictationField>
       </Field>
       <div className="flex flex-col gap-3 border-t border-border-subtle pt-5">
         <Controller

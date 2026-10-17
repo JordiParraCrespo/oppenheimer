@@ -3,8 +3,8 @@ import {
   useHosts,
   useHostsSnapshot,
   useProjectsSnapshot,
-  useTranscribeVoice,
   useUploadSessionAttachment,
+  useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -14,7 +14,6 @@ import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { NewSessionComposer } from '../components/new-session-composer';
 import { useAutoStart } from '../hooks/use-auto-start';
-import { useDictationAvailable } from '../hooks/use-dictation-available';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { dictationVocabulary } from '../lib/dictation-vocabulary';
 import { hasPlace, toCreateInput } from '../lib/session-options';
@@ -63,21 +62,7 @@ export function NewSessionSend({
   // none.
   const projects = useProjectsSnapshot();
   const hosts = useHostsSnapshot();
-  const dictationAvailable = useDictationAvailable();
-  const transcribe = useTranscribeVoice();
-
-  /** A recording's text, or null when it failed: the failure is the mutation's, which the alert reads. */
-  async function hear(wav: Blob): Promise<string | null> {
-    try {
-      const heard = await transcribe.mutateAsync({
-        audio: wav,
-        vocabulary: dictationVocabulary(projects(), hosts()),
-      });
-      return heard.text;
-    } catch {
-      return null;
-    }
-  }
+  const voice = useVoiceDictation(() => dictationVocabulary(projects(), hosts()));
 
   /**
    * The key that makes a second press of send safe, and the request it was
@@ -142,13 +127,10 @@ export function NewSessionSend({
         scope={scope}
         tools={tools}
         engine={engine}
-        dictation={
-          dictationAvailable ? { transcribe: hear, transcribing: transcribe.isPending } : undefined
-        }
+        voice={voice}
       />
 
       <ErrorAlert error={lastFailure([upload, create]).error} fallback={t('sessions.new.failed')} />
-      <ErrorAlert error={transcribe.error} fallback={t('sessions.new.dictation.failed')} />
     </div>
   );
 }

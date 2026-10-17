@@ -81,6 +81,8 @@ export {
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from './components/chat-composer-extras';
 export type { ComposerTask } from './components/chat-composer-stack';

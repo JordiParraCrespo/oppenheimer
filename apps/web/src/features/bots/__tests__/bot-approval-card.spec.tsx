@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotApprovalCard } from '../sections/bot-approval-card';
 
@@ -25,11 +26,14 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     error: null,
     reset: vi.fn(),
   }),
+  useVoiceDictation: () => ({ available: false, transcribe: vi.fn() }),
 }));
 
 vi.mock('@oppenheimer/frontend-web', () => ({
   ErrorAlert: () => null,
   useZodResolver: () => undefined,
+  DictationField: ({ children }: { children: ReactNode }) => children,
+  appendDictation: (held: string, text: string) => `${held} ${text}`,
 }));
 
 afterEach(() => {
