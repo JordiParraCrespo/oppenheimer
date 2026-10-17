@@ -1,5 +1,176 @@
 # @oppenheimer/frontend-consumer
 
+## 1.1.0
+
+### Minor Changes
+
+- 39dbe36: Bots, the Needs input card (`product/versions/mvp/25-bots.md` §5).
+
+  - `@oppenheimer/shared`: `BOT_APPROVAL_STATUSES`, `decideBotApprovalSchema`,
+    `findBotApprovalsSchema`, the `event` message role and the `approval`
+    stream event.
+  - `@oppenheimer/api`: `bot_approval`; under Approve for me an asking tool's
+    call becomes a pending approval (one per bot) instead of running;
+    `GET /v1/bots/:id/approvals` and
+    `POST /v1/bots/:id/approvals/:approvalId/decision`, which runs the stored
+    call as the owner on a yes and queues a turn opened by an `event` message
+    either way; a new message expires the card. Errors `BOTS_015`, `BOTS_016`.
+  - `@oppenheimer/api-client`: the approval operations.
+  - `@oppenheimer/frontend-consumer`: approvals on the bots repository and their
+    hooks.
+  - `@oppenheimer/web`: the Needs input card above the composer, and the event
+    line in the transcript.
+  - `@oppenheimer/translations`: the card's copy and `errors.byCode.BOTS_015`–`BOTS_016`.
+
+- ac929fa: Bots on a ChatGPT subscription (`product/versions/mvp/25-bots.md` §2): a fourth
+  provider, `chatgpt`, signed in rather than given a key, the way OpenClaw and the
+  Codex CLI do it.
+
+  - Settings → Model providers has a ChatGPT row with Connect ChatGPT: OpenAI's
+    device code flow, a one-time code typed on OpenAI's page, polled until the
+    person approves it (`POST /v1/model-providers/chatgpt/login` and
+    `…/login/poll`). The sign-in's tokens are sealed like a key.
+  - `ChatgptBotEngine`, the OpenAI engine with ChatGPT's Codex backend as its
+    endpoint: the account header, `store: false` and encrypted reasoning.
+  - The worker refreshes the token before a turn when it is about to lapse, one
+    refresh per workspace at a time, written only over the tokens it read; a
+    refresh ChatGPT refuses removes the sign-in.
+  - New problems `BOTS_017`–`BOTS_021`; `PUT /model-providers/chatgpt` answers
+    `BOTS_017`.
+
+- 581c202: Bot settings polish (`product/versions/mvp/25-bots.md`, 2026-10-16).
+
+  - `@oppenheimer/api`: `GET /bots/:id/conversation/export` streams the whole
+    chat as NDJSON, one message per line, a page at a time; `DELETE /bots/:id/conversation` clears it (turns,
+    messages, cards, summary, sidebar line) in one transaction, refused with
+    `BOTS_022` while a turn is queued or running; the conversation read
+    carries `messageCount`.
+  - `@oppenheimer/api-client`: `exportBotConversation`, `clearBotConversation`,
+    `messageCount`.
+  - `@oppenheimer/frontend-consumer`: `useSuspenseBotHistory`,
+    `useExportBotConversation` (reads the NDJSON stream a line at a time),
+    `useClearBotConversation`.
+  - `@oppenheimer/backend-core`: `ndjsonLines` and `NDJSON_CONTENT_TYPE`.
+  - `@oppenheimer/frontend-web`: `SettingsFormSaveRow`, the dirty / pending /
+    saved foot of a settings form.
+  - `@oppenheimer/design-system-web`: `SettingsListRow`'s `kind` tag never wraps;
+    the meta beside it does.
+  - `@oppenheimer/translations`: Home host, chat history, `BOTS_022`, and the
+    shorter ChatGPT sign-in chip.
+
+- d4606c6: Pull requests on the 2026-10-13 screens, without the chat and the review
+  agent.
+
+  - `@oppenheimer/shared`, `@oppenheimer/api`, `@oppenheimer/api-client`: a
+    review's verdict is `comment`, `approve`, `approve_and_merge` or
+    `request_changes`. `approve` only approves now; `approve_and_merge`
+    merges at once when GitHub allows it and otherwise turns on GitHub's
+    auto-merge, answering `{ merged, autoMerge }`. The queue is ordered by
+    lane (Deep first) and then the longest wait, and the path to merge is
+    three gates (checks, conflicts, merge).
+  - `@oppenheimer/frontend-consumer`: `ReviewOutcome`; the activity read
+    (`usePullRequestActivity`) is removed.
+  - `@oppenheimer/web`: a pull request is Description and Changes (a link to
+    `?view=briefing` opens the description); the queue filters by repository,
+    Difficulty, Checks and Waiting, with `j`/`k`, Enter and `/`; Review opens
+    the changes; Settings → Watched repositories is where watching is set.
+  - `@oppenheimer/design-system-web`: `MergePath` is the one-row status strip;
+    `PullRequestTable` folds in three widths (1080px, 720px); `ChipSelect`
+    options take a `count`. `FactTile`, `FactGrid`, `DiffCommentLink` and the
+    Stepper's horizontal orientation are removed.
+  - `@oppenheimer/translations`: the new queue, review, Settings and toast
+    copy; the briefing, rail, activity and lane-reason keys are removed.
+
+- 6917f62: Review sessions: a pull request's Chat tab starts Claude Code on one of your hosts, in a worktree of its head branch, on a review prompt that opens with a two-or-three-line take, then shows its terminal with an input line under it. Review sessions are listed under For review in the Pull requests sidebar and left out of Sessions (`origin = 'review'`, `pull_request_review_session`). New routes: `POST /pulls/…/review-session` and `GET /pulls/review-sessions`; a fork's pull request is `PULLS_002`. The pull request detail says whether its head is in a fork (`fromFork`).
+- 11fa44a: Deleting a session feels immediate, and a session gone from its host no
+  longer gets stuck.
+
+  - `@oppenheimer/frontend-consumer`, `@oppenheimer/web`: the sidebar drops a
+    session the moment Delete is confirmed and keeps it out until its host
+    resolves it. The row comes back when the close cannot happen: the API
+    refuses it, the host is offline (`SESSIONS_CLIENT_019`, shown in the
+    dialog), or the host has not resolved it within a minute. The "asked the
+    host to delete" toast is gone. A restart's watch also ends when the
+    session resolves.
+  - `@oppenheimer/runner`: a close or a restart for a session this host holds
+    no record of, one already closed here, or one whose worktree was deleted
+    by hand closes it and reports `session.closed`, so its row resolves. A
+    restart of such a session is still refused.
+  - `@oppenheimer/translations`: `errors.byCode.SESSIONS_CLIENT_019`; the
+    `toasts.sessionDeleteRequested` key is removed.
+
+- 45d642b: A session runs in a new worktree or in a folder already on the host
+  (`product/versions/mvp/24-session-places.md`).
+
+  - `@oppenheimer/runner`: the work folder is `~/oppenheimer/<account>/<workspace>/{repos,
+agents, sessions}`, with bare stores and a `.oppenheimer/` marker in every
+    folder the runner makes; a folder session runs in the person's folder and
+    writes nothing there; `fs.list` lists a host's directories. The old
+    `~/oppenheimer-ai/workspaces` layout is not migrated.
+  - `@oppenheimer/shared`: `session.create` carries the account and workspace
+    ids and either checkouts or a `folder`; `fs.list` / `fs.listing`; the
+    `session.folder` and `fs.list` capabilities; `createSessionSchema` takes a
+    `folder` instead of checkouts.
+  - `@oppenheimer/api`: `work_session` records the place and the folder;
+    `GET /v1/hosts/{id}/folders` lists a folder through the runner with the
+    caller's recent folders; `SESSIONS_025`–`031`.
+  - `@oppenheimer/web`: New session's Where chip (New worktree, Folder on
+    host), the folder picker, Open terminal on a host in Settings, folder and
+    terminal icons in the sidebar. The permission level opens on `auto` and is
+    remembered.
+  - `@oppenheimer/design-system-web`: `Composer` takes `allowEmpty`, so a
+    blank terminal can start with no first task.
+
+- fe61b51: Sharing a session follows the `ShareSession` design
+  (`product/versions/mvp/21-session-share-links.md`): one share per session
+  at one address, `/s/<slug>`, for named people or anyone signed in; view, or
+  write for named people for 24 hours at most. The Share dialog opens from a
+  row's menu and the terminal's status line, and the guest page is one bar
+  and the terminal. The share-link routes are replaced by
+  `GET`/`PUT`/`DELETE /v1/sessions/{id}/share` and
+  `PATCH /v1/sessions/{id}/share/people`; existing links are dropped. The
+  design system gains `RadioGroupCard` (with `columns` on `RadioGroup`) and an
+  `actions` slot on `SessionPaneHeader`.
+- 13374f0: A session's terminal can take a direct path to its host
+  (`product/versions/mvp/22-direct-terminal-path.md`), behind the new
+  `terminal_direct_path` release flag.
+
+  - `@oppenheimer/runner`: answers a browser's WebRTC offer with pion and
+    carries the attachment's bytes on one ordered `pty` data channel, at most
+    eight per host; switches each direction at a byte offset; falls back to the
+    link when the channel closes, with the tmux client repainted. The hello
+    names `attachment.direct`.
+  - `@oppenheimer/api`: the relay offers a direct path (with
+    `RELAY_ICE_SERVERS`) to a runner that can answer, for a person the flag is
+    on for, outside share links, and forwards the offer, answer, refusal and
+    offsets.
+  - `@oppenheimer/frontend-consumer`: the attach stream opens the data channel
+    beside its socket when invited, switches at the offsets, follows a
+    fallback, and stops trying after two failed channels; `onPath` says which
+    path the bytes take.
+  - `@oppenheimer/web`: the latency readout names the path.
+  - `@oppenheimer/shared`: the signalling messages on both sockets, the
+    `attachment.direct` capability and the `terminal_direct_path` flag.
+
+### Patch Changes
+
+- Updated dependencies [39dbe36]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [8deebf8]
+- Updated dependencies [581c202]
+- Updated dependencies [6af341b]
+- Updated dependencies [a80436f]
+- Updated dependencies [d4606c6]
+- Updated dependencies [6917f62]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+  - @oppenheimer/shared@0.4.0
+  - @oppenheimer/api-client@0.4.0
+  - @oppenheimer/frontend-core@0.3.1
+
 ## 1.0.0
 
 ### Major Changes

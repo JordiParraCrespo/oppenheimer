@@ -1,5 +1,73 @@
 # @oppenheimer/runner
 
+## 0.3.0
+
+### Minor Changes
+
+- 11fa44a: Deleting a session feels immediate, and a session gone from its host no
+  longer gets stuck.
+
+  - `@oppenheimer/frontend-consumer`, `@oppenheimer/web`: the sidebar drops a
+    session the moment Delete is confirmed and keeps it out until its host
+    resolves it. The row comes back when the close cannot happen: the API
+    refuses it, the host is offline (`SESSIONS_CLIENT_019`, shown in the
+    dialog), or the host has not resolved it within a minute. The "asked the
+    host to delete" toast is gone. A restart's watch also ends when the
+    session resolves.
+  - `@oppenheimer/runner`: a close or a restart for a session this host holds
+    no record of, one already closed here, or one whose worktree was deleted
+    by hand closes it and reports `session.closed`, so its row resolves. A
+    restart of such a session is still refused.
+  - `@oppenheimer/translations`: `errors.byCode.SESSIONS_CLIENT_019`; the
+    `toasts.sessionDeleteRequested` key is removed.
+
+- 45d642b: A session runs in a new worktree or in a folder already on the host
+  (`product/versions/mvp/24-session-places.md`).
+
+  - `@oppenheimer/runner`: the work folder is `~/oppenheimer/<account>/<workspace>/{repos,
+agents, sessions}`, with bare stores and a `.oppenheimer/` marker in every
+    folder the runner makes; a folder session runs in the person's folder and
+    writes nothing there; `fs.list` lists a host's directories. The old
+    `~/oppenheimer-ai/workspaces` layout is not migrated.
+  - `@oppenheimer/shared`: `session.create` carries the account and workspace
+    ids and either checkouts or a `folder`; `fs.list` / `fs.listing`; the
+    `session.folder` and `fs.list` capabilities; `createSessionSchema` takes a
+    `folder` instead of checkouts.
+  - `@oppenheimer/api`: `work_session` records the place and the folder;
+    `GET /v1/hosts/{id}/folders` lists a folder through the runner with the
+    caller's recent folders; `SESSIONS_025`–`031`.
+  - `@oppenheimer/web`: New session's Where chip (New worktree, Folder on
+    host), the folder picker, Open terminal on a host in Settings, folder and
+    terminal icons in the sidebar. The permission level opens on `auto` and is
+    remembered.
+  - `@oppenheimer/design-system-web`: `Composer` takes `allowEmpty`, so a
+    blank terminal can start with no first task.
+
+- 13374f0: A session's terminal can take a direct path to its host
+  (`product/versions/mvp/22-direct-terminal-path.md`), behind the new
+  `terminal_direct_path` release flag.
+
+  - `@oppenheimer/runner`: answers a browser's WebRTC offer with pion and
+    carries the attachment's bytes on one ordered `pty` data channel, at most
+    eight per host; switches each direction at a byte offset; falls back to the
+    link when the channel closes, with the tmux client repainted. The hello
+    names `attachment.direct`.
+  - `@oppenheimer/api`: the relay offers a direct path (with
+    `RELAY_ICE_SERVERS`) to a runner that can answer, for a person the flag is
+    on for, outside share links, and forwards the offer, answer, refusal and
+    offsets.
+  - `@oppenheimer/frontend-consumer`: the attach stream opens the data channel
+    beside its socket when invited, switches at the offsets, follows a
+    fallback, and stops trying after two failed channels; `onPath` says which
+    path the bytes take.
+  - `@oppenheimer/web`: the latency readout names the path.
+  - `@oppenheimer/shared`: the signalling messages on both sockets, the
+    `attachment.direct` capability and the `terminal_direct_path` flag.
+
+### Patch Changes
+
+- bb3f005: The runner image builds again: it no longer copies `go.work`, which lists Go modules the image does not carry (`e2e/netsim`), and builds with `GOWORK=off` on the module's own `replace` directives.
+
 ## 0.2.0
 
 ### Minor Changes
