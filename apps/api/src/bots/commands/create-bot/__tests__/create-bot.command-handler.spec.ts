@@ -8,6 +8,7 @@ import {
 } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
+import { NewBotProviderResolver } from '../../../application/new-bot-provider.resolver';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../../database/bot-group.repository.port';
 import type { BotEntity } from '../../../domain/bot.entity';
@@ -62,7 +63,7 @@ function setup(names: string[] = [], keyed: BotProvider[] = []) {
     bots as unknown as BotRepositoryPort,
     groups as unknown as BotGroupRepositoryPort,
     hosts,
-    credentials,
+    new NewBotProviderResolver(credentials),
   );
   const written = () => {
     const [bot, documents] = bots.insert.mock.calls[0] as [BotEntity, BotDocumentEntity[]];

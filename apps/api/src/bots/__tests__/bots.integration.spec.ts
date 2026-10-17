@@ -3,6 +3,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
@@ -559,7 +560,7 @@ describe('bots (integration)', () => {
         {
           assertUsable: async () => ({ probedTools: null }),
         },
-        { findAll: async () => [] },
+        new NewBotProviderResolver({ findAll: async () => [] }),
       );
 
     it('marks it as its creator’s, and keeps it, unmarked, when the creator is deleted', async () => {
@@ -620,7 +621,7 @@ describe('bots (integration)', () => {
         {
           assertUsable: async () => ({ probedTools: null }),
         },
-        { findAll: async () => [] },
+        new NewBotProviderResolver({ findAll: async () => [] }),
       );
       await expect(
         racing.execute(
