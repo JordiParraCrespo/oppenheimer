@@ -27,16 +27,17 @@ const PROVIDER_OF_MARK: ReadonlyMap<string, BotProvider> = new Map(
 
 /**
  * The model button's groups: one per provider the workspace has a key or a
- * sign-in for, with that provider's models, in catalog order. The bot's own
- * provider is always there, set up or not, so the button still names its
- * model; the composer says where to add the missing key.
+ * sign-in for, with that provider's models, in catalog order. A provider
+ * with no key is never offered beside one that has; only when none has a
+ * key is the bot's own provider there, so the button still names its model
+ * and the composer says where to add the missing key.
  */
 export function botProviderOptions(
   configured: readonly BotProvider[],
   current: BotProvider,
 ): AgentOption[] {
-  const offered = BOT_PROVIDERS.filter(
-    (provider) => provider === current || configured.includes(provider),
+  const offered = BOT_PROVIDERS.filter((provider) =>
+    configured.length > 0 ? configured.includes(provider) : provider === current,
   );
   return offered.map((provider) => {
     const definition = BOT_PROVIDER_CATALOG[provider];
@@ -46,6 +47,19 @@ export function botProviderOptions(
       models: definition.models.map((model) => ({ value: model.id, label: model.label })),
     };
   });
+}
+
+/**
+ * Where a bot whose provider has no key moves: the first provider, in
+ * catalog order, that has one. Undefined when its own has a key, or when
+ * none does and there is nowhere to go.
+ */
+export function keyedProviderFor(
+  configured: readonly BotProvider[],
+  current: BotProvider,
+): BotProvider | undefined {
+  if (configured.includes(current)) return undefined;
+  return BOT_PROVIDERS.find((provider) => configured.includes(provider));
 }
 
 /** The provider a pick in the model button belongs to; undefined for a mark no provider is drawn with. */

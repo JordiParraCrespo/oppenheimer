@@ -1,14 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { BOT_AVATAR_COLORS, botSoulFor } from '@oppenheimer/shared';
+import {
+  BOT_AVATAR_COLORS,
+  type BotProvider,
+  botDefaultModel,
+  botSoulFor,
+} from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
+import { NewBotProviderResolver } from '../../../application/new-bot-provider.resolver';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../../database/bot-group.repository.port';
 import type { BotEntity } from '../../../domain/bot.entity';
 import { BotEntity as Bot } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
+import type { ModelProviderCredentialEntity } from '../../../domain/model-provider-credential.entity';
 import { CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
@@ -31,7 +38,7 @@ const scope = (overrides: Partial<AccessScope> = {}): AccessScope => ({
   ...overrides,
 });
 
-function setup(names: string[] = []) {
+function setup(names: string[] = [], keyed: BotProvider[] = []) {
   const bots = {
     namesIn: vi.fn(async () => names),
     insert: vi.fn<BotRepositoryPort['insert']>(async () => 'saved'),
@@ -47,10 +54,16 @@ function setup(names: string[] = []) {
   const hosts = {
     assertUsable: vi.fn<HostAccessPort['assertUsable']>(async () => ({ probedTools: null })),
   } satisfies HostAccessPort;
+  const credentials = {
+    findAll: vi.fn(async () =>
+      keyed.map((provider) => ({ provider }) as ModelProviderCredentialEntity),
+    ),
+  };
   const handler = new CreateBotCommandHandler(
     bots as unknown as BotRepositoryPort,
     groups as unknown as BotGroupRepositoryPort,
     hosts,
+    new NewBotProviderResolver(credentials),
   );
   const written = () => {
     const [bot, documents] = bots.insert.mock.calls[0] as [BotEntity, BotDocumentEntity[]];
@@ -60,6 +73,30 @@ function setup(names: string[] = []) {
 }
 
 describe('CreateBotCommandHandler', () => {
+  it('starts a bot with no provider named on one the workspace has a key for', async () => {
+    const { handler, written } = setup([], ['openai']);
+    await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
+    expect(written().bot.provider).toBe('openai');
+  });
+
+  it('keeps Anthropic when it has a key, when no provider has one, or when a model is named', async () => {
+    for (const [keyed, model] of [
+      [['glm', 'anthropic'], undefined],
+      [[], undefined],
+      [['openai'], botDefaultModel('anthropic').id],
+    ] as const) {
+      const { handler, written } = setup([], [...keyed]);
+      await handler.execute(new CreateBotCommand({ scope: scope(), input: {}, model }));
+      expect(written().bot.provider).toBe('anthropic');
+    }
+  });
+
+  it('keeps the provider it is given, key or none', async () => {
+    const { handler, written } = setup([], ['openai']);
+    await handler.execute(new CreateBotCommand({ scope: scope(), input: { provider: 'glm' } }));
+    expect(written().bot.provider).toBe('glm');
+  });
+
   it('gives a blank bot a first name the workspace does not have yet, on the next colour', async () => {
     const { handler, written } = setup(['Juno', 'Release manager']);
     await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
