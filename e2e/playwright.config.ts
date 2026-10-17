@@ -12,6 +12,8 @@ import { defineConfig, devices } from '@playwright/test';
 export const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 export const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
 const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+/** What `pnpm screens` photographs: routes, and `spec:<name>` throwaway specs. */
+const SCREENS = (process.env.SCREENS ?? '').split(/[\s,]+/).filter(Boolean);
 /**
  * The browser every project that opens a page uses. An environment that
  * already ships a Chromium — a container image, a sandbox — says where it is
@@ -121,14 +123,20 @@ export default defineConfig({
       },
     },
     // Screenshots for a pull request (`tests/screens`), not a test: opt-in
-    // with `SCREENS`, which names the routes, or `SCREENS_SPECS`, set when
-    // `pnpm screens --spec` runs a throwaway spec from `tests/screens/local`,
-    // so `e2e` and `e2e:web` never select it.
-    ...(process.env.SCREENS || process.env.SCREENS_SPECS
+    // with `SCREENS`, which names the routes (what `screens` in package.json
+    // is for), so `e2e` and `e2e:web` never select it. A throwaway spec in
+    // `tests/screens/local` runs only when `SCREENS` names it as `spec:<name>`.
+    ...(SCREENS.length > 0
       ? [
           {
             name: 'screens',
             testDir: './tests/screens',
+            testMatch: [
+              '**/screens/screens.spec.ts',
+              ...SCREENS.filter((entry) => entry.startsWith('spec:')).map(
+                (entry) => `**/screens/local/${entry.slice('spec:'.length)}.spec.ts`,
+              ),
+            ],
             use: { ...chromium, baseURL: WEB_URL, ignoreHTTPSErrors: true },
           },
         ]

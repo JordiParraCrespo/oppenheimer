@@ -16,7 +16,7 @@ leaves the checkout's `.env` and any running Postgres and Redis alone. It
 does not need Docker: it uses a Postgres and a Redis already listening on
 5432 and 6379, and starts them with Docker only when nothing is. On a
 machine with neither (a cloud sandbox), start the local ones first —
-`service postgresql start && service redis-server start`, with an
+`service postgresql start`, then `service redis-server start`, with an
 `oppenheimer` role and database matching `.env.example`'s `DB_*` — and run
 it. Try it before deciding the stack cannot run here. The
 API's log is `.stack/api.log`, which is where the suites read it by default.
@@ -27,13 +27,13 @@ API's log is `.stack/api.log`, which is where the suites read it by default.
 | --- | --- |
 | API routes, sessions, hosts, pairing | `pnpm --filter @oppenheimer/e2e e2e:api` |
 | The runner's side of the link, the relay | `cd apps/api && RELAY_E2E=1 pnpm exec vitest run src/relay/__tests__/relay.e2e.spec.ts` (no stack needed) |
-| Several hosts, sessions on a real runner, flow control, the console's terminal | `FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet` (see `e2e/README.md` for the specs that need `--web`) |
+| Several hosts, sessions on a real runner, flow control, the console's terminal | `pnpm --filter @oppenheimer/e2e e2e:fleet:local` (see `e2e/README.md` for the specs that need `--web`) |
 | How the terminal feels over real-world links (latency, jitter, loss, slow uplinks), relay vs direct path | `pnpm --filter @oppenheimer/e2e e2e:netsim` with the stack up `--web` (Linux, root; the `/netsim` skill) |
 
-`FLEET_HOSTS=local` runs the fleet's hosts on this machine, which is what a
+`e2e:fleet:local` runs the fleet's hosts on this machine, which is what a
 machine that cannot build the fleet's image needs; a test that needs a host
 to lose its network alone skips there. Where Docker can build the image,
-drop the variable and the same suite runs every host in a container.
+`e2e:fleet` runs the same suite with every host in a container.
 
 In an environment that ships its own Chromium, point Playwright at it with
 `PLAYWRIGHT_CHROMIUM_PATH`.
@@ -70,9 +70,8 @@ after the pictures means taking them again.
    A state an empty account cannot reach (a dialog open, a row's menu, a
    host online) is a throwaway spec: write it with the Write tool straight
    to `e2e/tests/screens/local/<name>.spec.ts` (git-ignored, outside
-   Biome and the typecheck) and run it with `pnpm screens --spec <name>`,
-   alone or after routes (`pnpm screens /sessions --spec dialog`; only a
-   run that names routes empties `.screenshots/`). It imports the helpers
+   Biome and the typecheck) and name it among the routes as `spec:<name>`:
+   `pnpm screens /sessions spec:dialog`. It imports the helpers
    from `../../../support/` and saves into the repo's `.screenshots/`:
 
    ```ts
@@ -91,26 +90,10 @@ after the pictures means taking them again.
    Leave the file there; there is nothing to clean up. Never write it
    elsewhere and copy, `sed` or `rm` it into place.
 
-   **No prompts.** `.claude/settings.json` allows, exactly: `node
-   scripts/stack/stack.mjs up|status|down`, `pnpm screens …`, `pnpm
-   --filter @oppenheimer/e2e e2e:…` (also with `FLEET_HOSTS=local` in
-   front), `service postgresql start` / `service redis-server start`,
-   reading `.stack/`, and reading or writing `.screenshots/` and
-   `e2e/tests/screens/local/`. Keep to those spellings, one command per
-   call: chaining with `&&`, piping into `grep`/`tail`, a `cd` first, a
-   `timeout` or an env variable in front makes it a different command and
-   it asks. Read the output as it comes, or the log in `.stack/`.
-3. Look at every picture yourself (read the PNG). The change has to be
-   visible in it and nothing else has to look broken: clipped text, an
-   overflow, a dark-mode colour that vanishes. Fix what you find and take
-   them again.
-4. Show them to the user: send the files (`SendUserFile`, or the session's
-   way of attaching a file) with a line on what each one shows. Where no
-   such tool exists, list the paths.
-5. Give the pull request a `## Screenshots` section: the routes, the
-   widths and themes, the commit from `manifest.json`, and what a reviewer
-   should look at in each. The images stay in the session; they are not
-   committed or uploaded.
+   **No prompts.** Every command this skill names but the relay row is
+   allowed in `.claude/settings.json`; run each as written, one per call. Chaining
+   with `&&`, a pipe, a `cd` first or a variable in front makes a different
+   command, and that one asks.
 
 A change in those paths that does not show on screen (a renamed prop, a
 hook's internals) skips this: say why with

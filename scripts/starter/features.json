@@ -112,8 +112,6 @@
           "path": "permissions.allow",
           "remove": [
             "Bash(pnpm --filter @oppenheimer/e2e e2e:*)",
-            "Bash(FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:*)",
-            "Read(e2e/tests/screens/local/**)",
             "Write(e2e/tests/screens/local/**)",
             "Edit(e2e/tests/screens/local/**)"
           ]
