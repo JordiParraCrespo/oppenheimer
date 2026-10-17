@@ -212,6 +212,7 @@
       "SESSIONS_019": "An attached file expired before the session started. Send again to upload it anew.",
       "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
       "HOSTS_007": "No file is waiting for that command.",
+      "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
       "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
       "AUTOMATIONS_002": "Choose a workspace before working with automations.",
       "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
