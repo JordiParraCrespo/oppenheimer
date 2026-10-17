@@ -692,6 +692,28 @@ gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
+## Voice
+
+Dictation: a recording in, the text it says out, heard by the workspace's
+ChatGPT sign-in or the deployment's own speech-to-text server
+(`VOICE_STT_*`). See `product/next-steps/voice.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `VOICE_001` <a id="voice_001" />     | Dictation needs an active workspace                          | 400  |
+| `VOICE_002` <a id="voice_002" />     | No audio was sent                                            | 400  |
+| `VOICE_003` <a id="voice_003" />     | The recording is too long                                    | 413  |
+| `VOICE_004` <a id="voice_004" />     | The recording is not 16-bit PCM WAV                          | 415  |
+| `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
+| `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
+| `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
+
+`VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
+(Settings → Model providers), or give the deployment a speech-to-text server.
+A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
+falls back to the deployment's server when there is one; a rate limit
+(`VOICE_007`, with `Retry-After`) does not.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or

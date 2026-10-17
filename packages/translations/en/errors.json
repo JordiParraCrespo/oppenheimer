@@ -219,7 +219,14 @@
     "SESSIONS_028": "That folder doesn’t exist on the host.",
     "SESSIONS_029": "That path is a file, not a folder.",
     "SESSIONS_030": "That folder can’t be read on the host.",
-    "SESSIONS_031": "The host didn’t answer in time. Try again."
+    "SESSIONS_031": "The host didn’t answer in time. Try again.",
+    "VOICE_001": "Dictation needs a workspace. Open one and try again.",
+    "VOICE_002": "Nothing was recorded. Try dictating again.",
+    "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
+    "VOICE_004": "That recording couldn’t be read. Try dictating again.",
+    "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
+    "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
+    "VOICE_007": "Too many dictations for now. Try again in a moment."
   },
   "notFound": {
     "title": "That page does not exist",

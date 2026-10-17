@@ -258,6 +258,45 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 | 3 | Dictate everywhere | Task dialog, task composer, terminal paste, the hold-to-talk hotkey, a personal dictionary (words and replacements) | Talking to a running agent works the way the composer does |
 | 4 | Later | Streaming partials; mobile/PWA (0.5) where voice beats a phone keyboard; Slack voice notes (0.4); a runner-side `whisper.cpp` so audio never leaves your host | — |
 
+## Slice 1 as built (2026-10-17)
+
+Dictation into New session's composer, end to end. Where the build differs
+from the plan above, the build is the decision; the plan stays as written.
+
+- **The recording is WAV, not `MediaRecorder`.** The browser records with
+  Web Audio and encodes 16 kHz mono 16-bit PCM itself
+  (`apps/web/src/features/sessions/lib/wav.ts`), because ChatGPT's
+  dictation route has refused Ogg/Opus and every OpenAI-compatible server
+  takes WAV. The API takes WAV only, judged by its bytes (`VOICE_004`).
+- **No new scope.** `POST /v1/voice/transcriptions` asks what creating a
+  session asks (`create Session`, `sessions:write`): dictation writes a
+  session's first task. A `voice:*` scope comes with the first surface that
+  is not a session.
+- **The recorder lives in the sessions feature**, not the platform kit:
+  the kit takes a piece when a second feature needs it, and only New
+  session has a mic so far. `useDictation`, the meter and the WAV encoder
+  move to the kit with slice 3. The design system's `Composer` gained a
+  `recorder` slot, where `VoiceRecorderBar` takes the foot row's place
+  without changing the box's height.
+- **The mic shows only when someone can hear it**: `voice_dictation` on
+  (a release flag, default on, expiring 2027-04-30) and either the
+  workspace's ChatGPT sign-in or the deployment's `voice_transcription`
+  capability (`VOICE_STT_*`).
+- **The vocabulary comes from the console**: the project, repository and
+  host names New session has loaded, cut to the API's limits by the same
+  `vocabularyTerms` the API reads them with.
+- **The text is appended to the draft**, not inserted at the caret, and
+  never sent on its own.
+
+Verified on the local stack: `e2e/tests/api/voice.spec.ts` (a WAV through
+the API to the stub speech server and its tidy) and
+`e2e/tests/web/dictation.spec.ts` (Chromium's fake microphone, the
+recorder, the tidied text in the composer). ChatGPT's own route is covered
+by the gateway spec against a `fetch` double only: no run here can sign in
+to ChatGPT, so whether the route answers a server that names itself is
+still slice 0's question, and the first real dictation on a signed-in
+workspace answers it.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake

@@ -42,7 +42,8 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * The foot row reads scope of action, then engine: attach and `tools` (the
  * permission level) on the left; a spacer; `engine` (agent, model, effort) on
  * the right; then mic and the round primary send. Both slots take
- * `ComposerToolButton`s. Attachments list under the textarea as removable
+ * `ComposerToolButton`s. While dictating, `recorder` (a `VoiceRecorderBar`)
+ * takes the foot row's place. Attachments list under the textarea as removable
  * chips; they are never silently dropped.
  *
  * `sendBlockedReason` keeps the box usable but the send off, and says why
@@ -79,6 +80,7 @@ function Composer({
   onAttach,
   onRecord,
   recording = false,
+  recorder,
   tools,
   engine,
   scope,
@@ -110,6 +112,11 @@ function Composer({
   /** Present: shows the mic button. */
   onRecord?: () => void;
   recording?: boolean;
+  /**
+   * While dictating, the `VoiceRecorderBar`: it takes the foot row's place,
+   * so cancel and stop sit where the mic and send were.
+   */
+  recorder?: React.ReactNode;
   /** Controls after attach: what the run may touch (the permission level). */
   tools?: React.ReactNode;
   /** Controls before the mic: who drives it and how hard it thinks (agent, model, effort). */
@@ -196,6 +203,13 @@ function Composer({
             ))}
           </div>
         ) : null}
+        {recorder ? (
+          // The bar is 16px taller than the foot row it replaces; it takes
+          // that from the field's bottom padding, so the box keeps its height.
+          <div data-slot="composer-recorder" className="-mt-4 px-2.5 pb-2.5">
+            {recorder}
+          </div>
+        ) : (
         <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
           {onAttach ? (
             <IconButton
@@ -242,6 +256,7 @@ function Composer({
             )}
           </ComposerSendButton>
         </div>
+        )}
       </div>
     </ComposerFrame>
   );

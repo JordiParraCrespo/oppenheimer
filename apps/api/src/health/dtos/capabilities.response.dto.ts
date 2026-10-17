@@ -29,6 +29,12 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   bot_providers!: boolean;
 
   @ApiProperty({
+    description:
+      'The deployment has its own speech-to-text server, so a workspace not signed in to ChatGPT can dictate.',
+  })
+  voice_transcription!: boolean;
+
+  @ApiProperty({
     nullable: true,
     type: String,
     example: 'https://github.com/apps/oppenheimer/installations/new',

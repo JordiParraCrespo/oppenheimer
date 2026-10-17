@@ -104,6 +104,28 @@ export const FEATURE_FLAGS = {
     bucketBy: 'user',
     expiresAt: '2027-04-30',
   },
+  /**
+   * Dictation in the console (`product/next-steps/voice.md`): the composer's
+   * mic records, the API transcribes on the workspace's ChatGPT sign-in or
+   * the deployment's speech key, and the text lands in the field to read
+   * before sending. Read by the console, which shows the mic only while it is
+   * on, and by `POST /v1/voice/transcriptions`.
+   *
+   * Default `true`, like `terminal_typeahead`: the console has no flags
+   * screen to switch it on from, and nothing happens without a provider (the
+   * mic shows only where one is). It stays a release flag with an expiry: once
+   * the ChatGPT route has proved itself, the flag and its readers go.
+   */
+  voice_dictation: {
+    description: 'Dictate prompts into the console with the microphone.',
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    bucketBy: 'user',
+    expiresAt: '2027-04-30',
+  },
 } as const satisfies Record<string, FlagDefinition>;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

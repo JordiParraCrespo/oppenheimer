@@ -5,10 +5,13 @@ import {
   SESSION_FILE_MAX_BYTES,
   sessionFileOffered,
 } from '@oppenheimer/shared/protocol';
+import { VOICE_MAX_SECONDS, VOICE_SAMPLE_RATE } from '@oppenheimer/shared/schemas/voice';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDictation } from '../hooks/use-dictation';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
+import { DictationBar } from './dictation-bar';
 
 /** One file the composer holds, keyed so two files with one name stay two chips. */
 interface HeldFile {
@@ -32,6 +35,13 @@ interface HeldFile {
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
  * the New session draft's store.
+ *
+ * With `dictation` the mic is on (`product/next-steps/voice.md`): the
+ * recording takes the composer's foot, is handed to `dictation.transcribe`
+ * when it stops, and what comes back is added to the end of the draft, to be
+ * read before it is sent. A microphone the browser refuses is said under the
+ * field, like a refused file; a transcription that fails is the caller's to
+ * show.
  */
 export function NewSessionComposer({
   onSubmit,
@@ -41,6 +51,7 @@ export function NewSessionComposer({
   scope,
   tools,
   engine,
+  dictation,
 }: {
   onSubmit: (text: string, files: File[]) => void;
   busy?: boolean;
@@ -50,12 +61,34 @@ export function NewSessionComposer({
   scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
+  /** Present: the mic is on. `transcribe` answers the recording's text, or null when it failed. */
+  dictation?: { transcribe: (wav: Blob) => Promise<string | null>; transcribing: boolean };
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<HeldFile[]>([]);
   const [refusal, setRefusal] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const recorder = useDictation({
+    sampleRate: VOICE_SAMPLE_RATE,
+    maxSeconds: VOICE_MAX_SECONDS,
+    onRecorded: async (wav) => {
+      const text = await dictation?.transcribe(wav);
+      if (text) setDraft((held) => (held.trim() ? `${held.trimEnd()} ${text}` : text));
+    },
+  });
+  const recorderState = dictation?.transcribing
+    ? 'transcribing'
+    : recorder.state === 'idle'
+      ? null
+      : recorder.state;
+  const micRefusal = recorder.failure
+    ? t(
+        recorder.failure === 'denied'
+          ? 'sessions.new.dictation.denied'
+          : 'sessions.new.dictation.unavailable',
+      )
+    : null;
 
   function hold(incoming: File[]) {
     const accepted: HeldFile[] = [];
@@ -115,6 +148,8 @@ export function NewSessionComposer({
           send: t('sessions.new.composer.send'),
           stop: t('sessions.new.composer.stop'),
           attach: t('sessions.new.composer.attach'),
+          dictate: t('sessions.new.dictation.dictate'),
+          stopRecording: t('sessions.new.dictation.stop'),
           removeAttachment: (name) => t('sessions.new.composer.removeAttachment', { name }),
         }}
         attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
@@ -124,6 +159,22 @@ export function NewSessionComposer({
         }}
         onAttach={() => picker.current?.click()}
         onPaste={onPaste}
+        onRecord={
+          dictation
+            ? () => (recorder.state === 'recording' ? recorder.stop() : recorder.start())
+            : undefined
+        }
+        recording={recorder.state === 'recording'}
+        recorder={
+          recorderState ? (
+            <DictationBar
+              meter={recorder.meter}
+              state={recorderState}
+              onStop={recorder.stop}
+              onCancel={recorder.cancel}
+            />
+          ) : undefined
+        }
         scope={scope}
         tools={tools}
         engine={engine}
@@ -140,7 +191,9 @@ export function NewSessionComposer({
           // and its files where their author can fix them and send again.
         }}
       />
-      {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}
+      {(refusal ?? micRefusal) ? (
+        <FieldError className="mx-4.5">{refusal ?? micRefusal}</FieldError>
+      ) : null}
     </div>
   );
 }
