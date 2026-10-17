@@ -6,14 +6,20 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { BotPermission } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
-import { BOT_GROUP_REPOSITORY, BOT_REPOSITORY } from '../../bots.di-tokens';
+import {
+  BOT_GROUP_REPOSITORY,
+  BOT_REPOSITORY,
+  MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
+} from '../../bots.di-tokens';
 import type { BotCreatorCheck, BotRepositoryPort } from '../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
+import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';
 import { BotEntity } from '../../domain/bot.entity';
 import { userActor } from '../../domain/bot.types';
 import {
   BotLooserThanCreatorException,
   permissionForBotMadeBy,
+  providerForNewBot,
 } from '../../domain/bot-creation.policy';
 import { BotDocumentEntity } from '../../domain/bot-document.entity';
 import { avatarColorFor, nameForNewBot } from '../../domain/bot-naming.policy';
@@ -25,6 +31,7 @@ import { CreateBotCommand } from './create-bot.command';
  * on the next avatar colour, last in its group. It is born with a `SOUL.md`
  * that says its name and an empty `INSTRUCTIONS.md`, both at revision 1, so
  * its history starts with its creation. A home host, when given, is one the caller may use.
+ * With no provider named it starts on one the workspace has a key for (`providerForNewBot`).
  *
  * The optional fields set what the form does not: the engine, the level,
  * both documents, a creating bot and an idempotency key (`create_bot`,
@@ -41,6 +48,8 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     private readonly groups: BotGroupRepositoryPort,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
+    @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
+    private readonly credentials: Pick<ModelProviderCredentialRepositoryPort, 'findAll'>,
   ) {}
 
   async execute(command: CreateBotCommand): Promise<AggregateID> {
@@ -59,6 +68,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     const homeHostId = input.homeHostId ?? null;
     if (homeHostId) await this.hosts.assertUsable(scope, homeHostId);
 
+    const provider = await this.providerFor(scope, command);
     const taken = await this.bots.namesIn(scope);
     const bot = BotEntity.createNew({
       organizationId: scope.organizationId,
@@ -68,7 +78,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       avatarColor: input.avatarColor ?? avatarColorFor(taken.length),
       groupId,
       homeHostId,
-      provider: input.provider ?? 'anthropic',
+      provider,
       model: command.model,
       effort: command.effort,
       permission: command.permission,
@@ -114,5 +124,13 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       throw new BotLooserThanCreatorException();
     }
     return { botId: creator.id, permission: creator.permission };
+  }
+
+  /** The named provider; with none, one the workspace has a key for. A named model keeps Anthropic, whose model it is. */
+  private async providerFor(scope: AccessScope, command: CreateBotCommand) {
+    if (command.input.provider) return command.input.provider;
+    if (command.model) return providerForNewBot([]);
+    const keyed = await this.credentials.findAll(scope);
+    return providerForNewBot(keyed.map((credential) => credential.provider));
   }
 }

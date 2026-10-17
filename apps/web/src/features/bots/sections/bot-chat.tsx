@@ -16,6 +16,7 @@ import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
+import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
@@ -33,7 +34,8 @@ import { BotTranscript } from './bot-transcript';
  * The chips are made here, not in the composer, so the draft the composer
  * owns never re-renders them; and this section owns their save. The save
  * writes the pick into the bot it reads, so a picked value shows at once, a
- * refused one snaps back and says why above the box.
+ * refused one snaps back and says why above the box. A bot left on a provider
+ * with no key, while another has one, is moved onto it the same way.
  */
 export function BotChat({ botId }: { botId: string }) {
   const { t } = useTranslation();
@@ -42,6 +44,7 @@ export function BotChat({ botId }: { botId: string }) {
   const { data: bot, error } = useSuspenseBot(botId);
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
+  useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

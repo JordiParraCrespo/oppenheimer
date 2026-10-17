@@ -186,9 +186,15 @@ test('a model provider key from Settings, and a bot with no key moved onto it', 
   await expect(glm).toContainText('Key ending in 4821');
   await expect(page.getByText('zai-e2e-secret-4821')).toHaveCount(0);
 
-  // A bot made on Anthropic, which has no key, moves onto GLM, which has one,
-  // and the model button no longer offers Anthropic beside it.
-  const created = await owner.api.post('/api/v1/bots', { data: { name: 'Glm Bot' } });
+  // A new bot starts on GLM, the provider with a key.
+  const fresh = await owner.api.post('/api/v1/bots', { data: { name: 'Fresh Bot' } });
+  expect(((await fresh.json()) as { provider: string }).provider).toBe('glm');
+
+  // One left on Anthropic, which has no key, moves onto GLM when its chat
+  // opens, and the model button no longer offers Anthropic beside it.
+  const created = await owner.api.post('/api/v1/bots', {
+    data: { name: 'Glm Bot', provider: 'anthropic' },
+  });
   const botId = ((await created.json()) as { id: string }).id;
   await page.goto(`/bots/${botId}`);
   await expect(page.getByRole('button', { name: 'Model' })).toContainText('GLM-5.3');

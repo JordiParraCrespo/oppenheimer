@@ -553,9 +553,14 @@ describe('bots (integration)', () => {
     }
 
     const handler = () =>
-      new CreateBotCommandHandler(bots, groups, {
-        assertUsable: async () => ({ probedTools: null }),
-      });
+      new CreateBotCommandHandler(
+        bots,
+        groups,
+        {
+          assertUsable: async () => ({ probedTools: null }),
+        },
+        { findAll: async () => [] },
+      );
 
     it('marks it as its creator’s, and keeps it, unmarked, when the creator is deleted', async () => {
       const ada = await create('Ada');
@@ -609,9 +614,14 @@ describe('bots (integration)', () => {
         await dataSource.query(`UPDATE bot SET permission = 'auto' WHERE id = $1`, [ada.id]);
         return bots.namesIn(caller);
       };
-      const racing = new CreateBotCommandHandler(lowering, groups, {
-        assertUsable: async () => ({ probedTools: null }),
-      });
+      const racing = new CreateBotCommandHandler(
+        lowering,
+        groups,
+        {
+          assertUsable: async () => ({ probedTools: null }),
+        },
+        { findAll: async () => [] },
+      );
       await expect(
         racing.execute(
           new CreateBotCommand({
