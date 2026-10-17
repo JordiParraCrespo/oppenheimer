@@ -329,3 +329,40 @@ the default branch. In this mode:
 5. Add a comment only when something changed: new findings, resolved ones, a
    check that changed state, or a fix pull request opened or updated. List
    them by fingerprint and link the pull request. No comment on a quiet day.
+6. Answer the open fix pull request, after steps 3 to 5, on every run:
+   see **Answering the fix pull request** below.
+
+### Answering the fix pull request
+
+When a `frontend-audit/fix-*` pull request is open (the one this run pushed
+to, or one an earlier run opened), read its review threads, its reviews and
+its conversation comments on the current head. Review bots post minutes
+after a push, so a run usually answers the comments the previous run's push
+drew. Skip a comment that echoes the routine's own reply.
+
+First pass, the review threads whose last comment is not the routine's (a
+person's changes-requested review is answered the same way):
+
+| The comment asks for | Do | The thread |
+| --- | --- | --- |
+| A fix Step 3's constraints allow: a file the pull request already changes, a local change, a failure path you can trace from a real caller | Make it on the pull request's branch, run the Step 3 checks, commit by path, run `pnpm ci:local` (it refuses a dirty worktree), push, reply naming the commit | Resolve |
+| Anything else: deliberate, a guard the types need, outside Step 3's scope | Reply once with why it stays. When the reason is a change a person has to make, add it to the issue: a finding, or a line under **Rules to revisit** | Resolve |
+| A security finding | Reply as above | Leave open for a person |
+| A question | Answer it from the diff | Resolve |
+
+Second pass, the conversation comments not yet answered by the routine:
+handle each the same way, but reply with a conversation comment quoting it;
+there is no thread to resolve.
+
+Then:
+
+- Bring the default branch in (a merge commit) when the pull request has a
+  merge conflict.
+- When `ci:local` fails in code the pull request does not touch, re-run it
+  once; a second failure is real, and the reply says what is failing.
+- Rewrite the pull request body's single **Review status** section (one
+  line per thread or comment answered on the current head, and what
+  happened to it) and its `ci:local` report. Do not append a section per
+  round.
+- Leave a changes-requested review for its author to dismiss. The routine
+  never approves or merges its own pull request.
