@@ -9,5 +9,3 @@ export const HOST_METADATA_REPOSITORY = Symbol('HOST_METADATA_REPOSITORY');
 export const IP_GEOLOCATION = Symbol('IP_GEOLOCATION');
 /** The pre-`cache:` replay markers; one release only (see `LegacyReplayMarkerPort`). */
 export const LEGACY_REPLAY_MARKER = Symbol('LEGACY_REPLAY_MARKER');
-/** Sends `host.update` down a host's link (`HostUpdatePort`); bound by `LinksModule`. */
-export const HOST_UPDATE = Symbol('HOST_UPDATE');
