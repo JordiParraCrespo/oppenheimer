@@ -508,7 +508,7 @@ function SidebarProjectHeader({
       data-current={current || undefined}
       data-tone={tone}
       className={cn(
-        'group/project relative mx-1.5 flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-1.5 transition-colors duration-fast hover:bg-hover-surface',
+        'group/project relative mb-1.5 flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-2.5 transition-colors duration-fast hover:bg-hover-surface',
         sortable && 'touch-none',
         className,
       )}
@@ -571,7 +571,8 @@ function SidebarEmptyRow({ className, ...props }: React.ComponentProps<'p'>) {
  * SidebarEmptyCard — a list with nothing of the reader's own yet (Employees
  * before the first bot): on the hover wash at the 14px radius, the title at
  * 13.5px medium, a line on what will appear and how, and the one action that
- * starts it. Built-in rows can still list under it.
+ * starts it. Built-in rows can still list under it. It sits on the list's
+ * 12px column, the inset `SidebarProjectGroup` gives the groups under it.
  */
 function SidebarEmptyCard({
   title,
@@ -583,7 +584,7 @@ function SidebarEmptyCard({
   return (
     <div
       data-slot="sidebar-empty-card"
-      className={cn('mx-1.5 mt-2 flex flex-col gap-2 rounded-md bg-hover-surface p-3.5', className)}
+      className={cn('mx-3 mt-2 flex flex-col gap-2 rounded-md bg-hover-surface p-3.5', className)}
       {...props}
     >
       <span className="text-[13.5px] font-medium text-fg">{title}</span>
