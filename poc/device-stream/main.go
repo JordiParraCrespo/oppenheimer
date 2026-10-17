@@ -84,7 +84,7 @@ func main() {
 	flag.StringVar(&cfg.worktrees, "worktrees", filepath.Join(os.TempDir(), "device-stream-worktrees"), "where session worktrees live")
 	flag.IntVar(&cfg.firstPort, "first-port", 5556, "first emulator console port handed to a new session")
 	flag.IntVar(&cfg.maxSessions, "max-sessions", 2, "devices this host may run at once")
-	emuArgs := flag.String("emulator-args", "-no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect", "extra emulator flags")
+	emuArgs := flag.String("emulator-args", "-no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -feature MultiDisplay", "extra emulator flags")
 	flag.Parse()
 	cfg.emulatorArgs = strings.Fields(*emuArgs)
 
@@ -182,11 +182,14 @@ func (h *host) freePortLocked() int {
 
 func (h *host) start(s *session) {
 	ctx := context.Background()
+	// A failed start tears down whatever it started, so a partial boot does
+	// not leave an AVD or an emulator running until someone removes it.
 	fail := func(err error) {
 		h.log.Error("session failed", "session", s.ID, "err", err)
 		h.mu.Lock()
 		s.State, s.Error = "failed", err.Error()
 		h.mu.Unlock()
+		h.teardown(s)
 	}
 
 	if s.owned {
@@ -459,20 +462,32 @@ func (h *host) remove(w http.ResponseWriter, r *http.Request) {
 		problem(w, http.StatusNotFound, "no session with that id")
 		return
 	}
-	if s.streamer != nil {
-		s.streamer.Process.Kill()
+	h.teardown(s)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// teardown stops what a session started: the streamer, and when the session
+// created its device, the emulator and the AVD. It is safe on a session whose
+// start stopped part-way.
+func (h *host) teardown(s *session) {
+	h.mu.Lock()
+	streamer, emulator := s.streamer, s.emulator
+	h.mu.Unlock()
+	if streamer != nil {
+		streamer.Process.Kill()
+		streamer.Wait()
 	}
 	if s.owned {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		h.adb(ctx, s.Serial, "emu", "kill")
-		if s.emulator != nil {
-			s.emulator.Wait()
+		if emulator != nil {
+			emulator.Process.Kill()
+			emulator.Wait()
 		}
 		exec.CommandContext(ctx, filepath.Join(h.cfg.sdk, "cmdline-tools", "latest", "bin", "avdmanager"), "delete", "avd", "-n", s.AVD).Run()
 	}
 	os.RemoveAll(s.Worktree)
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func clamp(v float64) float64 { return min(1, max(0, v)) }

@@ -29,10 +29,11 @@ before we ship anything that leans on it.
   a device clones and boots a simulator or emulator, stores its id with the
   session, and deletes it with the session. A host caps how many it runs.
   No device is shared, so no claim protocol is needed.
-- **The agent is pinned to it.** Argent's own rule picks the device the
-  user names before any other, so a `CLAUDE.local.md` line in the worktree
-  naming the id is enough; `ANDROID_SERIAL` in the tmux environment pins
-  plain `adb` too. This is a convention the agent follows, not a fence.
+- **The agent is told which device is its own.** The POC does it with a
+  `CLAUDE.local.md` line naming the id (Argent's own rule picks the device
+  the user names before any other) and `ANDROID_SERIAL` for plain `adb`.
+  That is a convention the agent follows, not a fence, and one option among
+  those in open question 4, not the design.
 - **The reader sees and touches it from the console.** The runner runs
   Argent's stream server for that one device and carries frames and input
   over the link as one more attachment kind; input names the session and
@@ -76,3 +77,14 @@ with 4 cores and no KVM, on an Android 10 emulator in software:
 3. Where the stream rides: the relay is simple but carries several Mbps per
    viewer as MJPEG; the direct path wants H.264, and Argent's server serves
    only MJPEG (it decodes the H.264 an Android device sends it).
+4. How far the agent is held to its device: the instruction alone, a
+   session environment that can only reach its own device (an adb server
+   per session, Argent's tool-server per session or behind a proxy that
+   rewrites `udid`), or tools that refuse other ids.
+5. The device module owns the whole lifecycle in one place: whatever a
+   start created (AVD, emulator, streamer) is torn down when any later step
+   fails, as well as when the session ends. The POC does this in
+   `teardown`; a session removed while it is still booting is not covered.
+
+Until 1, 3 and 4 are answered, nothing here (Argent's `simulator-server`,
+MJPEG, the `CLAUDE.local.md` pin) is a design to build on.

@@ -96,6 +96,10 @@ field), built by `demo-app/build.sh` with the SDK's tools and no Gradle.
 
 - The relay and the direct path: the stream is a local HTTP proxy.
 - Auth: the server listens on 127.0.0.1 and trusts whoever reaches it.
+- A failed start tears down what it started (`teardown`), but a session
+  removed while it is still booting races the boot that is under way.
+- The agent pin is an instruction, not a fence: nothing stops an agent from
+  passing another serial to Argent.
 - A session that creates its own AVD (`POST /api/sessions` without
   `serial`) is written but was not run: a second software-emulated device
   did not fit in 4 cores.
