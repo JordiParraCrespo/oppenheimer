@@ -25,17 +25,21 @@ function newestSent(root: HTMLElement): string | undefined {
  * message pins it too, known by the newest sent message's id changing (each
  * `ChatUserMessage` carries `data-message-id`): you want to see the answer
  * to what you just asked.
- * The first layout opens at the bottom.
+ * The first layout opens at the bottom. Between `hold(true)` and
+ * `hold(false)` something else owns the scroll (the glide of a message you
+ * sent, `useSentGlide`) and this hook does not follow.
  */
 export function useStickToBottom(): {
   scroller: RefObject<HTMLDivElement | null>;
   content: RefObject<HTMLDivElement | null>;
+  hold: (owning: boolean) => void;
   atLatest: boolean;
   toLatest: () => void;
 } {
   const scroller = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  const held = useRef(false);
   const [atLatest, setAtLatest] = useState(true);
 
   // Watches the transcript's size and the reader's scroll, DOM state outside React.
@@ -58,7 +62,7 @@ export function useStickToBottom(): {
       const newest = newestSent(inner);
       if (newest !== sent) pinned.current = true;
       sent = newest;
-      if (pinned.current) box.scrollTop = box.scrollHeight;
+      if (pinned.current && !held.current) box.scrollTop = box.scrollHeight;
       setAtLatest(pinned.current || near());
     });
     box.addEventListener('scroll', onScroll, { passive: true });
@@ -70,6 +74,10 @@ export function useStickToBottom(): {
     };
   }, []);
 
+  const hold = (owning: boolean) => {
+    held.current = owning;
+  };
+
   const toLatest = () => {
     const box = scroller.current;
     if (!box) return;
@@ -79,5 +87,5 @@ export function useStickToBottom(): {
     box.scrollTo({ top: box.scrollHeight, behavior: instant ? 'auto' : 'smooth' });
   };
 
-  return { scroller, content, atLatest, toLatest };
+  return { scroller, content, hold, atLatest, toLatest };
 }
