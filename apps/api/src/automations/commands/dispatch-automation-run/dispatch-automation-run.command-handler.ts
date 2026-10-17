@@ -1,24 +1,22 @@
 import { Inject, Logger } from '@nestjs/common';
-import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
-import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
-import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
-import { RunDispatchResolver } from '../../application/run-dispatch.resolver';
+import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import {
+  type DispatchDecision,
+  RunDispatchResolver,
+} from '../../application/run-dispatch.resolver';
 import { AUTOMATION_REPOSITORY, AUTOMATION_RUN_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import type { AutomationEntity } from '../../domain/automation.entity';
 import type { AutomationRunEntity } from '../../domain/automation-run.entity';
-import { runRefusalOf } from '../../domain/run-refusal.policy';
 import { DispatchAutomationRunCommand } from './dispatch-automation-run.command';
 
 /**
- * Dispatch: the guards decide, and a run that passes becomes a session created
- * **as the automation's owner**, through the same command a person's session
- * goes through (§Q5). The session's idempotency key is the run's id, so a job
- * the queue runs twice — or a crash between the create and the write below —
- * finds the session already made instead of making a second.
+ * Dispatch: the guards decide, and a run that passes is launched by its
+ * automation's target **as the owner** (§Q5, `26-bot-routines.md` §3) — a
+ * session today. The target's launch is idempotent on the run's id, so a job
+ * the queue runs twice — or a crash between the launch and the write below —
+ * finds what it launched instead of launching a second.
  */
 @CommandHandler(DispatchAutomationRunCommand)
 export class DispatchAutomationRunCommandHandler
@@ -32,7 +30,6 @@ export class DispatchAutomationRunCommandHandler
     @Inject(AUTOMATION_REPOSITORY)
     private readonly automations: AutomationRepositoryPort,
     private readonly resolver: RunDispatchResolver,
-    private readonly commandBus: CommandBus,
   ) {}
 
   async execute(command: DispatchAutomationRunCommand): Promise<string> {
@@ -63,38 +60,29 @@ export class DispatchAutomationRunCommandHandler
         await this.runs.save(run, correlationId);
         return 'deferred';
       case 'launch':
-        return this.launch(run, automation, decision.scope, decision.input, now, correlationId);
+        return this.launch(run, automation, decision, now, correlationId);
     }
   }
 
   private async launch(
     run: AutomationRunEntity,
     automation: AutomationEntity,
-    scope: AccessScope,
-    input: CreateSessionCommand['input'],
+    { target, launch, refusalOf }: Extract<DispatchDecision, { kind: 'launch' }>,
     now: Date,
     correlationId: string,
   ): Promise<string> {
     try {
-      const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-        new CreateSessionCommand({
-          scope,
-          userId: automation.ownerUserId,
-          input,
-          idempotencyKey: `automation-run:${run.id}`,
-          origin: 'automation',
-        }),
-      );
-      run.dispatched(result.sessionId, automation.revision.id, new Date());
+      run.dispatched(await launch(), automation.revision.id, new Date());
       await this.runs.save(run, correlationId);
       return 'dispatched';
     } catch (error) {
-      const refusal = runRefusalOf(error instanceof AppError ? error.code : undefined);
+      const refusal = refusalOf(error);
       if (!refusal) throw error; // a fault, not a refusal: the queue retries it
       this.logger.warn({
         message: 'An automation run was refused at dispatch',
         runId: run.id,
-        code: (error as AppError).code,
+        target,
+        code: (error as { code?: string }).code,
       });
       run.skip(refusal.reason);
       await this.runs.save(run, correlationId);

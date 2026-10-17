@@ -1,6 +1,7 @@
 # 26 — Bot routines: how a bot wakes on its own
 
-**Decided 2026-10-16, in review; built in the slices of §7.** Note 25
+**Decided 2026-10-16, in review; built in the slices of §7. Built so
+far: slice A**, the run-target port with the session target behind it. Note 25
 builds a bot that only works when you write to it. This note is how it
 works when you do not: on a schedule (its heartbeat), on an event, or
 when a session ends. The 2026-10-13 export already draws it:
@@ -177,7 +178,7 @@ job, so there is no separate heartbeat file.
 
 Each is a stacked pull request, green on `pnpm ci:local`.
 
-- **A. The run-target port.** `AutomationRunTargetPort`, the
+- **A. The run-target port** — built. `AutomationRunTargetPort`, the
   registry, `SessionRunTarget` holding today's dispatch, the run recording
   a `RunDispatchRef`; no behaviour change.
 - **B. Bot routines in the API.** The automation columns of §3,

@@ -10,7 +10,11 @@ import type {
   AutomationOverlapPolicy,
   AutomationPausedReason,
 } from '@oppenheimer/shared/automations';
-import type { AutomationRevisionProps, AutomationTriggerProps } from './automation.types';
+import type {
+  AutomationRevisionProps,
+  AutomationRunTargetKind,
+  AutomationTriggerProps,
+} from './automation.types';
 import { nextFireOf } from './trigger-config.policy';
 
 export interface AutomationProps {
@@ -131,6 +135,10 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
   }
   get revision(): AutomationRevisionProps {
     return this.props.revision;
+  }
+  /** What its runs start; a session until bot routines add a column for it (`26-bot-routines.md` §3). */
+  get runTarget(): AutomationRunTargetKind {
+    return 'session';
   }
   get triggers(): readonly AutomationTriggerProps[] {
     return this.props.triggers;
