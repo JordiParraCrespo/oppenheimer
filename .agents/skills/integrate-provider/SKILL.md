@@ -85,6 +85,12 @@ Credentials another module owns are read through its published port
 - `pnpm generate:api-client`, then the client reads the status through the
   product package (`packages/frontend/consumer`) and a feature shows or hides
   from it; never a capability flag plus a providers list of its own.
+- The status query's key prefix goes in `CONSUMER_NON_PERSISTED_FEATURES`
+  when the answer says anything about a workspace's credentials (dictation's
+  says whether it has a ChatGPT sign-in), and every mutation that changes a
+  credential re-reads it: the bots module's `invalidateModelProviders` is
+  the one place a sign-in or key change invalidates what depends on it, so a
+  capability whose providers are model providers adds its key there.
 - A feature flag only if the rollout needs one (`feature-flags.md`).
 
 ## 5. Prove it
@@ -116,6 +122,8 @@ an earlier note changes, add the line to that note's decision log.
 - Falling back on a rate limit, which spends a second vendor's budget and
   hides the first one's "not now".
 - An `availableFor` that calls the vendor, so a status read costs a request.
+- A status the credentials screen does not invalidate, so the feature shows
+  the answer from before a sign-in until the cache goes stale.
 - The console deciding availability from capabilities and settings it reads
   itself; it asks the status endpoint.
 - Posing as another product's client or a browser to get past a vendor's

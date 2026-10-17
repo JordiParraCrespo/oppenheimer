@@ -103,7 +103,8 @@ export class TwilioSmsResolver implements SmsProviderPort<null> {
     return { access: null };
   }
 
-  send(message: SmsMessage): Promise<SmsReceipt> {
+  // The grant is part of the port even when a provider has nothing in it.
+  send(message: SmsMessage, _grant: SmsGrant<null>): Promise<SmsReceipt> {
     return this.gateway.send(message);
   }
 }
