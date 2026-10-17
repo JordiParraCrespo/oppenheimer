@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { turnOnForEveryone } from '../../support/flags';
 import { STUB_TRANSCRIPT, tidied } from '../../support/namer-stub';
 import { connectInstallation, pairHost, STUB_REPOSITORIES } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
@@ -22,6 +23,7 @@ test.describe('Dictation', () => {
   test('puts what was said into the composer, tidied, without sending it', async ({ page }) => {
     test.slow();
     const owner = await provisionedUser('dictation');
+    await turnOnForEveryone(owner.api, 'voice_dictation');
     await pairHost(owner.api, 'Dictation box');
     await connectInstallation(owner.api);
 
