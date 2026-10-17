@@ -295,6 +295,12 @@ name the jobs and split *those*.
 - **A bar that stays put is the shell's slot, not a frame.** A screen hands
   it to `PaneBar`, which puts it above the page; the page under it is still
   the route's measure.
+- **Every console page can fold the sidebar away.** It opens on the kit's
+  `PageBar` (the sidebar toggle, then its slots), rendered once per page: by
+  the screen, or by the layout route for a subtree (Plan, Automations, Pull
+  requests), or by the route when the screen is also composed into another
+  (a session's terminal). A screen with a toolbar of its own leads it with
+  `SidebarToggle`.
 - **`full` is only a box that is the pane** and must not scroll outside
   itself: the session terminal. A state of it that is not a route (a session
   still being prepared) renders the kit's `PageFrame`, the one caller outside

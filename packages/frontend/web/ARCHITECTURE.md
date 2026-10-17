@@ -100,7 +100,11 @@ A screen says how it wants to be framed with route `staticData.pane`, and
 `AppShell` frames it: the pane paints the ground, holds a bar slot
 (`PaneBar`), takes drops (`usePaneDrop`) and draws `PageFrame` at the
 measure. `resolveContentPane` reads the innermost match that declares a
-pane, the same way `AuthLayout` reads its legal note. The model is
+pane, the same way `AuthLayout` reads its legal note. Every console page
+opens on `PageBar` in that slot: the sidebar toggle (`SidebarToggle`), then
+its `leading`, `title`, `meta`, `status`, `tabs` and `actions` slots, each
+optional; a screen whose bar is a toolbar of its own leads it with
+`SidebarToggle`. The model is
 `.agents/rules/frontend-architecture.md`, "The page frame is the shell's".
 
 ## How an app configures the auth layout

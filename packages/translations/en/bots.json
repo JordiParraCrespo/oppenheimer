@@ -31,7 +31,6 @@
     "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
   },
   "chat": {
-    "toggleSidebar": "Toggle sidebar",
     "actions": "Bot options",
     "settings": "Settings",
     "delete": "Delete bot",

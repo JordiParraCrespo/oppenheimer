@@ -1,3 +1,4 @@
+import { PageBar } from '@oppenheimer/frontend-web';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { RunClosed } from '@/features/automations/sections/run-closed';
 import { SessionScreen } from '@/features/sessions/screens/session';
@@ -26,17 +27,20 @@ function RunSessionRoute() {
   const { automationId, sessionId } = Route.useParams();
   // Keyed like the sessions route: another run is another terminal.
   return (
-    <SessionScreen
-      key={sessionId}
-      sessionId={sessionId}
-      closed={({ branch, restart, restarting }) => (
-        <RunClosed
-          branch={branch}
-          onOpen={restart}
-          opening={restarting}
-          backToAutomation={<Link to="/automations/$automationId" params={{ automationId }} />}
-        />
-      )}
-    />
+    <>
+      <PageBar />
+      <SessionScreen
+        key={sessionId}
+        sessionId={sessionId}
+        closed={({ branch, restart, restarting }) => (
+          <RunClosed
+            branch={branch}
+            onOpen={restart}
+            opening={restarting}
+            backToAutomation={<Link to="/automations/$automationId" params={{ automationId }} />}
+          />
+        )}
+      />
+    </>
   );
 }

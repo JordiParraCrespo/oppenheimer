@@ -1,5 +1,5 @@
 import { Button } from '@oppenheimer/design-system-web';
-import { RouteNotFound } from '@oppenheimer/frontend-web';
+import { PageBar, RouteNotFound } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
@@ -10,16 +10,20 @@ import { useTranslation } from 'react-i18next';
  * for a `notFound()` thrown under it, and as the catch-all route, for a path
  * that matched nothing at all. Both keep the sidebar — the reader is still in
  * the product, with their sessions and New session one click away, instead of
- * on a bare page that has lost the app.
+ * on a bare page that has lost the app. Its bar folds the sidebar away like
+ * any other page's; outside the shell there is no bar slot and it draws none.
  */
 export function NotFoundScreen() {
   const { t } = useTranslation();
 
   return (
-    <RouteNotFound>
-      <Button variant="secondary" render={<Link to="/sessions/new" />}>
-        {t('nav.newSession')}
-      </Button>
-    </RouteNotFound>
+    <>
+      <PageBar />
+      <RouteNotFound>
+        <Button variant="secondary" render={<Link to="/sessions/new" />}>
+          {t('nav.newSession')}
+        </Button>
+      </RouteNotFound>
+    </>
   );
 }

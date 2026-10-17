@@ -1,4 +1,4 @@
-import { usePaneDrop } from '@oppenheimer/frontend-web';
+import { PageBar, usePaneDrop } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { NewSessionDropContext, useNewSessionDrop } from '../hooks/use-new-session-drop';
 import { NewSessionForm } from '../sections/new-session-form';
@@ -22,6 +22,7 @@ export function NewSessionScreen() {
 
   return (
     <NewSessionDropContext value={drop}>
+      <PageBar />
       <div className="flex flex-col gap-4.5">
         <NewSessionForm
           heading={

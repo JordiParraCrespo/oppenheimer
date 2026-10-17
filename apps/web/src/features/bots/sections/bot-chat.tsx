@@ -1,14 +1,6 @@
-import {
-  BotAvatar,
-  ChatHeader,
-  ChatTranscript,
-  IconButton,
-  Skeleton,
-  useSidebar,
-} from '@oppenheimer/design-system-web';
-import { PanelLeft } from '@oppenheimer/design-system-web/icons';
+import { BotAvatar, ChatTranscript, Skeleton } from '@oppenheimer/design-system-web';
 import { useSuspenseBot, useUpdateBotOptimistically } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { ErrorAlert, PageBar, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,8 +14,8 @@ import { BotEngine } from './bot-engine';
 import { BotTranscript } from './bot-transcript';
 
 /**
- * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): the header
- * with the sidebar toggle, the bot's face and name and its menu; the
+ * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
+ * `PageBar`, the sidebar toggle, the bot's face and name and its menu; the
  * transcript, which follows the latest line while you are there and offers
  * the way back when you scroll up; and the
  * composer, whose chips are how the bot's turns start (its model, effort and
@@ -38,26 +30,15 @@ import { BotTranscript } from './bot-transcript';
 export function BotChat({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { toggleSidebar } = useSidebar();
   const { data: bot, error } = useSuspenseBot(botId);
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ChatHeader
+      <PageBar
         leading={
-          <>
-            <IconButton
-              variant="quiet"
-              size="sm"
-              aria-label={t('bots.chat.toggleSidebar')}
-              onClick={toggleSidebar}
-            >
-              <PanelLeft />
-            </IconButton>
-            <BotAvatar option={{ initials: bot.initials }} size={26} color={bot.avatarColor} />
-          </>
+          <BotAvatar option={{ initials: bot.initials }} size={26} color={bot.avatarColor} />
         }
         title={bot.name}
         actions={
