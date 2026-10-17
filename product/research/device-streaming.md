@@ -83,8 +83,8 @@ with 4 cores and no KVM, on an Android 10 emulator in software:
    rewrites `udid`), or tools that refuse other ids.
 5. The device module owns the whole lifecycle in one place: whatever a
    start created (AVD, emulator, streamer) is torn down when any later step
-   fails, as well as when the session ends. The POC does this in
-   `teardown`; a session removed while it is still booting is not covered.
+   fails, as well as when the session ends, and removing a session first
+   cancels and waits for a start still under way. The POC does both.
 
 Until 1, 3 and 4 are answered, nothing here (Argent's `simulator-server`,
 MJPEG, the `CLAUDE.local.md` pin) is a design to build on.

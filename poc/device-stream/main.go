@@ -56,6 +56,8 @@ type session struct {
 
 	port      int
 	owned     bool
+	cancel    context.CancelFunc // stops a start that is still under way
+	done      chan struct{}      // closed when start returns
 	streamURL string
 	emulator  *exec.Cmd
 	streamer  *exec.Cmd
@@ -161,10 +163,12 @@ func (h *host) create(w http.ResponseWriter, r *http.Request) {
 		s.Serial = fmt.Sprintf("emulator-%d", s.port)
 		s.AVD = "oppenheimer-" + req.ID
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	s.cancel, s.done = cancel, make(chan struct{})
 	h.sessions[req.ID] = s
 	h.mu.Unlock()
 
-	go h.start(s)
+	go h.start(ctx, s)
 	writeJSON(w, http.StatusAccepted, s)
 }
 
@@ -180,11 +184,16 @@ func (h *host) freePortLocked() int {
 	return p
 }
 
-func (h *host) start(s *session) {
-	ctx := context.Background()
+// start brings a session's device up. It stops when ctx is cancelled (the
+// session was removed), leaving the teardown to remove, which waits for it.
+func (h *host) start(ctx context.Context, s *session) {
+	defer close(s.done)
 	// A failed start tears down whatever it started, so a partial boot does
 	// not leave an AVD or an emulator running until someone removes it.
 	fail := func(err error) {
+		if ctx.Err() != nil {
+			return
+		}
 		h.log.Error("session failed", "session", s.ID, "err", err)
 		h.mu.Lock()
 		s.State, s.Error = "failed", err.Error()
@@ -198,7 +207,7 @@ func (h *host) start(s *session) {
 			return
 		}
 		h.setState(s, "booting")
-		emu := exec.Command(filepath.Join(h.cfg.sdk, "emulator", "emulator"),
+		emu := exec.CommandContext(ctx, filepath.Join(h.cfg.sdk, "emulator", "emulator"),
 			append([]string{"-avd", s.AVD, "-port", fmt.Sprint(s.port), "-grpc", fmt.Sprint(s.port + 3000)}, h.cfg.emulatorArgs...)...)
 		emu.Env = append(os.Environ(), "ANDROID_HOME="+h.cfg.sdk)
 		if err := emu.Start(); err != nil {
@@ -218,7 +227,7 @@ func (h *host) start(s *session) {
 		return
 	}
 	h.setState(s, "streaming")
-	streamURL, cmd, stdin, err := h.startStreamer(s.Serial)
+	streamURL, cmd, stdin, err := h.startStreamer(ctx, s.Serial)
 	if err != nil {
 		fail(err)
 		return
@@ -258,13 +267,20 @@ func (h *host) waitBooted(ctx context.Context, serial string, limit time.Duratio
 	for time.Now().Before(deadline) {
 		booted, _ := h.adb(ctx, serial, "shell", "getprop", "sys.boot_completed")
 		input, _ := h.adb(ctx, serial, "shell", "service", "check", "input")
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		if strings.TrimSpace(string(booted)) == "1" && strings.Contains(string(input), ": found") {
 			h.adb(ctx, serial, "shell", "svc", "power", "stayon", "true")
 			h.adb(ctx, serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP")
 			h.adb(ctx, serial, "shell", "wm", "dismiss-keyguard")
 			return nil
 		}
-		time.Sleep(5 * time.Second)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(5 * time.Second):
+		}
 	}
 	return fmt.Errorf("%s did not boot within %s", serial, limit)
 }
@@ -291,8 +307,8 @@ any other device on this host: other sessions own them.
 
 // startStreamer runs Argent's simulator-server for one device and returns the
 // MJPEG URL it announces on stdout ("stream_ready http://…").
-func (h *host) startStreamer(serial string) (string, *exec.Cmd, io.WriteCloser, error) {
-	cmd := exec.Command(h.cfg.simServer, "android", "--id", serial)
+func (h *host) startStreamer(ctx context.Context, serial string) (string, *exec.Cmd, io.WriteCloser, error) {
+	cmd := exec.CommandContext(ctx, h.cfg.simServer, "android", "--id", serial)
 	cmd.Env = append(os.Environ(), "ANDROID_HOME="+h.cfg.sdk)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -327,6 +343,9 @@ func (h *host) startStreamer(serial string) (string, *exec.Cmd, io.WriteCloser, 
 			u = strings.TrimRight(u, "/") + "/stream.mjpeg"
 		}
 		return u, cmd, stdin, nil
+	case <-ctx.Done():
+		cmd.Process.Kill()
+		return "", nil, nil, ctx.Err()
 	case <-time.After(60 * time.Second):
 		cmd.Process.Kill()
 		return "", nil, nil, errors.New("simulator-server never announced its stream")
@@ -462,6 +481,10 @@ func (h *host) remove(w http.ResponseWriter, r *http.Request) {
 		problem(w, http.StatusNotFound, "no session with that id")
 		return
 	}
+	// Stop a start still under way and wait for it, so it cannot boot a
+	// device or a streamer after the session is gone.
+	s.cancel()
+	<-s.done
 	h.teardown(s)
 	w.WriteHeader(http.StatusNoContent)
 }
