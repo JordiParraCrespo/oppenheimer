@@ -32,8 +32,7 @@ const KNOB = 30;
  * with every stop, and the popover is anchored to it, so a live label would
  * shift the composer's foot row and the popover with it. It catches up when
  * the drag ends or the popover closes. The button is as wide as its longest
- * stop, so the label changing never moves it. `onOpenChange` tells the
- * caller when the popover opens and closes.
+ * stop, so the label changing never moves it.
  */
 function EffortSlider<V extends string>({
   stops,
