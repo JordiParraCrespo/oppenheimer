@@ -35,8 +35,19 @@ as you go, and keep working the pull request on every event while you do.
 Fetch the pull request fresh and merge only when all of these hold:
 
 - `steward` calls it ready, and the head SHA is the one its report names;
-- GitHub reports it mergeable, with no review requesting changes;
-- every review thread is resolved;
+- it has no conflict with its base branch: GitHub reports it mergeable
+  (`mergeable` true, not `dirty`). A conflict is not a stop: merge the base
+  in per `steward`, and the new head goes back through step 2;
+- it has at least one submitted review from a person. The reviews are
+  usually left by the user's own account, the pull request's author, who
+  cannot approve it, so a `COMMENTED` review counts as much as `APPROVED`;
+  a bot's review, Claude Code Review included, does not. With none, the
+  pull request waits: say once that it needs a review, and do not merge;
+- no review is requesting changes;
+- every review comment has been addressed: each thread, from every review,
+  is resolved, and each one a person opened has either the fix pushed or a
+  reply saying why not. A comment on the pull request itself that asks for
+  something counts too;
 - no stop condition holds.
 
 Merge pinned to that head SHA, so a head nobody checked fails the merge
