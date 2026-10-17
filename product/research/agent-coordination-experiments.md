@@ -59,7 +59,11 @@ Protocols:
 | `platform+hub` | the manager assigns through leases | inboxes | server | lanes |
 | `platform, all to a person` | leases | inboxes | server | every risky action to one person |
 
-`platform` is six controls, each removable for the ablation: identity,
+In `sim.mjs` a protocol is one strategy per axis (allocation, channel,
+identity, review, spawns, scanner, evidence), and the tick loop calls the
+same hooks for every protocol, so a new control or allocation rule is one
+more object, not a branch in the loop. `platform` is six controls, each
+removable for the ablation: identity,
 leases, approvals, spawns (a spawn without a task traced to a person or
 trigger is refused), a secret scanner on messages, and evidence (a
 claim without a link to system state is flagged).
@@ -141,7 +145,8 @@ Sensitivity, every assumed rate scaled at once by a random factor in
    approvals queued). Lanes, where a person sees 20% and a policy's
    checks the rest, hold to about 100. The rule of thumb is
    `bots per person ≈ approvals per tick × task length / (risky share ×
-   share to a person)`. The cost is safety: 4.6 bad actions through
+   share to a person)`, an output of the model computed from its own
+   assumed rates, not a measurement. The cost is safety: 4.6 bad actions through
    lanes against 1.2 with a person on everything, so the lane policy's
    quality is the safety knob (note 15's lanes are the same idea).
 6. **Broadcast is the expensive part.** Every agent reading every

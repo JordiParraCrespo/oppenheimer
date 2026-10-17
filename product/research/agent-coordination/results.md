@@ -133,7 +133,7 @@ Agent coordination experiments: 100 seeds, 400 ticks, mean ±95% CI.
 | Write conflicts | 0.0 | 1.3 ±0.2 | 5.2 ±0.5 | 24.1 ±0.9 | 0.0 |
 | Message reads (token cost) | 43199 ±99 | 43216 ±99 | 43128 ±93 | 42581 ±93 | 669 ±1 |
 
-### 5. Sensitivity: 50 draws of every rate × [0.5, 2]
+### 5. Sensitivity: 50 draws of every rate × [0.5, 2] (20 agents: 10 seeds per draw; 100 agents: 3 seeds per draw)
 
 | Conclusion | Holds in |
 |---|---:|

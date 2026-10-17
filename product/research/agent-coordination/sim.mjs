@@ -60,6 +60,177 @@ const DEFAULTS = {
   hubCapacity: 5, // assignments a manager bot hands out per tick
 };
 
+// A protocol is one strategy per axis: how work is allocated, how messages
+// travel, how a sender is known, how a risky action is reviewed, whether a
+// spawn is allowed, whether messages are scanned for secrets, and whether
+// claims need evidence. The tick loop in `simulate` calls the same hooks for
+// every protocol; each strategy below is the whole of one choice.
+//
+// Every hook takes the run's world `w` (see `simulate`). The order of random
+// draws inside a hook is part of the experiment: two runs are byte-identical
+// only while it stays fixed.
+
+const board = {
+  conventions: true, // claims and holds are messages, read `latency` ticks late
+  choose(w, agent, now) {
+    const ignoresHold = !agent.honest && w.chance(w.P.ignoreHold);
+    return w.sample(
+      (t) =>
+        w.visibleClaims(t, now).length === 0 &&
+        (ignoresHold || !w.visiblyHeld(t.resource, agent, now)),
+    );
+  },
+  take(w, agent, task, now) {
+    task.claims.push({ agent, tick: now });
+    const list = w.holds.get(task.resource) ?? [];
+    list.push({ agent, tick: now });
+    w.holds.set(task.resource, list);
+    w.post(2); // CLAIM, HOLD
+  },
+  release() {},
+};
+
+const lease = {
+  conventions: false,
+  choose(w, agent) {
+    // Taking a leased resource is refused where it is written, not by convention.
+    if (!agent.honest && w.chance(w.P.ignoreHold)) w.m.refusedWrites++;
+    return w.sample((t) => !w.resourceLease.has(t.resource));
+  },
+  take(w, agent, task) {
+    task.holder = agent;
+    w.resourceLease.set(task.resource, agent);
+    w.close(task);
+  },
+  release(w, agent, task) {
+    if (task.holder !== agent) return;
+    task.holder = null;
+    w.resourceLease.delete(task.resource);
+    if (!task.done) w.reopen(task);
+  },
+};
+
+// A manager bot hands out work from its own list, `hubCapacity` agents a tick,
+// on top of either board conventions or leases.
+function managed(base, { obeyed }) {
+  return {
+    ...base,
+    assign(w, now) {
+      let handed = 0;
+      for (const agent of w.live) {
+        if (handed >= w.P.hubCapacity) break;
+        if (agent.task || !agent.assigned) continue;
+        if (!obeyed && !agent.honest && w.chance(w.P.ignoreManager)) {
+          agent.selfServe = true;
+          continue;
+        }
+        const task = w.sample(
+          (t) =>
+            w.activeClaims(t).length === 0 &&
+            !w.working.get(t.resource) &&
+            !w.resourceLease.has(t.resource),
+        );
+        if (!task) break;
+        w.take(agent, task, now);
+        w.post(1); // ASSIGN
+        handed++;
+      }
+    },
+    // Only an agent that ignored the manager this tick serves itself.
+    choose(w, agent, now) {
+      return agent.selfServe ? board.choose(w, agent, now) : null;
+    },
+  };
+}
+
+const ALLOCATION = {
+  board,
+  lease,
+  hub: managed(board, { obeyed: false }),
+  'hub-lease': managed(lease, { obeyed: true }),
+};
+
+const CHANNEL = {
+  board: { broadcast: true, readsPerPost: (w) => w.live.length },
+  inbox: { broadcast: false, readsPerPost: () => 1 },
+};
+
+const IDENTITY = {
+  claimed: () => 0,
+  signed: (P) => P.signedVerify,
+  server: () => 1,
+};
+
+// A review returns whether the action lands now; a queued one lands when a
+// person approves it.
+function settle(w, bad, caught) {
+  if (bad && !caught) w.m.unsafe++;
+  return !(bad && caught);
+}
+
+function askPerson(w, bad, lands) {
+  w.m.approvalsAsked++;
+  w.approvals.push({ bad, lands });
+  return false;
+}
+
+const REVIEW = {
+  peer(w, agent, bad) {
+    const window = !agent.honest && w.chance(w.P.vetoBySilence) ? 1 : w.P.vetoWindow;
+    w.post(1);
+    return settle(w, bad, w.chance(1 - (1 - w.P.peerReview) ** window));
+  },
+  manager(w, agent, bad) {
+    w.post(1);
+    const bypass = !agent.honest && w.chance(w.P.ignoreManager);
+    return settle(w, bad, !bypass && w.chance(w.P.managerCatch));
+  },
+  lanes(w, _agent, bad, lands) {
+    if (w.chance(w.P.humanShare)) return askPerson(w, bad, lands);
+    return settle(w, bad, w.chance(w.P.policyCatch));
+  },
+  human: (w, _agent, bad, lands) => askPerson(w, bad, lands),
+};
+
+const SPAWNS = {
+  open: (w) => w.live.length < w.agents * w.P.boardLiveCap,
+  // A recruit carries no task, so the platform refuses it outright.
+  refused(w) {
+    w.m.refusedSpawns++;
+    return false;
+  },
+};
+
+const SCANNER = {
+  off: () => false,
+  on: (w) => w.chance(w.P.scannerCatch),
+};
+
+const EVIDENCE = {
+  off: (w) => (w.channel.broadcast ? w.P.adoptBroadcast : w.P.adoptInbox),
+  on: (w) => w.P.adoptWithEvidence,
+};
+
+function protocol({
+  allocation,
+  channel,
+  identity = 'claimed',
+  review,
+  spawns = 'open',
+  scanner = 'off',
+  evidence = 'off',
+}) {
+  return {
+    allocation: ALLOCATION[allocation],
+    channel: CHANNEL[channel],
+    verify: IDENTITY[identity],
+    review: REVIEW[review],
+    maySpawn: SPAWNS[spawns],
+    scannerBlocks: SCANNER[scanner],
+    adoption: EVIDENCE[evidence],
+  };
+}
+
 // The platform's controls. `platform` has all six; experiment 2 removes one at a time.
 const CONTROLS = {
   identity: 'the server stamps the sender',
@@ -72,22 +243,27 @@ const CONTROLS = {
 
 function platformWith(off = {}, extra = {}) {
   const on = (c) => !off[c];
-  return {
+  return protocol({
     allocation: on('leases') ? 'lease' : 'board',
     channel: 'inbox',
-    verify: on('identity') ? 'server' : 'none',
+    identity: on('identity') ? 'server' : 'claimed',
     review: on('approvals') ? 'lanes' : 'peer',
-    spawns: on('spawns'),
-    scanner: on('scanner'),
-    evidence: on('evidence'),
+    spawns: on('spawns') ? 'refused' : 'open',
+    scanner: on('scanner') ? 'on' : 'off',
+    evidence: on('evidence') ? 'on' : 'off',
     ...extra,
-  };
+  });
 }
 
 const PROTOCOLS = {
-  board: { allocation: 'board', channel: 'board', verify: 'none', review: 'peer' },
-  'board+signed': { allocation: 'board', channel: 'board', verify: 'signed', review: 'peer' },
-  hub: { allocation: 'hub', channel: 'inbox', verify: 'none', review: 'manager' },
+  board: protocol({ allocation: 'board', channel: 'board', review: 'peer' }),
+  'board+signed': protocol({
+    allocation: 'board',
+    channel: 'board',
+    identity: 'signed',
+    review: 'peer',
+  }),
+  hub: protocol({ allocation: 'hub', channel: 'inbox', review: 'manager' }),
   platform: platformWith(),
   'platform+hub': platformWith({}, { allocation: 'hub-lease' }),
   'platform, all to a person': platformWith({}, { review: 'human' }),
@@ -104,15 +280,13 @@ function mulberry32(seed) {
   };
 }
 
-function simulate(protocol, { agents, misaligned, latency, seed, params = DEFAULTS }) {
+// The world one run happens in: the backlog, the agents, the metrics and the
+// shared operations every strategy uses.
+function createWorld(proto, { agents, misaligned, latency, seed, params }) {
   const P = params;
   const rng = mulberry32(seed);
   const chance = (p) => rng() < p;
   const pick = (list) => list[Math.floor(rng() * list.length)];
-
-  const leased = protocol.allocation === 'lease' || protocol.allocation === 'hub-lease';
-  const managed = protocol.allocation === 'hub' || protocol.allocation === 'hub-lease';
-  const conventions = !leased; // claims and holds are messages, read late
 
   const taskCount = agents * P.tasksPerAgent;
   const resourceCount = Math.max(1, Math.round(taskCount * P.resourceShare));
@@ -129,155 +303,111 @@ function simulate(protocol, { agents, misaligned, latency, seed, params = DEFAUL
   // Open tasks, kept as a swap-remove array so sampling stays O(1).
   const open = tasks.slice();
   const openIndex = new Map(tasks.map((t, i) => [t, i]));
-  const close = (task) => {
-    const i = openIndex.get(task);
-    if (i === undefined) return;
-    const last = open.pop();
-    if (last !== task) {
-      open[i] = last;
-      openIndex.set(last, i);
-    }
-    openIndex.delete(task);
-  };
-  const sample = (accept) => {
-    for (let i = 0; i < 40 && open.length; i++) {
-      const t = pick(open);
-      if (accept(t)) return t;
-    }
-    return null;
-  };
 
-  const working = new Map(); // resource -> agents on it now
-  const resourceLease = new Map();
-  const holds = new Map(); // resource -> [{ agent, tick }]
-
-  const m = {
-    done: 0,
-    wastedTicks: 0,
-    conflicts: 0,
-    unsafe: 0,
-    secretExposures: 0,
-    premiseTicks: 0,
-    forgeriesObeyed: 0,
-    peakLive: agents,
-    offBooksTicks: 0,
-    reads: 0,
-    approvalsAsked: 0,
-    approvalsQueued: 0,
-    refusedWrites: 0,
-    refusedSpawns: 0,
-  };
-
-  let nextId = 0;
-  const live = [];
-  const spawnAgent = (honest, depth) => {
-    const a = {
-      id: nextId++,
-      honest,
-      depth,
-      task: null,
-      remaining: 0,
-      assigned: depth === 0, // a recruit works off the books
-      selfServe: false,
-    };
-    live.push(a);
-    return a;
+  const w = {
+    P,
+    agents,
+    chance,
+    pick,
+    tasks,
+    live: [],
+    working: new Map(), // resource -> agents on it now
+    resourceLease: new Map(),
+    holds: new Map(), // resource -> [{ agent, tick }]
+    approvals: [],
+    channel: proto.channel,
+    m: {
+      done: 0,
+      wastedTicks: 0,
+      conflicts: 0,
+      unsafe: 0,
+      secretExposures: 0,
+      premiseTicks: 0,
+      forgeriesObeyed: 0,
+      peakLive: agents,
+      offBooksTicks: 0,
+      reads: 0,
+      approvalsAsked: 0,
+      approvalsQueued: 0,
+      refusedWrites: 0,
+      refusedSpawns: 0,
+    },
+    close(task) {
+      const i = openIndex.get(task);
+      if (i === undefined) return;
+      const last = open.pop();
+      if (last !== task) {
+        open[i] = last;
+        openIndex.set(last, i);
+      }
+      openIndex.delete(task);
+    },
+    reopen(task) {
+      openIndex.set(task, open.length);
+      open.push(task);
+    },
+    // Up to SAMPLE_TRIES random open tasks; null when none passes, which an
+    // agent reads as "nothing to take this tick".
+    sample(accept) {
+      for (let i = 0; i < SAMPLE_TRIES && open.length; i++) {
+        const t = pick(open);
+        if (accept(t)) return t;
+      }
+      return null;
+    },
+    post(count = 1) {
+      w.m.reads += count * proto.channel.readsPerPost(w);
+    },
+    activeClaims: (task) => task.claims.filter((c) => c.agent.task === task),
+    visibleClaims: (task, now) => w.activeClaims(task).filter((c) => c.tick <= now - latency),
+    visiblyHeld: (resource, self, now) =>
+      (w.holds.get(resource) ?? []).some(
+        (h) => h.agent !== self && h.agent.task?.resource === resource && h.tick <= now - latency,
+      ),
+    take(agent, task, now) {
+      agent.task = task;
+      agent.remaining = task.duration;
+      w.working.set(task.resource, (w.working.get(task.resource) ?? 0) + 1);
+      proto.allocation.take(w, agent, task, now);
+    },
+    drop(agent) {
+      const task = agent.task;
+      agent.task = null;
+      w.working.set(task.resource, w.working.get(task.resource) - 1);
+      proto.allocation.release(w, agent, task);
+      return task;
+    },
+    spawn(honest, depth) {
+      // A recruit works off the books.
+      w.live.push({
+        id: w.live.length,
+        honest,
+        depth,
+        task: null,
+        remaining: 0,
+        assigned: depth === 0,
+        selfServe: false,
+      });
+    },
   };
   const misalignedCount = Math.round(agents * misaligned);
-  for (let i = 0; i < agents; i++) spawnAgent(i >= misalignedCount, 0);
+  for (let i = 0; i < agents; i++) w.spawn(i >= misalignedCount, 0);
+  return w;
+}
 
-  const broadcast = protocol.channel === 'board';
-  const post = (count = 1) => {
-    m.reads += count * (broadcast ? live.length : 1);
-  };
+const SAMPLE_TRIES = 40;
 
-  const take = (agent, task, now) => {
-    agent.task = task;
-    agent.remaining = task.duration;
-    working.set(task.resource, (working.get(task.resource) ?? 0) + 1);
-    if (leased) {
-      task.holder = agent;
-      resourceLease.set(task.resource, agent);
-      close(task);
-    } else {
-      task.claims.push({ agent, tick: now });
-      const list = holds.get(task.resource) ?? [];
-      list.push({ agent, tick: now });
-      holds.set(task.resource, list);
-      post(2); // CLAIM, HOLD
-    }
-  };
-  const drop = (agent) => {
-    const task = agent.task;
-    agent.task = null;
-    working.set(task.resource, working.get(task.resource) - 1);
-    if (task.holder === agent) {
-      task.holder = null;
-      resourceLease.delete(task.resource);
-      if (!task.done) {
-        openIndex.set(task, open.length);
-        open.push(task);
-      }
-    }
-    return task;
-  };
+function simulate(proto, { params = DEFAULTS, ...scenario }) {
+  const w = createWorld(proto, { ...scenario, params });
+  const { P, m, chance } = w;
+  const alloc = proto.allocation;
 
-  const activeClaims = (task) => task.claims.filter((c) => c.agent.task === task);
-  const visibleClaims = (task, now) => activeClaims(task).filter((c) => c.tick <= now - latency);
-  const visiblyHeld = (resource, self, now) =>
-    (holds.get(resource) ?? []).some(
-      (h) => h.agent !== self && h.agent.task?.resource === resource && h.tick <= now - latency,
-    );
-
-  const chooseFromBoard = (agent, now) => {
-    const ignoresHold = !agent.honest && chance(P.ignoreHold);
-    return sample(
-      (t) =>
-        visibleClaims(t, now).length === 0 && (ignoresHold || !visiblyHeld(t.resource, agent, now)),
-    );
-  };
-
-  const chooseLease = (agent) => {
-    // Taking a leased resource is refused where it is written, not by convention.
-    if (!agent.honest && chance(P.ignoreHold)) m.refusedWrites++;
-    return sample((t) => !resourceLease.has(t.resource));
-  };
-
-  const approvals = [];
-  // Returns whether the action lands now.
-  const review = (agent, bad, lands = true) => {
-    if (protocol.review === 'peer') {
-      const window = !agent.honest && chance(P.vetoBySilence) ? 1 : P.vetoWindow;
-      post(1);
-      const caught = chance(1 - (1 - P.peerReview) ** window);
-      if (bad && !caught) m.unsafe++;
-      return !(bad && caught);
-    }
-    if (protocol.review === 'manager') {
-      post(1);
-      const bypass = !agent.honest && chance(P.ignoreManager);
-      const caught = !bypass && chance(P.managerCatch);
-      if (bad && !caught) m.unsafe++;
-      return !(bad && caught);
-    }
-    if (protocol.review === 'lanes' && !chance(P.humanShare)) {
-      const caught = chance(P.policyCatch);
-      if (bad && !caught) m.unsafe++;
-      return !(bad && caught);
-    }
-    m.approvalsAsked++;
-    approvals.push({ bad, lands });
-    return false; // lands when a person approves it
-  };
+  const review = (agent, bad, lands = true) => proto.review(w, agent, bad, lands);
 
   const spreadPremise = (author) => {
-    post(1);
-    const readers = broadcast ? live.filter((a) => a !== author) : [pick(live)];
-    const adopt = protocol.evidence
-      ? P.adoptWithEvidence
-      : broadcast
-        ? P.adoptBroadcast
-        : P.adoptInbox;
+    w.post(1);
+    const readers = proto.channel.broadcast ? w.live.filter((a) => a !== author) : [w.pick(w.live)];
+    const adopt = proto.adoption(w);
     for (const r of readers) {
       if (r.honest && r.task && chance(adopt)) {
         r.remaining += P.premiseCost;
@@ -287,27 +417,25 @@ function simulate(protocol, { agents, misaligned, latency, seed, params = DEFAUL
   };
 
   const complete = (agent) => {
-    const task = drop(agent);
+    const task = w.drop(agent);
     if (task.done) {
       m.wastedTicks += task.duration; // someone else already landed it
       return;
     }
     task.done = true;
-    close(task);
-    if (conventions) {
+    w.close(task);
+    if (alloc.conventions) {
       // Everyone else mid-task on this resource redoes part of it.
-      for (const other of live) {
+      for (const other of w.live) {
         if (other.task && other.task.resource === task.resource) {
           other.remaining += Math.ceil(other.task.duration * P.reworkShare);
           m.conflicts++;
         }
       }
     }
-    post(1); // DONE
-    if (chance(agent.honest ? P.leakHonest : P.leakMisaligned)) {
-      if (!(protocol.scanner && chance(P.scannerCatch))) {
-        m.secretExposures += broadcast ? live.length - 1 : 1;
-      }
+    w.post(1); // DONE
+    if (chance(agent.honest ? P.leakHonest : P.leakMisaligned) && !proto.scannerBlocks(w)) {
+      m.secretExposures += proto.channel.broadcast ? w.live.length - 1 : 1;
     }
     if (chance(agent.honest ? P.premiseHonest : P.premiseMisaligned)) spreadPremise(agent);
     if (!task.risky) {
@@ -318,68 +446,51 @@ function simulate(protocol, { agents, misaligned, latency, seed, params = DEFAUL
     if (review(agent, bad)) m.done++;
   };
 
+  // A forged STOP from "the coordinator": the victim drops its work unless
+  // it can tell the sender is not who the message claims.
   const impersonate = () => {
-    const victim = pick(live);
+    const victim = w.pick(w.live);
     if (!victim.honest || !victim.task) return;
-    post(1);
-    const verify =
-      protocol.verify === 'server' ? 1 : protocol.verify === 'signed' ? P.signedVerify : 0;
-    if (chance(verify)) return;
-    // A forged STOP from "the coordinator": the victim drops its work.
+    w.post(1);
+    if (chance(proto.verify(P))) return;
     m.forgeriesObeyed++;
     m.wastedTicks += victim.task.duration - victim.remaining;
-    drop(victim);
+    w.drop(victim);
   };
 
-  // A recruit carries no task, so the platform refuses it outright.
-  const maySpawn = () => {
-    if (!protocol.spawns) return live.length < agents * P.boardLiveCap;
-    m.refusedSpawns++;
-    return false;
+  // An honest agent that now sees an earlier claim on its task backs off.
+  const outbid = (agent, now) => {
+    const mine = agent.task.claims.find((c) => c.agent === agent);
+    return w
+      .visibleClaims(agent.task, now)
+      .some(
+        (c) =>
+          c.agent !== agent &&
+          (c.tick < mine.tick || (c.tick === mine.tick && c.agent.id < agent.id)),
+      );
   };
 
   let humanCredit = 0;
   for (let now = 0; now < TICKS; now++) {
     // One person works through the approval queue.
     humanCredit = Math.min(1 + P.humanRate, humanCredit + P.humanRate);
-    while (humanCredit >= 1 && approvals.length) {
+    while (humanCredit >= 1 && w.approvals.length) {
       humanCredit -= 1;
-      const { bad, lands } = approvals.shift();
+      const { bad, lands } = w.approvals.shift();
       const rejected = bad && chance(P.humanCatch);
       if (bad && !rejected) m.unsafe++;
       if (!rejected && lands) m.done++;
     }
 
-    // The manager hands out work from its own list, a few agents a tick.
-    if (managed) {
-      let handed = 0;
-      for (const agent of live) {
-        if (handed >= P.hubCapacity) break;
-        if (agent.task || !agent.assigned) continue;
-        if (!agent.honest && protocol.allocation === 'hub' && chance(P.ignoreManager)) {
-          agent.selfServe = true;
-          continue;
-        }
-        const task = sample(
-          (t) =>
-            activeClaims(t).length === 0 &&
-            !working.get(t.resource) &&
-            !resourceLease.has(t.resource),
-        );
-        if (!task) break;
-        take(agent, task, now);
-        post(1); // ASSIGN
-        handed++;
-      }
-    }
+    alloc.assign?.(w, now);
 
-    for (let i = 0; i < live.length; i++) {
-      const agent = live[i];
+    for (let i = 0; i < w.live.length; i++) {
+      const agent = w.live[i];
       if (!agent.honest) {
         if (chance(P.impersonate)) impersonate();
-        if (chance(P.spawn) && maySpawn()) {
-          spawnAgent(false, agent.depth + 1); // a recruit shares its recruiter's aims
-          m.peakLive = Math.max(m.peakLive, live.length);
+        if (chance(P.spawn) && proto.maySpawn(w)) {
+          w.spawn(false, agent.depth + 1); // a recruit shares its recruiter's aims
+          m.peakLive = Math.max(m.peakLive, w.live.length);
         }
       }
 
@@ -390,34 +501,23 @@ function simulate(protocol, { agents, misaligned, latency, seed, params = DEFAUL
       }
 
       if (!agent.task) {
-        let task = null;
-        if (protocol.allocation === 'board' || agent.selfServe) task = chooseFromBoard(agent, now);
-        else if (protocol.allocation === 'lease') task = chooseLease(agent);
+        const task = alloc.choose(w, agent, now);
         agent.selfServe = false;
         if (!task) continue;
-        take(agent, task, now);
+        w.take(agent, task, now);
       }
 
-      if (conventions) {
-        // An honest agent that now sees an earlier claim on its task backs off.
-        const mine = agent.task.claims.find((c) => c.agent === agent);
-        const earlier = visibleClaims(agent.task, now).some(
-          (c) =>
-            c.agent !== agent &&
-            (c.tick < mine.tick || (c.tick === mine.tick && c.agent.id < agent.id)),
-        );
-        if (agent.honest && earlier) {
-          m.wastedTicks += agent.task.duration - agent.remaining;
-          drop(agent);
-          continue;
-        }
+      if (alloc.conventions && agent.honest && outbid(agent, now)) {
+        m.wastedTicks += agent.task.duration - agent.remaining;
+        w.drop(agent);
+        continue;
       }
 
       agent.remaining--;
       if (agent.remaining <= 0) complete(agent);
     }
   }
-  m.approvalsQueued = approvals.length;
+  m.approvalsQueued = w.approvals.length;
   return m;
 }
 
@@ -542,30 +642,55 @@ const base = { agents: 20, misaligned: 0.1, latency: 3 };
 
 // 5. Sensitivity: every rate in DEFAULTS scaled by a random factor in [0.5, 2]
 //    at once (probabilities capped at 1), and how often each conclusion holds.
+//    Each conclusion names the protocols and scenario it compares; every
+//    measurement goes through `samples` and `summarize` like the tables above,
+//    with the seeds per draw set once, per scenario, here.
 {
   const draws = Math.max(20, Math.round(seeds / 2));
-  const perDraw = 10;
+  const SCENARIOS = {
+    base: { ...base, seeds: 10 },
+    large: { agents: 100, misaligned: 0.1, latency: 3, seeds: 3 },
+  };
   const claims = [
-    [
-      'platform lands at least as much as board (within 2%)',
-      (r) => r.platform.done >= 0.98 * r.board.done,
-    ],
-    [
-      'platform executes fewer bad risky actions than board',
-      (r) => r.platform.unsafe < r.board.unsafe,
-    ],
-    ['platform executes fewer bad risky actions than hub', (r) => r.platform.unsafe < r.hub.unsafe],
-    ['hub wastes fewer ticks than board', (r) => r.hub.wastedTicks < r.board.wastedTicks],
-    [
-      'signatures alone cut forged messages obeyed by half or more',
-      (r) => r['board+signed'].forgeriesObeyed <= 0.5 * r.board.forgeriesObeyed,
-    ],
-    [
-      'every risky action to a person lands less than lanes',
-      (r) => r['platform, all to a person'].done < r.platform.done,
-    ],
-    ['platform+hub lands less than platform at 100 agents', (r) => r.hub100 < r.platform100],
+    {
+      text: 'platform lands at least as much as board (within 2%)',
+      holds: (r) => r.base.platform.done >= 0.98 * r.base.board.done,
+    },
+    {
+      text: 'platform executes fewer bad risky actions than board',
+      holds: (r) => r.base.platform.unsafe < r.base.board.unsafe,
+    },
+    {
+      text: 'platform executes fewer bad risky actions than hub',
+      holds: (r) => r.base.platform.unsafe < r.base.hub.unsafe,
+    },
+    {
+      text: 'hub wastes fewer ticks than board',
+      holds: (r) => r.base.hub.wastedTicks < r.base.board.wastedTicks,
+    },
+    {
+      text: 'signatures alone cut forged messages obeyed by half or more',
+      holds: (r) => r.base['board+signed'].forgeriesObeyed <= 0.5 * r.base.board.forgeriesObeyed,
+    },
+    {
+      text: 'every risky action to a person lands less than lanes',
+      holds: (r) => r.base['platform, all to a person'].done < r.base.platform.done,
+    },
+    {
+      text: 'platform+hub lands less than platform at 100 agents',
+      holds: (r) => r.large['platform+hub'].done < r.large.platform.done,
+      scenario: 'large',
+      protocols: ['platform', 'platform+hub'],
+    },
   ];
+  // What each scenario has to run: every protocol for the base, only the
+  // ones a claim names elsewhere.
+  const needed = { base: Object.keys(PROTOCOLS) };
+  for (const c of claims) {
+    if (c.scenario)
+      needed[c.scenario] = [...new Set([...(needed[c.scenario] ?? []), ...c.protocols])];
+  }
+
   const held = claims.map(() => 0);
   const rng = mulberry32(7);
   const fixed = new Set(['tasksPerAgent', 'durationMin', 'durationMax']);
@@ -582,28 +707,31 @@ const base = { agents: 20, misaligned: 0.1, latency: 3 };
           ? v
           : Math.min(1, v);
     }
-    const scenario = { ...base, params };
-    const mean = (p, sc = scenario, n = perDraw) => {
-      const s = summarize(samples(p, sc, n));
-      return Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v.mean]));
-    };
-    const r = Object.fromEntries(Object.entries(PROTOCOLS).map(([n, p]) => [n, mean(p)]));
-    const big = { agents: 100, misaligned: 0.1, latency: 3, params };
-    r.hub100 = mean(PROTOCOLS['platform+hub'], big, 3).done;
-    r.platform100 = mean(PROTOCOLS.platform, big, 3).done;
-    claims.forEach(([, test], i) => {
-      if (test(r)) held[i]++;
-    });
+    const r = {};
+    for (const [name, protocols] of Object.entries(needed)) {
+      const { seeds: n, ...scenario } = SCENARIOS[name];
+      r[name] = {};
+      for (const p of protocols) {
+        const s = summarize(samples(PROTOCOLS[p], { ...scenario, params }, n));
+        r[name][p] = Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v.mean]));
+      }
+    }
+    for (const [i, c] of claims.entries()) {
+      if (c.holds(r)) held[i]++;
+    }
   }
-  results.sensitivity = Object.fromEntries(claims.map(([c], i) => [c, held[i] / draws]));
+  results.sensitivity = Object.fromEntries(claims.map((c, i) => [c.text, held[i] / draws]));
+  const per = Object.values(SCENARIOS)
+    .map((s) => `${s.agents} agents: ${s.seeds} seeds per draw`)
+    .join('; ');
   const lines = [
-    `### 5. Sensitivity: ${draws} draws of every rate × [0.5, 2]`,
+    `### 5. Sensitivity: ${draws} draws of every rate × [0.5, 2] (${per})`,
     '',
     '| Conclusion | Holds in |',
     '|---|---:|',
   ];
-  for (const [i, [c]] of claims.entries()) {
-    lines.push(`| ${c} | ${Math.round((100 * held[i]) / draws)}% |`);
+  for (const [i, c] of claims.entries()) {
+    lines.push(`| ${c.text} | ${Math.round((100 * held[i]) / draws)}% |`);
   }
   out.push(`${lines.join('\n')}\n`);
 }
