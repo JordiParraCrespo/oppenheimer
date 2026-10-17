@@ -29,7 +29,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { connect } from 'node:net';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { visualChange } from '../../.agents/hooks/visual-change.mjs';
 
@@ -78,8 +78,9 @@ const specFiles = [];
 for (const spec of specs) {
   const name = spec.replace(/^.*\//, '').replace(/\.spec\.ts$/, '');
   const file = `tests/screens/local/${name}.spec.ts`;
-  if (!name || !existsSync(resolve(ROOT, 'e2e', file))) {
-    console.error(`screens: --spec ${spec}: no e2e/${file}`);
+  const path = resolve(ROOT, 'e2e', file);
+  if (!name || !existsSync(path)) {
+    console.error(`screens: --spec ${spec}: no ${relative(ROOT, path)}`);
     process.exit(2);
   }
   specFiles.push(file);
