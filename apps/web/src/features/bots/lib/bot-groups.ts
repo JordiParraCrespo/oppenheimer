@@ -45,3 +45,11 @@ export function botSections(
     term || section.group === null ? section.bots.length > 0 : true,
   );
 }
+
+/** The bot the sidebar draws first, in its groups' order then Ungrouped; undefined with none. */
+export function firstBot(
+  bots: readonly BotEntity[],
+  groups: readonly BotGroupEntity[],
+): BotEntity | undefined {
+  return botSections(bots, groups, '').flatMap((section) => section.bots)[0];
+}

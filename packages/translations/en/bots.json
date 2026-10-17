@@ -8,7 +8,7 @@
     "noMatch": "No bots match “{{query}}”.",
     "ungrouped": "Ungrouped",
     "emptyTitle": "No bots yet",
-    "emptyBody": "Bots you create appear here. Make one, tell it the job, and shape it in its settings.",
+    "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
     "emptyGroup": "No bots in this group yet.",
     "noMessages": "No messages yet",
     "newGroup": "New group",
@@ -28,8 +28,7 @@
   },
   "landing": {
     "titleEmpty": "Make your first bot.",
-    "title": "Pick a bot, or make a new one.",
-    "note": "A new bot starts blank. Tell it the job, and shape it in its settings."
+    "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
   },
   "chat": {
     "toggleSidebar": "Toggle sidebar",

@@ -14926,7 +14926,7 @@
         "tags": ["Bots"]
       },
       "post": {
-        "description": "A blank bot: \"New Bot\" unless named, numbered when the workspace has the name, last in its group, with a soul that says its name and empty instructions.",
+        "description": "A blank bot: the next free first name (\"Juno\", \"Milo\"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.",
         "operationId": "createBot",
         "parameters": [],
         "requestBody": {
@@ -25189,7 +25189,7 @@
           },
           "name": {
             "type": "string",
-            "example": "New Bot"
+            "example": "Juno"
           },
           "description": {
             "type": "string",
@@ -25385,7 +25385,7 @@
           },
           "content": {
             "type": "string",
-            "example": "# Soul\n\nYou are New Bot."
+            "example": "# Soul\n\nYou are Juno."
           },
           "revision": {
             "type": "number",

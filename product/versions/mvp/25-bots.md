@@ -30,6 +30,25 @@ it lives.
 | Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
 | The conversation | Turns and messages | The chat; Settings → Profile counts, exports and clears it |
 
+**A new bot.** Created blank, a bot takes the next of twenty first names
+the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
+no two with the same initial, so neighbours' avatars differ), on the next
+colour, with a `SOUL.md` that says its name and an empty
+`INSTRUCTIONS.md`. A name says who it is; the description says its job,
+and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
+its prompt carries a **Getting started** section instead (2026-10-16): take
+the job from the first message or ask for it, with examples that fit
+Oppenheimer; at most one follow-up, only for what cannot be defaulted (what
+never to do without asking, how to report); one focused job, a bot per
+unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
+asking, How I report), set the description to the job, remember what it
+learned about the person, and say in two or three lines what it set up and
+the first task it could do now. The steps that need a tool are the tools'
+own (`setupStep` on the tool's spec), listed only when the turn offers the
+tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
+person to paste in Settings. Names are given first-free, so a deleted
+bot's name is the next one handed out.
+
 Postgres is the source of truth for all of it. A bot changes what it is
 and what it knows only through Oppenheimer's tools (§4), and every change
 shows in the chat. Its two documents, `SOUL.md` and `INSTRUCTIONS.md`,
@@ -480,6 +499,9 @@ The decisions it produced:
   (`BotQueueLanes`, `BotChainPolicy`, §4.6).
 - **Revisions for its documents** (§1, §8), where Grok Bot keeps none.
 - **The owner's own permissions as the ceiling** (§4, §5).
+- **A first chat that sets the bot up** (§1), from Grok Bot's guide: one
+  focused job per bot, a description of what it owns and must never do
+  without approval, a first concrete task.
 
 ## Decided
 
@@ -553,3 +575,9 @@ The decisions it produced:
   Clear history (`DELETE /bots/:id/conversation`) erases the turns,
   messages, cards and summary in one transaction, keeps the soul,
   instructions and memory, and is refused while a turn works (`BOTS_022`).
+- 2026-10-16: **a blank bot is born with a first name and sets itself up
+  in its first chat** (§1). It replaces "New Bot" and a one-line "ask
+  what job": a sidebar of "New Bot 2, New Bot 3" told bots apart by
+  nothing, and a bot left to the person to find Settings rarely got
+  instructions. It keeps 2026-10-14's "created blank": no template is
+  applied, the person's answer is.

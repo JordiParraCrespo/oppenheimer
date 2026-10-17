@@ -119,3 +119,40 @@ note's "Research" section: the curated chat, the source on each fact,
 queue lanes and a bounded chain for bot-to-bot turns, taken; revisions
 for the bot's documents and the owner's own permissions as the ceiling,
 where Grok Bot has neither.
+
+## 6. Grok Bot's onboarding, from its own docs (2026-10-16)
+
+The desktop installer could not be fetched from this environment (the
+download page and the reconstructed repository both refused it), so this
+section reads xAI's published guide instead
+(`docs.x.ai/grok-bot/get-started`, `docs.x.ai/grok-bot/bots`), which is
+what a person sees anyway. No code is taken.
+
+- **First run is a tour, then a roster.** Sign-in, a short introduction of
+  bots, the shared computer and routines, a question about which tools the
+  person uses (it shapes suggestions, connects nothing), the computer
+  setting up in the background, and a **"Meet a future teammate"** screen:
+  pick a suggested teammate or create your own.
+- **A new bot is "New Bot" until edited.** Creating one opens it under
+  that name; name, label, description and avatar are set in Edit Profile.
+  The guide asks for a short name, **one primary job**, and a description
+  of how it should work.
+- **Name it after the job.** Its examples are Talent Scout, Expense
+  Manager, Bug Reproduction, Account Health; "General Helper" is the
+  counter-example, because a vague bot gets less guidance and its saved
+  context is harder to reuse. Focused bots over one catch-all.
+- **The description holds durable rules:** what the bot owns, which
+  sources it uses, and what it must never do without approval. The
+  conversation holds the task of the moment.
+- **Memory is not authoritative.** Changing facts stay in their source
+  system; ask the bot to reopen current data before a consequential call.
+- **Pin, hide, duplicate, share as a template.** Duplicating copies the
+  profile, skills and routines but not history or memory.
+
+What we take (`versions/mvp/25-bots.md` §1): the one focused job, the
+description as the job, the rules a bot must never break without asking,
+and the first concrete task. What we do differently: the bot does the
+setup itself in its first chat, so nobody has to find Edit Profile, and
+it is born with a first name rather than "New Bot", since a sidebar of
+"New Bot 2, New Bot 3" says nothing. The welcome tour, suggested
+teammates and templates wait for 25 §7's templates.

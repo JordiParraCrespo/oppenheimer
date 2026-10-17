@@ -57,6 +57,12 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * empty answer does and does not mean.
    */
   description: string;
+  /**
+   * What the tool does in a new bot's first chat, as one step of the prompt's
+   * Getting started list (`composeBotSystemPrompt`). Only a tool that sets
+   * the bot up has one; the list shows the steps of the tools a turn offers.
+   */
+  setupStep?: string;
   input: Input;
   /**
    * The credential scope a call needs, as the route the tool stands in for
@@ -104,6 +110,7 @@ export interface BotToolSpec<Input extends z.ZodType> {
 export interface BotToolDefinition {
   readonly name: string;
   readonly description: string;
+  readonly setupStep?: string;
   readonly scope: Scope;
   /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
@@ -148,6 +155,7 @@ export function defineBotTool<Input extends z.ZodType>(
   return {
     name: spec.name,
     description: spec.description,
+    setupStep: spec.setupStep,
     scope: spec.scope,
     bind: (context) => {
       const tool: BotEngineTool = {

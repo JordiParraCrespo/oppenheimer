@@ -1,30 +1,33 @@
 import { Button, ChatEmptyState } from '@oppenheimer/design-system-web';
-import { useBots } from '@oppenheimer/frontend-consumer/react';
+import { useBotGroups, useBots } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { Navigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
+import { firstBot } from '@/features/bots/lib/bot-groups';
 
 /**
- * `/bots` with no bot open: the design's new-chat greeting, "Make your first
- * bot." before there is one and "Pick a bot" after, over New bot. Typing to a
- * bot that does not exist yet comes with the chat (`25-bots.md`, slice 2), so
- * the landing offers the button rather than a composer. It counts the bots
- * only to pick its words, and says nothing until it knows, and nothing
- * false when it cannot.
+ * `/bots` with no bot open. A workspace with bots goes straight to the chat
+ * of the one the sidebar draws first, replacing `/bots` in history so Back
+ * does not bounce here; the sidebar's New bot makes another. Before the
+ * first bot it is the design's new-chat greeting, "Make your first bot.",
+ * over New bot. It says nothing until both reads land, and nothing false
+ * when one fails.
  */
 export function BotsLanding() {
   const { t } = useTranslation();
-  const { data: count, isPending, error } = useBots({ select: (rows) => rows.length });
+  const bots = useBots();
+  const groups = useBotGroups();
   const newBot = useNewBot();
-  if (isPending) return null;
-  // A failed count is not "no bots": the sidebar beside this says what failed.
+  if (bots.isPending || groups.isPending) return null;
+  // A failed read is not "no bots": the sidebar beside this says what failed.
+  const error = bots.error ?? groups.error;
   if (error) return <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} />;
+  const first = firstBot(bots.data ?? [], groups.data ?? []);
+  if (first) return <Navigate to="/bots/$botId" params={{ botId: first.id }} replace />;
 
   return (
-    <ChatEmptyState
-      align="center"
-      title={count ? t('bots.landing.title') : t('bots.landing.titleEmpty')}
-    >
+    <ChatEmptyState align="center" title={t('bots.landing.titleEmpty')}>
       <div className="flex flex-col items-center gap-3">
         <Button
           pending={newBot.pending}

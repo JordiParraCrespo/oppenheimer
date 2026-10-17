@@ -2,8 +2,8 @@ import { useCreateBot } from '@oppenheimer/frontend-consumer/react';
 import { useNavigate } from '@tanstack/react-router';
 
 /**
- * New bot: a blank bot ("New Bot", no instructions), then its chat, which
- * greets the reader and asks for the job. The sidebar's plus, its empty card
+ * New bot: a blank bot (a first name such as "Juno", no instructions), then
+ * its chat, where it asks for its job and writes its own instructions. The sidebar's plus, its empty card
  * and the landing page all start one the same way.
  */
 export function useNewBot() {

@@ -505,3 +505,8 @@ earlier note:
   runs in Oppenheimer and the home host is only where its sessions start
   when no machine is named, offers No home host, and every bot settings
   page saves a draft with Save (25 §1, "Decided").
+- Note 25 named a blank bot "New Bot" and had it ask for its job in one
+  line. On 2026-10-16 a blank bot takes the next of twenty first names
+  ("Juno", "Milo"…), and its first chat walks it through learning one
+  job, writing its own INSTRUCTIONS.md and description, and offering a
+  first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
