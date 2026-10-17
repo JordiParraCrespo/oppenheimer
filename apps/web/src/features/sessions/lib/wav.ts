@@ -34,7 +34,12 @@ export function encodeWav(
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
-/** The chunks as one run at `outputRate`, each output sample the mean of the input it covers. */
+/**
+ * The chunks as one run at `outputRate`: above it, each output sample the
+ * mean of the input it covers; below it (a headset in call mode records at
+ * 8 kHz), each one interpolated between its two neighbours, so the header's
+ * rate is always the samples' rate.
+ */
 function downsample(
   chunks: readonly Float32Array[],
   inputRate: number,
@@ -47,7 +52,8 @@ function downsample(
     input.set(chunk, at);
     at += chunk.length;
   }
-  if (inputRate <= outputRate) return input;
+  if (inputRate === outputRate) return input;
+  if (inputRate < outputRate) return upsample(input, inputRate / outputRate);
   const ratio = inputRate / outputRate;
   const output = new Float32Array(Math.floor(total / ratio));
   for (let i = 0; i < output.length; i++) {
@@ -56,6 +62,18 @@ function downsample(
     let sum = 0;
     for (let j = from; j < to; j++) sum += input[j];
     output[i] = to > from ? sum / (to - from) : 0;
+  }
+  return output;
+}
+
+/** `input` at `1 / step` times its rate, each sample between its two neighbours. */
+function upsample(input: Float32Array, step: number): Float32Array {
+  const output = new Float32Array(Math.floor(input.length / step));
+  for (let i = 0; i < output.length; i++) {
+    const at = i * step;
+    const before = Math.floor(at);
+    const after = Math.min(input.length - 1, before + 1);
+    output[i] = input[before] + (input[after] - input[before]) * (at - before);
   }
   return output;
 }

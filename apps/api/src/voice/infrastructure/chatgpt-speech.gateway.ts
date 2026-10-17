@@ -1,14 +1,9 @@
 import { createHash } from 'node:crypto';
 import { Injectable, Optional } from '@nestjs/common';
 import { CacheService } from '@oppenheimer/backend-cache';
-import { AppError, UpstreamLimiter } from '@oppenheimer/backend-core';
+import { UpstreamLimiter } from '@oppenheimer/backend-core';
 import { VoiceErrors } from '../domain/voice.errors';
-import {
-  readSpeechRefusal,
-  SPEECH_TIMEOUT_MS,
-  speechForm,
-  transcriptOf,
-} from './speech-request.util';
+import { exchangeSpeech, speechForm } from './speech-request.util';
 import type { ChatgptSpeechAccess, ChatgptSpeechPort, VoiceClip } from './speech-to-text.port';
 
 /** ChatGPT's dictation route: what the Codex CLI's push-to-talk posts to. */
@@ -62,39 +57,13 @@ export class ChatgptSpeechGateway implements ChatgptSpeechPort {
     };
     if (access.accountId) headers['chatgpt-account-id'] = access.accountId;
 
-    let exchanged: { response: Response; errorBody: string | null };
-    try {
-      exchanged = await this.limiter.exchange(
-        [this.bucketOf(access)],
-        () =>
-          fetch(TRANSCRIBE_URL, {
-            method: 'POST',
-            headers,
-            body: speechForm(clip, { language: clip.language }),
-            signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),
-          }),
-        readSpeechRefusal,
-      );
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-        detail: `ChatGPT could not be reached: ${error instanceof Error ? error.message : 'unknown error'}`,
-      });
-    }
-
-    const { response, errorBody } = exchanged;
-    if (errorBody !== null) {
-      throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-        detail: `ChatGPT's dictation route answered ${response.status}.`,
-      });
-    }
-    const text = transcriptOf(await response.text());
-    if (text === null) {
-      throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-        detail: "ChatGPT's dictation route answered something that is not a transcript.",
-      });
-    }
-    return text;
+    return exchangeSpeech(this.limiter, {
+      url: TRANSCRIBE_URL,
+      headers,
+      bucket: this.bucketOf(access),
+      form: speechForm(clip, { language: clip.language }),
+      who: "ChatGPT's dictation route",
+    });
   }
 
   /** The ChatGPT account the call is counted against; a digest of the token when the sign-in names none. */

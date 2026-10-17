@@ -1,10 +1,7 @@
 import { AppError } from '@oppenheimer/backend-core';
 import type { VoiceProvider } from '@oppenheimer/shared';
-import { None, Some } from 'oxide.ts';
 import type { TurnCredentialsPort } from '../../bots/application/turn-credentials.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../bots/domain/bots.errors';
-import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
 import { ChatgptSpeechResolver } from '../application/chatgpt-speech.resolver';
 import type { SpeechGrant, SpeechProvider } from '../application/speech-provider.port';
 import { SpeechProviderRegistry } from '../application/speech-provider.registry';
@@ -110,31 +107,13 @@ describe('VoiceTranscriptionResolver', () => {
 
 describe('ChatgptSpeechResolver', () => {
   function chatgptProvider(signedIn: boolean) {
-    const providers: Pick<ModelProviderCredentialRepositoryPort, 'findForRun'> = {
-      findForRun: vi.fn().mockResolvedValue(
-        signedIn
-          ? Some(
-              ModelProviderCredentialEntity.createNew({
-                organizationId: ORG,
-                provider: 'chatgpt',
-                sealedKey: Buffer.from('sealed'),
-                keyHint: 'acct',
-                updatedByUserId: 'user-placeholder',
-              }),
-            )
-          : None,
-      ),
-    };
     const credentials: TurnCredentialsPort = {
+      has: vi.fn().mockResolvedValue(signedIn),
       forTurn: vi.fn().mockResolvedValue({ apiKey: 'access-placeholder', accountId: 'acct-1' }),
     };
     const gateway: ChatgptSpeechPort = { transcribe: vi.fn().mockResolvedValue('heard') };
     return {
-      speech: new ChatgptSpeechResolver(
-        providers as ModelProviderCredentialRepositoryPort,
-        credentials,
-        gateway,
-      ),
+      speech: new ChatgptSpeechResolver(credentials, gateway),
       credentials,
       gateway,
     };
