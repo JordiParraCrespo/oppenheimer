@@ -10,8 +10,8 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The folder chip of New session: the path it names, in mono and already
- * compacted to the folder's own name (`compactPath`), and a popup whose body the
+ * The folder chip of New session: the path it is given, in mono and capped so
+ * the composer's four scope chips keep to one line, and a popup whose body the
  * section above draws (`FolderBrowser`) — so the listing is read only while
  * the popup is open. Props in, open state out.
  */
@@ -23,7 +23,7 @@ export function FolderSelect({
   variant,
   children,
 }: {
-  /** The picked folder as shown (`~/…/atlas`), or null for none yet. */
+  /** The picked folder as shown, or null for none yet. */
   label: string | null;
   /** The whole path, for the pointer. */
   title?: string;

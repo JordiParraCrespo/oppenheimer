@@ -26,6 +26,8 @@ describe('folder paths', () => {
     expect(compactPath('~/oppenheimer-ai/workspaces/jordi/atlas')).toBe('~/…/atlas');
     expect(compactPath('/srv/apps/atlas/')).toBe('/…/atlas');
     expect(compactPath('~/code')).toBe('~/code');
+    expect(compactPath('~/code/')).toBe('~/code');
+    expect(compactPath('/')).toBe('/');
     expect(compactPath('~')).toBe('~');
   });
 

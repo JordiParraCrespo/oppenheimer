@@ -21,7 +21,8 @@ export function shortenPath(path: string, home: string | null | undefined): stri
 export function compactPath(path: string): string {
   const root = path.startsWith('/') ? '/' : path.startsWith(`${HOME}/`) ? `${HOME}/` : '';
   const parts = path.slice(root.length).split('/').filter(Boolean);
-  return parts.length > 1 ? `${root}…/${parts.at(-1)}` : path;
+  if (parts.length > 1) return `${root}…/${parts.at(-1)}`;
+  return path.length > 1 ? path.replace(/\/+$/, '') : path;
 }
 
 /**
