@@ -9,14 +9,14 @@ import {
 
 /**
  * The chat's scrolling pane, for what inside it moves the scroll: the pane,
- * the room after the transcript, and `held`, set while something other than
- * following the latest owns the scroll. Every field is a ref, so the value
- * never changes and nothing re-renders through it.
+ * the room after the transcript, and `hold`, which tells following the
+ * latest that something else owns the scroll until it lets go. The value
+ * never changes, so nothing re-renders through it.
  */
 export const ChatScroll = createContext<{
   scroller: RefObject<HTMLDivElement | null>;
   room: RefObject<HTMLDivElement | null>;
-  held: RefObject<boolean>;
+  hold: (owning: boolean) => void;
 } | null>(null);
 
 /** How long a message you just sent takes to glide up to the top of the pane. */
@@ -54,7 +54,7 @@ function padding(box: HTMLElement): { top: number; bottom: number } {
  * The room stays after the turn ends (taking it away would yank the settled
  * chat) until the next send replaces it.
  *
- * The glide owns the scroll while it runs (`held`), and lets go the moment
+ * The glide owns the scroll while it runs (`hold`), and lets go the moment
  * the scroll is not where it left it: the reader took hold.
  */
 export function useSentGlide(sentId: string | undefined): void {
@@ -86,7 +86,7 @@ export function useSentGlide(sentId: string | undefined): void {
     reserve(box, room, element);
     const instant = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (!element || instant || typeof requestAnimationFrame === 'undefined') {
-      box.scrollTop = box.scrollHeight;
+      scrollTo(box, box.scrollHeight);
       return;
     }
 
@@ -96,31 +96,36 @@ export function useSentGlide(sentId: string | undefined): void {
     const start = performance.now();
     let left = box.scrollTop;
     let frame: number | undefined;
-    pane.held.current = true;
+    pane.hold(true);
     const step = () => {
       frame = undefined;
       if (Math.abs(box.scrollTop - left) > 1) {
-        pane.held.current = false;
+        pane.hold(false);
         return;
       }
       const elapsed = performance.now() - start;
       if (elapsed >= SLIDE_MS) {
-        pane.held.current = false;
-        box.scrollTop = box.scrollHeight;
+        pane.hold(false);
+        scrollTo(box, box.scrollHeight);
         return;
       }
       const max = box.scrollHeight - box.clientHeight;
       const target = box.scrollTop + offset() - slideOffset(from, rest, elapsed);
-      box.scrollTop = Math.min(max, Math.max(0, target));
+      scrollTo(box, Math.min(max, Math.max(0, target)));
       left = box.scrollTop;
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
     return () => {
       if (frame !== undefined) cancelAnimationFrame(frame);
-      pane.held.current = false;
+      pane.hold(false);
     };
   }, [pane, sentId]);
+}
+
+/** Moves the pane; a plain function, as the pane is the context's and not this hook's. */
+function scrollTo(box: HTMLElement, top: number): void {
+  box.scrollTop = top;
 }
 
 /** Room below `anchor` so that the bottom of the chat is where it sits at the top. */

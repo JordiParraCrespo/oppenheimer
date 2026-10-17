@@ -110,5 +110,11 @@ export function markersBefore(
 
 /** The id of the newest message you sent, which a new send replaces. */
 export function newestSentId(blocks: ChatTurnBlock[]): string | undefined {
-  return blocks.flatMap((block) => block.asked).findLast((message) => message.role === 'user')?.id;
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const asked = blocks[index]?.asked ?? [];
+    for (let at = asked.length - 1; at >= 0; at--) {
+      if (asked[at]?.role === 'user') return asked[at]?.id;
+    }
+  }
+  return undefined;
 }

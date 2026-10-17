@@ -16,10 +16,10 @@ import { useStickToBottom } from '@/features/bots/hooks/use-stick-to-bottom';
  */
 export function BotChatScroller({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const { scroller, content, held, atLatest, toLatest } = useStickToBottom();
+  const { scroller, content, hold, atLatest, toLatest } = useStickToBottom();
   const room = useRef<HTMLDivElement>(null);
   return (
-    <ChatScroll value={{ scroller, room, held }}>
+    <ChatScroll value={{ scroller, room, hold }}>
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 pb-10">
           <div ref={content}>{children}</div>

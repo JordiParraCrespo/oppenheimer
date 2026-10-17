@@ -25,14 +25,14 @@ function newestSent(root: HTMLElement): string | undefined {
  * message pins it too, known by the newest sent message's id changing (each
  * `ChatUserMessage` carries `data-message-id`): you want to see the answer
  * to what you just asked.
- * The first layout opens at the bottom. While `held` is set, something
- * else owns the scroll (the glide of a message you sent, `useSentGlide`) and
- * this hook does not follow.
+ * The first layout opens at the bottom. Between `hold(true)` and
+ * `hold(false)` something else owns the scroll (the glide of a message you
+ * sent, `useSentGlide`) and this hook does not follow.
  */
 export function useStickToBottom(): {
   scroller: RefObject<HTMLDivElement | null>;
   content: RefObject<HTMLDivElement | null>;
-  held: RefObject<boolean>;
+  hold: (owning: boolean) => void;
   atLatest: boolean;
   toLatest: () => void;
 } {
@@ -74,6 +74,10 @@ export function useStickToBottom(): {
     };
   }, []);
 
+  const hold = (owning: boolean) => {
+    held.current = owning;
+  };
+
   const toLatest = () => {
     const box = scroller.current;
     if (!box) return;
@@ -83,5 +87,5 @@ export function useStickToBottom(): {
     box.scrollTo({ top: box.scrollHeight, behavior: instant ? 'auto' : 'smooth' });
   };
 
-  return { scroller, content, held, atLatest, toLatest };
+  return { scroller, content, hold, atLatest, toLatest };
 }

@@ -10,7 +10,7 @@ import { ChatScroll, useSentGlide } from '../hooks/use-sent-glide';
  * reader who took hold of the scroll mid-way.
  */
 
-let held: { current: boolean };
+let held = false;
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
@@ -34,9 +34,16 @@ function Transcript({ sent }: { sent: string[] }) {
 function Harness({ sent }: { sent: string[] }) {
   const scroller = useRef<HTMLDivElement>(null);
   const room = useRef<HTMLDivElement>(null);
-  held = useRef(false);
   return (
-    <ChatScroll value={{ scroller, room, held }}>
+    <ChatScroll
+      value={{
+        scroller,
+        room,
+        hold: (owning) => {
+          held = owning;
+        },
+      }}
+    >
       <div ref={scroller} data-testid="scroller">
         <div>
           <Transcript sent={sent} />
@@ -69,13 +76,13 @@ describe('useSentGlide', () => {
     box.scrollTop = 200;
     act(() => vi.advanceTimersByTime(400));
     expect(box.scrollTop).toBe(200);
-    expect(held.current).toBe(false);
+    expect(held).toBe(false);
 
     view.rerender(<Harness sent={['m1', 'm2']} />);
-    expect(held.current).toBe(true);
+    expect(held).toBe(true);
     act(() => vi.advanceTimersByTime(400));
     expect(box.scrollTop).toBe(1000);
-    expect(held.current).toBe(false);
+    expect(held).toBe(false);
   });
 
   it('lets go where the reader took hold of the scroll mid-glide', () => {
@@ -88,6 +95,6 @@ describe('useSentGlide', () => {
     box.scrollTop = 100;
     act(() => vi.advanceTimersByTime(400));
     expect(box.scrollTop).toBe(100);
-    expect(held.current).toBe(false);
+    expect(held).toBe(false);
   });
 });
