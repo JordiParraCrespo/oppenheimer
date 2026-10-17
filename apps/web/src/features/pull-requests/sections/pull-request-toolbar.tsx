@@ -65,6 +65,7 @@ export function PullRequestToolbar({
       </SegmentedControl>
       {view === 'changes' ? (
         <SegmentedControl
+          size="md"
           value={layout}
           onValueChange={(next) => onLayoutChange(next as DiffLayout)}
           aria-label={t('pullRequests.changes.layout')}
