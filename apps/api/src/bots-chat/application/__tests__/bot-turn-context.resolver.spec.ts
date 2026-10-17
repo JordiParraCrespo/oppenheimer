@@ -46,7 +46,10 @@ function setup(
   };
   const access = new BotModelAccessResolver(
     { findForTurn: async () => Some(bot) } as unknown as BotRepositoryPort,
-    { forTurn: async () => ({ apiKey: 'key' }) } satisfies TurnCredentialsPort,
+    {
+      forTurn: async () => ({ apiKey: 'key' }),
+      has: async () => true,
+    } satisfies TurnCredentialsPort,
   );
   const resolver = new BotTurnContextResolver(
     access,

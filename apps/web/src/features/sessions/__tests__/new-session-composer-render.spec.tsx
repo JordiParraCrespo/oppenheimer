@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NewSessionComposer } from '../components/new-session-composer';
 
@@ -12,7 +12,38 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-afterEach(cleanup);
+/**
+ * The recorder, without a microphone: the state a test sets, a real meter,
+ * and the `onRecorded` the composer handed it, for a test to call as a
+ * finished recording would.
+ */
+const dictation = vi.hoisted(() => ({
+  state: 'idle' as 'idle' | 'waiting' | 'recording',
+  onRecorded: null as null | ((wav: Blob) => void),
+}));
+vi.mock('../hooks/use-dictation', async () => {
+  const { DictationMeter } = await import('../lib/dictation-meter');
+  const meter = new DictationMeter();
+  return {
+    meter,
+    useDictation: ({ onRecorded }: { onRecorded: (wav: Blob) => void }) => {
+      dictation.onRecorded = onRecorded;
+      return {
+        state: dictation.state,
+        failure: null,
+        meter,
+        start: vi.fn(),
+        stop: vi.fn(),
+        cancel: vi.fn(),
+      };
+    },
+  };
+});
+
+afterEach(() => {
+  cleanup();
+  dictation.state = 'idle';
+});
 
 function Chip({ onRender, label }: { onRender: () => void; label: string }) {
   onRender();
@@ -188,6 +219,67 @@ describe('NewSessionComposer', () => {
       fireEvent.click(remove);
 
       expect(screen.queryByText('screen.png')).toBeNull();
+    });
+  });
+
+  describe('dictation', () => {
+    it("draws a recording's levels in the recorder bar alone", async () => {
+      const { meter } = (await import('../hooks/use-dictation')) as unknown as {
+        meter: import('../lib/dictation-meter').DictationMeter;
+      };
+      dictation.state = 'recording';
+      const onEngine = vi.fn();
+      render(
+        <NewSessionComposer
+          onSubmit={vi.fn()}
+          engine={<Chip onRender={onEngine} label="engine" />}
+          dictation={{ transcribe: vi.fn(), transcribing: false }}
+        />,
+      );
+      onEngine.mockClear();
+
+      act(() => {
+        meter.push(0.2, 300);
+        meter.push(0.6, 700);
+        meter.push(0.4, 1_200);
+      });
+
+      expect(onEngine).not.toHaveBeenCalled();
+      expect(screen.getByText('0:01')).toBeTruthy();
+    });
+
+    it('adds what was said to the end of the draft, to be read before sending', async () => {
+      const transcribe = vi.fn().mockResolvedValue('fix the login redirect.');
+      render(
+        <NewSessionComposer onSubmit={vi.fn()} dictation={{ transcribe, transcribing: false }} />,
+      );
+      const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+      fireEvent.change(textarea, { target: { value: 'Then ' } });
+
+      const wav = new Blob(['wav'], { type: 'audio/wav' });
+      await act(async () => {
+        await dictation.onRecorded?.(wav);
+      });
+
+      expect(transcribe).toHaveBeenCalledWith(wav);
+      expect(textarea.value).toBe('Then fix the login redirect.');
+    });
+
+    it('leaves the draft alone when nothing came back', async () => {
+      render(
+        <NewSessionComposer
+          onSubmit={vi.fn()}
+          dictation={{ transcribe: vi.fn().mockResolvedValue(null), transcribing: false }}
+        />,
+      );
+      const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+      fireEvent.change(textarea, { target: { value: 'Fix it' } });
+
+      await act(async () => {
+        await dictation.onRecorded?.(new Blob());
+      });
+
+      expect(textarea.value).toBe('Fix it');
     });
   });
 });

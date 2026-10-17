@@ -42,6 +42,11 @@ export class TurnCredentialsResolver implements TurnCredentialsPort {
     return this.sources[provider](organizationId, now);
   }
 
+  async has(organizationId: string, provider: BotProvider): Promise<boolean> {
+    if (!this.sealer.isConfigured()) return false;
+    return (await this.credentials.findForRun(organizationId, provider)).isSome();
+  }
+
   private async keyFor(organizationId: string, provider: BotProvider): Promise<TurnCredential> {
     const stored = await this.credentials.findForRun(organizationId, provider);
     if (stored.isNone() || !this.sealer.isConfigured()) {

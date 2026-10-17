@@ -258,6 +258,78 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 | 3 | Dictate everywhere | Task dialog, task composer, terminal paste, the hold-to-talk hotkey, a personal dictionary (words and replacements) | Talking to a running agent works the way the composer does |
 | 4 | Later | Streaming partials; mobile/PWA (0.5) where voice beats a phone keyboard; Slack voice notes (0.4); a runner-side `whisper.cpp` so audio never leaves your host | — |
 
+## Slice 1 as built (2026-10-17)
+
+Dictation into New session's composer, end to end. Where the build differs
+from the plan above, the build is the decision; the plan stays as written.
+
+- **The recording is WAV, not `MediaRecorder`.** The browser records with
+  Web Audio and encodes 16 kHz mono 16-bit PCM itself
+  (`apps/web/src/features/sessions/lib/wav.ts`), because ChatGPT's
+  dictation route has refused Ogg/Opus and every OpenAI-compatible server
+  takes WAV. The API takes WAV only, judged by its bytes (`VOICE_004`).
+- **No new scope.** `POST /v1/voice/transcriptions` asks what creating a
+  session asks (`create Session`, `sessions:write`): dictation writes a
+  session's first task. A `voice:*` scope comes with the first surface that
+  is not a session.
+- **The recorder lives in the sessions feature**, not the platform kit:
+  the kit takes a piece when a second feature needs it, and only New
+  session has a mic so far. `useDictation`, the meter and the WAV encoder
+  move to the kit with slice 3. The design system's `Composer` gained a
+  `recorder` slot, where `VoiceRecorderBar` takes the foot row's place
+  without changing the box's height.
+- **The mic shows only when someone can hear it**: `voice_dictation` on
+  (a release flag, default off like every new feature's, so a deployment
+  targets it through the flag admin API, `/v1/feature-flags/admin/voice_dictation`;
+  it expires 2027-04-30) and either the
+  workspace's ChatGPT sign-in or the deployment's `voice_transcription`
+  capability (`VOICE_STT_*`).
+- **The recorder is a `ScriptProcessorNode`, knowingly.** It is
+  deprecated, and Chrome only calls it when it reaches the context's
+  destination (it outputs silence there). It is in every browser today and
+  needs no separate module; an `AudioWorklet` needs its processor served as
+  a file of its own, which the CSP admits but slice 1 did not need. Slice 3
+  moves the recorder to the kit, and the worklet comes with that move.
+- **The vocabulary comes from the console**: the project, repository and
+  host names New session has loaded, cut to the API's limits by the same
+  `vocabularyTerms` the API reads them with.
+- **The text is appended to the draft**, not inserted at the caret, and
+  never sent on its own.
+
+Verified on the local stack: `e2e/tests/api/voice.spec.ts` (a WAV through
+the API to the stub speech server and its tidy) and
+`e2e/tests/web/dictation.spec.ts` (Chromium's fake microphone, the
+recorder, the tidied text in the composer). ChatGPT's own route is covered
+by the gateway spec against a `fetch` double only: no run here can sign in
+to ChatGPT, so whether the route answers a server that names itself is
+still slice 0's question, and the first real dictation on a signed-in
+workspace answers it.
+
+## Speech providers behind one interface (2026-10-17)
+
+The first build hard-coded "ChatGPT sign-in, then the deployment's key" in
+`VoiceTranscriptionResolver`, and the console decided whether to show the
+mic from a capability and the providers list. Both now ask one list:
+
+- **`SpeechProvider`** (`apps/api/src/voice/application/speech-provider.port.ts`):
+  an `id`, a cheap `availableFor(organizationId)`, a `grantFor` that hands
+  over the provider's credential and the model the polish may run on, and
+  `transcribe`.
+- **`SpeechProviderRegistry`**, built in `voice.module.ts`, is the ordered
+  list. The resolver hears a clip on the first available provider, tries the
+  next when it fails for any reason but a rate limit, and answers the first
+  failure when all fail; `VOICE_005` when none is available.
+- **`GET /v1/voice/status`** answers which providers can hear the
+  workspace, and the console shows the mic when one can. The
+  `voice_transcription` capability stays in the startup log and leaves the
+  client list.
+- **The polish runs on the provider's model credential** when it brings
+  one (any bot provider, through the bot engine), on `LLM_*` otherwise.
+
+Adding a provider is a class implementing `SpeechProvider` (with a gateway
+of its own behind an `UpstreamLimiter`), its id in `VOICE_PROVIDERS`, and its
+place in the registry's list.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake

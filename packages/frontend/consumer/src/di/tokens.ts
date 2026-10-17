@@ -18,4 +18,5 @@ export const TOKENS = {
   SessionsService: Symbol.for('SessionsService'),
   TasksRepository: Symbol.for('TasksRepository'),
   CalendarRepository: Symbol.for('CalendarRepository'),
+  VoiceRepository: Symbol.for('VoiceRepository'),
 } as const;
