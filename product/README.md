@@ -510,3 +510,8 @@ earlier note:
   ("Juno", "Milo"…), and its first chat walks it through learning one
   job, writing its own INSTRUCTIONS.md and description, and offering a
   first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
+- `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
+  milestone bar on to ten days past its last milestone, which read as the
+  bar overshooting the dates. On 2026-10-15 the owner had it end on the last
+  milestone's day, as a timeline bar does in Notion; the three-week lead-in
+  before the first milestone or today stays (23 §1).

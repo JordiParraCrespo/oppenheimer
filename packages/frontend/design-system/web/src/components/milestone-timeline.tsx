@@ -11,8 +11,8 @@ const PX = 16;
 const DAY = 864e5;
 /** A project's track starts three weeks before its first milestone (or today)… */
 const LEAD_DAYS = 21;
-/** …and runs ten days past its last. */
-const TAIL_DAYS = 10;
+/** …and ends on its last milestone's day, with room for that diamond's half (px). */
+const TAIL_PX = 12;
 /** The timeline keeps two weeks of room past the earliest and the latest track… */
 const MARGIN_DAYS = 14;
 /** …and always shows six weeks ahead of today. */
@@ -29,7 +29,7 @@ type TimelineMilestone = {
 
 /** What a page's Today, Earlier and Later buttons do to the timeline. */
 type MilestoneTimelineControls = {
-  /** Scroll today back to a quarter in from the left. */
+  /** Scroll back to where the timeline opened (`openingScrollLeft`). */
   today: () => void;
   /** Four weeks back. */
   earlier: () => void;
@@ -64,13 +64,28 @@ function MilestoneGlyph({ filled = false, className }: { filled?: boolean; class
   );
 }
 
+/** The gutter a bleeding page leaves before the timeline's first day. */
+const GUTTER = 32;
+
+/**
+ * Where the timeline opens: today a quarter in from the left, pulled left to
+ * the start of every track that runs through today (so its name shows), but
+ * never so far that today leaves the left two thirds of the viewport.
+ */
+function openingScrollLeft(todayX: number, viewport: number, trackStarts: number[]) {
+  const preferred = todayX + GUTTER - viewport * 0.25;
+  const leftmostTrack = trackStarts.length > 0 ? Math.min(...trackStarts) : preferred;
+  const furthestLeft = todayX + GUTTER - viewport * (2 / 3);
+  return Math.max(0, furthestLeft, Math.min(preferred, leftmostTrack));
+}
+
 function daysBetween(a: Date, b: Date) {
   return Math.round((+b - +a) / DAY);
 }
 
 /**
  * Where everything sits: each project's span (three weeks before its first
- * milestone or today, to ten days past its last), the timeline's start on a
+ * milestone or today, to the day of its last), the timeline's start on a
  * Monday two weeks before the earliest span, its end six weeks past today
  * at least, and the week and month marks between.
  */
@@ -83,7 +98,7 @@ function layout(rows: TimelineRow[], today: IsoDate, locale: string) {
       return {
         row: r,
         from: new Date(Math.min(Math.min(...dues), +now) - LEAD_DAYS * DAY),
-        to: new Date(Math.max(...dues) + TAIL_DAYS * DAY),
+        to: new Date(Math.max(...dues)),
       };
     });
   const earliest = new Date(Math.min(+now, ...spans.map((s) => +s.from)) - MARGIN_DAYS * DAY);
@@ -197,14 +212,15 @@ function MilestoneMarker({
 
 /**
  * MilestoneTimeline — Plan's milestones laid out on time, one row per
- * project. It scrolls sideways with no bar and opens on today.
+ * project. It scrolls sideways with no bar and opens on today, pulled left
+ * to show the start of every track that runs through it.
  *
  * - **Header** (56px): the months in 11px uppercase at their first day, each
  *   with a hairline down into the rows; week numbers in mono under them; today
  *   as an inverted mono pill with a line through every row.
  * - **Row** (112px): the project's name with its folder and its done share,
  *   over a 30px track on the card from three weeks before its first
- *   milestone (or today) to ten days past its last.
+ *   milestone (or today) to the day of its last, ending on that diamond.
  * - **Milestone**: a 10px diamond on the track at its due day, its name under
  *   it. Open is the card with a muted stroke; done fills muted; under the
  *   pointer or focus it fills in ink, grows to 1.2 and shows a card with the
@@ -247,11 +263,12 @@ function MilestoneTimeline({
   const todayLabel = dateFormat(locale, { day: 'numeric', month: 'short' }).format(now);
   const dueFormat = dateFormat(locale, { month: 'short', day: 'numeric' });
 
-  // Open on today, a quarter in from the left (past a 32px gutter when the
-  // page bleeds it), once: the reader scrolls from there, and Today comes back.
+  // Open once, at `openingScrollLeft`: the reader scrolls from there, and
+  // Today comes back to it.
   const opened = React.useRef(false);
   const element = React.useRef<HTMLDivElement | null>(null);
-  const onToday = (el: HTMLDivElement) => Math.max(0, todayX + 32 - el.clientWidth * 0.25);
+  const trackStarts = spans.filter((s) => +s.to >= +now).map((s) => xOf(s.from));
+  const onToday = (el: HTMLDivElement) => openingScrollLeft(todayX, el.clientWidth, trackStarts);
   const scroller = (el: HTMLDivElement | null) => {
     element.current = el;
     if (el && !opened.current) {
@@ -269,7 +286,6 @@ function MilestoneTimeline({
       earlier: () => element.current?.scrollBy({ left: -28 * PX, behavior: 'smooth' }),
       later: () => element.current?.scrollBy({ left: 28 * PX, behavior: 'smooth' }),
     }),
-    [todayX],
   );
 
   return (
@@ -315,19 +331,22 @@ function MilestoneTimeline({
         />
         {spans.map(({ row, from, to }) => (
           <div key={row.id} className="relative h-28">
-            <button
-              type="button"
-              onClick={() => onOpenRow?.(row.id)}
-              className="absolute top-4.5 flex items-center gap-2 text-[15px] font-medium tracking-[-0.011em] whitespace-nowrap text-fg outline-none hover:text-link focus-visible:text-link"
-              style={{ left: xOf(from) }}
-            >
-              <FolderIcon className="size-3.75 text-fg-muted" />
-              {row.name}
-              <span className="figures font-mono text-[12px] font-normal text-fg-subtle">{row.progress}%</span>
-            </button>
+            {/* The name rides its track: it sticks to the left edge while the
+                track is scrolled past it, and leaves with the track's end. */}
+            <div className="absolute top-4.5" style={{ left: xOf(from), width: xOf(to) - xOf(from) + TAIL_PX }}>
+              <button
+                type="button"
+                onClick={() => onOpenRow?.(row.id)}
+                className="sticky left-4 flex w-max items-center gap-2 text-[15px] font-medium tracking-[-0.011em] whitespace-nowrap text-fg outline-none hover:text-link focus-visible:text-link"
+              >
+                <FolderIcon className="size-3.75 text-fg-muted" />
+                {row.name}
+                <span className="figures font-mono text-[12px] font-normal text-fg-subtle">{row.progress}%</span>
+              </button>
+            </div>
             <div
               className="absolute top-12 h-7.5 rounded-sm border border-border-subtle bg-card"
-              style={{ left: xOf(from), width: xOf(to) - xOf(from) }}
+              style={{ left: xOf(from), width: xOf(to) - xOf(from) + TAIL_PX }}
             />
             {row.milestones.map((m) => (
               <MilestoneMarker
