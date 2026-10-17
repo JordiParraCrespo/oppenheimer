@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { appendDictation, useDictation, type VoiceInput } from './use-dictation';
+import { appendDictation } from '../lib/dictate-into';
+import { useDictation, type VoiceInput } from './use-dictation';
 
 /**
  * One field's dictation over a recorder without a microphone: what a finished

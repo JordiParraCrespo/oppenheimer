@@ -33,10 +33,10 @@ names the concern and what to reach for first.
   from `@oppenheimer/frontend-core/react`.
 - **markdown** — `Markdown`, someone else's markdown as elements (a pull
   request's description, a bot's reply), inside `Prose` or `ChatReply`.
-- **dictation** — `DictationField` around a `Textarea` someone may speak
-  into, `useDictation` for a composer or a design-system field with its own
-  mic slot; the `voice` comes from `useVoiceDictation()` in the product
-  package.
+- **dictation** — `dictation={dictationSlots(useDictation(…))}` on any host
+  that frames its own field, `DictationField` around a plain `Textarea`, the
+  text in through `dictateInto` / `dictateIntoField`; the `voice` comes from
+  `useVoiceDictation()` in the product package.
 - **pairing** — `PairingChrome`, the column that pairs a machine.
 - **theme** — `ThemeProvider`.
 - **i18n** — `useLocale` and the formatters; `RelativeTime` for a "2 hours

@@ -339,15 +339,18 @@ personal dictionary stay for later.
 
 - **One piece, in three layers.**
   - The design system draws it: `DictationButton` (the mic, red while it
-    records), `DictationFrame` (a plain field with the mic in its corner and
-    the recorder under it), `VoiceRecorderBar`. `Composer` and
-    `ChatComposer` take the mic in their foot row; `DiffCommentDraft` and
-    `ReviewDecision` take a `dictation` slot for the comment field they own.
+    records), `VoiceRecorderBar`, and one slot every host takes,
+    `DictationSlot` (`mic`, `recorder`, `notice`): `DictationFrame` puts the
+    mic in a plain field's corner and the rest under it, and `Composer`,
+    `ChatComposer`, `DiffCommentDraft` and `ReviewDecision` place the same
+    three in their own layout. No host knows more about dictation than that.
   - The platform kit records and wires it (`@oppenheimer/frontend-web`,
     concern `dictation`): `useDictation({ voice, onText })` is one field's
-    recorder, trip to the API and last problem; `DictationField` is the whole
-    thing around a `Textarea`; `dictationSlots` fills a design-system slot;
-    `appendDictation` adds what was heard to the end of a field.
+    recorder, trip to the API and last problem; `dictationSlots` fills the
+    slot from it; `DictationField` is the two around a `Textarea`; and
+    `dictateInto` (a state or store setter) and `dictateIntoField` (a form
+    field, marked dirty) add what was heard to the end of the field, so no
+    screen writes the append itself.
   - The product package answers whether anyone can hear the workspace and
     how: `useVoiceDictation(vocabulary?)` (the flag, `GET /voice/status`, the
     transcription). One value serves every field on a screen.
@@ -358,7 +361,7 @@ personal dictionary stay for later.
   facts and the bot description stay without a mic: they are a few words.
 - **A field adds to what it holds.** What is heard goes on the end of the
   draft, a space between, to be read before it is sent or saved. A form field
-  takes it through `setValue`, so it stays the form's.
+  takes it through `setValue` (`dictateIntoField`), so it stays the form's.
 - **The recorder keeps `ScriptProcessorNode`.** The slice-1 note said the
   `AudioWorklet` would come with this move; it did not, because the worklet
   needs its processor served as a module of its own and nothing in this

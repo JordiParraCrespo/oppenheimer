@@ -748,12 +748,14 @@ function ChatComposerExtrasBody() {
           <DictationButton onClick={() => {}} />
           <DictationButton recording onClick={() => {}} />
         </div>
-        <DictationFrame mic={<DictationButton onClick={() => {}} />}>
+        <DictationFrame dictation={{ mic: <DictationButton onClick={() => {}} /> }}>
           <Textarea placeholder="Notes, or dictate them" />
         </DictationFrame>
         <DictationFrame
-          mic={<DictationButton recording onClick={() => {}} />}
-          recorder={<VoiceRecorderBar levels={LEVELS} elapsed="0:03" onCancel={() => {}} onStop={() => {}} />}
+          dictation={{
+            mic: <DictationButton recording onClick={() => {}} />,
+            recorder: <VoiceRecorderBar levels={LEVELS} elapsed="0:03" onCancel={() => {}} onStop={() => {}} />,
+          }}
         >
           <Textarea defaultValue="Check the deploy, then" />
         </DictationFrame>
@@ -1048,7 +1050,7 @@ export function ChatSection() {
         id="chatcomposer"
         title="Composer extras"
         meta="chat-composer-extras.tsx"
-        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. DictationButton is the one mic every dictating field shows, red while it records. DictationFrame gives a plain field dictation: the mic in its bottom-right corner, the recorder under it while dictating. ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
+        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. DictationButton is the one mic every dictating field shows, red while it records. DictationFrame gives a plain field dictation: the mic in its bottom-right corner, the recorder or the last problem under it. Every host — this frame, Composer, ChatComposer, the comment drafts — takes the same DictationSlot (mic, recorder, notice). ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
         code={`<ComposerMenu><ComposerMenuGroup label="Built-in"><ComposerMenuItem icon={<LayersIcon />} description="Think first" hint="/plan" highlighted>Plan</ComposerMenuItem></ComposerMenuGroup></ComposerMenu>`}
       >
         <ChatComposerExtrasDemo />

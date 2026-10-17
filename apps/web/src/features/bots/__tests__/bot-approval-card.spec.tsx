@@ -33,7 +33,7 @@ vi.mock('@oppenheimer/frontend-web', () => ({
   ErrorAlert: () => null,
   useZodResolver: () => undefined,
   DictationField: ({ children }: { children: ReactNode }) => children,
-  appendDictation: (held: string, text: string) => `${held} ${text}`,
+  dictateIntoField: () => () => {},
 }));
 
 afterEach(() => {

@@ -18,7 +18,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import {
-  appendDictation,
+  dictateInto,
   dictationSlots,
   notifySuccess,
   useDictation,
@@ -53,7 +53,7 @@ export function ReviewPopover({
   const [comment, setComment] = useState('');
   const dictation = useDictation({
     voice: useVoiceDictation(),
-    onText: (heard) => setComment((held) => appendDictation(held, heard)),
+    onText: dictateInto(setComment),
   });
   const submit = useSubmitPullRequestReview({
     onSuccess: ({ merged, autoMerge }) => {

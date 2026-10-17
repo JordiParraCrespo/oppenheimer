@@ -1,8 +1,7 @@
 import { Composer, FieldError } from '@oppenheimer/design-system-web';
 import {
-  appendDictation,
-  DictationBar,
-  DictationError,
+  dictateInto,
+  dictationSlots,
   useDictation,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
@@ -73,7 +72,7 @@ export function NewSessionComposer({
   const picker = useRef<HTMLInputElement>(null);
   const dictation = useDictation({
     voice,
-    onText: (text) => setDraft((held) => appendDictation(held, text)),
+    onText: dictateInto(setDraft),
   });
 
   function hold(incoming: File[]) {
@@ -134,8 +133,6 @@ export function NewSessionComposer({
           send: t('sessions.new.composer.send'),
           stop: t('sessions.new.composer.stop'),
           attach: t('sessions.new.composer.attach'),
-          dictate: t('common.dictation.dictate'),
-          stopRecording: t('common.dictation.stop'),
           removeAttachment: (name) => t('sessions.new.composer.removeAttachment', { name }),
         }}
         attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
@@ -145,9 +142,7 @@ export function NewSessionComposer({
         }}
         onAttach={() => picker.current?.click()}
         onPaste={onPaste}
-        onRecord={dictation.available ? dictation.toggle : undefined}
-        recording={dictation.recording}
-        recorder={dictation.phase ? <DictationBar dictation={dictation} /> : undefined}
+        dictation={dictationSlots(dictation)}
         scope={scope}
         tools={tools}
         engine={engine}
@@ -164,11 +159,7 @@ export function NewSessionComposer({
           // and its files where their author can fix them and send again.
         }}
       />
-      {refusal ? (
-        <FieldError className="mx-4.5">{refusal}</FieldError>
-      ) : (
-        <DictationError problem={dictation.problem} className="mx-4.5" />
-      )}
+      {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}
     </div>
   );
 }

@@ -83,8 +83,3 @@ export function useDictation({
     cancel: recorder.cancel,
   };
 }
-
-/** `text` added to the end of what a field holds, a space between them. */
-export function appendDictation(held: string, text: string): string {
-  return held.trim() ? `${held.trimEnd()} ${text}` : text;
-}

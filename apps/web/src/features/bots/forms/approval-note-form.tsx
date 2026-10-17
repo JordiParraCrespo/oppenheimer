@@ -1,7 +1,7 @@
 import { Button, Field, FieldError, FieldLabel, Textarea } from '@oppenheimer/design-system-web';
 import {
-  appendDictation,
   DictationField,
+  dictateIntoField,
   useZodResolver,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
@@ -45,12 +45,7 @@ export function ApprovalNoteForm({
         <FieldLabel htmlFor="approval-note">
           {t('bots.chat.approval.noteLabel', { name })}
         </FieldLabel>
-        <DictationField
-          voice={voice}
-          onText={(text) =>
-            setValue('note', appendDictation(getValues('note') ?? '', text), { shouldDirty: true })
-          }
-        >
+        <DictationField voice={voice} onText={dictateIntoField({ getValues, setValue }, 'note')}>
           <Textarea
             {...register('note')}
             id="approval-note"

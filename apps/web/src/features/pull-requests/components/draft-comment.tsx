@@ -1,6 +1,6 @@
 import { DiffCommentDraft } from '@oppenheimer/design-system-web';
 import {
-  appendDictation,
+  dictateInto,
   dictationSlots,
   useDictation,
   type VoiceInput,
@@ -29,7 +29,7 @@ export function DraftComment({
   const [body, setBody] = useState('');
   const dictation = useDictation({
     voice,
-    onText: (heard) => setBody((held) => appendDictation(held, heard)),
+    onText: dictateInto(setBody),
   });
   const text = body.trim();
   return (

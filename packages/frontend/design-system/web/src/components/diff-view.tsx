@@ -7,7 +7,7 @@ import type * as React from 'react';
 
 import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
-import { DictationFrame } from './chat-composer-extras';
+import { DictationFrame, type DictationSlot } from './chat-composer-extras';
 import { Button } from './button';
 import { DiffStat } from './diff-stat';
 import { FileIcon } from './file-icon';
@@ -294,8 +294,8 @@ function DiffCommentDraft({
   onAddSingle?: () => void;
   onCancel: () => void;
   avatar?: React.ReactNode;
-  /** The mic and, while dictating, the recorder, for the comment (`DictationFrame`). */
-  dictation?: { mic?: React.ReactNode; recorder?: React.ReactNode };
+  /** Dictation for the comment (`DictationFrame`). */
+  dictation?: DictationSlot;
   labels?: { placeholder?: string; addToReview?: string; addSingle?: string; hint?: string; cancel?: string };
   className?: string;
 }) {
@@ -305,7 +305,7 @@ function DiffCommentDraft({
       <div className="flex max-w-160 items-start gap-2.5">
         {avatar ? <span className="mt-1.5 shrink-0">{avatar}</span> : null}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <DictationFrame mic={dictation?.mic} recorder={dictation?.recorder}>
+          <DictationFrame dictation={dictation}>
             <CommentField
               rows={3}
               value={value}

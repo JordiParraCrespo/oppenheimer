@@ -4,17 +4,12 @@ import { ArrowUpIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
-import { DictationButton } from './chat-composer-extras';
+import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 
-type ChatComposerLabels = { send: string; stop: string; dictate: string; stopRecording: string };
+type ChatComposerLabels = { send: string; stop: string };
 
-const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
-  send: 'Send',
-  stop: 'Stop',
-  dictate: 'Dictate',
-  stopRecording: 'Stop recording',
-};
+const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = { send: 'Send', stop: 'Stop' };
 
 /**
  * ChatComposer — a bot's composer (Bots): a card at the 28px radius with no
@@ -30,8 +25,9 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * squares to meet it. `inputRef` is the textarea, for a caller that moves
  * focus into it (on open, after a suggestion fills it).
  *
- * `onRecord` shows the mic before the send, as `Composer` does; while
- * dictating, `recorder` (a `VoiceRecorderBar`) takes the foot row's place.
+ * `dictation` (`DictationSlot`) works as in `Composer`: the mic before send,
+ * the recorder in the foot row's place while dictating, the notice under the
+ * box.
  */
 function ChatComposer({
   value,
@@ -46,9 +42,7 @@ function ChatComposer({
   engine,
   above,
   inputRef,
-  onRecord,
-  recording = false,
-  recorder,
+  dictation,
   labels,
   className,
   ...props
@@ -69,12 +63,8 @@ function ChatComposer({
   /** A notice or an approval, fused to the field's top edge. */
   above?: React.ReactNode;
   inputRef?: React.Ref<HTMLTextAreaElement>;
-  /** Present: shows the mic. */
-  onRecord?: () => void;
-  recording?: boolean;
-  /** While dictating, the `VoiceRecorderBar`: it takes the foot row's place. */
-  recorder?: React.ReactNode;
-  /** The buttons' accessible names; any left out stay in English. */
+  dictation?: DictationSlot;
+  /** The send button's accessible names; any left out stay in English. */
   labels?: Partial<ChatComposerLabels>;
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
@@ -87,7 +77,7 @@ function ChatComposer({
     onStop,
   });
 
-  return (
+  const box = (
     <ComposerFrame above={above}>
       <div
         data-slot="chat-composer"
@@ -112,25 +102,18 @@ function ChatComposer({
           // `field-sizing-content` overrides `rows`) to eight, then scrolls.
           className="field-sizing-content max-h-52 min-h-18 w-full resize-none bg-transparent px-5 pt-4 pb-2 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder"
         />
-        {recorder ? (
+        {dictation?.recorder ? (
           // The bar is 12px taller than the foot row it replaces; it takes
           // that from the field's bottom padding, so the box keeps its height.
           <div data-slot="chat-composer-recorder" className="-mt-3 px-3 pb-3">
-            {recorder}
+            {dictation.recorder}
           </div>
         ) : (
           <div data-slot="chat-composer-foot" className="flex items-center gap-1 px-3 pb-3">
             {tools}
             <span className="flex-1" />
             {engine}
-            {onRecord ? (
-              <DictationButton
-                recording={recording}
-                onClick={onRecord}
-                labels={{ dictate: label.dictate, stop: label.stopRecording }}
-                className="ml-1"
-              />
-            ) : null}
+            {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
             <ComposerSendButton
               busy={busy}
               blocked={blocked}
@@ -153,6 +136,13 @@ function ChatComposer({
         )}
       </div>
     </ComposerFrame>
+  );
+  if (!dictation?.notice) return box;
+  return (
+    <div data-slot="chat-composer-dictation" className="flex flex-col gap-2">
+      {box}
+      <div className="mx-5">{dictation.notice}</div>
+    </div>
   );
 }
 

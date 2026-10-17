@@ -132,28 +132,41 @@ function DictationButton({
   );
 }
 
+/**
+ * Dictation, as a field's host takes it: the mic, the recorder while it is
+ * recording or transcribing, and what went wrong last. The kit fills it
+ * (`dictationSlots`); every host — `DictationFrame`, `Composer`,
+ * `ChatComposer`, `DiffCommentDraft`, `ReviewDecision` — places the three
+ * and knows nothing else about dictation.
+ */
+interface DictationSlot {
+  /** The `DictationButton`; absent, the host draws no mic. */
+  mic?: React.ReactNode;
+  /** While dictating, the `VoiceRecorderBar`. */
+  recorder?: React.ReactNode;
+  /** What went wrong last, said under the field. */
+  notice?: React.ReactNode;
+}
+
 function DictationFrame({
-  mic,
-  recorder,
+  dictation,
   children,
   className,
 }: {
-  /** The `DictationButton`; absent, the field is drawn as it is. */
-  mic?: React.ReactNode;
-  /** While dictating, the `VoiceRecorderBar` (and anything said about it), under the field. */
-  recorder?: React.ReactNode;
+  dictation?: DictationSlot;
   /** The field: a `Textarea`, or a component that draws one. */
   children: React.ReactNode;
   className?: string;
 }) {
+  const below = dictation?.recorder ?? dictation?.notice;
   return (
     <div data-slot="dictation-frame" className={cn('flex flex-col gap-2', className)}>
       {/* The mic stands clear of the field's resize grip, in the bottom-right corner. */}
-      <div className={cn('relative', mic && '[&_textarea]:pr-13')}>
+      <div className={cn('relative', dictation?.mic && '[&_textarea]:pr-13')}>
         {children}
-        {mic ? <div className="absolute right-4 bottom-1.5">{mic}</div> : null}
+        {dictation?.mic ? <div className="absolute right-4 bottom-1.5">{dictation.mic}</div> : null}
       </div>
-      {recorder}
+      {below}
     </div>
   );
 }
@@ -288,3 +301,4 @@ export {
   DictationFrame,
   VoiceRecorderBar,
 };
+export type { DictationSlot };

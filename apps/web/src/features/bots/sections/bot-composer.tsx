@@ -7,13 +7,7 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import {
-  appendDictation,
-  DictationBar,
-  DictationError,
-  ErrorAlert,
-  useDictation,
-} from '@oppenheimer/frontend-web';
+import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -62,7 +56,7 @@ export function BotComposer({
   const failure = send.error ?? cancel.error;
   const dictation = useDictation({
     voice: useVoiceDictation(() => [name]),
-    onText: (text) => setBotDraft(botId, appendDictation(botDraft(botId), text)),
+    onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
   });
 
   return (
@@ -100,17 +94,12 @@ export function BotComposer({
             </ComposerNotice>
           ) : undefined
         }
-        onRecord={dictation.available ? dictation.toggle : undefined}
-        recording={dictation.recording}
-        recorder={dictation.phase ? <DictationBar dictation={dictation} /> : undefined}
+        dictation={dictationSlots(dictation)}
         labels={{
           send: t('bots.chat.send'),
           stop: t('bots.chat.stop'),
-          dictate: t('common.dictation.dictate'),
-          stopRecording: t('common.dictation.stop'),
         }}
       />
-      <DictationError problem={dictation.problem} className="mx-5" />
     </>
   );
 }

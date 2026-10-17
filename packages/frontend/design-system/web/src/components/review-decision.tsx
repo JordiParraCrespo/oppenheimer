@@ -5,7 +5,7 @@ import type * as React from 'react';
 
 import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
-import { DictationFrame } from './chat-composer-extras';
+import { DictationFrame, type DictationSlot } from './chat-composer-extras';
 import { Button } from './button';
 import { IconButton } from './icon-button';
 import { RadioGroup, RadioGroupItem } from './radio-group';
@@ -64,8 +64,8 @@ function ReviewDecision({
   onDiscard?: () => void;
   onClose?: () => void;
   submitDisabled?: boolean;
-  /** The mic and, while dictating, the recorder, for the comment (`DictationFrame`). */
-  dictation?: { mic?: React.ReactNode; recorder?: React.ReactNode };
+  /** Dictation for the comment (`DictationFrame`). */
+  dictation?: DictationSlot;
   labels?: { title?: string; comment?: string; optional?: string; placeholder?: string; discard?: string; close?: string };
   className?: string;
 }) {
@@ -85,7 +85,7 @@ function ReviewDecision({
           <span className="flex-1" />
           <span className="text-xs text-fg-subtle">{labels.optional ?? 'Optional'}</span>
         </span>
-        <DictationFrame mic={dictation?.mic} recorder={dictation?.recorder}>
+        <DictationFrame dictation={dictation}>
           <CommentField
             value={comment}
             onValueChange={onCommentChange}

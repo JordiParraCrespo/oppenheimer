@@ -7,8 +7,8 @@ import {
   Textarea,
 } from '@oppenheimer/design-system-web';
 import {
-  appendDictation,
   DictationField,
+  dictateIntoField,
   ErrorAlert,
   type ResolvedErrorMessage,
   useZodResolver,
@@ -82,14 +82,7 @@ export function TaskForm({
       </Field>
       <Field>
         <FieldLabel htmlFor="task-notes">{t('tasks.dialog.notesLabel')}</FieldLabel>
-        <DictationField
-          voice={voice}
-          onText={(text) =>
-            setValue('notes', appendDictation(getValues('notes') ?? '', text), {
-              shouldDirty: true,
-            })
-          }
-        >
+        <DictationField voice={voice} onText={dictateIntoField({ getValues, setValue }, 'notes')}>
           <Textarea
             {...register('notes')}
             id="task-notes"

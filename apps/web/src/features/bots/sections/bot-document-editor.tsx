@@ -5,7 +5,7 @@ import {
   useSaveBotDocument,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import { appendDictation, DictationField, ErrorAlert } from '@oppenheimer/frontend-web';
+import { DictationField, dictateInto, ErrorAlert } from '@oppenheimer/frontend-web';
 import { BOT_DOCUMENT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,10 +37,7 @@ export function BotDocumentEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <DictationField
-        voice={voice}
-        onText={(text) => setDraft((held) => appendDictation(held, text))}
-      >
+      <DictationField voice={voice} onText={dictateInto(setDraft)}>
         <Textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

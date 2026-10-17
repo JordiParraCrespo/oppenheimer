@@ -2,7 +2,7 @@ import { DialogBody, DialogHeader, DialogTitle } from '@oppenheimer/design-syste
 import { parseRepositoryKey } from '@oppenheimer/frontend-consumer';
 import { useProjects, useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import {
-  appendDictation,
+  dictateIntoField,
   ErrorAlert,
   type ResolvedErrorMessage,
   useServerFieldErrors,
@@ -123,11 +123,7 @@ export function AutomationEditor({
             register={form.register}
             errors={form.formState.errors}
             voice={voice}
-            onDictatePrompt={(text) =>
-              form.setValue('prompt', appendDictation(form.getValues('prompt'), text), {
-                shouldDirty: true,
-              })
-            }
+            onDictatePrompt={dictateIntoField(form, 'prompt')}
             autoFocus={!editing}
           />
         ) : step === 'trigger' ? (

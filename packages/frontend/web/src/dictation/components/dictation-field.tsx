@@ -1,4 +1,4 @@
-import { DictationFrame } from '@oppenheimer/design-system-web';
+import { DictationFrame, type DictationSlot } from '@oppenheimer/design-system-web';
 import type { ReactNode } from 'react';
 import { type Dictation, useDictation, type VoiceInput } from '../hooks/use-dictation';
 import { DictationBar } from './dictation-bar';
@@ -6,11 +6,26 @@ import { DictationError } from './dictation-error';
 import { DictationMic } from './dictation-mic';
 
 /**
+ * Dictation as every host takes it (`DictationSlot`): the mic while anyone
+ * can hear this workspace, the recorder while recording or transcribing,
+ * and what went wrong last. `Composer`, `ChatComposer`, `DiffCommentDraft`
+ * and `ReviewDecision` take it as `dictation`; `DictationField` gives a
+ * plain field one.
+ */
+export function dictationSlots(dictation: Dictation): DictationSlot {
+  return {
+    mic: dictation.available ? (
+      <DictationMic recording={dictation.recording} onClick={dictation.toggle} />
+    ) : undefined,
+    recorder: dictation.phase ? <DictationBar dictation={dictation} /> : undefined,
+    notice: dictation.problem ? <DictationError problem={dictation.problem} /> : undefined,
+  };
+}
+
+/**
  * A plain multi-line field that takes dictation (`product/next-steps/voice.md`):
- * the field as its child, the mic in its corner while `voice` says anyone can
- * hear this workspace, the recorder under it while dictating, and what went
- * wrong under it after. What is heard goes to `onText`; the field adds it to
- * what it holds (`appendDictation`), so a form field stays its form's.
+ * the field as its child, framed with the slot. What is heard goes to
+ * `onText`, which adds it to the field (`dictateInto`, `dictateIntoField`).
  */
 export function DictationField({
   voice,
@@ -25,28 +40,8 @@ export function DictationField({
 }) {
   const dictation = useDictation({ voice, onText });
   return (
-    <DictationFrame className={className} {...dictationSlots(dictation)}>
+    <DictationFrame className={className} dictation={dictationSlots(dictation)}>
       {children}
     </DictationFrame>
   );
-}
-
-/**
- * A field's mic and recorder, for a design-system component that frames its
- * own field (`DiffCommentDraft`, `ReviewDecision`) and takes them as its
- * `dictation`.
- */
-export function dictationSlots(dictation: Dictation): { mic?: ReactNode; recorder: ReactNode } {
-  return {
-    mic: dictation.available ? (
-      <DictationMic recording={dictation.recording} onClick={dictation.toggle} />
-    ) : undefined,
-    recorder: <DictationParts dictation={dictation} />,
-  };
-}
-
-/** The bar while dictating, else what went wrong, else nothing. */
-function DictationParts({ dictation }: { dictation: Dictation }) {
-  if (dictation.phase) return <DictationBar dictation={dictation} />;
-  return <DictationError problem={dictation.problem} />;
 }

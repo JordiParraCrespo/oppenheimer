@@ -9,8 +9,8 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Cpu, GitBranch } from '@oppenheimer/design-system-web/icons';
 import {
-  appendDictation,
   DictationField,
+  dictateIntoField,
   ErrorAlert,
   type ResolvedErrorMessage,
   type VoiceInput,
@@ -74,12 +74,7 @@ export function StartSessionForm({
     >
       <Field>
         <FieldLabel htmlFor="start-prompt">{t('tasks.start.prompt')}</FieldLabel>
-        <DictationField
-          voice={voice}
-          onText={(text) =>
-            setValue('prompt', appendDictation(getValues('prompt'), text), { shouldDirty: true })
-          }
-        >
+        <DictationField voice={voice} onText={dictateIntoField({ getValues, setValue }, 'prompt')}>
           <Textarea {...register('prompt')} id="start-prompt" rows={5} />
         </DictationField>
       </Field>

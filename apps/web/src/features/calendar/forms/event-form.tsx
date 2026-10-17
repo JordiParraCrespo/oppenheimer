@@ -9,8 +9,8 @@ import {
   Textarea,
 } from '@oppenheimer/design-system-web';
 import {
-  appendDictation,
   DictationField,
+  dictateIntoField,
   ErrorAlert,
   type ResolvedErrorMessage,
   TimeField,
@@ -144,14 +144,7 @@ export function EventForm({
       )}
       <Field>
         <FieldLabel htmlFor="event-notes">{t('calendar.event.notes')}</FieldLabel>
-        <DictationField
-          voice={voice}
-          onText={(text) =>
-            setValue('notes', appendDictation(getValues('notes') ?? '', text), {
-              shouldDirty: true,
-            })
-          }
-        >
+        <DictationField voice={voice} onText={dictateIntoField({ getValues, setValue }, 'notes')}>
           <Textarea {...register('notes')} id="event-notes" rows={3} />
         </DictationField>
       </Field>
