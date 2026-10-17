@@ -16,13 +16,12 @@ export function shortenPath(path: string, home: string | null | undefined): stri
 
 /**
  * A shown path short enough for a chip: the root, `…` for the folders in
- * between, and the last two, so the folder and its parent stay readable.
- * `~/oppenheimer-ai/workspaces/jordi/atlas` → `~/…/jordi/atlas`.
+ * between, and the folder's own name. `~/code/jordi/atlas` → `~/…/atlas`.
  */
 export function compactPath(path: string): string {
   const root = path.startsWith('/') ? '/' : path.startsWith(`${HOME}/`) ? `${HOME}/` : '';
   const parts = path.slice(root.length).split('/').filter(Boolean);
-  return parts.length > 2 ? `${root}…/${parts.slice(-2).join('/')}` : path;
+  return parts.length > 1 ? `${root}…/${parts.at(-1)}` : path;
 }
 
 /**

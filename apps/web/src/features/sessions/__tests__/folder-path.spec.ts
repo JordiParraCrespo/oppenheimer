@@ -22,10 +22,10 @@ describe('folder paths', () => {
     expect(shortenPath('/home/jordi/code', null)).toBe('/home/jordi/code');
   });
 
-  it('compacts a long path to its root and last two folders', () => {
-    expect(compactPath('~/oppenheimer-ai/workspaces/jordi/atlas')).toBe('~/…/jordi/atlas');
-    expect(compactPath('/srv/apps/web/atlas')).toBe('/…/web/atlas');
-    expect(compactPath('~/code/atlas')).toBe('~/code/atlas');
+  it('compacts a path to its root and the folder it names', () => {
+    expect(compactPath('~/oppenheimer-ai/workspaces/jordi/atlas')).toBe('~/…/atlas');
+    expect(compactPath('/srv/apps/atlas/')).toBe('/…/atlas');
+    expect(compactPath('~/code')).toBe('~/code');
     expect(compactPath('~')).toBe('~');
   });
 
