@@ -227,7 +227,8 @@ export const TOC: TocGroup[] = [
     group: 'Chat',
     items: [
       { id: 'chattranscript', label: 'Transcript', icon: MessageSquareIcon, components: ['chat-transcript'] },
-      { id: 'chatwork', label: 'Work and tools', icon: SlidersHorizontalIcon, components: ['chat-work'] },
+      { id: 'chatwork', label: 'Work and tools', icon: SlidersHorizontalIcon, components: ['chat-work', 'chat-trace'] },
+      { id: 'chatelements', label: 'AI elements', icon: CodeIcon, components: ['chat-elements', 'chat-composer'] },
       { id: 'chatcards', label: 'Cards', icon: RectangleHorizontalIcon, components: ['chat-cards'] },
       { id: 'chatstatus', label: 'Dividers and status', icon: TriangleAlertIcon, components: ['chat-status'] },
       { id: 'chatstack', label: 'Above the composer', icon: LayersIcon, components: ['chat-composer-stack'] },
@@ -241,6 +242,7 @@ export const TOC: TocGroup[] = [
     items: [
       { id: 'botitem', label: 'BotItem', icon: BotIcon, components: ['bot-item'] },
       { id: 'avatarpicker', label: 'AvatarPicker', icon: CircleUserRoundIcon, components: ['avatar-picker'] },
+      { id: 'avatarcolorpicker', label: 'AvatarColorPicker', icon: CircleUserRoundIcon, components: [] },
       { id: 'routinecard', label: 'RoutineCard', icon: ZapIcon, components: ['routine-card'] },
       { id: 'settingslist', label: 'SettingsListRow · SettingsAddRow', icon: RowsIcon, components: [] },
       { id: 'settingstopbar', label: 'SettingsTopBar', icon: PanelTopIcon, components: [] },

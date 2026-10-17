@@ -63,6 +63,7 @@
       "!**/test-results",
       "!scripts/evals/*/results",
       "!**/node-compile-cache",
+      "!!**/.claude/worktrees",
       "!**/.agents",
       "!**/*.md",
       "!**/*.css",

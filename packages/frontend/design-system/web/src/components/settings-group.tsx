@@ -96,7 +96,8 @@ function SettingsHeading({ className, ...props }: React.ComponentProps<'h2'>) {
  * a revision, a learned fact, a connector, a thread between bots. `lead` is
  * what sits first (who made it, as a 22px pill: "You", "Release Bot");
  * then the text at 14px over a `meta` line in 12px subtle, where `kind`
- * is an 18px tag on the hover wash ("Preference", "Repo"). `actions` hold
+ * is an 18px tag on the hover wash ("Preference", "Repo", "Key ending in
+ * wzKr") that never wraps, and the meta wraps in the room it leaves. `actions` hold
  * what the row does (Revert, edit and delete icon buttons, a `Switch`), or a
  * word in their place ("Current"). `muted` is a record the bot can read but
  * not change (a fact shared from another bot). An edit in place passes the
@@ -140,11 +141,13 @@ function SettingsListRow({
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className={cn('text-[14px] leading-[1.45] text-pretty', muted ? 'text-fg-muted' : 'text-fg')}>{children}</span>
         {meta || kind ? (
-          <span className="flex items-center gap-2 text-[12px] text-fg-subtle">
+          <span className="flex items-start gap-2 text-[12px] text-fg-subtle">
             {kind ? (
-              <span className="inline-flex h-4.5 items-center rounded-xs bg-hover-surface px-1.5 text-fg-muted">{kind}</span>
+              <span className="inline-flex h-4.5 shrink-0 items-center whitespace-nowrap rounded-xs bg-hover-surface px-1.5 text-fg-muted">
+                {kind}
+              </span>
             ) : null}
-            {meta}
+            {meta ? <span className="min-w-0 flex-1 leading-4.5">{meta}</span> : null}
           </span>
         ) : null}
       </span>

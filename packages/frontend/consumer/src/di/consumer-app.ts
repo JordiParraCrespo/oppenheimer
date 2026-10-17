@@ -1,6 +1,8 @@
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
 import type { AutomationsRepository } from '../modules/automations';
 import { AutomationsModule } from '../modules/automations';
+import type { BotsRepository } from '../modules/bots';
+import { BotsModule } from '../modules/bots';
 import type { CalendarRepository } from '../modules/calendar';
 import { CalendarModule } from '../modules/calendar';
 import type { HostsRepository } from '../modules/hosts';
@@ -31,6 +33,7 @@ export const consumerModules = [
   SessionsModule,
   ProjectsModule,
   AutomationsModule,
+  BotsModule,
   PullRequestsModule,
   TasksModule,
   CalendarModule,
@@ -85,6 +88,11 @@ export class ConsumerApp {
   /** Saved prompts that start sessions on a schedule or an event, and the runs they made. */
   get automations(): AutomationsRepository {
     return this.kernel.container.get(TOKENS.AutomationsRepository);
+  }
+
+  /** The Employees section: bots, their sidebar groups, their soul and instructions, their memory. */
+  get bots(): BotsRepository {
+    return this.kernel.container.get(TOKENS.BotsRepository);
   }
 
   /** Pull requests on GitHub: the queue, a briefing, reviews and merges in the user's name, analytics. */

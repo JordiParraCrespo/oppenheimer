@@ -21,7 +21,7 @@ for the detail and sources.
 | 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
 | research/ | [Research](research/README.md) | Reads of other products, measurements and proposals that were not adopted; they decide nothing. Notes 12 (Grok Bot), 13 (herdr), 14 (session boot time) and 16 (developer-tools landscape) live there, and its index maps the old numbers |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP, one document each; its README is the list and holds the order |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -464,6 +464,52 @@ earlier note:
   name was settled as the id the runner receives when it is paired
   (`POST /hosts/register` answers it), so `session.create` and
   `repository.prepare` carry the workspace only (24 §2, §5).
+- The agent catalog mapped Claude Code's `auto` level to
+  `--permission-mode acceptEdits`, which prompts on every shell command,
+  and review sessions launched at `ask` (both left open in
+  `versions/mvp/16-automations-architecture.md` and
+  `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
+  Claude Code's own auto mode (`--permission-mode auto`), which checks each
+  action before it runs, and made it the level review sessions start at.
+- On 2026-10-16 the owner dropped the review session's input row, which
+  doubled the agent's own prompt; the Chat tab is now the plain session
+  pane (`next-steps/0.2-pull-requests.md`).
+- `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
+  on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
+- Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
+  2026-10-15 both were turned off: the fetch reached the server's private
+  network, and subagents searched the server's disk (25, "Decided").
+- Note 25's system prompt was the bot's soul, instructions and memory. On
+  2026-10-15 it became ours from the first line, with a closed list of
+  what the bot can do and the sender's time, home host and hosts, and a
+  turn stops after 4 minutes (25, "Decided").
+- Note 25 ran bots on three providers, each on a workspace's API key. On
+  2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
+  through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
+  (25, §2 and "Decided").
+- Note 25's system prompt ended with the moment the turn ran in: the
+  sender's time, the home host and the hosts. On 2026-10-15 that moved to
+  a `<turn_context>` block opening each turn's message, so the system
+  prompt is the same bytes every turn and the provider's prompt cache
+  hits (25, "Decided").
+- Note 25 sent a turn the bot's last 40 messages and dropped everything
+  older without a word. On 2026-10-15 history became a token budget
+  (24,000 tokens) opened by a stored summary of the older messages, which
+  a `bot-summaries` job writes with the bot's own model once they pass the
+  budget with headroom (25 §2, "Decided"). The chat still shows every
+  message.
+- Note 25 named a bot's last settings page Runs on (Works on from slice
+  3), and its picks, the colour and sidebar group on Profile included,
+  saved on the click. On 2026-10-16 the owner, testing it, read Runs on as
+  where the bot runs: the page is **Home host** now, says the bot always
+  runs in Oppenheimer and the home host is only where its sessions start
+  when no machine is named, offers No home host, and every bot settings
+  page saves a draft with Save (25 §1, "Decided").
+- Note 25 named a blank bot "New Bot" and had it ask for its job in one
+  line. On 2026-10-16 a blank bot takes the next of twenty first names
+  ("Juno", "Milo"…), and its first chat walks it through learning one
+  job, writing its own INSTRUCTIONS.md and description, and offering a
+  first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
 - `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
   milestone bar on to ten days past its last milestone, which read as the
   bar overshooting the dates. On 2026-10-15 the owner had it end on the last

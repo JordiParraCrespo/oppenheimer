@@ -22,6 +22,8 @@ import { cn } from '../lib/utils';
  *   the verb and target breathing, the elapsed time.
  * - `ReasoningRow`: "Thought for 9s", folded; open, the thinking reads in
  *   the muted tone behind a hairline.
+ *
+ * A bot's chat draws its work as a trace instead: `chat-trace.tsx`.
  */
 function ToolCallGroup({
   summary,

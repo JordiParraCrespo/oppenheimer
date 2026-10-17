@@ -95,3 +95,64 @@ its second year: brokered descriptors with structured hints, resumable
 migration streams, recreate-with-data-preserved updates, disk pressure,
 and epoch-guarded reconnects. All of it fits the runner and control
 plane as designed, without changing a boundary.
+
+## 5. Grok Bot 0.71.2: the bot itself (2026-10-15)
+
+Sections 1 to 4 read version 0.18's connection layer. On 2026-10-15 a
+static read of version 0.71.2, built by Anysphere on Cursor's agent
+stack, looked at the bot instead of the box, for the bots design
+(`versions/mvp/25-bots.md`). It found:
+
+- **The loop moved to the vendor's servers.** The desktop app no longer
+  runs the agent; it is a client of a loop that runs elsewhere.
+- **A curated chat.** Only what the bot sends reaches you; the tool
+  calls behind it are not the conversation.
+- **Memory as files, with a source on each fact.** What the bot
+  remembers says where it learned it.
+- **Layered approvals.** More than one level decides whether a tool call
+  runs without asking.
+- **Bots that edit themselves without asking**, with no history to go
+  back to.
+
+What note 25 takes from it, and what it does differently, is that
+note's "Research" section: the curated chat, the source on each fact,
+queue lanes and a bounded chain for bot-to-bot turns, taken; revisions
+for the bot's documents and the owner's own permissions as the ceiling,
+where Grok Bot has neither.
+
+## 6. Grok Bot's onboarding, from its own docs (2026-10-16)
+
+The desktop installer could not be fetched from this environment (the
+download page and the reconstructed repository both refused it), so this
+section reads xAI's published guide instead
+(`docs.x.ai/grok-bot/get-started`, `docs.x.ai/grok-bot/bots`), which is
+what a person sees anyway. No code is taken.
+
+- **First run is a tour, then a roster.** Sign-in, a short introduction of
+  bots, the shared computer and routines, a question about which tools the
+  person uses (it shapes suggestions, connects nothing), the computer
+  setting up in the background, and a **"Meet a future teammate"** screen:
+  pick a suggested teammate or create your own.
+- **A new bot is "New Bot" until edited.** Creating one opens it under
+  that name; name, label, description and avatar are set in Edit Profile.
+  The guide asks for a short name, **one primary job**, and a description
+  of how it should work.
+- **Name it after the job.** Its examples are Talent Scout, Expense
+  Manager, Bug Reproduction, Account Health; "General Helper" is the
+  counter-example, because a vague bot gets less guidance and its saved
+  context is harder to reuse. Focused bots over one catch-all.
+- **The description holds durable rules:** what the bot owns, which
+  sources it uses, and what it must never do without approval. The
+  conversation holds the task of the moment.
+- **Memory is not authoritative.** Changing facts stay in their source
+  system; ask the bot to reopen current data before a consequential call.
+- **Pin, hide, duplicate, share as a template.** Duplicating copies the
+  profile, skills and routines but not history or memory.
+
+What we take (`versions/mvp/25-bots.md` §1): the one focused job, the
+description as the job, the rules a bot must never break without asking,
+and the first concrete task. What we do differently: the bot does the
+setup itself in its first chat, so nobody has to find Edit Profile, and
+it is born with a first name rather than "New Bot", since a sidebar of
+"New Bot 2, New Bot 3" says nothing. The welcome tour, suggested
+teammates and templates wait for 25 §7's templates.

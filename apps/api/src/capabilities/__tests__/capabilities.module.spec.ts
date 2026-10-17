@@ -18,7 +18,16 @@ describe('resolveCapabilities', () => {
       session_namer: false,
       ip_geolocation: false,
       google_calendar: false,
+      bot_providers: false,
     });
+  });
+
+  it('reports bot providers only with a 32-byte sealing key', () => {
+    const key = Buffer.alloc(32, 7).toString('base64');
+    expect(resolveCapabilities(configWith({ 'bots.providerKey': 'too-short' })).bot_providers).toBe(
+      false,
+    );
+    expect(resolveCapabilities(configWith({ 'bots.providerKey': key })).bot_providers).toBe(true);
   });
 
   it('reports Google Calendar only with the Google client and a 32-byte sealing key', () => {

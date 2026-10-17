@@ -17,8 +17,9 @@ import { signInAs } from '../../support/web';
  * shows its terminal. The session is listed under For review and never under
  * Sessions. The stub's #14 is `fix/wallet-empty-state` on `xrp-mobile`,
  * which the fleet's git server also carries; the `claude` shim prints the
- * argv it was started with, then hands the pane to a shell, so a line sent
- * from the composer under the terminal runs there. Needs the console on `WEB_URL`.
+ * argv it was started with, then hands the pane to a shell. The pane has no
+ * input row of its own: the agent's prompt in the grid is the only one. Needs
+ * the console on `WEB_URL`.
  */
 test.describe.configure({ timeout: 240_000 });
 test.use({ baseURL: WEB_URL });
@@ -71,24 +72,16 @@ test('a pull request’s Chat tab starts a review session on its head branch', a
     page.getByRole('listitem').filter({ hasText: '#14 Fix the empty state' }),
   ).toBeVisible();
 
-  // Claude Code starts on the review prompt, asking before any edit, in the worktree
+  // Claude Code starts on the review prompt, in auto mode, in the worktree
   // of the head branch.
   const terminal = await attach(api, sessionId);
   const screen = await terminal.waitFor('CLAUDE-SHIM argv=', 120_000);
-  expect(screen).toContain('--permission-mode manual');
+  expect(screen).toContain('--permission-mode auto');
   expect(screen).toContain('Help me review pull request #14 in acme-labs/xrp-mobile');
   // The typed line holds `$((1+1))`, never the `2`, so only the answer matches.
   terminal.send(
     `git merge-base --is-ancestor origin/${STUB_BRANCH} HEAD && echo HEAD-OF-$((1+1))\r`,
   );
   await terminal.waitFor('HEAD-OF-2', 30_000);
-
-  // The composer under the terminal sends a line to the agent, as typed at
-  // its prompt: here the shim's shell runs it.
-  const composer = page.getByRole('textbox', { name: 'Ask the review agent, or run a command' });
-  await composer.fill('echo COMPOSED-$((2+3))');
-  await composer.press('Enter');
-  await expect(composer).toHaveValue('');
-  await terminal.waitFor('COMPOSED-5', 30_000);
   await terminal.close();
 });

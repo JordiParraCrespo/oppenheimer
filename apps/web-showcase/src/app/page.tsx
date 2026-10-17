@@ -852,13 +852,21 @@ export default function Page() {
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
-        desc="The multi-line field at the 10px radius, sized to its content from 88px."
-        code={`<Textarea placeholder="Session name" />`}
+        desc="The multi-line field at the 10px radius, sized to its content from 88px. The code variant is a file edited in place (a bot's SOUL.md and INSTRUCTIONS.md): mono at 13px, the 18px reading radius, at least 320px tall."
+        code={`<Textarea placeholder="Session name" />
+<Textarea variant="code" aria-label="INSTRUCTIONS.md" defaultValue={file} />`}
       >
-        <Field className="w-full max-w-105">
-          <FieldLabel htmlFor="notes">Session name</FieldLabel>
-          <Textarea id="notes" placeholder="Describe the task in one or two lines." />
-        </Field>
+        <div className="flex w-full flex-col gap-6">
+          <Field className="w-full max-w-105">
+            <FieldLabel htmlFor="notes">Session name</FieldLabel>
+            <Textarea id="notes" placeholder="Describe the task in one or two lines." />
+          </Field>
+          <Textarea
+            variant="code"
+            aria-label="INSTRUCTIONS.md"
+            defaultValue={'# Instructions\n\n- Work only in the projects and repositories you have access to.\n- Ask before merging, deleting, pushing or deploying.'}
+          />
+        </div>
       </Spec>
 
       <Spec

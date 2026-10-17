@@ -110,8 +110,10 @@ test.describe('Pull requests', () => {
     await expect(page.getByText('src/screens/wallet/EmptyWallet.tsx').first()).toBeVisible({
       timeout: 30_000,
     });
-    // Back from the changes is the pull request's bare address: its description.
-    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    // The bar keeps its views on Changes, with the diff's layout beside them, and
+    // Description is the pull request's bare address.
+    await expect(page.getByRole('button', { name: 'Split', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Description', exact: true }).click();
     await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14$/);
     await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible();
 

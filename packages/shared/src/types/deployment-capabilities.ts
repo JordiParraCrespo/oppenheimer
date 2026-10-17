@@ -32,6 +32,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'session_namer',
   'ip_geolocation',
   'google_calendar',
+  'bot_providers',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
@@ -66,6 +67,10 @@ export const CLIENT_CAPABILITIES = [
   // this before it asks. Public because the probe is: anonymous callers get
   // it too, and it says no more than whether pairing is configured.
   'hosts',
+  // Whether a workspace can store a model provider's key, which a bot needs
+  // to answer. Without it the console says so instead of offering a form
+  // whose save would fail.
+  'bot_providers',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];
