@@ -157,20 +157,9 @@ code, keeping the upstream code as an `upstreamCode` extension. Throwing a bare
 
 ## Third-party services are providers
 
-A capability a vendor provides (hearing speech, sending a message, running a
-model) is one port in `application/`, each vendor a provider implementing it,
-and one ordered list (`<capability>-provider.registry.ts`) built in the
-module. The resolver beside it is the only place that decides fallback: the
-first available provider answers, anything but a rate limit falls through to
-the next, a rate limit answers at once. Clients ask
-`GET /v1/<capability>/status` whether the workspace has a provider. Each
-vendor's HTTP is its own gateway behind an `UpstreamLimiter`.
-
-`src/voice/` is the worked example; the rule is
-`.agents/rules/provider-integrations.md` and the walkthrough is the
-`/integrate-provider` skill. Adding a vendor touches one gateway, one provider
-class, its id in `packages/shared` and its place in the list: if you are
-editing the resolver or the console to add one, the shape did not hold.
+A vendor's capability (speech, messages, a model) is one port with a provider
+per vendor in one ordered list: `.agents/rules/provider-integrations.md`, the
+`/integrate-provider` skill, and `src/voice/` as the worked example.
 
 ## Config
 

@@ -206,10 +206,7 @@ need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
   `UpstreamLimiter.exchange` (`@oppenheimer/backend-core`), with buckets named
   for what the provider counts and a `429` code of its own
 - `provider-integrations.md` — a third-party service is a capability behind
-  one interface, each vendor a provider in one ordered list with one
-  fallback rule, and a status endpoint the console reads; the next vendor is
-  a class and a line. `/integrate-provider` walks a new integration, and
-  `apps/api/src/voice/` is the worked example
+  one interface, each vendor a provider in one ordered list
 - `rbac-roles.md` — database-backed roles & permissions, `@CheckPolicies`/`PoliciesGuard`, resource scoping, role-management endpoints
 - `scopes-and-credentials.md` — the scope catalog, `@RequireScopes`/`ScopesGuard`, API tokens, OAuth for MCP clients
 
@@ -401,11 +398,7 @@ pnpm changeset          # Create a changeset for versioning
   `pnpm generate:api-client`
 - Keep the pluggable service pattern: abstract class → concrete implementations → factory in module
 - Integrating a third-party service (an LLM, speech, email, SMS, a calendar,
-  any vendor API) is the `/integrate-provider` skill: the capability as one
-  interface, each vendor a provider in one ordered list
-  (`.agents/rules/provider-integrations.md`), every call through an
-  `UpstreamLimiter` (`.agents/rules/integrations.md`). Never name the
-  interface after the first vendor
+  any vendor API) is the `/integrate-provider` skill
 - New translations go in `packages/translations/{locale}/index.json`
 - Where frontend code goes — kernel, product package, platform kit, or a
   feature's kind directory — is `.agents/rules/frontend-architecture.md`;
