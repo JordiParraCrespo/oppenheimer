@@ -595,14 +595,30 @@ catalog's `install` entry (`packages/shared/src/agents/catalog.ts` for
 agents, `host-tools.ts` for `git`, `tmux` and `gh`), generated into the
 runner's `host_tools.gen.go`: a POSIX `sh` script per platform family,
 run as the runner's account with no terminal and nothing on stdin, under the
-same per-agent lock as an update, bounded at ten minutes. The scripts prefer
-the vendor's own installer, fetched to a file before it runs (never `curl |
-sh`, which runs half a script when a download is cut), and a user-level
-destination; none uses `sudo`. Claude Code and OpenCode use their vendors'
-installers; Codex and Grok use their npm packages under a `~/.local` prefix,
-because that is a destination the catalog can name; `gh` is its release
-tarball, checked against the release's checksums, on Linux and Homebrew on
-macOS. Each entry names the directory it installs into, and the runner
+same per-agent lock as an update, bounded at ten minutes. Every script
+installs to a user-level destination and none uses `sudo`. Where the
+vendor publishes release binaries with checksums, the script takes the
+latest release and checks it against the vendor's published SHA-256
+(`sha256sum` on Linux, `shasum -a 256` on macOS) before anything from it is
+unpacked or run, and a checksum that is missing, malformed or different
+stops the install (`release-install.ts`). Claude Code reads the version
+`downloads.claude.ai/claude-code-releases/latest` names, takes that
+version's `manifest.json`, downloads the binary for its platform (musl
+told from glibc, Rosetta from Intel, as `claude.ai/install.sh` does),
+verifies it against the manifest's checksum, and runs the verified
+binary's own `claude install <version>`, which links `~/.local/bin/claude`;
+`gh` on Linux is its release tarball, checked against the release's
+`checksums.txt`, and Homebrew on macOS. That trusts the vendor's release
+over HTTPS: it catches a download cut short, corrupted, or swapped on a
+mirror or CDN, not a compromised vendor. *(Changed 2026-10-17: until then
+Claude Code and OpenCode ran their vendors' install scripts, fetched to a
+file first, which nothing checked.)* OpenCode still runs
+`opencode.ai/install`, fetched to a file before it runs (never `curl | sh`),
+because its GitHub releases publish no checksum for the CLI archives to
+verify against; how to replace it is open. Codex and Grok use their npm
+packages under a `~/.local` prefix, because that is a destination the
+catalog can name, and npm checks each package against the registry's
+integrity hash. Each entry names the directory it installs into, and the runner
 appends every such directory to its own `PATH` at start, so a tool it
 installed is found by the next probe and by the sessions' tmux server
 without the person editing a shell profile the service never reads. An
@@ -721,3 +737,14 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
    a session whose terminal says "command not found". The host facts already
    carry every tool and version the console needs to show what each host can
    run.
+11. **Installing OpenCode without its script.** Claude Code and `gh` install
+   from a release binary checked against the vendor's checksum (§10).
+   OpenCode cannot yet: `opencode.ai/install` checks nothing, and its GitHub
+   releases (`anomalyco/opencode`) publish no checksum for the CLI archives
+   (`latest.json` and `latest.yml` cover the desktop app only). Two ways out:
+   the npm packages `opencode-ai` already resolves to (`opencode-<platform>`,
+   checked against the registry's integrity hash, as Codex and Grok are),
+   which moves its executable and its `upgrade --method` to npm's; or the
+   SHA-256 GitHub's release API reports per asset, which is GitHub's digest
+   rather than the vendor's and costs an API call under the unauthenticated
+   rate limit. Until it is decided, OpenCode runs its vendor's script.

@@ -526,3 +526,11 @@ earlier note:
   command leaves a host ready to run a session (`versions/mvp/09` §2).
   Developing Oppenheimer itself on a new machine is one command,
   `scripts/dev/bootstrap.sh`, with `mise.toml` pinning the toolchain.
+- `versions/mvp/02-runner.md` §10 (2026-10-12) installed Claude Code and
+  OpenCode by running their vendors' install scripts, fetched to a file
+  first but checked by nothing. On 2026-10-17 Claude Code installs from its
+  latest release binary instead, verified against the SHA-256 in that
+  release's manifest before the binary runs its own `claude install`, and
+  `gh` shares the same check; no Claude Code script runs. OpenCode keeps
+  its script for now, because its releases publish no checksum for the CLI
+  (02 open question 11).

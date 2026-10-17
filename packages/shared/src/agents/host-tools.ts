@@ -15,6 +15,7 @@
  * (`host_tools.gen.go`) by `scripts/emit-agent-catalog.cjs`.
  */
 import type { HostInstall } from './catalog.js';
+import { RELEASE_TEMP_DIR, sha256Verifier } from './release-install.js';
 
 export const HOST_TOOL_IDS = ['git', 'tmux', 'gh'] as const;
 
@@ -65,12 +66,12 @@ const GH_LINUX = [
   'name="gh_${version}_linux_${arch}"',
   // biome-ignore lint/suspicious/noTemplateCurlyInString: a shell expansion, not a JS template
   'base="https://github.com/cli/cli/releases/download/v${version}"',
-  'tmp="$(mktemp -d)"',
-  'trap \'rm -rf "$tmp"\' EXIT',
+  ...RELEASE_TEMP_DIR,
+  ...sha256Verifier('linux', 'gh'),
   'curl -fsSL "$base/$name.tar.gz" -o "$tmp/$name.tar.gz"',
   // biome-ignore lint/suspicious/noTemplateCurlyInString: a shell expansion, not a JS template
   'curl -fsSL "$base/gh_${version}_checksums.txt" -o "$tmp/checksums.txt"',
-  '(cd "$tmp" && grep " $name.tar.gz\\$" checksums.txt | sha256sum -c -)',
+  'verify "$tmp/$name.tar.gz" "$(awk -v f="$name.tar.gz" \'$2 == f { print $1 }\' "$tmp/checksums.txt")"',
   'tar -xzf "$tmp/$name.tar.gz" -C "$tmp"',
   'mkdir -p "$HOME/.local/bin"',
   'install -m 0755 "$tmp/$name/bin/gh" "$HOME/.local/bin/gh"',

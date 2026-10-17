@@ -16,9 +16,12 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. The two script builders beside the install entries
- * (`vendorInstaller`, `npmUserInstall`) are private: they only spell data.
+ * that the same way. The script builders beside the install entries
+ * (`claudeRelease`, `vendorInstaller`, `npmUserInstall`) are private: they
+ * only spell data.
  */
+
+import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
 
 /**
  * Every agent id, in display order.
@@ -234,10 +237,12 @@ export interface CodingAgentLoginTarget {
  * and as the person's own account: no `sudo`, no terminal, nothing on stdin
  * (`product/versions/mvp/02-runner.md` §10).
  *
- * Each platform's entry is a POSIX `sh` script, run with `sh -c`. It prefers
- * the vendor's own installer, fetched to a file first so a download cut short
- * fails the install instead of feeding half a script to a shell, and a
- * user-level destination. A platform with no entry is one the runner does not
+ * Each platform's entry is a POSIX `sh` script, run with `sh -c`, and a
+ * user-level destination. A vendor that publishes release binaries with
+ * checksums is installed from its latest release, verified against that
+ * checksum before it is unpacked or run (`release-install.ts`); one that
+ * publishes on npm is installed from the registry, which checks each
+ * package's integrity. A platform with no entry is one the runner does not
  * install on; it says so rather than guessing.
  *
  * `bin` is the directory, `~`-relative, the script leaves the executable in.
@@ -262,9 +267,51 @@ export interface InstallMethod {
 }
 
 /**
+ * Claude Code's latest native build, as `claude.ai/install.sh` finds it but
+ * without running that script: the version `latest` names, that version's
+ * `manifest.json`, the binary for this platform checked against the
+ * manifest's SHA-256, and then the verified binary's own `claude install
+ * <version>`, which puts it under `~/.local/share/claude/versions` with the
+ * `~/.local/bin/claude` link. Linux tells musl from glibc and macOS an x64
+ * shell under Rosetta from an Intel Mac, as the vendor's script does.
+ */
+function claudeRelease(platform: ReleasePlatform): string {
+  const target =
+    platform === 'macos'
+      ? [
+          'if [ "$arch" = x64 ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ]; then arch=arm64; fi',
+          'platform="darwin-$arch"',
+        ]
+      : [
+          'if [ -f /lib/libc.musl-x86_64.so.1 ] || [ -f /lib/libc.musl-aarch64.so.1 ] || ldd /bin/ls 2>&1 | grep -q musl; then platform="linux-$arch-musl"; else platform="linux-$arch"; fi',
+        ];
+  return [
+    'set -eu',
+    'case "$(uname -m)" in x86_64|amd64) arch=x64 ;; aarch64|arm64) arch=arm64 ;; *) echo "claude: unsupported architecture $(uname -m)" >&2; exit 1 ;; esac',
+    ...target,
+    'base=https://downloads.claude.ai/claude-code-releases',
+    ...RELEASE_TEMP_DIR,
+    ...sha256Verifier(platform, 'claude'),
+    'version="$(curl -fsSL "$base/latest")"',
+    String.raw`printf '%s' "$version" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' || { echo "claude: could not read the latest version from $base/latest" >&2; exit 1; }`,
+    'curl -fsSL "$base/$version/manifest.json" -o "$tmp/manifest.json"',
+    // The platform's own object only: `[^{}]*` cannot leave it.
+    String.raw`checksum="$(tr -d ' \t\r\n' <"$tmp/manifest.json" | grep -o "\"$platform\":{[^{}]*}" | grep -o '"checksum":"[0-9a-f]*"' | cut -d '"' -f 4)"`,
+    // Before the binary's download, which is hundreds of megabytes.
+    'printf \'%s\' "$checksum" | grep -Eqx \'[0-9a-f]{64}\' || { echo "claude: the $version manifest has no checksum for $platform" >&2; exit 1; }',
+    'curl -fsSL "$base/$version/$platform/claude" -o "$tmp/claude"',
+    'verify "$tmp/claude" "$checksum"',
+    'chmod 0755 "$tmp/claude"',
+    '"$tmp/claude" install "$version" </dev/null',
+  ].join('\n');
+}
+
+/**
  * A vendor's installer script: fetched whole to a temporary file, then run.
  * `curl … | bash` would run whatever arrived when the download is cut short,
- * and report success; this fails instead.
+ * and report success; this fails instead. Nothing checks what the script is,
+ * so it is left only where the vendor publishes no checksum to check a
+ * release binary against (OpenCode, whose replacement is the owner's call).
  */
 function vendorInstaller(url: string): string {
   return [
@@ -460,11 +507,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `claude update|upgrade`: "Check for updates and install if available",
     // claude 2.1.284. It takes no options and asks nothing.
     update: Object.freeze(['update']),
-    // The native installer, the one Anthropic documents first: one binary in
+    // The native build, the one Anthropic documents first: one binary in
     // `~/.local/bin`, no Node, and it keeps itself current through `update`.
+    // Its latest release, checked against the release manifest's checksum,
+    // rather than `claude.ai/install.sh`, which would run unchecked.
     install: Object.freeze({
-      macos: vendorInstaller('https://claude.ai/install.sh'),
-      linux: vendorInstaller('https://claude.ai/install.sh'),
+      macos: claudeRelease('macos'),
+      linux: claudeRelease('linux'),
       bin: '~/.local/bin',
     }),
   }),

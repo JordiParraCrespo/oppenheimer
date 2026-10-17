@@ -41,9 +41,13 @@ func TestUpdateAgentsTellsOpenCodeHowItWasInstalled(t *testing.T) {
 
 func TestInstallRunsTheCatalogScriptAndReportsTheProbedTool(t *testing.T) {
 	p := fake.New()
+	want, err := domain.InstallScript(domain.ToolClaude, p.PlatformName)
+	if err != nil {
+		t.Fatal(err)
+	}
 	i := &fake.Installer{Run: func(tool, script string) error {
-		if !strings.Contains(script, "https://claude.ai/install.sh") {
-			t.Errorf("script for %s is not the vendor installer:\n%s", tool, script)
+		if script != want {
+			t.Errorf("script for %s is not the catalog's %s entry:\n%s", tool, p.PlatformName, script)
 		}
 		p.Tools[domain.ToolClaude] = domain.Tool{Path: "/home/jordi/.local/bin/claude", Version: "2.1.284 (Claude Code)"}
 		return nil

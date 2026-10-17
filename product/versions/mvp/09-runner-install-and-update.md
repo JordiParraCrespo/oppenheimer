@@ -393,8 +393,9 @@ putting the user's credentials on it.
    When an updater fails (`HOST_009` from `runner agents update`, a
    warning in the service log), the CLI is almost always installed where
    the runner's account cannot write: `npm install -g` as root, or a
-   system package. Reinstall it as the account the runner runs as (Claude
-   Code's own installer puts it in `~/.local/bin`), or keep it current by
+   system package. Reinstall it as the account the runner runs as
+   (`runner agents install claude` puts Claude Code in `~/.local/bin`, from
+   its verified release binary), or keep it current by
    other means and set `RUNNER_AGENT_UPDATES=off` before `runner install`,
    which the service unit then carries.
 5. Update telemetry: is "version, channel, last outcome" per host enough
