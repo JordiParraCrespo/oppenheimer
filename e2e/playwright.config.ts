@@ -121,9 +121,10 @@ export default defineConfig({
       },
     },
     // Screenshots for a pull request (`tests/screens`), not a test: opt-in
-    // with `SCREENS`, which names the routes (what `screens` in package.json
-    // is for), so `e2e` and `e2e:web` never select it.
-    ...(process.env.SCREENS
+    // with `SCREENS`, which names the routes, or `SCREENS_SPECS`, set when
+    // `pnpm screens --spec` runs a throwaway spec from `tests/screens/local`,
+    // so `e2e` and `e2e:web` never select it.
+    ...(process.env.SCREENS || process.env.SCREENS_SPECS
       ? [
           {
             name: 'screens',

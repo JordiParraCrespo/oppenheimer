@@ -5,13 +5,19 @@
  *
  *   pnpm screens /sessions /settings/profile anon:/login
  *   pnpm screens --phone --github /sessions/new
+ *   pnpm screens --spec dialog /sessions
  *   pnpm screens --not-visual "renames a prop; nothing on screen changes"
  *
  * Each route is taken light and dark into `.screenshots/` by the e2e
  * `screens` project (`e2e/tests/screens/screens.spec.ts`), against the stack
  * `stack.mjs up --web` started. `--phone` adds a 390px width to the 1440px
- * one; `--github` connects a stub GitHub installation first. It empties
- * `.screenshots/` first, so the folder never mixes two runs. Chromium is the
+ * one; `--github` connects a stub GitHub installation first. `--spec <name>`
+ * also runs `e2e/tests/screens/local/<name>.spec.ts`, a throwaway spec that
+ * reaches a state an empty account cannot (a dialog open, a host online) and
+ * screenshots it into `.screenshots/`; that folder is git-ignored and the
+ * agent writes into it without a prompt, so no copy, rewrite or cleanup of a
+ * spec is ever needed. A run that names routes empties `.screenshots/`
+ * first, so the folder never mixes two runs of them. Chromium is the
  * machine's own where it ships one (`/opt/pw-browsers/chromium`), so nothing
  * is downloaded.
  *
@@ -40,6 +46,7 @@ function fingerprint() {
 }
 
 const routes = [];
+const specs = [];
 const env = { ...process.env };
 let notVisual = null;
 const argv = process.argv.slice(2);
@@ -48,6 +55,7 @@ for (let i = 0; i < argv.length; i += 1) {
   if (arg === '--not-visual') notVisual = argv[++i] ?? '';
   else if (arg === '--phone') env.SCREENS_WIDTHS = '1440,390';
   else if (arg === '--github') env.SCREENS_GITHUB = '1';
+  else if (arg === '--spec') specs.push(argv[++i] ?? '');
   else if (arg.startsWith('-')) {
     console.error(`screens: unknown option ${arg}`);
     process.exit(2);
@@ -66,7 +74,17 @@ if (notVisual !== null) {
   console.log(`screens: recorded as not visual in ${resolve(OUT, 'not-visual.md')}`);
   process.exit(0);
 }
-if (routes.length === 0) {
+const specFiles = [];
+for (const spec of specs) {
+  const name = spec.replace(/^.*\//, '').replace(/\.spec\.ts$/, '');
+  const file = `tests/screens/local/${name}.spec.ts`;
+  if (!name || !existsSync(resolve(ROOT, 'e2e', file))) {
+    console.error(`screens: --spec ${spec}: no e2e/${file}`);
+    process.exit(2);
+  }
+  specFiles.push(file);
+}
+if (routes.length === 0 && specFiles.length === 0) {
   console.error('screens: name at least one route, e.g. pnpm screens /sessions');
   process.exit(2);
 }
@@ -87,19 +105,22 @@ if (!up) {
   process.exit(1);
 }
 
-// Every run starts empty, so the folder only ever holds pictures of this code.
-rmSync(OUT, { recursive: true, force: true });
+// A run of routes starts empty, so the folder only ever holds pictures of this code.
+if (routes.length > 0) rmSync(OUT, { recursive: true, force: true });
+mkdirSync(OUT, { recursive: true });
 const taken = fingerprint();
 env.SCREENS = routes.join(',');
+if (specFiles.length > 0) env.SCREENS_SPECS = '1';
+const files = [...(routes.length > 0 ? ['tests/screens/screens.spec.ts'] : []), ...specFiles];
 if (!env.PLAYWRIGHT_CHROMIUM_PATH && existsSync(SHIPPED_CHROMIUM))
   env.PLAYWRIGHT_CHROMIUM_PATH = SHIPPED_CHROMIUM;
 // oppenheimer:begin e2e
-const result = spawnSync('pnpm', ['--filter', '@oppenheimer/e2e', 'screens'], {
+const result = spawnSync('pnpm', ['--filter', '@oppenheimer/e2e', 'screens', ...files], {
   cwd: ROOT,
   env,
   stdio: 'inherit',
 });
-if (result.status === 0) {
+if (result.status === 0 && routes.length > 0) {
   const manifest = resolve(OUT, 'manifest.json');
   const written = JSON.parse(readFileSync(manifest, 'utf8'));
   writeFileSync(manifest, `${JSON.stringify({ fingerprint: taken, ...written }, null, 2)}\n`);

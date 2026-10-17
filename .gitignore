@@ -71,6 +71,8 @@ go.work.sum
 
 # Screenshots of the console for a pull request (e2e/tests/screens)
 .screenshots/
+# Throwaway specs that reach a state for them (pnpm screens --spec)
+e2e/tests/screens/local/
 
 # IP databases fetched by scripts/geoip/fetch-dbip.mjs
 .data/

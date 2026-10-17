@@ -64,14 +64,42 @@ after the pictures means taking them again.
    `manifest.json` naming the commit. `anon:/login` takes a signed-out
    route; `--github` connects a stub GitHub installation first, so the
    composer and project screens have repositories; `--phone` adds a 390px
-   width, which a layout change needs. The stack commands, `pnpm screens`,
-   and reading or writing `.screenshots/` are allowed in
-   `.claude/settings.json`, so none of this asks the user for permission;
-   keep to those spellings. A component in the design system or the kit is photographed
-   on a console route that renders it. A state an empty account cannot reach
-   (a dialog open, a row's menu, a host online) is a few lines in a
-   throwaway spec beside `e2e/tests/screens/screens.spec.ts` that reaches it
-   and calls `page.screenshot` into `.screenshots/`; do not commit it.
+   width, which a layout change needs. A component in the design system or
+   the kit is photographed on a console route that renders it.
+
+   A state an empty account cannot reach (a dialog open, a row's menu, a
+   host online) is a throwaway spec: write it with the Write tool straight
+   to `e2e/tests/screens/local/<name>.spec.ts` (git-ignored, outside
+   Biome and the typecheck) and run it with `pnpm screens --spec <name>`,
+   alone or after routes (`pnpm screens /sessions --spec dialog`; only a
+   run that names routes empties `.screenshots/`). It imports the helpers
+   from `../../../support/` and saves into the repo's `.screenshots/`:
+
+   ```ts
+   import { test } from '@playwright/test';
+   import { provisionedUser, signInAs } from '../../../support/web';
+
+   test('the delete dialog', async ({ page }) => {
+     const owner = await provisionedUser('screens');
+     await signInAs(page, owner.user);
+     await page.goto('/sessions');
+     // …reach the state…
+     await page.screenshot({ path: '../.screenshots/dialog-1440-light.png' });
+   });
+   ```
+
+   Leave the file there; there is nothing to clean up. Never write it
+   elsewhere and copy, `sed` or `rm` it into place.
+
+   **No prompts.** `.claude/settings.json` allows, exactly: `node
+   scripts/stack/stack.mjs up|status|down`, `pnpm screens …`, `pnpm
+   --filter @oppenheimer/e2e e2e:…` (also with `FLEET_HOSTS=local` in
+   front), `service postgresql start` / `service redis-server start`,
+   reading `.stack/`, and reading or writing `.screenshots/` and
+   `e2e/tests/screens/local/`. Keep to those spellings, one command per
+   call: chaining with `&&`, piping into `grep`/`tail`, a `cd` first, a
+   `timeout` or an env variable in front makes it a different command and
+   it asks. Read the output as it comes, or the log in `.stack/`.
 3. Look at every picture yourself (read the PNG). The change has to be
    visible in it and nothing else has to look broken: clipped text, an
    overflow, a dark-mode colour that vanishes. Fix what you find and take
