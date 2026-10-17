@@ -587,11 +587,15 @@ export type FsListingMessage = z.infer<typeof fsListingSchema>;
  * Install a release. The runner still fetches and verifies the signed manifest
  * itself — this asks, it does not hand over a binary, because the release is
  * signed by an offline key and not trusted because the control plane said so.
+ *
+ * `version` pins the host to that release; absent, the runner installs the
+ * newest its channel offers now, skipping the safe window, and stays unpinned.
+ * The console's Update runner sends it absent.
  */
 export const hostUpdateSchema = z.object({
   type: z.literal('host.update'),
   commandId: commandIdSchema,
-  version: z.string().min(1).max(64),
+  version: z.string().min(1).max(64).optional(),
   channel: z.string().min(1).max(64),
 });
 

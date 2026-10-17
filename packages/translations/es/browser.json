@@ -2059,6 +2059,8 @@
         "runner": "runner {{version}}"
       },
       "actions": "Acciones de {{name}}",
+      "updateRunner": "Actualizar runner",
+      "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
       "rename": "Renombrar",
       "renameLabel": "Nombre del equipo",
       "save": "Guardar",
@@ -2513,6 +2515,7 @@
     "projectDeleted": "Se ha eliminado «{{name}}».",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
+    "hostUpdateRequested": "Actualizando el runner de «{{name}}». Se volverá a conectar con la nueva versión en un minuto o así.",
     "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
     "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",

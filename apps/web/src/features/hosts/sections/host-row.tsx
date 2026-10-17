@@ -1,9 +1,9 @@
 import { Button, HostCard } from '@oppenheimer/design-system-web';
 import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
-import { useRenameHost } from '@oppenheimer/frontend-consumer/react';
+import { useRenameHost, useUpdateHostRunner } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
+import { ErrorAlert, notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,10 @@ import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
  * the host's home with the blank terminal, started on arrival
  * (`product/versions/mvp/24-session-places.md` §3).
  *
+ * Update runner asks the host's runner for the newest release; the row's
+ * runner version moves once it reconnects on it, through the presence poll.
+ * A refusal (the host went offline in between) stays under the card.
+ *
  * The row owns what its menu opens — the inline rename and the remove dialog —
  * because the menu's content unmounts when it closes, and nothing above a row
  * reads either.
@@ -34,6 +38,9 @@ export function HostRow({ host }: { host: HostEntity }) {
       setRenaming(false);
       notifySuccess('hostRenamed', { name: renamed.name });
     },
+  });
+  const update = useUpdateHostRunner({
+    onSuccess: () => notifySuccess('hostUpdateRequested', { name: host.name }),
   });
 
   const wordOf = (part: MetaPart) => {
@@ -118,11 +125,18 @@ export function HostRow({ host }: { host: HostEntity }) {
             ) : null}
             <HostActionsMenu
               name={host.name}
+              online={host.online}
               onRename={() => setRenaming(true)}
+              onUpdate={() => update.mutate(host.id)}
               onRemove={() => setRemoving(true)}
             />
           </span>
         }
+      />
+      <ErrorAlert
+        error={update.error}
+        fallback={t('hosts.settings.updateFailed', { name: host.name })}
+        onDismiss={update.reset}
       />
       {removing ? <RemoveHostDialog host={host} onClose={() => setRemoving(false)} /> : null}
     </>

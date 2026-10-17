@@ -57,6 +57,8 @@
     },
     "actions": "{{name}} actions",
     "rename": "Rename",
+    "updateRunner": "Update runner",
+    "updateFailed": "Could not update the runner on {{name}}.",
     "renameLabel": "Host name",
     "save": "Save",
     "cancel": "Cancel",

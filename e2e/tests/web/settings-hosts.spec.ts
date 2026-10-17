@@ -10,8 +10,9 @@ import { provisionedUser, signInAs } from '../../support/web';
  * but no runner dials in, so the card reads offline with no last-seen line: the
  * page is about what the control plane holds, and a live link is the fleet
  * suite's subject. The legs are the page's verbs: the account menu's way in,
- * the card, Rename in place, and Remove behind its confirm,
- * after which the host leaves the list and the timeline says why.
+ * the card, Update runner held back while offline, Rename in place, and Remove
+ * behind its confirm, after which the host leaves the list and the timeline says
+ * why.
  */
 test('lists, renames and removes a host from Settings', async ({ page }) => {
   test.slow();
@@ -39,8 +40,16 @@ test('lists, renames and removes a host from Settings', async ({ page }) => {
   await expect(card).toContainText('runner 0.1.0');
   await expect(card).toContainText('Offline');
 
-  // ── Rename in place ──────────────────────────────────────────────────────
+  // ── Update runner, off while offline ─────────────────────────────────────
+  // It goes down the host's link, so with no runner dialled in the item is
+  // there but cannot be picked, and the route says why.
   await card.getByRole('button', { name: 'build-02 actions' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Update runner' })).toBeDisabled();
+  const update = await owner.api.post(`/api/v1/hosts/${hostId}/update`);
+  expect(update.status()).toBe(409);
+  expect(((await update.json()) as { code: string }).code).toBe('HOSTS_008');
+
+  // ── Rename in place ──────────────────────────────────────────────────────
   await page.getByRole('menuitem', { name: 'Rename' }).click();
   const input = card.getByRole('textbox', { name: 'Host name' });
   await input.fill('');

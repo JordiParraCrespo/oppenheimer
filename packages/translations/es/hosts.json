@@ -57,6 +57,8 @@
       "runner": "runner {{version}}"
     },
     "actions": "Acciones de {{name}}",
+    "updateRunner": "Actualizar runner",
+    "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
     "rename": "Renombrar",
     "renameLabel": "Nombre del equipo",
     "save": "Guardar",
