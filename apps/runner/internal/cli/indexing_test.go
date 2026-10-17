@@ -56,7 +56,7 @@ func TestExcludeFromIndexingCreatesAMissingRootPrivately(t *testing.T) {
 	// The default root does not exist until something makes it; the boot that
 	// asks for the opt-out is that something, or the first session's
 	// worktrees are indexed before any marker can land.
-	dir := filepath.Join(t.TempDir(), "oppenheimer-ai", "workspaces")
+	dir := filepath.Join(t.TempDir(), "oppenheimer")
 
 	if err := excludeFromIndexing("darwin", dir); err != nil {
 		t.Fatalf("exclude: %v", err)

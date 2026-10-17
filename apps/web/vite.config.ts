@@ -31,6 +31,11 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
     },
+    // One zod for the console, the app's own (3.x). The workspace's root copy
+    // is zod 4 for the API's agent SDKs (`@oppenheimer/backend-agents`), and a
+    // dependency hoisted beside it (`@hookform/resolvers`) would otherwise
+    // bundle that second zod into the forms chunk.
+    dedupe: ['zod'],
   },
   build: {
     rollupOptions: {

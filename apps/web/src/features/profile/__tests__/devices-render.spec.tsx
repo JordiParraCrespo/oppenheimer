@@ -56,9 +56,9 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 
 const idle = { mutate: vi.fn(), isPending: false, error: null, submittedAt: 0, reset: vi.fn() };
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useProfileSessions: () => {
+  useSuspenseProfileSessions: () => {
     const data = useSyncExternalStore(world.subscribe, () => world.get().devices);
-    return { data, isPending: false, error: null };
+    return { data, error: null };
   },
   useRevokeProfileSession: () => idle,
   useRevokeOtherProfileSessions: () => idle,

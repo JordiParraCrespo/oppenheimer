@@ -103,6 +103,27 @@ describe('NewSessionComposer', () => {
       expect(onSubmit).toHaveBeenCalledWith('Match this', [file]);
     });
 
+    it('sends a blank terminal with no task, but asks for one once a file is held', () => {
+      // A file rides a written task: the create schema refuses files with no
+      // prompt, so Send must not let one through empty.
+      const onSubmit = vi.fn();
+      const { container } = render(<NewSessionComposer onSubmit={onSubmit} taskOptional />);
+      const textarea = screen.getByRole('textbox');
+
+      const send = () =>
+        screen.getByRole('button', { name: 'sessions.new.composer.send' }) as HTMLButtonElement;
+      expect(send().disabled).toBe(false);
+
+      pick(container, [png()]);
+      expect(send().disabled).toBe(true);
+      fireEvent.keyDown(textarea, { key: 'Enter' });
+      expect(onSubmit).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+      fireEvent.keyDown(textarea, { key: 'Enter' });
+      expect(onSubmit).toHaveBeenCalledWith('', []);
+    });
+
     it('takes an image pasted into the field as an attachment', () => {
       const onSubmit = vi.fn();
       render(<NewSessionComposer onSubmit={onSubmit} />);

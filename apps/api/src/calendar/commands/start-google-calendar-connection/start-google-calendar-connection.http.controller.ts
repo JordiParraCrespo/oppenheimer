@@ -1,4 +1,12 @@
-import { Controller, HttpCode, Post, UseGuards, UseInterceptors, Version } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  UseGuards,
+  UseInterceptors,
+  Version,
+} from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
@@ -12,6 +20,7 @@ import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope
 import { GoogleCalendarConnectStartResponseDto } from '../../dtos/google-calendar-connection.response.dto';
 import { StartGoogleCalendarConnectionCommand } from './start-google-calendar-connection.command';
 import type { StartedGoogleConnection } from './start-google-calendar-connection.command-handler';
+import { StartGoogleCalendarConnectionRequest } from './start-google-calendar-connection.request.dto';
 
 @ApiTags('Calendar')
 @ApiBearerAuth()
@@ -22,25 +31,32 @@ import type { StartedGoogleConnection } from './start-google-calendar-connection
 export class StartGoogleCalendarConnectionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
-  @Post('google/connection/start')
+  @Post('google/connections')
   @Version('1')
   @HttpCode(200)
   @CheckPolicies({ action: 'create', subject: 'Calendar' })
   @RequireScopes('calendar:write')
   @ApiOperation({
-    summary: 'Start connecting Google Calendar',
+    summary: 'Start connecting a Google account',
     description:
-      'Google’s consent page, read-only, carrying a single-use state for this caller in this workspace. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.',
+      'Google’s consent page, read-only, with its account chooser, carrying a single-use state for this caller in this workspace. With `connectionId`, a reconnect of that account: the chooser opens on its address. Google redirects to the console’s `/plan/calendar/google`, which posts the code back.',
   })
   @ApiResponse({ status: 200, type: GoogleCalendarConnectStartResponseDto })
+  @ApiProblemResponse({
+    status: 409,
+    description:
+      'Five accounts already connected, or no such connection of the caller’s to reconnect',
+    code: ['CALENDAR_011', 'CALENDAR_007'],
+  })
   @ApiProblemResponse({ status: 503, description: 'Not configured', code: 'CALENDAR_004' })
   async start(
     @CurrentAccessScope() scope: AccessScope,
+    @Body() body: StartGoogleCalendarConnectionRequest,
   ): Promise<GoogleCalendarConnectStartResponseDto> {
     const started = await this.commandBus.execute<
       StartGoogleCalendarConnectionCommand,
       StartedGoogleConnection
-    >(new StartGoogleCalendarConnectionCommand({ scope }));
+    >(new StartGoogleCalendarConnectionCommand({ scope, input: body ?? {} }));
     return { url: started.url, expiresAt: started.expiresAt.toISOString() };
   }
 }

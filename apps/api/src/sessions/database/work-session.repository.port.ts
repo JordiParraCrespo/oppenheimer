@@ -98,6 +98,12 @@ export interface HostSessionRow {
   images?: SessionLaunchFile[];
 }
 
+/** A folder a person ran sessions in on a host, and when they last started one there. */
+export interface RecentFolder {
+  path: string;
+  lastUsedAt: Date;
+}
+
 /**
  * Every person-facing read takes an {@link AccessScope}, so authorization is something
  * the compiler asks for, not something a handler remembers. Writes take the
@@ -240,4 +246,16 @@ export interface WorkSessionRepositoryPort {
    * placeholder answering "none" would be fail-open on a destructive path.
    */
   countUnresolvedForProject(scope: AccessScope, projectId: string): Promise<number>;
+
+  /**
+   * The folder picker's recent folders: the distinct folders of `userId`'s own
+   * folder sessions on `hostId` that the caller can reach, last started first,
+   * at most `limit` (`IDX_work_session_recent_folders`).
+   */
+  findRecentFolders(
+    scope: AccessScope,
+    hostId: string,
+    userId: string,
+    limit: number,
+  ): Promise<RecentFolder[]>;
 }

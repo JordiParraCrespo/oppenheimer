@@ -223,12 +223,13 @@ func (a *App) Workspaces(ctx context.Context, out io.Writer, dir string) error {
 }
 
 // moveWorkspaces points new sessions at dir. It moves nothing: every session
-// whose checkout is still on disk under the old directory has to be closed
+// whose folder is still on disk under the old work folder has to be closed
 // first, because git wrote that directory's absolute path into each worktree
-// and tmux may be running in it. Closing a session removes its worktree, so the
+// and tmux may be running in it. Closing a session removes its folder, so the
 // question is asked of the disk, not of the session's state: a close that kept
-// the worktree still holds it, and a session whose worktree is gone does not.
-// The old directory is left for the user to delete.
+// the worktree still holds it, and a session whose folder is gone does not. A
+// folder session runs in a folder of the person's, which nothing here moves.
+// The old directory, its stores included, is left for the user to delete.
 func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error {
 	if a.Paths.WorkspacesSource == "env" {
 		return hostdomain.ErrWorkspaces.WithDetail(
@@ -240,7 +241,7 @@ func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error 
 	}
 	var held []string
 	for _, session := range a.Sessions.List() {
-		if hasCheckoutUnder(a.Paths.Workspaces, session.Worktree) {
+		if hasCheckoutUnder(a.Paths.Workspaces, session.Dir) || hasCheckoutUnder(a.Paths.Workspaces, session.Worktree) {
 			held = append(held, session.ID)
 		}
 	}
@@ -263,7 +264,8 @@ func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error 
 	return nil
 }
 
-// hasCheckoutUnder reports whether worktree is a directory on disk inside dir.
+// hasCheckoutUnder reports whether worktree, a session's folder or its
+// checkout, is a directory on disk inside dir.
 func hasCheckoutUnder(dir, worktree string) bool {
 	if worktree == "" {
 		return false

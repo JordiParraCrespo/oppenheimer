@@ -121,6 +121,17 @@ describe('OrganizationAuthGateway', () => {
       expect(await gateway.isSlugAvailable(headers, 'taken-slug')).toBe(false);
     });
 
+    // ORGANIZATION_ALREADY_EXISTS folds onto the same catalog entry as a taken
+    // slug (ORG_002); it is not the answer to "is this slug free".
+    it('raises another code that shares the slug-taken catalog entry', async () => {
+      api.checkOrganizationSlug.mockRejectedValue(
+        new APIError('BAD_REQUEST', { message: 'exists', code: 'ORGANIZATION_ALREADY_EXISTS' }),
+      );
+      await expect(gateway.isSlugAvailable(headers, 'x')).rejects.toMatchObject({
+        code: 'ORG_002',
+      });
+    });
+
     // Not every refusal means "taken": signed out, or the plugin refusing the
     // request, is a problem the caller is told about.
     it('reports any other Better Auth refusal as the problem it is', async () => {

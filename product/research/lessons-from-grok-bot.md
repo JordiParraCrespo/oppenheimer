@@ -95,3 +95,109 @@ its second year: brokered descriptors with structured hints, resumable
 migration streams, recreate-with-data-preserved updates, disk pressure,
 and epoch-guarded reconnects. All of it fits the runner and control
 plane as designed, without changing a boundary.
+
+## 5. Grok Bot 0.71.2: the bot itself (2026-10-15)
+
+Sections 1 to 4 read version 0.18's connection layer. On 2026-10-15 a
+static read of version 0.71.2, built by Anysphere on Cursor's agent
+stack, looked at the bot instead of the box, for the bots design
+(`versions/mvp/25-bots.md`). It found:
+
+- **The loop moved to the vendor's servers.** The desktop app no longer
+  runs the agent; it is a client of a loop that runs elsewhere.
+- **A curated chat.** Only what the bot sends reaches you; the tool
+  calls behind it are not the conversation.
+- **Memory as files, with a source on each fact.** What the bot
+  remembers says where it learned it.
+- **Layered approvals.** More than one level decides whether a tool call
+  runs without asking.
+- **Bots that edit themselves without asking**, with no history to go
+  back to.
+
+What note 25 takes from it, and what it does differently, is that
+note's "Research" section: the curated chat, the source on each fact,
+queue lanes and a bounded chain for bot-to-bot turns, taken; revisions
+for the bot's documents and the owner's own permissions as the ceiling,
+where Grok Bot has neither.
+
+## 6. Grok Bot's onboarding, from its own docs (2026-10-16)
+
+The desktop installer could not be fetched from this environment (the
+download page and the reconstructed repository both refused it), so this
+section reads xAI's published guide instead
+(`docs.x.ai/grok-bot/get-started`, `docs.x.ai/grok-bot/bots`), which is
+what a person sees anyway. No code is taken.
+
+- **First run is a tour, then a roster.** Sign-in, a short introduction of
+  bots, the shared computer and routines, a question about which tools the
+  person uses (it shapes suggestions, connects nothing), the computer
+  setting up in the background, and a **"Meet a future teammate"** screen:
+  pick a suggested teammate or create your own.
+- **A new bot is "New Bot" until edited.** Creating one opens it under
+  that name; name, label, description and avatar are set in Edit Profile.
+  The guide asks for a short name, **one primary job**, and a description
+  of how it should work.
+- **Name it after the job.** Its examples are Talent Scout, Expense
+  Manager, Bug Reproduction, Account Health; "General Helper" is the
+  counter-example, because a vague bot gets less guidance and its saved
+  context is harder to reuse. Focused bots over one catch-all.
+- **The description holds durable rules:** what the bot owns, which
+  sources it uses, and what it must never do without approval. The
+  conversation holds the task of the moment.
+- **Memory is not authoritative.** Changing facts stay in their source
+  system; ask the bot to reopen current data before a consequential call.
+- **Pin, hide, duplicate, share as a template.** Duplicating copies the
+  profile, skills and routines but not history or memory.
+
+What we take (`versions/mvp/25-bots.md` §1): the one focused job, the
+description as the job, the rules a bot must never break without asking,
+and the first concrete task. What we do differently: the bot does the
+setup itself in its first chat, so nobody has to find Edit Profile, and
+it is born with a first name rather than "New Bot", since a sidebar of
+"New Bot 2, New Bot 3" says nothing. The welcome tour, suggested
+teammates and templates wait for 25 §7's templates.
+
+## 7. Grok Bot 0.71.2: how a bot wakes (2026-10-16)
+
+A second static read of the same release, the Linux `.deb` from
+Cursor's download page, unpacked from its `app.asar`, for how a bot works
+when nobody writes to it. The scheduler runs on the vendor's servers, so
+this is what the client's protobuf schemas, its copy and its prompts
+show, not the scheduler itself. Ideas only; the design they fed is
+`versions/mvp/26-bot-routines.md`.
+
+- **No heartbeat of its own.** A bot wakes for five reasons only: a
+  message, a routine firing, a channel (Slack, GitHub, email) through a
+  routine, another bot, or background work it started finishing. A
+  process on its computer cannot wake it; users ask for that on Cursor's
+  forum and staff answer it is being worked on.
+- **Routines are automations with one trigger** each: a schedule, Slack,
+  GitHub, Microsoft Teams, Linear, Sentry, PagerDuty, email, or a webhook
+  with its own API key. Schedules are a cron in the user's zone or an
+  `@every` interval, an active window ("every 30 minutes, 9:00 – 18:00"),
+  weekdays, or one date. A schedule with a window or a fire time reads
+  "around" instead of "at": it is spread, not on the minute.
+- **The bot manages its own routines** with one tool (`UpdateRoutine`:
+  create, update, pause, resume, delete), and saving one asks first.
+  Routines brought in by a template are created paused, and the bot asks
+  once whether to turn them all on.
+- **A spend guard.** When a bot's routines keep running and nobody reads
+  the results, it first asks (*keep them running*, *pause them all*,
+  *keep running, don't ask again*), then pauses them all and says so.
+- **Wakes are durable.** A bot watching a cloud agent registers a
+  watcher (durable or not, with a count of the wakes it caused);
+  finished background tasks and subagents reach it as a completion
+  carrying a system reminder; pending wakes live in a ledger that
+  survives a host restart; a subagent wakes its parent with `WakeParent`.
+- **Missed is missed.** A scheduled computer update the box slept
+  through by more than an hour is not run late; it asks for a new time.
+- **Offline fallback.** When the routine sync fails, event routines keep
+  running locally where that is safe; scheduled ones may not.
+
+What 26 takes: routines as automations with a bot as the target, the
+spread schedule, and routines from templates starting paused. What it
+does differently: a routine's run is a queued turn of the bot, so the
+turn queue is the durable record and there is no wake ledger beside it;
+"when a session ends" is a trigger like any other rather than a watcher;
+no spend guard yet, the run budget holds the cost; and the owner's
+permissions are the ceiling, as in 25.

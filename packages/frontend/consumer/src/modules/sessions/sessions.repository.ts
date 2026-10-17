@@ -3,24 +3,23 @@ import {
   heyApiSdk,
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
-  type ShareLinkResponseDto,
+  type SessionShareResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
-import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
+import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { injectable } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
 import {
   type AttachTicket,
-  type CreatedShareLink,
   type CreateSessionInput,
   type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
+  type SessionShare,
   type SharedSession,
-  type ShareLink,
 } from './session.entity';
 import { type SessionStartEntry, settlesStart, toStartEntry } from './session-steps';
 import { SessionsErrors } from './sessions.errors';
@@ -44,17 +43,16 @@ function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
   );
 }
 
-function toShareLink(data: ShareLinkResponseDto): ShareLink {
+function toShare(data: SessionShareResponseDto): SessionShare {
   return {
     id: data.id,
-    access: data.access,
+    slug: data.slug,
     audience: data.audience,
+    access: data.access,
     people: data.people,
-    label: data.label ?? null,
     expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-    revokedAt: data.revokedAt ? new Date(data.revokedAt) : null,
-    live: data.live,
-    createdAt: new Date(data.createdAt),
+    sharedBy: data.sharedBy ?? null,
+    updatedAt: new Date(data.updatedAt),
   };
 }
 
@@ -88,6 +86,8 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.stoppedAt ? new Date(data.stoppedAt) : null,
     data.hints ?? [],
     new Date(data.createdAt),
+    data.place,
+    data.folderPath ?? null,
   );
 }
 
@@ -108,8 +108,14 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
   return {
     hostId: input.hostId,
     agent: input.agent,
-    checkouts: input.checkouts,
-    ...(input.cwdGithubRepoId !== undefined ? { cwdGithubRepoId: input.cwdGithubRepoId } : {}),
+    ...(input.folder !== undefined
+      ? { folder: input.folder }
+      : {
+          checkouts: input.checkouts,
+          ...(input.cwdGithubRepoId !== undefined
+            ? { cwdGithubRepoId: input.cwdGithubRepoId }
+            : {}),
+        }),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
     ...(input.attachmentIds?.length ? { attachmentIds: input.attachmentIds } : {}),
@@ -295,43 +301,46 @@ export class SessionsRepository {
     return toTicket(data);
   }
 
-  /** A session's share links, live and not, newest first. */
-  @MapApiError(SessionsErrors.SHARE_LINKS_FAILED)
-  async findShareLinks(id: string): Promise<ShareLink[]> {
+  /** How a session is shared, or `null` when it is not. */
+  @MapApiError(SessionsErrors.SHARE_LOAD_FAILED)
+  async findShare(id: string): Promise<SessionShare | null> {
     const data = await unwrapBody(
-      heyApiSdk.findShareLinks({ path: { id } }),
-      SessionsErrors.SHARE_LINKS_FAILED,
+      heyApiSdk.findSessionShare({ path: { id } }),
+      SessionsErrors.SHARE_LOAD_FAILED,
     );
-    return data.map(toShareLink);
+    return data.share ? toShare(data.share) : null;
   }
 
-  /** A new link, with its secret: the one answer that carries it. */
+  /** Share a session, or replace how it is shared; its address stays. */
   @MapApiError(SessionsErrors.SHARE_FAILED)
-  async createShareLink(id: string, input: CreateShareLinkDto): Promise<CreatedShareLink> {
+  async putShare(id: string, input: PutSessionShareDto): Promise<SessionShare> {
     const data = await unwrapBody(
-      heyApiSdk.createShareLink({ path: { id }, body: input }),
+      heyApiSdk.putSessionShare({ path: { id }, body: input }),
       SessionsErrors.SHARE_FAILED,
     );
-    return { ...toShareLink(data), token: data.token };
+    return toShare(data);
   }
 
-  @MapApiError(SessionsErrors.REVOKE_SHARE_FAILED)
-  async revokeShareLink(id: string, linkId: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.revokeShareLink({ path: { id, linkId } }),
-      SessionsErrors.REVOKE_SHARE_FAILED,
-    );
-  }
-
-  /**
-   * What a link opens. The secret goes in the body: it came from the URL's
-   * fragment, which the browser never sent anywhere, and stays out of every
-   * path and query string.
-   */
-  @MapApiError(SessionsErrors.SHARED_SESSION_FAILED)
-  async findSharedSession(token: string): Promise<SharedSession> {
+  /** The people a `people` share names, nothing else changed. */
+  @MapApiError(SessionsErrors.UPDATE_SHARE_FAILED)
+  async setSharePeople(id: string, people: string[]): Promise<SessionShare> {
     const data = await unwrapBody(
-      heyApiSdk.findSharedSession({ body: { token } }),
+      heyApiSdk.setSessionSharePeople({ path: { id }, body: { people } }),
+      SessionsErrors.UPDATE_SHARE_FAILED,
+    );
+    return toShare(data);
+  }
+
+  @MapApiError(SessionsErrors.UPDATE_SHARE_FAILED)
+  async stopShare(id: string): Promise<void> {
+    await unwrap(heyApiSdk.stopSessionShare({ path: { id } }), SessionsErrors.UPDATE_SHARE_FAILED);
+  }
+
+  /** What a share's address opens for whoever is signed in. */
+  @MapApiError(SessionsErrors.SHARED_SESSION_FAILED)
+  async findSharedSession(slug: string): Promise<SharedSession> {
+    const data = await unwrapBody(
+      heyApiSdk.findSharedSession({ body: { slug } }),
       SessionsErrors.SHARED_SESSION_FAILED,
     );
     return {
@@ -345,9 +354,9 @@ export class SessionsRepository {
 
   /** A ticket through a share link: never cached, never retried on its own. */
   @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
-  async issueSharedAttachTicket(token: string): Promise<AttachTicket> {
+  async issueSharedAttachTicket(slug: string): Promise<AttachTicket> {
     const data = await unwrapBody(
-      heyApiSdk.issueSharedAttachTicket({ body: { token } }),
+      heyApiSdk.issueSharedAttachTicket({ body: { slug } }),
       SessionsErrors.ATTACH_TICKET_FAILED,
     );
     return toTicket(data);

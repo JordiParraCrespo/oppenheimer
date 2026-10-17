@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
 import type {
@@ -18,6 +19,33 @@ import type {
 /** A pull request's files, reviews and comments: GitHub stops listing files at 3,000 anyway. */
 const MAX_PAGES = 30;
 
+/**
+ * What GraphQL's `errors` list (it answers `200` either way) says about
+ * turning on auto-merge. `UNPROCESSABLE` is the two refusals the caller
+ * expects, a repository that does not allow auto-merge and a pull request
+ * clean enough to merge now: the approval stands and it waits, so false. A
+ * rate limit is `GITHUB_015` like any other (the headers have already paused
+ * the bucket), and anything else is GitHub failing the request.
+ */
+function autoMergeEnabled(errors: readonly { type?: string; message?: string }[]): boolean {
+  if (!errors.length) return true;
+  const detail = errors.map((error) => error.message ?? error.type ?? 'unknown').join('; ');
+  if (errors.some((error) => error.type === 'RATE_LIMITED')) {
+    throw new AppError(GithubErrors.RATE_LIMITED, { detail });
+  }
+  if (errors.every((error) => error.type === 'UNPROCESSABLE')) return false;
+  throw new AppError(GithubErrors.UPSTREAM_FAILED, {
+    detail: `GitHub did not turn on auto-merge: ${detail}`,
+    extensions: { upstreamStatus: 200 },
+  });
+}
+
+const ENABLE_AUTO_MERGE = `mutation($id: ID!, $method: PullRequestMergeMethod!, $sha: GitObjectID!) {
+  enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $method, expectedHeadOid: $sha }) {
+    clientMutationId
+  }
+}`;
+
 /** A conversation's timeline, a hundred entries a page: a thousand covers the longest-lived. */
 const TIMELINE_PAGES = 10;
 
@@ -27,6 +55,7 @@ interface RawUser {
 }
 
 interface RawPull {
+  node_id?: string;
   number: number;
   title: string;
   html_url: string;
@@ -35,8 +64,8 @@ interface RawPull {
   state: 'open' | 'closed';
   merged_at: string | null;
   merged?: boolean;
-  head: { ref: string; sha: string };
-  base: { ref: string };
+  head: { ref: string; sha: string; repo?: { id: number } | null };
+  base: { ref: string; repo?: { id: number } };
   created_at: string;
   updated_at: string;
   closed_at: string | null;
@@ -123,12 +152,15 @@ export class GithubPullsAdapter implements GithubPullsPort {
     });
     return {
       ...toSummary(body),
+      nodeId: body.node_id ?? '',
       body: body.body ?? '',
       additions: body.additions ?? 0,
       deletions: body.deletions ?? 0,
       changedFiles: body.changed_files ?? 0,
       mergeable: body.mergeable ?? null,
       mergeableState: body.mergeable_state ?? 'unknown',
+      // A head whose repository is gone (a deleted fork) is a fork's too.
+      fromFork: body.head.repo?.id !== body.base.repo?.id,
     };
   }
 
@@ -320,6 +352,26 @@ export class GithubPullsAdapter implements GithubPullsPort {
         422: GithubErrors.MERGE_REFUSED,
       },
     });
+  }
+
+  async enableAutoMerge(
+    credential: GithubCredential,
+    nodeId: string,
+    method: 'squash' | 'merge' | 'rebase',
+    sha: string,
+  ): Promise<boolean> {
+    if (!nodeId) return false;
+    const { body } = await this.request<{
+      errors?: { type?: string; message?: string }[];
+    }>(`${this.http.api}/graphql`, {
+      credential,
+      method: 'POST',
+      body: {
+        query: ENABLE_AUTO_MERGE,
+        variables: { id: nodeId, method: method.toUpperCase(), sha },
+      },
+    });
+    return autoMergeEnabled(body.errors ?? []);
   }
 
   private repo(fullName: string): string {

@@ -143,6 +143,7 @@
     --hover-surface: rgba(0, 0, 0, 0.04);
     --active-surface: rgba(0, 0, 0, 0.07);
     --selected-surface: rgba(0, 113, 227, 0.1);
+    --selected-fg: var(--primary); /* the ink on the selected wash: a picked pill */
 
     /* ---- The two blues ----------------------------------------------- */
     --primary: var(--op-blue-500); /* one blue for actions */
@@ -269,6 +270,20 @@
     --file-icon-yml: var(--file-icon-red);
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
+
+    /* A bot's avatar: its initials on one of the export's eight colours
+       (`AV_COLORS`), an identity like a file's mark, never a state. The same
+       in both themes so a bot keeps its face; the initials are dark ink on
+       every one of them, which all sit at or above 0.70 lightness. */
+    --avatar-mint: oklch(0.74 0.13 175);
+    --avatar-tangerine: oklch(0.72 0.18 50);
+    --avatar-snow: oklch(0.96 0 0);
+    --avatar-sky: oklch(0.74 0.12 240);
+    --avatar-lilac: oklch(0.74 0.12 300);
+    --avatar-lemon: oklch(0.88 0.15 100);
+    --avatar-coral: oklch(0.72 0.15 20);
+    --avatar-moss: oklch(0.7 0.12 135);
+    --avatar-ink: oklch(0.21 0 0);
 
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
@@ -515,6 +530,7 @@
     --hover-surface: rgba(255, 255, 255, 0.06);
     --active-surface: rgba(255, 255, 255, 0.1);
     --selected-surface: rgba(41, 151, 255, 0.16);
+    --selected-fg: var(--op-blue-400); /* the export lifts it a step in dark (`.op-pill[data-on]`) */
 
     --primary: var(--op-blue-500);
     --primary-hover: #1a83ea;
@@ -739,6 +755,11 @@
   --animate-appear-fast: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-appear: op-effort-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-drag-lift: op-drag-lift var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  /* The agent chat: work in flight breathes between 55% and full ink, and
+     the write head of a streaming reply blinks. Both sit behind
+     `motion-safe:`, since reduced motion zeroes durations, not animations. */
+  --animate-shimmer: op-chat-shimmer 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-caret: op-caret 1s steps(2) infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
   /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
@@ -766,6 +787,7 @@
   --color-hover-surface: var(--hover-surface);
   --color-active-surface: var(--active-surface);
   --color-selected-surface: var(--selected-surface);
+  --color-selected-fg: var(--selected-fg);
   --color-primary-hover: var(--primary-hover);
   --color-primary-active: var(--primary-active);
   --color-link: var(--link);
@@ -824,6 +846,15 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-avatar-mint: var(--avatar-mint);
+  --color-avatar-tangerine: var(--avatar-tangerine);
+  --color-avatar-snow: var(--avatar-snow);
+  --color-avatar-sky: var(--avatar-sky);
+  --color-avatar-lilac: var(--avatar-lilac);
+  --color-avatar-lemon: var(--avatar-lemon);
+  --color-avatar-coral: var(--avatar-coral);
+  --color-avatar-moss: var(--avatar-moss);
+  --color-avatar-ink: var(--avatar-ink);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -949,6 +980,26 @@
 
   ::selection {
     background: var(--selected-surface);
+  }
+}
+
+@keyframes op-chat-shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes op-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }
 

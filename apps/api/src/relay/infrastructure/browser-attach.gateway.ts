@@ -27,6 +27,7 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import { ABILITY, CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
+import type { CredentialOwner } from '../../auth/domain/scope-context.types';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import { FLAG_EVALUATOR } from '../../feature-flags/feature-flags.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
@@ -239,29 +240,46 @@ export class BrowserAttachGateway {
   }
 
   /**
+   * Whether a share still lets this guest in, asked again on every re-check:
+   * the share's own judgment as at mint (stopped, expired, no longer for this
+   * guest, narrowed to watching under a typing ticket, or set again by
+   * another member), the guest's account as it is now, and the sharer's
+   * `update Session` on their current roles, since nobody signed in as them
+   * mints these tickets. The rest of `authorize` is the sharer's judgement
+   * as their own terminal's; this is everything a share adds to it.
+   */
+  private async shareRefusal(
+    claim: AttachTicket,
+    share: NonNullable<AttachTicket['share']>,
+    sharer: CredentialOwner,
+  ): Promise<AttachVerdict | null> {
+    const viewer = await this.owners.findActiveOwner(share.viewerUserId);
+    if (!viewer) return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+    const admitted = await this.sessions.shareAdmits(
+      share.shareId,
+      claim.sessionId,
+      claim.userId,
+      { userId: viewer.id, email: viewer.email, emailVerified: viewer.emailVerified },
+      share.readOnly,
+    );
+    if (!admitted) return refuse('unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
+    const ability = await this.abilities.forRequest({
+      user: { ...sharer },
+      tenant: { organizationId: claim.organizationId },
+    });
+    const row = { id: claim.sessionId, organizationId: claim.organizationId };
+    if (!canAccessRow(ability, 'update', 'Session', row)) {
+      return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+    }
+    return null;
+  }
+
+  /**
    * Whether a claim still authorises an attachment. A lookup that throws is
    * thrown, never read as a refusal: at redemption that is a 1011 the console
    * retries, and on the timer it keeps the socket.
    */
   private async authorize(claim: AttachTicket): Promise<AttachVerdict> {
-    // Through a share link, the link's own judgment first, asked again as at
-    // mint: revoked, expired, or no longer for this holder ends it whatever
-    // its creator may still do. A signed-in holder is judged as their
-    // account is now; one banned since holds nothing. The rest is the
-    // creator's judgement, below, as their own terminal's.
-    if (claim.share) {
-      const viewerId = claim.share.viewerUserId;
-      const viewer = viewerId ? await this.owners.findActiveOwner(viewerId) : null;
-      if (viewerId && !viewer) return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
-      const admitted = await this.sessions.shareLinkAdmits(
-        claim.share.linkId,
-        claim.sessionId,
-        viewer
-          ? { userId: viewer.id, email: viewer.email, emailVerified: viewer.emailVerified }
-          : null,
-      );
-      if (!admitted) return refuse('unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
-    }
     const target = await this.sessions.findAttachTarget(claim.sessionId);
     if (!target || target.organizationId !== claim.organizationId) {
       return refuse('missing', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
@@ -277,19 +295,9 @@ export class BrowserAttachGateway {
     if (!owner) {
       return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
     }
-    // A share link keeps minting tickets with nobody signed in as its
-    // creator, so the policy their own ticket passed at mint (`update
-    // Session`) is asked again here, on their current roles: a role change
-    // that took it away ends every link they made.
     if (claim.share) {
-      const ability = await this.abilities.forRequest({
-        user: { ...owner },
-        tenant: { organizationId: claim.organizationId },
-      });
-      const row = { id: claim.sessionId, organizationId: claim.organizationId };
-      if (!canAccessRow(ability, 'update', 'Session', row)) {
-        return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
-      }
+      const refused = await this.shareRefusal(claim, claim.share, owner);
+      if (refused) return refused;
     }
     // The same own-or-granted predicate a create asks, so a revoked grant or
     // an unpaired host ends the PTY. `isPlatformAdmin: false` is deliberate: a
@@ -362,7 +370,7 @@ class BrowserAttachment implements AttachmentSink {
   private rechecking = false;
   private attached = false;
   private finished = false;
-  /** A read-only share link's attachment: no input, and the host told so. */
+  /** A read-only share's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
   /** The direct path's signalling, which this attachment only hands messages to. */
   private readonly directPath: DirectPathSignalling;
@@ -513,7 +521,7 @@ class BrowserAttachment implements AttachmentSink {
    */
   private input(bytes: Buffer): void {
     if (!this.attached || this.attachmentId === null || bytes.byteLength === 0) return;
-    // A read-only share link watches. The host attached tmux read-only too;
+    // A read-only share watches. The host attached tmux read-only too;
     // this is the relay's half, so a runner that predates the flag still
     // never sees a keystroke from it.
     if (this.readOnly) return;

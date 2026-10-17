@@ -29,7 +29,7 @@ import { StatusDot, type StatusState } from './status-dot';
  *   `TaskColumnAdd` button or a `TaskComposer`.
  * - `TaskCard`: the card in the tray — a round `Checkbox` (green when
  *   done, the title then struck and muted), the title, two lines of notes,
- *   the project and goal, the due date in mono (red when overdue, full ink
+ *   the project and milestone, the due date in mono (red when overdue, full ink
  *   when due within a day), the linked session, and Start session on hover.
  */
 
@@ -38,12 +38,13 @@ type TaskStatus = 'later' | 'todo' | 'doing' | 'done';
 /**
  * A task's status on the run-state vocabulary, so a task reads with the
  * same dot as everything else: Later is pending, To do idle, In progress
- * running, and Done completed (the check, since a done task is finished).
+ * amber (`waiting`, as the 2026-10-13 frame draws it: work under way, not yet
+ * settled), and Done completed (the check, since a done task is finished).
  */
 const TASK_STATUS_STATE: Record<TaskStatus, StatusState> = {
   later: 'pending',
   todo: 'idle',
-  doing: 'running',
+  doing: 'waiting',
   done: 'completed',
 };
 
@@ -143,7 +144,7 @@ function TaskCard({
   onToggleDone,
   checkLabel,
   project,
-  goal,
+  milestone,
   due,
   dueTone = 'default',
   session,
@@ -159,7 +160,7 @@ function TaskCard({
   /** "Mark as done" / "Mark as not done". */
   checkLabel?: string;
   project?: React.ReactNode;
-  goal?: React.ReactNode;
+  milestone?: React.ReactNode;
   /** Mono, already formatted ("Oct 10", "Tomorrow", "Oct 7 · 14:00"). */
   due?: React.ReactNode;
   dueTone?: TaskDueTone;
@@ -170,7 +171,7 @@ function TaskCard({
   startLabel?: string;
 }) {
   const offerStart = Boolean(onStart) && !session && !done;
-  const hasMeta = Boolean(project || goal || (due && !done));
+  const hasMeta = Boolean(project || milestone || (due && !done));
   return (
     <div
       data-slot="task-card"
@@ -207,10 +208,10 @@ function TaskCard({
                 <span className="truncate">{project}</span>
               </span>
             ) : null}
-            {goal ? (
+            {milestone ? (
               <span className="inline-flex max-w-full min-w-0 items-center gap-[5px]">
                 <LayersIcon className="size-3 shrink-0" aria-hidden />
-                <span className="truncate">{goal}</span>
+                <span className="truncate">{milestone}</span>
               </span>
             ) : null}
             <span className="flex-1" />

@@ -3,9 +3,11 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
 
 export class FindGoogleCalendarConnectionQuery extends QueryBase {
   readonly scope: AccessScope;
+  readonly id: string;
 
-  constructor(props: { scope: AccessScope }) {
+  constructor(props: { scope: AccessScope; id: string }) {
     super();
     this.scope = props.scope;
+    this.id = props.id;
   }
 }

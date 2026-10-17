@@ -18,6 +18,16 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { BotOrmEntity } from '../bots/database/bot.orm-entity';
+import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
+import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
+import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
+import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
+import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
+import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
+import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
+import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
@@ -42,6 +52,7 @@ import { PersonalWorkspaceRepository } from '../organizations/database/personal-
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { ReviewSessionOrmEntity } from '../pull-requests/database/review-session.orm-entity';
 import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
@@ -53,11 +64,12 @@ import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
-import { SessionShareLinkOrmEntity } from '../sessions/database/session-share-link.orm-entity';
+import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
-import { GoalOrmEntity } from '../tasks/database/goal.orm-entity';
+import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
+import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
@@ -100,7 +112,7 @@ const dataSource = new DataSource({
     SessionCheckoutOrmEntity,
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
-    SessionShareLinkOrmEntity,
+    SessionShareOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
     AutomationOrmEntity,
@@ -110,12 +122,24 @@ const dataSource = new DataSource({
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
     TaskOrmEntity,
-    GoalOrmEntity,
+    MilestoneOrmEntity,
+    PlanEventOrmEntity,
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
     GithubUserGrantOrmEntity,
     WatchedRepositoryOrmEntity,
+    BotOrmEntity,
+    BotGroupOrmEntity,
+    BotDocumentOrmEntity,
+    BotDocumentRevisionOrmEntity,
+    BotMemoryFactOrmEntity,
+    ModelProviderCredentialOrmEntity,
+    BotTurnOrmEntity,
+    BotMessageOrmEntity,
+    BotApprovalOrmEntity,
+    BotConversationSummaryOrmEntity,
+    ReviewSessionOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,

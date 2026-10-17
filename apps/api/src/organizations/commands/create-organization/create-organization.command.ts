@@ -5,7 +5,8 @@ import type { CreateOrganizationDto } from '@oppenheimer/shared';
 export class CreateOrganizationCommand extends CommandBase {
   readonly headers: IncomingHttpHeaders;
   readonly input: CreateOrganizationDto;
-  readonly creatorId: string | undefined;
+  /** The authenticated caller, who becomes the organization's owner. */
+  readonly creatorId: string;
 
   constructor(props: CommandProps<CreateOrganizationCommand>) {
     super(props);

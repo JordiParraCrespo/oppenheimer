@@ -23,7 +23,10 @@
     "@oppenheimer/translations": "workspace:*",
     "@hookform/resolvers": "^5.9.1",
     "i18next-browser-languagedetector": "^8.2.1",
-    "posthog-js": "^1.432.0"
+    "lowlight": "^3",
+    "marked": "^16",
+    "posthog-js": "^1.432.0",
+    "react-error-boundary": "^6.1.6"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",

@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -13,6 +18,7 @@ import type {
   UpdateProjectInput,
 } from '../modules/projects/project.entity';
 import { useConsumerApp } from './context';
+import { useHostListQuery } from './hosts.queries';
 
 export const projectsKeys = {
   all: ['projects'] as const,
@@ -32,13 +38,41 @@ export const projectsKeys = {
 export function useProjects<TData = ProjectEntity[]>(
   options?: Omit<UseQueryOptions<ProjectEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
-  const app = useConsumerApp();
+  return useQuery<ProjectEntity[], Error, TData>({ ...useProjectListQuery(), ...options });
+}
 
-  return useQuery<ProjectEntity[], Error, TData>({
-    queryKey: projectsKeys.list(),
-    queryFn: () => app.projects.findAll(),
-    ...options,
+/**
+ * {@link useProjects} under a Suspense `QueryState`; `select` reads less than
+ * the whole list, as there.
+ */
+export function useSuspenseProjects<TData = ProjectEntity[]>(
+  select?: (rows: ProjectEntity[]) => TData,
+) {
+  return useSuspenseQuery<ProjectEntity[], Error, TData>({
+    ...useProjectListQuery(),
+    ...(select ? { select } : {}),
   });
+}
+
+/**
+ * The projects and the hosts under a Suspense `QueryState`, fetched side by
+ * side: what New automation prefills its draft from. `error` is the first
+ * refetch that failed over data already drawn.
+ */
+export function useSuspenseNewAutomation() {
+  const [projects, hosts] = useSuspenseQueries({
+    queries: [useProjectListQuery(), useHostListQuery()],
+  });
+  return { projects: projects.data, hosts: hosts.data, error: projects.error ?? hosts.error };
+}
+
+/**
+ * The projects read, for every hook over it: the key and the fetch, once.
+ * Not in the barrel; the sidebars' combined Suspense reads spread it.
+ */
+export function useProjectListQuery() {
+  const app = useConsumerApp();
+  return { queryKey: projectsKeys.list(), queryFn: () => app.projects.findAll() };
 }
 
 /**

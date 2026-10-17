@@ -57,13 +57,11 @@ describe('the path to merge', () => {
     expect(mergeGates(READY)).toEqual({
       checks: 'done',
       conflicts: 'done',
-      review: 'done',
       merge: 'pending',
     });
     expect(mergeGates({ ...READY, checks: 'running', mergeable: null, verdicts: [] })).toEqual({
       checks: 'pending',
       conflicts: 'pending',
-      review: 'pending',
       merge: 'pending',
     });
     expect(
@@ -73,7 +71,7 @@ describe('the path to merge', () => {
         mergeable: false,
         verdicts: ['APPROVED', 'CHANGES_REQUESTED'],
       }),
-    ).toEqual({ checks: 'failed', conflicts: 'failed', review: 'failed', merge: 'pending' });
+    ).toEqual({ checks: 'failed', conflicts: 'failed', merge: 'pending' });
   });
 });
 

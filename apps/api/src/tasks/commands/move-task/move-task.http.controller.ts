@@ -14,11 +14,13 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { userActor } from '../../domain/plan-change.types';
 import type { TaskEntity } from '../../domain/task.entity';
 import { TaskResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -52,12 +54,16 @@ export class MoveTaskHttpController {
   @ApiResponse({ status: 200, type: TaskResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Task not found', code: 'TASKS_001' })
   @ApiProblemResponse({ status: 409, description: 'Stale position', code: 'TASKS_006' })
+  @ApiProblemResponse({ status: 409, description: 'Changed since it was read', code: 'TASKS_008' })
   async move(
     @CurrentAccessScope() scope: AccessScope,
+    @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: MoveTaskRequest,
   ): Promise<TaskResponseDto> {
-    await this.commandBus.execute(new MoveTaskCommand({ scope, taskId: id, move: body }));
+    await this.commandBus.execute(
+      new MoveTaskCommand({ scope, actor: userActor(userId), taskId: id, move: body }),
+    );
     const task = await this.queryBus.execute<FindTaskQuery, TaskEntity>(
       new FindTaskQuery({ scope, taskId: id }),
     );

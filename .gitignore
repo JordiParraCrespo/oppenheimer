@@ -69,5 +69,8 @@ go.work.sum
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
 
+# Screenshots of the console for a pull request (e2e/tests/screens)
+.screenshots/
+
 # IP databases fetched by scripts/geoip/fetch-dbip.mjs
 .data/

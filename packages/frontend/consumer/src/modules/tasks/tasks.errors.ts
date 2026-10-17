@@ -8,7 +8,7 @@ export const TasksErrors = {
   DELETE_FAILED: { code: 'TASKS_CLIENT_004', message: 'Failed to delete the task' },
   START_SESSION_FAILED: { code: 'TASKS_CLIENT_005', message: 'Failed to start the session' },
   LINK_FAILED: { code: 'TASKS_CLIENT_006', message: 'Failed to link the session' },
-  FETCH_GOALS_FAILED: { code: 'TASKS_CLIENT_007', message: 'Failed to load the goals' },
-  SAVE_GOAL_FAILED: { code: 'TASKS_CLIENT_008', message: 'Failed to save the goal' },
-  DELETE_GOAL_FAILED: { code: 'TASKS_CLIENT_009', message: 'Failed to delete the goal' },
+  FETCH_MILESTONES_FAILED: { code: 'TASKS_CLIENT_007', message: 'Failed to load the milestones' },
+  SAVE_MILESTONE_FAILED: { code: 'TASKS_CLIENT_008', message: 'Failed to save the milestone' },
+  DELETE_MILESTONE_FAILED: { code: 'TASKS_CLIENT_009', message: 'Failed to delete the milestone' },
 } as const satisfies Record<string, ErrorDefinition>;

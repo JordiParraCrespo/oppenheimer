@@ -1,15 +1,14 @@
-import type { CreateShareLinkDto } from '@oppenheimer/shared/schemas/session-share';
+import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type {
   AttachTicket,
-  CreatedShareLink,
   CreateSessionInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionShare,
   SharedSession,
-  ShareLink,
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
@@ -77,31 +76,35 @@ export class SessionsService {
     return this.repository.pasteFile(id, file, window);
   }
 
-  findShareLinks(id: string): Promise<ShareLink[]> {
-    return this.repository.findShareLinks(id);
+  findShare(id: string): Promise<SessionShare | null> {
+    return this.repository.findShare(id);
   }
 
-  createShareLink(id: string, input: CreateShareLinkDto): Promise<CreatedShareLink> {
-    return this.repository.createShareLink(id, input);
+  putShare(id: string, input: PutSessionShareDto): Promise<SessionShare> {
+    return this.repository.putShare(id, input);
   }
 
-  revokeShareLink(id: string, linkId: string): Promise<void> {
-    return this.repository.revokeShareLink(id, linkId);
+  setSharePeople(id: string, people: string[]): Promise<SessionShare> {
+    return this.repository.setSharePeople(id, people);
   }
 
-  findSharedSession(token: string): Promise<SharedSession> {
-    return this.repository.findSharedSession(token);
+  stopShare(id: string): Promise<void> {
+    return this.repository.stopShare(id);
+  }
+
+  findSharedSession(slug: string): Promise<SharedSession> {
+    return this.repository.findSharedSession(slug);
   }
 
   /**
    * A shared terminal, live: the same socket and ladder as a member's, with
-   * each ticket minted through the link. A `read` link's stream is the same
+   * each ticket minted through the share. A `read` share's stream is the same
    * stream; the relay and the host are what keep its keystrokes out.
    */
-  openSharedStream(token: string): SessionStream {
+  openSharedStream(slug: string): SessionStream {
     return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
-      issueTicket: () => this.repository.issueSharedAttachTicket(token),
+      issueTicket: () => this.repository.issueSharedAttachTicket(slug),
     });
   }
 

@@ -4,9 +4,9 @@
     "views": "Vistas",
     "queue": "Cola de PR",
     "analytics": "Analítica",
-    "repositories": "Repositorios",
-    "allRepositories": "Todos los repositorios",
-    "noRepositories": "Aún no sigues ningún repositorio."
+    "forReview": "Para revisar",
+    "searchReviews": "Buscar sesiones de revisión",
+    "clearSearch": "Borrar búsqueda"
   },
   "queue": {
     "title": "Cola de PR",
@@ -27,19 +27,17 @@
     },
     "search": "Busca por título, repositorio, #número o autor",
     "clearSearch": "Borrar la búsqueda",
-    "laneLabel": "Carril",
     "all": "Todas",
     "noMatch": "Ninguna pull request coincide con «{{query}}».",
     "emptyTitle": "No hay nada en esta vista",
     "emptyHint": "Las pull requests que abren tus sesiones o tus compañeros llegan aquí con el carril ya elegido.",
     "emptyWatchingTitle": "No sigues ningún repositorio",
-    "emptyWatchingHint": "Busca repositorios en Seguir repositorios. Sus pull requests abiertas aparecen aquí.",
+    "emptyWatchingHint": "Elige en Ajustes los repositorios que quieres observar. Sus pull requests abiertas aparecen aquí.",
     "loadFailed": "No se pudieron cargar las pull requests.",
     "notConnectedTitle": "Conecta GitHub para ver pull requests",
     "notConnectedHint": "Instala la app de GitHub en la cuenta que tiene tus repositorios.",
     "connect": "Conectar GitHub",
     "range": "{{first}}–{{last}} de {{total}}",
-    "openChanges": "Abrir cambios",
     "review": "Revisar",
     "session": "Sesión",
     "merged": "Fusionada",
@@ -57,21 +55,27 @@
     "mergeButton": {
       "merge": "Fusionar",
       "confirm": "Confirmar la fusión",
-      "cancel": "Cancelar la fusión"
-    }
+      "cancel": "Cancelar la fusión",
+      "confirmTitle": "Squash y merge en la rama base"
+    },
+    "repository": "Repositorio",
+    "allRepositories": "Todos los repositorios",
+    "noRepository": "Ningún repositorio coincide.",
+    "difficulty": "Dificultad",
+    "any": "Cualquiera",
+    "anyTime": "Cualquier espera",
+    "waits": {
+      "hour": "Menos de 1 h",
+      "day": "1 h – 1 día",
+      "older": "Más de 1 día"
+    },
+    "noFilterMatch": "Ninguna pull request coincide con estos filtros.",
+    "configureWatched": "Configurar repositorios observados"
   },
   "lanes": {
     "deep": "A fondo",
     "medium": "Media",
     "quick": "Rápida"
-  },
-  "laneReason": {
-    "risky_path": "Toca {{path}}, donde conviene leer con calma.",
-    "large_change": "{{lines}} líneas cambiadas.",
-    "docs_tests_config": "Solo documentación, tests y configuración.",
-    "small_change": "Un cambio pequeño: {{lines}} líneas en {{files}} archivos.",
-    "medium_change": "{{lines}} líneas en {{files}} archivos.",
-    "files_unread": "GitHub no devolvió sus archivos, así que el carril sale solo de su tamaño ({{lines}} líneas)."
   },
   "checks": {
     "passing": "Pasan",
@@ -102,15 +106,17 @@
     "none": "Aún no hay repositorios que seguir",
     "unwatch": "Dejar de seguir {{name}}",
     "private": "Privado",
-    "failed": "No se pudieron actualizar los repositorios seguidos."
+    "failed": "No se pudieron actualizar los repositorios seguidos.",
+    "empty": "Añade un repositorio para seguir sus pull requests.",
+    "loadFailed": "No se pudieron cargar los repositorios observados."
   },
   "detail": {
     "back": "Volver a la cola",
     "viewLabel": "Vista",
     "views": {
-      "briefing": "Resumen",
       "description": "Descripción",
-      "changes": "Cambios"
+      "changes": "Cambios",
+      "chat": "Chat"
     },
     "openOnGithub": "Abrir en GitHub",
     "loadFailed": "No se pudo cargar la pull request.",
@@ -121,57 +127,9 @@
       "draft": "Borrador"
     },
     "into": "en",
-    "size": "Tamaño",
-    "files": "Archivos",
-    "inFolders_one": "en {{count}} carpeta",
-    "inFolders_other": "en {{count}} carpetas",
-    "inFolders_many": "en {{count}} carpetas",
-    "checks": "Checks",
-    "conflicts": "Conflictos",
-    "mergesCleanly": "Se fusiona sin conflictos en {{base}}",
-    "withBase": "Con {{base}} · haz rebase antes de fusionar",
-    "noneWord": "Ninguno",
-    "pathToMerge": "Camino a la fusión",
-    "gatesDone": "{{done}} de {{total}} hechos",
-    "gates": {
-      "checks": "Checks",
-      "conflicts": "Conflictos",
-      "review": "Revisión",
-      "merge": "Fusión"
-    },
-    "gateMeta": {
-      "checks": {
-        "done": "Todos pasan",
-        "failed": "{{failed}} fallan",
-        "pending": "{{pending}} en curso"
-      },
-      "conflicts": {
-        "done": "Sin conflictos",
-        "failed": "Rebase sobre {{base}}",
-        "pending": "GitHub lo está comprobando"
-      },
-      "review": {
-        "done": "Aprobada",
-        "failed": "Se pidieron cambios",
-        "pending": "Espera revisión"
-      },
-      "merge": {
-        "done": "Fusionada",
-        "pending": "Squash en {{base}}"
-      }
-    },
-    "mergeNote": "Squash y fusión en {{base}} como @{{login}}.",
-    "mergeNoteNoLogin": "Vuelve a conectar GitHub para que la fusión se haga en tu nombre.",
-    "mergedInto": "Fusionada en {{base}}.",
-    "reviewChanges": "Revisar los cambios",
-    "brief": "Resumen",
     "noDescription": "Sin descripción.",
-    "copyCode": "Copiar código",
-    "codeCopied": "Copiado",
-    "whatChanges": "Qué cambia",
-    "risk": "Carril",
-    "where": "Sobre todo {{folders}}",
-    "reviewers": "Revisores",
+    "editOnGithub": "Editar en GitHub",
+    "checks": "Checks",
     "noReviewers": "Nadie la ha revisado todavía.",
     "reviewer": {
       "approved": "Aprobada",
@@ -179,9 +137,7 @@
       "commented": "Comentó",
       "requested": "Pedida"
     },
-    "opened": "{{author}} quiere fusionar {{head}} en {{base}}",
     "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
-    "filesUnread": "GitHub no devolvió los archivos en esta lectura.",
     "rail": {
       "mergeStatus": "Estado de la fusión",
       "canMerge": "Se puede fusionar sin conflictos",
@@ -195,31 +151,8 @@
       "noComments": "Sin comentarios",
       "commentCount_one": "{{count}} comentario",
       "commentCount_other": "{{count}} comentarios",
-      "commentCount_many": "{{count}} comentarios"
-    },
-    "editOnGithub": "Editar en GitHub",
-    "activity": {
-      "title": "Actividad",
-      "empty": "Aún no ha pasado nada aquí.",
-      "loadFailed": "No se pudo cargar la actividad.",
-      "commits_one": "{{count}} commit",
-      "commits_other": "{{count}} commits",
-      "commits_many": "{{count}} commits",
-      "review": {
-        "approved": "{{author}} aprobó estos cambios",
-        "changes_requested": "{{author}} pidió cambios",
-        "commented": "{{author}} revisó",
-        "dismissed": "Se descartó la revisión de {{author}}"
-      },
-      "event": {
-        "review_requested": "{{author}} pidió una revisión a {{subject}}",
-        "merged": "{{author}} fusionó esta pull request",
-        "closed": "{{author}} cerró esta pull request",
-        "reopened": "{{author}} reabrió esta pull request",
-        "ready_for_review": "{{author}} la marcó como lista para revisar",
-        "convert_to_draft": "{{author}} la convirtió en borrador",
-        "head_ref_force_pushed": "{{author}} hizo force-push de la rama"
-      }
+      "commentCount_many": "{{count}} comentarios",
+      "commentsFailed": "No se pudieron cargar los comentarios."
     }
   },
   "review": {
@@ -231,8 +164,12 @@
         "description": "Publica tus comentarios sin veredicto."
       },
       "approve": {
-        "label": "Aprobar y fusionar",
-        "description": "Aprueba como tú y fusiona en cuanto GitHub lo permita."
+        "label": "Aprobar",
+        "description": "Aprueba en tu nombre. El merge lo haces tú después."
+      },
+      "approve_and_merge": {
+        "label": "Aprobar y hacer merge",
+        "description": "Aprueba en tu nombre y hace merge cuando pasen los checks obligatorios."
       },
       "request_changes": {
         "label": "Pedir cambios",
@@ -251,7 +188,6 @@
     "optional": "Opcional"
   },
   "changes": {
-    "back": "Volver",
     "layout": "Disposición",
     "unified": "Unificada",
     "split": "Dividida",
@@ -315,5 +251,22 @@
     "capped": "Calculado con las pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez.",
     "weekOf": "Semana del {{date}}",
     "hoverWeek": "Pasa por una semana"
+  },
+  "reviewSession": {
+    "start": "Iniciar sesión de revisión",
+    "starting": "Iniciando…",
+    "host": "Host",
+    "search": "Buscar hosts…",
+    "empty": "Ningún host coincide.",
+    "offline": "sin conexión",
+    "noHost": "No hay ningún host en línea. Arranca el runner en una de tus máquinas.",
+    "fork": "Viene de un fork, que una sesión todavía no puede descargar.",
+    "failed": "No se pudo iniciar la sesión de revisión.",
+    "title": "Revisa este pull request en una sesión",
+    "description": "Claude Code arranca en uno de tus hosts en un worktree de {{branch}}, lee el diff y empieza con dos o tres líneas. Luego pregúntale lo que quieras.",
+    "bar": "revisión · {{repository}} #{{number}}",
+    "close": "Mostrar el pull request",
+    "loadFailed": "No se pudo cargar la sesión de revisión.",
+    "listFailed": "No se pudieron cargar tus sesiones de revisión."
   }
 }

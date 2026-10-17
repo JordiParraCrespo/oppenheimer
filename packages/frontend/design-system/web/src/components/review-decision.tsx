@@ -14,7 +14,8 @@ import { RadioGroup, RadioGroupItem } from './radio-group';
  * in a `Popover`.
  *
  * - `ReviewDecision`: the verdicts as a radio list, each with its line of
- *   what it does (Comment; Approve and merge; Request changes, which sends
+ *   what it does (Comment; Approve, which leaves the merge to you; Approve
+ *   and merge, once the required checks pass; Request changes, which sends
  *   the comments back to the session) on `RadioGroup`, the review comment
  *   (optional, the one comment field: ⌘⏎ submits), a
  *   note on what posts with it, and the foot: Discard the pending comments,

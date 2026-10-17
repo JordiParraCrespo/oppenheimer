@@ -17,6 +17,10 @@ import { useTranslation } from 'react-i18next';
  * dialog's box is where that is accepted, not a hidden flag. A failure stays
  * next to the button, never a toast — a host that is offline among them,
  * since the close never reached it and the row comes back.
+ *
+ * A folder session has no worktree and nothing of ours to push: its close
+ * ends the terminal and leaves the folder as it is, so it says only that and
+ * has no box to tick.
  */
 export function DeleteSessionDialog({
   session,
@@ -32,23 +36,31 @@ export function DeleteSessionDialog({
   return (
     <ConfirmDialog
       title={t('sessions.deleteSession.title', { name: session.name })}
-      description={`${t('sessions.deleteSession.description')} ${t('sessions.deleteSession.keeps')}`}
+      description={
+        session.isFolder
+          ? t('sessions.deleteSession.descriptionFolder')
+          : `${t('sessions.deleteSession.description')} ${t('sessions.deleteSession.keeps')}`
+      }
       confirmLabel={t('sessions.deleteSession.confirm')}
       pendingLabel={t('sessions.deleteSession.deleting')}
       pending={close.isPending}
       error={close.error}
       errorFallback={t('sessions.deleteSession.failed')}
       onClose={onClose}
-      onConfirm={() => close.mutate({ id: session.id, acceptUnpushedWork: discard })}
+      onConfirm={() =>
+        close.mutate({ id: session.id, acceptUnpushedWork: session.isFolder ? false : discard })
+      }
     >
-      <FieldLabel className="items-center">
-        <Checkbox
-          checked={discard}
-          onCheckedChange={(checked) => setDiscard(checked === true)}
-          disabled={close.isPending}
-        />
-        {t('sessions.deleteSession.discard')}
-      </FieldLabel>
+      {session.isFolder ? null : (
+        <FieldLabel className="items-center">
+          <Checkbox
+            checked={discard}
+            onCheckedChange={(checked) => setDiscard(checked === true)}
+            disabled={close.isPending}
+          />
+          {t('sessions.deleteSession.discard')}
+        </FieldLabel>
+      )}
     </ConfirmDialog>
   );
 }

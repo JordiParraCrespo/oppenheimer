@@ -3,6 +3,7 @@
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { FIELD_SIZE, type FieldSize } from '../internal/control-size';
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
@@ -11,7 +12,7 @@ import { Popover, PopoverTrigger } from './popover';
 /** Both looks (see `FieldSelect`), keyed on `data-variant` so one class list carries them. */
 const TRIGGER = [
   'flex items-center text-left text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard disabled:pointer-events-none disabled:opacity-50',
-  'data-[variant=field]:h-(--control-h-lg) data-[variant=field]:w-full data-[variant=field]:gap-2 data-[variant=field]:rounded-sm data-[variant=field]:border data-[variant=field]:border-border data-[variant=field]:bg-card data-[variant=field]:pr-3 data-[variant=field]:pl-3.5 data-[variant=field]:text-operate data-[variant=field]:hover:border-fg-subtle data-[variant=field]:focus-visible:border-primary data-[variant=field]:focus-visible:ring-3 data-[variant=field]:focus-visible:ring-ring data-[variant=field]:data-popup-open:border-primary data-[variant=field]:data-popup-open:ring-3 data-[variant=field]:data-popup-open:ring-ring',
+  'data-[variant=field]:w-full data-[variant=field]:gap-2 data-[variant=field]:rounded-sm data-[variant=field]:border data-[variant=field]:border-field-border data-[variant=field]:bg-field data-[variant=field]:hover:border-border-strong data-[variant=field]:focus-visible:border-primary data-[variant=field]:focus-visible:ring-3 data-[variant=field]:focus-visible:ring-ring data-[variant=field]:data-popup-open:border-primary data-[variant=field]:data-popup-open:ring-3 data-[variant=field]:data-popup-open:ring-ring',
   'data-[variant=quiet]:h-8 data-[variant=quiet]:w-auto data-[variant=quiet]:border data-[variant=quiet]:border-transparent data-[variant=quiet]:max-w-full data-[variant=quiet]:gap-1.5 data-[variant=quiet]:rounded-pill data-[variant=quiet]:pr-2 data-[variant=quiet]:pl-3 data-[variant=quiet]:text-[13.5px] data-[variant=quiet]:hover:bg-hover-surface data-[variant=quiet]:focus-visible:ring-3 data-[variant=quiet]:focus-visible:ring-ring data-[variant=quiet]:data-popup-open:bg-hover-surface',
 ].join(' ');
 
@@ -44,14 +45,16 @@ type FieldSelectProps = {
   /** Popup width; defaults to the trigger's (at least 280px when quiet). */
   width?: number;
   variant?: 'field' | 'quiet';
+  /** The field look's rung of the control ramp, as an `Input`'s `size`; the quiet pill has one height. */
+  size?: FieldSize;
 } & (
   | { multiple?: false; value: string | null; onValueChange: (value: string) => void }
   | { multiple: true; value: string[]; onValueChange: (value: string[]) => void }
 );
 
 /**
- * FieldSelect — the routine editor's picker: a 42px labelled field on a
- * 10px radius whose value and a muted mono `meta` ("1 repo", "+1",
+ * FieldSelect — the routine editor's picker: a labelled field on the control
+ * ramp (34px by default, the same field as an `Input` beside it) on a 10px radius whose value and a muted mono `meta` ("1 repo", "+1",
  * "idle") sit on one line. It opens the same listbox the scope chips use,
  * with a search row and, when `multiple`, a checkbox per row and a check
  * on the picked ones. Options can carry a `group` eyebrow ("In XRP
@@ -74,6 +77,7 @@ function FieldSelect(props: FieldSelectProps) {
     'aria-label': ariaLabel,
     width,
     variant = 'field',
+    size = 'md',
   } = props;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
@@ -121,7 +125,7 @@ function FieldSelect(props: FieldSelectProps) {
             disabled={disabled}
             data-slot="field-select"
             data-variant={variant}
-            className={cn(TRIGGER, className)}
+            className={cn(TRIGGER, variant === 'field' && FIELD_SIZE[size], className)}
           />
         }
       >

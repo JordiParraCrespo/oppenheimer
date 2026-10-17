@@ -47,3 +47,15 @@ export const EMAIL_JOB_OPTIONS = {
   attempts: 5,
   backoff: { type: 'exponential', delay: 10_000 },
 } as const satisfies DefaultJobOptions;
+
+/**
+ * A bot's turn runs once: it calls a model for as long as the model works, so
+ * a retry would answer twice. A failure is recorded on the turn instead, and a
+ * worker that died under one leaves it for the next pickup to fail
+ * (`RunBotTurnCommandHandler`). Kept as long as the durable queues.
+ */
+export const BOT_TURN_JOB_OPTIONS = {
+  attempts: 1,
+  removeOnComplete: DURABLE_JOB_OPTIONS.removeOnComplete,
+  removeOnFail: DURABLE_JOB_OPTIONS.removeOnFail,
+} as const satisfies DefaultJobOptions;

@@ -23,6 +23,7 @@ export const SCOPE_RESOURCES = [
   'projects',
   'sessions',
   'automations',
+  'bots',
   'tasks',
   'calendar',
   'pulls',
@@ -381,21 +382,46 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     },
   },
   {
+    resource: 'bots',
+    label: 'Bots',
+    description: 'Bots: their profile, sidebar groups, soul and instructions, and memory.',
+    levels: {
+      read: {
+        scope: 'bots:read',
+        label: 'Read',
+        description:
+          'List bots and their groups, and read a bot, its documents with their revisions, and its memory.',
+        policies: [{ action: 'read', subject: 'Bot' }],
+      },
+      write: {
+        scope: 'bots:write',
+        label: 'Edit',
+        description:
+          'Create, edit, regroup and delete bots and their groups, edit and revert their soul and instructions, and change what they remember.',
+        policies: [
+          { action: 'create', subject: 'Bot' },
+          { action: 'update', subject: 'Bot' },
+          { action: 'delete', subject: 'Bot' },
+        ],
+      },
+    },
+  },
+  {
     resource: 'tasks',
     label: 'Tasks',
-    description: 'Plan: tasks, goals, and the sessions a task started or links.',
+    description: 'Plan: tasks, milestones, and the sessions a task started or links.',
     levels: {
       read: {
         scope: 'tasks:read',
         label: 'Read',
-        description: 'Read the board, its tasks and goals, and which sessions a task links.',
+        description: 'Read the board, its tasks and milestones, and which sessions a task links.',
         policies: [{ action: 'read', subject: 'Task' }],
       },
       write: {
         scope: 'tasks:write',
         label: 'Edit',
         description:
-          'Create, edit, move and delete tasks and goals, link sessions, and start a session from a task.',
+          'Create, edit, move and delete tasks and milestones, link sessions, and start a session from a task.',
         // Starting a session from a task also asks `sessions:write` on the
         // route, so a tasks-only credential cannot reach a host.
         policies: [

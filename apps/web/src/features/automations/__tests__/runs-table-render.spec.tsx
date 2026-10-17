@@ -51,12 +51,10 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useAutomationRuns: () => {
+  useSuspenseAutomationRuns: () => {
     const data = useSyncExternalStore(world.subscribe, world.get);
-    return { data, isPending: false, error: null, isPlaceholderData: false };
+    return { data, error: null };
   },
-  useAutomations: () => ({ data: undefined }),
-  useProjects: () => ({ data: undefined }),
 }));
 
 vi.mock('@oppenheimer/frontend-web', async (original) => ({
@@ -64,17 +62,21 @@ vi.mock('@oppenheimer/frontend-web', async (original) => ({
   useLocale: () => 'en',
 }));
 
+const FILTERS = vi.hoisted(() => ({
+  state: { status: 'all', automation: null, project: null, window: '30d', page: 1 },
+  filter: {},
+  dirty: false,
+}));
+
 vi.mock('../hooks/use-runs-filters', async (original) => ({
   ...(await original<typeof import('../hooks/use-runs-filters')>()),
-  useRunsFilters: () => ({
-    state: { status: 'all', automation: null, project: null, window: '30d', page: 1 },
-    filter: {},
-    dirty: false,
-  }),
+  // One object for every render, as the real hook memoises it.
+  useRunsFilters: () => FILTERS,
 }));
 
 vi.mock('@tanstack/react-router', () => ({ getRouteApi: () => ({}), useNavigate: () => vi.fn() }));
 vi.mock('../components/choice-token', () => ({ ChoiceToken: () => null }));
+vi.mock('../sections/runs-facets', () => ({ RunsFacets: () => null }));
 
 const START = Date.parse('2026-09-26T10:00:00Z');
 

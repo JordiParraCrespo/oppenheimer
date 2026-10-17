@@ -31,6 +31,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   (SF Mono on Apple platforms), tabular (`figures` utility). Nothing is
   vendored: the fonts are the reader's own.
 - **One control ramp**: 28 / 34 / 42px for Button, IconButton, Input, ChipSelect.
+  **A form's fields stand at 34px**: `Input`, `DatePicker` and
+  `FieldSelect`'s field look default to the `md` rung, and a `Chip` that is a
+  field takes `size="md"`, so a label column of mixed controls reads as one
+  height. The three share one size map (`internal/control-size.ts`).
+  A smaller or larger field is a `size` the caller asks for, never a height
+  of the component's own.
 - **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
   press a pill, read inside an 18.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
@@ -84,14 +90,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   and takes no hue; a tinted tone only when something is in that state. The
   action lives in the form. `Alert` is the same box with a title, and a
   failure (`ErrorAlert`) may put its one Dismiss or Retry in `AlertAction`.
-- **Copy first, read second.** Add a host is two buttons — Copy install
-  command, Copy agent prompt — then the instruction behind a `Disclosure`
-  as one `CodeBlock layout="panel"` with Command / Agent prompt tabs on its
-  band; the Settings page shows the panel outright. Never two blocks with
-  two copy buttons.
+- **Copy first, read second, the prompt before the command.** Add a host
+  (onboarding and the console's dialog) leads with the agent prompt: one
+  card with Copy prompt, its text behind the card's fold, and the
+  install command behind "Install manually instead", one line with its
+  Copy. The Settings page shows both forms outright as one `CodeBlock
+  layout="panel"` with Command / Agent prompt tabs on its band.
 - **A fold is a `Disclosure`**: one row that reads as a label, an optional
   word, a summary while closed, a chevron that turns; the panel opens 14px
-  under it. Defaults in the project dialog, Inspect in Add a host. Its two
+  under it. Defaults in the project dialog. Its two
   tones are the only two.
 - **A dialog has three widths**, `md`, `form` and `lg`, and a caller never
   sets one.
@@ -146,10 +153,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   stays a run state. A component never adds its own state union for a
   colour the dot already has.
 - **A section is a `Card`.** `Panel` and `StatCard` compose `Card`; a
-  numbered sequence is `Stepper` (`MergePath` is its horizontal
-  orientation in a `Panel`); a share of a whole is `StatBar`, wherever it
-  sits; a weight in ink (a pull request's lane) is a `Badge` variant
-  (`strong`, `soft`), not a component per meaning.
+  numbered sequence is `Stepper`; what stands between a pull request and
+  main is `MergePath`, one card row of gates, each a dot and a word; a share
+  of a whole is `StatBar`, wherever it sits; a weight in ink (a pull
+  request's lane) is a `Badge` variant (`strong`, `soft`), not a component
+  per meaning.
 - **Data colours are one set of tones.** Charts, stat bars and fact dots
   take a `DataTone` (`chart-1` to `chart-5`, the status hues, `muted`);
   `--chart-1` to `--chart-3` are a categorical order validated for
@@ -186,6 +194,71 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
   routine row adds `lastRun`, a dot before the meta for how the last run
   ended, from the same table as `RoutineRun`'s.
+- **A setting that applies when it flips is a `Switch`; one that waits for
+  Save is a `Checkbox`.** A setting a template holds stays drawn, disabled,
+  with its reason as the title.
+- **A short set of values in a form is a `PillGroup`** (`.op-pill`): one
+  value (For how long) or, with `multiple`, a set (a bot's projects). It
+  holds a value; `PillTabs` switches what a page shows and
+  `SegmentedControl` how one pane reads, so neither is a form field. A
+  bounded count a person nudges (Parallel sessions) is a `NumberStepper`.
+- **Sharing names people, then says who holds what.** `PeoplePicker` is a
+  combobox over the workspace's members whose typed outside address becomes
+  an invite; `AccessList` is who can open the thing, with the role and the
+  time left in mono, the owner first and fixed, a link a row of its own.
+- **A list page's facet is a `FacetSelect`**, unset on its first option and
+  lit on the selected wash once narrowed: `pill` on Plan's board, `labelled`
+  in the pull-request queue. Several facets of one menu stay
+  `DropdownMenuSub`s.
+- **Time on Plan.** Milestones lie on a `MilestoneTimeline` (diamonds on a
+  track per project, today a line through every row), marked elsewhere by
+  `MilestoneGlyph`; Stats reports over a `DateRangePicker` period, and
+  volume over time is an `AreaChart` (monotone, so it never overshoots),
+  rates without volume a `LineChart`. Several Google accounts are a
+  `CalendarAccountList`.
+- **An employee reads like a conversation.** `BotItem` is a photo, the
+  name, the age and the last message, unread in full ink with the blue
+  dot, waiting on the reader (`needsInput`) the same with the amber one.
+  Its groups head with `SidebarProjectHeader tone="eyebrow"`, the Built-in
+  group with a lock `marker`; before the first bot the list is a
+  `SidebarEmptyCard`, and the chat a centred `ChatEmptyState` over
+  `TemplateTiles`. A bot's message to another is a `BotExchange`, and the
+  instructions it proposes for itself a `ProposedFile`. Its photo is
+  picked with `AvatarPicker`. The photos are the product's own: the
+  export's portraits are of real people and never ship. Until there is a
+  set we may use, a bot's face is its initials in dark ink on one of the
+  export's eight colours (`--avatar-*`, the same in both themes): `BotAvatar`
+  and `BotItem` take `color`, and Profile picks it with `AvatarColorPicker`.
+  A bot's routine is a `RoutineCard`, read and edited in place
+  (`RoutineItem` is the workspace's, in the sidebar); records in a settings
+  card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`
+  says whose settings these are.
+- **The chat is a 46rem column on the pane's recessed ground.** The
+  person's turns are cards on the right, the agent's are unboxed prose
+  opened by a `TurnHeader` on its hairline; what the agent did (tool calls,
+  reasoning) is in muted ink so it never reads as the answer. Work in
+  flight breathes (`animate-shimmer`) and a streaming reply has its caret
+  (`animate-caret`), both behind `motion-safe:`. Panels on the composer
+  fuse onto its top (`ComposerStack`, `ComposerNotice`); a blocking
+  request takes the composer's place (`ApprovalPanel`, `QuestionPanel`),
+  and its number keys pick only while focus is inside it. In a bot's chat
+  the request fuses onto the composer instead (`ComposerApproval` in
+  `ChatComposer`'s `above`, under a Needs input line), so it can be answered
+  in words.
+- **A bot's chat is the Bots frame and AI Elements.** Your turns are
+  28px bubbles, their time and copy on hover; the bot's answer has no
+  header: a `Trace` line per tool call at the reply's 15px, muted, each
+  opening to its `TraceOutput` (numbered mono lines on the card) or a
+  `TraceNote`, failures in red, then the reply, its fenced code a
+  `ChatCodeBlock`, then a `MessageTrail` (copy, retry, model and tokens).
+  While it runs a `TraceLive` line says what it is doing, with its clock.
+  Between turns a `ChatMarker` notes a model switch and a
+  `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;
+  the way back to the latest turn is `FloatingChip variant="round"`; the
+  box is `ChatComposer`, a 28px card growing from two lines to eight, which
+  shares `Composer`'s send rules and send button (`internal/composer-send`)
+  rather than branching inside it. The trace lives in `chat-trace.tsx`,
+  apart from the agent's tool-call groups in `chat-work.tsx`.
 
 ## Conventions
 

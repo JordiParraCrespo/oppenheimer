@@ -128,7 +128,7 @@ export interface PullRequestQueue {
   viewerLogin: string | null;
 }
 
-export type MergeGateId = 'checks' | 'conflicts' | 'review' | 'merge';
+export type MergeGateId = 'checks' | 'conflicts' | 'merge';
 export type MergeGateState = 'done' | 'failed' | 'pending';
 
 export interface PullRequestReviewer {
@@ -143,6 +143,8 @@ export class PullRequestDetailEntity extends PullRequestEntity {
     /** The description, as written (Markdown). */
     public readonly body: string,
     public readonly baseRef: string,
+    /** The head branch is in a fork, which a session cannot check out yet. */
+    public readonly fromFork: boolean,
     public readonly state: 'open' | 'merged' | 'closed',
     public readonly changedFiles: number,
     /** Top-level directories, most files first. */
@@ -237,6 +239,13 @@ export interface ReviewInput {
   comments: LineCommentInput[];
 }
 
+/** What submitting a review did to the merge. */
+export interface ReviewOutcome {
+  merged: boolean;
+  /** GitHub merges it once its required checks pass. */
+  autoMerge: boolean;
+}
+
 export interface WatchedRepository {
   installationId: string;
   githubRepoId: number;
@@ -282,4 +291,31 @@ export interface PullRequestAnalytics {
   bucket: 'day' | 'week';
   lanes: ({ lane: PullRequestLane } & AnalyticsFigure)[];
   waiting: { reason: PullRequestBlocker; value: number; medianHours: number | null }[];
+}
+
+/**
+ * A review session: a session started from a pull request's Chat tab, in a
+ * worktree of its head branch, listed under For review and never under
+ * Sessions. The title and repository are as they were when it started.
+ */
+export interface ReviewSession {
+  sessionId: string;
+  installationId: string;
+  githubRepoId: number;
+  number: number;
+  repository: string;
+  title: string;
+  headRef: string;
+  hostId: string;
+  state: string;
+  createdAt: Date;
+}
+
+/** Whether a review session reviews the pull request at `address`. */
+export function reviews(session: ReviewSession, address: PullRequestAddress): boolean {
+  return (
+    session.installationId === address.installationId &&
+    session.githubRepoId === address.githubRepoId &&
+    session.number === address.number
+  );
 }

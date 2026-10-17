@@ -22,7 +22,9 @@ type Options struct {
 	Publisher  Publisher
 	// Files keeps the files (images, PDF, text) pasted into a session's prompt.
 	Files Files
-	// Layout is where repositories and worktrees live on this host.
+	// Places makes, checks and removes the folders sessions run in.
+	Places Places
+	// Layout is the work folder: where stores and sessions live on this host.
 	Layout domain.Layout
 	// Env is added to every session's tmux environment, inherited by every
 	// window: what the git credential helper called from that shell needs to
@@ -62,6 +64,7 @@ type Service struct {
 	store      Store
 	publisher  Publisher
 	files      Files
+	places     Places
 	layout     domain.Layout
 	env        func(domain.Session) map[string]string
 	gate       LaunchGate
@@ -87,7 +90,7 @@ func New(opts Options) (*Service, error) {
 		revs: map[string]uint64{}, busy: map[string]int{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		files: opts.Files, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
+		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -95,6 +98,11 @@ func New(opts Options) (*Service, error) {
 			return nil, domain.ErrNotFound.WithDetail("read the session map: %v", err).WithCause(err)
 		}
 		for _, session := range loaded {
+			// A record with no place was made on the work folder's first
+			// layout, which this runner does not read (24: no migration).
+			if session.Place == "" {
+				continue
+			}
 			s.sessions[session.ID] = session.Clone()
 		}
 	}
@@ -111,403 +119,6 @@ func (s *Service) SetPublisher(publisher Publisher) {
 		publisher = NopPublisher{}
 	}
 	s.publisher = publisher
-}
-
-// CreateInput is what opening a session takes, from the link or the CLI.
-type CreateInput struct {
-	// ID is the control plane's session id when the create arrives over the
-	// link, so an attach that names it finds it; the CLI leaves it empty and
-	// one is minted.
-	ID   string
-	Repo string
-	// Remote is where the mirror is cloned from. The control plane supplies
-	// it with a credential-helper-backed URL; nothing is written to disk.
-	Remote string
-	// BaseBranch is what the session's branch is cut from.
-	BaseBranch string
-	// Branch, when empty, means a new branch named after the session.
-	Branch string
-	// Existing checks out Branch instead of creating it.
-	Existing bool
-	Name     string
-	Agent    domain.Agent
-	// Launch is the model, permission, effort and first task, as argv, from
-	// the catalog (02-runner §5). Zero for a CLI-created session.
-	Launch domain.Launch
-	// CheckoutID and GithubRepoID are the control plane's names for the
-	// repository, kept for the credential helper.
-	CheckoutID   string
-	GithubRepoID int64
-	// Files are the files attached to the first task, already pulled.
-	// Each is saved outside the worktree just before the agent starts, and
-	// its path appended to the prompt the agent is launched with.
-	Files []CreateFile
-	// Progress, when set, hears each stage start and land, in order, with the
-	// session as it stands at each. StageTerminal landing is what says the
-	// session has a pane to attach to. It must not block.
-	Progress func(domain.StageEvent)
-}
-
-// CreateFile is one file attached to a session's first task.
-type CreateFile struct {
-	// ID names the file on disk, so it is a plain name: the control plane's
-	// file id, checked at the link.
-	ID        string
-	MediaType string
-	Data      []byte
-}
-
-// base is the branch a new session's branch is cut from.
-func (in CreateInput) base() string {
-	if in.BaseBranch == "" {
-		return "main"
-	}
-	return in.BaseBranch
-}
-
-// fetchRef is the one branch a create fetches: the one its worktree is made
-// from, which is the existing branch it checks out or the base it cuts from.
-func (in CreateInput) fetchRef() string {
-	if in.Existing {
-		return in.Branch
-	}
-	return in.base()
-}
-
-// Create makes a session: mirror, worktree, tmux session, agent in window 0.
-// Each step is observable on disk, so a failure half-way leaves something a
-// person can look at rather than a mystery.
-func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, error) {
-	// Whatever effort arrives now is a level of the CLI's own; say so on the
-	// launch that is saved, so a restart can tell it from an older stop.
-	in.Launch.EffortIsLevel = true
-	if err := s.terminals.Available(ctx); err != nil {
-		return domain.Session{}, err
-	}
-	if err := domain.ValidateRepo(in.Repo); err != nil {
-		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
-	}
-	agent := in.Agent
-	if agent == "" {
-		agent = domain.AgentClaude
-	}
-	if !agent.Valid() {
-		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v: %q", domain.ErrUnknownAgent, agent)
-	}
-	base := in.base()
-	if err := domain.ValidateBranch(base); err != nil {
-		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
-	}
-	if err := s.checkFiles(in.Files, in.Launch.Prompt); err != nil {
-		return domain.Session{}, err
-	}
-
-	id := in.ID
-	if id == "" {
-		minted, err := domain.NewID()
-		if err != nil {
-			return domain.Session{}, domain.ErrInvalidInput.WithDetail("generate a session id: %v", err).WithCause(err)
-		}
-		id = minted
-	}
-	branch := in.Branch
-	if branch == "" {
-		branch = domain.DefaultBranchName(id)
-	}
-	if err := domain.ValidateBranch(branch); err != nil {
-		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
-	}
-
-	now := s.now().UTC()
-	session := domain.Session{
-		ID: id, Name: nameOr(in.Name, branch), Repo: in.Repo,
-		BaseBranch: base, Branch: branch, Worktree: s.layout.Worktree(in.Repo, domain.Slug(branch, id)),
-		Agent: agent, Launch: in.Launch,
-		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
-		State: domain.StateCreating, Created: now, Updated: now,
-		Windows: []domain.Window{{Index: 0, Name: string(agent), Agent: true}},
-	}
-	// Idempotent by session id: a create redelivered after a reconnect finds
-	// the session it already made, or joins the create still making it.
-	c, first, existing := s.begin(session)
-	if existing != nil {
-		return *existing, nil
-	}
-	if !first {
-		return c.wait(ctx)
-	}
-	created, err := s.create(domain.WithSession(ctx, id), in, session)
-	s.end(c, created, err)
-	return created, err
-}
-
-// create walks the stages. What a failed stage leaves on disk is taken over
-// by the next attempt for the same session (Worktrees.Add).
-func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
-	// Every stage runs through run, so "started, then landed or failed" is
-	// the one shape a stage can have, and a new stage cannot report half of it.
-	run := func(start domain.StageEvent, fn func() error) error {
-		stage, started := start.Stage, s.now()
-		if in.Progress != nil {
-			start.Session = session.Clone()
-			in.Progress(start)
-		}
-		if err := fn(); err != nil {
-			return err
-		}
-		if in.Progress != nil {
-			in.Progress(domain.StageEvent{
-				Stage: stage, Done: true, Took: s.now().Sub(started), Session: session.Clone(),
-			})
-		}
-		return nil
-	}
-
-	// The terminal comes first, before the repository exists. A create spends
-	// its seconds on the clone and the worktree, and every one of them used to
-	// be a spinner: the pane was made last, so there was nothing to look at
-	// until everything was done. Made first, the reader is in the session at
-	// once and watches it being built, which is the whole difference between
-	// waiting and working.
-	//
-	// It starts in the directory the worktree will be made in — the worktree
-	// itself is not there yet. Once it is, the pane's shell is replaced by
-	// the agent started in the worktree (Terminals.Launch), so nothing typed
-	// to start it is ever on the screen.
-	if err := run(domain.StageEvent{Stage: domain.StageTerminal}, func() error {
-		parent, err := s.worktrees.Prepare(ctx, in.Repo)
-		if err != nil {
-			return err
-		}
-		return s.terminals.Create(ctx, session.TmuxName(), parent, "", s.env(session))
-	}); err != nil {
-		return domain.Session{}, err
-	}
-	// A stage that fails from here leaves no pane behind: the session never
-	// became one, and a terminal nothing is running in is not a session.
-	abandon := func(err error) (domain.Session, error) {
-		_ = s.terminals.Kill(context.WithoutCancel(ctx), session.TmuxName())
-		return domain.Session{}, err
-	}
-	// The pane exists, so an attach waiting on it may go. Nothing else changes:
-	// the create holds its lane to the end, so a stop, a list or an unpair
-	// still see the session only once it has landed.
-	s.paneReady(session)
-
-	// A repository this host has never held is downloaded, which is the one
-	// stage that can take tens of seconds; the reader is told so.
-	download := !s.worktrees.Has(in.Repo)
-	if err := run(domain.StageEvent{Stage: domain.StageClone, Download: download}, func() error {
-		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, in.fetchRef())
-	}); err != nil {
-		return abandon(err)
-	}
-	if err := run(domain.StageEvent{Stage: domain.StageWorktree}, func() error {
-		return s.worktrees.Add(ctx, in.Repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
-	}); err != nil {
-		return abandon(err)
-	}
-	session.State = domain.StateStarting
-	if err := run(domain.StageEvent{Stage: domain.StageAgent}, func() error {
-		launch, err := s.saveFiles(session.ID, in)
-		if err != nil {
-			return err
-		}
-		defer s.holdLaunch(ctx, session.Agent)()
-		if err := s.terminals.Launch(ctx, session.Target(0), session.Worktree, launch.CommandLine(session.Agent)); err != nil {
-			s.discardFiles(session.ID)
-			return err
-		}
-		return nil
-	}); err != nil {
-		// Leave the worktree: it is on disk, it is the user's, and a
-		// half-created session they can see beats one that vanished.
-		return abandon(err)
-	}
-	return session, nil
-}
-
-// checkFiles refuses a first task's files before anything is made: too
-// many, a type a session does not take, or bytes that are not the type they
-// claim (domain.FileIs: magic bytes, or text that is only text). A create
-// that would launch the task without its files is refused rather than
-// started, since the task talks about them.
-func (s *Service) checkFiles(files []CreateFile, prompt string) error {
-	if len(files) == 0 {
-		return nil
-	}
-	if s.files == nil {
-		return domain.ErrFile.WithDetail("this runner keeps no files")
-	}
-	if prompt == "" {
-		return domain.ErrInvalidInput.WithDetail("attached files ride a first task, and this create has none")
-	}
-	if len(files) > domain.CreateMaxFiles {
-		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d files; this one carried %d", domain.CreateMaxFiles, len(files))
-	}
-	for _, file := range files {
-		if _, ok := domain.FileExtension(file.MediaType); !ok {
-			return domain.ErrFile.WithDetail("%q is not a type a session takes", file.MediaType)
-		}
-		if !domain.FileIs(file.Data, file.MediaType) {
-			return domain.ErrFile.WithDetail("the bytes are not %s", file.MediaType)
-		}
-	}
-	return nil
-}
-
-// saveFiles writes the first task's files where pasted ones go and returns
-// the launch that names them. Only the command line gets the paths:
-// session.Launch keeps the task as typed, so a restart, by which time the
-// files have been discarded with the tmux session, names no file that is gone.
-func (s *Service) saveFiles(id string, in CreateInput) (domain.Launch, error) {
-	launch := in.Launch
-	if len(in.Files) == 0 {
-		return launch, nil
-	}
-	paths := make([]string, 0, len(in.Files))
-	for _, file := range in.Files {
-		ext, _ := domain.FileExtension(file.MediaType)
-		path, err := s.files.Save(id, file.ID+ext, file.Data)
-		if err != nil {
-			s.discardFiles(id)
-			return launch, domain.ErrFile.WithDetail("write the file: %v", err).WithCause(err)
-		}
-		paths = append(paths, path)
-	}
-	launch.Prompt = domain.PromptWithFiles(launch.Prompt, paths)
-	return launch, nil
-}
-
-type creation struct {
-	session domain.Session
-	done    chan struct{}
-	result  domain.Session
-	err     error
-	// pane is closed once the session's tmux session exists, which is well
-	// before the create lands: the terminal is made before the clone runs. An
-	// attach waits on it; nothing else does.
-	pane chan struct{}
-}
-
-// begin registers a create, or finds what is already there for its id: a
-// recorded session (existing), or a create still running (first is false).
-func (s *Service) begin(session domain.Session) (c *creation, first bool, existing *domain.Session) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if recorded, ok := s.sessions[session.ID]; ok {
-		clone := recorded.Clone()
-		return nil, false, &clone
-	}
-	if running, ok := s.creating[session.ID]; ok {
-		return running, false, nil
-	}
-	c = &creation{session: session, done: make(chan struct{}), pane: make(chan struct{})}
-	s.creating[session.ID] = c
-	return c, true, nil
-}
-
-// end records a create's outcome — the session, when it landed — and wakes
-// every create that joined it. The record is written before the pending entry
-// goes, so Get never finds neither.
-// paneReady releases the attaches waiting on this session's terminal: its tmux
-// session exists, whatever the clone behind it is still doing. It also
-// refreshes the copy the creation holds, so what an attach reads is the
-// session as it is.
-func (s *Service) paneReady(session domain.Session) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	c, creating := s.creating[session.ID]
-	if !creating {
-		return
-	}
-	c.session = session
-	select {
-	case <-c.pane:
-	default:
-		close(c.pane)
-	}
-}
-
-// awaitAttachable is the session an attach may use, waiting if the host is
-// still making its terminal.
-//
-// This is the one command a session being created can serve, and waiting is
-// what makes that true without a second notion of "recorded". The terminal is
-// built before the clone, so an attach sent the moment the console hears about
-// the session arrives while the create is still running: refusing it would
-// send the browser into its reconnect ladder to wait out a clone its terminal
-// never depended on, and queueing it behind the create would do the same thing
-// more quietly.
-//
-// Only an attach waits here. Stop, List and the rest still ask for a recorded
-// session, so a create that has not landed is still not a session to act on.
-func (s *Service) awaitAttachable(ctx context.Context, id string) (domain.Session, error) {
-	s.mu.Lock()
-	if recorded, ok := s.sessions[id]; ok {
-		session := recorded.Clone()
-		s.mu.Unlock()
-		if !session.State.Live() {
-			return domain.Session{}, domain.ErrNotRunning.WithDetail(
-				"session %s is %s; restart it to attach", id, session.State)
-		}
-		return session, nil
-	}
-	c, creating := s.creating[id]
-	s.mu.Unlock()
-	if !creating {
-		return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
-	}
-
-	select {
-	case <-c.pane:
-	case <-c.done:
-	case <-ctx.Done():
-		return domain.Session{}, domain.ErrNotRunning.WithDetail(
-			"session %q was still being created when the attach gave up", id)
-	}
-
-	// The create may have landed while waiting, so the record is asked first:
-	// it is the session as it finally stands. A create that ended without ever
-	// making a pane leaves neither, and that is a refusal.
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if recorded, ok := s.sessions[id]; ok {
-		session := recorded.Clone()
-		if !session.State.Live() {
-			return domain.Session{}, domain.ErrNotRunning.WithDetail(
-				"session %s is %s; restart it to attach", id, session.State)
-		}
-		return session, nil
-	}
-	select {
-	case <-c.pane:
-		return c.session.Clone(), nil
-	default:
-		return domain.Session{}, domain.ErrNotRunning.WithDetail(
-			"session %q never got a terminal", id)
-	}
-}
-
-func (s *Service) end(c *creation, session domain.Session, err error) {
-	if err == nil {
-		s.record(session)
-	}
-	s.mu.Lock()
-	delete(s.creating, c.session.ID)
-	c.result, c.err = session, err
-	s.mu.Unlock()
-	close(c.done)
-}
-
-// wait is a joined create: the first one's outcome, or ctx's end.
-func (c *creation) wait(ctx context.Context) (domain.Session, error) {
-	select {
-	case <-c.done:
-		return c.result, c.err
-	case <-ctx.Done():
-		return domain.Session{}, ctx.Err()
-	}
 }
 
 // List returns every session this runner knows, newest first.
@@ -559,7 +170,7 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
-// OpenWindow adds a tab: a plain shell in the same worktree. It holds the
+// OpenWindow adds a tab: a plain shell where the agent runs. It holds the
 // session like every command, so a refresh running meanwhile keeps the
 // window (see observe).
 func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
@@ -571,7 +182,7 @@ func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, err
 	if !session.State.Live() {
 		return domain.Window{}, domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
-	index, err := s.terminals.NewWindow(ctx, session.TmuxName(), session.Worktree)
+	index, err := s.terminals.NewWindow(ctx, session.TmuxName(), session.Cwd())
 	if err != nil {
 		return domain.Window{}, err
 	}
@@ -765,8 +376,9 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 	return s.List(), errors.Join(errs...)
 }
 
-// Restart recreates window 0 in the same worktree. It is the Restart button
-// on a session that stopped when the host rebooted.
+// Restart recreates window 0 where the session ran: its checkout, or its
+// folder. It is the Restart button on a session that stopped when the host
+// rebooted.
 func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error) {
 	defer s.hold(id)()
 	session, over, err := s.gone(ctx, id)
@@ -775,7 +387,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	}
 	if over {
 		return domain.Session{}, domain.ErrNotRunning.WithDetail(
-			"session %s is closed; its worktree is gone from this host", id)
+			"session %s is closed; where it ran is gone from this host", id)
 	}
 	if alive, err := s.terminals.Has(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
@@ -796,7 +408,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	launch := session.Launch
 	launch.Resume = true
 	release := s.holdLaunch(ctx, session.Agent)
-	err = s.terminals.Create(ctx, session.TmuxName(), session.Worktree, launch.CommandLine(session.Agent), s.env(session))
+	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
 	release()
 	if err != nil {
 		return domain.Session{}, err
@@ -833,8 +445,10 @@ type CloseInput struct {
 }
 
 // Close ends a session: kill the tmux session, push the branch if asked, and
-// remove the worktree. A dirty worktree is not a reason to refuse — it is
-// reported, and the worktree is kept unless Force says otherwise.
+// remove the worktree and the session's folder. A dirty worktree is not a
+// reason to refuse — it is reported, and the worktree is kept unless Force
+// says otherwise. A folder session only loses its terminal: its folder is the
+// person's, and nothing in it is pushed, checked or removed.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
 	defer s.hold(id)()
 	ctx = domain.WithSession(ctx, id)
@@ -845,38 +459,14 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
 	}
-
-	dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
-	if dirtyErr == nil {
-		session.Dirty = dirty
-	}
-	var pushErr error
-	if in.Push {
-		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
-			// Report and keep going: the session is over either way, and
-			// the branch is still in the worktree we are about to name.
-			session.Dirty = true
-		}
-	}
-	if session.Dirty && !in.Force {
-		session = s.decide(session, domain.StateStopped, "")
-		detail := "the worktree has uncommitted changes and was kept at " + session.Worktree
-		if pushErr != nil {
-			detail = "the branch could not be pushed, so the worktree was kept at " + session.Worktree
-		}
-		return session, domain.ErrPushRejected.WithDetail("%s", detail).WithCause(pushErr)
-	}
-	if err := s.worktrees.Remove(ctx, session.Repo, session.Worktree, in.Force); err != nil {
-		return session, err
-	}
-	return s.decide(session, domain.StateClosed, ""), nil
+	return s.closePlace(ctx, session, in)
 }
 
 // gone answers a close or a restart for a session this host can no longer
 // run, and over is true when it did: one it holds no record of (removed by
 // hand, or a state that did not survive a reinstall), one closed here already
 // (`runner sessions close`, or an answer the control plane never got), or one
-// whose worktree someone deleted. Each is closed, and announced as closed
+// whose worktree or folder someone deleted. Each is closed, and announced as closed
 // even when it already was, because that answer is what resolves the
 // session's row: refusing would leave one nobody can delete or restart.
 // Anything else is handed back for the caller to go on with.
@@ -893,16 +483,8 @@ func (s *Service) gone(ctx context.Context, id string) (session domain.Session, 
 	case session.State == domain.StateClosed:
 		s.announce(session)
 		return session, true, nil
-	case session.Worktree != "" && !s.worktrees.Exists(session.Worktree):
-		if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
-			return domain.Session{}, false, err
-		}
-		// Only git's record of the worktree is left, and a prune that fails
-		// leaves nothing a person needs: the session is over either way.
-		_ = s.worktrees.Remove(ctx, session.Repo, session.Worktree, true)
-		return s.decide(session, domain.StateClosed, ""), true, nil
 	}
-	return session, false, nil
+	return s.placeGone(ctx, session)
 }
 
 // announce publishes a session as it stands, whether or not it changed.
@@ -1164,13 +746,6 @@ func (s *Service) commit(id string, apply func(cur domain.Session, known bool) (
 		_ = s.store.Save(snapshot)
 	}
 	return next, true, publisher
-}
-
-func nameOr(name, fallback string) string {
-	if name != "" {
-		return name
-	}
-	return fallback
 }
 
 // holdLaunch waits, through the gate, until nothing is replacing the agent's

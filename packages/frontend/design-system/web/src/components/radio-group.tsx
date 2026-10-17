@@ -17,18 +17,28 @@ import { cn } from '../lib/utils';
 function RadioGroup({
   value,
   onValueChange,
+  columns,
   className,
   ...props
 }: Omit<RadioGroupPrimitive.Props, 'value' | 'defaultValue' | 'onValueChange'> & {
   value: string;
   onValueChange: (value: string) => void;
+  /** Lay `RadioGroupCard`s out side by side, 8px apart. */
+  columns?: 2 | 3;
 }) {
   return (
     <RadioGroupPrimitive
       data-slot="radio-group"
       value={value}
       onValueChange={(next) => onValueChange(String(next))}
-      className={cn('flex flex-col gap-1', className)}
+      className={cn(
+        columns === 2
+          ? 'grid grid-cols-2 gap-2'
+          : columns === 3
+            ? 'grid grid-cols-3 gap-2'
+            : 'flex flex-col gap-1',
+        className,
+      )}
       {...props}
     />
   );
@@ -68,4 +78,60 @@ function RadioGroupItem({
   );
 }
 
-export { RadioGroup, RadioGroupItem };
+/**
+ * RadioGroupCard — the same pick drawn as a card, for two or three choices
+ * that each change what follows (a share's Can view / Can write). A 14-radius
+ * card on a hairline: an icon and the label on its first line, what it does
+ * under it. The chosen card takes the action blue's border, the selected wash
+ * and a blue icon; `tone="danger"` is for the one choice that hands a machine
+ * to somebody else, and turns the chosen card's border, wash and icon red.
+ * The group lays them out with `columns`.
+ */
+function RadioGroupCard({
+  value,
+  label,
+  description,
+  icon,
+  tone = 'default',
+  disabled,
+  className,
+}: {
+  value: string;
+  label: React.ReactNode;
+  description?: React.ReactNode;
+  icon?: React.ReactNode;
+  tone?: 'default' | 'danger';
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <RadioPrimitive.Root
+      value={value}
+      disabled={disabled}
+      data-slot="radio-group-card"
+      data-tone={tone}
+      className={cn(
+        'flex flex-col items-start gap-1 rounded-lg border border-border-subtle px-3.5 py-3 text-left outline-none transition-[background-color,border-color,opacity] duration-instant ease-standard focus-visible:ring-3 focus-visible:ring-ring',
+        'enabled:cursor-pointer enabled:hover:bg-hover-surface disabled:opacity-45',
+        'data-checked:border-primary data-checked:bg-selected-surface',
+        'data-[tone=danger]:data-checked:border-danger/45 data-[tone=danger]:data-checked:bg-danger/6',
+        'group/radio-card',
+        className,
+      )}
+    >
+      <span className="flex items-center gap-2 text-sm font-medium text-fg">
+        {icon ? (
+          <span className="flex text-fg-subtle group-data-checked/radio-card:text-primary group-data-[tone=danger]/radio-card:group-data-checked/radio-card:text-danger [&_svg]:size-3.75">
+            {icon}
+          </span>
+        ) : null}
+        {label}
+      </span>
+      {description ? (
+        <span className="text-[12.5px] leading-[1.4] text-pretty text-fg-muted">{description}</span>
+      ) : null}
+    </RadioPrimitive.Root>
+  );
+}
+
+export { RadioGroup, RadioGroupCard, RadioGroupItem };

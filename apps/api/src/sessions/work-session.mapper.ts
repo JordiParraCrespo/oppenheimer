@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
@@ -9,11 +10,14 @@ import {
 } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
+import type { HostFolderListing } from './application/host-folders.port';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
+import type { SessionUsageWeek } from './database/session-usage.repository.port';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import type {
   NewSessionEvent,
+  RecentFolder,
   SessionListCursor,
   SessionListPage,
 } from './database/work-session.repository.port';
@@ -28,6 +32,7 @@ import {
   type SessionLaunchFold,
 } from './domain/session-state.policy';
 import {
+  SESSION_ORIGINS,
   type SessionTurnFold,
   TURN_DRIVES,
   TURN_ORIGINS,
@@ -38,6 +43,7 @@ import {
 } from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
+import { HostFoldersResponseDto } from './dtos/host-folders.response.dto';
 import {
   SessionCheckoutResponseDto,
   SessionPageMetaDto,
@@ -90,6 +96,8 @@ export class WorkSessionMapper
     record.nameSource = entity.nameSource;
     record.slug = entity.slug;
     record.agent = entity.agent;
+    record.place = entity.place;
+    record.folderPath = entity.folderPath;
     record.idempotencyKey = entity.idempotencyKey;
     record.origin = entity.origin;
     const fold = entity.fold;
@@ -123,9 +131,14 @@ export class WorkSessionMapper
         hostId: record.hostId,
         slug: record.slug,
         agent: record.agent as SessionAgent,
+        // The place is read off the folder; the row's `place` column and its
+        // CHECK are the store's own guard that the two agree.
+        folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
-        origin: record.origin === 'automation' ? 'automation' : 'person',
+        origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
+          ? record.origin
+          : 'person',
         // Loaded by the repository when it folds, under the row lock.
         latestTurn: null,
         ...this.foldOf(record),
@@ -135,6 +148,38 @@ export class WorkSessionMapper
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /** One row of the recent-folders aggregate; the driver returns the `max` as a `Date`. */
+  recentFolderOf(row: unknown): RecentFolder {
+    const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+    const at = record.lastUsedAt;
+    return {
+      path: String(record.path),
+      lastUsedAt: at instanceof Date ? at : new Date(String(at)),
+    };
+  }
+
+  /**
+   * The folder picker's answer: the runner's listing with each entry's path
+   * joined on the host's own separator, and the caller's recent folders. Absent
+   * branches and an absent `truncated` are spelled out, so a client never has to
+   * tell "no" from "not said".
+   */
+  toFoldersResponse(listing: HostFolderListing, recent: RecentFolder[]): HostFoldersResponseDto {
+    const dto = new HostFoldersResponseDto();
+    dto.path = listing.path;
+    dto.parent = listing.parent;
+    dto.home = listing.home;
+    dto.branch = listing.branch ?? null;
+    dto.entries = listing.entries.map((entry) => ({
+      name: entry.name,
+      path: posix.join(listing.path, entry.name),
+      branch: entry.branch ?? null,
+    }));
+    dto.truncated = listing.truncated ?? false;
+    dto.recent = recent.map((folder) => ({ path: folder.path, lastUsedAt: folder.lastUsedAt }));
+    return dto;
   }
 
   /** A stored turn as the fold reads it. Values outside the unions read as their safest member. */
@@ -161,6 +206,31 @@ export class WorkSessionMapper
       costUsd: record.costUsd === null ? null : Number(record.costUsd),
       permissionDenials: record.permissionDenials,
       outputRef: record.outputRef,
+      model: record.model,
+      inputTokens: tokenCount(record.inputTokens),
+      outputTokens: tokenCount(record.outputTokens),
+      cacheReadTokens: tokenCount(record.cacheReadTokens),
+      cacheWriteTokens: tokenCount(record.cacheWriteTokens),
+    };
+  }
+
+  /**
+   * One row of the weekly usage aggregate. Postgres sums `bigint` and `numeric`
+   * into `numeric`, which `pg` returns as a string, so every figure is read
+   * here once rather than at each caller.
+   */
+  usageWeekToRead(row: unknown): SessionUsageWeek {
+    const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+    return {
+      weekStart: String(record.weekStart),
+      projectId: String(record.projectId),
+      model: typeof record.model === 'string' ? record.model : null,
+      inputTokens: summed(record.inputTokens),
+      outputTokens: summed(record.outputTokens),
+      cacheReadTokens: summed(record.cacheReadTokens),
+      cacheWriteTokens: summed(record.cacheWriteTokens),
+      costUsd: summed(record.costUsd),
+      turns: summed(record.turns),
     };
   }
 
@@ -183,6 +253,11 @@ export class WorkSessionMapper
     record.costUsd = turn.costUsd === null ? null : turn.costUsd.toFixed(6);
     record.permissionDenials = turn.permissionDenials;
     record.outputRef = turn.outputRef;
+    record.model = turn.model;
+    record.inputTokens = turn.inputTokens === null ? null : String(turn.inputTokens);
+    record.outputTokens = turn.outputTokens === null ? null : String(turn.outputTokens);
+    record.cacheReadTokens = turn.cacheReadTokens === null ? null : String(turn.cacheReadTokens);
+    record.cacheWriteTokens = turn.cacheWriteTokens === null ? null : String(turn.cacheWriteTokens);
     return record;
   }
 
@@ -220,9 +295,11 @@ export class WorkSessionMapper
    * building them beside the persistence shape keeps the two saying the same thing.
    *
    * At most three. `session.requested` states the launch, which the launch columns
-   * project. `session.cwd_set` is an entry, not a column write, because a later "work
-   * in this checkout instead" is the same entry. `prompt.first` carries the
-   * composer's task, and is absent rather than empty when there was none.
+   * project, and for a folder session the folder. `session.cwd_set` is an entry,
+   * not a column write, because a later "work in this checkout instead" is the same
+   * entry; a folder session has no checkout to work in, so it gets none.
+   * `prompt.first` carries the composer's task, and is absent rather than empty
+   * when there was none.
    */
   toRequestEvents(props: {
     commandId: string;
@@ -244,17 +321,20 @@ export class WorkSessionMapper
           agent: input.agent,
           hostId: input.hostId,
           checkouts: props.checkouts,
+          ...(input.folder ? { place: 'folder', folder: input.folder } : { place: 'worktree' }),
           requestedByUserId: props.userId,
           launch: this.toLaunch(input.agent, input.launch),
         },
       },
-      {
+    ];
+    if (!input.folder) {
+      events.push({
         idempotencyKey: key(SESSION_EVENT_KINDS.CWD_SET),
         source: 'api',
         kind: SESSION_EVENT_KINDS.CWD_SET,
         payload: { checkoutId: props.cwdCheckoutId },
-      },
-    ];
+      });
+    }
     if (input.prompt) {
       events.push({
         idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
@@ -509,6 +589,8 @@ export class WorkSessionMapper
     dto.name = entity.name;
     dto.slug = entity.slug;
     dto.agent = entity.agent;
+    dto.place = entity.place;
+    dto.folderPath = entity.folderPath;
     dto.launch = {
       model: entity.launch.model,
       permission: entity.launch.permission,
@@ -562,4 +644,21 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
   return { imageId: image.imageId, mediaType: image.mediaType };
+}
+
+/**
+ * A `bigint` column as the fold reads it. `pg` returns bigint as a string so
+ * that nothing past 2^53 is silently rounded; a token count never gets there,
+ * and one that somehow did reads as unmeasured rather than as a wrong number.
+ */
+function tokenCount(value: string | null): number | null {
+  if (value === null) return null;
+  const count = Number(value);
+  return Number.isSafeInteger(count) && count >= 0 ? count : null;
+}
+
+/** A sum as the aggregate returns it: a numeric string, a number, or null for nothing summed. */
+function summed(value: unknown): number {
+  const total = typeof value === 'number' ? value : Number(value ?? 0);
+  return Number.isFinite(total) ? total : 0;
 }

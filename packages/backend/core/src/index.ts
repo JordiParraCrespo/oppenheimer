@@ -1,4 +1,5 @@
 export type { Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
+export { openBlob, sealBlob } from './crypto/sealed-blob';
 export { likeContains } from './database/like-contains';
 export {
   ApiAuthProblemResponses,
@@ -70,6 +71,7 @@ export { MetricsModule, type MetricsModuleOptions } from './metrics/metrics.modu
 export { RequestContextMiddleware } from './middleware/request-context.middleware';
 export { SanitizePipe } from './pipes/sanitize.pipe';
 export { requestMemo } from './requests/request-memo';
+export { NDJSON_CONTENT_TYPE, ndjsonLines } from './responses/ndjson';
 export { type PageMeta, toPageMeta } from './responses/page-meta';
 export { PaginatedResponseDto } from './responses/paginated-response.dto';
 export {

@@ -13,6 +13,7 @@ export * from './auth';
 export * from './forms';
 export * from './i18n';
 export * from './layout';
+export * from './markdown';
 export * from './pairing';
 export * from './platform';
 export * from './shell';

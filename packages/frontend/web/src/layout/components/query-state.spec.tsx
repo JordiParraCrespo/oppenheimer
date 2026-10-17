@@ -1,6 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider, useSuspenseQuery } from '@tanstack/react-query';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { combineQueries, QueryState, type QueryStateSource } from './query-state';
+import { QueryState } from './query-state';
 
 // Partial: the forms concern's index also loads the i18n instance, which
 // needs the real `initReactI18next`.
@@ -12,102 +13,98 @@ vi.mock('react-i18next', async (importOriginal) => ({
   }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
-function show(
-  query: QueryStateSource<string[]>,
-  options: { renderError?: (error: unknown) => string; stale?: 'replace' | 'keep' } = {},
-) {
+const hostsKeys = { all: ['hosts'] as const, list: () => [...hostsKeys.all, 'list'] as const };
+
+function Hosts({ fetch }: { fetch: () => Promise<string[]> }) {
+  const { data } = useSuspenseQuery({ queryKey: hostsKeys.list(), queryFn: fetch });
+  return <p>{data.join(', ')}</p>;
+}
+
+function show(fetch: () => Promise<string[]>) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // React logs the error a boundary catches; the assertions are on the screen.
+  vi.spyOn(console, 'error').mockImplementation(() => {});
   return render(
-    <QueryState
-      query={query}
-      pending="loading"
-      errorFallback="Could not load the hosts"
-      renderError={options.renderError}
-      stale={options.stale}
-      empty={{ when: (rows) => rows.length === 0, show: 'nothing here' }}
-    >
-      {(rows) => rows.join(', ')}
-    </QueryState>,
+    <QueryClientProvider client={client}>
+      <QueryState>
+        <QueryState.Pending>loading</QueryState.Pending>
+        <QueryState.Error fallback="Could not load the hosts" />
+        <QueryState.Data>
+          <Hosts fetch={fetch} />
+        </QueryState.Data>
+      </QueryState>
+    </QueryClientProvider>,
   );
 }
 
-const boom = new Error('boom');
-
 describe('QueryState', () => {
-  it('holds the place until the first answer', () => {
-    const { container } = show({ isPending: true, error: null, data: undefined });
-    expect(container.textContent).toBe('loading');
+  it('draws Pending, and only Pending, until the first answer', async () => {
+    show(() => new Promise(() => {}));
+    expect(await screen.findByText('loading')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('says a first read failed rather than loading or empty', () => {
-    const { container } = show({ isPending: false, error: boom, data: undefined });
-    expect(screen.getByRole('alert')).toBeTruthy();
-    expect(container.textContent).not.toContain('loading');
-    expect(container.textContent).not.toContain('nothing here');
+  it('draws a first failure on Error, not Pending', async () => {
+    show(() => Promise.reject(new Error('boom')));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('loading')).toBeNull();
   });
 
-  it('replaces data it holds with a later failure by default', () => {
-    const { container } = show({ isPending: false, error: boom, data: ['optimus'] });
-    expect(screen.getByRole('alert')).toBeTruthy();
-    expect(container.textContent).not.toContain('optimus');
+  it('fetches again on Try again rather than rethrowing the failure it cached', async () => {
+    const fetch = vi
+      .fn<() => Promise<string[]>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(['optimus', 'build-03']);
+    show(fetch);
+    await screen.findByRole('alert');
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'common.retry' })));
+
+    expect(await screen.findByText('optimus, build-03')).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps drawing the data beside a later failure when asked', () => {
-    const { container } = show(
-      { isPending: false, error: boom, data: ['optimus'] },
-      { stale: 'keep' },
+  it('hands a function child the retry that resets the boundary, for a failure said another way', async () => {
+    const fetch = vi
+      .fn<() => Promise<string[]>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(['optimus']);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <QueryClientProvider client={client}>
+        <QueryState>
+          <QueryState.Pending>loading</QueryState.Pending>
+          <QueryState.Error>
+            {(_error, retry) => (
+              <button type="button" onClick={retry}>
+                Reload
+              </button>
+            )}
+          </QueryState.Error>
+          <QueryState.Data>
+            <Hosts fetch={fetch} />
+          </QueryState.Data>
+        </QueryState>
+      </QueryClientProvider>,
     );
-    expect(screen.getByRole('alert')).toBeTruthy();
-    expect(container.textContent).toContain('optimus');
+
+    const reload = await screen.findByRole('button', { name: 'Reload' });
+    await act(async () => fireEvent.click(reload));
+
+    expect(await screen.findByText('optimus')).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  it('lets the caller say a failure its own way', () => {
-    const { container } = show(
-      { isPending: false, error: boom, data: undefined },
-      { renderError: () => 'route error' },
+  it('refuses a slot drawn outside its root', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => render(<QueryState.Pending>loading</QueryState.Pending>)).toThrow(
+      '<QueryState.Pending> is drawn outside a <QueryState>',
     );
-    expect(container.textContent).toBe('route error');
-  });
-
-  it('shows the empty state for an empty answer', () => {
-    const { container } = show({ isPending: false, error: null, data: [] });
-    expect(container.textContent).toBe('nothing here');
-  });
-
-  it('hands the data to its children', () => {
-    const { container } = show({ isPending: false, error: null, data: ['optimus', 'build-03'] });
-    expect(container.textContent).toBe('optimus, build-03');
-  });
-});
-
-describe('combineQueries', () => {
-  const join = (a: string[], b: string[]) => [...a, ...b];
-
-  it('waits for every read', () => {
-    const both = combineQueries(
-      { isPending: false, error: null, data: ['a'] },
-      { isPending: true, error: null, data: undefined },
-      join,
-    );
-    expect(both).toEqual({ isPending: true, error: null, data: undefined });
-  });
-
-  it('fails with the first failure', () => {
-    const both = combineQueries(
-      { isPending: false, error: null, data: ['a'] },
-      { isPending: false, error: boom, data: undefined },
-      join,
-    );
-    expect(both.error).toBe(boom);
-  });
-
-  it('combines once both hold data', () => {
-    const both = combineQueries(
-      { isPending: false, error: null, data: ['a'] },
-      { isPending: false, error: null, data: ['b'] },
-      join,
-    );
-    expect(both.data).toEqual(['a', 'b']);
   });
 });

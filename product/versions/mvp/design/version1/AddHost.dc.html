@@ -15,7 +15,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 </style>
 </helmet>
 <div style="position:relative;min-height:100vh;background:var(--canvas);padding:36px 40px;display:flex;font-family:var(--font-sans);color:var(--fg)">
-<span class="op-wordmark" style="position:absolute;top:34px;left:44px;font-size:20px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<span class="op-wordmark" style="position:absolute;top:34px;left:44px;font-size:20px">Oppenheimer</span>
 <div style="display:flex;flex:1;gap:40px;max-width:1400px;margin:0 auto;align-items:center">
 
 <div style="flex:1.35 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:48px 8px">
@@ -28,61 +28,59 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">4 of 4</span>
 </div>
 <h1 style="margin-top:10px;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Add your first host</h1>
-<p style="margin-top:10px;font-size:15px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.</p>
+<p style="margin-top:10px;font-size:15px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Paste this prompt into the coding agent on the machine you want sessions on — a cloud VM, a build box, or your workstation. It installs the runner and connects it. Nothing is exposed to the internet.</p>
 </div>
 
-<div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="op-btn op-btn--secondary op-btn--lg" type="button" onClick="{{ copyCmd }}" style="gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>{{ copyCmdLabel }}</button>
-<button class="op-btn op-btn--ghost op-btn--lg" type="button" onClick="{{ copyPrompt }}" style="gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>{{ copyPromptLabel }}</button>
+<div style="display:flex;flex-direction:column;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 16px">
+<button type="button" aria-expanded="{{ promptExpanded }}" onClick="{{ togglePrompt }}" style="display:flex;align-items:center;gap:6px;padding:0;border:0;background:none;font:inherit;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle);cursor:pointer">Agent prompt · {{ promptToggleLabel }}<span style="display:flex;transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ promptRot }})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ copyPrompt }}" style="gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>{{ copyPromptLabel }}</button>
 </div>
+<sc-if value="{{ promptOpen }}">
+<pre style="margin:0;padding:14px 16px;max-height:200px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;border-top:1px solid var(--border-subtle);font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">{{ promptText }}</pre>
+</sc-if>
+</div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
 <span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ countdown }} · single use</span>
 <a href="#" onClick="{{ regenerate }}" style="font-size:12px">New token</a>
 </div>
+<a href="#" onClick="{{ toggleManual }}" style="font-size:13px">{{ manualLabel }}</a>
 </div>
 
-<div style="display:flex;flex-direction:column">
-<button type="button" aria-expanded="{{ inspectS }}" onClick="{{ toggleInspect }}" style="display:flex;align-items:center;gap:8px;align-self:flex-start;padding:0;border:0;background:none;font:inherit;font-size:13px;color:var(--fg-muted);cursor:pointer">Inspect command and prompt<span style="display:flex;color:var(--fg-subtle);transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ inspectRot }})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
-<sc-if value="{{ inspectOpen }}">
-<div style="margin-top:12px;border-radius:10px;background:var(--card);border:1px solid var(--border-subtle);overflow:hidden">
-<div role="tablist" aria-label="Install format" style="display:flex;gap:2px;padding:6px;border-bottom:1px solid var(--border-subtle)">
-<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
-<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
+<sc-if value="{{ manualOpen }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;color:var(--fg-muted)">Run this on the machine yourself instead:</span>
+<div style="display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border-subtle)">
+<code style="flex:1;min-width:0;font-family:var(--font-mono);font-size:12px;color:var(--fg);overflow-x:auto;white-space:nowrap">{{ cmdText }}</code>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyCmd }}" style="flex:none">{{ copyCmdLabel }}</button>
 </div>
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">{{ inspectText }}</pre>
 </div>
 </sc-if>
-</div>
 
 <div style="height:1px;background:var(--border-subtle)"></div>
 
-<div style="min-height:112px;display:flex;flex-direction:column;justify-content:center">
-<sc-if value="{{ waiting }}" hint-placeholder-val="{{ true }}">
-<button type="button" onClick="{{ simulate }}" style="display:flex;align-items:center;gap:10px;padding:0;border:0;background:none;color:var(--fg-muted);font:inherit;font-size:14px;text-align:left;cursor:pointer">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
-Waiting for the host to connect…
-</button>
-</sc-if>
-
-<sc-if value="{{ registered }}">
-<div style="display:flex;flex-direction:column;gap:14px;padding:16px 18px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
-<div style="display:flex;align-items:center;gap:10px">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
-<span style="font-family:var(--font-mono);font-size:13px">{{ hostName }}</span>
-<span style="font-size:12px;color:var(--fg-muted)">{{ hostMeta }}</span>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Connection</span>
+<sc-if value="{{ waiting }}" hint-placeholder-val="{{ true }}"><a href="#" onClick="{{ simulate }}" style="font-size:12px;color:var(--fg-subtle)">Simulate</a></sc-if>
 </div>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<span class="op-chip" data-selected="false" style="gap:6px"><span style="color:var(--success)">✓</span>git</span>
-<span class="op-chip" data-selected="false" style="gap:6px"><span style="color:var(--success)">✓</span>tmux</span>
-<span class="op-chip" data-selected="false" style="gap:6px"><span style="color:var(--success)">✓</span>claude</span>
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:7px minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:9px 0">
+<span style="width:7px;height:7px;border-radius:980px;background:{{ st.dot }};animation:{{ st.anim }}"></span>
+<span style="font-size:14px;color:{{ st.fg }}">{{ st.label }}</span>
+<span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);font-variant-numeric:tabular-nums">{{ st.detail }}</span>
 </div>
+</sc-for>
 </div>
-</sc-if>
 </div>
 
-<div style="display:flex;gap:12px;align-items:center">
+<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
 <a class="op-btn op-btn--primary op-btn--lg" href="./Ready.dc.html" style="text-decoration:none;pointer-events:{{ continuePointer }};opacity:{{ continueOpacity }}">Continue</a>
+<a href="./Ready.dc.html" style="font-size:14px">Skip for now</a>
+<span style="font-size:12px;color:var(--fg-subtle);text-wrap:pretty">You can add a host later from any new session.</span>
 </div>
 
 </div>
@@ -112,7 +110,7 @@ Waiting for the host to connect…
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;system&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;system&quot;,&quot;tsType&quot;:&quot;'system' | 'light' | 'dark'&quot;}}">
 class Component extends DCLogic {
-  state = { registered: false, secs: 3581, copied: null, slide: 0, inspect: false, tab: 'cmd' };
+  state = { stage: 0, secs: 3581, copied: null, slide: 0, manual: false, showPrompt: false };
 
 
   applyTheme() {
@@ -125,7 +123,14 @@ class Component extends DCLogic {
     this.applyTheme();
     this._tick = setInterval(() => this.setState(s => ({ secs: Math.max(0, s.secs - 1) })), 1000);
     this._c = setInterval(() => this.setState(s => ({ slide: (s.slide + 1) % 5 })), 5200);
-    this._reg = setTimeout(() => this.setState({ registered: true }), 6500);
+    this._reg = setTimeout(() => this.advance(), 6500);
+  }
+  // 0 waiting · 1 runner installed · 2 host connected · 3 tools checked
+  advance() {
+    clearTimeout(this._reg);
+    if (this.state.stage >= 3) return;
+    this.setState(s => ({ stage: s.stage + 1 }));
+    this._reg = setTimeout(() => this.advance(), 1400);
   }
   componentWillUnmount() { clearInterval(this._tick); clearInterval(this._c); clearTimeout(this._reg); clearTimeout(this._copy); }
 
@@ -134,10 +139,16 @@ class Component extends DCLogic {
     const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
     if (which === 'cmd') return cmd;
     return [
-      'Install the oppenheimer runner on this machine.',
-      'Run: ' + cmd,
-      'Then confirm the service is running with: oppenheimer-runner status',
-      'Report the hostname and OS version back to me.'
+      'Connect this machine to Oppenheimer as a host.',
+      '1. Run: ' + cmd,
+      '2. Confirm the runner is up: oppenheimer-runner status',
+      '3. Check git, tmux and claude are on PATH; install any that are missing.',
+      '4. If the runner fails to start, read ~/.oppenheimer/runner.log and fix the cause before retrying.',
+      '5. Do not open any inbound ports; the runner only makes outbound connections.',
+      '6. Do not change shell profiles beyond adding the runner to PATH.',
+      '7. Report the hostname, OS version and runner version back to me.',
+      '',
+      'The token above is single use and expires in one hour.'
     ].join('\n');
   }
 
@@ -190,25 +201,38 @@ class Component extends DCLogic {
       go0: go(0), go1: go(1), go2: go(2), go3: go(3), go4: go(4),
       caption: captions[ci],
       countdown: m + ':' + String(sec).padStart(2, '0'),
-      waiting: !s.registered,
-      registered: s.registered,
-      hostName: 'mac-studio',
-      hostMeta: 'macOS 15',
-      statusHost: s.registered ? 'mac-studio' : '—',
-      statusLink: s.registered ? 'echo 38 ms' : 'waiting',
-      continuePointer: s.registered ? 'auto' : 'none',
-      continueOpacity: s.registered ? 1 : 0.4,
-      copyCmdLabel: s.copied === 'cmd' ? 'Copied' : 'Copy install command',
-      copyPromptLabel: s.copied === 'prompt' ? 'Copied' : 'Copy agent prompt',
-      inspectOpen: s.inspect ? 'true' : undefined, inspectS: s.inspect ? 'true' : 'false', inspectRot: s.inspect ? '180deg' : '0deg',
-      toggleInspect: () => this.setState({ inspect: !s.inspect }),
-      inspectText: this.text(s.tab),
-      showCmd: () => this.setState({ tab: 'cmd' }), showPrompt: () => this.setState({ tab: 'prompt' }),
-      cmdTabBg: s.tab === 'cmd' ? 'var(--hover-surface)' : 'transparent', cmdTabFg: s.tab === 'cmd' ? 'var(--fg)' : 'var(--fg-muted)',
-      promptTabBg: s.tab === 'prompt' ? 'var(--hover-surface)' : 'transparent', promptTabFg: s.tab === 'prompt' ? 'var(--fg)' : 'var(--fg-muted)',
+      waiting: s.stage < 3 ? 'true' : undefined,
+      steps: [
+        { pending: 'Waiting for the agent to run the install', done: 'Runner installed', detail: 'v0.9.2' },
+        { pending: 'Host connected', done: 'Host connected', detail: 'mac-studio · macOS 15' },
+        { pending: 'Tools on PATH', done: 'Tools on PATH', detail: 'git · tmux · claude' }
+      ].map((x, i) => {
+        const done = s.stage > i, cur = s.stage === i;
+        return {
+          label: done ? x.done : x.pending,
+          detail: done ? x.detail : '',
+          dot: done ? 'var(--success)' : cur ? 'var(--fg-subtle)' : 'var(--border)',
+          anim: cur ? 'op-pulse-dot 1.4s ease-in-out infinite' : 'none',
+          fg: done ? 'var(--fg)' : cur ? 'var(--fg-muted)' : 'var(--fg-subtle)'
+        };
+      }),
+      continuePointer: s.stage >= 3 ? 'auto' : 'none',
+      continueOpacity: s.stage >= 3 ? 1 : 0.4,
+      copyCmdLabel: s.copied === 'cmd' ? 'Copied' : 'Copy',
+      copyPromptLabel: s.copied === 'prompt' ? 'Copied' : 'Copy prompt',
+      promptText: this.text('prompt'),
+      promptOpen: s.showPrompt ? 'true' : undefined,
+      promptExpanded: s.showPrompt ? 'true' : 'false',
+      promptToggleLabel: s.showPrompt ? 'Hide' : 'Show',
+      promptRot: s.showPrompt ? '180deg' : '0deg',
+      togglePrompt: () => this.setState({ showPrompt: !s.showPrompt }),
+      cmdText: this.text('cmd'),
+      manualOpen: s.manual ? 'true' : undefined,
+      manualLabel: s.manual ? 'Hide manual install' : 'Install manually instead',
+      toggleManual: (e) => { e.preventDefault(); this.setState({ manual: !s.manual }); },
       copyCmd: this.copy('cmd'),
       copyPrompt: this.copy('prompt'),
-      simulate: () => this.setState({ registered: true }),
+      simulate: (e) => { e.preventDefault(); this.advance(); },
       regenerate: (e) => { e.preventDefault(); this.setState({ secs: 3600 }); }
     };
   }

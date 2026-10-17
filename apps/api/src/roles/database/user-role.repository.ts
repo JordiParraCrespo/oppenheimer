@@ -34,6 +34,11 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     return [...new Set(links.map((link) => link.roleId))];
   }
 
+  async findScopedRoleIds(userId: string, organizationId: string): Promise<string[]> {
+    const links = await this.userRoleRepository.find({ where: { userId, organizationId } });
+    return [...new Set(links.map((link) => link.roleId))];
+  }
+
   async findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]> {
     const roleIds = await this.findRoleIdsForUser(userId, organizationId);
     if (roleIds.length === 0) return [];

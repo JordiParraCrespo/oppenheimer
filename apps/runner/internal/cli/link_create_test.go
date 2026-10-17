@@ -28,7 +28,7 @@ type heldClone struct {
 	refs    []string // the ref each clone was asked to fetch
 }
 
-func (h *heldClone) Ensure(ctx context.Context, repo, remote, ref string) error {
+func (h *heldClone) Ensure(ctx context.Context, repo sessionsdomain.Repository, remote, ref string) error {
 	h.mu.Lock()
 	h.clones++
 	h.forID = append(h.forID, sessionsdomain.SessionOf(ctx))
@@ -47,7 +47,7 @@ func newCreateHarness(t *testing.T) (*linkHandler, *sessionsapp.Service, *heldCl
 	git := &heldClone{Worktrees: fake.NewWorktrees(), release: make(chan struct{})}
 	svc, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: git, Classifier: manifest.New(manifest.Options{}),
-		Layout: sessionsdomain.Layout{Root: t.TempDir()},
+		Places: fake.NewPlaces(), Layout: sessionsdomain.Layout{Root: t.TempDir()},
 	})
 	if err != nil {
 		t.Fatal(err)

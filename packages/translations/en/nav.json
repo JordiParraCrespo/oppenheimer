@@ -22,5 +22,6 @@
   "automations": "Automations",
   "logOutFailed": "Could not log you out. Try again.",
   "plan": "Plan",
-  "pullRequests": "Pull requests"
+  "pullRequests": "Pull requests",
+  "employees": "Employees"
 }

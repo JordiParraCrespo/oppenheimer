@@ -15,11 +15,14 @@
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
+<a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests</span></a>
 <button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations<span class="op-nav__count">{{ routineTotal }}</span></span></button>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
 </nav>
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
 <div class="op-sidebar__head">
-<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<span class="op-wordmark" style="font-size:18px">Oppenheimer</span>
 </div>
 <sc-if value="{{ inSessions }}" hint-placeholder-val="{{ true }}">
 <div style="padding:0 12px 10px">
@@ -85,6 +88,7 @@
 <sc-if value="{{ s.menuOpen }}"><div class="op-menu" role="menu" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 2px);right:4px;left:auto;bottom:auto;z-index:60;min-width:188px">
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.rename }}"><span class="op-menu__label-text">Rename</span><span class="op-menu__shortcut">R</span></button>
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.move }}"><span class="op-menu__label-text">Move to project…</span><span class="op-menu__shortcut">M</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.share }}"><span class="op-menu__label-text">{{ s.shareLabel }}</span><span class="op-menu__shortcut">S</span></button>
 <div class="op-menu__sep"></div>
 <button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ s.remove }}"><span class="op-menu__label-text">Delete</span><span class="op-menu__shortcut">D</span></button>
 </div></sc-if>
@@ -1097,6 +1101,8 @@ Listening for this host…
 <span class="op-term__statusitem">763.4 MB</span>
 <span class="op-term__statusitem">bypass permissions on</span>
 <span class="op-term__statusitem">1 host</span>
+<span style="flex:1"></span>
+<button class="op-term__statusitem" type="button" onClick="{{ shareCurrent }}" title="Share this session" style="position:sticky;right:0;flex:none;display:inline-flex;align-items:center;gap:6px;border:0;background:var(--term-bg,var(--card));box-shadow:-12px 0 12px var(--term-bg,var(--card));padding:0 0 0 10px;font:inherit;color:var(--fg);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ curShareIcon }}" size="12" hint-size="12px,12px"></x-import>{{ curShareLabel }}</button>
 </div>
 </div>
 </div>
@@ -1104,6 +1110,133 @@ Listening for this host…
 </sc-if>
 
 </div>
+
+<sc-if value="{{ shDlgOpen }}">
+<div class="op-scrim" style="z-index:220" onClick="{{ shCloseShare }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick="{{ stop }}" style="max-width:560px;overflow:visible">
+<div class="op-dialog__head"><h2 class="op-dialog__title" id="share-title" style="margin:0">{{ shDlgTitle }}</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ shCloseShare }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
+<p class="op-dialog__desc" style="margin:0"><span style="font-family:var(--font-mono);font-size:13px">{{ shName }}</span> · on {{ shHost }}</p>
+
+<sc-if value="{{ shComposing }}" hint-placeholder-val="{{ true }}">
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px;max-height:calc(100vh - 220px);overflow-y:auto">
+
+<div class="op-field">
+<span class="op-label">Who</span>
+<div style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--hover-surface);align-self:flex-start">
+<sc-for list="{{ shModes }}" as="m" hint-placeholder-count="2">
+<button type="button" onClick="{{ m.pick }}" style="display:flex;align-items:center;gap:7px;height:28px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="13" hint-size="13px,13px"></x-import>{{ m.label }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ shModePeople }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative">
+<label class="op-input op-input--md" style="cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mail" size="15" hint-size="15px,15px"></x-import></span><input class="op-input__el" type="text" autoFocus="{{ true }}" placeholder="Name or email" value="{{ shQ }}" onChange="{{ shSetQ }}" onFocus="{{ shFocusQ }}" onBlur="{{ shBlurQ }}" onKeyDown="{{ shQKey }}"></label>
+<sc-if value="{{ shSuggestOpen }}">
+<div class="op-listbox" role="listbox" style="right:0">
+<sc-for list="{{ shSuggestions }}" as="o" hint-placeholder-count="3">
+<button class="op-option" type="button" role="option" onMouseDown="{{ o.hold }}" onClick="{{ o.pick }}" style="padding:7px 10px;gap:10px;font-size:13px">
+<span class="op-avatar op-avatar--sm" style="flex:none">{{ o.initials }}</span>
+<span class="op-option__stack"><span>{{ o.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11.5px">{{ o.desc }}</span></span>
+</button>
+</sc-for>
+<sc-if value="{{ shSuggestNone }}"><div class="op-listbox__empty">Type a full email address to invite someone outside the workspace.</div></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ shPeopleAny }}">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ shPeople }}" as="p" hint-placeholder-count="1">
+<span class="op-chip" style="gap:7px;padding-left:4px"><span class="op-avatar op-avatar--sm" style="width:20px;height:20px;font-size:9px">{{ p.initials }}</span>{{ p.name }}<sc-if value="{{ p.external }}"><span style="font-size:11.5px;color:var(--fg-subtle)">outside workspace</span></sc-if><button class="op-chip__x" type="button" aria-label="Remove {{ p.name }}" onClick="{{ p.remove }}">×</button></span>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{ shModeLink }}">
+<span class="op-hint">Anyone who opens the link and signs in can watch. Link access is always view only.</span>
+</sc-if>
+</div>
+
+<div class="op-field">
+<span class="op-label">Permission</span>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{ shAccessOpts }}" as="a" hint-placeholder-count="2">
+<button type="button" role="radio" aria-checked="{{ a.on }}" onClick="{{ a.pick }}" disabled="{{ a.off }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 14px;border-radius:14px;font:inherit;text-align:left;cursor:pointer;transition:background 80ms,border-color 80ms,opacity 80ms;border:1px solid {{ a.bd }};background:{{ a.bg }};color:var(--fg);opacity:{{ a.op }}">
+<span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500"><span style="display:flex;color:{{ a.ic }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ a.icon }}" size="15" hint-size="15px,15px"></x-import></span>{{ a.label }}</span>
+<span style="font-size:12.5px;line-height:1.4;color:var(--fg-muted);text-wrap:pretty">{{ a.desc }}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ shWriteLocked }}"><span class="op-hint">Write access needs named people. Switch to “Specific people” to grant it.</span></sc-if>
+</div>
+
+<sc-if value="{{ shIsWrite }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid color-mix(in srgb, var(--danger) 38%, transparent);background:color-mix(in srgb, var(--danger) 6%, var(--card))">
+<div style="display:flex;gap:10px;align-items:flex-start">
+<span style="display:flex;flex:none;margin-top:2px;color:var(--danger)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-triangle" size="16" hint-size="16px,16px"></x-import></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:14px;font-weight:600;color:var(--danger)">{{ shWriteWho }} will act as you on {{ shHost }}</span>
+<span style="font-size:13px;line-height:1.5;color:var(--fg);text-wrap:pretty">Everything they send runs with your credentials, your GitHub token and bypass permissions on. They can push, delete files and spend your quota.</span>
+</div>
+</div>
+<label class="op-check" style="font-size:13px">
+<input type="checkbox" checked="{{ shAck }}" onChange="{{ shToggleAck }}">
+<span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+<span class="op-check__text">I understand they act as me on this host</span>
+</label>
+</div>
+</sc-if>
+
+<div class="op-field">
+<span class="op-label">For how long</span>
+<div class="op-pills">
+<sc-for list="{{ shDurPills }}" as="d" hint-placeholder-count="5">
+<button class="op-pill" type="button" data-on="{{ d.on }}" disabled="{{ d.off }}" onClick="{{ d.pick }}" style="opacity:{{ d.op }}">{{ d.label }}</button>
+</sc-for>
+</div>
+<span class="op-hint">{{ shDurHint }}</span>
+</div>
+</div>
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ shCancelCompose }}">Cancel</button>
+<button class="op-btn op-btn--md {{ shSubmitVariant }}" type="button" disabled="{{ shSubmitBlocked }}" onClick="{{ shSubmit }}">{{ shSubmitLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ shManaging }}">
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px">
+<div class="op-field">
+<span class="op-label">Link</span>
+<div style="display:flex;align-items:center;gap:8px;padding:5px 5px 5px 14px;border-radius:10px;background:var(--field);border:1px solid var(--border-subtle)">
+<code style="flex:1;min-width:0;font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">oppenheimer.dev/s/fx7Q-2kLm</code>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ shCopyLink }}" style="flex:none;gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ shCopyIcon }}" size="13" hint-size="13px,13px"></x-import>{{ shCopyLabel }}</button>
+</div>
+<span class="op-hint">{{ shLinkHint }}</span>
+</div>
+<div class="op-field">
+<span class="op-label">Who has access</span>
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px">
+<sc-for list="{{ shAccessRows }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 12px;border-top:{{ r.sep }}">
+<span class="op-avatar op-avatar--sm" style="flex:none;background:{{ r.bg }};color:{{ r.fg }}">{{ r.initials }}</span>
+<span style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0"><span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+<span class="op-badge op-badge--neutral" style="flex:none">{{ r.role }}</span>
+<span style="flex:none;width:72px;text-align:right;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ r.ends }}</span>
+<sc-if value="{{ r.removable }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Remove access" title="Remove access" onClick="{{ r.remove }}" style="flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button></sc-if>
+<sc-if value="{{ r.fixed }}"><span style="flex:none;width:28px"></span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ shStopSharing }}" style="color:var(--danger)">Stop sharing</button>
+<span style="flex:1"></span>
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ shAddMore }}">Add people</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ shCloseShare }}">Done</button>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
 
 <sc-if value="{{ deleting }}">
 <div class="op-scrim" onClick="{{ cancelDelete }}">
@@ -2549,8 +2682,88 @@ class Component extends DCLogic {
     };
   }
 
+  openShare(key, name, host) {
+    const sh = (this.state.shares || {})[key];
+    this.setState({ sessionMenu: null, shareFor: { key, name, host: host || 'this host' }, shView: sh ? 'manage' : 'compose', shMode: 'people', shPeople: [], shQ: '', shAccess: 'read', shAck: false, shDur: '24h' });
+  }
+  shareVals(v) {
+    const MEMBERS = [
+      { id: 'ana', name: 'Ana Ruiz', email: 'ana@acme.dev', initials: 'AR' },
+      { id: 'lea', name: 'Lea Brandt', email: 'lea@acme.dev', initials: 'LB' },
+      { id: 'marc', name: 'Marc Soler', email: 'marc@acme.dev', initials: 'MS' },
+      { id: 'tomas', name: 'Tomás Vidal', email: 'tomas@acme.dev', initials: 'TV' },
+    ];
+    const DUR = {
+      '1h': { label: '1 hour', end: 'Oct 13, 15:20', rel: '59m' }, '8h': { label: '8 hours', end: 'Oct 13, 22:20', rel: '7h 59m' },
+      '24h': { label: '24 hours', end: 'Oct 14, 14:20', rel: '23h 59m' }, '7d': { label: '7 days', end: 'Oct 20, 14:20', rel: '6d 23h' },
+      none: { label: 'Never expires', end: null, rel: 'never' },
+    };
+    const isEmail = q => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(q);
+    const s = this.state, f = s.shareFor, shares = s.shares || {};
+    const sh = f ? shares[f.key] : null;
+    const people = s.shPeople || [], mode = s.shMode || 'people', access = s.shAccess || 'read', dur = s.shDur || '24h', q = s.shQ || '';
+    const setShare = val => this.setState(st => { const n = { ...(st.shares || {}) }; if (val) n[st.shareFor.key] = val; else delete n[st.shareFor.key]; return { shares: n }; });
+    const addPerson = p => this.setState(st => (st.shPeople || []).find(x => x.id === p.id) ? { shQ: '' } : { shPeople: [...(st.shPeople || []), p], shQ: '' });
+    const added = new Set(people.map(p => p.id)); const ql = q.trim().toLowerCase();
+    let sugg = MEMBERS.filter(m => !added.has(m.id) && (!ql || m.name.toLowerCase().includes(ql) || m.email.includes(ql))).map(m => ({ ...m, desc: m.email + ' · workspace member', pick: () => addPerson(m) }));
+    if (ql && isEmail(ql) && !MEMBERS.some(m => m.email === ql)) sugg = [{ initials: ql.slice(0, 2).toUpperCase(), name: 'Invite ' + ql, desc: 'Outside this workspace · they sign in to open it', pick: () => addPerson({ id: ql, name: ql, email: ql, initials: ql.slice(0, 2).toUpperCase(), external: true }) }];
+    sugg = sugg.map(o => ({ ...o, hold: e => e.preventDefault() }));
+    const isWrite = mode === 'people' && access === 'write', writeLocked = mode === 'link';
+    const accessOpts = [
+      { k: 'read', label: 'Can view', icon: 'eye', desc: 'Watch the terminal live. Can’t type or stop the session.' },
+      { k: 'write', label: 'Can write', icon: 'terminal', desc: 'Send prompts and commands. They run as you.' },
+    ].map(a => { const on = (writeLocked ? 'read' : access) === a.k, off = a.k === 'write' && writeLocked, danger = a.k === 'write' && on;
+      return { ...a, on, off, op: off ? '.45' : '1', pick: () => this.setState(st => ({ shAccess: a.k, shAck: false, shDur: a.k === 'write' && (st.shAccess || 'read') !== 'write' ? '1h' : st.shDur })),
+        bd: danger ? 'color-mix(in srgb, var(--danger) 45%, transparent)' : on ? 'var(--primary)' : 'var(--border-subtle)',
+        bg: danger ? 'color-mix(in srgb, var(--danger) 6%, var(--card))' : on ? 'var(--selected-surface)' : 'transparent',
+        ic: danger ? 'var(--danger)' : on ? 'var(--primary)' : 'var(--fg-subtle)' }; });
+    const durPills = Object.keys(DUR).map(k => { const off = isWrite && (k === '7d' || k === 'none'); return { label: DUR[k].label, on: dur === k, off, op: off ? '.4' : '1', pick: () => this.setState({ shDur: k }) }; });
+    const d = DUR[dur];
+    let rows = [{ initials: 'JP', name: 'Jordi Parra', sub: 'jordiparra99@gmail.com · you', role: 'Owner', ends: '', bg: 'var(--primary)', fg: '#fff', fixed: true }];
+    if (sh) {
+      const sd = DUR[sh.dur];
+      if (sh.mode === 'link') rows.push({ initials: '··', name: 'Anyone with the link', sub: 'Must sign in to open', role: 'Can view', ends: sd.rel, bg: 'var(--control)', fg: 'var(--fg-muted)', removable: true, remove: () => { setShare(null); this.setState({ shView: 'compose' }); } });
+      sh.people.forEach(p => rows.push({ initials: p.initials, name: p.name, sub: p.external ? p.email + ' · outside workspace' : p.email, role: sh.access === 'write' ? 'Can write' : 'Can view', ends: sd.rel, bg: 'var(--control)', fg: 'var(--fg)', removable: true,
+        remove: () => { const ppl = sh.people.filter(x => x.id !== p.id); if (ppl.length) setShare({ ...sh, people: ppl }); else { setShare(null); this.setState({ shView: 'compose' }); } } }));
+    }
+    rows = rows.map((r, i) => ({ ...r, sep: i ? '1px solid var(--border-subtle)' : '0' }));
+    const curKey = 'current', cur = shares[curKey];
+    const curLabel = cur ? (cur.access === 'write' ? 'Shared · can write' : 'Shared · view only') + (cur.mode === 'link' ? ' · link' : ' · ' + cur.people.length) : 'Share';
+    return {
+      shareCurrent: () => this.openShare(curKey, (s.session && s.session.label) || 'this session', v.attachHost),
+      curShareLabel: curLabel, curShareIcon: cur ? (cur.access === 'write' ? 'terminal' : 'eye') : 'users',
+      shDlgOpen: !!f, shName: f ? f.name : '', shHost: f ? f.host : '',
+      shDlgTitle: s.shView === 'manage' ? 'Sharing' : 'Share session',
+      shCloseShare: () => this.setState({ shareFor: null }),
+      shCancelCompose: () => sh ? this.setState({ shView: 'manage' }) : this.setState({ shareFor: null }),
+      shComposing: s.shView !== 'manage', shManaging: s.shView === 'manage',
+      shModes: [['people', 'Specific people', 'users'], ['link', 'Anyone with the link', 'globe']].map(([k, label, icon]) => ({ label, icon, pick: () => this.setState({ shMode: k }), bg: mode === k ? 'var(--card)' : 'transparent', fg: mode === k ? 'var(--fg)' : 'var(--fg-muted)' })),
+      shModePeople: mode === 'people', shModeLink: mode === 'link',
+      shQ: q, shSetQ: e => this.setState({ shQ: e.target.value }), shFocusQ: () => this.setState({ shQFocus: true }), shBlurQ: () => this.setState({ shQFocus: false }),
+      shQKey: e => { if (e.key === 'Enter' && sugg[0]) { e.preventDefault(); sugg[0].pick(); } if (e.key === 'Backspace' && !q && people.length) this.setState({ shPeople: people.slice(0, -1) }); if (e.key === 'Escape') e.target.blur(); },
+      shSuggestOpen: !!s.shQFocus, shSuggestions: sugg, shSuggestNone: !sugg.length,
+      shPeople: people.map(p => ({ ...p, remove: () => this.setState({ shPeople: people.filter(x => x.id !== p.id) }) })), shPeopleAny: people.length > 0,
+      shAccessOpts: accessOpts, shWriteLocked: writeLocked, shIsWrite: isWrite,
+      shWriteWho: people.length === 1 ? people[0].name : people.length ? people.length + ' people' : 'They',
+      shAck: !!s.shAck, shToggleAck: () => this.setState(st => ({ shAck: !st.shAck })),
+      shDurPills: durPills,
+      shDurHint: !d.end ? 'Does not expire. Access stays until you stop sharing.' : isWrite ? 'Ends ' + d.end + '. Write access lasts 24 hours at most.' : 'Ends ' + d.end + '. You can stop sharing any time.',
+      shSubmitBlocked: (mode === 'people' && !people.length) || (isWrite && !s.shAck),
+      shSubmitLabel: mode === 'link' ? 'Create link' : isWrite ? 'Give write access' : 'Share',
+      shSubmitVariant: isWrite ? 'op-btn--danger' : 'op-btn--primary',
+      shSubmit: () => { setShare({ mode, people, access: mode === 'link' ? 'read' : access, dur }); this.setState({ shView: 'manage' }); },
+      shCopyLabel: s.shCopied ? 'Copied' : 'Copy link', shCopyIcon: s.shCopied ? 'check' : 'copy',
+      shCopyLink: () => { this.setState({ shCopied: true }); setTimeout(() => this.setState({ shCopied: false }), 1600); },
+      shLinkHint: sh && sh.mode === 'link' ? 'Anyone who signs in can watch. Never shows write controls.' : 'Only the people below can open it. Others see “You don’t have access”.',
+      shAccessRows: rows,
+      shStopSharing: () => { setShare(null); this.setState({ shareFor: null }); },
+      shAddMore: () => this.setState({ shView: 'compose', shPeople: sh ? sh.people : [], shMode: sh ? sh.mode : 'people', shAccess: sh ? sh.access : 'read', shAck: false }),
+    };
+  }
+
   renderVals() {
     const v = this._renderVals();
+    Object.assign(v, this.shareVals(v));
     const st = this.state, d = st.draft;
     const hostOn = !!st.addHost, projOn = !!st.projDlg && !hostOn;
     const back = st.section === 'routines' ? 'Automations' : st.view === 'new' ? 'New session' : 'Sessions';
@@ -2654,6 +2867,10 @@ class Component extends DCLogic {
         rename: e => { e.stopPropagation(); this.startRename(x.key); },
 
         move: e => { e.stopPropagation(); this.setState({ sessionMenu: null, moving: x.key, moveTo: x.project }); },
+
+        share: e => { e.stopPropagation(); this.openShare(x.key, x.name, find(HOST_FILTER, x.host)); },
+
+        shareLabel: (this.state.shares || {})[x.key] ? 'Sharing…' : 'Share…',
 
         remove: e => { e.stopPropagation(); this.setState({ sessionMenu: null, deleting: x.key }); },
 

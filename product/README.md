@@ -21,7 +21,7 @@ for the detail and sources.
 | 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
 | research/ | [Research](research/README.md) | Reads of other products, measurements and proposals that were not adopted; they decide nothing. Notes 12 (Grok Bot), 13 (herdr), 14 (session boot time) and 16 (developer-tools landscape) live there, and its index maps the old numbers |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP, one document each; its README is the list and holds the order |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -332,6 +332,15 @@ earlier note:
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
   (`versions/mvp/17-plan.md`, "As built").
+- 17 to 19 named Plan's grouping of tasks **goals**. The 2026-10-13
+  export renamed them milestones, and the owner had the rename go all the
+  way down, tables and routes included (`versions/mvp/23-plan-milestones-stats-accounts.md`).
+- Note 23 first gave Plan's console a Stats view, a project overview, a
+  project list in the sidebar, a Blocked row on tasks and a toggle per
+  Google account. The owner had the console match the 2026-10-13 `Tasks`
+  frame instead (2026-10-13): Tasks, Milestones (the timeline alone) and
+  Calendar, nothing more. The API pieces stay for the agents' Projects
+  section (`versions/mvp/23-plan-milestones-stats-accounts.md`, "Settled since").
 - Note 15's first version proposed protecting the reviewer and the
   evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
   owner rejected it the same day (2026-09-27): the product is for people
@@ -366,6 +375,12 @@ earlier note:
   link, to watch or to type, for anyone, any account or named people
   (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
   as its creator's, so it opens nothing they could not.
+- `versions/mvp/21-session-share-links.md` built sharing on 2026-10-08 as
+  bearer links (anyone signed out, any account, or named people; the
+  secret shown once). On 2026-10-13 it was rebuilt to the `ShareSession`
+  design: one share per session at one address, named people or anyone
+  signed in, write for named people for a day at most. The note keeps the
+  links under Superseded.
 - Note 06 described Orca as a viewer over files the vendor CLI owns.
   Its source shows that holds for the default login only: for a managed
   account Orca captures, stores and refreshes the token itself. Note 06
@@ -399,3 +414,104 @@ earlier note:
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
+- `versions/mvp/05-screens.md` had onboarding's Add a host step and the
+  console's Add a host dialog lead with Copy install command and Copy
+  agent prompt, the instruction behind an Inspect fold and one status
+  line. Since 2026-10-13 both lead with the agent prompt (Copy prompt, the
+  text behind a fold), fold the command behind "Install manually instead"
+  and show a Connection list: Runner installed, then Host connected. The
+  export's Tools on PATH row waits for the wire to carry a host's tools.
+  Settings' Add a host page keeps the panel with both forms.
+- `next-steps/0.2-pull-requests.md` (version 1 scope, 2026-10-05) put a
+  summary agent's brief on every pull request, and the 2026-10-05 frames
+  opened one on a Briefing with a lane switcher and a review session. On
+  2026-10-13 the owner took the 2026-10-13 frames without their chat,
+  review agent or Employees: a pull request is **Description and
+  Changes**, the description is the author's own beside the rail (merge
+  status, comments, reviews, checks), and there is no generated summary
+  until the chat comes (0.7). The frame's status strip above the
+  description was built and dropped the next day for the rail. The queue filters by repository,
+  Difficulty, Checks and Waiting in a fixed order (Deep first, then the
+  longest wait); Submit review splits **Approve** from **Approve and
+  merge**, which turns on GitHub's auto-merge when it cannot merge yet;
+  the activity timeline, the Briefing and the Merge confidence
+  score are gone; watched repositories are set in Settings only
+  (`next-steps/0.2-pull-requests.md`, "The screens as built").
+  On 2026-10-14 the review session came back without the review agent:
+  a pull request's **Chat** tab starts Claude Code on one of the reader's
+  hosts, in a worktree of the head branch, on a prompt that opens with a
+  two-or-three-line take and waits, and then shows its terminal with an
+  input line under it; review sessions are listed under **For review** in
+  the Pull requests sidebar and never under Sessions. That is §4's *Check
+  out in a session* decided as 0.2.
+- `versions/mvp/10-api-modules-and-data-model.md` held a project to at
+  least one repository, and the console would not save one without (the
+  2026-09-26 line above). On 2026-10-14 the owner allowed a project with
+  no repository: it is a place for tasks, milestones, memory and sessions,
+  and folder and terminal sessions need none. A project that holds
+  repositories still offers a default among them (`PROJECTS_006`). The
+  Unassigned project keeps that name.
+- `versions/mvp/05-screens.md` opened New session on the `full`
+  permission level every visit and never remembered it. On 2026-10-14 the
+  owner made it open on `auto` and remember the last level picked, like
+  the other chips.
+- `versions/mvp/00-scope.md` made every session a worktree, the blank
+  terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
+  2026-10-14 the owner made the place a choice, a new worktree or a folder
+  already on the host, and moved the runner's work to `~/oppenheimer/`
+  as `<account>/<workspace>/{repos, agents, sessions}`
+  (`versions/mvp/24-session-places.md`). The same day the account level's
+  name was settled as the id the runner receives when it is paired
+  (`POST /hosts/register` answers it), so `session.create` and
+  `repository.prepare` carry the workspace only (24 §2, §5).
+- The agent catalog mapped Claude Code's `auto` level to
+  `--permission-mode acceptEdits`, which prompts on every shell command,
+  and review sessions launched at `ask` (both left open in
+  `versions/mvp/16-automations-architecture.md` and
+  `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
+  Claude Code's own auto mode (`--permission-mode auto`), which checks each
+  action before it runs, and made it the level review sessions start at.
+- On 2026-10-16 the owner dropped the review session's input row, which
+  doubled the agent's own prompt; the Chat tab is now the plain session
+  pane (`next-steps/0.2-pull-requests.md`).
+- `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
+  on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
+- Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
+  2026-10-15 both were turned off: the fetch reached the server's private
+  network, and subagents searched the server's disk (25, "Decided").
+- Note 25's system prompt was the bot's soul, instructions and memory. On
+  2026-10-15 it became ours from the first line, with a closed list of
+  what the bot can do and the sender's time, home host and hosts, and a
+  turn stops after 4 minutes (25, "Decided").
+- Note 25 ran bots on three providers, each on a workspace's API key. On
+  2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
+  through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
+  (25, §2 and "Decided").
+- Note 25's system prompt ended with the moment the turn ran in: the
+  sender's time, the home host and the hosts. On 2026-10-15 that moved to
+  a `<turn_context>` block opening each turn's message, so the system
+  prompt is the same bytes every turn and the provider's prompt cache
+  hits (25, "Decided").
+- Note 25 sent a turn the bot's last 40 messages and dropped everything
+  older without a word. On 2026-10-15 history became a token budget
+  (24,000 tokens) opened by a stored summary of the older messages, which
+  a `bot-summaries` job writes with the bot's own model once they pass the
+  budget with headroom (25 §2, "Decided"). The chat still shows every
+  message.
+- Note 25 named a bot's last settings page Runs on (Works on from slice
+  3), and its picks, the colour and sidebar group on Profile included,
+  saved on the click. On 2026-10-16 the owner, testing it, read Runs on as
+  where the bot runs: the page is **Home host** now, says the bot always
+  runs in Oppenheimer and the home host is only where its sessions start
+  when no machine is named, offers No home host, and every bot settings
+  page saves a draft with Save (25 §1, "Decided").
+- Note 25 named a blank bot "New Bot" and had it ask for its job in one
+  line. On 2026-10-16 a blank bot takes the next of twenty first names
+  ("Juno", "Milo"…), and its first chat walks it through learning one
+  job, writing its own INSTRUCTIONS.md and description, and offering a
+  first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
+- `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
+  milestone bar on to ten days past its last milestone, which read as the
+  bar overshooting the dates. On 2026-10-15 the owner had it end on the last
+  milestone's day, as a timeline bar does in Notion; the three-week lead-in
+  before the first milestone or today stays (23 §1).

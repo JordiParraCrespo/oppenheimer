@@ -1,11 +1,13 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { AppError } from '@oppenheimer/backend-core';
 import type { RepositoryAccessPort } from '../../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../../github/github.di-tokens';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import type { HostKeyPort } from '../../../hosts/application/host-key.port';
 import { HOST_ACCESS, HOST_KEY } from '../../../hosts/hosts.di-tokens';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
+import { SessionErrors } from '../../domain/sessions.errors';
 import { SESSION_DISPATCH } from '../../sessions.di-tokens';
 import { PrepareSessionCommand } from './prepare-session.command';
 
@@ -41,6 +43,8 @@ export class PrepareSessionCommandHandler
 
   async execute(command: PrepareSessionCommand): Promise<PrepareSessionResult> {
     const { scope, input } = command;
+    // The stores are warmed under the workspace the session will be in.
+    if (!scope.organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
     await this.hosts.assertUsable(scope, input.hostId);
     // Asked before a token is minted: a host that cannot take one gets none.
     const refusal = this.dispatch.prepareRefusal(input.hostId);
@@ -61,6 +65,7 @@ export class PrepareSessionCommandHandler
       const sealed = await this.keys.sealFor(input.hostId, Buffer.from(minted.token, 'utf8'));
       if (!sealed) return { hints: ['host_offline'] };
       const outcome = this.dispatch.prepare(input.hostId, {
+        workspaceId: scope.organizationId,
         githubRepoId: checkout.githubRepoId,
         repositoryFullName: repository.fullName,
         baseBranch: checkout.baseBranch ?? repository.defaultBranch,

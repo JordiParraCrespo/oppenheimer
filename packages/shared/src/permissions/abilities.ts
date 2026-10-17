@@ -67,13 +67,16 @@ export const KNOWN_SUBJECTS = [
   // workspace runs, and each of its runs is a session.
   'Automation',
   // Plan (`product/versions/mvp/17-plan.md`), workspace-owned like the rest:
-  // `Task` covers tasks, their goals and their links to sessions; `Calendar`
+  // `Task` covers tasks, their milestones and their links to sessions; `Calendar`
   // the workspace's own events and a person's Google Calendar connection.
   'Task',
   'Calendar',
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
+  // Bots (`product/versions/mvp/25-bots.md`), workspace-owned like automations:
+  // `Bot` covers a bot, its sidebar groups, its documents and its memory.
+  'Bot',
   'all',
 ] as const;
 
@@ -372,6 +375,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'PullRequest',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Bot',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

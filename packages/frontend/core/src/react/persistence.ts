@@ -2,7 +2,10 @@
 
 import type { Query, QueryClient } from '@tanstack/query-core';
 import { CORE_CONFIG } from '../config';
-import { authKeys, userSettingsKeys } from './query-keys';
+import { PERSIST_META } from './persist-meta';
+import { authKeys } from './query-keys';
+import { userSettingsKeys } from './user-settings.queries';
+import { usersKeys } from './users.queries';
 
 /**
  * How long a restored cache entry stays usable before the persister throws it
@@ -13,12 +16,23 @@ export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**
  * Features whose queries never reach storage, whatever the product: the
- * session and the user's settings. A product adds its sensitive features
+ * session, the user's settings, and the signed-in user, whose record carries
+ * their email and name (`useMyPermissions` keeps its read with
+ * {@link PERSIST_META}, so the nav does not wait on a warm start). A product
+ * adds its sensitive features
  * (sessions, hosts, a profile) through `nonPersistedFeatures` when the app
  * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
  * `@oppenheimer/frontend-consumer` is the list `apps/web` passes.
  */
-const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [authKeys.all[0], userSettingsKeys.all[0]];
+const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [
+  authKeys.all[0],
+  userSettingsKeys.all[0],
+  usersKeys.all[0],
+];
+
+function optsIn(query: Query): boolean {
+  return query.meta?.persist === PERSIST_META.persist;
+}
 
 export interface QueryPersistConfig {
   /** Feature key prefixes (the first segment of a query key) to keep out of storage. */
@@ -34,7 +48,7 @@ export interface QueryPersistConfig {
  *
  * A denied feature may hold one read that is safe to keep — counts and dates
  * inside a feature that otherwise holds private code. That read says so
- * itself, with `meta: { persist: true }`, rather than being moved to a key of
+ * itself, with `meta: PERSIST_META`, rather than being moved to a key of
  * its own: splitting one feature's key so a storage policy could see the
  * halves left two roots for every later invalidation to remember.
  *
@@ -50,7 +64,7 @@ export function shouldDehydrateQuery(
   const [feature] = query.queryKey;
   if (typeof feature !== 'string') return false;
   if (!nonPersistedFeatures.includes(feature)) return true;
-  return (query.meta as { persist?: boolean } | undefined)?.persist === true;
+  return optsIn(query);
 }
 
 /**
@@ -62,7 +76,7 @@ export const cacheOwnerKey = ['cacheOwner'] as const;
 /**
  * A persisted cache outlives its session (expired, server-revoked, or a tab
  * closed before the persister's throttled write after logout), so the next
- * boot could hydrate the previous user's `users`/`organizations` entries and
+ * boot could hydrate the previous user's permissions and `organizations` entries and
  * flash them to the next person on that browser.
  *
  * So each session restore reconciles the cache against the signed-in user:
@@ -87,7 +101,7 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
  * already-stored cache unsafe to hydrate, or changes the shape of a persisted
  * key so an old entry would sit in storage that nothing reads.
  */
-const QUERY_PERSIST_REVISION = 3;
+const QUERY_PERSIST_REVISION = 4;
 
 /**
  * Persistence options every app shares. The app supplies the platform's

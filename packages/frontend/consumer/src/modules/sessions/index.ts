@@ -1,6 +1,5 @@
 export {
   type AttachTicket,
-  type CreatedShareLink,
   type CreateSessionCheckout,
   type CreateSessionInput,
   type PrepareSessionInput,
@@ -9,9 +8,9 @@ export {
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,
+  type SessionShare,
   type SessionState,
   type SharedSession,
-  type ShareLink,
 } from './session.entity';
 export { isSessionNotFound } from './session-not-found';
 export type {

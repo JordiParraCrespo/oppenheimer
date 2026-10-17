@@ -19,7 +19,11 @@ const invitation = {
 describe('AcceptInvitationCommandHandler', () => {
   const invitationAuth = { accept: vi.fn() };
   const organizations = { setActive: vi.fn(), leave: vi.fn() };
-  const invitations = { findOneById: vi.fn() };
+  const invitations = {
+    findOneById: vi.fn(),
+    reopen: vi.fn(),
+    markAccepted: vi.fn(),
+  };
   const workspaces = { isMember: vi.fn() };
   const grant = vi.fn();
   // Behaves as `MembershipAccessPolicy.admit` does: write, grant, undo on failure.
@@ -45,6 +49,8 @@ describe('AcceptInvitationCommandHandler', () => {
     invitations.findOneById.mockResolvedValue(None);
     workspaces.isMember.mockResolvedValue(false);
     grant.mockResolvedValue(undefined);
+    invitations.reopen.mockResolvedValue(undefined);
+    invitations.markAccepted.mockResolvedValue(undefined);
     handler = new AcceptInvitationCommandHandler(
       invitationAuth as never,
       organizations as never,
@@ -84,6 +90,43 @@ describe('AcceptInvitationCommandHandler', () => {
 
     await expect(accept(null)).rejects.toMatchObject({ code: 'ROLE_007' });
     expect(organizations.leave).toHaveBeenCalledWith(headers, 'org1');
+  });
+
+  // Better Auth accepts a pending invitation only: without the reopen a
+  // passing failure would use the invitation up.
+  it('reopens the invitation before leaving, so a retry can accept it again', async () => {
+    invitationAuth.accept.mockResolvedValue({ invitation, userId: 'u2' });
+    grant.mockRejectedValue(new Error('grant failed'));
+
+    await expect(accept(null)).rejects.toThrow('grant failed');
+
+    expect(invitations.reopen).toHaveBeenCalledWith('inv1');
+    expect(invitations.reopen.mock.invocationCallOrder[0]).toBeLessThan(
+      organizations.leave.mock.invocationCallOrder[0],
+    );
+    expect(invitations.markAccepted).not.toHaveBeenCalled();
+  });
+
+  it('keeps the membership and the accepted invitation when the reopen fails', async () => {
+    invitationAuth.accept.mockResolvedValue({ invitation, userId: 'u2' });
+    grant.mockRejectedValue(new Error('grant failed'));
+    invitations.reopen.mockRejectedValue(new Error('reopen failed'));
+
+    await expect(accept(null)).rejects.toThrow('reopen failed');
+
+    // The replay path repairs this on retry; leaving would strand the invitation.
+    expect(organizations.leave).not.toHaveBeenCalled();
+    expect(invitations.markAccepted).not.toHaveBeenCalled();
+  });
+
+  it('puts the invitation back to accepted when the membership cannot be left', async () => {
+    invitationAuth.accept.mockResolvedValue({ invitation, userId: 'u2' });
+    grant.mockRejectedValue(new Error('grant failed'));
+    organizations.leave.mockRejectedValue(new Error('leave failed'));
+
+    await expect(accept(null)).rejects.toThrow('leave failed');
+
+    expect(invitations.markAccepted).toHaveBeenCalledWith('inv1');
   });
 
   it('finishes an already-accepted invitation for the same member', async () => {

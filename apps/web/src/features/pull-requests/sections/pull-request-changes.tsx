@@ -1,7 +1,7 @@
-import { DiffFileTree, type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
+import { DiffFileTree, type DiffLayout } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
-import { usePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
-import { QueryState } from '@oppenheimer/frontend-web';
+import { useSuspensePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PendingNote, pendingByPath } from '../lib/review-draft';
@@ -15,6 +15,9 @@ const NO_PENDING: readonly PendingNote[] = [];
  * under it, and the tree beside it, which stays put while the diff scrolls. A
  * comment added to the review stays pending here, with the screen, until the
  * review is submitted.
+ *
+ * Read under Suspense: the screen's `QueryState` draws the placeholder and a
+ * first failure. A refetch that fails keeps the diff and says so above it.
  */
 export function PullRequestChanges({
   address,
@@ -30,23 +33,20 @@ export function PullRequestChanges({
   onDiscardPending: (index: number) => void;
 }) {
   const { t } = useTranslation();
-  const files = usePullRequestFiles(address);
+  const { data: rows, error } = useSuspensePullRequestFiles(address);
   const [selected, setSelected] = useState<string | undefined>(undefined);
   const pendingOn = pendingByPath(pending);
 
   return (
-    <QueryState
-      query={files}
-      pending={<Skeleton className="min-h-0 w-full flex-1" />}
-      errorFallback={t('pullRequests.changes.loadFailed')}
-      empty={{
-        when: (rows) => rows.length === 0,
-        show: (
-          <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
-        ),
-      }}
-    >
-      {(rows) => (
+    <>
+      <ErrorAlert
+        error={error}
+        fallback={t('pullRequests.changes.loadFailed')}
+        className="mx-8 mt-4"
+      />
+      {rows.length === 0 ? (
+        <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
+      ) : (
         <div className="flex min-h-0 flex-1 bg-card">
           <div className="min-w-0 flex-1 overflow-y-auto">
             {rows.map((file) => (
@@ -81,6 +81,6 @@ export function PullRequestChanges({
           </aside>
         </div>
       )}
-    </QueryState>
+    </>
   );
 }

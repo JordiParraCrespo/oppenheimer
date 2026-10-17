@@ -1,5 +1,6 @@
 import auth from './en/auth.json';
 import automations from './en/automations.json';
+import bots from './en/bots.json';
 import calendar from './en/calendar.json';
 import common from './en/common.json';
 import consent from './en/consent.json';
@@ -32,6 +33,7 @@ const en = {
   public: publicCopy,
   projects,
   sessions,
+  bots,
   automations,
   pullRequests,
   tasks,

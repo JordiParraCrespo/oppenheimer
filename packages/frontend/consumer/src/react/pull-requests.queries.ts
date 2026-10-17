@@ -1,8 +1,15 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  PERSIST_META,
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
+  type QueryKey,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -22,6 +29,8 @@ import type {
   PullRequestQueue,
   PullRequestScope,
   ReviewInput,
+  ReviewOutcome,
+  ReviewSession,
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
 import { useConsumerApp } from './context';
@@ -59,6 +68,7 @@ export const pullRequestsKeys = {
   activity: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'activity'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
+  reviewSessions: () => [...pullRequestsKeys.all, 'review-sessions'] as const,
   analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
   analyticsRange: (range: PullRequestAnalyticsRange) =>
     [...pullRequestsKeys.analytics(), range] as const,
@@ -69,6 +79,25 @@ export const pullRequestsKeys = {
  * scope and lane controls show. The previous scope stays on screen while the
  * next loads.
  */
+/**
+ * {@link usePullRequestQueue} under a Suspense `QueryState`, polling while
+ * the answer is still filling. A new scope is a new key, which suspends: the
+ * table reads its scope through `useDeferredValue`, so the rows on screen stay
+ * until the next scope has answered.
+ */
+export function useSuspensePullRequestQueue(scope: PullRequestScope) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PullRequestQueue, Error>({
+    queryKey: pullRequestsKeys.queue(scope),
+    queryFn: () => app.pullRequests.queue(scope),
+    ...usePollWhile<PullRequestQueue>(
+      'pullRequestsFilling',
+      pullRequestsKeys.queue(scope),
+      (data) => data?.filling === true,
+    ),
+  });
+}
+
 export function usePullRequestQueue<TData = PullRequestQueue>(
   scope: PullRequestScope,
   options?: Omit<UseQueryOptions<PullRequestQueue, Error, TData>, 'queryKey' | 'queryFn'>,
@@ -90,19 +119,49 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
 }
 
 export function usePullRequest(address: PullRequestAddress | undefined) {
-  const app = useConsumerApp();
-  return useQuery<PullRequestDetailEntity, Error>({
-    queryKey: pullRequestsKeys.detail(address),
-    queryFn: address ? () => app.pullRequests.find(address) : skipToken,
-  });
+  return useQuery<PullRequestDetailEntity, Error>(usePullRequestQuery(address));
 }
 
-/** The diff, file by file: the Changes view. */
-export function usePullRequestFiles(address: PullRequestAddress | undefined) {
+/**
+ * {@link usePullRequest} for a section under a Suspense `QueryState`: the
+ * address is known, so nothing is switched off, and `data` is always the pull
+ * request. One definition with {@link usePullRequest}, so the toolbar shares
+ * the entry.
+ */
+export function useSuspensePullRequest(address: PullRequestAddress) {
+  return useSuspenseQuery<PullRequestDetailEntity, Error>(usePullRequestQuery(address));
+}
+
+/**
+ * A pull request's read, for both hooks over it: the key and the fetch, once.
+ * With no address yet there is nothing to fetch (`skipToken`); the Suspense
+ * read always has one.
+ */
+function usePullRequestQuery(address: PullRequestAddress): {
+  queryKey: QueryKey;
+  queryFn: () => Promise<PullRequestDetailEntity>;
+};
+function usePullRequestQuery(address: PullRequestAddress | undefined): {
+  queryKey: QueryKey;
+  queryFn: (() => Promise<PullRequestDetailEntity>) | typeof skipToken;
+};
+function usePullRequestQuery(address: PullRequestAddress | undefined): {
+  queryKey: QueryKey;
+  queryFn: (() => Promise<PullRequestDetailEntity>) | typeof skipToken;
+} {
   const app = useConsumerApp();
-  return useQuery<PullRequestFile[], Error>({
+  return {
+    queryKey: pullRequestsKeys.detail(address),
+    queryFn: address ? () => app.pullRequests.find(address) : skipToken,
+  };
+}
+
+/** The diff, file by file: the Changes view, read under a Suspense `QueryState`. */
+export function useSuspensePullRequestFiles(address: PullRequestAddress) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PullRequestFile[], Error>({
     queryKey: pullRequestsKeys.files(address),
-    queryFn: address ? () => app.pullRequests.files(address) : skipToken,
+    queryFn: () => app.pullRequests.files(address),
   });
 }
 
@@ -115,12 +174,12 @@ export function usePullRequestComments(address: PullRequestAddress | undefined) 
   });
 }
 
-/** Its conversation: comments, commits, reviews and events, drawn under the description. */
-export function usePullRequestActivity(address: PullRequestAddress | undefined) {
+/** Its conversation: comments, commits, reviews and events, read for the rail's comments. */
+export function useSuspensePullRequestActivity(address: PullRequestAddress) {
   const app = useConsumerApp();
-  return useQuery<PullRequestActivityItem[], Error>({
+  return useSuspenseQuery<PullRequestActivityItem[], Error>({
     queryKey: pullRequestsKeys.activity(address),
-    queryFn: address ? () => app.pullRequests.activity(address) : skipToken,
+    queryFn: () => app.pullRequests.activity(address),
   });
 }
 
@@ -128,12 +187,29 @@ export function usePullRequestActivity(address: PullRequestAddress | undefined) 
 export function useWatchedRepositories<TData = WatchedRepository[]>(
   options?: Omit<UseQueryOptions<WatchedRepository[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
+  return useQuery<WatchedRepository[], Error, TData>({ ...useRepositoriesQuery(), ...options });
+}
+
+/**
+ * {@link useWatchedRepositories} for a section under a Suspense `QueryState`;
+ * `select` reads less than the whole list, as there.
+ */
+export function useSuspenseWatchedRepositories<TData = WatchedRepository[]>(
+  select?: (rows: WatchedRepository[]) => TData,
+) {
+  return useSuspenseQuery<WatchedRepository[], Error, TData>({
+    ...useRepositoriesQuery(),
+    ...(select ? { select } : {}),
+  });
+}
+
+/** What the repositories read is, for both hooks over it: the key and the fetch, once. */
+function useRepositoriesQuery() {
   const app = useConsumerApp();
-  return useQuery<WatchedRepository[], Error, TData>({
+  return {
     queryKey: pullRequestsKeys.repositories(),
     queryFn: () => app.pullRequests.repositories(),
-    ...options,
-  });
+  };
 }
 
 /**
@@ -143,13 +219,12 @@ export function useWatchedRepositories<TData = WatchedRepository[]>(
  * counts, medians, a lane mix and dates that name nothing. Reading them from
  * storage is what spares the page a skeleton on every visit.
  */
-export function usePullRequestAnalytics(range: PullRequestAnalyticsRange) {
+export function useSuspensePullRequestAnalytics(range: PullRequestAnalyticsRange) {
   const app = useConsumerApp();
-  return useQuery<PullRequestAnalytics, Error>({
+  return useSuspenseQuery<PullRequestAnalytics, Error>({
     queryKey: pullRequestsKeys.analyticsRange(range),
     queryFn: () => app.pullRequests.analytics(range),
-    placeholderData: keepPreviousData,
-    meta: { persist: true },
+    meta: PERSIST_META,
   });
 }
 
@@ -183,9 +258,9 @@ export interface SubmitReviewVariables {
   review: ReviewInput;
 }
 
-/** A review in the caller's name; approving also merges when GitHub allows it. */
+/** A review in the caller's name; approve and merge also merges, now or once checks pass. */
 export function useSubmitPullRequestReview(
-  options?: UseMutationOptions<{ merged: boolean }, Error, SubmitReviewVariables>,
+  options?: UseMutationOptions<ReviewOutcome, Error, SubmitReviewVariables>,
 ) {
   const app = useConsumerApp();
   const invalidate = useInvalidatePullRequests();
@@ -231,5 +306,57 @@ export function useMergePullRequest(
     mutationFn: ({ address, method }: MergePullRequestVariables) =>
       app.pullRequests.merge(address, method),
     ...withCacheOnSuccess(options, invalidate),
+  });
+}
+
+/**
+ * The caller's review sessions, newest first: the sidebar's For review list
+ * and each pull request's Chat tab. `select` reads less than the whole list.
+ */
+export function useReviewSessions<TData = ReviewSession[]>(
+  options?: Omit<UseQueryOptions<ReviewSession[], Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery<ReviewSession[], Error, TData>({ ...useReviewSessionsQuery(), ...options });
+}
+
+/**
+ * A pull request's Chat tab under a Suspense `QueryState`: the pull request
+ * and the caller's review sessions, fetched side by side. `error` is the first
+ * refetch that failed over data already drawn.
+ */
+export function useSuspensePullRequestAndReviewSessions(address: PullRequestAddress) {
+  const [pull, sessions] = useSuspenseQueries({
+    queries: [usePullRequestQuery(address), useReviewSessionsQuery()],
+  });
+  return { pull: pull.data, reviewSessions: sessions.data, error: pull.error ?? sessions.error };
+}
+
+function useReviewSessionsQuery() {
+  const app = useConsumerApp();
+  return {
+    queryKey: pullRequestsKeys.reviewSessions(),
+    queryFn: () => app.pullRequests.reviewSessions(),
+  };
+}
+
+export interface StartReviewSessionVariables {
+  address: PullRequestAddress;
+  hostId: string;
+  /** The attempt's `Idempotency-Key`, minted by the screen that holds the attempt. */
+  idempotencyKey: string;
+}
+
+/** Starts a review session for a pull request; the For review list is read again. */
+export function useStartReviewSession(
+  options?: UseMutationOptions<string, Error, StartReviewSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ address, hostId, idempotencyKey }: StartReviewSessionVariables) =>
+      app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
+    ...withCacheOnSuccess(options, () =>
+      queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() }),
+    ),
   });
 }

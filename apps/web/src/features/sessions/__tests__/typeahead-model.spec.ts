@@ -162,6 +162,45 @@ describe('TypeaheadModel', () => {
     expect(model.waiting).toBe(false);
   });
 
+  it('never deletes the prompt: Backspace and Left stop where the text begins', () => {
+    // Claude Code draws `❯` and a no-break space (2.1), not a space.
+    for (const prompt of ['\u276f\u00a0', '\u276f ', '> ', '$ ', '\u2502 > ']) {
+      const { screen, host } = grid(`${prompt}a`, prompt.length + 1);
+      const model = new TypeaheadModel(clock().now);
+      keys(model, screen, ['b']);
+      host(`${prompt}ab`, prompt.length + 2);
+      model.reconcile(screen);
+      // Two take back what was typed; a third, and Left, do nothing at the
+      // start of the text. A guess that ate the prompt sprang back once the
+      // host refused it, and one that gave up dropped the deletions before it.
+      keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x1b[D']);
+      expect(shown(model, `${prompt}ab`)).toEqual({
+        text: prompt.trimEnd(),
+        cursor: prompt.length,
+      });
+    }
+  });
+
+  it('leaves a list bullet the reader typed deletable (`- item` is text, not prompt)', () => {
+    const { screen, host } = grid('\u2502 > - a', 7);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['\x7f']);
+    host('\u2502 > - ', 6);
+    model.reconcile(screen);
+    keys(model, screen, ['\x7f', '\x7f']);
+    expect(shown(model, '\u2502 > - ')).toEqual({ text: '\u2502 >', cursor: 4 });
+  });
+
+  it('predicts deleting a line it did not see typed (Up recalled it)', () => {
+    const { screen, host } = grid('\u276f hello', 7);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['\x7f']);
+    host('\u276f hell', 6);
+    model.reconcile(screen);
+    keys(model, screen, ['\x7f', '\x7f']);
+    expect(shown(model, '\u276f hell')).toEqual({ text: '\u276f he', cursor: 4 });
+  });
+
   it('expires guesses the host has not confirmed in time', () => {
     const time = clock();
     const { screen, host } = grid('> ', 2);

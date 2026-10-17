@@ -155,6 +155,9 @@ describe('RegisterHostCommandHandler', () => {
 
     expect(result).toMatchObject({
       hostId: 'host-new',
+      // The account the runner names its work folder's top level by: whoever
+      // minted the token.
+      accountId: 'jordi',
       fingerprint: CONTROL_PLANE_FINGERPRINT,
       channel: 'stable',
       releaseBaseUrl: 'https://releases.example.com',
@@ -207,7 +210,10 @@ describe('RegisterHostCommandHandler', () => {
         Some(existingHost(key.fingerprint, key.base64)),
       );
 
-      await expect(handler.execute(command())).resolves.toMatchObject({ hostId: 'host-existing' });
+      await expect(handler.execute(command())).resolves.toMatchObject({
+        hostId: 'host-existing',
+        accountId: 'jordi',
+      });
     });
 
     it('refuses a different machine presenting the same spent token', async () => {

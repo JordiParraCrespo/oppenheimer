@@ -1,6 +1,7 @@
 import type { RunsFilter } from '@oppenheimer/frontend-consumer';
 import type { AutomationRunStatus, RunWindow } from '@oppenheimer/shared/automations';
 import { getRouteApi } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import type { RunStatusTab, RunsSearch } from '../lib/runs-search';
 
 /** What each pill asks the API for; `all` is the listed statuses, the API's default. */
@@ -42,14 +43,22 @@ export function useRunsFilters(scope: { automationId?: string }) {
   const write = (patch: Partial<RunsSearch>) =>
     navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true });
 
-  const filter: RunsFilter = {
-    automationId: scope.automationId ?? state.automation ?? undefined,
-    projectId: scope.automationId ? undefined : (state.project ?? undefined),
-    statuses: TAB_STATUSES[state.status],
-    window: state.window,
-    page: state.page,
-    limit: RUNS_PAGE_SIZE,
-  };
+  // One object per filter, not per render: the list reads it through
+  // `useDeferredValue`, which would otherwise render again in the background
+  // for every new object that asks for the same page.
+  const automationId = scope.automationId ?? state.automation ?? undefined;
+  const projectId = scope.automationId ? undefined : (state.project ?? undefined);
+  const filter: RunsFilter = useMemo(
+    () => ({
+      automationId,
+      projectId,
+      statuses: TAB_STATUSES[state.status],
+      window: state.window,
+      page: state.page,
+      limit: RUNS_PAGE_SIZE,
+    }),
+    [automationId, projectId, state.status, state.window, state.page],
+  );
 
   const dirty =
     state.status !== 'all' ||

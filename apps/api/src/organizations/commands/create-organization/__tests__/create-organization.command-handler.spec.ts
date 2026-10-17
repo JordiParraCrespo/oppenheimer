@@ -29,7 +29,7 @@ describe('CreateOrganizationCommandHandler', () => {
   const events = { emitAsync: vi.fn() };
   let handler: CreateOrganizationCommandHandler;
 
-  const create = (input: { name: string; slug?: string }, creatorId?: string) =>
+  const create = (input: { name: string; slug?: string }, creatorId = 'u1') =>
     handler.execute(new CreateOrganizationCommand({ headers, input, creatorId }));
 
   beforeEach(() => {
@@ -67,26 +67,24 @@ describe('CreateOrganizationCommandHandler', () => {
     expect(organizations.create.mock.calls[0][1].slug).toMatch(/^my-great-org-[0-9a-f]{8}$/);
   });
 
-  it('touches no roles and makes no workspace without an authenticated creator', async () => {
-    const id = await create({ name: 'Acme' });
-
-    expect(id).toBe('org1');
-    expect(membershipAccess.admit).not.toHaveBeenCalled();
-    expect(workspaces.create).not.toHaveBeenCalled();
-  });
-
   /**
    * The bug this exists to stop: Better Auth's `owner` membership is not what
    * the app's routes check, so an organization created without the org-scoped
    * application role is one its creator owns and cannot read.
    */
   it('grants the creator the org-scoped role that opens the organization', async () => {
-    await create({ name: 'Acme' }, 'u1');
+    await create({ name: 'Acme' });
     expect(grant).toHaveBeenCalledWith({ userId: 'u1', organizationId: 'org1', role: 'owner' });
   });
 
+  it('always goes through admit, owned by the authenticated caller', async () => {
+    await create({ name: 'Acme' }, 'u9');
+    expect(membershipAccess.admit).toHaveBeenCalledOnce();
+    expect(grant).toHaveBeenCalledWith({ userId: 'u9', organizationId: 'org1', role: 'owner' });
+  });
+
   it('gives the organization a default workspace with its creator in it', async () => {
-    await create({ name: 'Acme' }, 'u1');
+    await create({ name: 'Acme' });
 
     expect(workspaces.create).toHaveBeenCalledWith(headers, {
       name: 'General',
@@ -99,7 +97,7 @@ describe('CreateOrganizationCommandHandler', () => {
   // Its own event, not sign-up's: an organization made from the console is
   // not a personal workspace, though both get an Unassigned project.
   it('announces the organization it created', async () => {
-    await create({ name: 'Acme' }, 'u1');
+    await create({ name: 'Acme' });
     expect(events.emitAsync).toHaveBeenCalledWith(
       'OrganizationCreatedDomainEvent',
       expect.objectContaining({ aggregateId: 'org1', creatorId: 'u1' }),
@@ -110,7 +108,7 @@ describe('CreateOrganizationCommandHandler', () => {
     const failure = new Error('role store unavailable');
     grant.mockRejectedValueOnce(failure);
 
-    await expect(create({ name: 'Acme' }, 'u1')).rejects.toBe(failure);
+    await expect(create({ name: 'Acme' })).rejects.toBe(failure);
 
     expect(organizations.delete).toHaveBeenCalledWith(headers, 'org1');
     // No half-built organization left behind for the caller to trip over.
@@ -122,7 +120,7 @@ describe('CreateOrganizationCommandHandler', () => {
     grant.mockRejectedValueOnce(failure);
     organizations.delete.mockRejectedValueOnce(new Error('delete failed too'));
 
-    await expect(create({ name: 'Acme' }, 'u1')).rejects.toBe(failure);
+    await expect(create({ name: 'Acme' })).rejects.toBe(failure);
   });
 
   /**
@@ -133,12 +131,12 @@ describe('CreateOrganizationCommandHandler', () => {
   it('still returns the organization when the default workspace cannot be made', async () => {
     workspaces.create.mockRejectedValue(new Error('teams are unavailable'));
 
-    expect(await create({ name: 'Acme' }, 'u1')).toBe('org1');
+    expect(await create({ name: 'Acme' })).toBe('org1');
     expect(grant).toHaveBeenCalledOnce();
   });
 
   it('still returns the organization when a listener fails', async () => {
     events.emitAsync.mockRejectedValue(new Error('listener down'));
-    expect(await create({ name: 'Acme' }, 'u1')).toBe('org1');
+    expect(await create({ name: 'Acme' })).toBe('org1');
   });
 });

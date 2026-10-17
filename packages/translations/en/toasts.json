@@ -20,7 +20,7 @@
   "passwordChanged": "Password changed. Other devices are signed out.",
   "taskAdded": "Task added.",
   "taskDeleted": "Task deleted.",
-  "goalAdded": "Goal added.",
+  "milestoneAdded": "Milestone added.",
   "taskSessionStarted": "Session started.",
   "taskSessionQueued": "Session queued. It starts when its host reconnects.",
   "pullRequestsSlowedDown": "GitHub asked us to slow down, so some rows are missing a part. They fill on the next read.",
@@ -33,5 +33,8 @@
   "reviewSubmitted": "Review submitted.",
   "reviewApprovedMerged": "Approved and merged.",
   "reviewApprovedWaiting": "Approved. GitHub will not merge it yet, so it waits.",
-  "reviewCommentPosted": "Comment posted."
+  "reviewCommentPosted": "Comment posted.",
+  "reviewApproved": "Approved.",
+  "reviewApprovedAutoMerge": "Approved. It merges once the required checks pass.",
+  "botDeleted": "“{{name}}” deleted."
 }

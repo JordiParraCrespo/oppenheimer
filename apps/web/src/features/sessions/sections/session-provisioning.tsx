@@ -45,6 +45,8 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
       branch: checkout?.branch ?? session.slug,
       agent: CODING_AGENTS[session.agent].label,
       failure: failure?.reason ?? null,
+      folder: session.isFolder ? session.folderPath : null,
+      shell: session.agent === 'shell',
     },
     t,
   );

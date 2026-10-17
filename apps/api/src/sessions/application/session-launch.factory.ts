@@ -11,7 +11,8 @@ import type { SessionLaunchSpec } from './session-dispatch.port';
  * cannot read off it: the workspace's slug, asked of `organizations/` through its
  * port. One place, so every command that dispatches a launch — create, restart,
  * add a checkout, the hello reconciliation — names the same directories. No
- * project name travels (see `sessionCreateSchema`).
+ * project name travels (see `sessionCreateSchema`), and no account: the runner
+ * learnt that when it was paired (24 §2).
  */
 @Injectable()
 export class SessionLaunchSpecFactory {
@@ -30,7 +31,10 @@ export class SessionLaunchSpecFactory {
     if (!organizationSlug) throw new Error(`workspace ${session.organizationId} has no slug`);
     return {
       organizationSlug,
-      branch: session.branch ?? sessionBranchName(session.slug),
+      workspaceId: session.organizationId,
+      ...(session.place === 'worktree'
+        ? { branch: session.branch ?? sessionBranchName(session.slug) }
+        : {}),
       ...(extra.prompt ? { prompt: extra.prompt } : {}),
       ...(extra.images?.length ? { images: extra.images } : {}),
     };

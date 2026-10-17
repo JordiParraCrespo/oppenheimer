@@ -47,7 +47,7 @@ export class StartTaskSessionCommandHandler
     // The session exists whatever happens next; a link that fails is retried
     // with the same key and finds it.
     await this.tasks.attach(
-      task,
+      task.actingAs(command.actor),
       {
         sessionId: result.sessionId,
         origin: 'started',

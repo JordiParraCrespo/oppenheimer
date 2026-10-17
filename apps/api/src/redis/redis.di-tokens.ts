@@ -6,3 +6,6 @@
  * connections from the same `redisConnectionOptions`.
  */
 export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
+
+/** Pub/sub for the live streams (`RedisPubSubPort`), on one subscriber connection per replica. */
+export const REDIS_PUB_SUB = Symbol('REDIS_PUB_SUB');

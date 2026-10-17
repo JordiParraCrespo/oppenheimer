@@ -15,8 +15,16 @@ export type PullRequestScope = (typeof PULL_REQUEST_SCOPES)[number];
 export const PULL_REQUEST_LANES = ['deep', 'medium', 'quick'] as const;
 export type PullRequestLane = (typeof PULL_REQUEST_LANES)[number];
 
-/** What submitting a review does: comment only, approve (and merge when it can), or send it back. */
-export const REVIEW_VERDICTS = ['comment', 'approve', 'request_changes'] as const;
+/**
+ * What submitting a review does: comment only, approve and leave the merge to
+ * you, approve and merge once the required checks pass, or send it back.
+ */
+export const REVIEW_VERDICTS = [
+  'comment',
+  'approve',
+  'approve_and_merge',
+  'request_changes',
+] as const;
 export type ReviewVerdict = (typeof REVIEW_VERDICTS)[number];
 
 export const MERGE_METHODS = ['squash', 'merge', 'rebase'] as const;
@@ -54,7 +62,11 @@ export const submitPullRequestReviewSchema = z
   })
   // GitHub refuses a review that asks for changes, or only comments, with nothing to say.
   .refine(
-    (value) => value.verdict === 'approve' || Boolean(value.body) || value.comments.length > 0,
+    (value) =>
+      value.verdict === 'approve' ||
+      value.verdict === 'approve_and_merge' ||
+      Boolean(value.body) ||
+      value.comments.length > 0,
     {
       path: ['body'],
     },
@@ -70,6 +82,16 @@ export const mergePullRequestSchema = z.object({
   method: z.enum(MERGE_METHODS).default('squash'),
 });
 export type MergePullRequestDto = z.infer<typeof mergePullRequestSchema>;
+
+/**
+ * `POST /pulls/…/review-session`: start a review session on one of the
+ * caller's hosts. What it checks out and what the agent starts on are the
+ * pull request's, decided by the API.
+ */
+export const startReviewSessionSchema = z.object({
+  hostId: z.string().uuid(),
+});
+export type StartReviewSessionDto = z.infer<typeof startReviewSessionSchema>;
 
 /** `PUT /pulls/repositories/…`: watch a repository, or stop. */
 export const setRepositoryWatchSchema = z.object({

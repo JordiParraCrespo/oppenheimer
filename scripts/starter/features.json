@@ -9,6 +9,9 @@
         "apps/web",
         "deploy/kamal/deploy.web.yml",
         "e2e/tests/web",
+        "e2e/tests/screens",
+        "scripts/stack/screens.mjs",
+        "scripts/evals/pr-screenshots",
         ".agents/skills/shadcn/evals/evals.json",
         "scripts/evals/query-keys",
         "scripts/evals/frontend-audit",
@@ -18,7 +21,7 @@
         "scripts/check-singletons.mjs",
         "scripts/check-singletons.test.mjs"
       ],
-      "scripts": ["dev:mvp", "check:unused", "check:singletons"],
+      "scripts": ["dev:mvp", "check:unused", "check:singletons", "screens"],
       "json": [
         {
           "file": "package.json",
@@ -97,7 +100,7 @@
       "summary": "e2e/ — Playwright suites against the running API and web app",
       "identifiers": ["@oppenheimer/e2e", "e2e/"],
       "paths": ["e2e", "scripts/stack", ".agents/skills/local-stack"],
-      "scripts": ["test:e2e"]
+      "scripts": ["test:e2e", "screens"]
     }
   },
   "shared": {
@@ -131,6 +134,10 @@
       "identifiers": ["check-frontend-structure", "check:structure"],
       "neededBy": ["web"],
       "scripts": ["check:structure"]
+    },
+    "scripts/query-state-slots.mjs": {
+      "identifiers": ["query-state-slots"],
+      "neededBy": ["web"]
     },
     "scripts/check-react-compiler.mjs": {
       "identifiers": ["check-react-compiler", "check:compiler"],

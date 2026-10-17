@@ -57,8 +57,19 @@ import {
 } from '../components/host-link-demos';
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
+import { ChatSection } from '../components/chat-demos';
+import { EmployeesSection } from '../components/employee-demos';
+import {
+  AreaChartDemo,
+  CalendarAccountsDemo,
+  DateRangePickerDemo,
+  FacetSelectDemo,
+  MilestoneTimelineDemo,
+} from '../components/plan-stats-demos';
+import { ShareSection } from '../components/share-demos';
+import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/control-demos';
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
-import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
+import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
 import { TaskBoardDemo, TaskStatusDots } from '../components/task-board-demos';
@@ -70,6 +81,7 @@ import {
   AddHostDialogDemo,
   DestructiveDialogDemo,
   CheckboxDemo,
+  RadioGroupCardDemo,
   RadioGroupDemo,
   SegmentedDemo,
   SlugFieldDemo,
@@ -203,18 +215,18 @@ export default function Page() {
         id="wordmark"
         title="Wordmark · BrandMark"
         meta="wordmark.tsx · brand-mark.tsx"
-        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em. The product suffix is the one place uppercase is allowed."
-        code={`<Wordmark product="Console" />`}
+        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em."
+        code={`<Wordmark />`}
       >
-        <Swatch label="18px, console">
-          <Wordmark product="Console" />
+        <Swatch label="18px">
+          <Wordmark />
         </Swatch>
         <Swatch label="28px">
           <Wordmark size={28} />
         </Swatch>
         <Swatch label="dark">
           <div className="dark rounded-md bg-canvas px-5 py-3">
-            <Wordmark product="Console" />
+            <Wordmark />
           </div>
         </Swatch>
         <Swatch label="BrandMark, the auth chrome's glyph">
@@ -767,7 +779,7 @@ export default function Page() {
         id="segmented"
         title="SegmentedControl"
         meta="segmented-control.tsx"
-        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Briefing / Description / Changes, a lane), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Description / Changes), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
@@ -787,17 +799,50 @@ export default function Page() {
         id="radiogroup"
         title="RadioGroup"
         meta="radio-group.tsx"
-        desc="One value out of a few, each a row that says what it does: the 16px ring filling with the action blue's dot, the label, an optional line under it. The whole row picks and the chosen one rests on the selected wash. A review's verdict in ReviewDecision. Two or three ways to read one pane are a SegmentedControl; a pick inside a menu is DropdownMenuRadioGroup."
+        desc="One value out of a few, each a row that says what it does: the 16px ring filling with the action blue's dot, the label, an optional line under it. The whole row picks and the chosen one rests on the selected wash. A review's verdict in ReviewDecision. RadioGroupCard draws the same pick as cards side by side (columns on the group), for two or three choices that each change what follows (a share's Can view / Can write): an icon, the label and a line, the chosen card on the action blue's border and the selected wash, tone danger turning the chosen card red for the one choice that hands a machine to somebody else. Two or three ways to read one pane are a SegmentedControl; a pick inside a menu is DropdownMenuRadioGroup."
         code={`<RadioGroup value={verdict} onValueChange={setVerdict} aria-label="Verdict"><RadioGroupItem value="approve" label="Approve" description="…" /></RadioGroup>`}
       >
-        <RadioGroupDemo />
+        <div className="flex w-full flex-col gap-6">
+          <RadioGroupDemo />
+          <RadioGroupCardDemo />
+        </div>
+      </Spec>
+
+      <Spec
+        id="switch"
+        title="Switch"
+        meta="switch.tsx"
+        desc="A setting that takes effect the moment it flips: Learn automatically, a connector, a routine's Active, Notifications. A 34×20 pill with a 16px white knob, the action blue when on and the control grey when off; 30×18 (sm) in a popover's foot. A setting the template holds is disabled with its reason as the title, at half strength. A choice that waits for Save is a Checkbox."
+        code={`<Switch checked={learn} onCheckedChange={setLearn} aria-label="Learn automatically" />`}
+      >
+        <SwitchDemo />
+      </Spec>
+
+      <Spec
+        id="pillgroup"
+        title="PillGroup"
+        meta="pill-group.tsx"
+        desc="A form value picked from a short row of 30px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
+        code={`<PillGroup value={ttl} onValueChange={setTtl} aria-label="For how long"><PillGroupItem value="1h">1 hour</PillGroupItem><PillGroupItem value="7d" disabled>7 days</PillGroupItem></PillGroup>`}
+      >
+        <PillGroupDemo />
+      </Spec>
+
+      <Spec
+        id="numberstepper"
+        title="NumberStepper"
+        meta="number-stepper.tsx"
+        desc="A small bounded count a person nudges: Parallel sessions (1–8), Hop limit (1–6). Minus, the value in mono 28px wide, plus, on a pill track with 2px of inset; a button at its bound turns off, and the value stays typeable and steps with the arrow keys. A number with a unit and room to type is an Input."
+        code={`<NumberStepper value={parallel} onValueChange={setParallel} min={1} max={8} aria-label="Parallel sessions" />`}
+      >
+        <NumberStepperDemo />
       </Spec>
 
       <Spec
         id="disclosure"
         title="Disclosure"
         meta="disclosure.tsx"
-        desc="A fold inside a dialog or a step: one row that reads as a label, an optional word beside it, a summary on the right while closed, and a chevron that turns over 140ms. Add a host folds the install command and the agent prompt behind Inspect command and prompt, in the muted tone; the project dialog folds its Defaults with the summary of what is set."
+        desc="A fold inside a dialog or a step: one row that reads as a label, an optional word beside it, a summary on the right while closed, and a chevron that turns over 140ms. Add a host folds the agent prompt and the manual install, in the muted tone; the project dialog folds its Defaults with the summary of what is set."
         code={`<Disclosure><DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">Defaults</DisclosureTrigger><DisclosurePanel>…</DisclosurePanel></Disclosure>`}
       >
         <DisclosureDemo />
@@ -807,13 +852,21 @@ export default function Page() {
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
-        desc="The multi-line field at the 10px radius, sized to its content from 88px."
-        code={`<Textarea placeholder="Session name" />`}
+        desc="The multi-line field at the 10px radius, sized to its content from 88px. The code variant is a file edited in place (a bot's SOUL.md and INSTRUCTIONS.md): mono at 13px, the 18px reading radius, at least 320px tall."
+        code={`<Textarea placeholder="Session name" />
+<Textarea variant="code" aria-label="INSTRUCTIONS.md" defaultValue={file} />`}
       >
-        <Field className="w-full max-w-105">
-          <FieldLabel htmlFor="notes">Session name</FieldLabel>
-          <Textarea id="notes" placeholder="Describe the task in one or two lines." />
-        </Field>
+        <div className="flex w-full flex-col gap-6">
+          <Field className="w-full max-w-105">
+            <FieldLabel htmlFor="notes">Session name</FieldLabel>
+            <Textarea id="notes" placeholder="Describe the task in one or two lines." />
+          </Field>
+          <Textarea
+            variant="code"
+            aria-label="INSTRUCTIONS.md"
+            defaultValue={'# Instructions\n\n- Work only in the projects and repositories you have access to.\n- Ask before merging, deleting, pushing or deploying.'}
+          />
+        </div>
       </Spec>
 
       <Spec
@@ -965,7 +1018,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, Copy install command and Copy agent prompt, the token line, the command and the prompt behind an Inspect fold, and a status box that resolves in place. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, the agent prompt in a card with Copy prompt and its text behind a fold, the token line with Install manually instead across from it, and Connection rows that resolve in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />
@@ -1139,7 +1192,7 @@ export default function Page() {
         id="sessionpane"
         title="SessionPaneHeader"
         meta="session-pane-header.tsx"
-        desc="The bar over a session's terminal, on the pane's card with a hairline under it: the session in mono, its run state on StatusDot, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash, no glyph. TerminalStatusBar is the terminal's own band along its bottom."
+        desc="The bar over a session's terminal, on the pane's card with a hairline under it: the session in mono, its run state on StatusDot, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash, no glyph. actions closes the bar on the right: a shared session's guest sees the access the share gives them and Leave there, with the wordmark leading. TerminalStatusBar is the terminal's own band along its bottom."
         code={`<SessionPaneHeader
   state="needs-input"
   name="biometric-unlock"
@@ -1225,9 +1278,9 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
 
       <Spec
         id="taskboard"
-        title="TaskBoard · GoalCard"
-        meta="task-board.tsx · goal-card.tsx · page-header.tsx"
-        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and goal, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Later pending, To do idle, In progress running, Done completed). Goals sit above the board: a 4px bar of the share done, full ink and green at 100%, and the goal's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a goal."
+        title="TaskBoard · MilestoneCard"
+        meta="task-board.tsx · milestone-card.tsx · page-header.tsx"
+        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Later pending, To do idle, In progress running, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
         code={`<DragProvider {...useSortableGroups(groups, setGroups, save)} overlay={(a) => <TaskCard title={titleOf(a.id)} />}>
   <TaskBoard>
     <TaskColumn id="todo" status="todo" label="To do" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>
@@ -1239,7 +1292,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
     </TaskColumn>
   </TaskBoard>
 </DragProvider>
-<GoalCard name="Atlas public beta" meta="Atlas · Nov 16" done={1} total={4} countLabel="1 / 4 tasks" selected onSelect={pick} />`}
+<MilestoneCard name="Atlas public beta" meta="Atlas · Nov 16" done={1} total={4} countLabel="1 / 4 tasks" selected onSelect={pick} />`}
         bare
       >
         <div className="flex w-full flex-col gap-6">
@@ -1250,24 +1303,74 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
 
       <Spec
         id="calendar"
-        title="MonthCalendar · CalendarSourceCard"
+        title="MonthCalendar · CalendarLayerItem"
         meta="month-calendar.tsx · calendar-source.tsx"
-        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. The page owns the DragProvider: an entry is a calendar-entry source and a day a target whose id is its date, and N more lists the day to read, not to drag. Automation runs keep their schedule. It shares one month grid with DatePicker. The sidebar lists what the month draws, each source a row with a Checkbox, and the connected calendar's card says when it last synced."
+        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. The page owns the DragProvider: an entry is a calendar-entry source and a day a target whose id is its date, and N more lists the day to read, not to drag. Automation runs keep their schedule. It shares one month grid with DatePicker. The sidebar lists what the month draws, each source a row with a Checkbox in ink; the connected accounts are a CalendarAccountList."
         code={`<DragProvider overlay={(a) => <CalendarEntry entry={byId(a.id)} lifted />} onDragEnd={({ active, over }) => over && move(active.id, over.id)}>
   <MonthCalendar year={2026} month={9} today={today} entries={entries} onOpenEntry={open} onAddDay={add} />
 </DragProvider>
-<CalendarLayerItem icon={<CalendarIcon />} checked onCheckedChange={toggle}>Google Calendar</CalendarLayerItem>
-<CalendarSourceCard mark={<BrandGlyph name="google" />} name="Google Calendar" account="me@example.com" status="Synced 2 min ago" />`}
+<CalendarLayerItem icon={<CalendarIcon />} checked onCheckedChange={toggle}>Google Calendar</CalendarLayerItem>`}
         bare
       >
         <MonthCalendarDemo />
       </Spec>
 
       <Spec
+        id="calendaraccounts"
+        title="CalendarAccountList"
+        meta="calendar-source.tsx"
+        desc="More than one connected Google account, under the calendar's sources: a grouped list on the hover wash, one row per account with the provider's mark, the address and how its sync stands behind a dot in mono. A failed sync turns the dot red and offers Reconnect; every row disconnects with its ×. Add account is the last row."
+        code={`<CalendarAccountList><CalendarAccountRow mark={<BrandGlyph name="google" />} account="me@acme.dev" status="Synced 2 min ago" onDisconnect={…} /><CalendarAccountAdd onClick={connect} /></CalendarAccountList>`}
+      >
+        <CalendarAccountsDemo />
+      </Spec>
+
+      <Spec
+        id="milestones"
+        title="MilestoneTimeline · MilestoneGlyph"
+        meta="milestone-timeline.tsx"
+        desc="Milestones on time, one row per project, scrolling sideways and opening on today. Months in uppercase at their first day with a hairline down the rows, week numbers in mono, today an inverted pill with a line through every row. Each project is its name and done share over a track from three weeks before its first milestone to the day of its last; each milestone a diamond at its due day, filled muted when done. Point at one and it fills in ink and shows the share done, the task count and the due day. MilestoneGlyph is the same diamond, 8px, for the sidebar row and the filter pill."
+        code={`<MilestoneTimeline rows={rows} today={today} onOpenMilestone={edit} onOpenRow={openProject} />`}
+      >
+        <MilestoneTimelineDemo />
+      </Spec>
+
+      <Spec
+        id="facetselect"
+        title="FacetSelect"
+        meta="facet-select.tsx"
+        desc="One facet of a list's filter picked from a short menu: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. The menu is radio rows with the count each pick would leave. pill (30px) is Plan's board: the icon, then the facet's name or the pick. labelled (34px) is the pull-request queue: the facet's name muted, then the current option."
+        code={`<FacetSelect label="Difficulty" options={lanes} value={lane} onValueChange={setLane} />
+<FacetSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} value={project} onValueChange={setProject} />`}
+      >
+        <FacetSelectDemo />
+      </Spec>
+
+      <Spec
+        id="daterange"
+        title="DateRangePicker"
+        meta="date-range-picker.tsx"
+        desc="The period Stats reports on. A hairline pill with the preset's name muted and the range in mono, opening presets beside two months: the range fills the selected wash between its two inked ends, today is ringed and days after it are off. The first click starts a range, the second ends it, the pointer previews it; a preset applies at once. The foot holds the compare switch, the range's length and Done."
+        code={`<DateRangePicker value={range} onValueChange={setRange} presets={presets} today={today} compare={compare} onCompareChange={setCompare} />`}
+      >
+        <DateRangePickerDemo />
+      </Spec>
+
+      <Spec
+        id="areachart"
+        title="AreaChart"
+        meta="charts.tsx"
+        desc="Volume over time, for Stats: tokens and cost per week. A monotone curve per series, so it never overshoots a value, over a wash of its tone (12% alone, 8% when two overlap); ticks on the left, a label under every week, and LineChart's crosshair, dots and readout. Two rates without volume stay a LineChart."
+        code={`<AreaChart series={series} points={weeks} ticks={[0, 1, 2, 3, 4]} format={(v) => \`\${v}M\`} aria-label="Tokens per week" />`}
+      >
+        <AreaChartDemo />
+      </Spec>
+
+      <Spec
         id="plandialogs"
         title="Task & session dialogs"
         meta="dialog.tsx · chip.tsx · chip-select.tsx · date-picker.tsx"
-        desc="The task dialog and Start session are compositions, not components: a form-size Dialog with a borderless title and notes, then label and value rows. Values that are fixed (the four statuses, an agent's models) are chips; values that grow with the workspace (projects, goals, hosts, repositories) are ChipSelects that filter. One state each: what a pick means (an offline host, a queued start) is the console's rule, not this page's."
+        desc="The task dialog and Start session are compositions, not components: a form-size Dialog with a borderless title and notes, then label and value rows. Values that are fixed (the four statuses, an agent's models) are chips; values that grow with the workspace (projects, milestones, hosts, repositories) are ChipSelects that filter. One state each: what a pick means (an offline host, a queued start) is the console's rule, not this page's."
       >
         <PlanDialogsDemo />
       </Spec>
@@ -1278,7 +1381,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="prqueue"
         title="PullRequestTable"
         meta="pull-request-table.tsx"
-        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width: from 880px Size, Checks and Conflicts are columns, narrower they fold under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search and PillTabs, the foot is RunsListFoot."
+        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width in three steps: from 1080px Size, Checks and Conflicts are columns; from 720px they fold into a line under the title and the actions keep their column; narrower, the actions wrap under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search, a ChipSelect of repositories with a count per row and the Difficulty, Checks and Waiting FacetSelects; the order is fixed (Deep first, then the longest wait), and the foot is RunsListFoot."
         code={`<PullRequestTable>
   <PullRequestTableHead />
   <PullRequestRow lane={<Badge variant="strong">Deep</Badge>} title="Move session tokens to the runner keychain" reference="oppenheimer #482" author="Session · auth-hardening" additions={612} deletions={248} checks="passing" checksLabel="Passing" conflicts="passing" conflictsLabel="No conflicts" waiting="1d 3h" onOpen={open}
@@ -1290,17 +1393,16 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       </Spec>
 
       <Spec
-        id="prbriefing"
-        title="Briefing · ReviewDecision"
-        meta="pull-request-header.tsx · stat-card.tsx · merge-path.tsx · panel.tsx · review-decision.tsx · prose.tsx"
-        desc="One pull request, opened on its briefing. The bar holds the views (a medium SegmentedControl, Changes carrying its DiffStat), Open review session and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup, the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill), lane and reference, the title at H2 and the branch head → base. StatCards lead with the numbers (a 24px mono figure, a unit, a StatBar of shares or a track); MergePath is a horizontal Stepper of Checks, Conflicts, Review and Merge (a gate not met is failed), with the next step and its actions under a hairline. StatCard and Panel are Cards. The rest are Panels: the brief with its FactTiles and lane, the review session, the pending comments as DiffCommentLinks, where it changes, the reviewers. Description renders the author's markdown in Prose. The second frame is the same page held by a conflict."
-        code={`<PullRequestHeader state="active" stateLabel="Open" lane={<Badge variant="strong">Deep</Badge>} reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
-<StatCard label="Checks" value="214 / 214" unit="Passing" bar={<StatBar track segments={[{ share: 100, tone: 'success' }]} />} />
-<MergePath title="Path to merge" summary="2 of 4 done" steps={[{ id: 'checks', label: 'Checks', detail: 'All passing', state: 'done' }, …]} note="Squash and merge into main" actions={…} />
+        id="prdescription"
+        title="Description · ReviewDecision"
+        meta="pull-request-header.tsx · merge-path.tsx · review-decision.tsx · prose.tsx"
+        desc="One pull request, opened on its Description. The bar holds the two views (a medium SegmentedControl, Changes carrying its DiffStat), GitHub and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup (Comment, Approve, Approve and merge, Request changes), the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill) and reference, the title at H2 and the branch head → base. MergePath is the status strip under it: the DiffStat and the file count, then Checks, Conflicts and Merge, each a dot in its state's colour with its word, and Review changes and a MergeButton on the right; it wraps on a narrow pane. Under it the author's markdown renders in Prose on a Card. The second frame is the same page held by a conflict."
+        code={`<PullRequestHeader state="active" stateLabel="Open" reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
+<MergePath leading={<><DiffStat additions={612} deletions={248} /><span>4 files in 2 folders</span></>} steps={[{ id: 'checks', label: 'Checks', meta: 'All passing', state: 'done' }, …]} actions={…} />
 <Popover><PopoverTrigger render={<SubmitReviewButton count={2} />}>Submit review</PopoverTrigger><PopoverContent align="end"><ReviewDecision verdicts={…} verdict={v} onVerdictChange={setV} comment={c} onCommentChange={setC} submitLabel="Approve and merge" onSubmit={submit} /></PopoverContent></Popover>`}
         bare
       >
-        <PullRequestBriefingDemo />
+        <PullRequestDescriptionDemo />
       </Spec>
 
       <Spec
@@ -1373,6 +1475,12 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       >
         <HostCardsDemo />
       </Spec>
+
+      <ChatSection />
+
+      <EmployeesSection />
+
+      <ShareSection />
 
       <GroupHead>Media</GroupHead>
 

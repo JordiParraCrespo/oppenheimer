@@ -2,6 +2,7 @@ import { Global, Logger, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
+import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
@@ -71,6 +72,8 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
         configService.get('oauth.google.clientSecret') &&
         calendarTokenKeyOf(configService.get<string>('calendar.tokenKey')),
     ),
+    // A valid sealing key for the workspaces' model provider keys.
+    bot_providers: Boolean(botsProviderKeyOf(configService.get<string>('bots.providerKey'))),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

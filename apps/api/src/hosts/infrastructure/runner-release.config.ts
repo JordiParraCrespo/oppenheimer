@@ -87,7 +87,7 @@ export class RunnerReleaseConfig {
       '- Tell me which machine you are on (uname -n, uname -sr, whoami) and ask whether it',
       '  is the one I mean. If it is not, stop: the token below pairs one machine only.',
       '- Ask me where session code should live. Add --workspaces with that path to the',
-      '  command, or leave it off for ~/oppenheimer-ai/workspaces.',
+      '  command, or leave it off for ~/oppenheimer.',
       '- Do not install anything, run anything as root, or add --force or --allow-container',
       '  unless I say so.',
       '',

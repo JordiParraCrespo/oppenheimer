@@ -1,14 +1,12 @@
-import { FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
+import { FieldDescription } from '@oppenheimer/design-system-web';
 import {
   useCreateTask,
   useDeleteTask,
-  useGoals,
-  useProjects,
-  useTasks,
+  useSuspensePlan,
   useUpdateTask,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TaskForm } from '../forms/task-form';
@@ -19,17 +17,18 @@ import { TaskSessionsRow } from './task-sessions-row';
 
 /**
  * The task dialog's body: the task (or a new one's values, filed where the
- * board is filtered), the projects and goals its rows offer, and the three
- * writes. The form takes values and hands them back.
+ * board is filtered), the projects and milestones its rows offer, and the three
+ * writes. The form takes values and hands them back. It reads under
+ * Suspense, in the dialog's `QueryState`; a refetch that fails keeps the
+ * form and says so above it.
  */
 export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () => void }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const today = useToday();
   const filter = useBoardFilter();
-  const tasks = useTasks({ select: (rows) => rows.find((row) => row.id === taskId) ?? null });
-  const projects = useProjects();
-  const { data: goals } = useGoals();
+  const { tasks, projects, milestones, error } = useSuspensePlan();
+  const task = taskId ? tasks.find((row) => row.id === taskId) : undefined;
   const [deleting, setDeleting] = useState(false);
   const create = useCreateTask({
     onSuccess: () => {
@@ -45,19 +44,23 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
     },
   });
 
-  if (tasks.isPending || projects.isPending) return <Skeleton className="h-60 w-full" />;
-  if (projects.isError) return <FieldDescription>{t('tasks.dialog.loadFailed')}</FieldDescription>;
-  const task = tasks.data;
-  if (taskId && !task) return <FieldDescription>{t('tasks.dialog.gone')}</FieldDescription>;
+  const alert = <ErrorAlert error={error} fallback={t('tasks.dialog.loadFailed')} />;
+  if (taskId && !task)
+    return (
+      <>
+        {alert}
+        <FieldDescription>{t('tasks.dialog.gone')}</FieldDescription>
+      </>
+    );
 
-  const unassigned = projects.data.find((row) => row.isUnassigned);
+  const unassigned = projects.find((row) => row.isUnassigned);
   const choices = [
     ...(unassigned ? [{ id: unassigned.id, name: t('tasks.sidebar.unassigned') }] : []),
-    ...projects.data.filter((row) => !row.isUnassigned),
+    ...projects.filter((row) => !row.isUnassigned),
   ];
   const values = task
     ? taskValues(task)
-    : newTaskValues(filter.projectId || unassigned?.id || '', filter.goalId ?? null);
+    : newTaskValues(filter.projectId || unassigned?.id || '', filter.milestoneId ?? null);
   const pending = create.isPending || update.isPending;
   const failure = create.error ?? update.error;
   const submit = (next: TaskFormOutput) => {
@@ -68,10 +71,11 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
 
   return (
     <>
+      {alert}
       <TaskForm
         values={values}
         projects={choices}
-        goals={goals ?? []}
+        milestones={milestones}
         today={today}
         sessions={task ? <TaskSessionsRow task={task} /> : null}
         pending={pending}

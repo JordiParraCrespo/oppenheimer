@@ -197,21 +197,6 @@ export function launchPermissionFor(
     : 'ask';
 }
 
-/**
- * Whether a host's runner can start `agent`, from the tool names its last inventory
- * probed.
- *
- * A runner probes every agent command it can launch, installed or not, so a missing
- * entry means a runner older than the agent, which would refuse `session.create`.
- * Before the first inventory (`null`), and for the blank terminal (no command), it is
- * allowed. Installation is not asked: that stays a hint, and the terminal says so.
- */
-export function runnerCanStart(agent: string, probedTools: readonly string[] | null): boolean {
-  if (probedTools === null || !isCodingAgentId(agent)) return true;
-  const { command } = CODING_AGENTS[agent];
-  return command === '' || probedTools.includes(command);
-}
-
 function stringField(payload: unknown, field: string): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as Record<string, unknown>)[field];

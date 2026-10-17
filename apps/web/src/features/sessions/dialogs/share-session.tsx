@@ -1,77 +1,71 @@
 import {
   Button,
-  Callout,
-  CodeBlock,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  Separator,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import { useCreateShareLink } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { usePutSessionShare } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ShareLinkForm } from '../forms/share-link';
-import { shareLinkUrl } from '../lib/share-links';
-import { ShareLinks } from '../sections/share-links';
+import { ShareSessionPanes } from '../sections/share-session-panes';
 
 /**
- * Share a session's terminal with a link. The form makes one; the answer is
- * the only time its address exists, so it replaces the form with the address
- * to copy, and Another link brings the form back. The live links sit under
- * either, each revocable.
+ * Share a session (`ShareSession.dc.html`, and the Share dialog of
+ * `SessionsConsole (pages).dc.html`), from the terminal's status line or a
+ * session row's menu. The panes read the session and its share under
+ * Suspense; this draws the dialog, its placeholder and a first failure, and
+ * owns the write, so Close waits while a share is being saved.
  */
 export function ShareSessionDialog({
-  session,
+  sessionId,
   onClose,
 }: {
-  session: SessionEntity;
+  sessionId: string;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const create = useCreateShareLink();
-  const made = create.data;
+  const put = usePutSessionShare();
+  const header = (
+    <DialogHeader>
+      <DialogTitle>{t('sessions.share.title')}</DialogTitle>
+    </DialogHeader>
+  );
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-130">
-        <DialogHeader>
-          <DialogTitle>{t('sessions.share.title', { name: session.name })}</DialogTitle>
-          <DialogDescription>{t('sessions.share.description')}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          <div className="flex flex-col gap-5 pb-7">
-            {made ? (
-              <div className="flex flex-col gap-3">
-                <CodeBlock
-                  code={shareLinkUrl(window.location.origin, made.token)}
-                  title={t('sessions.share.linkTitle')}
-                  copyLabel={t('common.copy')}
-                  copiedLabel={t('common.copied')}
-                />
-                <Callout>{t('sessions.share.onceOnly')}</Callout>
-                <div className="flex justify-end">
-                  <Button variant="secondary" onClick={() => create.reset()}>
-                    {t('sessions.share.another')}
-                  </Button>
-                </div>
-              </div>
-            ) : (
+    <Dialog open onOpenChange={(open) => !open && !put.isPending && onClose()}>
+      <DialogContent size="form" closeLabel={t('common.close')}>
+        <QueryState>
+          <QueryState.Pending>
+            {header}
+            <DialogBody>
+              <Skeleton className="h-64 w-full" />
+            </DialogBody>
+          </QueryState.Pending>
+          <QueryState.Error>
+            {(error, retry) => (
               <>
-                <ErrorAlert error={create.error} fallback={t('sessions.share.failed')} />
-                <ShareLinkForm
-                  isPending={create.isPending}
-                  onSubmit={(input) => create.mutate({ sessionId: session.id, input })}
-                />
+                {header}
+                <DialogBody>
+                  <ErrorAlert
+                    error={error}
+                    fallback={t('sessions.share.loadFailed')}
+                    action={
+                      <Button variant="ghost" size="sm" onClick={retry}>
+                        {t('common.retry')}
+                      </Button>
+                    }
+                  />
+                </DialogBody>
               </>
             )}
-            <Separator />
-            <ShareLinks sessionId={session.id} />
-          </div>
-        </DialogBody>
+          </QueryState.Error>
+          <QueryState.Data>
+            <ShareSessionPanes sessionId={sessionId} put={put} onClose={onClose} />
+          </QueryState.Data>
+        </QueryState>
       </DialogContent>
     </Dialog>
   );

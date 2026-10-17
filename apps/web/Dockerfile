@@ -34,12 +34,15 @@ RUN find /usr/share/nginx/html -type f \
          -o -name '*.html' -o -name '*.txt' \) \
       -exec sh -c 'gzip -9c "$1" > "$1.gz"' _ {} \;
 ENV API_UPSTREAM=api:3001
+# Who nginx asks for API_UPSTREAM's addresses: Docker's embedded DNS, which
+# every user-defined network has. Set it where the image runs outside one.
+ENV NGINX_RESOLVER=127.0.0.11
 # Origins the Content-Security-Policy in nginx.conf admits beyond 'self'.
 # Defaults to the PostHog EU endpoints, matching VITE_POSTHOG_HOST's default;
 # widen it when the analytics project is in another region or VITE_API_URL
 # points the app at a different origin.
 ENV CSP_EXTRA_ORIGINS="https://eu.i.posthog.com https://eu-assets.i.posthog.com"
-ENV NGINX_ENVSUBST_FILTER='(API_UPSTREAM|CSP_EXTRA_ORIGINS)'
+ENV NGINX_ENVSUBST_FILTER='(API_UPSTREAM|NGINX_RESOLVER|CSP_EXTRA_ORIGINS)'
 COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]

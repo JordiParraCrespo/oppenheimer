@@ -18,6 +18,8 @@ type ChipSelectOption = {
   keywords?: string;
   /** Mono label at 12px: branches, paths. */
   mono?: boolean;
+  /** How many rows this option would leave, in mono before the check (a list's filter). */
+  count?: number;
   disabled?: boolean;
 };
 
@@ -262,6 +264,7 @@ function ChipSelectItem({
   mono,
   highlighted,
   trailing,
+  count,
   className,
   children,
   ...props
@@ -273,6 +276,8 @@ function ChipSelectItem({
   mono?: boolean;
   highlighted?: boolean;
   trailing?: React.ReactNode;
+  /** In mono before the check. */
+  count?: number;
 }) {
   return (
     <button
@@ -301,6 +306,9 @@ function ChipSelectItem({
           <span className="truncate text-[11px] leading-[1.35] text-fg-subtle">{description}</span>
         ) : null}
       </span>
+      {count === undefined ? null : (
+        <span className="figures shrink-0 text-xs text-fg-subtle">{count}</span>
+      )}
       {trailing ?? (
         <span
           className={cn(
@@ -515,6 +523,7 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
       leading={option.leading}
       description={option.description}
       mono={option.mono}
+      count={option.count}
       data-disabled={option.disabled || undefined}
       onMouseEnter={() => onHighlight(index)}
       onClick={() => onChoose(option)}

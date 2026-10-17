@@ -1,86 +1,37 @@
-import { Badge, Button, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
-import { useSharedSession } from '@oppenheimer/frontend-consumer/react';
-import { RouteError } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
+import { Skeleton } from '@oppenheimer/design-system-web';
+import { QueryState, RouteError } from '@oppenheimer/frontend-web';
 import { SharedFrame } from '../components/shared-frame';
-import { SharedNotice } from '../components/shared-notice';
-import { useShareToken } from '../hooks/use-share-token';
-import { keepShareToken, shareRefusalOf } from '../lib/share-links';
-import { SharedSessionTerminal } from '../sections/shared-session-terminal';
+import { shareRefusalOf } from '../lib/share-session';
+import { SharedRefusal } from '../sections/shared-refusal';
+import { SharedSessionPane } from '../sections/shared-session-pane';
 
 /**
- * A session opened through a share link, signed in or not
- * (`product/versions/mvp/21-session-share-links.md`). The link's secret is
- * the URL's fragment; the page says what the link opens and who shared it,
- * then the terminal. Every refusal is its own answer: a link that opens
- * nothing, one that wants an account, one that is not for this account.
+ * A session as a guest opens it, `/s/<slug>`. The pane reads the share under
+ * Suspense; this draws its placeholder and a first failure, where a refusal
+ * (sign in, not shared with you, not shared at all) is its own answer and
+ * anything else is a failure with Try again.
  */
-export function SharedSessionScreen() {
-  const { t } = useTranslation();
-  const token = useShareToken();
-  const shared = useSharedSession(token ?? undefined);
-
-  if (!token)
-    return (
-      <SharedNotice title={t('sessions.shared.gone.title')} body={t('sessions.shared.gone.body')} />
-    );
-  if (shared.isPending) {
-    return (
-      <SharedFrame>
-        <Skeleton className="m-6 h-40" />
-      </SharedFrame>
-    );
-  }
-  if (shared.error) {
-    const refusal = shareRefusalOf(shared.error);
-    if (!refusal) return <RouteError error={shared.error} />;
-    return (
-      <SharedNotice
-        title={t(`sessions.shared.${refusal}.title`)}
-        body={t(`sessions.shared.${refusal}.body`)}
-        action={
-          refusal === 'signIn' ? (
-            <Button
-              render={<Link to="/login" search={{ redirect: '/shared' }} />}
-              onClick={() => keepShareToken(token)}
-            >
-              {t('sessions.shared.signIn.action')}
-            </Button>
-          ) : undefined
-        }
-      />
-    );
-  }
-
-  const session = shared.data;
+export function SharedSessionScreen({ slug }: { slug: string }) {
   return (
-    <SharedFrame>
-      <header className="flex flex-wrap items-center gap-2 px-5 py-3">
-        <h1 className="min-w-0 truncate text-sm font-medium text-fg">{session.name}</h1>
-        <Badge variant="neutral">
-          {session.access === 'write'
-            ? t('sessions.share.writeBadge')
-            : t('sessions.share.readBadge')}
-        </Badge>
-        {session.sharedBy ? (
-          <span className="text-xs text-fg-muted">
-            {t('sessions.shared.sharedBy', { name: session.sharedBy })}
-          </span>
-        ) : null}
-      </header>
-      {session.state === 'stopped' ? (
-        <EmptyState>
-          <EmptyState.Header>
-            <EmptyState.Title>{t('sessions.shared.stopped.title')}</EmptyState.Title>
-            <EmptyState.Description>{t('sessions.shared.stopped.body')}</EmptyState.Description>
-          </EmptyState.Header>
-        </EmptyState>
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col p-3.5 pt-0">
-          <SharedSessionTerminal token={token} readOnly={session.access === 'read'} />
-        </div>
-      )}
-    </SharedFrame>
+    <QueryState>
+      <QueryState.Pending>
+        <SharedFrame>
+          <Skeleton className="m-6 h-40" />
+        </SharedFrame>
+      </QueryState.Pending>
+      <QueryState.Error>
+        {(error, retry) => {
+          const refusal = shareRefusalOf(error);
+          return refusal ? (
+            <SharedRefusal refusal={refusal} slug={slug} />
+          ) : (
+            <RouteError error={error} onRetry={retry} />
+          );
+        }}
+      </QueryState.Error>
+      <QueryState.Data>
+        <SharedSessionPane slug={slug} />
+      </QueryState.Data>
+    </QueryState>
   );
 }

@@ -9,12 +9,16 @@
     "online": "Runner connected",
     "mintFailed": "We could not create a registration token.",
     "installerDigest": "Installer SHA-256: {{digest}}",
-    "copyCommand": "Copy install command",
-    "copyPrompt": "Copy agent prompt",
-    "inspect": "Inspect command and prompt",
+    "copyPrompt": "Copy prompt",
     "format": "Install format",
     "command": "Command",
-    "agentPrompt": "Agent prompt"
+    "agentPrompt": "Agent prompt",
+    "manualLead": "Run this on the machine yourself instead:",
+    "connection": "Connection",
+    "installWaiting": "Waiting for the agent to run the install",
+    "installed": "Runner installed",
+    "connected": "Host connected",
+    "manual": "Install manually instead"
   },
   "add": {
     "title": "Add a host",
@@ -33,7 +37,7 @@
     },
     "crumbHosts": "Hosts",
     "done": "Done",
-    "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet."
+    "description": "Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet."
   },
   "settings": {
     "state": {
@@ -63,6 +67,8 @@
     "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
     "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
     "renameFailed": "Could not rename this host. Try again.",
-    "removeFailed": "Could not remove this host. Try again."
+    "removeFailed": "Could not remove this host. Try again.",
+    "openTerminal": "Open terminal",
+    "openTerminalTitle": "Blank terminal in ~ on {{host}}"
   }
 }

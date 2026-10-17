@@ -40,7 +40,8 @@ describe('AutomationRunEntity raises a change per write', () => {
     for (const move of [
       (run: AutomationRunEntity) => run.defer(now),
       (run: AutomationRunEntity) => run.expire(),
-      (run: AutomationRunEntity) => run.dispatched('s-1', 'rev-1', now),
+      (run: AutomationRunEntity) =>
+        run.dispatched({ kind: 'session', sessionId: 's-1' }, 'rev-1', now),
     ]) {
       const run = AutomationRunEntity.fire(props, now);
       run.clearEvents();

@@ -28,7 +28,9 @@ type CreateSessionOptions struct {
 	Existing bool
 }
 
-// CreateSession opens a session: worktree, tmux session, agent in window 0.
+// CreateSession opens a session: worktree, tmux session, agent in window 0. A
+// session made here has no control plane ids, so its folder and its store sit
+// under the work folder's `local/local/` (domain.LocalTenant).
 func (a *App) CreateSession(ctx context.Context, out io.Writer, opts CreateSessionOptions) error {
 	session, err := a.Sessions.Create(ctx, sessionsapp.CreateInput{
 		Repo: opts.Repo, Remote: opts.Remote, BaseBranch: opts.Base, Branch: opts.Branch,
@@ -41,6 +43,7 @@ func (a *App) CreateSession(ctx context.Context, out io.Writer, opts CreateSessi
 	p.printf("session %s (%s)\n", session.ID, session.Name)
 	p.printf("branch   %s from %s\n", session.Branch, session.BaseBranch)
 	p.printf("worktree %s\n", session.Worktree)
+	p.printf("folder   %s\n", session.Dir)
 	p.printf("attach   %s sessions attach %s\n", binaryName(), session.ID)
 	// The next create's worktree is being checked out now; a process that
 	// exits under it leaves half a spare for the next one to throw away.
@@ -66,8 +69,14 @@ func (a *App) ListSessions(ctx context.Context, out io.Writer) error {
 	p := newPrinter(tw)
 	p.printf("ID\tSTATE\tAGENT\tREPO\tBRANCH\tWINDOWS\tAGE\n")
 	for _, session := range sessions {
+		repo, branch := session.Repo, session.Branch
+		if session.Place == sessionsdomain.PlaceFolder {
+			// A folder session is on whatever the folder is on; its row
+			// says where it runs instead.
+			repo, branch = session.Folder, "-"
+		}
 		p.printf("%s\t%s\t%s\t%s\t%s\t%d\t%s\n", session.ID, session.State, session.Agent,
-			session.Repo, session.Branch, len(session.Windows), age(session.Created))
+			repo, branch, len(session.Windows), age(session.Created))
 	}
 	if p.err != nil {
 		return p.err
@@ -110,14 +119,14 @@ func (a *App) AttachSession(id string, window int) error {
 	return syscall.Exec(binary, args, os.Environ()) //nolint:gosec // binary came from exec.LookPath, arguments built here
 }
 
-// RestartSession recreates window 0 in the same worktree.
+// RestartSession recreates window 0 where the session ran.
 func (a *App) RestartSession(ctx context.Context, out io.Writer, id string) error {
 	session, err := a.Sessions.Restart(ctx, id)
 	if err != nil {
 		return err
 	}
 	p := newPrinter(out)
-	p.printf("session %s is %s again in %s\n", session.ID, session.State, session.Worktree)
+	p.printf("session %s is %s again in %s\n", session.ID, session.State, session.Cwd())
 	return p.err
 }
 
@@ -138,6 +147,10 @@ func (a *App) CloseSession(ctx context.Context, out io.Writer, id string, opts C
 			p.printf("worktree kept at %s\n", session.Worktree)
 		}
 		return err
+	}
+	if session.Place == sessionsdomain.PlaceFolder {
+		p.printf("session %s closed; %s is left as it is\n", session.ID, session.Folder)
+		return p.err
 	}
 	if session.Worktree == "" {
 		p.printf("session %s is not on this host; there was nothing to close\n", session.ID)

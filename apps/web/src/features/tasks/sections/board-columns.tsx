@@ -10,12 +10,8 @@ import {
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import {
   useCreateTask,
-  useGoals,
-  useHosts,
   useMoveTask,
-  useProjects,
-  useSessions,
-  useTasks,
+  useSuspenseTaskBoard,
 } from '@oppenheimer/frontend-consumer/react';
 import {
   ErrorAlert,
@@ -28,7 +24,6 @@ import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BoardSkeleton } from '../components/board-skeleton';
 import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
@@ -45,7 +40,9 @@ const board = getRouteApi('/_authenticated/plan/');
  * cards in board order, dragged within and across columns on the drag
  * layer, ticked to Done and back, added at a column's foot. A drop moves the
  * card at once and the server's answer settles it; a refused move puts it
- * back and says why above the columns.
+ * back and says why above the columns. It reads under Suspense, in the
+ * screen's `QueryState`; a refetch that fails keeps the columns and says so
+ * above them.
  */
 export function BoardColumns() {
   const { t } = useTranslation();
@@ -55,22 +52,18 @@ export function BoardColumns() {
   const filter = useBoardFilter();
   const navigate = board.useNavigate();
   const go = useNavigate();
-  const tasks = useTasks();
-  const { data: projectNames } = useProjects({
-    select: (rows) => new Map(rows.map((row) => [row.id, row.isUnassigned ? null : row.name])),
-  });
-  const { data: unassignedId } = useProjects({
-    select: (rows) => rows.find((row) => row.isUnassigned)?.id,
-  });
-  const { data: goals } = useGoals({ select: (rows) => new Map(rows.map((row) => [row.id, row])) });
-  const { data: sessions } = useSessions({
-    select: (rows) => new Map(rows.map((row) => [row.id, row])),
-  });
-  const { data: hosts } = useHosts({ select: (rows) => new Map(rows.map((row) => [row.id, row])) });
+  const read = useSuspenseTaskBoard();
+  const projectNames = new Map(
+    read.projects.map((row) => [row.id, row.isUnassigned ? null : row.name]),
+  );
+  const unassignedId = read.projects.find((row) => row.isUnassigned)?.id;
+  const milestones = new Map(read.milestones.map((row) => [row.id, row]));
+  const sessions = new Map(read.sessions.map((row) => [row.id, row]));
+  const hosts = new Map(read.hosts.map((row) => [row.id, row]));
   const move = useMoveTask();
   const create = useCreateTask({ onSuccess: () => notifySuccess('taskAdded') });
   const [composing, setComposing] = useState<TaskStatus | null>(null);
-  const rows = tasks.data ?? [];
+  const rows = read.tasks;
   const byId = new Map(rows.map((row) => [row.id, row]));
   const drag = useBoardDrag(
     Object.fromEntries(
@@ -78,10 +71,6 @@ export function BoardColumns() {
     ),
     (next) => move.mutate(next),
   );
-
-  if (tasks.isPending) return <BoardSkeleton />;
-  if (tasks.isError)
-    return <ErrorAlert error={tasks.error} fallback={t('tasks.board.loadFailed')} />;
 
   const words = {
     today: t('tasks.dates.today'),
@@ -91,17 +80,17 @@ export function BoardColumns() {
   const context = {
     filter,
     today,
-    projectName: (id: string) => projectNames?.get(id) ?? null,
-    goalName: (id: string) => goals?.get(id)?.name ?? null,
+    projectName: (id: string) => projectNames.get(id) ?? null,
+    milestoneName: (id: string) => milestones.get(id)?.name ?? null,
     dayLabel: (iso: string) =>
       dueDayLabel(iso, today, words, (day) => formatCalendarDay(day, locale, 'short')),
   };
-  const goal = filter.goalId ? goals?.get(filter.goalId) : undefined;
-  const filed = goal?.name ?? (filter.projectId ? projectNames?.get(filter.projectId) : null);
+  const milestone = filter.milestoneId ? milestones.get(filter.milestoneId) : undefined;
+  const filed = milestone?.name ?? (filter.projectId ? projectNames.get(filter.projectId) : null);
 
   const card = (task: TaskEntity, lifted = false) => {
     const view = cardView(task, context);
-    const line = sessionLineOf(task, sessions ?? new Map(), hosts ?? new Map());
+    const line = sessionLineOf(task, sessions, hosts);
     return (
       <TaskCard
         title={view.title}
@@ -112,7 +101,7 @@ export function BoardColumns() {
           move.mutate({ id: task.id, status: task.isDone ? 'todo' : 'done', afterTaskId: null })
         }
         project={view.projectName ?? undefined}
-        goal={view.goalName ?? undefined}
+        milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
         dueTone={view.dueTone}
         startLabel={t('tasks.card.start')}
@@ -147,6 +136,7 @@ export function BoardColumns() {
 
   return (
     <div className="flex flex-col gap-3">
+      <ErrorAlert error={read.error} fallback={t('tasks.board.loadFailed')} />
       <ErrorAlert
         error={move.error}
         fallback={t('tasks.board.moveFailed')}
@@ -197,7 +187,7 @@ export function BoardColumns() {
                           title,
                           status,
                           projectId: filter.projectId || unassignedId,
-                          goalId: filter.goalId ?? null,
+                          milestoneId: filter.milestoneId ?? null,
                         })
                       }
                     />

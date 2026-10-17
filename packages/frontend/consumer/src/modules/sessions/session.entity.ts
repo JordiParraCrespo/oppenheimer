@@ -1,4 +1,5 @@
 import type { CodingAgentId, SessionEffort, SessionPermission } from '@oppenheimer/shared/agents';
+import type { SessionPlace } from '@oppenheimer/shared/schemas/session';
 
 /** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
 export type SessionAgent = CodingAgentId;
@@ -82,29 +83,25 @@ export interface AttachTicket {
 }
 
 /**
- * A link that opens a session's terminal to somebody outside the workspace,
- * as its members see it. Never the secret: that exists once, in
- * {@link CreatedShareLink}.
+ * How a session's terminal is opened to people outside the workspace, as its
+ * members see it: one share per session, at one address, `/s/<slug>`.
  */
-export interface ShareLink {
+export interface SessionShare {
   id: string;
+  slug: string;
+  /** `people`, the accounts on `people`; `link`, anyone signed in with the address. */
+  audience: 'people' | 'link';
   access: 'read' | 'write';
-  audience: 'anyone' | 'accounts' | 'people';
+  /** Lowercased emails; empty unless `audience` is `people`. */
   people: string[];
-  label: string | null;
+  /** `null` until its owner stops sharing. */
   expiresAt: Date | null;
-  revokedAt: Date | null;
-  /** Neither revoked nor expired. */
-  live: boolean;
-  createdAt: Date;
+  /** The person the share acts as, while their account is active. */
+  sharedBy: { id: string; name: string; email: string } | null;
+  updatedAt: Date;
 }
 
-/** A link just made, and the secret that opens it — shown this once. */
-export interface CreatedShareLink extends ShareLink {
-  token: string;
-}
-
-/** What a link's holder may know about the session it opens. */
+/** What a guest may know about the session a share opens. */
 export interface SharedSession {
   name: string;
   state: 'live' | 'stopped';
@@ -114,8 +111,10 @@ export interface SharedSession {
 }
 
 /**
- * A session as the console needs it: a terminal, an agent, and a set of
- * checkouts on a host.
+ * A session as the console needs it: a terminal, an agent, and where it runs
+ * on a host — a set of checkouts the runner made (`worktree`), or a folder
+ * already there that nothing is written into (`folder`,
+ * `product/versions/mvp/24-session-places.md`).
  *
  * Two state words, because the API has two and they answer different questions:
  * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
@@ -140,7 +139,15 @@ export class SessionEntity {
     /** What the control plane could not do for the request that returned this. */
     public readonly hints: string[],
     public readonly createdAt: Date,
+    public readonly place: SessionPlace,
+    /** The folder a `folder` session runs in, absolute; null for a worktree session. */
+    public readonly folderPath: string | null,
   ) {}
+
+  /** Whether it runs in a folder of the host's own, with no checkout and nothing to push. */
+  get isFolder(): boolean {
+    return this.place === 'folder';
+  }
 
   /**
    * Whether a terminal can be attached to right now.
@@ -168,8 +175,12 @@ export class SessionEntity {
     return named ?? this.checkouts[0];
   }
 
-  /** `repo · branch` for the status line, with a count when there are more. */
+  /**
+   * `repo · branch` for the status line, with a count when there are more; the
+   * folder's path for a folder session (`folderLabel` shortens it under home).
+   */
   get scopeLabel(): string | null {
+    if (this.isFolder) return this.folderPath;
     const checkout = this.cwdCheckout;
     if (!checkout) return null;
     const extra = this.checkouts.length - 1;
@@ -200,6 +211,8 @@ export class SessionEntity {
       this.stoppedAt,
       this.hints,
       this.createdAt,
+      this.place,
+      this.folderPath,
     );
   }
 }
@@ -214,13 +227,29 @@ export interface CreateSessionCheckout {
 }
 
 /** What New session posts: the chips, the foot row, and the first task. */
-export interface CreateSessionInput {
-  hostId: string;
-  agent: SessionAgent;
+export type CreateSessionInput = CreateSessionCommon &
+  (CreateWorktreeSession | CreateFolderSession);
+
+/** A new worktree: the runner clones and cuts a branch. */
+export interface CreateWorktreeSession {
   /** Exactly one: a runner makes a session as one worktree of one repository. */
   checkouts: [CreateSessionCheckout];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
+  folder?: never;
+}
+
+/** A folder already on the host, opened as it is: nothing is cloned or written. */
+export interface CreateFolderSession {
+  /** Absolute, on the host. */
+  folder: string;
+  checkouts?: never;
+  cwdGithubRepoId?: never;
+}
+
+interface CreateSessionCommon {
+  hostId: string;
+  agent: SessionAgent;
   launch?: Partial<SessionLaunch>;
   /** The composer's first task. It names the session and reaches the agent. */
   prompt?: string;

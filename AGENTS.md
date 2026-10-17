@@ -61,6 +61,7 @@ oppenheimer/
 ├── packages/
 │   ├── auth/             # Shared Better Auth config + client helpers (@oppenheimer/auth)
 │   ├── backend/
+│   │   ├── agents/       # The bot engines: Claude Agent SDK + OpenAI Agents SDK behind one port (@oppenheimer/backend-agents)
 │   │   ├── authz/        # Authorization kernel: grants, policies (@oppenheimer/backend-authz)
 │   │   ├── cache/        # Redis cache abstraction (@oppenheimer/backend-cache)
 │   │   ├── core/         # Errors, filters, pipes, interceptors (@oppenheimer/backend-core)
@@ -151,7 +152,8 @@ When you add a file that mentions an optional app (CI, compose,
   hook is the precise check, and `pnpm check:hooks` runs its cases. Stage
   files by path. The
   same file formats every edit with Biome and runs the architecture check
-  (`.agents/hooks/arch-check.sh`) before a task ends
+  (`.agents/hooks/arch-check.sh`) and the screenshot guard
+  (`.agents/hooks/screenshot-guard.mjs`) before a task ends
 
 ### Backend (`apps/api` + `packages/backend/*`)
 
@@ -336,6 +338,7 @@ packages/backend/email    → used by api
 packages/backend/i18n     → used by api (bundles from packages/translations)
 packages/backend/cache    → used by api
 packages/backend/llm      → used by api
+packages/backend/agents   → used by api (bots; the only code that imports an agent SDK)
 packages/backend/storage  → used by api
 packages/backend/queue    → used by api
 packages/translations     → used by web, frontend/web, api (email copy via backend/i18n)
@@ -398,6 +401,17 @@ pnpm changeset          # Create a changeset for versioning
   `/scaffold-feature` builds the shape and `pnpm check:structure` checks it
 - UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
+- **A change to what the console shows gets screenshots, every time.**
+  What counts as one (the console, the platform kit, the design system,
+  the translations; not their tests, stories or docs) is defined once, in
+  `.agents/hooks/visual-change.mjs`. Before the pull request is opened or
+  updated, run the `/local-stack` skill's "Show a visual change" step:
+  stack up `--web`, `pnpm screens <route>...` on each route the change
+  shows on, light and dark (both pre-approved, no prompt). Look at every
+  picture, send them to the user, and give the pull request a
+  `## Screenshots` section (`/steward`). The screenshot guard holds the end
+  of a task until the screenshots are of the code as it is; a change there
+  that is not visual records why with `pnpm screens --not-visual "<why>"`
 - Routes in `apps/web` — a new URL, a guard, a layout
   route, search params, or anything that regenerates `routeTree.gen.ts` — is
   the `/tanstack-routing` skill (`.agents/skills/tanstack-routing/`). A route
@@ -407,7 +421,10 @@ pnpm changeset          # Create a changeset for versioning
   export's values go onto the token vocabulary in `globals.css` and the
   component rules in `packages/frontend/design-system/AGENTS.md` and
   `.agents/rules/frontend-ui.md`; it does not replace them. Fonts are system
-  stacks. The MVP export is `product/versions/mvp/design/`
+  stacks. The MVP export is `product/versions/mvp/design/`. Run with no
+  arguments, the skill ports every export sync since the last port
+  (`last-port.json` in the skill) end to end, captures and pull request
+  included
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
