@@ -89,9 +89,11 @@ in its doc comment.
 ### Credentials stay where they live
 
 - A workspace's sign-in or key that another module owns (the bots module's
-  model provider credentials) is read through that module's published port
-  (`TURN_CREDENTIALS`, the repository port), never by reading its tables or
-  keeping a second copy of the secret.
+  model provider credentials) is read through the one port that module
+  publishes for it (`TURN_CREDENTIALS`: `has` for `availableFor`, `forTurn`
+  for `grantFor`), never through its repository or tables, and never kept as
+  a second copy of the secret. If the port has no cheap "is there one", add
+  it there rather than reaching past it.
 - A deployment-wide key is config (`<MODULE>_<VENDOR>_*` in the root
   `.env.example`), optional, and its absence makes that provider unavailable,
   never a boot failure (`api-config.md`).
