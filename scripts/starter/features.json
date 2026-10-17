@@ -112,6 +112,9 @@
           "path": "permissions.allow",
           "remove": [
             "Bash(pnpm --filter @oppenheimer/e2e e2e:*)",
+            "Bash(service postgresql start)",
+            "Bash(service redis-server start)",
+            "Read(.stack/**)",
             "Write(e2e/tests/screens/local/**)",
             "Edit(e2e/tests/screens/local/**)"
           ]
