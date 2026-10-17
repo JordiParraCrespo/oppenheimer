@@ -8,6 +8,7 @@ import { projectsKeys } from './projects.queries';
 import { pullRequestsKeys } from './pull-requests.queries';
 import { sessionsKeys } from './sessions.queries';
 import { tasksKeys } from './tasks.queries';
+import { voiceKeys } from './voice.queries';
 
 /**
  * Consumer features that never reach the persisted query cache: a session
@@ -18,7 +19,8 @@ import { tasksKeys } from './tasks.queries';
  * prompt or the events its runs were started by. Plan's tasks name the work
  * and the sessions on it, and a calendar is someone's day, Google's included. Pull requests are
  * private repositories' code, diffs included. A bot's soul, instructions and
- * memory are what someone told it about their work. A consumer app passes this
+ * memory are what someone told it about their work. Whether a workspace can
+dictate says whether it has a ChatGPT sign-in. A consumer app passes this
  * to `createQueryPersistOptions`.
  *
  * The review period's numbers are the one read of that feature which is kept:
@@ -38,4 +40,5 @@ export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   tasksKeys.all[0],
   calendarKeys.all[0],
   pullRequestsKeys.all[0],
+  voiceKeys.all[0],
 ];

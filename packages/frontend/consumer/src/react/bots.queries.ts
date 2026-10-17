@@ -28,6 +28,7 @@ import {
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
 import { seedDetails } from './seed-details';
+import { voiceKeys } from './voice.queries';
 
 /**
  * Query key factory for the `bots` feature. A bot's documents and memory hang
@@ -521,6 +522,18 @@ interface ModelProviderKeyVariables {
   apiKey: string;
 }
 
+/**
+ * Re-reads what a workspace's model providers decide: the provider list, and
+ * whether it can dictate (a ChatGPT sign-in is a speech provider). Every
+ * change to a sign-in or a key goes through here.
+ */
+export function invalidateModelProviders(queryClient: QueryClient): Promise<unknown> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
+    queryClient.invalidateQueries({ queryKey: voiceKeys.all }),
+  ]);
+}
+
 /** Stores a provider's key. The answer carries no key, so the list is read again for its hint. */
 export function usePutModelProviderKey(
   options?: UseMutationOptions<void, Error, ModelProviderKeyVariables>,
@@ -530,9 +543,7 @@ export function usePutModelProviderKey(
   return useMutation({
     mutationFn: ({ provider, apiKey }: ModelProviderKeyVariables) =>
       app.bots.putModelProviderKey(provider, apiKey),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
-    ),
+    ...withCacheOnSuccess(options, () => invalidateModelProviders(queryClient)),
   });
 }
 
@@ -542,8 +553,6 @@ export function useRemoveModelProviderKey(options?: UseMutationOptions<void, Err
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (provider: BotProvider) => app.bots.removeModelProviderKey(provider),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
-    ),
+    ...withCacheOnSuccess(options, () => invalidateModelProviders(queryClient)),
   });
 }

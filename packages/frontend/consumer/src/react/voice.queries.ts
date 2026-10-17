@@ -6,15 +6,16 @@ import { type UseMutationOptions, type UseQueryOptions, useMutation } from '@tan
 import type { VoiceTranscription } from '../modules/voice';
 import { useConsumerApp } from './context';
 
-const voiceKeys = {
+export const voiceKeys = {
   all: ['voice'] as const,
   status: () => [...voiceKeys.all, 'status'] as const,
 };
 
 /**
- * Whether the workspace can dictate (`GET /voice/status`). A sign-in made in
- * Settings changes the answer, so it is not cached for long; a reader that
- * needs only the yes or no narrows it with `select`.
+ * Whether the workspace can dictate (`GET /voice/status`). A sign-in or key
+ * changed in Settings changes the answer, so those mutations invalidate it
+ * with the provider list (`invalidateModelProviders`); a reader that needs
+ * only the yes or no narrows it with `select`.
  */
 export function useVoiceStatus<TData = VoiceStatusDto>(
   options?: Omit<UseQueryOptions<VoiceStatusDto, Error, TData>, 'queryKey' | 'queryFn'>,
