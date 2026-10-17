@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { crumbsOf, expandPath, parentOf, parseFolderInput, shortenPath } from '../lib/folder-path';
+import {
+  compactPath,
+  crumbsOf,
+  expandPath,
+  parentOf,
+  parseFolderInput,
+  shortenPath,
+} from '../lib/folder-path';
 
 /**
  * The folder picker shows a host's paths under its home as `~/…` and takes
@@ -13,6 +20,13 @@ describe('folder paths', () => {
     expect(shortenPath('/home/jordi/code', home)).toBe('~/code');
     expect(shortenPath('/home/jordian', home)).toBe('/home/jordian');
     expect(shortenPath('/home/jordi/code', null)).toBe('/home/jordi/code');
+  });
+
+  it('compacts a long path to its root and last two folders', () => {
+    expect(compactPath('~/oppenheimer-ai/workspaces/jordi/atlas')).toBe('~/…/jordi/atlas');
+    expect(compactPath('/srv/apps/web/atlas')).toBe('/…/web/atlas');
+    expect(compactPath('~/code/atlas')).toBe('~/code/atlas');
+    expect(compactPath('~')).toBe('~');
   });
 
   it('expands ~ once the home is known, and waits without it', () => {

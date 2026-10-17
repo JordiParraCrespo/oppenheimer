@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { FolderSelect } from '../components/folder-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { rememberedFolder, rememberFolder } from '../lib/folder-memory';
-import { shortenPath } from '../lib/folder-path';
+import { compactPath, shortenPath } from '../lib/folder-path';
 import { NewSessionFolderBrowser } from './new-session-folder-browser';
 import { NewSessionFolderSearch } from './new-session-folder-search';
 
@@ -47,7 +47,7 @@ export function NewSessionFolder() {
         />
       ) : null}
       <FolderSelect
-        label={field.value ? shortenPath(field.value, home) : null}
+        label={field.value ? compactPath(shortenPath(field.value, home)) : null}
         title={field.value ?? undefined}
         open={open}
         onOpenChange={setOpen}
