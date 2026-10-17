@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { turnOnForEveryone } from '../../support/flags';
 import { STUB_TRANSCRIPT, tidied } from '../../support/namer-stub';
 import { provisionedUser } from '../../support/web';
 
@@ -8,7 +9,8 @@ import { provisionedUser } from '../../support/web';
  * workspace is not signed in to ChatGPT, so the deployment's own speech
  * server hears it — the stub (`support/namer-stub.ts`), which hears one fixed
  * sentence and tidies it as the polish does. ChatGPT's own route is the
- * gateway spec's; no run here reaches it.
+ * gateway spec's; no run here reaches it. `voice_dictation` is a release
+ * flag, off until a deployment targets it, so each test turns it on.
  */
 
 /** One second of 16 kHz mono 16-bit silence, as the console records it. */
@@ -33,6 +35,7 @@ function wav(): Buffer {
 test.describe('Voice', () => {
   test('transcribes a WAV on the deployment speech server and tidies it', async () => {
     const owner = await provisionedUser('voice');
+    await turnOnForEveryone(owner.api, 'voice_dictation');
 
     const response = await owner.api.post('/api/v1/voice/transcriptions', {
       multipart: {
@@ -52,6 +55,7 @@ test.describe('Voice', () => {
 
   test('refuses what is not a WAV with VOICE_004, before any provider hears it', async () => {
     const owner = await provisionedUser('voice-refused');
+    await turnOnForEveryone(owner.api, 'voice_dictation');
 
     const response = await owner.api.post('/api/v1/voice/transcriptions', {
       multipart: {

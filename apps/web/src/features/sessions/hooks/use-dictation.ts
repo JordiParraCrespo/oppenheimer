@@ -135,6 +135,8 @@ export function useDictation({
     };
     source.connect(processor);
     // A processor that reaches no destination is never called in Chrome; its output is silence.
+    // ScriptProcessorNode is deprecated and kept on purpose for slice 1; the AudioWorklet that
+    // replaces it comes when the recorder moves to the kit (`product/next-steps/voice.md`).
     processor.connect(context.destination);
     recording.current = open;
     setState('recording');
