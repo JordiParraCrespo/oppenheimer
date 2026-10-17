@@ -1,6 +1,7 @@
 import {
   BOT_PROMPT_HOSTS_MAX,
   composeTurnContext,
+  formatNow,
   type TurnContextInput,
   withTurnContext,
 } from '../domain/bot-turn-context.policy';
@@ -30,9 +31,24 @@ describe('composeTurnContext', () => {
     expect(composeTurnContext({ ...base, timeZone: 'Europe/Madrid' })).toContain(
       'It is Thursday, 15 October 2026, 11:00 (Europe/Madrid, GMT+02:00)',
     );
-    expect(composeTurnContext(base)).toContain('It is Thursday, 15 October 2026, 09:00 (UTC, GMT)');
+    expect(composeTurnContext(base)).toContain(
+      'It is Thursday, 15 October 2026, 09:00 (UTC, GMT+00:00)',
+    );
     expect(composeTurnContext({ ...base, timeZone: 'Mars/Olympus' })).toContain(
-      'It is Thursday, 15 October 2026, 09:00 (UTC, GMT)',
+      'It is Thursday, 15 October 2026, 09:00 (UTC, GMT+00:00)',
+    );
+  });
+
+  // ICU's own `longOffset` spells a zero offset "GMT" on some Node builds,
+  // which once read differently on CI than on a laptop (#347).
+  it('spells every offset GMT±HH:MM, a zero one and a half-hour one included', () => {
+    const now = new Date('2026-10-15T09:00:00Z');
+    expect(formatNow(now, 'UTC')).toContain('(UTC, GMT+00:00)');
+    expect(formatNow(now, 'Europe/London')).toContain('10:00 (Europe/London, GMT+01:00)');
+    expect(formatNow(now, 'America/New_York')).toContain('05:00 (America/New_York, GMT-04:00)');
+    expect(formatNow(now, 'Asia/Kolkata')).toContain('14:30 (Asia/Kolkata, GMT+05:30)');
+    expect(formatNow(new Date('2026-12-15T09:00:00Z'), 'Europe/London')).toContain(
+      '(Europe/London, GMT+00:00)',
     );
   });
 
