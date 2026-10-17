@@ -6265,6 +6265,43 @@ export type FindHostTimelineResponses = {
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
 
+export type UpdateHostRunnerData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/update';
+};
+
+export type UpdateHostRunnerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * HOSTS_008 — The host is not connected
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateHostRunnerError = UpdateHostRunnerErrors[keyof UpdateHostRunnerErrors];
+
+export type UpdateHostRunnerResponses = {
+    /**
+     * The update was sent to the runner
+     */
+    202: unknown;
+};
+
 export type ListUsersData = {
     body?: never;
     path?: never;

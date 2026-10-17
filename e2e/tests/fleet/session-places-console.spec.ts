@@ -63,7 +63,7 @@ test('a folder session from the picker, and a blank terminal from Settings', asy
   await input.fill('~/code/atlas/');
   await page.getByRole('button', { name: 'Use atlas' }).click();
   await expect(page.getByRole('button', { name: 'Folder', exact: true })).toContainText(
-    '~/code/atlas',
+    '~/…/atlas',
   );
 
   await page.getByRole('textbox').last().fill('List what is here');

@@ -10,8 +10,8 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The folder chip of New session: the path it names, in mono and cut from the
- * left so the folder's own name stays in view, and a popup whose body the
+ * The folder chip of New session: the path it is given, in mono and capped so
+ * the composer's four scope chips keep to one line, and a popup whose body the
  * section above draws (`FolderBrowser`) — so the listing is read only while
  * the popup is open. Props in, open state out.
  */
@@ -23,7 +23,7 @@ export function FolderSelect({
   variant,
   children,
 }: {
-  /** The picked folder as shown (`~/code/atlas`), or null for none yet. */
+  /** The picked folder as shown, or null for none yet. */
   label: string | null;
   /** The whole path, for the pointer. */
   title?: string;
@@ -47,7 +47,7 @@ export function FolderSelect({
             title={title}
           >
             {label ? (
-              <span className="block max-w-65 truncate font-mono text-xs">{label}</span>
+              <span className="block max-w-48 truncate font-mono text-xs">{label}</span>
             ) : null}
           </ChipSelectTrigger>
         }

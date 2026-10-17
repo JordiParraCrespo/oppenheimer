@@ -247,7 +247,7 @@ describe('the run', () => {
     expect(run.isPending).toBe(true);
     run.defer(new Date(now.getTime() + 60_000));
     expect(run.attempts).toBe(1);
-    run.dispatched('session-1', 'r-2', now);
+    run.dispatched({ kind: 'session', sessionId: 'session-1' }, 'r-2', now);
     expect(run).toMatchObject({ outcome: 'dispatched', sessionId: 'session-1', revisionId: 'r-2' });
     expect(() => run.skip('paused')).toThrow();
   });

@@ -17,6 +17,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  *   SCREENS="/sessions,/settings/profile" pnpm --filter @oppenheimer/e2e screens
  *
  * - `anon:/login` photographs a route signed out.
+ * - `spec:<name>` is a throwaway spec in `local/` the config runs beside this
+ *   one; it is not a route, so it is skipped here.
  * - `SCREENS_GITHUB=1` connects a stub GitHub installation first, so the
  *   composer and the project screens have repositories to show.
  * - `SCREENS_WIDTHS` (default `1440`) is a comma list; `390` is a phone.
@@ -44,7 +46,7 @@ interface Shot {
 function shots(): Shot[] {
   return (process.env.SCREENS ?? '')
     .split(/[\s,]+/)
-    .filter(Boolean)
+    .filter((entry) => entry && !entry.startsWith('spec:'))
     .map((entry) =>
       entry.startsWith('anon:')
         ? { route: entry.slice('anon:'.length), signedIn: false }
@@ -73,8 +75,8 @@ async function settle(page: Page): Promise<void> {
 }
 
 test('photographs the screens a change touches', async ({ browser }) => {
+  // No route (only `spec:` entries) still writes the manifest the guard reads.
   const list = shots();
-  test.skip(list.length === 0, 'SCREENS names no route');
   test.setTimeout(60_000 + list.length * WIDTHS.length * 30_000);
   mkdirSync(OUT, { recursive: true });
 

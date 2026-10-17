@@ -16,7 +16,7 @@ match. It is built: "As built" at the end says where the build differs.
 
 | Area | Built (17–20) | The 2026-10-13 frame | Whose |
 |------|---------------|----------------------|-------|
-| Goals | `goal` table, a strip over the board | Renamed **milestones**; a sidebar item of their own with a timeline per project (a bar from three weeks before today to ten days past the last milestone, a diamond per milestone, the project's % done) | This note, §2 |
+| Goals | `goal` table, a strip over the board | Renamed **milestones**; a sidebar item of their own with a timeline per project (a bar from three weeks before its first milestone or today to the last milestone's day (ten days past it until 2026-10-15), a diamond per milestone, the project's % done) | This note, §2 |
 | Sidebar | Tasks · Calendar | Tasks · **Milestones** · Calendar · **Projects** | Projects is the agents' |
 | Project overview | — | Per project: tasks completed / total, in progress, **needs input** (blocked or overdue), next milestone, the in-progress list, the blockers, the milestones | Data here (§3), screen the agents' |
 | Stats | — | Tasks completed and created per week, PRs opened, merged and closed, tokens per model, agent cost, a per-project table; presets (7 d … year to date) or a custom range, compared with the previous period | This note, §4 |

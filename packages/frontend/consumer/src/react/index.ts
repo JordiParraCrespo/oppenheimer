@@ -101,6 +101,7 @@ export {
   useRenameHost,
   useSuspenseHostPresence,
   useSuspenseHosts,
+  useUpdateHostRunner,
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,

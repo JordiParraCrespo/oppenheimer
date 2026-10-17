@@ -447,7 +447,7 @@ type HostPreflight struct {
 type HostUpdate struct {
 	Type      string `json:"type"`
 	CommandID string `json:"commandId"`
-	Version   string `json:"version"`
+	Version   string `json:"version,omitempty"`
 	Channel   string `json:"channel"`
 }
 
