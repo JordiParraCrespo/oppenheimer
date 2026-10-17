@@ -3243,6 +3243,25 @@ export type DecideBotApprovalRequest = {
     note?: string;
 };
 
+export type VoiceTranscriptionResponseDto = {
+    /**
+     * The transcript as writing: fillers and false starts gone, names spelled as the vocabulary has them.
+     */
+    text: string;
+    /**
+     * What the speech model heard, word for word. Equals `text` when no polish ran.
+     */
+    raw: string;
+    /**
+     * Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server.
+     */
+    provider: 'chatgpt' | 'speech_key';
+    /**
+     * Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough.
+     */
+    polished: boolean;
+};
+
 export type LivenessResponseDto = {
     /**
      * Always `ok`: the process answered.
@@ -3275,6 +3294,10 @@ export type CapabilitiesResponseDto = {
      * A workspace can store model provider keys, which bots run on.
      */
     bot_providers: boolean;
+    /**
+     * The deployment has its own speech-to-text server, so a workspace not signed in to ChatGPT can dictate.
+     */
+    voice_transcription: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -11586,6 +11609,70 @@ export type DecideBotApprovalResponses = {
 };
 
 export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
+
+export type TranscribeVoiceData = {
+    body: {
+        audio: Blob | File;
+        /**
+         * Names to spell as written, one per line.
+         */
+        vocabulary?: string;
+        /**
+         * ISO 639-1, when known.
+         */
+        language?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/transcriptions';
+};
+
+export type TranscribeVoiceErrors = {
+    /**
+     * VOICE_002 — No audio attached
+     *
+     * VOICE_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "voice_dictation" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * VOICE_005 — Nobody to transcribe
+     */
+    409: ProblemDetailsDto;
+    /**
+     * VOICE_003 — Recording too long
+     */
+    413: ProblemDetailsDto;
+    /**
+     * VOICE_004 — Not 16-bit PCM WAV
+     */
+    415: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     *
+     * VOICE_007 — Provider rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * VOICE_006 — Provider failed
+     */
+    502: ProblemDetailsDto;
+};
+
+export type TranscribeVoiceError = TranscribeVoiceErrors[keyof TranscribeVoiceErrors];
+
+export type TranscribeVoiceResponses = {
+    200: VoiceTranscriptionResponseDto;
+};
+
+export type TranscribeVoiceResponse = TranscribeVoiceResponses[keyof TranscribeVoiceResponses];
 
 export type CheckData = {
     body?: never;

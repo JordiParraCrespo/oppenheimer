@@ -17206,6 +17206,137 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/voice/transcriptions": {
+      "post": {
+        "description": "A recording (16-bit PCM WAV, at most 4194304 bytes) in, the text it says out, tidied into writing. Heard by the workspace's ChatGPT sign-in when it has one, otherwise by the deployment's own speech-to-text server. Nothing is kept.",
+        "operationId": "transcribeVoice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "vocabulary": {
+                    "type": "string",
+                    "description": "Names to spell as written, one per line."
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "ISO 639-1, when known."
+                  }
+                },
+                "required": ["audio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceTranscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VOICE_002 — No audio attached\n\nVOICE_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"voice_dictation\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VOICE_005 — Nobody to transcribe",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "VOICE_003 — Recording too long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "VOICE_004 — Not 16-bit PCM WAV",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached\n\nVOICE_007 — Provider rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "VOICE_006 — Provider failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transcribe a dictation",
+        "tags": ["Voice"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -26009,6 +26140,29 @@
         },
         "required": ["decision"]
       },
+      "VoiceTranscriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The transcript as writing: fillers and false starts gone, names spelled as the vocabulary has them."
+          },
+          "raw": {
+            "type": "string",
+            "description": "What the speech model heard, word for word. Equals `text` when no polish ran."
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["chatgpt", "speech_key"],
+            "description": "Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server."
+          },
+          "polished": {
+            "type": "boolean",
+            "description": "Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough."
+          }
+        },
+        "required": ["text", "raw", "provider", "polished"]
+      },
       "LivenessResponseDto": {
         "type": "object",
         "properties": {
@@ -26047,6 +26201,10 @@
             "type": "boolean",
             "description": "A workspace can store model provider keys, which bots run on."
           },
+          "voice_transcription": {
+            "type": "boolean",
+            "description": "The deployment has its own speech-to-text server, so a workspace not signed in to ChatGPT can dictate."
+          },
           "github_app_install_url": {
             "type": "string",
             "nullable": true,
@@ -26061,6 +26219,7 @@
           "google_calendar",
           "hosts",
           "bot_providers",
+          "voice_transcription",
           "github_app_install_url"
         ]
       },

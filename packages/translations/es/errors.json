@@ -220,7 +220,14 @@
     "SESSIONS_028": "Esa carpeta no existe en el equipo.",
     "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
     "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-    "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+    "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+    "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+    "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
+    "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
+    "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
+    "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
+    "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
+    "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
   },
   "notFound": {
     "title": "Esta página no existe",
