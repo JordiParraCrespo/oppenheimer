@@ -1,6 +1,10 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
 import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
-import { type VoiceProvider, vocabularyTerms } from '@oppenheimer/shared/schemas/voice';
+import {
+  type VoiceProvider,
+  type VoiceStatusDto,
+  vocabularyTerms,
+} from '@oppenheimer/shared/schemas/voice';
 import { injectable } from 'inversify';
 import { VoiceErrors } from './voice.errors';
 
@@ -41,5 +45,15 @@ export class VoiceRepository {
       VoiceErrors.TRANSCRIBE_FAILED,
     );
     return { text: data.text, raw: data.raw, provider: data.provider, polished: data.polished };
+  }
+
+  /**
+   * Whether the workspace can dictate, and on which providers: the API asks
+   * every speech provider it knows, so the console never decides it itself.
+   */
+  @MapApiError(VoiceErrors.STATUS_FAILED)
+  async status(): Promise<VoiceStatusDto> {
+    const data = await unwrapBody(heyApiSdk.findVoiceStatus(), VoiceErrors.STATUS_FAILED);
+    return { available: data.available, providers: data.providers };
   }
 }

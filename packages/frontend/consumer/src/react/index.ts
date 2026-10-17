@@ -222,5 +222,9 @@ export {
   useUpdateMilestone,
   useUpdateTask,
 } from './tasks.queries';
-export { type TranscribeVoiceVariables, useTranscribeVoice } from './voice.queries';
+export {
+  type TranscribeVoiceVariables,
+  useTranscribeVoice,
+  useVoiceStatus,
+} from './voice.queries';
 export { useWorkspaceEvents } from './workspace-events';

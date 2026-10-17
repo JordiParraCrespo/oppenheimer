@@ -3262,6 +3262,17 @@ export type VoiceTranscriptionResponseDto = {
     polished: boolean;
 };
 
+export type VoiceStatusResponseDto = {
+    /**
+     * At least one provider can hear a recording.
+     */
+    available: boolean;
+    /**
+     * The providers available, in the order a dictation tries them.
+     */
+    providers: Array<'chatgpt' | 'speech_key'>;
+};
+
 export type LivenessResponseDto = {
     /**
      * Always `ok`: the process answered.
@@ -3294,10 +3305,6 @@ export type CapabilitiesResponseDto = {
      * A workspace can store model provider keys, which bots run on.
      */
     bot_providers: boolean;
-    /**
-     * The deployment has its own speech-to-text server, so a workspace not signed in to ChatGPT can dictate.
-     */
-    voice_transcription: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -11673,6 +11680,32 @@ export type TranscribeVoiceResponses = {
 };
 
 export type TranscribeVoiceResponse = TranscribeVoiceResponses[keyof TranscribeVoiceResponses];
+
+export type FindVoiceStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/status';
+};
+
+export type FindVoiceStatusErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindVoiceStatusError = FindVoiceStatusErrors[keyof FindVoiceStatusErrors];
+
+export type FindVoiceStatusResponses = {
+    200: VoiceStatusResponseDto;
+};
+
+export type FindVoiceStatusResponse = FindVoiceStatusResponses[keyof FindVoiceStatusResponses];
 
 export type CheckData = {
     body?: never;
