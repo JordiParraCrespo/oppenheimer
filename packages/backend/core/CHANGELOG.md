@@ -1,5 +1,44 @@
 # @oppenheimer/backend-core
 
+## 0.4.0
+
+### Minor Changes
+
+- 581c202: Bot settings polish (`product/versions/mvp/25-bots.md`, 2026-10-16).
+
+  - `@oppenheimer/api`: `GET /bots/:id/conversation/export` streams the whole
+    chat as NDJSON, one message per line, a page at a time; `DELETE /bots/:id/conversation` clears it (turns,
+    messages, cards, summary, sidebar line) in one transaction, refused with
+    `BOTS_022` while a turn is queued or running; the conversation read
+    carries `messageCount`.
+  - `@oppenheimer/api-client`: `exportBotConversation`, `clearBotConversation`,
+    `messageCount`.
+  - `@oppenheimer/frontend-consumer`: `useSuspenseBotHistory`,
+    `useExportBotConversation` (reads the NDJSON stream a line at a time),
+    `useClearBotConversation`.
+  - `@oppenheimer/backend-core`: `ndjsonLines` and `NDJSON_CONTENT_TYPE`.
+  - `@oppenheimer/frontend-web`: `SettingsFormSaveRow`, the dirty / pending /
+    saved foot of a settings form.
+  - `@oppenheimer/design-system-web`: `SettingsListRow`'s `kind` tag never wraps;
+    the meta beside it does.
+  - `@oppenheimer/translations`: Home host, chat history, `BOTS_022`, and the
+    shorter ChatGPT sign-in chip.
+
+### Patch Changes
+
+- Updated dependencies [39dbe36]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [6af341b]
+- Updated dependencies [a80436f]
+- Updated dependencies [d4606c6]
+- Updated dependencies [6917f62]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+  - @oppenheimer/shared@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
