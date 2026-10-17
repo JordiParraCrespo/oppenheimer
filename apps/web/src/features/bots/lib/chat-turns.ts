@@ -107,3 +107,8 @@ export function markersBefore(
     turn && prior && (turn.model !== prior.model || turn.provider !== prior.provider) ? turn : null;
   return { day, model };
 }
+
+/** The id of the newest message you sent, which a new send replaces. */
+export function newestSentId(blocks: ChatTurnBlock[]): string | undefined {
+  return blocks.flatMap((block) => block.asked).findLast((message) => message.role === 'user')?.id;
+}
