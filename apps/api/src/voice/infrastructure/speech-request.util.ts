@@ -1,8 +1,9 @@
-import type { RefusalReader } from '@oppenheimer/backend-core';
+import { AppError, type RefusalReader, type UpstreamLimiter } from '@oppenheimer/backend-core';
+import { VoiceErrors } from '../domain/voice.errors';
 import type { VoiceClip } from './speech-to-text.port';
 
 /** How long one transcription may take: a two-minute clip is a few seconds of work. */
-export const SPEECH_TIMEOUT_MS = 60_000;
+const SPEECH_TIMEOUT_MS = 60_000;
 
 /** The largest answer read: a transcript of two minutes is a few kilobytes. */
 const MAX_ANSWER_BYTES = 1024 * 1024;
@@ -49,3 +50,59 @@ export const readSpeechRefusal: RefusalReader = (errorBody) => {
       lower.includes('usage_limit'),
   };
 };
+
+/** One transcription request: where it goes, how it says who it is, what it counts against. */
+export interface SpeechRequest {
+  url: string;
+  headers: Record<string, string>;
+  /** The limiter bucket: what the provider counts this call against. */
+  bucket: string;
+  form: FormData;
+  /** Who answered, for the problem's detail: "ChatGPT's dictation route". */
+  who: string;
+}
+
+/**
+ * The one way a speech gateway calls its provider: through its
+ * `UpstreamLimiter` (a rate refusal is `VOICE_007`), then the answer read as
+ * `{ "text": "…" }`. An unreachable provider, a refusal for anything but
+ * rate, and an answer that is not a transcript are each `VOICE_006`, saying
+ * which. The gateways differ only in the request they hand it.
+ */
+export async function exchangeSpeech(
+  limiter: UpstreamLimiter,
+  { url, headers, bucket, form, who }: SpeechRequest,
+): Promise<string> {
+  let exchanged: { response: Response; errorBody: string | null };
+  try {
+    exchanged = await limiter.exchange(
+      [bucket],
+      () =>
+        fetch(url, {
+          method: 'POST',
+          headers,
+          body: form,
+          signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),
+        }),
+      readSpeechRefusal,
+    );
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
+      detail: `${who} could not be reached: ${error instanceof Error ? error.message : 'unknown error'}`,
+    });
+  }
+  const { response, errorBody } = exchanged;
+  if (errorBody !== null) {
+    throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
+      detail: `${who} answered ${response.status}.`,
+    });
+  }
+  const text = transcriptOf(await response.text());
+  if (text === null) {
+    throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
+      detail: `${who} answered something that is not a transcript.`,
+    });
+  }
+  return text;
+}

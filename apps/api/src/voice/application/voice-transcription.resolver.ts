@@ -5,8 +5,7 @@ import type {
   TurnCredential,
   TurnCredentialsPort,
 } from '../../bots/application/turn-credentials.port';
-import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, TURN_CREDENTIALS } from '../../bots/bots.di-tokens';
-import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
+import { TURN_CREDENTIALS } from '../../bots/bots.di-tokens';
 import { VoiceErrors } from '../domain/voice.errors';
 import type {
   ChatgptSpeechPort,
@@ -28,8 +27,8 @@ export interface HeardClip {
  * speech-to-text server otherwise, and nobody (`VOICE_005`) when it has
  * neither.
  *
- * The sign-in is read and refreshed through the bots module's
- * `TURN_CREDENTIALS`, the same way a bot's turn reads it, so voice never
+ * The sign-in is found, read and refreshed through the bots module's
+ * `TURN_CREDENTIALS` alone, the same way a bot's turn reads it, so voice never
  * keeps a second copy of the tokens. ChatGPT's dictation route is
  * undocumented: when it cannot transcribe (`VOICE_006`) or the sign-in has
  * lapsed, a deployment with its own server tries that instead of failing the
@@ -40,15 +39,13 @@ export class VoiceTranscriptionResolver {
   private readonly logger = new Logger(VoiceTranscriptionResolver.name);
 
   constructor(
-    @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
-    private readonly providers: ModelProviderCredentialRepositoryPort,
     @Inject(TURN_CREDENTIALS) private readonly credentials: TurnCredentialsPort,
     @Inject(CHATGPT_SPEECH) private readonly chatgpt: ChatgptSpeechPort,
     @Inject(KEYED_SPEECH) private readonly keyed: KeyedSpeechPort,
   ) {}
 
   async hear(organizationId: string, clip: VoiceClip, now: Date): Promise<HeardClip> {
-    const signedIn = (await this.providers.findForRun(organizationId, 'chatgpt')).isSome();
+    const signedIn = await this.credentials.has(organizationId, 'chatgpt');
     if (!signedIn) return this.hearOnKey(clip);
 
     try {

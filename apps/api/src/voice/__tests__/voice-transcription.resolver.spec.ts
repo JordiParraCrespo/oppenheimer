@@ -1,9 +1,6 @@
 import { AppError } from '@oppenheimer/backend-core';
-import { None, Some } from 'oxide.ts';
 import type { TurnCredentialsPort } from '../../bots/application/turn-credentials.port';
-import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../bots/domain/bots.errors';
-import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
 import { VoiceTranscriptionResolver } from '../application/voice-transcription.resolver';
 import { VoiceErrors } from '../domain/voice.errors';
 import type { ChatgptSpeechPort, KeyedSpeechPort } from '../infrastructure/speech-to-text.port';
@@ -19,21 +16,9 @@ const ORG = 'org-placeholder';
 const CLIP = { data: Buffer.from('wav') };
 const NOW = new Date('2026-10-17T10:00:00Z');
 
-function signIn(): ModelProviderCredentialEntity {
-  return ModelProviderCredentialEntity.createNew({
-    organizationId: ORG,
-    provider: 'chatgpt',
-    sealedKey: Buffer.from('sealed'),
-    keyHint: 'acct',
-    updatedByUserId: 'user-placeholder',
-  });
-}
-
 function setup({ signedIn, keyed }: { signedIn: boolean; keyed: boolean }) {
-  const providers: Pick<ModelProviderCredentialRepositoryPort, 'findForRun'> = {
-    findForRun: vi.fn().mockResolvedValue(signedIn ? Some(signIn()) : None),
-  };
   const credentials: TurnCredentialsPort = {
+    has: vi.fn().mockResolvedValue(signedIn),
     forTurn: vi.fn().mockResolvedValue({ apiKey: 'access-placeholder', accountId: 'acct-1' }),
   };
   const chatgpt: ChatgptSpeechPort = { transcribe: vi.fn().mockResolvedValue('heard by chatgpt') };
@@ -41,12 +26,7 @@ function setup({ signedIn, keyed }: { signedIn: boolean; keyed: boolean }) {
     isConfigured: () => keyed,
     transcribe: vi.fn().mockResolvedValue('heard by the key'),
   };
-  const resolver = new VoiceTranscriptionResolver(
-    providers as ModelProviderCredentialRepositoryPort,
-    credentials,
-    chatgpt,
-    key,
-  );
+  const resolver = new VoiceTranscriptionResolver(credentials, chatgpt, key);
   return { resolver, credentials, chatgpt, key };
 }
 
@@ -75,6 +55,7 @@ describe('VoiceTranscriptionResolver', () => {
       provider: 'speech_key',
       chatgpt: null,
     });
+    expect(credentials.has).toHaveBeenCalledWith(ORG, 'chatgpt');
     expect(credentials.forTurn).not.toHaveBeenCalled();
     expect(chatgpt.transcribe).not.toHaveBeenCalled();
   });
