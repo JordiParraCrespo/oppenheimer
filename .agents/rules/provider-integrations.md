@@ -1,7 +1,6 @@
 ---
 paths:
   - "apps/api/src/**/*"
-  - "packages/backend/**/*"
   - "packages/shared/src/**/*"
 ---
 
@@ -23,7 +22,10 @@ This rule sits on top of two others and replaces neither:
 
 - `integrations.md`: every call to a system we do not run goes through one
   `UpstreamLimiter.exchange`, with buckets for what the provider counts and a
-  `429` code of its own. Each provider's gateway still owes all of that.
+  `429` code of its own. Each provider's gateway in `apps/api` still owes all
+  of that. Providers live in an API module; a package with no workspace
+  dependencies (`backend-llm`, `backend-email`) keeps the limit its own way,
+  as that rule's "Outside the API" says.
 - `backend-packages.md`: a pluggable package (`email`, `storage`, `llm`) picks
   **one** driver per deployment from config. Use that shape for plumbing the
   whole deployment shares. Use this one when the answer depends on the
@@ -60,7 +62,10 @@ The walk tries the providers available for the workspace, in order:
 1. The first one that answers is the answer, with its `id`, so the response
    and the logs say who answered.
 2. **Anything but a rate limit falls through to the next provider**: the
-   vendor refused, changed its answer, was unreachable, or the grant failed.
+   vendor refused, changed its answer, was unreachable, the grant failed, or
+   asking whether it was available failed. So the walk asks each provider's
+   `availableFor` in order, inside the same `try`, never all of them up
+   front.
 3. **A rate limit is answered at once** (the module's `429` code). It is the
    vendor saying "not now"; spending the next provider's budget hides it.
 4. When every available provider failed, the **first** failure is the
@@ -106,8 +111,8 @@ find out why.
 ## Tests the shape owes
 
 - **The walk, over fake providers** typed by the port: first available wins,
-  unavailable ones are never granted, a failure falls through, a rate limit
-  does not, the first failure is the answer, none available is "not
+  unavailable ones are never granted, a failure falls through (an
+  `availableFor` that throws included), a rate limit does not, the first failure is the answer, none available is "not
   configured", two providers with one id are refused.
 - **Each provider** over doubles of what it reads.
 - **Each gateway** against a `fetch` double, as `integrations.md` lists.

@@ -157,9 +157,11 @@ code, keeping the upstream code as an `upstreamCode` extension. Throwing a bare
 
 ## Third-party services are providers
 
-A vendor's capability (speech, messages, a model) is one port with a provider
-per vendor in one ordered list: `.agents/rules/provider-integrations.md`, the
-`/integrate-provider` skill, and `src/voice/` as the worked example.
+A capability more than one vendor can provide (speech, messages, a model) is
+one port with a provider per vendor in one ordered list; a system we reach
+only one way is a port and a gateway. The rule is
+`.agents/rules/provider-integrations.md`, the walk is the `/integrate-provider`
+skill, and `src/voice/` is the worked example.
 
 ## Config
 
