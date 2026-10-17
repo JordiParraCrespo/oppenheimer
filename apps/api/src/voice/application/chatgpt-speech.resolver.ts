@@ -3,8 +3,7 @@ import type {
   TurnCredential,
   TurnCredentialsPort,
 } from '../../bots/application/turn-credentials.port';
-import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, TURN_CREDENTIALS } from '../../bots/bots.di-tokens';
-import type { ModelProviderCredentialRepositoryPort } from '../../bots/database/model-provider-credential.repository.port';
+import { TURN_CREDENTIALS } from '../../bots/bots.di-tokens';
 import type { ChatgptSpeechPort, VoiceClip } from '../infrastructure/speech-to-text.port';
 import { CHATGPT_SPEECH } from '../voice.di-tokens';
 import type { SpeechGrant, SpeechProvider } from './speech-provider.port';
@@ -20,14 +19,12 @@ export class ChatgptSpeechResolver implements SpeechProvider<TurnCredential> {
   readonly id = 'chatgpt' as const;
 
   constructor(
-    @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
-    private readonly providers: ModelProviderCredentialRepositoryPort,
     @Inject(TURN_CREDENTIALS) private readonly credentials: TurnCredentialsPort,
     @Inject(CHATGPT_SPEECH) private readonly gateway: ChatgptSpeechPort,
   ) {}
 
   async availableFor(organizationId: string): Promise<boolean> {
-    return (await this.providers.findForRun(organizationId, 'chatgpt')).isSome();
+    return this.credentials.has(organizationId, 'chatgpt');
   }
 
   async grantFor(organizationId: string, now: Date): Promise<SpeechGrant<TurnCredential>> {

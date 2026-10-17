@@ -3,12 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError, UpstreamLimiter } from '@oppenheimer/backend-core';
 import { VoiceErrors } from '../domain/voice.errors';
-import {
-  readSpeechRefusal,
-  SPEECH_TIMEOUT_MS,
-  speechForm,
-  transcriptOf,
-} from './speech-request.util';
+import { exchangeSpeech, speechForm } from './speech-request.util';
 import type { KeyedSpeechPort, VoiceClip } from './speech-to-text.port';
 
 /**
@@ -50,39 +45,13 @@ export class OpenAiCompatibleSpeechGateway implements KeyedSpeechPort {
     const headers: Record<string, string> = { accept: 'application/json' };
     if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
 
-    let exchanged: { response: Response; errorBody: string | null };
-    try {
-      exchanged = await this.limiter.exchange(
-        [KEY_BUCKET],
-        () =>
-          fetch(`${baseUrl.replace(/\/+$/, '')}/audio/transcriptions`, {
-            method: 'POST',
-            headers,
-            body: speechForm(clip, { model, language: clip.language }),
-            signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),
-          }),
-        readSpeechRefusal,
-      );
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-        detail: `The speech-to-text server could not be reached: ${error instanceof Error ? error.message : 'unknown error'}`,
-      });
-    }
-
-    const { response, errorBody } = exchanged;
-    if (errorBody !== null) {
-      throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-        detail: `The speech-to-text server answered ${response.status}.`,
-      });
-    }
-    const text = transcriptOf(await response.text());
-    if (text === null) {
-      throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-        detail: 'The speech-to-text server answered something that is not a transcript.',
-      });
-    }
-    return text;
+    return exchangeSpeech(this.limiter, {
+      url: `${baseUrl.replace(/\/+$/, '')}/audio/transcriptions`,
+      headers,
+      bucket: KEY_BUCKET,
+      form: speechForm(clip, { model, language: clip.language }),
+      who: 'The speech-to-text server',
+    });
   }
 
   private get baseUrl(): string | undefined {
