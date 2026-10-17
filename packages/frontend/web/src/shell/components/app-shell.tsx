@@ -67,10 +67,9 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
               edge. */}
           <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
             {ownBar ? null : (
-              <header
-                data-slot="page-bar"
-                className="flex h-12 shrink-0 items-center bg-canvas pl-3.5"
-              >
+              // On the pane's own grey, not a surface: the bar reads as the
+              // page's top edge rather than a strip above it.
+              <header data-slot="page-bar" className="flex h-12 shrink-0 items-center pl-3.5">
                 <SidebarToggle />
               </header>
             )}
