@@ -3,4 +3,4 @@
 "@oppenheimer/web": patch
 ---
 
-`EffortPicker` takes `onValueCommit`, called once with the pick when its popover closes. A bot's effort now saves once per adjustment instead of once per stop the knob crosses, which a drag across the track turned into a burst of updates the API refused as too many requests.
+A bot's effort saves once per adjustment, when its picker closes, instead of once per stop the knob crosses, which a drag across the track turned into a burst of updates the API refused as too many requests. `EffortPicker` takes an optional `onOpenChange` so the caller can tell when it closes.
