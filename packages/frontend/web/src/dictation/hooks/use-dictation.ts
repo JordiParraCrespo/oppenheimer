@@ -76,6 +76,8 @@ export function useDictation({
     meter: recorder.meter,
     toggle: () => {
       if (recorder.state === 'recording') return recorder.stop();
+      // One recording at a time: a second would answer over the first.
+      if (transcribing) return;
       setFailed(false);
       recorder.start();
     },
