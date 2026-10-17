@@ -571,7 +571,8 @@ function SidebarEmptyRow({ className, ...props }: React.ComponentProps<'p'>) {
  * SidebarEmptyCard — a list with nothing of the reader's own yet (Employees
  * before the first bot): on the hover wash at the 14px radius, the title at
  * 13.5px medium, a line on what will appear and how, and the one action that
- * starts it. Built-in rows can still list under it.
+ * starts it. Built-in rows can still list under it. It sits on the list's
+ * 12px column, the inset `SidebarProjectGroup` gives the groups under it.
  */
 function SidebarEmptyCard({
   title,

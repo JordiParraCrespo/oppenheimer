@@ -40,7 +40,7 @@ export function BotsSidebarList() {
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {bots.length === 0 ? <BotsEmptyCard /> : null}
         {term && sections.length === 0 && bots.length > 0 ? (
-          <SidebarEmptyRow className="mt-2 ml-5">
+          <SidebarEmptyRow className="mt-2 ml-3.5">
             {t('bots.sidebar.noMatch', { query: term })}
           </SidebarEmptyRow>
         ) : null}
