@@ -268,6 +268,26 @@ describe('TypeaheadModel', () => {
     expect(confirmed).toEqual([80]);
   });
 
+  it('confirms only the guess the host reached when the ones after it expect the same line', () => {
+    // The fourth Backspace is guessed to do nothing at `> `; the host
+    // drawing the third's line has not reached it, and a sample for it
+    // would read the link as faster than it is.
+    const time = clock();
+    const confirmed: number[] = [];
+    const { screen, host } = grid('$ ls > ou', 9);
+    const model = new TypeaheadModel(time.now, (ms) => confirmed.push(ms));
+    keys(model, screen, ['t']);
+    host('$ ls > out', 10);
+    model.reconcile(screen);
+    confirmed.length = 0;
+    keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
+    time.advance(80);
+    host('$ ls > ', 7);
+    model.reconcile(screen);
+    expect(confirmed).toEqual([80, 80, 80]);
+    expect(model.waiting).toBe(true);
+  });
+
   it('starts a tentative epoch when the program redraws the line without a key (a prompt that stops echoing)', () => {
     const { screen, host } = grid('$ ', 2);
     const model = new TypeaheadModel(clock().now);

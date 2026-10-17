@@ -294,6 +294,12 @@ export class TypeaheadModel {
         break;
       }
     }
+    // Guesses that leave the line as it was (a Backspace at the start of the
+    // text) expect what the one before them did, and the host drawing that
+    // line has reached the first of them only.
+    while (matched > 0 && sameState((this.pending[matched - 1] as Pending).expected, actual)) {
+      matched -= 1;
+    }
     if (matched >= 0) {
       const now = this.now();
       for (const guess of this.pending.slice(0, matched + 1)) this.onConfirm(now - guess.at);
