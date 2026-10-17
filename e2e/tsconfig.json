@@ -12,5 +12,6 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "support/**/*.ts", "tests/**/*.ts"]
+  "include": ["playwright.config.ts", "support/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["tests/screens/local"]
 }
