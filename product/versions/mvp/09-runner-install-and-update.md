@@ -314,7 +314,8 @@ putting the user's credentials on it.
   console that sends `host.update` over the link. Both go through the
   same verification; neither is a way to run something unsigned.
   The console's is **Update runner** in a host card's menu on Settings →
-  Hosts (`POST /v1/hosts/{id}/update`), off while the host is offline
+  Hosts (`POST /v1/hosts/{id}/update`), behind a confirm that says the
+  runner restarts and sessions keep running, off while the host is offline
   (`HOSTS_008`). It sends no `version`, so the runner takes the newest
   release on its channel now, skipping the safe window, and is left
   unpinned; a pinned host refuses (`UPD_004`) and stays on its pin. The

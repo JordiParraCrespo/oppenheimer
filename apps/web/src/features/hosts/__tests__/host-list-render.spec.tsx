@@ -60,7 +60,6 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     return { data, error: null };
   },
   useRenameHost: () => ({ mutate: vi.fn(), isPending: false, error: null }),
-  useUpdateHostRunner: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null }),
 }));
 
 vi.mock('../components/host-actions-menu', () => ({ HostActionsMenu: () => null }));

@@ -5,6 +5,7 @@
 "@oppenheimer/api-client": minor
 "@oppenheimer/frontend-consumer": minor
 "@oppenheimer/web": minor
+"@oppenheimer/frontend-web": minor
 "@oppenheimer/translations": minor
 "@oppenheimer/docs": patch
 ---
@@ -24,9 +25,12 @@ menu on Settings → Hosts (09 §5, "Manual control").
 - `@oppenheimer/api-client`: `updateHostRunner`.
 - `@oppenheimer/frontend-consumer`: `HostsRepository.updateRunner` and
   `useUpdateHostRunner`.
-- `@oppenheimer/web`: the menu item, off while the host is offline; a
-  `hostUpdateRequested` toast on success and an `ErrorAlert` under the card
-  on a refusal.
-- `@oppenheimer/translations`: `hosts.settings.updateRunner`,
-  `hosts.settings.updateFailed` and `toasts.hostUpdateRequested`.
+- `@oppenheimer/web`: the menu item, off while the host is offline, opens a
+  confirm (`UpdateRunnerDialog`) that says what the restart does; a
+  `hostUpdateRequested` toast on success, and a refusal kept in the dialog.
+- `@oppenheimer/frontend-web`: `ConfirmDialog` takes `tone="primary"` for a
+  confirm that loses nothing; `destructive` stays the default.
+- `@oppenheimer/translations`: `hosts.settings.updateRunner`, `updateTitle`,
+  `updateDescription`, `updating`, `updateFailed` and
+  `toasts.hostUpdateRequested`.
 - `@oppenheimer/docs`: `HOSTS_008` in the error catalog.

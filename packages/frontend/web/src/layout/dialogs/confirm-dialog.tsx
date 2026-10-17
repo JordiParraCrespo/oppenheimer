@@ -29,6 +29,10 @@ import { ErrorAlert } from '../../forms';
  * as `form`, and the destructive button submits it instead of calling
  * `onConfirm`, so its validation runs first. Smaller confirmations stay in the
  * menu that asked.
+ *
+ * `tone="primary"` is for a confirm that costs a moment rather than
+ * something lost (Update runner restarts the runner; nothing is deleted): the
+ * same dialog with the primary button.
  */
 export function ConfirmDialog({
   title,
@@ -41,6 +45,7 @@ export function ConfirmDialog({
   onClose,
   onConfirm,
   form,
+  tone = 'destructive',
   children,
 }: {
   title: ReactNode;
@@ -54,6 +59,8 @@ export function ConfirmDialog({
   onConfirm?: () => void;
   /** The id of a form in `children` that the destructive button submits. */
   form?: string;
+  /** The confirm button's colour: red for a loss, primary for a restart. */
+  tone?: 'destructive' | 'primary';
   children?: ReactNode;
 } & (
   | {
@@ -87,7 +94,7 @@ export function ConfirmDialog({
           <Button
             type={form ? 'submit' : 'button'}
             form={form}
-            variant="destructive"
+            variant={tone}
             pending={pending}
             pendingLabel={pendingLabel}
             onClick={form ? undefined : onConfirm}

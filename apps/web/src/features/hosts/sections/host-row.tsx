@@ -1,14 +1,15 @@
 import { Button, HostCard } from '@oppenheimer/design-system-web';
 import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
-import { useRenameHost, useUpdateHostRunner } from '@oppenheimer/frontend-consumer/react';
+import { useRenameHost } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
+import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HostActionsMenu } from '../components/host-actions-menu';
 import { RemoveHostDialog } from '../dialogs/remove-host';
+import { UpdateRunnerDialog } from '../dialogs/update-runner';
 import { RenameHostForm } from '../forms/rename-host';
 import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
 
@@ -20,11 +21,10 @@ import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
  * the host's home with the blank terminal, started on arrival
  * (`product/versions/mvp/24-session-places.md` §3).
  *
- * Update runner asks the host's runner for the newest release; the row's
- * runner version moves once it reconnects on it, through the presence poll.
- * A refusal (the host went offline in between) stays under the card.
+ * Update runner asks first, in its own dialog; the row's runner version moves
+ * once the runner reconnects on the new release, through the presence poll.
  *
- * The row owns what its menu opens — the inline rename and the remove dialog —
+ * The row owns what its menu opens — the inline rename and the two dialogs —
  * because the menu's content unmounts when it closes, and nothing above a row
  * reads either.
  */
@@ -32,15 +32,13 @@ export function HostRow({ host }: { host: HostEntity }) {
   const { t } = useTranslation();
   const [renaming, setRenaming] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const resolveError = useErrorMessage();
   const rename = useRenameHost({
     onSuccess: (renamed) => {
       setRenaming(false);
       notifySuccess('hostRenamed', { name: renamed.name });
     },
-  });
-  const update = useUpdateHostRunner({
-    onSuccess: () => notifySuccess('hostUpdateRequested', { name: host.name }),
   });
 
   const wordOf = (part: MetaPart) => {
@@ -127,17 +125,13 @@ export function HostRow({ host }: { host: HostEntity }) {
               name={host.name}
               online={host.online}
               onRename={() => setRenaming(true)}
-              onUpdate={() => update.mutate(host.id)}
+              onUpdate={() => setUpdating(true)}
               onRemove={() => setRemoving(true)}
             />
           </span>
         }
       />
-      <ErrorAlert
-        error={update.error}
-        fallback={t('hosts.settings.updateFailed', { name: host.name })}
-        onDismiss={update.reset}
-      />
+      {updating ? <UpdateRunnerDialog host={host} onClose={() => setUpdating(false)} /> : null}
       {removing ? <RemoveHostDialog host={host} onClose={() => setRemoving(false)} /> : null}
     </>
   );
