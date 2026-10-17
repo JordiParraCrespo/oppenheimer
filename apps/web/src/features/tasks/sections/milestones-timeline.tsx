@@ -1,4 +1,8 @@
-import { MilestoneTimeline, type MilestoneTimelineControls } from '@oppenheimer/design-system-web';
+import {
+  MilestoneEmpty,
+  MilestoneTimeline,
+  type MilestoneTimelineControls,
+} from '@oppenheimer/design-system-web';
 import { useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
@@ -43,14 +47,13 @@ export function MilestonesTimeline({
     return (
       <>
         {alert}
-        <button
-          type="button"
+        <MilestoneEmpty
+          title={t('tasks.milestones.emptyTitle')}
           onClick={onNew}
-          className="flex max-w-105 flex-col items-start gap-1 rounded-lg border border-border border-dashed px-4.5 py-4 text-left text-sm text-fg-muted hover:text-fg"
+          className="max-w-105"
         >
-          <span className="font-medium text-fg">{t('tasks.milestones.emptyTitle')}</span>
           {t('tasks.milestones.empty')}
-        </button>
+        </MilestoneEmpty>
       </>
     );
   }
