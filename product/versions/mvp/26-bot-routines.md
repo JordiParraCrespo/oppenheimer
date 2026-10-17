@@ -10,7 +10,7 @@ when a session ends. The 2026-10-13 export already draws it:
 a schedule ("Weekdays at 09:00"), a GitHub event ("When a PR is opened in
 atlas") and a session ("When a session linked to a task ends").
 
-The research is `../../research/lessons-from-grok-bot.md` §6 (Grok Bot
+The research is `../../research/lessons-from-grok-bot.md` §7 (Grok Bot
 0.71.2's routines, read from the shipped client on 2026-10-16) and
 OpenClaw's heartbeat (`lessons-from-synara-and-openclaw.md`). Ideas are
 taken, no code.

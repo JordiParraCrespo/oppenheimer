@@ -21,7 +21,7 @@ for the detail and sources.
 | 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
 | research/ | [Research](research/README.md) | Reads of other products, measurements and proposals that were not adopted; they decide nothing. Notes 12 (Grok Bot), 13 (herdr), 14 (session boot time) and 16 (developer-tools landscape) live there, and its index maps the old numbers |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP, one document each; its README is the list and holds the order |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -505,3 +505,13 @@ earlier note:
   runs in Oppenheimer and the home host is only where its sessions start
   when no machine is named, offers No home host, and every bot settings
   page saves a draft with Save (25 §1, "Decided").
+- Note 25 named a blank bot "New Bot" and had it ask for its job in one
+  line. On 2026-10-16 a blank bot takes the next of twenty first names
+  ("Juno", "Milo"…), and its first chat walks it through learning one
+  job, writing its own INSTRUCTIONS.md and description, and offering a
+  first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
+- `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
+  milestone bar on to ten days past its last milestone, which read as the
+  bar overshooting the dates. On 2026-10-15 the owner had it end on the last
+  milestone's day, as a timeline bar does in Notion; the three-week lead-in
+  before the first milestone or today stays (23 §1).

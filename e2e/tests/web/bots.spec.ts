@@ -36,9 +36,12 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   const chatUrl = page.url();
   const botId = chatUrl.split('/').pop() as string;
   await expect(
-    page.getByRole('heading', { name: 'New Bot is ready. Tell it what job to do.' }),
+    page.getByRole('heading', { name: 'Juno is ready. Tell it what job to do.' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: /New Bot/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Juno/ })).toBeVisible();
+  // With a bot, Employees opens its chat rather than the greeting.
+  await page.getByRole('link', { name: 'Employees', exact: true }).click();
+  await expect(page).toHaveURL(chatUrl);
   // Send stays off while the bot's provider has no key, and says where to add one.
   await expect(
     page.getByRole('status').filter({ hasText: 'Anthropic has no key in this workspace yet' }),

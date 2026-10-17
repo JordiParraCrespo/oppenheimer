@@ -1329,7 +1329,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="milestones"
         title="MilestoneTimeline · MilestoneGlyph"
         meta="milestone-timeline.tsx"
-        desc="Milestones on time, one row per project, scrolling sideways and opening on today. Months in uppercase at their first day with a hairline down the rows, week numbers in mono, today an inverted pill with a line through every row. Each project is its name and done share over a track from three weeks before its first milestone to ten days past its last; each milestone a diamond at its due day, filled muted when done. Point at one and it fills in ink and shows the share done, the task count and the due day. MilestoneGlyph is the same diamond, 8px, for the sidebar row and the filter pill."
+        desc="Milestones on time, one row per project, scrolling sideways and opening on today. Months in uppercase at their first day with a hairline down the rows, week numbers in mono, today an inverted pill with a line through every row. Each project is its name and done share over a track from three weeks before its first milestone to the day of its last; each milestone a diamond at its due day, filled muted when done. Point at one and it fills in ink and shows the share done, the task count and the due day. MilestoneGlyph is the same diamond, 8px, for the sidebar row and the filter pill."
         code={`<MilestoneTimeline rows={rows} today={today} onOpenMilestone={edit} onOpenRow={openProject} />`}
       >
         <MilestoneTimelineDemo />
