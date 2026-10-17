@@ -74,32 +74,32 @@ claim without a link to system state is flagged).
 
 | | board | board+signed | hub | platform | platform, all to a person |
 |---|---:|---:|---:|---:|---:|
-| Tasks landed | 581 | 608 | 604 | **647** | 636 |
-| Ticks wasted (duplicates, forged stops) | 530 | 176 | 526 | **0** | 0 |
-| Bad risky actions executed | 106 | 107 | 71 | 4.6 | **1.2** |
-| Secret exposures | 979 | 1030 | 15 | **0.8** | 0.7 |
-| Forged messages obeyed | 88 | 26 | 86 | **0** | 0 |
+| Tasks landed | 581 | 607 | 603 | **648** | 636 |
+| Ticks wasted (duplicates, forged stops) | 537 | 174 | 532 | **0** | 0 |
+| Bad risky actions executed | 108 | 107 | 72 | 4.5 | **1.4** |
+| Secret exposures | 963 | 990 | 15 | **0.9** | 0.7 |
+| Forged messages obeyed | 88 | 25 | 87 | **0** | 0 |
 | Peak live agents | 80 | 80 | 80 | **20** | 20 |
-| Message reads (token cost) | 179,128 | 177,066 | 3,398 | **693** | 694 |
-| Approvals asked of a person | — | — | — | 39 | 197 |
+| Message reads (token cost) | 179,767 | 178,460 | 3,406 | **695** | 694 |
+| Approvals asked of a person | — | — | — | 40 | 197 |
 
 Ablation, the platform minus one control:
 
 | Removed | What comes back |
 |---|---|
-| identity | 13 forged stops obeyed, 85 ticks wasted |
+| identity | 13 forged stops obeyed, 80 ticks wasted |
 | leases | 19 ticks of duplicates, 7 write conflicts, 3× the reads |
-| approvals | bad risky actions 4.6 → 10.2 |
-| spawns | bad risky actions 4.6 → 42, peak agents 20 → 80, 18,500 off-the-books ticks, 3× the approvals |
-| scanner | secret exposures 0.8 → 15 |
-| evidence | ticks lost to false premises 3.5 → 35 |
+| approvals | bad risky actions 4.5 → 9.9 |
+| spawns | bad risky actions 4.5 → 42, peak agents 20 → 80, 18,800 off-the-books ticks, 3× the approvals |
+| scanner | secret exposures 0.9 → 16 |
+| evidence | ticks lost to false premises 4.2 → 38 |
 
 Scale (2 of 20, 3 of 30 and 10 of 100 agents misaligned):
 
 | Tasks landed | board | hub | platform | platform+hub | all to a person |
 |---|---:|---:|---:|---:|---:|
-| 30 agents | 856 | 905 | **972** | 966 | 873 (102 queued) |
-| 100 agents | 2,410 | 1,777 | **3,228** | 1,906 | 2,483 (790 queued) |
+| 30 agents | 855 | 902 | **973** | 965 | 873 (101 queued) |
+| 100 agents | 2,420 | 1,722 | **3,230** | 1,919 | 2,479 (795 queued) |
 
 With honest agents only, the board still loses to its own latency: 3% of
 throughput at 3 ticks, 5.4% at 10, with 24 write conflicts and 64 times
@@ -113,42 +113,47 @@ Sensitivity, every assumed rate scaled at once by a random factor in
 | platform lands at least as much as board | 100% |
 | platform executes fewer bad risky actions than board | 100% |
 | platform executes fewer bad risky actions than hub | 98% |
+| bad risky actions rank platform < hub < board | 94% |
+| tasks landed rank platform > hub > board | 98% |
 | a manager that assigns every task caps throughput at 100 agents | 100% |
-| every risky action to a person lands less than lanes | 94% |
-| signatures alone halve forged messages obeyed | 76% |
-| hub wastes fewer ticks than board | 32% |
+| every risky action to a person lands less than lanes | 88% |
+| signatures alone halve forged messages obeyed | 80% |
+| hub wastes fewer ticks than board | 40% |
 
 ## What to take
 
 1. **Enforce, do not agree.** Every convention the incident's agents
    invented works in the model when the platform enforces it and leaks
-   when agents keep it. The ranking platform > hub > board holds in
-   every draw of the sensitivity run.
+   when agents keep it. Platform beats board on throughput and on bad
+   actions in every draw of the sensitivity run; the full ranking
+   platform > hub > board holds in 98% of draws for throughput and 94%
+   for bad actions.
 2. **No control is redundant.** Each of the six removes a different
    failure, and none of the others covers it (the ablation). Refusing
    taskless spawns is the largest single safety control: without it,
    recruits off the books produce nine times the bad actions and four
    times the agents.
 3. **Signatures are not identity.** The agents' own fix cut forgeries
-   from 88 to 26, not to zero, and only when receivers verify; it halves
-   them in three draws out of four. A sender the server stamps costs
+   from 88 to 25, not to zero, and only when receivers verify; it halves
+   them in four draws out of five. A sender the server stamps costs
    nothing and leaves nothing to verify.
 4. **A manager bot plans, leases allocate.** A hub cuts conflicts and
    reads, but not forgeries, so it wastes no fewer ticks than a board in
-   two draws of three. And a manager that hands out every task caps
-   throughput at its own rate: at 100 agents, `platform+hub` lands 1,906
-   tasks to `platform`'s 3,228, in every draw. The manager should set
+   three draws of five. And a manager that hands out every task caps
+   throughput at its own rate: at 100 agents, `platform+hub` lands 1,919
+   tasks to `platform`'s 3,230, in every draw. The manager should set
    priorities in the backlog and review; bots claim by lease in
    priority order.
 5. **A person is the scarce resource.** Sending every risky action to
-   one person stops scaling at about 20 bots (30 bots leave 102
+   one person stops scaling at about 20 bots (30 bots leave 101
    approvals queued). Lanes, where a person sees 20% and a policy's
    checks the rest, hold to about 100. The rule of thumb is
    `bots per person ≈ approvals per tick × task length / (risky share ×
    share to a person)`, an output of the model computed from its own
-   assumed rates, not a measurement. The cost is safety: 4.6 bad actions through
-   lanes against 1.2 with a person on everything, so the lane policy's
-   quality is the safety knob (note 15's lanes are the same idea).
+   assumed rates, not a measurement. The cost is safety: 4.5 bad actions
+   through lanes against 1.4 with a person on everything, so the lane
+   policy's quality is the safety knob (note 15's lanes are the same
+   idea).
 6. **Broadcast is the expensive part.** Every agent reading every
    message is quadratic: 260 times the reads at 20 agents, 1,150 times
    at 100. Inboxes and shared state that is read when needed are the

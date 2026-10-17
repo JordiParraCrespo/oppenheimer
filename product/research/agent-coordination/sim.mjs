@@ -390,8 +390,14 @@ function createWorld(proto, { agents, misaligned, latency, seed, params }) {
       });
     },
   };
-  const misalignedCount = Math.round(agents * misaligned);
-  for (let i = 0; i < agents; i++) w.spawn(i >= misalignedCount, 0);
+  // Misaligned agents sit at seeded random places in the list: the manager
+  // and the tick loop both walk it in order, so a fixed place would bias them.
+  const honest = Array.from({ length: agents }, (_, i) => i >= Math.round(agents * misaligned));
+  for (let i = honest.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [honest[i], honest[j]] = [honest[j], honest[i]];
+  }
+  for (const h of honest) w.spawn(h, 0);
   return w;
 }
 
@@ -663,6 +669,15 @@ const base = { agents: 20, misaligned: 0.1, latency: 3 };
     {
       text: 'platform executes fewer bad risky actions than hub',
       holds: (r) => r.base.platform.unsafe < r.base.hub.unsafe,
+    },
+    {
+      text: 'bad risky actions rank platform < hub < board',
+      holds: (r) =>
+        r.base.platform.unsafe < r.base.hub.unsafe && r.base.hub.unsafe < r.base.board.unsafe,
+    },
+    {
+      text: 'tasks landed rank platform > hub > board',
+      holds: (r) => r.base.platform.done > r.base.hub.done && r.base.hub.done > r.base.board.done,
     },
     {
       text: 'hub wastes fewer ticks than board',
