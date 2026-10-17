@@ -1,6 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "allow": [
+      "Bash(node scripts/stack/stack.mjs up*)",
+      "Bash(node scripts/stack/stack.mjs status*)",
+      "Bash(node scripts/stack/stack.mjs down*)",
+      "Bash(pnpm screens *)",
+      "Read(.screenshots/**)",
+      "Write(.screenshots/**)",
+      "Edit(.screenshots/**)",
+      "SendUserFile"
+    ],
     "ask": [
       "Read(.env)",
       "Read(.env.local)",
@@ -113,6 +123,12 @@
             "command": ".agents/hooks/arch-check.sh",
             "timeout": 180,
             "statusMessage": "Checking API architecture boundaries..."
+          },
+          {
+            "type": "command",
+            "command": "node .agents/hooks/screenshot-guard.mjs",
+            "timeout": 15,
+            "statusMessage": "Checking a visual change has screenshots..."
           }
         ]
       }

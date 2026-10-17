@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	statestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -53,7 +55,8 @@ func newRealHarness(t *testing.T) *realHarness {
 	svc, err := app.New(app.Options{
 		Terminals: terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: layout}),
 		Classifier: manifest.New(manifest.Options{}), Store: store, Publisher: &recorder{}, Layout: layout,
-		Files: filestore.New(files),
+		Places: workfolder.New(workfolder.Options{Layout: layout}),
+		Files:  filestore.New(files),
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
 		},
@@ -135,6 +138,20 @@ func TestARealSessionIsAWorktreeWithATerminal(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(session.Worktree, "README.md")); err != nil {
 		t.Fatalf("the worktree has no files: %v", err)
 	}
+	// The work folder's layout (24 §2): the CLI's own levels, the session's
+	// folder with its marker, the checkout in it, and a bare store beside.
+	if want := filepath.Join(session.Dir, "oppenheimer"); session.Worktree != want {
+		t.Fatalf("worktree = %q, want %q", session.Worktree, want)
+	}
+	if filepath.Dir(session.Dir) != h.layout.Sessions(domain.LocalTenant) {
+		t.Fatalf("session folder %q is not in %q", session.Dir, h.layout.Sessions(domain.LocalTenant))
+	}
+	if _, err := os.Stat(filepath.Join(session.Dir, ".oppenheimer", "meta.json")); err != nil {
+		t.Fatalf("the session's folder has no marker: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(h.layout.Store(session.Repository()), "HEAD")); err != nil {
+		t.Fatalf("no bare store beside the sessions: %v", err)
+	}
 	if has, err := h.terminal.Has(ctx, session.TmuxName()); err != nil || !has {
 		t.Fatalf("the tmux session is not there: %v", err)
 	}
@@ -157,6 +174,9 @@ func TestARealSessionIsAWorktreeWithATerminal(t *testing.T) {
 	}
 	if _, err := os.Stat(session.Worktree); !os.IsNotExist(err) {
 		t.Fatal("the worktree is still on disk")
+	}
+	if _, err := os.Stat(session.Dir); !os.IsNotExist(err) {
+		t.Fatal("the session's folder is still on disk")
 	}
 	if has, _ := h.terminal.Has(ctx, session.TmuxName()); has {
 		t.Fatal("the tmux session outlived the close")
@@ -181,6 +201,7 @@ func TestARealSessionSurvivesTheRunnerGoingAway(t *testing.T) {
 	restarted, err := app.New(app.Options{
 		Terminals: h.terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: h.layout}),
 		Classifier: manifest.New(manifest.Options{}), Store: h.store, Layout: h.layout,
+		Places: workfolder.New(workfolder.Options{Layout: h.layout}),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -249,4 +270,67 @@ func TestARealSessionTakesAPastedImage(t *testing.T) {
 	if _, err := os.Stat(filepath.Dir(path)); !os.IsNotExist(err) {
 		t.Fatalf("closing kept the session's files: %v", err)
 	}
+}
+
+// A folder session runs in a folder that is the person's (24 §3): the agent
+// starts there, nothing is written into it, and closing the session ends the
+// terminal and leaves the folder exactly as it was — no marker, no checkout,
+// nothing removed.
+func TestARealFolderSessionLeavesItsFolderAlone(t *testing.T) {
+	h := newRealHarness(t)
+	ctx := context.Background()
+	folder := t.TempDir()
+	if err := os.WriteFile(filepath.Join(folder, "notes.txt"), []byte("mine\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	before := listing(t, folder)
+
+	session, err := h.svc.Create(ctx, app.CreateInput{Folder: folder, Agent: domain.AgentShell})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if session.Place != domain.PlaceFolder || session.Cwd() != folder || session.Worktree != "" || session.Dir != "" {
+		t.Fatalf("session = %+v", session)
+	}
+	if has, err := h.terminal.Has(ctx, session.TmuxName()); err != nil || !has {
+		t.Fatalf("the tmux session is not there: %v", err)
+	}
+	if after := listing(t, folder); after != before {
+		t.Fatalf("creating wrote into the folder: %q, was %q", after, before)
+	}
+
+	closed, err := h.svc.Close(ctx, session.ID, app.CloseInput{Push: true})
+	if err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	if closed.State != domain.StateClosed {
+		t.Fatalf("state = %q", closed.State)
+	}
+	if has, _ := h.terminal.Has(ctx, session.TmuxName()); has {
+		t.Fatal("the tmux session outlived the close")
+	}
+	if after := listing(t, folder); after != before {
+		t.Fatalf("closing touched the folder: %q, was %q", after, before)
+	}
+	if entries, _ := os.ReadDir(h.layout.Root); len(entries) != 0 {
+		t.Fatalf("a folder session made something in the work folder: %v", entries)
+	}
+}
+
+// listing is a folder's entries, names and sizes, to compare before and after.
+func listing(t *testing.T, dir string) string {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, entry.Name()+":"+info.Mode().String()+":"+strconv.FormatInt(info.Size(), 10))
+	}
+	return strings.Join(out, ",")
 }

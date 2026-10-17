@@ -7,54 +7,44 @@ import {
   RunsListFilters,
   RunsListFoot,
   RunsListHead,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
-import {
-  useAutomationRuns,
-  useAutomations,
-  useProjects,
-} from '@oppenheimer/frontend-consumer/react';
-import { QueryState, useLocale } from '@oppenheimer/frontend-web';
+import { useSuspenseAutomationRuns } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
+import { useDeferredValue } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChoiceToken } from '../components/choice-token';
 import { RUNS_PAGE_SIZE, useRunsFilters } from '../hooks/use-runs-filters';
 import { runState, runTitle } from '../lib/automation-view';
 import { RUN_STATUS_TABS, type RunStatusTab } from '../lib/runs-search';
 import { clock, monthDay } from '../lib/time';
-import { automationTriggerText } from '../lib/trigger-text';
-
-const ALL = '__all__';
+import { RunsFacets } from './runs-facets';
 
 /**
  * The runs (`product/versions/mvp/13-automations.md`): the Runs tab across
  * the workspace, or one automation's on its page. Status pills with counts,
  * the facets on the right, a page of ten and the pager. A run opens the
  * session it started in the run view, with the automations list kept beside
- * it. A list that could not load says so, rather than reading as empty.
+ * it.
+ *
+ * Read under Suspense, in the `QueryState` of the screen or page that shows
+ * it. The filter is read deferred: a new filter renders the next page in the
+ * background and the page on screen stays until it answers, rather than
+ * dropping back to the placeholder. A refetch that fails keeps the page and
+ * says so above it.
  */
 export function RunsTable({ automationId }: { automationId?: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
   const filters = useRunsFilters({ automationId });
-  const runs = useAutomationRuns(filters.filter);
-  // The facets are the workspace-wide list's only; an automation's page has none.
-  const { data: automations } = useAutomations({ enabled: !automationId });
-  const { data: projects } = useProjects({
-    enabled: !automationId,
-    select: (rows) => rows.filter((project) => !project.isUnassigned),
-  });
-
-  const page = runs.data;
-  const counts = page?.counts;
-  const first = page?.total ? (page.page - 1) * RUNS_PAGE_SIZE + 1 : 0;
-  const last = page ? Math.min(page.total, page.page * RUNS_PAGE_SIZE) : 0;
+  const settled = useDeferredValue(filters.filter);
+  const { data: page, error } = useSuspenseAutomationRuns(settled);
+  const counts = page.counts;
+  const first = page.total ? (page.page - 1) * RUNS_PAGE_SIZE + 1 : 0;
+  const last = Math.min(page.total, page.page * RUNS_PAGE_SIZE);
   const { state } = filters;
-
-  const automationName = automations?.find((row) => row.id === state.automation)?.name;
-  const projectName = projects?.find((row) => row.id === state.project)?.name;
 
   return (
     <RunsList>
@@ -65,7 +55,7 @@ export function RunsTable({ automationId }: { automationId?: string }) {
           onValueChange={(value) => filters.setStatus(value as RunStatusTab)}
         >
           {RUN_STATUS_TABS.map((tab) => (
-            <PillTab key={tab} value={tab} count={counts ? counts[tab] : undefined}>
+            <PillTab key={tab} value={tab} count={counts[tab]}>
               {t(`automations.runs.${tab}`)}
             </PillTab>
           ))}
@@ -73,37 +63,7 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         {/* The facets are one group: when the row cannot hold them they wrap
             together, not the window alone. */}
         <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-          {automationId ? null : (
-            <>
-              <ChoiceToken
-                label={automationName ?? t('automations.runs.allAutomations')}
-                value={state.automation ?? ALL}
-                dirty={state.automation !== null}
-                options={[
-                  { value: ALL, label: t('automations.runs.allAutomations') },
-                  ...(automations ?? []).map((automation) => ({
-                    value: automation.id,
-                    label: automation.name,
-                    description: automationTriggerText(automation, locale, t),
-                  })),
-                ]}
-                onValueChange={(value) => filters.setAutomation(value === ALL ? null : value)}
-              />
-              <ChoiceToken
-                label={projectName ?? t('automations.runs.allProjects')}
-                value={state.project ?? ALL}
-                dirty={state.project !== null}
-                options={[
-                  { value: ALL, label: t('automations.runs.allProjects') },
-                  ...(projects ?? []).map((project) => ({
-                    value: project.id,
-                    label: project.name,
-                  })),
-                ]}
-                onValueChange={(value) => filters.setProject(value === ALL ? null : value)}
-              />
-            </>
-          )}
+          {automationId ? null : <RunsFacets />}
           <ChoiceToken
             label={t(`automations.runs.window.${state.window}`)}
             value={state.window}
@@ -134,56 +94,41 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         ]}
       />
 
-      {/* A refetch that fails keeps the page already drawn, with the
-          failure above it. */}
-      <QueryState
-        query={runs}
-        stale="keep"
-        pending={
-          <div className="flex flex-col gap-1 px-1.5">
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-          </div>
-        }
-        errorFallback={t('automations.runs.loadFailed')}
-        errorClassName="mx-1.5 mb-1.5"
-        empty={{
-          when: (data) => data.items.length === 0,
-          show: (
-            <RunsListEmpty>
-              {counts?.all || filters.dirty
-                ? t('automations.runs.noMatch')
-                : t('automations.page.runsEmpty')}
-            </RunsListEmpty>
-          ),
-        }}
-      >
-        {(data) =>
-          data.items.map((run) => (
-            <RunRow
-              key={run.id}
-              state={runState(run.status)}
-              title={runTitle(run, t)}
-              aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
-              routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
-              date={monthDay(run.createdAt, locale)}
-              time={clock(run.createdAt)}
-              disabled={!run.sessionId}
-              onClick={() => {
-                if (run.sessionId) {
-                  navigate({
-                    to: '/automations/$automationId/sessions/$sessionId',
-                    params: { automationId: run.automationId, sessionId: run.sessionId },
-                  });
-                }
-              }}
-            />
-          ))
-        }
-      </QueryState>
+      <ErrorAlert
+        error={error}
+        fallback={t('automations.runs.loadFailed')}
+        className="mx-1.5 mb-1.5"
+      />
+      {page.items.length === 0 ? (
+        <RunsListEmpty>
+          {counts.all || filters.dirty
+            ? t('automations.runs.noMatch')
+            : t('automations.page.runsEmpty')}
+        </RunsListEmpty>
+      ) : (
+        page.items.map((run) => (
+          <RunRow
+            key={run.id}
+            state={runState(run.status)}
+            title={runTitle(run, t)}
+            aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
+            routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
+            date={monthDay(run.createdAt, locale)}
+            time={clock(run.createdAt)}
+            disabled={!run.sessionId}
+            onClick={() => {
+              if (run.sessionId) {
+                navigate({
+                  to: '/automations/$automationId/sessions/$sessionId',
+                  params: { automationId: run.automationId, sessionId: run.sessionId },
+                });
+              }
+            }}
+          />
+        ))
+      )}
 
-      {page?.total ? (
+      {page.total ? (
         <RunsListFoot
           range={t('automations.runs.range', { from: first, to: last, total: page.total })}
           previousLabel={t('automations.runs.previous')}

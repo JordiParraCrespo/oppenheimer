@@ -69,6 +69,37 @@ describe('a requested session', () => {
   });
 });
 
+describe('where a session runs', () => {
+  it('is a worktree unless it names a folder on the host', () => {
+    const work = session();
+    expect(work.place).toBe('worktree');
+    expect(work.folderPath).toBeNull();
+  });
+
+  it('runs in the folder it names, and is nobody’s worktree', () => {
+    const work = session({ folder: '/home/jordi/notes' });
+    expect(work.place).toBe('folder');
+    expect(work.folderPath).toBe('/home/jordi/notes');
+    expect(work.branch).toBeNull();
+  });
+
+  it('refuses a checkout in a folder session: the folder is the person’s', () => {
+    const work = session({ folder: '/home/jordi/notes' });
+    expect(() => work.attachCheckout(checkout(work, 'xrp-mobile'))).toThrow(/no checkouts/);
+    expect(work.checkouts).toEqual([]);
+  });
+
+  it('reads its place off the stored folder, so the two cannot disagree', () => {
+    const props = session().getProps();
+    const stored = WorkSessionEntity.create({
+      id: 'session-1',
+      props: { ...props, folderPath: '/srv' },
+    });
+    expect(stored.place).toBe('folder');
+    expect(WorkSessionEntity.create({ id: 'session-2', props }).place).toBe('worktree');
+  });
+});
+
 describe('recordEvent is the only mutator of the fold', () => {
   it('raises a state-changed event only on a real transition', () => {
     const work = session();

@@ -20,6 +20,35 @@ The **`web` project passes but is not a CI row yet.** Run
 journeys. Adding it to `scripts/ci/local.mjs` is a separate CI decision: the
 scheduled workflow would need a Chromium.
 
+The **`terminal` project** needs Chromium and nothing else: no stack. It is the
+console's session terminal on a fake host whose echo the test holds back
+(`tests/terminal/page/`), and it checks what typing ahead of a slow host looks
+like. Each case photographs the screen with the predicted keys drawn, lets the
+echo go, and photographs it again once the echo has landed and again after any
+unconfirmed guess would have expired. All three must be the same picture:
+nothing may move or spring back, neither the letters nor the caret. It runs
+both renderers, four pixel ratios, several installed faces served under a name
+the terminal's font stack asks for, and both ways an agent shows its cursor (a
+visible caret, or Ink's inverse cell). One more case counts the cursors in
+every painted frame while twenty keys are typed: exactly one, always, so the
+cursor never blinks out as each echo hands it back to the terminal. The one thing it cannot see is the WebGL
+renderer above 1x, which headless Chromium draws blank;
+`apps/web/src/features/sessions/__tests__/typeahead-webgl-baseline.spec.ts`
+holds the rule there. Run it after any change to the session terminal, the
+typeahead or the terminal's font and cursor:
+`pnpm --filter @oppenheimer/e2e e2e:terminal`.
+
+The **`screens` project** is not a test: it is the camera for a pull request
+that changes what the console looks like. With the stack up `--web`, it signs
+in as a fresh account and photographs every route `SCREENS` names, light and
+dark, into `.screenshots/` (git-ignored) with a `manifest.json` naming the
+commit. It only exists when `SCREENS` is set, so no other run selects it.
+The `local-stack` skill's "Show a visual change" step is how it is used:
+
+```bash
+pnpm screens --phone /sessions anon:/login   # from the root: scripts/stack/screens.mjs
+```
+
 ## The two stubs, and what they are for
 
 Two of the console's surfaces talk to something this repository does not own,
@@ -151,6 +180,7 @@ node scripts/stack/stack.mjs up --web      # `down` stops what it started
 pnpm test:e2e                              # everything (from the repo root)
 pnpm --filter @oppenheimer/e2e e2e:api           # API only, no browser needed
 pnpm --filter @oppenheimer/e2e e2e:web           # browser only
+pnpm --filter @oppenheimer/e2e e2e:terminal      # the session terminal alone: no stack needed
 pnpm --filter @oppenheimer/e2e e2e:ratelimit     # see "The rate-limit test" below
 ```
 
@@ -248,5 +278,6 @@ e2e/
     ├── fleet/      # real runners: machines, link loss, adoption, one link per
     │               # host, flow control, the console on a live session
     ├── netsim/     # the typing bench: relay vs direct over simulated links
+    ├── screens/    # the console photographed for a pull request (SCREENS=…)
     └── web/        # the same journeys through apps/web in Chromium
 ```

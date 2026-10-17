@@ -1,18 +1,21 @@
 {
   "sidebar": {
-    "layers": "Show"
+    "layers": "Calendars"
   },
   "layers": {
-    "events": "My events",
+    "events": "Personal",
     "google": "Google Calendar",
-    "tasks": "Tasks due",
-    "automations": "Automation runs"
+    "tasks": "Task due dates",
+    "automations": "Automations"
   },
   "header": {
     "previous": "Previous month",
     "next": "Next month",
     "today": "Today",
-    "newEvent": "New event"
+    "newEvent": "New event",
+    "meetings": "meetings",
+    "tasksDue": "tasks due",
+    "runs": "automation runs"
   },
   "grid": {
     "more_one": "{{count}} more",
@@ -39,21 +42,37 @@
   },
   "google": {
     "title": "Google Calendar",
+    "accounts": "Google accounts",
     "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
     "connect": "Connect Google Calendar",
+    "add": "Add account",
+    "atLimit": "You can connect up to {{count}} Google accounts.",
     "reconnect": "Reconnect",
-    "revoked": "Google no longer lets us read this calendar. Reconnect to show it again.",
-    "connectedAs": "Connected as {{email}}",
-    "disconnect": "Disconnect",
-    "disconnectTitle": "Disconnect Google Calendar?",
-    "disconnectDescription": "Its events leave the calendar. You can connect it again at any time.",
-    "disconnectFailed": "Couldn’t disconnect Google Calendar.",
+    "connected": "Connected",
+    "updatedNow": "Updated just now",
+    "updated": "Updated {{age}} ago",
+    "needsReconnect": "Needs reconnecting",
+    "readFailed": "Couldn’t read it just now",
+    "remove": "Remove",
+    "removeLabel": "Remove {{email}}",
+    "removeTitle": "Remove this Google account?",
+    "removeDescription": "{{email}} leaves the calendar, and its events with it. You can connect it again at any time.",
+    "removeFailed": "Couldn’t remove the Google account.",
     "startFailed": "Couldn’t reach Google. Try again.",
-    "loadFailed": "Couldn’t check the Google Calendar connection.",
+    "loadFailed": "Couldn’t check your Google accounts.",
     "connecting": "Connecting Google Calendar…",
     "connectFailed": "Couldn’t connect Google Calendar.",
     "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-    "back": "Back to the calendar",
-    "readOnly": "Read-only"
+    "back": "Back to the calendar"
+  },
+  "googleEvent": {
+    "untitled": "(No title)",
+    "when": "When",
+    "account": "Account",
+    "shows": "Shows as",
+    "busy": "Busy",
+    "free": "Free",
+    "readOnly": "Read-only here: change it in Google Calendar.",
+    "open": "Open in Google Calendar"
   }
 }

@@ -25,6 +25,9 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   @ApiProperty({ description: 'Host pairing is configured (the runner release settings).' })
   hosts!: boolean;
 
+  @ApiProperty({ description: 'A workspace can store model provider keys, which bots run on.' })
+  bot_providers!: boolean;
+
   @ApiProperty({
     nullable: true,
     type: String,

@@ -24,6 +24,15 @@ func (s *slowUpdater) Update(context.Context, string, string, []string) error {
 	return nil
 }
 
+// blockingUpdater holds its agent's lock until the test lets it finish.
+type blockingUpdater struct{ held, finish chan struct{} }
+
+func (b blockingUpdater) Update(context.Context, string, string, []string) error {
+	close(b.held)
+	<-b.finish
+	return nil
+}
+
 func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	paths := Paths{Home: t.TempDir()}
 	if err := os.MkdirAll(paths.Run(), 0o700); err != nil {
@@ -58,10 +67,31 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	if inner.overlap.Load() {
 		t.Fatal("two updaters of one CLI ran at once")
 	}
-	// Another agent's launch does not wait on claude's lock.
-	start = time.Now()
-	agentGate{paths: paths}.Hold(context.Background(), "codex")()
-	if waited := time.Since(start); waited > 20*time.Millisecond {
-		t.Errorf("codex waited %s on nothing", waited)
+	// Another agent's launch does not wait on claude's lock: while claude's
+	// updater holds it, codex still gets through. A codex that waited would
+	// block until that update ends, which this test never lets happen; the
+	// bound is a few polls of the lock, far inside launchWaitLimit, so it
+	// tells "waited on claude" apart without timing how fast a launch is.
+	held := make(chan struct{})
+	finish := make(chan struct{})
+	updated := make(chan error, 1)
+	go func() {
+		updated <- lockedUpdater{paths: paths, next: blockingUpdater{held: held, finish: finish}}.
+			Update(context.Background(), "claude", "/bin/claude", []string{"update"})
+	}()
+	<-held
+	codex := make(chan struct{})
+	go func() {
+		agentGate{paths: paths}.Hold(context.Background(), "codex")()
+		close(codex)
+	}()
+	select {
+	case <-codex:
+	case <-time.After(20 * agentLockPoll):
+		t.Fatal("codex waited on claude's update")
+	}
+	close(finish)
+	if err := <-updated; err != nil {
+		t.Fatal(err)
 	}
 }

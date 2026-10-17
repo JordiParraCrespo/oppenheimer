@@ -48,6 +48,7 @@ export class PrepareSessionHttpController {
       'Clones or fetches each repository on the host and makes a spare worktree there, so the session created next starts without waiting on git. Nothing is recorded and the host does not reply; a host that is offline or whose runner predates this is named in `hints`, and the create then does the work itself.',
   })
   @ApiResponse({ status: 200, type: PrepareSessionResponseDto })
+  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'SESSIONS_002' })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({
     status: 404,

@@ -102,6 +102,13 @@ export default defineConfig({
     ...(FLEET ? fleetProjects() : []),
     // oppenheimer:end runner
     // oppenheimer:begin web
+    // The session terminal alone, on a fake host (`tests/terminal`): Chromium
+    // and nothing else, no API.
+    {
+      name: 'terminal',
+      testDir: './tests/terminal',
+      use: { ...chromium },
+    },
     {
       name: 'web',
       testDir: './tests/web',
@@ -113,6 +120,18 @@ export default defineConfig({
         ignoreHTTPSErrors: true,
       },
     },
+    // Screenshots for a pull request (`tests/screens`), not a test: opt-in
+    // with `SCREENS`, which names the routes (what `screens` in package.json
+    // is for), so `e2e` and `e2e:web` never select it.
+    ...(process.env.SCREENS
+      ? [
+          {
+            name: 'screens',
+            testDir: './tests/screens',
+            use: { ...chromium, baseURL: WEB_URL, ignoreHTTPSErrors: true },
+          },
+        ]
+      : []),
     // oppenheimer:end web
   ],
 });

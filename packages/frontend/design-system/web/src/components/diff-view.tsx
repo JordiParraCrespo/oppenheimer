@@ -334,39 +334,5 @@ function DiffCommentDraft({
   );
 }
 
-/**
- * A comment as a way into the diff, in a list away from it (Pending
- * comments on the briefing): the file's mark and `path:line` in the link
- * blue, mono, over the comment's text. The whole tile is the button.
- */
-function DiffCommentLink({
-  path,
-  line,
-  className,
-  children,
-  ...props
-}: React.ComponentProps<'button'> & { path: string; line?: number }) {
-  return (
-    <button
-      type="button"
-      data-slot="diff-comment-link"
-      className={cn(
-        'flex w-full flex-col items-start gap-1.5 rounded-md bg-hover-surface px-3.5 py-3 text-left outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring',
-        className,
-      )}
-      {...props}
-    >
-      <span className="flex max-w-full min-w-0 items-center gap-1.5">
-        <FileIcon path={path} className="size-3.5" />
-        <span className="figures truncate text-micro text-link">
-          {path}
-          {line !== undefined ? `:${line}` : ''}
-        </span>
-      </span>
-      <span className="line-clamp-2 text-[13px] leading-[1.45] text-pretty text-fg">{children}</span>
-    </button>
-  );
-}
-
-export { DiffComment, DiffCommentDraft, DiffCommentLink, DiffFile, DiffFileHeader, DiffView };
+export { DiffComment, DiffCommentDraft, DiffFile, DiffFileHeader, DiffView };
 export type { DiffAnnotation, DiffLayout };

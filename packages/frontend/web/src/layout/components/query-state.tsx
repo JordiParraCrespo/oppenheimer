@@ -1,90 +1,125 @@
-import type { ReactNode } from 'react';
+import { Button } from '@oppenheimer/design-system-web';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
+import { createContext, type ReactNode, Suspense, use } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 
-/** The part of a query result {@link QueryState} branches on. */
-export interface QueryStateSource<T> {
-  isPending: boolean;
-  error: unknown;
-  data: T | undefined;
+/**
+ * The rung a read is on, decided by the root and read by every slot: still
+ * loading, failed (with the boundary's `retry`), or there.
+ */
+type Rung =
+  | { rung: 'pending' }
+  | { rung: 'failed'; error: unknown; retry: () => void }
+  | { rung: 'data' };
+
+const RungContext = createContext<Rung | null>(null);
+
+function useRung(slot: string): Rung {
+  const rung = use(RungContext);
+  if (!rung) throw new Error(`<QueryState.${slot}> is drawn outside a <QueryState>`);
+  return rung;
 }
 
-/**
- * Several reads as one source, for a section that can draw nothing until all
- * of them have answered: pending while any is, failed with the first failure,
- * and `combine`d once every one holds data. The sessions sidebar groups its
- * sessions under their projects, so it needs both.
- */
-export function combineQueries<A, B, T>(
-  a: QueryStateSource<A>,
-  b: QueryStateSource<B>,
-  combine: (a: A, b: B) => T,
-): QueryStateSource<T> {
-  const settled = a.data !== undefined && b.data !== undefined;
-  return {
-    isPending: a.isPending || b.isPending,
-    error: a.error ?? b.error ?? null,
-    data: settled ? combine(a.data as A, b.data as B) : undefined,
-  };
-}
+const PENDING: Rung = { rung: 'pending' };
+const DATA: Rung = { rung: 'data' };
 
 /**
- * The four states of a read, in one order: failed, still loading, empty, or
- * there. Hand-written, the ladder lost rungs: a failed read spun a skeleton
- * for ever, or read as "No projects".
+ * The boundary of a Suspense read, and the three states it draws in one
+ * order: still loading, failed, or there. Hand-written, the ladder lost rungs:
+ * a failed read spun a skeleton for ever, or read as "No projects".
  *
- * A failure is shown instead of everything else, through `ErrorAlert` with the
- * section's `errorFallback`, or `renderError` (a screen's `RouteError`, a
- * 404's "not found"). `stale` decides what a later failure does to data on
- * screen: `"replace"` (the default) shows the failure in its place; `"keep"`
- * keeps the data and puts the failure above it — a page of runs a refetch
- * failed to replace is still the page the reader was reading.
+ * The section in `Data` reads through a product package's `useSuspense…`
+ * hook, so its `data` is never `undefined`; the root draws the read's other
+ * states, and each slot draws its own and nothing else, where the caller puts
+ * it:
  *
- * It takes the query the section already holds and moves no subscription, as
- * the render rules ask. `children` is a function because the data only exists
- * on the last rung.
+ * ```tsx
+ * <QueryState>
+ *   <QueryState.Pending><Skeleton className="h-18 w-full" /></QueryState.Pending>
+ *   <QueryState.Error fallback={t('settings.hosts.failed')} />
+ *   <QueryState.Data><HostListRows /></QueryState.Data>
+ * </QueryState>
+ * ```
+ *
+ * TanStack's recipe: `react-error-boundary` inside `QueryErrorResetBoundary`.
+ * The children draw three times — under `<Suspense>`, as its placeholder, and
+ * as the boundary's fallback — and each slot draws in its own place only. A
+ * first failure lands on `Error` with Try again, which resets the failed
+ * queries so they fetch rather than rethrow; a refetch that fails over drawn
+ * data does not throw, and the section shows its read's `error` beside the
+ * data. An empty answer is the section's own branch: only it knows what empty
+ * means. A read whose key the URL moves reads that key through
+ * `useDeferredValue`, so the page on screen stays while the next one loads.
+ *
+ * `pnpm check:structure` holds every use to a `Pending`, an `Error` and a
+ * `Data`, and every Suspense read to an `ErrorAlert` for the later failure.
  */
-export function QueryState<T>({
-  query,
-  pending,
-  errorFallback,
-  errorClassName,
-  renderError,
-  stale = 'replace',
-  empty,
-  children,
-}: {
-  query: QueryStateSource<T>;
-  /** What holds the place until the first answer: skeletons, usually. */
-  pending: ReactNode;
-  /** Already translated: the failure's sentence when its code has none. */
-  errorFallback: string;
-  errorClassName?: string;
-  renderError?: (error: unknown) => ReactNode;
-  /** A failure after data arrived: show it instead (`replace`) or beside it (`keep`). */
-  stale?: 'replace' | 'keep';
-  /** What an empty answer shows, and what counts as empty. */
-  empty?: { when: (data: T) => boolean; show: ReactNode };
-  children: (data: T) => ReactNode;
-}) {
-  const { error, data } = query;
-  const failed = error !== null && error !== undefined;
-  const failure = failed ? (
-    renderError ? (
-      renderError(error)
-    ) : (
-      <ErrorAlert error={error} fallback={errorFallback} className={errorClassName} />
-    )
-  ) : null;
-
-  if (failed && (stale === 'replace' || data === undefined)) return failure;
-  if (data === undefined) return pending;
-  const body = empty?.when(data) ? empty.show : children(data);
-  return failed ? (
-    <>
-      {failure}
-      {body}
-    </>
-  ) : (
-    body
+function QueryStateRoot({ children }: { children: ReactNode }) {
+  return (
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <ErrorBoundary
+          onReset={reset}
+          fallbackRender={({ error, resetErrorBoundary }) => (
+            <RungContext value={{ rung: 'failed', error, retry: resetErrorBoundary }}>
+              {children}
+            </RungContext>
+          )}
+        >
+          <Suspense fallback={<RungContext value={PENDING}>{children}</RungContext>}>
+            <RungContext value={DATA}>{children}</RungContext>
+          </Suspense>
+        </ErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
   );
 }
+
+/** What holds the place until the first answer: skeletons, usually. */
+function QueryStatePending({ children }: { children: ReactNode }) {
+  return useRung('Pending').rung === 'pending' ? children : null;
+}
+
+/**
+ * A first failure: `ErrorAlert` with the section's already-translated
+ * `fallback` for a code with no sentence of its own, and Try again; or
+ * `children` to say it another way (a screen's `RouteError`, a 404 said as
+ * "not found"), handed the same `retry` — only it resets the boundary, so
+ * another way of saying the failure wires its own button to it.
+ */
+function QueryStateError(
+  props:
+    | { fallback: string; className?: string; children?: never }
+    | { children: (error: unknown, retry: () => void) => ReactNode },
+) {
+  const { t } = useTranslation();
+  const rung = useRung('Error');
+  if (rung.rung !== 'failed') return null;
+  if ('fallback' in props)
+    return (
+      <ErrorAlert
+        error={rung.error}
+        fallback={props.fallback}
+        className={props.className}
+        action={
+          <Button variant="ghost" size="sm" onClick={rung.retry}>
+            {t('common.retry')}
+          </Button>
+        }
+      />
+    );
+  return props.children(rung.error, rung.retry);
+}
+
+/** The section that reads, once its read has answered. */
+function QueryStateData({ children }: { children: ReactNode }) {
+  return useRung('Data').rung === 'data' ? children : null;
+}
+
+export const QueryState = Object.assign(QueryStateRoot, {
+  Pending: QueryStatePending,
+  Error: QueryStateError,
+  Data: QueryStateData,
+});

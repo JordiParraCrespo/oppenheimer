@@ -24,23 +24,20 @@ export const projectFormSchema = createProjectSchema.pick({ name: true }).extend
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 /** Why Save is off, in the order they are checked; `null` is ready. */
-export type ProjectBlock = 'name' | 'repositories' | 'default';
+export type ProjectBlock = 'name' | 'default';
 
 /**
- * The export's rule for a project that can be saved
- * (`design/version1/SessionsConsole.dc.html`, `projSaveBlocked`): a name, at
- * least one repository, at least one of them default. The workspace's
- * Unassigned project (`holdsNone`) is where work naming no project goes, so it
- * may hold no repository; one it does hold still needs a default.
+ * When a project can be saved: a name, and a default among its repositories
+ * whenever it holds any. A project may hold none (2026-10-14): it is a place
+ * for tasks, memory and sessions, and a folder or terminal session needs no
+ * repository.
  */
 export function projectBlock(
   name: string,
   rows: readonly RepositoryRowValue[],
-  options: { holdsNone?: boolean } = {},
 ): ProjectBlock | null {
   if (!name.trim()) return 'name';
-  if (rows.length === 0) return options.holdsNone ? null : 'repositories';
-  if (!rows.some((row) => row.isDefault)) return 'default';
+  if (rows.length > 0 && !rows.some((row) => row.isDefault)) return 'default';
   return null;
 }
 
@@ -63,9 +60,8 @@ export function projectDraftOf(project: ProjectEntity | undefined): ProjectFormV
 /**
  * What a save sends. A row whose id no longer parses is dropped rather than
  * sent. The workspace's Unassigned project (`fixed`) keeps its name, so the
- * name is not sent for it, and with no repository it leaves the list as it is:
- * the API holds a project's repositories to at least one whenever they are
- * sent.
+ * name is not sent for it. The list is always sent, so removing the last
+ * repository leaves the project with none.
  */
 export function projectInputOf(
   values: ProjectFormValues,
@@ -77,7 +73,7 @@ export function projectInputOf(
   });
   return {
     ...(fixed ? {} : { name: values.name.trim() }),
-    ...(fixed && repositories.length === 0 ? {} : { repositories }),
+    repositories,
     defaultHostId: values.defaultHostId,
     defaultAgent: values.defaultAgent,
   };

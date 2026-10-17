@@ -16,6 +16,10 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 @keyframes op-lift{from{transform:none}to{transform:rotate(1.6deg) scale(1.025)}}
 [data-noscrollbar]::-webkit-scrollbar{display:none}
 @keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes op-chat-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes op-chat-shimmer{0%,100%{opacity:.55}50%{opacity:1}}
+[data-chatscroll]::-webkit-scrollbar{width:10px}[data-chatscroll]::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:980px;border:3px solid transparent;background-clip:content-box}
+textarea::placeholder{color:var(--fg-subtle)}
 </style>
 <script src="./rail-order.js"></script>
 </helmet>
@@ -24,28 +28,31 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></button>
+<a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
 <button class="op-rail__btn" type="button" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></button>
-<button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan<span class="op-nav__count">{{ openN }}</span></span></button>
+<button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan<span class="op-nav__count">{{ openN }}</span></span></button>
 </nav>
 <nav class="op-sidebar" style="width:264px;min-width:264px;overflow:hidden">
 <div class="op-sidebar__head">
-<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Plan</span></span>
+<span class="op-wordmark" style="font-size:18px">Oppenheimer</span>
 </div>
 <div class="op-sidebar__scroll">
 <div class="op-sessionlist">
 <button class="op-session" type="button" data-active="{{ navTasks }}" onClick="{{ goTasks }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Tasks</span><span class="op-session__age" style="opacity:1">{{ openN }}</span></button>
+<button class="op-session" type="button" data-active="{{ navMs }}" onClick="{{ goMs }}"><span class="op-session__glyph" style="display:flex;align-items:center;justify-content:center;width:14px"><span style="width:8px;height:8px;box-sizing:border-box;transform:rotate(45deg);border:1.5px solid currentColor"></span></span><span class="op-session__name">Milestones</span><span class="op-session__age" style="opacity:1">{{ goalsN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navCal }}" onClick="{{ goCal }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Calendar</span><span class="op-session__age" style="opacity:1">{{ todayN }}</span></button>
+<button class="op-session" type="button" data-active="{{ navProj }}" onClick="{{ goProj }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Projects</span><span class="op-session__age" style="opacity:1">{{ agProjN }}</span></button>
 </div>
-<sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
-<div class="op-listhead" style="margin-top:14px">
-<span class="op-listhead__title">Projects</span>
-<span class="op-listhead__count">{{ projCount }}</span>
-<button class="op-iconbtn-sm" type="button" aria-label="New project" title="New project" onClick="{{ newProject }}" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
-</div>
+<sc-if value="{{ isProj }}">
+<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">General</span></div>
 <div class="op-sessionlist">
-<sc-for list="{{ projChips }}" as="p" hint-placeholder-count="4">
-<button class="op-session" type="button" data-active="{{ p.sideOn }}" onClick="{{ p.pick }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ p.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ p.name }}</span><span class="op-session__age" style="opacity:1">{{ p.n }}</span></button>
+<button class="op-session" type="button" data-active="{{ agPmOn }}" onClick="{{ agOpenPm }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="users" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Project manager</span><sc-if value="{{ agPmLive }}"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span></sc-if></button>
+</div>
+<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">Project agents</span></div>
+<div class="op-sessionlist">
+<sc-for list="{{ agRows }}" as="p" hint-placeholder-count="3">
+<button class="op-session" type="button" data-active="{{ p.on }}" onClick="{{ p.open }}"><span class="op-session__glyph" style="display:flex;align-items:center;justify-content:center;width:14px"><span style="width:7px;height:7px;border-radius:980px;background:{{ p.dot }};animation:{{ p.anim }}"></span></span><span class="op-session__name">{{ p.name }}</span><span class="op-session__age" style="opacity:1;font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ p.pctLabel }}</span></button>
 </sc-for>
 </div>
 </sc-if>
@@ -58,10 +65,22 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <button class="op-session" type="button" aria-pressed="{{ l.on }}" onClick="{{ l.toggle }}" style="opacity:{{ l.op }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ l.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ l.name }}</span><span class="op-session__age" style="opacity:1;display:flex;width:16px;height:16px;align-items:center;justify-content:center;box-sizing:border-box;border-radius:6px;border:1.5px solid {{ l.boxBorder }};background:{{ l.boxBg }};color:var(--background)"><sc-if value="{{ l.onV }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if></span></button>
 </sc-for>
 </div>
-<div style="margin:16px 12px 0;padding:12px;display:flex;flex-direction:column;gap:4px;border-radius:14px;background:var(--hover-surface)">
-<span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500"><img src="./assets/brand/google-color.svg" alt="" style="width:13px;height:13px;flex:none">Google Calendar</span>
-<span style="font-size:12px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">jordiparra99@gmail.com</span>
-<span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">Synced 2 min ago</span>
+<div class="op-listhead" style="margin-top:14px">
+<span class="op-listhead__title">Google accounts</span>
+</div>
+<div style="margin:0 12px;display:flex;flex-direction:column;border-radius:14px;background:var(--hover-surface);overflow:hidden">
+<sc-for list="{{ gAccts }}" as="a" hint-placeholder-count="2">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 8px 10px 12px;border-top:{{ a.sep }}">
+<img src="./assets/brand/google-color.svg" alt="" style="width:13px;height:13px;flex:none;margin-top:2px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.email }}</span>
+<span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)"><span style="width:6px;height:6px;border-radius:6px;flex:none;background:{{ a.dot }}"></span>{{ a.status }}</span>
+<sc-if value="{{ a.failed }}"><button type="button" onClick="{{ a.reconnect }}" style="align-self:flex-start;margin-top:2px;padding:0;border:0;background:none;font:inherit;font-size:12px;color:var(--link);cursor:pointer">Reconnect</button></sc-if>
+</div>
+<button type="button" aria-label="Disconnect {{ a.email }}" title="Disconnect" onClick="{{ a.remove }}" style="flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:transparent;color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button>
+</div>
+</sc-for>
+<button type="button" onClick="{{ addGAcct }}" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:0;border-top:{{ addSep }};background:transparent;font:inherit;font-size:13px;color:var(--fg);cursor:pointer;text-align:left" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="13" hint-size="13px,13px"></x-import></span>Add account</button>
 </div>
 </sc-if>
 </div>
@@ -71,6 +90,320 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 </nav>
 
 <main style="flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;background:var(--canvas)">
+<sc-if value="{{ isProj }}">
+<div style="height:100%;display:flex;flex-direction:column;background:var(--background)">
+<header style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--border-subtle)">
+<span style="flex:none;width:26px;height:26px;border-radius:980px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ agHeadIcon }}" size="14" hint-size="14px,14px"></x-import></span>
+<sc-if value="{{ agIsPm }}"><a href="./BotSettings.dc.html?bot=pm" title="Project manager settings" style="display:inline-flex;align-items:center;gap:6px;height:28px;margin-left:-6px;padding:0 6px;border-radius:10px;color:var(--fg);font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none">{{ agHeadTitle }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import></span></a></sc-if>
+<sc-if value="{{ agIsProject }}"><span style="font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap">{{ agHeadTitle }}</span></sc-if>
+<span style="flex:1"></span>
+<sc-if value="{{ agRunning }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span>Running</span></sc-if>
+<div role="tablist" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<button type="button" role="tab" aria-selected="{{ agChatOn }}" onClick="{{ agGoChat }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ agChatBg }};color:{{ agChatFg }};font:inherit;font-size:13px;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="13" hint-size="13px,13px"></x-import>Chat</button>
+<button type="button" role="tab" aria-selected="{{ agViewOn }}" onClick="{{ agGoView }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ agViewBg }};color:{{ agViewFg }};font:inherit;font-size:13px;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="13" hint-size="13px,13px"></x-import>View</button>
+<button type="button" role="tab" aria-selected="{{ agStatsOn }}" onClick="{{ agGoStats }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ agStatsBg }};color:{{ agStatsFg }};font:inherit;font-size:13px;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="activity" size="13" hint-size="13px,13px"></x-import>Stats</button>
+</div>
+</header>
+<div style="flex:1;min-height:0;display:flex">
+<sc-if value="{{ agChatOn }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<div data-chatscroll="true" ref="{{ agScrollRef }}" style="flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden">
+<div style="max-width:44rem;margin:0 auto;padding:28px 20px 40px;display:flex;flex-direction:column;gap:20px">
+<sc-for list="{{ agMsgs }}" as="m" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<sc-if value="{{ m.isUser }}">
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+<div style="max-width:82%;padding:10px 14px;box-sizing:border-box;background:var(--card);border-radius:18px;font-size:15px;line-height:1.55;letter-spacing:-0.011em;white-space:pre-wrap;word-break:break-word;text-wrap:pretty">{{ m.text }}</div>
+<span style="padding-right:6px;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.time }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ m.isWork }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<button type="button" onClick="{{ m.toggle }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:4px;margin-left:-8px;padding:4px 8px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">{{ m.label }}<span style="display:flex;transform:{{ m.chevRot }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ m.open }}">
+<div style="display:flex;flex-direction:column;padding:4px 0 4px 12px;margin-left:2px;border-left:1px solid var(--border-subtle);animation:op-rise 180ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ m.steps }}" as="st" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:9px;min-height:28px;font-size:13px;color:var(--fg-muted)">
+<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ st.icon }}" size="13" hint-size="13px,13px"></x-import></span>
+<span style="flex:none">{{ st.verb }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg)">{{ st.target }}</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ st.meta }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ m.isAction }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:18px;background:var(--card);border:1px solid {{ m.border }}">
+<div style="display:flex;align-items:flex-start;gap:12px">
+<span style="flex:none;width:28px;height:28px;border-radius:980px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="font-size:14px;font-weight:500">{{ m.title }}</span>
+<span style="font-size:13.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ m.target }}</span>
+</div>
+<span style="flex:none;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:{{ m.dot }}"></span>{{ m.stateLabel }}</span>
+</div>
+<sc-if value="{{ m.pending }}">
+<div style="display:flex;align-items:center;gap:8px;padding-left:40px;flex-wrap:wrap">
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ m.approve }}">{{ m.approveLabel }}</button>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ m.deny }}">Deny</button>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-subtle)">Switch to Auto to skip approvals</span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ m.isAssistant }}">
+<div style="display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.6;letter-spacing:-0.011em">
+<sc-for list="{{ m.blocks }}" as="b" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column">
+<sc-if value="{{ b.isP }}"><p style="margin:0;text-wrap:pretty"><sc-for list="{{ b.segs }}" as="g"><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></p></sc-if>
+<sc-if value="{{ b.isList }}">
+<ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+<sc-for list="{{ b.items }}" as="it"><li style="text-wrap:pretty;padding-left:2px"><sc-for list="{{ it.segs }}" as="g"><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></li></sc-for>
+</ul>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ m.done }}"><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.meta }}</span></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ agRunning }}">
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)">
+<span style="display:flex;animation:op-chat-shimmer 1.4s cubic-bezier(.4,0,.2,1) infinite"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ agLiveIcon }}" size="13" hint-size="13px,13px"></x-import></span>
+<span style="animation:op-chat-shimmer 1.4s cubic-bezier(.4,0,.2,1) infinite">{{ agLiveLabel }}</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ agElapsed }}</span>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="flex:none;padding:0 20px 16px">
+<div style="max-width:44rem;margin:0 auto;display:flex;flex-direction:column;gap:8px">
+<sc-if value="{{ agShowSuggest }}">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ agSuggest }}" as="q" hint-placeholder-count="3">
+<button type="button" onClick="{{ q.pick }}" style="height:28px;padding:0 12px;border:1px solid var(--border-subtle);border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">{{ q.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+<div style="border-radius:18px;background:var(--card);border:1px solid {{ agBorder }};transition:border-color 140ms cubic-bezier(.4,0,.2,1)">
+<textarea value="{{ agDraft }}" onChange="{{ agOnDraft }}" onKeyDown="{{ agOnKey }}" onFocus="{{ agOnFocus }}" onBlur="{{ agOnBlur }}" rows="2" placeholder="{{ agPlaceholder }}" style="display:block;width:100%;box-sizing:border-box;padding:12px 14px 6px;border:0;outline:0;resize:none;background:none;color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.55;letter-spacing:-0.011em"></textarea>
+<div style="display:flex;align-items:center;gap:4px;padding:0 8px 8px 6px">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Attach"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+<div style="position:relative" onClick="{{ stop }}">
+<button type="button" onClick="{{ agModeToggle }}" aria-expanded="{{ agModeOpen }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:980px;background:{{ agModeBg }};color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap" style-hover="background:var(--hover-surface);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ agModeIcon }}" size="13" hint-size="13px,13px"></x-import>{{ agModeLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ agModeOpen }}">
+<div role="menu" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:280px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ agModeOpts }}" as="o" hint-placeholder-count="2">
+<button type="button" role="menuitemradio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;padding-top:2px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ o.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:13.5px;font-weight:500">{{ o.label }}</span><span style="font-size:12px;line-height:1.4;color:var(--fg-muted)">{{ o.desc }}</span></span>
+<sc-if value="{{ o.on }}"><span style="display:flex;padding-top:2px;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<span style="flex:1"></span>
+<div style="position:relative" onClick="{{ stop }}">
+<button type="button" onClick="{{ mdToggle }}" aria-expanded="{{ mdOpen }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:980px;background:{{ mdBg }};color:var(--fg);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap" style-hover="background:var(--hover-surface)">{{ mdName }}<span style="color:var(--fg-muted)">{{ efLabel }}</span></button>
+<sc-if value="{{ mdOpen }}">
+<div role="menu" style="position:absolute;right:0;bottom:calc(100% + 8px);z-index:20;width:248px;padding:4px;display:flex;flex-direction:column;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px 6px"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:13.5px">{{ mdName }}</span><span style="font-size:12px;color:var(--fg-subtle)">{{ mdDesc }}</span></span><span style="display:flex;padding-top:2px;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></div>
+<div style="height:1px;margin:4px 10px;background:var(--border-subtle)"></div>
+<button type="button" onClick="{{ efSubOpen }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:0 10px;border:0;border-radius:10px;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer;background:{{ efRowBg }}" style-hover="background:var(--hover-surface)"><span style="flex:1">Effort</span><span style="color:var(--fg-muted)">{{ efLabel }}</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></span></button>
+<div style="height:1px;margin:4px 10px;background:var(--border-subtle)"></div>
+<button type="button" onClick="{{ mdSubOpen }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:0 10px;border:0;border-radius:10px;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer;background:{{ mdRowBg }}" style-hover="background:var(--hover-surface)"><span style="flex:1">More models</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ efSub }}">
+<div role="menu" aria-label="Effort" style="position:absolute;right:calc(100% + 6px);bottom:0;width:236px;padding:4px;display:flex;flex-direction:column;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<span style="padding:8px 10px 6px;font-size:12px;line-height:1.45;color:var(--fg-subtle);text-wrap:pretty">More effort is more thorough, slower and uses more tokens.</span>
+<sc-for list="{{ efOpts }}" as="e" hint-placeholder-count="5">
+<button type="button" role="menuitemradio" aria-checked="{{ e.on }}" onClick="{{ e.pick }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span>{{ e.label }}</span><sc-if value="{{ e.rec }}"><span style="font-size:12px;color:var(--fg-subtle)">Recommended</span></sc-if><sc-if value="{{ e.warn }}"><span style="font-size:12px;color:var(--fg-subtle)">4× usage</span></sc-if><span style="flex:1"></span><sc-if value="{{ e.on }}"><span style="display:flex;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></sc-if></button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ mdSub }}">
+<div role="dialog" aria-label="More models" style="position:absolute;right:calc(100% + 6px);bottom:0;width:260px;display:flex;flex-direction:column;overflow:hidden;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<label style="display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-bottom:1px solid var(--border-subtle);color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input ref="{{ mdRef }}" value="{{ mdQ }}" onChange="{{ mdOnQ }}" onKeyDown="{{ mdKey }}" placeholder="Search models" aria-label="Search models" style="flex:1;min-width:0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:14px"></label>
+<div data-chatscroll="true" style="max-height:300px;overflow-y:auto;padding:4px">
+<sc-for list="{{ mdList }}" as="o" hint-placeholder-count="6">
+<button type="button" role="option" aria-selected="{{ o.on }}" onClick="{{ o.pick }}" onMouseEnter="{{ o.hover }}" style="display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font:inherit;font-size:14px;text-align:left;cursor:pointer"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.name }}</span><sc-if value="{{ o.on }}"><span style="display:flex;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></sc-if></button>
+</sc-for>
+<sc-if value="{{ mdEmpty }}"><div style="padding:10px;font-size:13px;color:var(--fg-muted)">No model matches.</div></sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ micOn }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:0 4px;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span>{{ micTime }}</span></sc-if>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ micAria }}" aria-pressed="{{ micOn }}" title="{{ micAria }}" onClick="{{ micToggle }}" style="background:{{ micBg }};color:{{ micFg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="15" hint-size="15px,15px"></x-import></button>
+<sc-if value="{{ agRunning }}"><button type="button" aria-label="Stop run" title="Stop run" onClick="{{ agStop }}" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer" style-active="transform:scale(.975)"><span style="width:9px;height:9px;border-radius:2px;background:currentColor"></span></button></sc-if>
+<sc-if value="{{ agIdle }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="Send" onClick="{{ agSend }}" disabled="{{ agCantSend }}" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:980px;background:var(--primary);color:#fff;cursor:pointer;opacity:{{ agSendOp }};transition:opacity 80ms" style-active="transform:scale(.975)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="15" hint-size="15px,15px"></x-import></button></sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ agViewOn }}">
+<div data-chatscroll="true" style="flex:1;min-width:0;overflow-y:auto;background:var(--canvas)">
+<div style="max-width:1080px;margin:0 auto;padding:32px 32px 64px;display:flex;flex-direction:column;gap:28px">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+<sc-for list="{{ agTiles }}" as="st" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:18px;background:var(--card)">
+<span style="font-size:13px;color:var(--fg-muted)">{{ st.label }}</span>
+<span style="display:flex;align-items:baseline;gap:4px"><span style="font-family:var(--font-mono);font-size:34px;font-weight:500;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1">{{ st.value }}</span><span style="font-family:var(--font-mono);font-size:17px;color:var(--fg-muted);font-variant-numeric:tabular-nums">{{ st.unit }}</span></span>
+<span style="font-size:12.5px;color:var(--fg-subtle)">{{ st.note }}</span>
+</div>
+</sc-for>
+</div>
+
+<sc-if value="{{ agIsProject }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:16px;padding:18px;border-radius:18px;background:var(--card)">
+<span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Milestones</span>
+<sc-for list="{{ ag.goals }}" as="g" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="display:flex;align-items:center;gap:10px"><span style="flex:none;width:8px;height:8px;margin:0 1px;transform:rotate(45deg);background:{{ g.mark }};box-shadow:inset 0 0 0 1.5px var(--fg-muted)"></span><span style="flex:1;min-width:0;font-size:14px;line-height:1.4">{{ g.name }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ g.due }}</span></span>
+<span style="display:flex;align-items:center;gap:10px;padding-left:20px"><span style="flex:1;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ g.pct }};background:var(--fg-muted);border-radius:980px"></span></span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ g.count }}</span></span>
+</div>
+</sc-for>
+<sc-if value="{{ ag.noGoals }}"><span style="font-size:13px;color:var(--fg-muted)">No milestones yet.</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-if value="{{ ag.hasBlockers }}">
+<div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:18px;background:var(--card)">
+<span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Needs input</span>
+<sc-for list="{{ ag.blockers }}" as="bl" hint-placeholder-count="1">
+<button type="button" onClick="{{ bl.ask }}" style="display:flex;flex-direction:column;gap:4px;margin:0 -8px;padding:8px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span>{{ bl.reason }}</span>
+<span style="font-size:14px;line-height:1.45;text-wrap:pretty">{{ bl.title }}</span>
+<span style="display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--link)">Ask the agent<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="12" hint-size="12px,12px"></x-import></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:18px;background:var(--card)">
+<span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">In progress</span>
+<sc-for list="{{ ag.doing }}" as="t" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;min-height:32px"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:var(--success)"></span><span style="flex:1;min-width:0;font-size:14px;line-height:1.4;text-wrap:pretty">{{ t.title }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ t.due }}</span></div>
+</sc-for>
+<sc-if value="{{ ag.noDoing }}"><span style="font-size:13px;color:var(--fg-muted)">Nothing in progress.</span></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ agIsPm }}">
+<div style="display:flex;flex-direction:column;padding:6px 18px;border-radius:18px;background:var(--card)">
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1fr) 72px 72px;gap:16px;align-items:center;height:40px;font-size:12px;color:var(--fg-subtle)"><span>Project</span><span>Status</span><span>Progress</span><span style="text-align:right">Done</span><span style="text-align:right">Next due</span></div>
+<sc-for list="{{ agRows }}" as="p" hint-placeholder-count="3">
+<button type="button" onClick="{{ p.openChat }}" style="display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1fr) 72px 72px;gap:16px;align-items:center;min-height:48px;margin:0 -10px;padding:0 10px;border:0;border-top:1px solid var(--border-subtle);border-radius:0;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span>
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:{{ p.dot }}"></span>{{ p.status }}</span>
+<span style="display:flex;align-items:center;gap:10px"><span style="flex:1;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ p.pctLabel }};background:var(--fg-muted);border-radius:980px"></span></span><span style="width:34px;text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ p.pctLabel }}</span></span>
+<span style="text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ p.count }}</span>
+<span style="text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ p.next }}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ agStatsOn }}">
+<div data-chatscroll="true" style="flex:1;min-width:0;overflow-y:auto;background:var(--canvas)">
+<div style="max-width:1080px;margin:0 auto;padding:32px 32px 64px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px">
+<div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em">{{ st.scope }}</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ st.compareCaption }}</span></div>
+<div style="position:relative;margin-left:auto" onClick="{{ stop }}">
+<button type="button" onClick="{{ st.dpToggle }}" aria-expanded="{{ st.dpOpen }}" style="display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 14px;border:1px solid var(--border-subtle);border-radius:980px;background:{{ st.dpBtnBg }};color:var(--fg);font:inherit;font-size:13.5px;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span><span style="color:var(--fg-muted)">{{ st.presetName }}</span><span style="font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums">{{ st.rangeLabel }}</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ st.dpOpen }}">
+<div role="dialog" aria-label="Date range" style="position:absolute;right:0;top:calc(100% + 8px);z-index:40;max-width:{{ st.dpMaxW }};display:flex;flex-direction:column;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1);overflow:hidden">
+<div style="display:flex;flex-direction:{{ st.dpDir }}">
+<div style="width:{{ st.dpPresetW }};flex:none;display:flex;flex-direction:{{ st.dpPresetDir }};flex-wrap:wrap;gap:2px;padding:8px;border-right:{{ st.dpPresetBr }};border-bottom:{{ st.dpPresetBb }};box-sizing:border-box">
+<sc-for list="{{ st.presets }}" as="p" hint-placeholder-count="6">
+<button type="button" onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:0;border-radius:10px;background:{{ p.bg }};color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="flex:1">{{ p.label }}</span><sc-if value="{{ p.on }}"><span style="display:flex;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import></span></sc-if></button>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px 12px">
+<div style="display:flex;align-items:center;gap:4px">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous month" onClick="{{ st.dpPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import></button>
+<span style="flex:1"></span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next month" onClick="{{ st.dpNext }}" disabled="{{ st.dpNextOff }}" style="opacity:{{ st.dpNextOp }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div style="display:flex;gap:24px;margin-top:-38px">
+<sc-for list="{{ st.months }}" as="mo" hint-placeholder-count="2">
+<div style="width:224px;display:flex;flex-direction:column;gap:6px">
+<span style="height:28px;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:500">{{ mo.title }}</span>
+<div style="display:grid;grid-template-columns:repeat(7,32px);row-gap:2px">
+<sc-for list="{{ st.dow }}" as="w" hint-placeholder-count="7"><span style="height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--fg-subtle)">{{ w }}</span></sc-for>
+<sc-for list="{{ mo.days }}" as="d" hint-placeholder-count="35">
+<button type="button" onClick="{{ d.pick }}" onMouseEnter="{{ d.hover }}" disabled="{{ d.off }}" style="height:32px;padding:0;border:0;border-radius:{{ d.radius }};background:{{ d.bg }};color:{{ d.fg }};font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;cursor:{{ d.cursor }};opacity:{{ d.op }};box-shadow:{{ d.ring }};visibility:{{ d.vis }}">{{ d.n }}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;border-top:1px solid var(--border-subtle)">
+<button type="button" role="switch" aria-checked="{{ st.cmpOn }}" onClick="{{ st.cmpToggle }}" style="display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--fg);font:inherit;font-size:13px;cursor:pointer"><span style="position:relative;width:30px;height:18px;border-radius:980px;background:{{ st.cmpTrack }};transition:background 140ms cubic-bezier(.4,0,.2,1)"><span style="position:absolute;top:2px;left:{{ st.cmpKnob }};width:14px;height:14px;border-radius:980px;background:#fff;transition:left 140ms cubic-bezier(.4,0,.2,1)"></span></span>Compare with previous period</button>
+<span style="flex:1"></span>
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ st.dpHint }}</span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ st.dpDone }}">Done</button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+<sc-for list="{{ st.cards }}" as="c" hint-placeholder-count="4">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.StatCard" label="{{ c.label }}" value="{{ c.value }}" unit="{{ c.unit }}" delta="{{ c.delta }}" direction="{{ c.dir }}" caption="{{ c.caption }}" icon="{{ c.icon }}" hint-size="100%,132px"></x-import>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px">
+<div style="display:flex;flex-direction:column;gap:14px;padding:18px 18px 14px;border-radius:18px;background:var(--card);min-width:0">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em">Tasks completed</span><span style="font-size:12.5px;color:var(--fg-muted)">Per week, against tasks created</span></div><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.ChartLegend" items="{{ st.taskLegend }}" hint-size="auto,20px"></x-import></div>
+<x-import component="CurvedAreaChart" from="./CurvedAreaChart.jsx" series="{{ st.taskSeries }}" labels="{{ st.labels }}" height="{{ st.h }}" y-ticks="{{ st.yTicks }}" hint-size="100%,220px"></x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;padding:18px 18px 14px;border-radius:18px;background:var(--card);min-width:0">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em">Pull requests</span><span style="font-size:12.5px;color:var(--fg-muted)">Opened and merged per week</span></div><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.ChartLegend" items="{{ st.prLegend }}" hint-size="auto,20px"></x-import></div>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.BarChart" series="{{ st.prSeries }}" labels="{{ st.labels }}" height="{{ st.h }}" y-ticks="{{ st.yTicks }}" hint-size="100%,220px"></x-import>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:12px">
+<div style="display:flex;flex-direction:column;gap:14px;padding:18px 18px 14px;border-radius:18px;background:var(--card);min-width:0">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em">Tokens burned</span><span style="font-size:12.5px;color:var(--fg-muted)">Per week by model, in millions</span></div><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.ChartLegend" items="{{ st.tokLegend }}" hint-size="auto,20px"></x-import></div>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.BarChart" series="{{ st.tokSeries }}" labels="{{ st.labels }}" height="{{ st.h }}" stacked="{{ true }}" y-ticks="{{ st.yTicks }}" y-format="{{ st.fmtM }}" hint-size="100%,220px"></x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;padding:18px 18px 14px;border-radius:18px;background:var(--card);min-width:0">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em">Pull request outcomes</span><span style="font-size:12.5px;color:var(--fg-muted)">All PRs in the period</span></div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:4px 0 6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.DonutChart" data="{{ st.prDonut }}" size="{{ st.donutSize }}" thickness="{{ st.donutThick }}" center-value="{{ st.prRate }}" center-caption="merge rate" hint-size="168px,168px"></x-import><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.ChartLegend" items="{{ st.donutLegend }}" hint-size="auto,20px"></x-import></div>
+</div>
+</div>
+<sc-if value="{{ st.hasTable }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:18px 18px 14px;border-radius:18px;background:var(--card);min-width:0">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em">By project</span><span style="font-size:12.5px;color:var(--fg-muted)">Where the work and the tokens went</span></div></div>
+<div style="display:flex;flex-direction:column">
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) repeat(4,minmax(64px,1fr));gap:16px;height:32px;align-items:center;font-size:12px;color:var(--fg-subtle)"><span>Project</span><span style="text-align:right">Tasks done</span><span style="text-align:right">PRs merged</span><span style="text-align:right">Tokens</span><span style="text-align:right">Cost</span></div>
+<sc-for list="{{ st.table }}" as="r" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) repeat(4,minmax(64px,1fr));gap:16px;min-height:44px;align-items:center;border-top:1px solid var(--border-subtle);font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums"><span style="font-family:var(--font-sans);font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span><span style="text-align:right">{{ r.done }}</span><span style="text-align:right">{{ r.prs }}</span><span style="text-align:right">{{ r.tok }}</span><span style="text-align:right;color:var(--fg-muted)">{{ r.cost }}</span></div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ notProj }}" hint-placeholder-val="{{ true }}">
 <div style="max-width:1400px;margin:0 auto;padding:44px 32px 80px;display:flex;flex-direction:column;gap:36px">
 <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
 <header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
@@ -83,45 +416,86 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <sc-if value="{{ hasOverdue }}"><span style="color:var(--fg-subtle)">·</span><span style="color:var(--danger)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ overdueN }}</span> overdue</span></sc-if>
 </div>
 </div>
-<sc-if value="{{ goalActive }}">
-<button class="op-pill" type="button" data-on="true" onClick="{{ clearGoal }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="13" hint-size="13px,13px"></x-import>{{ goalActiveName }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button>
+<sc-if value="{{ isGoalsTab }}">
+<div style="display:flex;align-items:center;gap:4px">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ tlTodayGo }}" style="margin-right:6px">Today</button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Earlier" onClick="{{ tlPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Later" onClick="{{ tlNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></button>
+</div>
 </sc-if>
+<sc-if value="{{ isBoard }}" hint-placeholder-val="{{ true }}">
 <button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ newTask }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>New task</button>
+</sc-if>
+<sc-if value="{{ isGoalsTab }}">
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ newGoal }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>New milestone</button>
+</sc-if>
 </header>
 
-<sc-if value="{{ showGoals }}" hint-placeholder-val="{{ true }}">
-<section style="display:flex;flex-direction:column;gap:12px">
-<div style="display:flex;align-items:center;gap:10px;padding:0 4px">
-<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Goals</span>
-<span style="flex:1"></span>
-<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ newGoal }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="13" hint-size="13px,13px"></x-import>New goal</button>
-</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
-<sc-for list="{{ goalCards }}" as="g" hint-placeholder-count="3">
-<div role="button" tabindex="0" onClick="{{ g.pick }}" style="display:flex;flex-direction:column;gap:14px;padding:16px 14px 16px 18px;background:{{ g.bg }};border:1px solid {{ g.border }};border-radius:18px;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1),border-color 140ms cubic-bezier(.4,0,.2,1)">
-<div style="display:flex;align-items:flex-start;gap:8px">
-<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
-<span style="font-size:15px;font-weight:500;letter-spacing:-0.011em;line-height:1.35;text-wrap:pretty">{{ g.name }}</span>
-<span style="font-size:12.5px;color:var(--fg-muted)">{{ g.projName }}<span style="color:var(--fg-subtle)"> · </span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ g.due }}</span></span>
-</div>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Edit goal" onClick="{{ g.edit }}" style="margin:-4px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button>
-</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div style="height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><div style="height:100%;width:{{ g.pct }};border-radius:980px;background:{{ g.barBg }};transition:width 400ms cubic-bezier(.4,0,.2,1)"></div></div>
-<div style="display:flex;align-items:baseline;justify-content:space-between;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-muted)"><span style="white-space:nowrap">{{ g.countLabel }}</span><span>{{ g.pct }}</span></div>
-</div>
-</div>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-16px">
+<div style="position:relative">
+<button class="op-pill" type="button" data-on="{{ fProjOn }}" onClick="{{ fProjToggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="13" hint-size="13px,13px"></x-import>{{ fProjLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ fProjOpen }}">
+<div role="menu" onClick="{{ stop }}" style="position:absolute;left:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:320px;overflow-y:auto;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ fProjOpts }}" as="o" hint-placeholder-count="4">
+<button type="button" role="menuitemradio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer;white-space:nowrap" style-hover="background:var(--hover-surface)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ o.name }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ o.meta }}</span><span style="display:flex;width:14px;color:var(--primary)"><sc-if value="{{ o.onV }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></sc-if></span></button>
 </sc-for>
-<sc-if value="{{ noGoals }}">
-<button type="button" onClick="{{ newGoal }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 18px;border:1px dashed var(--border);border-radius:18px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;text-align:left;cursor:pointer">
-<span style="font-size:15px;font-weight:500;color:var(--fg)">No goals for this project</span>
-Goals group tasks and track how many are done.
-</button>
+</div>
 </sc-if>
 </div>
+<sc-if value="{{ isBoard }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative">
+<button class="op-pill" type="button" data-on="{{ fMsOn }}" onClick="{{ fMsToggle }}"><span style="width:8px;height:8px;margin:0 2px;box-sizing:border-box;transform:rotate(45deg);border:1.5px solid currentColor"></span>{{ fMsLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ fMsOpen }}">
+<div role="menu" onClick="{{ stop }}" style="position:absolute;left:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:320px;overflow-y:auto;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ fMsOpts }}" as="o" hint-placeholder-count="4">
+<button type="button" role="menuitemradio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer;white-space:nowrap" style-hover="background:var(--hover-surface)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ o.name }}</span><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ o.meta }}</span><span style="display:flex;width:14px;color:var(--primary)"><sc-if value="{{ o.onV }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></sc-if></span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ fAny }}"><button type="button" onClick="{{ fClear }}" style="height:28px;padding:0 10px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">Clear</button></sc-if>
+</div>
+
+<sc-if value="{{ isGoalsTab }}">
+<section ref="{{ tlRef }}" data-noscrollbar="true" style="overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;margin:0 -32px;padding:0 32px 12px;overscroll-behavior-x:contain">
+<sc-if value="{{ hasTimeline }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;width:{{ tlWidth }};min-width:100%">
+<div style="position:relative;height:56px;border-bottom:1px solid var(--border-subtle)">
+<sc-for list="{{ tlMonths }}" as="mo" hint-placeholder-count="4"><span style="position:absolute;top:4px;left:{{ mo.x }};font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-muted);white-space:nowrap">{{ mo.label }}</span><span style="position:absolute;top:24px;bottom:-1px;left:{{ mo.x }};width:1px;background:var(--border-subtle)"></span></sc-for>
+<sc-for list="{{ tlWeeks }}" as="wk" hint-placeholder-count="12"><span style="position:absolute;top:30px;left:{{ wk.x }};transform:translateX(-50%);font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ wk.label }}</span></sc-for>
+<span style="position:absolute;top:27px;left:{{ tlToday.x }};transform:translateX(-50%);z-index:2;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:980px;background:var(--fg);color:var(--background);font-family:var(--font-mono);font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap">{{ tlToday.label }}</span>
+</div>
+<span style="position:absolute;top:56px;bottom:0;left:{{ tlToday.x }};width:1px;background:var(--fg);opacity:.35;pointer-events:none"></span>
+<sc-for list="{{ tlRows }}" as="r" hint-placeholder-count="3">
+<div style="position:relative;height:112px">
+<button type="button" onClick="{{ r.open }}" style="position:absolute;top:18px;left:{{ r.left }};display:flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--fg);font:inherit;font-size:15px;font-weight:500;letter-spacing:-0.011em;white-space:nowrap;cursor:pointer" style-hover="color:var(--link)"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="15" hint-size="15px,15px"></x-import></span>{{ r.name }}<span style="font-family:var(--font-mono);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ r.pct }}</span></button>
+<div style="position:absolute;top:48px;left:{{ r.left }};width:{{ r.width }};height:30px;box-sizing:border-box;border-radius:10px;background:var(--card);border:1px solid var(--border-subtle)"></div>
+<sc-for list="{{ r.ms }}" as="m" hint-placeholder-count="3">
+<button type="button" aria-label="{{ m.name }}" onClick="{{ m.pick }}" onMouseEnter="{{ m.enter }}" onMouseLeave="{{ m.leave }}" style="position:absolute;top:53px;left:{{ m.x }};transform:translateX(-50%);width:20px;height:20px;padding:0;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="width:10px;height:10px;box-sizing:border-box;transform:rotate(45deg) scale({{ m.scale }});background:{{ m.fill }};border:1.5px solid {{ m.stroke }};transition:transform 80ms cubic-bezier(.4,0,.2,1)"></span></button>
+<button type="button" onClick="{{ m.pick }}" onMouseEnter="{{ m.enter }}" onMouseLeave="{{ m.leave }}" style="position:absolute;top:84px;left:{{ m.x }};transform:translateX(-50%);padding:0;border:0;background:none;font:inherit;font-size:12.5px;color:{{ m.labelFg }};white-space:nowrap;cursor:pointer">{{ m.name }}</button>
+<sc-if value="{{ m.hov }}">
+<div role="tooltip" style="position:absolute;top:0;left:{{ m.tipX }};z-index:5;display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);white-space:nowrap;pointer-events:none;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<span style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500"><span style="width:9px;height:9px;box-sizing:border-box;transform:rotate(45deg);background:{{ m.fill }};border:1.5px solid {{ m.stroke }}"></span>{{ m.name }}</span>
+<span style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span style="width:40px;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ m.pct }};background:var(--fg)"></span></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ m.pct }}</span>of <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ m.total }}</span> tasks<span style="color:var(--fg-subtle)">·</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ m.due }}</span></span>
+<span style="font-size:12px;color:var(--fg-subtle)">Click to edit</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ noGoals }}">
+<button type="button" onClick="{{ newGoal }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;max-width:420px;padding:16px 18px;border:1px dashed var(--border);border-radius:18px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;text-align:left;cursor:pointer">
+<span style="font-size:15px;font-weight:500;color:var(--fg)">No milestones for this project</span>
+Milestones split a project into stages with a target date. Progress is the share of their tasks that are done.
+</button>
+</sc-if>
 </section>
 </sc-if>
 
+<sc-if value="{{ isBoard }}" hint-placeholder-val="{{ true }}">
 <section data-noscrollbar="true" style="overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;margin:0 -32px;padding:0 32px;overscroll-behavior-x:contain">
 <div style="display:grid;grid-template-columns:repeat(4,minmax(272px,1fr));gap:12px;align-items:start;width:max(100%,1124px)">
 <sc-for list="{{ cols }}" as="c" hint-placeholder-count="4">
@@ -162,8 +536,11 @@ Goals group tasks and track how many are done.
 </button>
 </sc-if>
 </div>
-<sc-if value="{{ t.canStart }}">
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Start session" title="Start session" onPointerDown="{{ stop }}" onClick="{{ t.start }}" style="position:absolute;top:8px;right:8px;background:var(--hover-surface);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="13" hint-size="13px,13px"></x-import></button>
+<sc-if value="{{ t.canAct }}">
+<div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-if value="{{ t.canStart }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Start session" title="Start session" onPointerDown="{{ stop }}" onClick="{{ t.start }}" style="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="13" hint-size="13px,13px"></x-import></button></sc-if>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Delete task" title="Delete task" onPointerDown="{{ stop }}" onClick="{{ t.del }}" style="background:var(--hover-surface)"><span aria-hidden="true" style="width:13px;height:13px;display:block;background:currentColor;-webkit-mask:url(./assets/icons/trash-2.svg) center / contain no-repeat;mask:url(./assets/icons/trash-2.svg) center / contain no-repeat"></span></button>
+</div>
 </sc-if>
 </div>
 </sc-if>
@@ -182,6 +559,7 @@ Goals group tasks and track how many are done.
 </sc-for>
 </div>
 </section>
+</sc-if>
 </sc-if>
 
 <sc-if value="{{ isCal }}">
@@ -245,6 +623,7 @@ Goals group tasks and track how many are done.
 </sc-if>
 
 </div>
+</sc-if>
 </main>
 
 <sc-if value="{{ dragging }}">
@@ -261,12 +640,20 @@ Goals group tasks and track how many are done.
 
 <sc-if value="{{ dlgOpen }}">
 <div class="op-scrim" onClick="{{ closeDlg }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-label="{{ dlgTitle }}" onClick="{{ dlgClick }}" style="width:min(580px,calc(100vw - 32px));max-width:none;overflow:visible">
-<div style="display:flex;flex-direction:column;gap:22px;padding:24px 28px 0">
-<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span>{{ dlgTitle }}</span><sc-if value="{{ dIsGoogle }}"><span style="color:var(--fg-subtle)">·</span><span style="display:inline-flex;align-items:center;gap:6px"><img src="./assets/brand/google-color.svg" alt="" style="width:12px;height:12px">Google Calendar</span></sc-if><span style="flex:1"></span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeDlg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button></div>
-<div style="display:flex;flex-direction:column;gap:8px;margin-top:-10px">
-<input type="text" aria-label="Title" placeholder="{{ dlgPh }}" value="{{ dTitle }}" onChange="{{ setDTitle }}" onKeyDown="{{ dlgKey }}" autoFocus="{{ true }}" style="border:0;outline:none;padding:0;background:none;color:var(--fg);font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.018em">
-<sc-if value="{{ dHasNotes }}" hint-placeholder-val="{{ true }}"><textarea rows="3" aria-label="Notes" placeholder="Notes" value="{{ dNotes }}" onChange="{{ setDNotes }}" style="border:0;outline:none;resize:none;padding:0;background:none;color:var(--fg-muted);font:inherit;font-size:14px;line-height:1.5"></textarea></sc-if>
+<div class="op-dialog" role="dialog" aria-modal="true" aria-label="{{ dlgTitle }}" onClick="{{ dlgClick }}" style="max-width:560px;overflow:visible">
+<div class="op-dialog__head"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><h2 class="op-dialog__title" style="flex:none;margin:0">{{ dlgTitle }}</h2><sc-if value="{{ dIsGoogle }}"><span style="display:inline-flex;font-size:13px;color:var(--fg-muted);align-items:center;gap:6px"><img src="./assets/brand/google-color.svg" alt="" style="width:12px;height:12px">Google Calendar</span></sc-if></div><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeDlg }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<label class="op-field">
+<span class="op-label">{{ dTitleLabel }}</span>
+<span class="op-input op-input--md"><input class="op-input__el" type="text" placeholder="{{ dlgPh }}" value="{{ dTitle }}" onChange="{{ setDTitle }}" onKeyDown="{{ dlgKey }}" autoFocus="{{ true }}"></span>
+</label>
+<sc-if value="{{ dHasNotes }}" hint-placeholder-val="{{ true }}">
+<label class="op-field">
+<span class="op-label">Notes</span>
+<textarea class="op-textarea" rows="3" style="resize:none" placeholder="Add context, links or acceptance criteria" value="{{ dNotes }}" onChange="{{ setDNotes }}"></textarea>
+</label>
+</sc-if>
 </div>
 <div style="display:{{ dGridDisplay }};grid-template-columns:80px minmax(0,1fr);row-gap:14px;column-gap:16px;align-items:start;padding-top:18px;border-top:1px solid var(--border-subtle)">
 <sc-if value="{{ dIsTask }}" hint-placeholder-val="{{ true }}">
@@ -275,10 +662,10 @@ Goals group tasks and track how many are done.
 </sc-if>
 <sc-if value="{{ dHasProject }}" hint-placeholder-val="{{ true }}">
 <span style="font-size:13px;color:var(--fg-muted);line-height:30px">Project</span>
-<div class="op-pills"><sc-for list="{{ dProjects }}" as="o" hint-placeholder-count="4"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
+<div class="op-pills"><sc-for list="{{ dProjects }}" as="o" hint-placeholder-count="4"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for><sc-if value="{{ npCanAdd }}" hint-placeholder-val="{{ true }}"><button class="op-pill" type="button" onClick="{{ npStart }}" style="gap:6px;background:transparent;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="13" hint-size="13px,13px"></x-import>New project</button></sc-if></div>
 </sc-if>
 <sc-if value="{{ dIsTask }}" hint-placeholder-val="{{ true }}">
-<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Goal</span>
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Milestone</span>
 <div class="op-pills"><sc-for list="{{ dGoals }}" as="o" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
 <span style="font-size:13px;color:var(--fg-muted);line-height:30px">Sessions</span>
 <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
@@ -313,7 +700,7 @@ Goals group tasks and track how many are done.
 <span style="font-size:13px;color:var(--fg-muted);line-height:30px">{{ dDueLabel }}</span>
 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
 <div style="position:relative">
-<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="dialog" aria-expanded="{{ dpOpenS }}" onClick="{{ dpToggle }}" style="width:auto;min-width:184px;justify-content:flex-start;gap:8px;box-shadow:{{ dpRing }}">
+<button class="op-select__trigger op-input--md" type="button" aria-haspopup="dialog" aria-expanded="{{ dpOpenS }}" onClick="{{ dpToggle }}" style="width:auto;min-width:184px;justify-content:flex-start;gap:8px;box-shadow:{{ dpRing }}">
 <span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span>
 <span style="color:{{ dpFg }};font-size:13px">{{ dpLabel }}</span>
 <span style="flex:1"></span>
@@ -345,7 +732,7 @@ Goals group tasks and track how many are done.
 </div>
 <sc-if value="{{ dDueTimeShow }}">
 <div style="position:relative">
-<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="listbox" aria-label="Due time" onClick="{{ tpDueToggle }}" style="width:auto;min-width:104px;justify-content:flex-start;gap:8px;box-shadow:{{ tpDueRing }}">
+<button class="op-select__trigger op-input--md" type="button" aria-haspopup="listbox" aria-label="Due time" onClick="{{ tpDueToggle }}" style="width:auto;min-width:104px;justify-content:flex-start;gap:8px;box-shadow:{{ tpDueRing }}">
 <span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></span>
 <span style="color:{{ dDueTimeFg }};font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums">{{ dDueTimeLabel }}</span>
 <span style="flex:1"></span>
@@ -367,7 +754,7 @@ Goals group tasks and track how many are done.
 <button class="op-pill" type="button" data-on="{{ dAllDayOn }}" onClick="{{ toggleAllDay }}">All day</button>
 <sc-if value="{{ dTimed }}" hint-placeholder-val="{{ true }}">
 <div style="position:relative">
-<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="listbox" onClick="{{ tpStartToggle }}" style="width:96px;gap:6px;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;box-shadow:{{ tpStartRing }}">{{ dStart }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<button class="op-select__trigger op-input--md" type="button" aria-haspopup="listbox" onClick="{{ tpStartToggle }}" style="width:96px;gap:6px;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;box-shadow:{{ tpStartRing }}">{{ dStart }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
 <sc-if value="{{ tpStartOpen }}">
 <div role="listbox" data-tp="true" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 6px);left:0;z-index:80;width:150px;max-height:232px;overflow-y:auto;padding:4px;box-sizing:border-box;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
 <sc-for list="{{ tpSlots }}" as="o" hint-placeholder-count="8"><button type="button" role="option" data-slot-on="{{ o.onS }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;height:30px;padding:0 10px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--hover-surface)">{{ o.label }}<span style="font-size:11px;color:var(--fg-subtle)">{{ o.dur }}</span></button></sc-for>
@@ -376,7 +763,7 @@ Goals group tasks and track how many are done.
 </div>
 <span style="color:var(--fg-subtle)">–</span>
 <div style="position:relative">
-<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="listbox" onClick="{{ tpEndToggle }}" style="width:96px;gap:6px;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;box-shadow:{{ tpEndRing }}">{{ dEnd }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<button class="op-select__trigger op-input--md" type="button" aria-haspopup="listbox" onClick="{{ tpEndToggle }}" style="width:96px;gap:6px;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;box-shadow:{{ tpEndRing }}">{{ dEnd }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
 <sc-if value="{{ tpEndOpen }}">
 <div role="listbox" data-tp="true" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 6px);left:0;z-index:80;width:170px;max-height:232px;overflow-y:auto;padding:4px;box-sizing:border-box;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
 <sc-for list="{{ tpSlots }}" as="o" hint-placeholder-count="8"><button type="button" role="option" data-slot-on="{{ o.onS }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;height:30px;padding:0 10px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--hover-surface)">{{ o.label }}<span style="font-size:11px;color:var(--fg-subtle)">{{ o.dur }}</span></button></sc-for>
@@ -391,7 +778,7 @@ Goals group tasks and track how many are done.
 </sc-if>
 </div>
 </div>
-<div style="display:flex;align-items:center;gap:8px;padding:24px 28px 24px">
+<div class="op-dialog__foot">
 <sc-if value="{{ dCanDelete }}"><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ deleteDlg }}" style="color:var(--danger)">{{ dDeleteLabel }}</button></sc-if>
 <span style="flex:1"></span>
 <button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ closeDlg }}">Cancel</button>
@@ -401,20 +788,31 @@ Goals group tasks and track how many are done.
 </div>
 </sc-if>
 
+<sc-if value="{{ npOpen }}">
+<div class="op-scrim" onClick="{{ npCancel }}" style="z-index:1100">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-label="New project" onClick="{{ stop }}" style="max-width:440px">
+<div class="op-dialog__head"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><h2 class="op-dialog__title" style="flex:none;margin:0">New project</h2><span style="font-size:13px;color:var(--fg-muted)">The task moves into it once it is created.</span></div><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ npCancel }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:14px">
+<label class="op-field">
+<span class="op-label">Name</span>
+<span class="op-input op-input--md"><input class="op-input__el" type="text" placeholder="Project name" value="{{ npVal }}" onChange="{{ npChange }}" onKeyDown="{{ npKey }}" autoFocus="{{ true }}"></span>
+</label>
+</div>
+<div class="op-dialog__foot">
+<span style="flex:1"></span>
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ npCancel }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ npEmpty }}" onClick="{{ npSave }}">Create project</button>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ lOpen }}">
 <div class="op-scrim" onClick="{{ lClose }}" style="z-index:1100">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-label="Start session" onClick="{{ stop }}" style="width:min(560px,calc(100vw - 32px));max-width:none">
-<div style="display:flex;flex-direction:column;gap:20px;padding:24px 28px 0">
-<div style="display:flex;align-items:flex-start;gap:8px">
-<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
-<span style="font-family:var(--font-display);font-size:21px;font-weight:600;letter-spacing:-0.014em">Start session</span>
-<span style="font-size:13px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">For “{{ lTask }}”</span>
-</div>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ lClose }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
-</div>
-<div class="op-textarea" style="padding:0;overflow:hidden">
-<textarea rows="4" aria-label="Prompt" value="{{ lPrompt }}" onChange="{{ lSetPrompt }}" onKeyDown="{{ lKey }}" autoFocus="{{ true }}" style="display:block;width:100%;box-sizing:border-box;border:0;outline:none;resize:none;padding:12px 14px;background:none;color:var(--fg);font-family:var(--font-mono);font-size:12.5px;line-height:1.6"></textarea>
-</div>
+<div class="op-dialog" role="dialog" aria-modal="true" aria-label="Start session" onClick="{{ stop }}" style="max-width:560px">
+<div class="op-dialog__head"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><h2 class="op-dialog__title" style="flex:none;margin:0">Start session</h2><span style="font-size:13px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">For “{{ lTask }}”</span></div><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ lClose }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:20px">
+<textarea class="op-textarea" rows="4" aria-label="Prompt" value="{{ lPrompt }}" onChange="{{ lSetPrompt }}" onKeyDown="{{ lKey }}" autoFocus="{{ true }}" style="resize:none;font-family:var(--font-mono);font-size:12.5px;line-height:1.6"></textarea>
 <div style="display:grid;grid-template-columns:88px minmax(0,1fr);row-gap:14px;column-gap:16px;align-items:start">
 <span style="font-size:13px;color:var(--fg-muted);line-height:30px">Repository</span>
 <div class="op-pills"><sc-for list="{{ lRepos }}" as="o" hint-placeholder-count="2"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}" style="font-family:var(--font-mono);font-size:12.5px">{{ o.name }}<span class="op-pill__n">{{ o.base }}</span></button></sc-for></div>
@@ -435,7 +833,7 @@ Goals group tasks and track how many are done.
 </div>
 </sc-if>
 </div>
-<div style="display:flex;align-items:center;gap:8px;padding:24px 28px">
+<div class="op-dialog__foot">
 <span style="font-size:12px;color:var(--fg-subtle);display:flex;align-items:center;gap:6px"><kbd class="op-kbd">⌘</kbd><kbd class="op-kbd">⏎</kbd>to start</span>
 <span style="flex:1"></span>
 <button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ lClose }}">Cancel</button>
@@ -447,7 +845,7 @@ Goals group tasks and track how many are done.
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tasks&quot;,&quot;calendar&quot;],&quot;default&quot;:&quot;tasks&quot;,&quot;tsType&quot;:&quot;'tasks' | 'calendar'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;showGoals&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tasks&quot;,&quot;calendar&quot;,&quot;projects&quot;],&quot;default&quot;:&quot;tasks&quot;,&quot;tsType&quot;:&quot;'tasks' | 'calendar' | 'projects'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;showGoals&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
 let PROJECTS = [
   { id: 'mobile', name: 'XRP Mobile' },
   { id: 'atlas', name: 'Atlas' },
@@ -462,9 +860,9 @@ const COLS = [
 const KEY = 'op-tasks-v1';
 const day = n => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const SEED_GOALS = [
-  { id: 'g1', name: 'Ship XRP Mobile 2.0 to TestFlight', project: 'mobile', due: day(27) },
-  { id: 'g2', name: 'Atlas public beta', project: 'atlas', due: day(42) },
-  { id: 'g3', name: 'Move every client site to the new stack', project: 'web', due: day(58) },
+  { id: 'g1', name: 'TestFlight beta', project: 'mobile', due: day(27) },
+  { id: 'g2', name: 'Public beta', project: 'atlas', due: day(42) },
+  { id: 'g3', name: 'New stack migration', project: 'web', due: day(58) },
 ];
 const T = (id, status, title, project, goal, due, notes) => ({ id, status, title, project, goal, due: due == null ? '' : day(due), notes: notes || '' });
 const SEED_TASKS = [
@@ -597,6 +995,11 @@ const AUTOS = [
   { id: 'a2', name: 'Release notes draft', time: '16:00', on: d => d.getDay() === 5 },
   { id: 'a3', name: 'Monthly cost report', time: '08:00', on: d => d.getDate() === 1 },
 ];
+const SEED_GACCTS = [
+  { id: 'g1', email: 'jordiparra99@gmail.com', ok: true, ago: '2 min ago' },
+  { id: 'g2', email: 'jordi@flama.ai', ok: false },
+];
+const EXTRA_GACCTS = ['jordi@xrpmobile.io', 'jordi.parra@atlas.dev'];
 const LAYERS = [
   { id: 'google', name: 'Google Calendar', icon: 'calendar' },
   { id: 'manual', name: 'Personal', icon: 'user' },
@@ -611,9 +1014,9 @@ class Component extends DCLogic {
     const now = new Date();
     return { tasks: ((saved && saved.tasks) || SEED_TASKS).filter(t => !/^zz\d/.test(t.id)).map(t => (saved && saved.links ? t : { ...t, sessions: SEED_LINKS[t.id] || t.sessions || [] })),
       sessions: (saved && saved.sessions) || SEED_SESSIONS, hov: null, linkOpen: false, launch: null, goals: (saved && saved.goals) || SEED_GOALS, projects: (saved && saved.projects) || PROJECTS, events: (() => { let ev = (saved && saved.events) || buildEvents(); if (!(saved && saved.busyDay)) ev = ev.filter(e => !/^bd\d/.test(e.id)).concat(BUSY_DAY()); return ev; })(), busyDay: true, project: 'all', goal: null, drag: null, compose: null, composeText: '', dlg: null,
-      section: null, cal: { y: now.getFullYear(), m: now.getMonth() }, layers: { google: true, manual: true, tasks: true, autos: true }, dp: null, tp: null, more: null, dropDay: null };
+      section: null, cal: { y: now.getFullYear(), m: now.getMonth() }, layers: { google: true, manual: true, tasks: true, autos: true }, dp: null, tp: null, more: null, dropDay: null, project: 'all' };
   })();
-  ghostRef = React.createRef();
+  ghostRef = React.createRef(); tlRef = React.createRef();
   calRef = React.createRef();
   watchCal() {
     const el = this.calRef.current;
@@ -629,7 +1032,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     const q = new URLSearchParams(window.location.search).get('section');
-    if (q === 'calendar' || q === 'tasks') this.setState({ section: q });
+    if (q === 'calendar' || q === 'tasks' || q === 'projects') this.setState({ section: q });
     const tq = new URLSearchParams(window.location.search).get('task');
     if (tq && this.state.tasks.some(t => t.id === tq)) this.openTask(tq);
     this._move = e => this.onMove(e);
@@ -644,12 +1047,16 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this._key);
   }
   componentWillUnmount() {
+    clearInterval(this._agTick); clearTimeout(this._agTo); clearInterval(this._micT);
     window.removeEventListener('pointermove', this._move);
     window.removeEventListener('pointerup', this._up);
     window.removeEventListener('keydown', this._key);
     clearTimeout(this._drop);
   }
   componentDidUpdate() {
+    { const el = this.tlRef.current, key = this.state.tab === 'goals' && this.sec() === 'tasks' ? this.state.project + ':' + (this._tlX || 0) : null;
+      if (el && key && key !== this._tlKey) { this._tlKey = key; el.scrollLeft = Math.max(0, (this._tlX || 0) + 32 - el.clientWidth * 0.25); }
+      if (!key) this._tlKey = null; }
     if (this._savedT !== this.state.tasks || this._savedG !== this.state.goals || this._savedE !== this.state.events || this._savedP !== this.state.projects || this._savedS !== this.state.sessions) {
       this._savedS = this.state.sessions;
       this._savedT = this.state.tasks; this._savedG = this.state.goals; this._savedE = this.state.events; this._savedP = this.state.projects;
@@ -772,7 +1179,7 @@ class Component extends DCLogic {
     const t = id && s.tasks.find(x => x.id === id);
     const project = s.goal ? (s.goals.find(g => g.id === s.goal) || {}).project : s.project === 'all' || s.project === 'none' ? null : s.project;
     const draft = t ? { ...t } : { id: null, status: status || 'todo', title: '', notes: '', project: project || null, goal: s.goal, due: '', sessions: [] };
-    this.setState({ dlg: { kind: 'task', draft }, compose: null, dp: null, tp: null, more: null, linkOpen: false });
+    this.setState({ dlg: { kind: 'task', draft }, newProj: null, compose: null, dp: null, tp: null, more: null, linkOpen: false });
   }
   openGoal(id) {
     const s = this.state;
@@ -912,13 +1319,14 @@ class Component extends DCLogic {
             hasSess: top ? 'true' : undefined, sessDot: top ? SSTATE[top.state].dot : '', sessWord: top ? SSTATE[top.state].word : '',
             sessName: top ? top.name : '', sessMore: ls.length > 1 ? '+' + (ls.length - 1) : '',
             openSess: e => { e.stopPropagation(); if (top) window.location.href = sessionUrl(top, t); },
-            canStart: !top && !done && !d && s.hov === t.id ? 'true' : undefined,
-            titlePad: !top && !done ? '26px' : '0px',
+            canStart: !top && !done && !d && s.hov === t.id ? 'true' : undefined, canAct: !d && s.hov === t.id ? 'true' : undefined,
+            titlePad: s.hov === t.id && !d ? (!top && !done ? '60px' : '30px') : !top && !done ? '26px' : '0px',
           };
         })(),
         enter: () => { if (!this.state.drag && this.state.hov !== t.id) this.setState({ hov: t.id }); },
         leave: () => { if (this.state.hov === t.id) this.setState({ hov: null }); },
         start: e => { e.stopPropagation(); this.openLaunch(t, 'card'); },
+        del: e => { e.stopPropagation(); this.snap(); this.setState(st => ({ tasks: st.tasks.filter(x => x.id !== t.id), hov: null })); },
         toggle: e => { e.stopPropagation(); this.toggleDone(t); },
       };
     };
@@ -947,15 +1355,45 @@ class Component extends DCLogic {
       const pct = linked.length ? Math.round((doneN / linked.length) * 100) : 0;
       const sel = s.goal === g.id;
       return {
-        ...g, projName: projName(g.project), due: g.due ? fmtDate(g.due) : 'No date',
+        ...g, iso: g.due || '', projName: projName(g.project), due: g.due ? fmtDate(g.due) : 'No date',
         doneN, totalN: linked.length, pct: pct + '%', countLabel: doneN + ' / ' + linked.length + ' tasks',
         barBg: pct === 100 ? 'var(--success)' : 'var(--fg)',
         bg: sel ? 'var(--selected-surface)' : 'var(--card)',
         border: sel ? 'var(--ring)' : 'var(--border-subtle)',
-        pick: () => { this.snap(); this.setState({ goal: sel ? null : g.id }); },
+        pick: () => { this.snap(); this.setState({ goal: sel ? null : g.id, tab: 'board' }); },
         edit: e => { e.stopPropagation(); this.openGoal(g.id); },
       };
     });
+
+    const tl = (() => {
+      const PX = 16, D = 864e5;
+      const toD = iso => { const [y, m, dd] = iso.split('-').map(Number); return new Date(y, m - 1, dd); };
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const projs = PROJECTS.filter(p => s.project === 'all' || p.id === s.project)
+        .map(p => ({ p, gs: goalCards.filter(g => g.project === p.id && g.iso).sort((a, b) => a.iso < b.iso ? -1 : 1) }))
+        .filter(x => x.gs.length);
+      if (!projs.length) return null;
+      const span = projs.map(x => { const first = toD(x.gs[0].iso), last = toD(x.gs[x.gs.length - 1].iso);
+        return { ...x, a: new Date(Math.min(first, today) - 21 * D), b: new Date(+last + 10 * D) }; });
+      let start = new Date(Math.min(...span.map(x => +x.a)) - 14 * D); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+      let end = new Date(Math.max(...span.map(x => +x.b), +today + 42 * D) + 14 * D);
+      const xOf = d => Math.round((d - start) / D) * PX;
+      const weeks = [], months = [];
+      for (let d = new Date(start); d <= end; d = new Date(+d + 7 * D)) weeks.push({ x: xOf(d) + 'px', label: String(d.getDate()) });
+      for (let d = new Date(start.getFullYear(), start.getMonth() + 1, 1), k = 0; d <= end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1), k++)
+        months.push({ x: xOf(d) + 'px', label: MON[d.getMonth()] + (k === 0 || d.getMonth() === 0 ? ' ' + d.getFullYear() : '') });
+      const rows = span.map(x => ({
+        name: x.p.name, left: xOf(x.a) + 'px', width: (xOf(x.b) - xOf(x.a)) + 'px',
+        pct: (() => { const ts = s.tasks.filter(t => t.project === x.p.id); return ts.length ? Math.round(ts.filter(t => t.status === 'done').length / ts.length * 100) + '%' : '0%'; })(),
+        open: () => { this.snap(); this.setState({ project: x.p.id, goal: null, tab: 'board' }); },
+        ms: x.gs.map(g => { const mx = xOf(toD(g.iso)), hov = s.msHov === g.id, done = g.totalN > 0 && g.doneN === g.totalN;
+          return { name: g.name, x: mx + 'px', tipX: (mx + 18) + 'px', hov, pct: g.pct, total: g.totalN, due: g.due,
+            fill: done ? 'var(--fg-muted)' : hov ? 'var(--fg)' : 'var(--card)', stroke: hov ? 'var(--fg)' : 'var(--fg-muted)', scale: hov ? 1.2 : 1,
+            labelFg: hov ? 'var(--fg)' : 'var(--fg-muted)',
+            pick: () => this.openGoal(g.id), enter: () => this.setState({ msHov: g.id }), leave: () => this.setState(st => st.msHov === g.id ? { msHov: null } : null) }; }),
+      }));
+      return { todayPx: xOf(today), width: (xOf(end) + 40) + 'px', weeks, months, rows, today: { x: xOf(today) + 'px', label: today.getDate() + ' ' + MON[today.getMonth()].toUpperCase() } };
+    })();
 
     const projChips = [{ id: 'all', name: 'All projects' }].concat(PROJECTS, [{ id: 'none', name: 'Unassigned' }]).map(p => ({
       name: p.name, icon: p.id === 'all' ? 'layers' : 'folder', sideOn: s.project === p.id ? 'true' : 'false',
@@ -1001,8 +1439,9 @@ class Component extends DCLogic {
         dlgOpen: 'true', dIsTask: isTask ? 'true' : undefined, dIsEvent: isEvent ? 'true' : undefined,
         dHasNotes: isGoal || isProj ? undefined : 'true', dHasProject: isEvent || isProj ? undefined : 'true', dHasDate: isProj ? undefined : 'true', dGridDisplay: isProj ? 'none' : 'grid',
         dIsGoogle: isEvent && draft.source === 'google' ? 'true' : undefined,
-        dlgTitle: { task: draft.id ? 'Edit task' : 'New task', goal: draft.id ? 'Edit goal' : 'New goal', event: draft.id ? 'Edit event' : 'New event', project: 'New project' }[kind],
-        dlgPh: isTask ? 'Task title' : isGoal ? 'What are you aiming for?' : isProj ? 'Project name' : 'Event title',
+        dlgTitle: { task: draft.id ? 'Edit task' : 'New task', goal: draft.id ? 'Edit milestone' : 'New milestone', event: draft.id ? 'Edit event' : 'New event', project: 'New project' }[kind],
+        dTitleLabel: isGoal || isProj ? 'Name' : 'Title',
+        dlgPh: isTask ? 'Task title' : isGoal ? 'e.g. Public beta' : isProj ? 'Project name' : 'Event title',
         dTitle: isGoal || isProj ? draft.name : draft.title,
         setDTitle: e => this.patch(isGoal || isProj ? { name: e.target.value } : { title: e.target.value }),
         dNotes: draft.notes || '', setDNotes: e => this.patch({ notes: e.target.value }),
@@ -1012,6 +1451,14 @@ class Component extends DCLogic {
           name: p.name, on: draft.project === p.id ? 'true' : 'false',
           pick: () => this.patch(isTask ? { project: p.id, goal: draft.goal && (goalById(draft.goal) || {}).project !== p.id ? null : draft.goal } : { project: p.id }),
         })),
+        ...(() => {
+          const np = s.newProj, v = (np || '').trim();
+          const save = () => { if (!v) return; const id = 'p' + Date.now(); this.setState(st => ({ projects: st.projects.concat({ id, name: v }), newProj: null, dlg: st.dlg && { ...st.dlg, draft: { ...st.dlg.draft, project: id, goal: null } } })); };
+          return { npCanAdd: isTask ? 'true' : undefined, npOpen: isTask && np != null ? 'true' : undefined, npVal: np || '', npEmpty: !v,
+            npStart: () => this.setState({ newProj: '' }), npCancel: () => this.setState({ newProj: null }), npSave: save,
+            npChange: e => this.setState({ newProj: e.target.value }),
+            npKey: e => { e.stopPropagation(); if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation(); if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') { e.preventDefault(); this.setState({ newProj: null }); } } };
+        })(),
         dGoals: [{ id: null, name: 'None' }].concat(s.goals.filter(g => !draft.project || g.project === draft.project)).map(g => ({
           name: g.name, on: draft.goal === g.id ? 'true' : 'false',
           pick: () => this.patch(g.id ? { goal: g.id, project: g.project } : { goal: null }),
@@ -1072,8 +1519,8 @@ class Component extends DCLogic {
             pick: e => { e.stopPropagation(); this.setState(st => ({ tp: null, dlg: { ...st.dlg, draft: { ...st.dlg.draft, dueTime: o.v, ...(o.v && !st.dlg.draft.due ? { due: day(0) } : {}) } } })); } };
         }),
         dBusyOpts: [['Busy', true], ['Free', false]].map(([name, v]) => ({ name, on: draft.busy === v ? 'true' : 'false', pick: () => this.patch({ busy: v }) })),
-        dCanDelete: draft.id ? 'true' : undefined, dDeleteLabel: isTask ? 'Delete task' : isGoal ? 'Delete goal' : 'Delete event',
-        dSaveLabel: draft.id ? 'Save' : isTask ? 'Add task' : isGoal ? 'Add goal' : isProj ? 'Create project' : 'Add event',
+        dCanDelete: draft.id ? 'true' : undefined, dDeleteLabel: isTask ? 'Delete task' : isGoal ? 'Delete milestone' : 'Delete event',
+        dSaveLabel: draft.id ? 'Save' : isTask ? 'Add task' : isGoal ? 'Add milestone' : isProj ? 'Create project' : 'Add event',
         dEmpty: !(isGoal || isProj ? draft.name : draft.title).trim(),
       };
     }
@@ -1151,12 +1598,18 @@ class Component extends DCLogic {
     const calVals = {
       ...launchVals,
       isTasks: sec === 'tasks' ? 'true' : undefined, isCal: sec === 'calendar' ? 'true' : undefined,
-      navTasks: sec === 'tasks' ? 'true' : 'false', navCal: sec === 'calendar' ? 'true' : 'false',
-      goTasks: () => this.setState({ section: 'tasks', more: null }), goCal: () => this.setState({ section: 'calendar', compose: null }),
+      navTasks: sec === 'tasks' && s.tab !== 'goals' ? 'true' : 'false', navMs: sec === 'tasks' && s.tab === 'goals' ? 'true' : 'false', navCal: sec === 'calendar' ? 'true' : 'false',
+      goTasks: () => this.setState({ section: 'tasks', tab: 'board', more: null }), goMs: () => this.setState({ section: 'tasks', tab: 'goals', more: null, compose: null }), goCal: () => this.setState({ section: 'calendar', compose: null }),
       todayN: s.events.filter(e => e.date === todayIso).length,
       calLayers: LAYERS.map(l => ({ ...l, on: L[l.id] ? 'true' : 'false', onV: L[l.id] ? 'true' : undefined, op: L[l.id] ? '1' : '0.6',
         boxBg: L[l.id] ? 'var(--fg)' : 'transparent', boxBorder: L[l.id] ? 'var(--fg)' : 'var(--border-strong)',
         toggle: () => this.setState(st => ({ layers: { ...st.layers, [l.id]: !st.layers[l.id] } })) })),
+      gAccts: (s.gAccts || SEED_GACCTS).map((a, i) => ({ ...a, sep: i ? '1px solid var(--border-subtle)' : '0',
+        status: a.ok ? 'Synced ' + a.ago : 'Couldn\u2019t read', dot: a.ok ? 'var(--success)' : 'var(--danger)', failed: a.ok ? undefined : 'true',
+        reconnect: () => this.setState(st => ({ gAccts: (st.gAccts || SEED_GACCTS).map(x => x.id === a.id ? { ...x, ok: true, ago: 'just now' } : x) })),
+        remove: () => this.setState(st => ({ gAccts: (st.gAccts || SEED_GACCTS).filter(x => x.id !== a.id) })) })),
+      addSep: (s.gAccts || SEED_GACCTS).length ? '1px solid var(--border-subtle)' : '0',
+      addGAcct: () => this.setState(st => { const cur = st.gAccts || SEED_GACCTS; const next = EXTRA_GACCTS.find(e => !cur.some(c => c.email === e)) || ('account' + (cur.length + 1) + '@gmail.com'); return { gAccts: cur.concat([{ id: 'g' + Date.now(), email: next, ok: true, ago: 'just now' }]) }; }),
       calTitle: LONGMON[cm] + ' ' + cy, calMeetN, calDueN, calRunN,
       calPrev: shiftCal(-1), calNext: shiftCal(1),
       calToday: () => { const x = new Date(); this.setState({ cal: { y: x.getFullYear(), m: x.getMonth() }, more: null }); },
@@ -1170,7 +1623,7 @@ class Component extends DCLogic {
 
     return {
       stop,
-      closeMenus: () => { if (s.more) this.setState({ more: null }); },
+      closeMenus: () => { if (s.more || s.fOpen || s.agDpOpen || s.agModeOpen || s.mdOpen) this.setState({ more: null, fOpen: null, agDpOpen: false, agDpA: null, agDpHov: null, agModeOpen: false, mdOpen: false }); },
       goSessions: () => { window.location.href = 'SessionsConsole.dc.html'; },
       goRoutines: () => { window.location.href = 'Routines.dc.html'; },
       openN: open.length, doingN: s.tasks.filter(t => t.status === 'doing').length, doneN: s.tasks.filter(t => t.status === 'done').length,
@@ -1179,11 +1632,40 @@ class Component extends DCLogic {
       newGoal: e => { if (e) e.stopPropagation(); this.openGoal(null); },
       projChips, projCount: PROJECTS.length,
       newProject: e => { e.stopPropagation(); this.openProject(); },
-      pageTitle: s.project === 'all' ? 'Tasks' : s.project === 'none' ? 'Unassigned' : projName(s.project),
+      pageTitle: s.tab === 'goals' ? 'Milestones' : 'Tasks',
       goalActive: ag ? 'true' : undefined, goalActiveName: ag ? ag.name : '',
       clearGoal: () => { this.snap(); this.setState({ goal: null }); },
-      showGoals: this.props.showGoals === false ? undefined : 'true',
+      isBoard: s.tab === 'goals' ? undefined : 'true', isGoalsTab: s.tab === 'goals' ? 'true' : undefined,
+      tabBoardOn: s.tab === 'goals' ? 'false' : 'true', tabGoalsOn: s.tab === 'goals' ? 'true' : 'false',
+      goBoard: () => this.setState({ tab: 'board' }), goGoals: () => this.setState({ tab: 'goals' }),
+      goalsN: goalsShown.length,
+      ...(() => {
+        const pOpts = [{ id: 'all', name: 'All projects' }].concat(PROJECTS, [{ id: 'none', name: 'No project' }]);
+        const mList = s.goals.filter(g => s.project === 'all' || g.project === s.project);
+        const mOpts = [{ id: null, name: 'All milestones' }].concat(mList);
+        const cnt = f => s.tasks.filter(f).length;
+        const tog = k => e => { e.stopPropagation(); this.setState(x => ({ fOpen: x.fOpen === k ? null : k, more: null })); };
+        const curM = s.goal && goalById(s.goal);
+        return {
+          fProjOn: s.project !== 'all' ? 'true' : 'false', fProjLabel: s.project === 'all' ? 'Project' : s.project === 'none' ? 'No project' : projName(s.project),
+          fProjOpen: s.fOpen === 'proj', fProjToggle: tog('proj'),
+          fProjOpts: pOpts.map(p => ({ name: p.name, on: s.project === p.id ? 'true' : 'false', onV: s.project === p.id,
+            meta: String(cnt(t => p.id === 'all' || (p.id === 'none' ? !t.project : t.project === p.id))),
+            pick: () => { this.snap(); this.setState(st => ({ fOpen: null, project: p.id, goal: st.goal && p.id !== 'all' && (goalById(st.goal) || {}).project !== p.id ? null : st.goal })); } })),
+          fMsOn: s.goal ? 'true' : 'false', fMsLabel: curM ? curM.name : 'Milestone',
+          fMsOpen: s.fOpen === 'ms', fMsToggle: tog('ms'),
+          fMsOpts: mOpts.map(g => ({ name: g.name, on: (s.goal || null) === g.id ? 'true' : 'false', onV: (s.goal || null) === g.id,
+            meta: g.id ? String(cnt(t => t.goal === g.id)) : '',
+            pick: () => { this.snap(); this.setState({ fOpen: null, goal: g.id }); } })),
+          fAny: s.project !== 'all' || !!s.goal,
+          fClear: () => { this.snap(); this.setState({ project: 'all', goal: null, fOpen: null }); },
+          tlPrev: () => { const el = this.tlRef.current; if (el) el.scrollBy({ left: -16 * 28, behavior: 'smooth' }); },
+          tlNext: () => { const el = this.tlRef.current; if (el) el.scrollBy({ left: 16 * 28, behavior: 'smooth' }); },
+          tlTodayGo: () => { const el = this.tlRef.current; if (el) el.scrollTo({ left: Math.max(0, (this._tlX || 0) + 32 - el.clientWidth * 0.25), behavior: 'smooth' }); },
+        };
+      })(),
       goalCards, noGoals: goalsShown.length ? undefined : 'true',
+      tlRef: (this._tlX = tl ? tl.todayPx : 0, this.tlRef), hasTimeline: tl ? 'true' : undefined, tlWidth: tl ? tl.width : '100%', tlWeeks: tl ? tl.weeks : [], tlMonths: tl ? tl.months : [], tlRows: tl ? tl.rows : [], tlToday: tl ? tl.today : { x: '0px', label: '' },
       cols,
       composeText: s.composeText,
       composeHint: s.goal && ag ? 'In ' + ag.name : s.project !== 'all' ? 'In ' + projName(s.project) : '',
@@ -1200,8 +1682,379 @@ class Component extends DCLogic {
       ...calVals,
       saveDlg: () => this.save(), deleteDlg: () => this.remove(),
       ...dlgVals,
+      ...this.agVals(sec),
     };
   }
+
+  // ---- Projects: project agents + general PM ----
+  agScrollRef = React.createRef();
+  agStats(p) {
+    const s = this.state, ts = s.tasks.filter(t => t.project === p.id);
+    const done = ts.filter(t => t.status === 'done').length, total = ts.length;
+    const doing = ts.filter(t => t.status === 'doing');
+    const blockers = ts.filter(t => t.status !== 'done' && ((t.notes && /block/i.test(t.notes)) || (t.due && diffDays(t.due) < 0)))
+      .map(t => ({ ...t, reason: t.due && diffDays(t.due) < 0 ? 'Overdue since ' + fmtDate(t.due) : 'Blocked' }));
+    const open = ts.filter(t => t.status !== 'done' && t.due).sort((a, b) => a.due < b.due ? -1 : 1);
+    const goals = s.goals.filter(g => g.project === p.id).map(g => { const gt = ts.filter(t => t.goal === g.id); const gd = gt.filter(t => t.status === 'done').length; return { ...g, gd, gt: gt.length, pct: gt.length ? Math.round(gd / gt.length * 100) + '%' : '0%' }; });
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const status = blockers.length ? 'Needs input' : doing.length ? 'Running' : total && done === total ? 'Completed' : total ? 'Queued' : 'Idle';
+    const nextMs = goals.filter(g => g.due && !(g.gt && g.gd === g.gt)).sort((a, b) => a.due < b.due ? -1 : 1)[0];
+    return { p, ts, done, total, doing, blockers, goals, pct, status, next: open[0], nextMs };
+  }
+  agDot(st) { return { 'Running': 'var(--success)', 'Needs input': 'var(--warning)', 'Failed': 'var(--danger)', 'Queued': 'var(--fg-subtle)', 'Completed': 'var(--fg-muted)', 'Idle': 'var(--border)' }[st]; }
+  agReply(id) {
+    const s = this.state;
+    if (id === 'pm') {
+      const all = s.projects.map(p => this.agStats(p));
+      const loose = s.tasks.filter(t => !t.project && t.status !== 'done').length;
+      const att = all.filter(x => x.blockers.length);
+      return (att.length ? 'Here is what needs you: ' + att.map(x => '**' + x.p.name + '**').join(' and ') + ' ' + (att.length > 1 ? 'have' : 'has') + ' tasks that are blocked or overdue.' : 'Nothing is blocked right now.') + '\n\n' +
+        all.map(x => '- **' + x.p.name + '** — ' + x.pct + '% done, ' + x.doing.length + ' in progress' + (x.blockers.length ? ', waiting on ' + x.blockers[0].title.toLowerCase() : '') + '.').join('\n') +
+        (loose ? '\n\n' + loose + ' open ' + (loose === 1 ? 'task is' : 'tasks are') + ' not in any project. Want me to file them?' : '');
+    }
+    const p = s.projects.find(x => x.id === id); if (!p) return '';
+    const x = this.agStats(p);
+    if (!x.total) return '**' + p.name + '** has no tasks yet. Tell me what it has to deliver and by when, and I will draft tasks and goals from it.';
+    return '**' + p.name + '** is ' + x.pct + '% done: ' + x.done + ' of ' + x.total + ' tasks.' + '\n\n' +
+      [x.doing.length ? '- In progress: ' + x.doing.map(t => t.title).join('; ') + '.' : '- Nothing is in progress.',
+       x.blockers.length ? '- Needs input: **' + x.blockers[0].title + '** (' + (r => r[0].toLowerCase() + r.slice(1))(x.blockers[0].reason) + ').' : '- Nothing is blocked.',
+       x.next ? '- Next due: ' + x.next.title + ', ' + fmtDate(x.next.due) + '.' : ''].filter(Boolean).join('\n') +
+      (x.goals.length ? '\n\nMilestone **' + x.goals[0].name + '** is at ' + x.goals[0].gd + ' of ' + x.goals[0].gt + ' tasks, due ' + fmtDate(x.goals[0].due) + '.' : '');
+  }
+  agSteps(id) {
+    const s = this.state;
+    if (id === 'pm') return s.projects.map(p => ({ icon: 'folder', verb: 'Asked', target: p.name + ' agent', meta: this.agStats(p).pct + '%', label: 'Asking ' + p.name + ' agent' }));
+    const p = s.projects.find(x => x.id === id), x = p ? this.agStats(p) : { total: 0, goals: [] };
+    return [{ icon: 'check-circle', verb: 'Read', target: 'tasks', meta: x.total + ' items', label: 'Reading tasks' }, { icon: 'layers', verb: 'Read', target: 'milestones', meta: x.goals.length + ' items', label: 'Reading milestones' }];
+  }
+  agSeed(id) {
+    if (id === 'pm') return [
+      { id: 'pm0', role: 'user', time: '08:42', text: 'What needs my attention this week?' },
+      { id: 'pm1', role: 'work', label: 'Checked ' + this.state.projects.length + ' projects', steps: this.agSteps('pm') },
+      { id: 'pm2', role: 'assistant', md: this.agReply('pm'), meta: 'Project manager · 1.4k tokens' }];
+    const p = this.state.projects.find(x => x.id === id);
+    return [{ id: id + '0', role: 'assistant', md: 'Morning update. ' + this.agReply(id), meta: (p ? p.name : '') + ' agent · Today 08:00' }];
+  }
+  agThread(id) { return (this.state.agThreads || {})[id] || this.agSeed(id); }
+  agSet(id, fn) { this.setState(s => ({ agThreads: { ...(s.agThreads || {}), [id]: fn((s.agThreads || {})[id] || this.agSeed(id)) } })); }
+  agOpen(id) { if (this.state.agRun) this.agStopRun(); this.setState({ agActive: id, agDraft: '' }); }
+  agPermDefs() { return [
+    { g: 'Tasks', k: 'task.create', label: 'Create tasks', desc: 'Add tasks to this project' },
+    { g: 'Tasks', k: 'task.update', label: 'Update tasks', desc: 'Change status, dates and milestone' },
+    { g: 'Tasks', k: 'task.delete', label: 'Delete tasks', desc: 'Remove tasks permanently' },
+    { g: 'Milestones', k: 'ms.edit', label: 'Create and edit milestones', desc: 'Names and target dates' },
+    { g: 'Sessions', k: 'sess.start', label: 'Start sessions', desc: 'Launch an agent on a task' },
+    { g: 'Sessions', k: 'sess.stop', label: 'Stop sessions', desc: 'Completed work is kept' },
+    { g: 'Sessions', k: 'sess.delete', label: 'Delete sessions', desc: 'Removes the session and its trace' },
+    { g: 'Pull requests', k: 'pr.open', label: 'Open pull requests', desc: 'From a session branch' },
+    { g: 'Pull requests', k: 'pr.merge', label: 'Merge pull requests', desc: 'Into the default branch' },
+  ]; }
+  agCatalogue() { return [
+    { k: 'sonnet45', name: 'Claude Sonnet 4.5', vendor: 'Anthropic', desc: 'Balanced default for coding and planning', ctx: '200k', price: '$3 / $15' },
+    { k: 'opus41', name: 'Claude Opus 4.1', vendor: 'Anthropic', desc: 'Deepest reasoning, slowest', ctx: '200k', price: '$15 / $75' },
+    { k: 'haiku45', name: 'Claude Haiku 4.5', vendor: 'Anthropic', desc: 'Fast status checks and summaries', ctx: '200k', price: '$1 / $5' },
+    { k: 'gpt5', name: 'GPT-5', vendor: 'OpenAI', desc: 'General reasoning', ctx: '400k', price: '$1.25 / $10' },
+    { k: 'gpt5codex', name: 'GPT-5 Codex', vendor: 'OpenAI', desc: 'Tuned for agentic coding', ctx: '400k', price: '$1.25 / $10' },
+    { k: 'gpt5mini', name: 'GPT-5 mini', vendor: 'OpenAI', desc: 'Cheap and quick', ctx: '400k', price: '$0.25 / $2' },
+    { k: 'gem25pro', name: 'Gemini 2.5 Pro', vendor: 'Google', desc: 'Long context, strong on research', ctx: '1M', price: '$1.25 / $10' },
+    { k: 'gem25flash', name: 'Gemini 2.5 Flash', vendor: 'Google', desc: 'Low latency', ctx: '1M', price: '$0.30 / $2.50' },
+    { k: 'grok4', name: 'Grok 4', vendor: 'xAI', desc: 'Reasoning with live search', ctx: '256k', price: '$3 / $15' },
+    { k: 'dsv31', name: 'DeepSeek V3.1', vendor: 'DeepSeek', desc: 'Open weights, low cost', ctx: '128k', price: '$0.27 / $1.10' },
+    { k: 'qwen3coder', name: 'Qwen3 Coder', vendor: 'Alibaba', desc: 'Open weights coding model', ctx: '256k', price: '$0.40 / $1.60' },
+    { k: 'mistralmed', name: 'Mistral Medium 3.1', vendor: 'Mistral', desc: 'Hosted in the EU', ctx: '128k', price: '$0.40 / $2' },
+  ]; }
+  agModelOf(id) { const k = (this.state.agModel || {})[id] || (id === 'pm' ? 'opus41' : 'sonnet45'); return this.agCatalogue().find(m => m.k === k) || this.agCatalogue()[0]; }
+  mdRef = React.createRef();
+  mdMatches() { const q = (this.state.mdQ || '').trim().toLowerCase(); return this.agCatalogue().filter(m => !q || (m.name + ' ' + m.vendor).toLowerCase().includes(q)); }
+  mdPick(m) { const id = this.state.agActive || 'pm'; this.setState(x => ({ mdOpen: false, mdSubK: null, mdQ: '', mdIdx: 0, agModel: { ...(x.agModel || {}), [id]: m.k } })); }
+  agPerm(id) { return ((this.state.agMode || {})[id] || 'ask') === 'auto' ? 'allow' : 'ask'; }
+  agIntent(id, text) {
+    const s = this.state, q = text.toLowerCase();
+    const pTasks = s.tasks.filter(t => id === 'pm' || t.project === id);
+    const match = list => list.find(t => t.title.toLowerCase().split(/\W+/).filter(w => w.length > 4).some(w => q.includes(w)));
+    if (/\b(delete|remove|clean up)\b.*\bsession/.test(q)) {
+      const ss = s.sessions.filter(x => id === 'pm' || PROJ_OF_REPO[x.repo] === id);
+      const t = ss.filter(x => x.state === 'idle').pop() || ss[ss.length - 1];
+      if (!t) return null;
+      return { k: 'sess.delete', icon: 'terminal', title: 'Delete session', target: t.name + ' · ' + t.agent + ' · idle ' + t.age, approveLabel: 'Delete session', ref: t.id, say: 'The oldest idle session is **' + t.name + '**. Deleting it removes its trace; nothing in it is linked to open work.' };
+    }
+    if (/\b(delete|remove)\b/.test(q)) {
+      const t = match(pTasks) || pTasks.filter(x => x.status === 'later').pop(); if (!t) return null;
+      return { k: 'task.delete', icon: 'x', title: 'Delete task', target: t.title, approveLabel: 'Delete task', ref: t.id, say: 'That would remove **' + t.title + '** from the board.' };
+    }
+    if (/\b(add|create|new task)\b/.test(q)) {
+      const title = (text.replace(/^.*?\b(add|create)\b( a)?( new)?( task)?( to| for)?[:\s]*/i, '').trim() || 'Untitled task').replace(/^./, c => c.toUpperCase());
+      return { k: 'task.create', icon: 'plus', title: 'Create task', target: title + ' · To do', approveLabel: 'Create task', ref: title, say: 'I will add **' + title + '** to To do.' };
+    }
+    if (/\b(mark|done|complete|finish|move|update)\b/.test(q)) {
+      const t = match(pTasks.filter(x => x.status !== 'done')) || pTasks.find(x => x.status === 'doing'); if (!t) return null;
+      return { k: 'task.update', icon: 'check-circle', title: 'Update task', target: t.title + ' · In progress → Done', approveLabel: 'Mark as done', ref: t.id, say: '**' + t.title + '** is the one in progress. I will move it to Done.' };
+    }
+    if (/\bmerge\b/.test(q)) return { k: 'pr.merge', icon: 'git-pull-request', title: 'Merge pull request', target: 'PR #121 · Address review comments', approveLabel: 'Merge', ref: null, say: 'PR #121 has two approvals and passing checks.' };
+    return null;
+  }
+  agExec(a) {
+    if (a.k === 'sess.delete') this.setState(s => ({ sessions: s.sessions.filter(x => x.id !== a.ref), tasks: s.tasks.map(t => t.sessions && t.sessions.includes(a.ref) ? { ...t, sessions: t.sessions.filter(x => x !== a.ref) } : t) }));
+    else if (a.k === 'task.delete') this.setState(s => ({ tasks: s.tasks.filter(t => t.id !== a.ref) }));
+    else if (a.k === 'task.update') this.setState(s => ({ tasks: s.tasks.map(t => t.id === a.ref ? { ...t, status: 'done' } : t) }));
+    else if (a.k === 'task.create') { const pid = this.state.agActive && this.state.agActive !== 'pm' ? this.state.agActive : null; this.setState(s => ({ tasks: s.tasks.concat({ id: 't' + Date.now(), status: 'todo', title: a.ref, project: pid, goal: null, due: '', notes: '', sessions: [] }) })); }
+  }
+  agActResolve(id, mid, ok) {
+    const m = this.agThread(id).find(x => x.id === mid); if (!m || m.state !== 'pending') return;
+    if (ok) this.agExec(m.action);
+    this.agSet(id, ms => ms.map(x => x.id === mid ? { ...x, state: ok ? 'done' : 'denied' } : x));
+  }
+  agSendText(text) {
+    text = (text || '').trim(); const s = this.state; if (!text || s.agRun) return;
+    const id = s.agActive || 'pm', d = new Date();
+    const intent = this.agIntent(id, text);
+    this._agAction = intent ? { ...intent, level: this.agPerm(id) } : null;
+    this.agSet(id, ms => [...ms, { id: 'u' + Date.now(), role: 'user', text, time: pad(d.getHours()) + ':' + pad(d.getMinutes()) }]);
+    this.setState({ agDraft: '', agRun: true, agStart: Date.now(), agNow: Date.now(), agRev: 0, agStep: 0, agStream: null });
+    clearInterval(this._agTick); clearTimeout(this._agTo); clearInterval(this._micT);
+    const reply = this._agAction ? this._agAction.say + (this._agAction.level === 'ask' ? ' It needs your approval.' : '') : this.agReply(id), steps = this.agSteps(id);
+    this._agTick = setInterval(() => this.setState({ agNow: Date.now() }), 250);
+    let k = 0;
+    const tick = () => {
+      if (!this.state.agRun) return;
+      if (k < steps.length) { this.setState({ agStep: k }); k++; this._agTo = setTimeout(tick, 700); return; }
+      const sid = 's' + Date.now(), secs = Math.max(1, Math.round((Date.now() - this.state.agStart) / 1000));
+      const who = id === 'pm' ? 'Project manager' : (s.projects.find(x => x.id === id) || {}).name + ' agent';
+      this.agSet(id, ms => [...ms, { id: 'w' + sid, role: 'work', label: id === 'pm' ? 'Checked ' + steps.length + ' projects' : 'Worked for ' + secs + 's', steps },
+        { id: sid, role: 'assistant', md: reply, meta: who + ' · ' + this.agModelOf(id).name + ' ' + ({ low: 'Low', medium: 'Medium', high: 'High', extra: 'Extra', max: 'Max' })[(this.state.agEffort || {})[id] || 'medium'] + ' · ' + (0.6 + reply.length / 400).toFixed(1) + 'k tokens', streaming: true }]);
+      this.setState({ agStream: sid, agRev: 0 });
+      const stream = () => {
+        if (!this.state.agRun) return;
+        const r = this.state.agRev + 6 + Math.floor(Math.random() * 8);
+        if (r >= reply.length) { this.agFinish(id, sid); return; }
+        this.setState({ agRev: r }); this._agTo = setTimeout(stream, 26);
+      };
+      stream();
+    };
+    this._agTo = setTimeout(tick, 500);
+  }
+  agFinish(id, sid, stopped) {
+    clearInterval(this._agTick); clearTimeout(this._agTo); clearInterval(this._micT);
+    const rev = this.state.agRev;
+    const act = !stopped && this._agAction; this._agAction = null;
+    this.agSet(id, ms => {
+      const out = ms.map(m => m.id === sid ? { ...m, streaming: false, md: stopped ? m.md.slice(0, rev) : m.md, meta: stopped ? 'Stopped' : m.meta } : m);
+      if (act) out.push({ id: 'act' + Date.now(), role: 'action', action: act, state: act.level === 'allow' ? 'done' : 'pending' });
+      return out;
+    });
+    if (act && act.level === 'allow') this.agExec(act);
+    this.setState({ agRun: false, agStream: null });
+  }
+  agStopRun = () => { const s = this.state; if (s.agStream) this.agFinish(s.agActive || 'pm', s.agStream, true); else { clearInterval(this._agTick); clearTimeout(this._agTo); this.setState({ agRun: false }); } };
+  agVals(sec) {
+    const s = this.state, isProj = sec === 'projects';
+    if (isProj && this._agLast !== (s.agRev || 0) + ':' + (s.agActive || 'pm') + ':' + !!s.agRun) { this._agLast = (s.agRev || 0) + ':' + (s.agActive || 'pm') + ':' + !!s.agRun; setTimeout(() => { const el = this.agScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 0); }
+    const active = s.agActive || 'pm', isPm = active === 'pm';
+    const stats = s.projects.map(p => this.agStats(p));
+    const agRows = stats.map(x => ({ name: x.p.name, status: x.status, dot: this.agDot(x.status), pctLabel: x.pct + '%', count: x.done + '/' + x.total, next: x.next ? fmtDate(x.next.due) : '—', openChat: () => { this.agOpen(x.p.id); this.setState({ agView: 'chat' }); },
+      on: active === x.p.id ? 'true' : 'false', anim: s.agRun && active === x.p.id ? 'op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite' : 'none',
+      open: () => this.agOpen(x.p.id) }));
+    const cur = isPm ? null : stats.find(x => x.p.id === active);
+    const parse = md => md.split(/\n\n/).map(b => b.startsWith('- ') ? { isList: true, items: b.split('\n').map(l => ({ segs: this.agSegs(l.replace(/^- /, '')) })) } : { isP: true, segs: this.agSegs(b) });
+    const agMsgs = this.agThread(active).map(m => {
+      if (m.role === 'user') return { isUser: true, text: m.text, time: m.time };
+      if (m.role === 'action') { const a = m.action, def = this.agPermDefs().find(x => x.k === a.k) || { label: a.title };
+        const lab = { pending: 'Waiting for you', done: 'Done', denied: 'Denied', blocked: 'Not allowed' }[m.state];
+        return { isAction: true, icon: a.icon, title: a.title, target: a.target, approveLabel: a.approveLabel, stateLabel: lab,
+          dot: { pending: 'var(--warning)', done: 'var(--success)', denied: 'var(--fg-subtle)', blocked: 'var(--danger)' }[m.state],
+          border: m.state === 'pending' ? 'var(--border)' : 'var(--border-subtle)',
+          pending: m.state === 'pending', blocked: m.state === 'blocked', permLower: def.label.toLowerCase(),
+          approve: () => this.agActResolve(active, m.id, true), deny: () => this.agActResolve(active, m.id, false) }; }
+      if (m.role === 'work') { const open = !!(s.agOpenW || {})[m.id]; return { isWork: true, label: m.label, steps: m.steps, open, chevRot: open ? 'rotate(90deg)' : 'none', toggle: () => this.setState(x => ({ agOpenW: { ...(x.agOpenW || {}), [m.id]: !open } })) }; }
+      return { isAssistant: true, done: !m.streaming, meta: m.meta, blocks: parse(m.streaming ? m.md.slice(0, s.agRev) : m.md) };
+    });
+    const steps = this.agSteps(active), ls = steps[Math.min(s.agStep || 0, steps.length - 1)] || { icon: 'activity', label: 'Working' };
+    const name = isPm ? 'Project manager' : cur ? cur.p.name : '';
+    const sugg = isPm ? ['What slipped this week?', 'Which project is most at risk?', 'Clean up idle sessions'] : ['Where does this stand?', 'Mark the in-progress task as done', 'Delete the oldest idle session'];
+    const draft = s.agDraft || '', view = s.agView || 'chat';
+    const allMsDone = s.goals.filter(g => { const gt = s.tasks.filter(t => t.goal === g.id); return gt.length && gt.every(t => t.status === 'done'); }).length;
+    const all = stats.reduce((a, x) => ({ d: a.d + x.done, t: a.t + x.total, b: a.b + x.blockers.length, r: a.r + x.doing.length }), { d: 0, t: 0, b: 0, r: 0 });
+    return {
+      isProj: isProj ? 'true' : undefined, notProj: isProj ? undefined : 'true', navProj: isProj ? 'true' : 'false',
+      goProj: () => this.setState({ section: 'projects', more: null, compose: null }),
+      agProjN: s.projects.length, agRows, agPmOn: isPm ? 'true' : 'false', agPmLive: s.agRun && isPm, agOpenPm: () => this.agOpen('pm'),
+      agIsPm: isPm, agIsProject: !isPm,
+      agHeadIcon: isPm ? 'users' : 'folder', agHeadTitle: isPm ? 'Project manager' : name + ' agent',
+      agHeadRole: isPm ? 'Tracks every project and asks their agents for detail' : 'Tracks tasks, milestones and blockers for ' + name,
+      agScope: isPm ? 'All projects' : name,
+      agChatOn: view === 'chat', agViewOn: view === 'view', agStatsOn: view === 'stats',
+      agGoChat: () => this.setState({ agView: 'chat' }), agGoView: () => this.setState({ agView: 'view' }), agGoStats: () => this.setState({ agView: 'stats' }),
+      agChatBg: view === 'chat' ? 'var(--card)' : 'transparent', agChatFg: view === 'chat' ? 'var(--fg)' : 'var(--fg-muted)',
+      agViewBg: view === 'view' ? 'var(--card)' : 'transparent', agViewFg: view === 'view' ? 'var(--fg)' : 'var(--fg-muted)',
+      agStatsBg: view === 'stats' ? 'var(--card)' : 'transparent', agStatsFg: view === 'stats' ? 'var(--fg)' : 'var(--fg-muted)',
+      st: this.agProd(isPm ? null : active),
+      ...(() => { const cur = this.agModelOf(active), list = this.mdMatches(), idx = Math.min(s.mdIdx || 0, Math.max(0, list.length - 1)), groups = [];
+        const mdList = list.map((m, i) => ({ name: m.name, on: m.k === cur.k, bg: i === idx ? 'var(--hover-surface)' : 'transparent', pick: () => this.mdPick(m), hover: () => this.setState({ mdIdx: i }) }));
+        return { mdName: cur.name, mdOpen: !!s.mdOpen, mdBg: s.mdOpen ? 'var(--hover-surface)' : 'transparent', mdQ: s.mdQ || '', mdRef: this.mdRef,
+          mdList, mdEmpty: list.length === 0,
+          mdToggle: e => { e.stopPropagation(); this.setState(x => ({ mdOpen: !x.mdOpen, mdSubK: null, mdQ: '', agModeOpen: false })); },
+          mdDesc: cur.desc, efSub: s.mdSubK === 'effort', mdSub: s.mdSubK === 'models',
+          efRowBg: s.mdSubK === 'effort' ? 'var(--hover-surface)' : 'transparent', mdRowBg: s.mdSubK === 'models' ? 'var(--hover-surface)' : 'transparent',
+          efSubOpen: () => this.setState(x => ({ mdSubK: x.mdSubK === 'effort' ? null : 'effort' })),
+          mdSubOpen: () => { const open = this.state.mdSubK !== 'models'; this.setState({ mdSubK: open ? 'models' : null, mdQ: '', mdIdx: Math.max(0, this.agCatalogue().findIndex(m => m.k === cur.k)) }); if (open) setTimeout(() => this.mdRef.current && this.mdRef.current.focus(), 0); },
+          ...(() => { const ef = (s.agEffort || {})[active] || 'medium', E = [['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['extra', 'Extra'], ['max', 'Max']];
+            return { efLabel: E.find(x => x[0] === ef)[1], efOpts: E.map(([k, label]) => ({ label, on: ef === k, rec: k === 'medium', warn: k === 'max',
+              pick: () => this.setState(x => ({ mdOpen: false, mdSubK: null, agEffort: { ...(x.agEffort || {}), [active]: k } })) })) }; })(),
+          mdOnQ: e => this.setState({ mdQ: e.target.value, mdIdx: 0 }),
+          mdKey: e => { const n = list.length;
+            if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ mdIdx: (idx + 1) % Math.max(1, n) }); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ mdIdx: (idx - 1 + n) % Math.max(1, n) }); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (list[idx]) this.mdPick(list[idx]); }
+            else if (e.key === 'Escape') { e.preventDefault(); this.setState({ mdOpen: false }); } } }; })(),
+      ...(() => { const on = !!s.micAt, secs = on ? Math.floor(((s.agNow || Date.now()) - s.micAt) / 1000) : 0;
+        return { micOn: on, micTime: Math.floor(secs / 60) + ':' + pad(secs % 60), micAria: on ? 'Stop dictation' : 'Dictate',
+          micBg: on ? 'var(--hover-surface)' : 'transparent', micFg: on ? 'var(--fg)' : 'var(--fg-muted)',
+          micToggle: () => {
+            if (this.state.micAt) { clearInterval(this._micT); const said = isPm ? 'Which project is most at risk this week?' : 'Where does this stand?';
+              this.setState(x => ({ micAt: null, agDraft: (x.agDraft ? x.agDraft.replace(/\s*$/, ' ') : '') + said })); }
+            else { this.setState({ micAt: Date.now(), agNow: Date.now() }); clearInterval(this._micT); this._micT = setInterval(() => this.setState({ agNow: Date.now() }), 500); } } }; })(),
+      ...(() => { const mode = (s.agMode || {})[active] || 'ask';
+        return { agModeOpen: !!s.agModeOpen, agModeBg: s.agModeOpen ? 'var(--hover-surface)' : 'transparent',
+          agModeIcon: mode === 'auto' ? 'zap' : 'shield', agModeLabel: mode === 'auto' ? 'Auto' : 'Ask permissions',
+          agModeToggle: e => { e.stopPropagation(); this.setState(x => ({ agModeOpen: !x.agModeOpen, mdOpen: false })); },
+          agModeOpts: [{ k: 'ask', icon: 'shield', label: 'Ask permissions', desc: 'Approve every change to tasks, sessions and PRs in the chat.' },
+            { k: 'auto', icon: 'zap', label: 'Auto', desc: 'The agent makes changes without asking. Each one is still logged here.' }]
+            .map(o => ({ ...o, on: mode === o.k, pick: () => this.setState(x => ({ agModeOpen: false, agMode: { ...(x.agMode || {}), [active]: o.k } })) })) }; })(),
+      agTiles: isPm
+        ? [{ label: 'Tasks completed', value: String(all.d), unit: '/ ' + all.t, note: (all.t ? Math.round(all.d / all.t * 100) : 0) + '% across ' + s.projects.length + ' projects' },
+           { label: 'In progress', value: String(all.r), unit: '', note: 'Tasks being worked on now' },
+           { label: 'Needs input', value: String(all.b), unit: '', note: 'Blocked or overdue' },
+           { label: 'Milestones', value: String(s.goals.length), unit: '', note: allMsDone + ' completed' }]
+        : cur ? [{ label: 'Tasks completed', value: String(cur.done), unit: '/ ' + cur.total, note: cur.pct + '% of the project' },
+           { label: 'In progress', value: String(cur.doing.length), unit: '', note: cur.doing.length === 1 ? 'Task being worked on' : 'Tasks being worked on' },
+           { label: 'Needs input', value: String(cur.blockers.length), unit: '', note: 'Blocked or overdue' },
+           { label: 'Next milestone', value: cur.nextMs ? fmtDate(cur.nextMs.due) : '—', unit: '', note: cur.nextMs ? cur.nextMs.name : 'None scheduled' }] : [],
+      agScrollRef: this.agScrollRef, agMsgs, agRunning: !!s.agRun, agIdle: !s.agRun,
+      agLiveLabel: s.agStream ? 'Writing' : ls.label, agLiveIcon: s.agStream ? 'activity' : ls.icon,
+      agElapsed: Math.max(0, Math.floor(((s.agNow || 0) - (s.agStart || 0)) / 1000)) + 's',
+      agShowSuggest: false,
+      agSuggest: sugg.map(label => ({ label, pick: () => this.agSendText(label) })),
+      agDraft: draft, agOnDraft: e => this.setState({ agDraft: e.target.value }),
+      agOnKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.agSendText(this.state.agDraft); } },
+      agOnFocus: () => this.setState({ agFocus: true }), agOnBlur: () => this.setState({ agFocus: false }),
+      agBorder: s.agFocus ? 'var(--border)' : 'var(--border-subtle)',
+      agPlaceholder: 'Message ' + (isPm ? 'the project manager' : name + ' agent'),
+      agSend: () => this.agSendText(this.state.agDraft), agStop: this.agStopRun,
+      agCantSend: !draft.trim(), agSendOp: draft.trim() ? 1 : 0.4,
+      agPmStats: [{ value: all.t ? Math.round(all.d / all.t * 100) + '%' : '0%', label: 'Tasks done' }, { value: String(all.r), label: 'In progress' }, { value: String(all.b), label: 'Need input' }],
+      ag: cur ? { status: cur.status, dot: this.agDot(cur.status), pct: cur.pct, pctLabel: cur.pct + '%', done: cur.done, total: cur.total,
+        hasNext: !!cur.next, next: cur.next ? fmtDate(cur.next.due) : '',
+        noGoals: cur.goals.length === 0, noDoing: cur.doing.length === 0, hasGoals: cur.goals.length > 0, goals: cur.goals.map(g => ({ name: g.name, due: fmtDate(g.due), pct: g.pct, count: g.gd + '/' + g.gt, mark: g.gt && g.gd === g.gt ? 'var(--fg-muted)' : 'transparent' })),
+        hasBlockers: cur.blockers.length > 0, blockers: cur.blockers.map(b => ({ title: b.title, reason: b.reason, ask: () => this.agSendText('How do we unblock "' + b.title + '"?') })),
+        hasDoing: cur.doing.length > 0, doing: cur.doing.map(t => ({ title: t.title, due: t.due ? fmtDate(t.due) : '' })) }
+        : { goals: [], blockers: [], doing: [] },
+    };
+  }
+  agSeries(id, weeks) {
+    let x = 0; for (const ch of id) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+    const rnd = () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 4294967296; };
+    const scale = { mobile: 1.3, atlas: 1, web: 0.6 }[id] || 0.8;
+    const out = { done: [], created: [], prOpen: [], prMerged: [], sonnet: [], opus: [], codex: [], closed: 0 };
+    for (let i = 0; i < weeks; i++) {
+      const trend = 0.7 + i / weeks * 0.6;
+      const d = Math.round((2 + rnd() * 5) * scale * trend); out.done.push(d); out.created.push(Math.max(1, Math.round(d * (0.8 + rnd() * 0.6))));
+      const m = Math.round((1 + rnd() * 4) * scale * trend); out.prMerged.push(m); out.prOpen.push(m + Math.round(rnd() * 2));
+      out.sonnet.push(+((0.4 + rnd() * 0.9) * scale * trend).toFixed(2)); out.opus.push(+((0.05 + rnd() * 0.3) * scale).toFixed(2)); out.codex.push(+((0.1 + rnd() * 0.4) * scale * trend).toFixed(2));
+    }
+    out.closed = Math.round(1 + rnd() * 3 * scale);
+    return out;
+  }
+  agProd(pid) {
+    const s = this.state, ids = pid ? [pid] : s.projects.map(p => p.id);
+    const D = 864e5, isoD = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()), parse = iso => { const [y, m, dd] = iso.split('-').map(Number); return new Date(y, m - 1, dd); };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const PRESETS = [['7d', 'Last 7 days', 7], ['4w', 'Last 4 weeks', 28], ['8w', 'Last 8 weeks', 56], ['12w', 'Last 12 weeks', 84], ['qtd', 'This quarter'], ['ytd', 'Year to date']];
+    const presetRange = k => { const p = PRESETS.find(x => x[0] === k); if (!p) return null;
+      if (p[2]) return [new Date(+today - (p[2] - 1) * D), today];
+      if (k === 'qtd') return [new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1), today];
+      return [new Date(today.getFullYear(), 0, 1), today]; };
+    const sel = s.agDate || { preset: '8w' };
+    const [rs, re] = sel.preset ? presetRange(sel.preset) : [parse(sel.start), parse(sel.end)];
+    const days = Math.round((re - rs) / D) + 1;
+    const W = Math.max(2, Math.min(52, Math.ceil(days / 7)));
+    const cmp = s.agCmp !== false;
+    const fmtD = (d, yr) => MON[d.getMonth()] + ' ' + d.getDate() + (yr ? ', ' + d.getFullYear() : '');
+    const ps = new Date(+rs - days * D), pe = new Date(+rs - D);
+    const dpOpen = !!s.agDpOpen, view = s.agDpView || (d => ({ y: d.getFullYear(), m: d.getMonth() }))(new Date(re.getFullYear(), re.getMonth() - 1, 1));
+    const pick = s.agDpA, hov = s.agDpHov, narrow = (s.agDpW || 900) < 700;
+    const lo = pick ? (hov && hov < pick ? hov : pick) : isoD(rs), hi = pick ? (hov && hov > pick ? hov : pick) : isoD(re);
+    const monthOf = (y, m) => { const f = new Date(y, m, 1), off = (f.getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate();
+      const cells = Array.from({ length: off }, () => ({ n: '', vis: 'hidden', off: true, pick: null, hover: null, bg: 'none', fg: 'inherit', radius: '0', cursor: 'default', op: 1, ring: 'none' }));
+      for (let dn = 1; dn <= dim; dn++) { const d = new Date(y, m, dn), id = isoD(d), fut = d > today, inR = id >= lo && id <= hi, end = id === lo || id === hi;
+        cells.push({ n: String(dn), vis: 'visible', off: fut,
+          bg: end ? 'var(--fg)' : inR ? 'var(--selected-surface)' : 'none', fg: end ? 'var(--background)' : 'var(--fg)',
+          radius: end ? '10px' : inR ? '0' : '10px', cursor: fut ? 'default' : 'pointer', op: fut ? 0.3 : 1,
+          ring: id === isoD(today) && !end ? 'inset 0 0 0 1px var(--border)' : 'none',
+          hover: () => { if (this.state.agDpA) this.setState({ agDpHov: id }); },
+          pick: () => { if (fut) return; const a = this.state.agDpA;
+            if (!a) this.setState({ agDpA: id, agDpHov: id });
+            else this.setState({ agDpA: null, agDpHov: null, agDate: { start: a < id ? a : id, end: a < id ? id : a } }); } }); }
+      return { title: MON[m] + ' ' + y, days: cells }; };
+    const v2 = new Date(view.y, view.m + 1, 1);
+    const atEnd = v2.getFullYear() > today.getFullYear() || (v2.getFullYear() === today.getFullYear() && v2.getMonth() >= today.getMonth());
+    const shiftV = n => this.setState(x => { const cur = x.agDpView || view; const d = new Date(cur.y, cur.m + n, 1); return { agDpView: { y: d.getFullYear(), m: d.getMonth() } }; });
+    const dpVals = {
+      dpOpen, dpBtnBg: dpOpen ? 'var(--hover-surface)' : 'var(--card)',
+      dpToggle: e => { e.stopPropagation(); const sc = e.currentTarget.closest('[data-chatscroll]'); const w = sc ? sc.clientWidth - 64 : 900; this.setState(x => ({ agDpOpen: !x.agDpOpen, agDpA: null, agDpHov: null, agDpView: null, agDpW: w })); },
+      dpDone: () => this.setState({ agDpOpen: false, agDpA: null, agDpHov: null }),
+      presetName: sel.preset ? PRESETS.find(p => p[0] === sel.preset)[1] : 'Custom',
+      rangeLabel: fmtD(rs, rs.getFullYear() !== re.getFullYear()) + ' – ' + fmtD(re, true),
+      compareCaption: cmp ? 'Compared with ' + fmtD(ps) + ' – ' + fmtD(pe, ps.getFullYear() !== today.getFullYear()) : days + ' days, no comparison',
+      presets: PRESETS.map(p => ({ label: p[1], on: sel.preset === p[0], bg: sel.preset === p[0] ? 'var(--selected-surface)' : 'transparent', pick: () => this.setState({ agDate: { preset: p[0] }, agDpA: null, agDpHov: null, agDpView: null }) }))
+        .concat([{ label: 'Custom', on: !sel.preset, bg: !sel.preset ? 'var(--selected-surface)' : 'transparent', pick: () => this.setState({ agDate: { start: isoD(rs), end: isoD(re) } }) }]),
+      months: narrow ? [monthOf(v2.getFullYear(), v2.getMonth())] : [monthOf(view.y, view.m), monthOf(v2.getFullYear(), v2.getMonth())],
+      dpMaxW: (s.agDpW || 900) + 'px', dpDir: narrow ? 'column' : 'row', dpPresetW: narrow ? 'auto' : '168px', dpPresetDir: narrow ? 'row' : 'column',
+      dpPresetBr: narrow ? '0' : '1px solid var(--border-subtle)', dpPresetBb: narrow ? '1px solid var(--border-subtle)' : '0',
+      dow: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+      dpPrev: () => shiftV(-1), dpNext: () => { if (!atEnd) shiftV(1); }, dpNextOff: atEnd, dpNextOp: atEnd ? 0.35 : 1,
+      dpHint: pick ? 'Pick an end date' : days + ' days',
+      cmpOn: cmp, cmpToggle: () => this.setState(x => ({ agCmp: x.agCmp === false })),
+      cmpTrack: cmp ? 'var(--primary)' : 'var(--control-hover, var(--hover-surface))', cmpKnob: cmp ? '14px' : '2px',
+    };
+    const sum = (k, from, to) => ids.reduce((a, id) => a + this.agSeries(id, 2 * W)[k].slice(from, to).reduce((x, y) => x + y, 0), 0);
+    const per = k => Array.from({ length: W }, (_, i) => +ids.reduce((a, id) => a + this.agSeries(id, 2 * W)[k][W + i], 0).toFixed(2));
+    const every = Math.ceil(W / 9);
+    const labels = Array.from({ length: W }, (_, i) => { const d = new Date(+re - (W - 1 - i) * 7 * D); return (W - 1 - i) % every === 0 ? MON[d.getMonth()] + ' ' + d.getDate() : ''; });
+    const tok = k => sum(k, W, 2 * W), tokPrev = k => sum(k, 0, W);
+    const tCur = tok('sonnet') + tok('opus') + tok('codex'), tPrev = tokPrev('sonnet') + tokPrev('opus') + tokPrev('codex');
+    const costOf = (so, op, co) => so * 9 + op * 45 + co * 6;
+    const cost = costOf(tok('sonnet'), tok('opus'), tok('codex')), costPrev = costOf(tokPrev('sonnet'), tokPrev('opus'), tokPrev('codex'));
+    const dl = (a, b) => { if (!cmp) return { delta: undefined, dir: 'flat' }; const p = b ? Math.round((a - b) / b * 100) : 0; return { delta: (p > 0 ? '+' : p < 0 ? '−' : '') + Math.abs(p) + '%', dir: p > 0 ? 'up' : p < 0 ? 'down' : 'flat' }; };
+    const merged = sum('prMerged', W, 2 * W), opened = sum('prOpen', W, 2 * W), closed = ids.reduce((a, id) => a + this.agSeries(id, 2 * W).closed, 0);
+    const stillOpen = Math.max(0, opened - merged - closed);
+    const done = sum('done', W, 2 * W);
+    const C = n => 'var(--chart-' + n + ')';
+    return {
+      scope: pid ? (s.projects.find(p => p.id === pid) || {}).name : 'All projects',
+      ...dpVals,
+      cards: [
+        { label: 'Tasks completed', value: String(done), unit: '', icon: 'check-circle', caption: cmp ? 'vs previous period' : 'in this period', ...dl(done, sum('done', 0, W)) },
+        { label: 'PRs merged', value: String(merged), unit: '', icon: 'git-pull-request', caption: cmp ? 'vs previous period' : 'in this period', ...dl(merged, sum('prMerged', 0, W)) },
+        { label: 'Tokens burned', value: tCur.toFixed(1), unit: 'M', icon: 'zap', caption: cmp ? 'vs previous period' : 'in this period', ...dl(tCur, tPrev) },
+        { label: 'Agent cost', value: '$' + Math.round(cost).toLocaleString('en-US'), unit: '', icon: 'database', caption: '$' + (cost / Math.max(1, done)).toFixed(2) + ' per task done', ...dl(cost, costPrev) },
+      ],
+      labels, h: 220, yTicks: 4, donutSize: 168, donutThick: 18, fmtM: v => v + 'M',
+      taskSeries: [{ name: 'Completed', data: per('done') }, { name: 'Created', data: per('created') }],
+      taskLegend: [{ label: 'Completed', color: C(1) }, { label: 'Created', color: C(2) }],
+      prSeries: [{ name: 'Opened', data: per('prOpen') }, { name: 'Merged', data: per('prMerged') }],
+      prLegend: [{ label: 'Opened', color: C(1) }, { label: 'Merged', color: C(2) }],
+      tokSeries: [{ name: 'Claude Sonnet 4.5', data: per('sonnet') }, { name: 'GPT-5 Codex', data: per('codex') }, { name: 'Claude Opus 4.1', data: per('opus') }],
+      tokLegend: [{ label: 'Claude Sonnet 4.5', color: C(1), value: tok('sonnet').toFixed(1) + 'M' }, { label: 'GPT-5 Codex', color: C(2), value: tok('codex').toFixed(1) + 'M' }, { label: 'Claude Opus 4.1', color: C(3), value: tok('opus').toFixed(1) + 'M' }],
+      prDonut: [{ label: 'Merged', value: merged, color: C(1) }, { label: 'Open', value: stillOpen, color: C(2) }, { label: 'Closed', value: closed, color: C(3) }],
+      donutLegend: [{ label: 'Merged', color: C(1), value: merged }, { label: 'Open', color: C(2), value: stillOpen }, { label: 'Closed', color: C(3), value: closed }],
+      prRate: Math.round(merged / Math.max(1, opened) * 100) + '%',
+      hasTable: !pid,
+      table: pid ? [] : s.projects.map(p => { const q = this.agSeries(p.id, 2 * W), r = a => a.slice(W).reduce((x, y) => x + y, 0);
+        const so = r(q.sonnet), op = r(q.opus), co = r(q.codex);
+        return { name: p.name, done: r(q.done), prs: r(q.prMerged), tok: (so + op + co).toFixed(1) + 'M', cost: '$' + Math.round(costOf(so, op, co)).toLocaleString('en-US') }; }),
+    };
+  }
+  agSegs(str) { const out = []; const re = /\*\*([^*]+)\*\*/g; let last = 0, m; while ((m = re.exec(str))) { if (m.index > last) out.push({ t: str.slice(last, m.index), isPlain: true }); out.push({ t: m[1], isBold: true }); last = m.index + m[0].length; } if (last < str.length) out.push({ t: str.slice(last), isPlain: true }); return out; }
 }
 </script>
 </body>

@@ -39,6 +39,16 @@ export const attachmentIdSchema = z.number().int().min(0).max(0xffffffff);
 /** A tmux window index. Tabs are tmux windows, so a ticket authorises one window. */
 export const windowIndexSchema = z.number().int().min(0);
 
+/**
+ * An absolute path on a host (macOS or Linux). Only the shape is checked here;
+ * what is at the path is the runner's to find out, on the machine that has it.
+ */
+export const hostPathSchema = z
+  .string()
+  .min(FIELD_BOUNDS.hostPath.min)
+  .max(FIELD_BOUNDS.hostPath.max)
+  .regex(/^\/[^\0]*$/);
+
 /** GitHub's own numeric repository id. */
 export const githubRepoIdSchema = z.number().int().positive();
 
@@ -274,6 +284,7 @@ for (const [id, schema] of [
   ['windowIndex', windowIndexSchema],
   ['githubRepoId', githubRepoIdSchema],
   ['gitRef', gitRefSchema],
+  ['hostPath', hostPathSchema],
 ] as const) {
   z.globalRegistry.add(schema, { id });
 }

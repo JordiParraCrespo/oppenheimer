@@ -269,8 +269,8 @@ export interface Terminal {
 
 export interface AttachOptions {
   window?: number;
-  /** Attach through this share link's secret instead of as a member. */
-  sharedToken?: string;
+  /** Attach as a guest of this shared session's address instead of as a member. */
+  sharedSlug?: string;
   credit?: boolean;
   keep?: number;
 }
@@ -278,11 +278,11 @@ export interface AttachOptions {
 export async function attach(
   api: APIRequestContext,
   sessionId: string,
-  { window = 0, credit = false, keep = 1_000_000, sharedToken }: AttachOptions = {},
+  { window = 0, credit = false, keep = 1_000_000, sharedSlug }: AttachOptions = {},
 ): Promise<Terminal> {
-  const minted = sharedToken
+  const minted = sharedSlug
     ? await api.post('/api/v1/shared-sessions/attach-ticket', {
-        data: { token: sharedToken },
+        data: { slug: sharedSlug },
         failOnStatusCode: false,
       })
     : await api.post(`/api/v1/sessions/${sessionId}/attach-ticket`, {

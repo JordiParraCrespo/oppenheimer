@@ -13,10 +13,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# One deploy at a time, and none cancelled halfway through a migration.
-concurrency:
-  group: deploy-dev
-  cancel-in-progress: false
+# No run-level concurrency: a push builds while an earlier push deploys. Each
+# job holds its own lock instead (see build and deploy), and together they
+# keep pushes in order: a newer push's build cancels the older one's, so an
+# older push never reaches the deploy lock after a newer one.
 
 jobs:
   build:
@@ -25,6 +25,11 @@ jobs:
     # and ships nothing, with or without the environment's branch rule.
     if: vars.DEV_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: gha-vm
+    # One build per image: a newer push cancels the older push's build, and
+    # a run with a cancelled build never deploys.
+    concurrency:
+      group: deploy-dev-build-${{ matrix.image }}
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
@@ -55,6 +60,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       # Tagged by commit only; `:latest` stays the scheduled CI run's. The
       # server is x86: Hetzner CX/CPX, not the Arm CAX line.
+      #
+      # The layer cache lives in GHCR beside the image, as `:buildcache-dev`.
+      # The runners are fresh VMs with no local cache, and the Actions cache
+      # downloaded at 2-5 MB/s there (about 9 of the API's 10 minutes); GHCR
+      # answers the same host at 17-50 MB/s. Only this job, on main, holds
+      # `packages: write`, so a pull request's job cannot seed the cache main
+      # deploys from. `mode=max` keeps the build stages' layers too (the
+      # 600 MB dependency install is one), not just the final image's;
+      # `image-manifest=true,oci-mediatypes=true` stores the cache as a plain
+      # OCI image manifest, the form GHCR accepts for a cache.
       - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ${{ matrix.context }}
@@ -64,14 +79,21 @@ jobs:
           build-args: |
             VERSION=${{ github.sha }}
           tags: ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:${{ github.sha }}
-          cache-from: type=gha,scope=deploy-dev-${{ matrix.image }}
-          cache-to: type=gha,scope=deploy-dev-${{ matrix.image }},mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:buildcache-dev
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:buildcache-dev,mode=max,image-manifest=true,oci-mediatypes=true
 
   deploy:
     name: Deploy to the dev server
     needs: build
     if: vars.DEV_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: gha-vm
+    # One deploy at a time, and none cancelled halfway through a migration.
+    # GitHub keeps one waiting job per group, so a deploy still waiting is
+    # cancelled when a newer push's deploy arrives; `cancel-in-progress` is
+    # about the running one.
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
     # Holds the secrets below; restrict it to `main` in the repository's
     # environment settings so no other branch can reach the server.
     environment:

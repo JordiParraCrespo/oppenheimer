@@ -19,4 +19,9 @@ var (
 	ErrAgentUpdate         = problem.New("HOST_009", http.StatusFailedDependency, "An agent CLI could not be updated")
 	ErrInstallUnsupported  = problem.New("HOST_010", http.StatusBadRequest, "The runner does not install this tool")
 	ErrInstallFailed       = problem.New("HOST_011", http.StatusFailedDependency, "A tool could not be installed")
+	// The folder picker's listing (`fs.list`, 24 §4). The codes are the
+	// protocol's, named in packages/shared's fsListSchema.
+	ErrFolderNotFound   = problem.New("FS_001", http.StatusNotFound, "The folder does not exist")
+	ErrFolderNotDir     = problem.New("FS_002", http.StatusBadRequest, "The path is not a directory")
+	ErrFolderUnreadable = problem.New("FS_003", http.StatusForbidden, "The folder cannot be read")
 )

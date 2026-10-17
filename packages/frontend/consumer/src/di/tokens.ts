@@ -5,6 +5,7 @@ export const TOKENS = {
   ...KERNEL_TOKENS,
   PermissionsRepository: Symbol.for('PermissionsRepository'),
   AutomationsRepository: Symbol.for('AutomationsRepository'),
+  BotsRepository: Symbol.for('BotsRepository'),
   HostsRepository: Symbol.for('HostsRepository'),
   InstallationsRepository: Symbol.for('InstallationsRepository'),
   OrganizationsRepository: Symbol.for('OrganizationsRepository'),

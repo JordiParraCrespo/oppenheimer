@@ -78,7 +78,8 @@ describe('bindTerminalRenderer', () => {
     await h.fontsReady();
 
     expect(h.term.loadAddon).toHaveBeenCalledTimes(1);
-    expect(h.onCellsChanged).toHaveBeenCalled();
+    // What the typeahead draws by: told wrong, a guess sits off the echo.
+    expect(h.onCellsChanged).toHaveBeenLastCalledWith('webgl');
   });
 
   it('never attaches WebGL where the policy refuses it', async () => {
@@ -114,6 +115,7 @@ describe('bindTerminalRenderer', () => {
     await h.fontsReady();
 
     h.addons[0]?.loseContext();
+    expect(h.onCellsChanged).toHaveBeenLastCalledWith('dom');
     h.faceLoaded('"Oppenheimer Symbols"');
 
     expect(h.term.loadAddon).toHaveBeenCalledTimes(1);

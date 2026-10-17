@@ -1,0 +1,31 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class MilestoneResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  projectId!: string;
+
+  @ApiProperty({ example: 'Ship XRP Mobile 2.0 to TestFlight' })
+  name!: string;
+
+  @ApiPropertyOptional({ nullable: true, type: String, format: 'date', example: '2026-11-01' })
+  targetDate!: string | null;
+
+  @ApiProperty({ description: 'Its tasks that are Done.' })
+  doneCount!: number;
+
+  @ApiProperty({ description: 'All its tasks.' })
+  totalCount!: number;
+
+  @ApiProperty({
+    description:
+      'Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.',
+    example: 3,
+  })
+  version!: number;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+}

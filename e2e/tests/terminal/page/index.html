@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /* The dark terminal ramp, literal: the page loads no design system. */
+      :root {
+        --term-bg: #1a1a1c;
+        --term-fg: #e6e6e6;
+        --term-dim: #8a8a8f;
+        --term-caret: #60a5fa;
+        --term-selection: #3b4252;
+        --term-accent: #60a5fa;
+        --term-danger: #f87171;
+        --term-success: #4ade80;
+        --term-warning: #facc15;
+        --term-magenta: #c084fc;
+        --term-cyan: #22d3ee;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #1a1a1c;
+      }
+      #terminal {
+        position: absolute;
+        /* Off whole pixels, as a pane in the console is. */
+        left: 3.3px;
+        top: 2.7px;
+        width: 640px;
+        height: 120px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

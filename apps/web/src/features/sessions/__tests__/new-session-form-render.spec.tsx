@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useSyncExternalStore } from 'react';
+import { type ReactNode, useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleDialogProvider } from '@/lib/console';
 import { NewSessionForm } from '../sections/new-session-form';
@@ -21,6 +21,7 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch
 
 const renders = vi.hoisted(() => new Map<string, number>());
 const prepared = vi.hoisted(() => vi.fn());
+const created = vi.hoisted(() => vi.fn());
 
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
@@ -34,10 +35,32 @@ vi.mock('../components/repository-branch-select', () => ({
 }));
 vi.mock('../components/branch-select', () => ({ BranchSelect: chip('branch', 'develop') }));
 vi.mock('../components/permission-select', () => ({
-  PermissionSelect: chip('permission', 'auto'),
+  PermissionSelect: chip('permission', 'ask'),
 }));
 vi.mock('../components/agent-select', () => ({
-  AgentSelect: chip('agent', { agent: 'codex', model: null }),
+  AgentSelect: chip(
+    'agent',
+    { agent: 'codex', model: null },
+    { shell: { agent: 'shell', model: null } },
+  ),
+}));
+vi.mock('../components/where-select', () => ({
+  WhereSelect: chip('where', 'folder', { worktree: 'worktree' }),
+}));
+// The folder chip draws its popup's body as it is given; the body is the
+// section that reads the host, stubbed to a button that uses one folder.
+vi.mock('../components/folder-select', () => ({
+  FolderSelect: ({ children }: { children: ReactNode }) => {
+    renders.set('folder', (renders.get('folder') ?? 0) + 1);
+    return <>{children}</>;
+  },
+}));
+vi.mock('../sections/new-session-folder-browser', () => ({
+  NewSessionFolderBrowser: ({ onUse }: { onUse: (path: string, home: string) => void }) => (
+    <button type="button" onClick={() => onUse('/home/me/code/atlas', '/home/me')}>
+      folder:use
+    </button>
+  ),
 }));
 vi.mock('../components/effort-select', () => ({ EffortSelect: chip('effort', 'high') }));
 
@@ -87,11 +110,12 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useStartInstallation: () => ({ mutate: vi.fn(), isPending: false, error: null, reset: vi.fn() }),
   useRefreshInstallations: () => vi.fn(),
   usePrepareSession: () => ({ mutate: prepared }),
+  useHostFolders: () => ({ data: undefined, isPending: true, error: null }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);
     return {
-      mutate: vi.fn(),
+      mutate: created,
       reset: vi.fn(),
       isPending: false,
       isError: false,
@@ -278,12 +302,98 @@ describe('NewSessionForm', () => {
     });
   });
 
-  it('remembers a pick for the next visit, but never the permission level', () => {
+  it('remembers a pick for the next visit, the permission level and the place included', () => {
     fireEvent.click(screen.getByRole('button', { name: 'effort' }));
     fireEvent.click(screen.getByRole('button', { name: 'permission' }));
+    fireEvent.click(screen.getByRole('button', { name: 'where' }));
 
     const stored = JSON.parse(window.localStorage.getItem('oppenheimer.new-session.draft') ?? '{}');
     expect(stored.efforts).toEqual({ 'claude-code': 'high' });
-    expect(stored).not.toHaveProperty('permission');
+    expect(stored.permission).toBe('ask');
+    expect(stored.where).toBe('folder');
+  });
+
+  /**
+   * Where the session runs decides which chips the band holds
+   * (`product/versions/mvp/24-session-places.md` §5): a pick redraws the band,
+   * not the composer, which waits for a folder.
+   */
+  describe('a folder on the host', () => {
+    beforeEach(() => {
+      act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
+      rendered();
+    });
+
+    it('swaps the repository and branch chips for the folder chip, and leaves the composer', () => {
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+
+      expect(rendered()).toEqual(['folder', 'host', 'project', 'where']);
+      expect(screen.queryByRole('button', { name: 'repositories' })).toBeNull();
+    });
+
+    it('renders only the folder chip and the send gate when a folder is used', () => {
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      rendered();
+
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+      expect(rendered()).toEqual(['folder', 'send']);
+    });
+
+    it('opens the gate on a host and a folder, with no repository', () => {
+      const send = () =>
+        screen.getByRole<HTMLButtonElement>('button', { name: 'sessions.new.composer.send' });
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Tidy the notes' } });
+      expect(send().disabled).toBe(true);
+
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+      expect(send().disabled).toBe(false);
+    });
+
+    /** A repository picked before the switch stays in the draft, and is not prepared. */
+    it('asks the host to prepare nothing', () => {
+      prepared.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+
+      expect(prepared).not.toHaveBeenCalled();
+    });
+
+    it('remembers the folder for that host', () => {
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+
+      const folders = JSON.parse(
+        window.localStorage.getItem('oppenheimer.new-session.folders') ?? '{}',
+      );
+      expect(folders['host-2']).toEqual({ path: '/home/me/code/atlas', home: '/home/me' });
+    });
+
+    /** The blank terminal starts on no task: send is on with the field empty. */
+    it('sends the blank terminal with no task, as a folder and no checkouts', async () => {
+      created.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+      fireEvent.click(screen.getByRole('button', { name: 'agent:shell' }));
+
+      const send = screen.getByRole<HTMLButtonElement>('button', {
+        name: 'sessions.new.composer.send',
+      });
+      expect(send.disabled).toBe(false);
+      await act(async () => fireEvent.click(send));
+
+      expect(created).toHaveBeenCalledTimes(1);
+      expect(created.mock.calls[0]?.[0].input).toEqual({
+        hostId: 'host-2',
+        agent: 'shell',
+        folder: '/home/me/code/atlas',
+        launch: { model: null },
+      });
+    });
   });
 });

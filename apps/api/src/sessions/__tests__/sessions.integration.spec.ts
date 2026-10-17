@@ -60,7 +60,9 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       stageEvents: async () => undefined,
     }) as unknown as OutboxService;
 
-  function session(overrides: Partial<{ idempotencyKey: string | null; slug: string }> = {}) {
+  function session(
+    overrides: Partial<{ idempotencyKey: string | null; slug: string; folder: string }> = {},
+  ) {
     return WorkSessionEntity.request({
       organizationId,
       projectId,
@@ -69,6 +71,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       slug: overrides.slug ?? `bold-otter-${randomUUID().slice(0, 6)}`,
       agent: 'claude-code',
       idempotencyKey: overrides.idempotencyKey ?? null,
+      folder: overrides.folder,
     });
   }
 
@@ -761,6 +764,82 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         work.id,
       );
       expect(theirs.isNone()).toBe(true);
+    });
+
+    it('reads a folder session back with its place and its path', async () => {
+      const work = session({ folder: '/home/jordi/notes' });
+      await repository.createIfUnclaimed(work, requested());
+
+      const read = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(read.place).toBe('folder');
+      expect(read.folderPath).toBe('/home/jordi/notes');
+      const [row] = await dataSource.query(
+        `SELECT "place", "folderPath" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row).toEqual({ place: 'folder', folderPath: '/home/jordi/notes' });
+    });
+
+    it('refuses a row whose path does not match its place', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "place" = 'folder' WHERE "id" = $1`, [work.id]),
+      ).rejects.toThrow(/CHK_work_session_folder_path/);
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "folderPath" = '/srv' WHERE "id" = $1`, [
+          work.id,
+        ]),
+      ).rejects.toThrow(/CHK_work_session_folder_path/);
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
+      ).rejects.toThrow(/CHK_work_session_place/);
+    });
+
+    it('lists the caller’s recent folders on a host: distinct, newest first, bounded', async () => {
+      const at = async (folder: string, minutesAgo: number) => {
+        const work = session({ folder });
+        await repository.createIfUnclaimed(work, requested());
+        await dataSource.query(
+          `UPDATE "work_session" SET "createdAt" = now() - make_interval(mins => $2) WHERE "id" = $1`,
+          [work.id, minutesAgo],
+        );
+      };
+      await at('/home/jordi/notes', 30);
+      await at('/home/jordi/code', 20);
+      await at('/home/jordi/notes', 10);
+      await at('/srv/www', 40);
+      // A worktree session is not a folder anybody picked.
+      await repository.createIfUnclaimed(session(), requested());
+      // Someone else's folder session on the same host is theirs.
+      const other = randomUUID();
+      await dataSource.query(
+        `INSERT INTO "user" ("id", "email", "name", "firstName", "lastName", "emailVerified")
+         VALUES ($1, $2, 'Ana', 'Ana', 'B', false)`,
+        [other, `${other}@example.com`],
+      );
+      await repository.createIfUnclaimed(
+        WorkSessionEntity.request({
+          organizationId,
+          projectId,
+          createdByUserId: other,
+          hostId,
+          slug: `quiet-heron-${randomUUID().slice(0, 6)}`,
+          agent: 'shell',
+          folder: '/home/ana',
+        }),
+        requested(),
+      );
+
+      const recent = await repository.findRecentFolders(scope(), hostId, userId, 2);
+
+      expect(recent.map((folder) => folder.path)).toEqual([
+        '/home/jordi/notes',
+        '/home/jordi/code',
+      ]);
+      expect(recent[0].lastUsedAt).toBeInstanceOf(Date);
+      expect((await repository.findRecentFolders(scope(), hostId, userId, 8)).length).toBe(3);
     });
 
     it('counts what stops a project being archived', async () => {

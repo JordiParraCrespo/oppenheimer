@@ -12,6 +12,11 @@ const AutomationsSidebar = lazy(() =>
     default: module.AutomationsSidebar,
   })),
 );
+const BotsSidebar = lazy(() =>
+  import('@/features/bots/sections/bots-sidebar').then((module) => ({
+    default: module.BotsSidebar,
+  })),
+);
 const PullRequestsSidebar = lazy(() =>
   import('@/features/pull-requests/sections/pull-requests-sidebar').then((module) => ({
     default: module.PullRequestsSidebar,
@@ -20,46 +25,38 @@ const PullRequestsSidebar = lazy(() =>
 const PlanNav = lazy(() =>
   import('@/features/tasks/sections/plan-nav').then((module) => ({ default: module.PlanNav })),
 );
-/**
- * Plan's two lists load as one: whichever the reader lands on fetches the
- * other, so the move between the board and the calendar has nothing left to
- * wait for.
- */
-const planSidebars = () =>
-  Promise.all([
-    import('@/features/tasks/sections/tasks-sidebar'),
-    import('@/features/calendar/sections/calendar-sidebar'),
-  ]);
-const TasksSidebar = lazy(() =>
-  planSidebars().then(([tasks]) => ({ default: tasks.TasksSidebar })),
-);
 const CalendarSidebar = lazy(() =>
-  planSidebars().then(([, calendar]) => ({ default: calendar.CalendarSidebar })),
+  import('@/features/calendar/sections/calendar-sidebar').then((module) => ({
+    default: module.CalendarSidebar,
+  })),
 );
 
 /**
  * The sidebar body beside the rail, for the list the address is under. Route
  * composition, beside the layout that mounts it (the `-` keeps it out of the
- * route tree): Plan's sidebar is the tasks feature's head over either the
- * board's projects or the calendar's layers, two features that never import
- * each other.
+ * route tree): Plan's sidebar is the tasks feature's head (Tasks, Milestones,
+ * Calendar), with the calendar's layers and accounts under it on the
+ * calendar; the board and Milestones filter by project in the page.
+ * Two features that never import each other.
  */
 export function ConsoleSidebar({ list }: { list: ConsoleList }) {
   if (list === 'sessions') return <SessionsSidebar />;
   return (
     <Suspense fallback={null}>
-      {list === 'automations' ? (
+      {list === 'bots' ? (
+        <BotsSidebar />
+      ) : list === 'automations' ? (
         <AutomationsSidebar />
       ) : list === 'pulls' ? (
         <PullRequestsSidebar />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <PlanNav />
-          {/* A boundary per list: a swap that still suspends draws nothing under
-              the nav, never the previous list, whose route is no longer matched. */}
-          <Suspense key={list} fallback={null}>
-            {list === 'tasks' ? <TasksSidebar /> : <CalendarSidebar />}
-          </Suspense>
+          {list === 'calendar' ? (
+            <Suspense fallback={null}>
+              <CalendarSidebar />
+            </Suspense>
+          ) : null}
         </div>
       )}
     </Suspense>

@@ -50,3 +50,18 @@ type Updater interface {
 type Installer interface {
 	Install(ctx context.Context, tool, script string) error
 }
+
+// Directories is the host's file system, as far as the folder picker reads
+// it: directory names and the branch a checkout is on, never a file's name
+// and never what a file holds.
+type Directories interface {
+	// Subdirectories names dir's sub-directories, symlinks to directories
+	// included, in no order. A dir that is not there answers fs.ErrNotExist,
+	// one that cannot be read fs.ErrPermission, and a path that is something
+	// else domain.ErrNotADirectory.
+	Subdirectories(dir string) ([]string, error)
+	// Branch is the branch the git checkout at dir is on, a short commit id
+	// when it is detached, or "" when dir is no checkout. It reads what git
+	// wrote and never runs git: a listing asks it once per directory shown.
+	Branch(dir string) string
+}

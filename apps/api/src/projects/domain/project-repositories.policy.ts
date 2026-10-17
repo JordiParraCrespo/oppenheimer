@@ -1,6 +1,7 @@
 /**
  * What makes a project's repository list one a project can hold
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). An empty list is
+ * one: a project may hold no repository.
  *
  * Pure: the list in, the first thing wrong with it out, or `null`. The aggregate
  * refuses a list with a problem, and the handlers ask first so the caller gets the
@@ -23,17 +24,13 @@ export interface ProjectRepositoryProps {
   isDefault: boolean;
 }
 
-export type ProjectRepositoriesProblem =
-  | 'empty'
-  | 'no-default'
-  | 'duplicate'
-  | 'too-many'
-  | 'blank-base';
+export type ProjectRepositoriesProblem = 'no-default' | 'duplicate' | 'too-many' | 'blank-base';
 
 export function projectRepositoriesProblem(
   repositories: readonly ProjectRepositoryProps[],
 ): ProjectRepositoriesProblem | null {
-  if (repositories.length === 0) return 'empty';
+  // No repository is a project that holds none yet, not a problem.
+  if (repositories.length === 0) return null;
   if (repositories.length > MAX_PROJECT_REPOSITORIES) return 'too-many';
   if (
     new Set(repositories.map((repository) => repository.githubRepoId)).size !== repositories.length

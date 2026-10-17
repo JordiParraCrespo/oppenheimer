@@ -82,6 +82,15 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 			slog.String("dir", a.Paths.Workspaces), slog.Any("error", err))
 	}
 
+	// The work folder says which layout it is on before anything is made in
+	// it (24 §2).
+	if a.WorkFolder != nil {
+		if err := a.WorkFolder.Init(); err != nil {
+			logger.Warn("could not prepare the work folder",
+				slog.String("dir", a.Paths.Workspaces), slog.Any("error", err))
+		}
+	}
+
 	// Sessions live in tmux, which outlived this process being replaced.
 	// Take them back over before anything else looks at them.
 	if adopted, err := a.Sessions.Adopt(ctx); err != nil {

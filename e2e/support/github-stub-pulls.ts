@@ -62,11 +62,13 @@ interface StubPull {
   closed_at: string | null;
   created_at: string;
   updated_at: string;
-  head: { ref: string; sha: string };
-  base: { ref: string };
+  head: { ref: string; sha: string; repo: { id: number } };
+  base: { ref: string; repo: { id: number } };
   requested_reviewers: StubUser[];
   mergeable: boolean | null;
   mergeable_state: string;
+  /** Set by approve-and-merge when the merge itself was refused. */
+  auto_merge?: boolean;
   files: StubFile[];
   reviews: StubReview[];
   comments: StubComment[];
@@ -215,8 +217,8 @@ function pullOf(repository: PullsRepository, seed: Seed, now: number): StubPull 
         ...(seed.reviews ?? []).map((r) => r.hoursAgo),
       ),
     ),
-    head: { ref: seed.head, sha: shaOf(repository.id, seed.number) },
-    base: { ref: repository.default_branch },
+    head: { ref: seed.head, sha: shaOf(repository.id, seed.number), repo: { id: repository.id } },
+    base: { ref: repository.default_branch, repo: { id: repository.id } },
     requested_reviewers: (seed.requested ?? []).map(person),
     mergeable: state !== 'dirty',
     mergeable_state: seed.draft ? 'draft' : state,
@@ -467,6 +469,11 @@ function mergedSeeds(viewer: string, base: number, count: number): Seed[] {
   });
 }
 
+/** GitHub's global node id for a pull request: opaque, and unique across repositories. */
+function nodeIdOf(fullName: string, pull: { number: number }): string {
+  return `PR_${Buffer.from(`${fullName}#${pull.number}`).toString('base64url')}`;
+}
+
 export interface PullsStub {
   /** Answers a GitHub pull request route, or null when the path is not one. */
   handle(
@@ -515,7 +522,11 @@ export function createPullsStub(
       checks: _checks,
       ...rest
     } = pull;
-    return { ...rest, html_url: `https://github.com/${fullName}/pull/${pull.number}` };
+    return {
+      ...rest,
+      node_id: nodeIdOf(fullName, pull),
+      html_url: `https://github.com/${fullName}/pull/${pull.number}`,
+    };
   };
   const detail = (fullName: string, pull: StubPull) => ({
     ...summary(fullName, pull),
@@ -555,6 +566,21 @@ export function createPullsStub(
       if (refuse && method === 'PUT') {
         checksRefused.add(`${refuse[1]}/${refuse[2]}`);
         return { status: 200, body: { refused: [...checksRefused] } };
+      }
+      // Approve and merge, when the merge itself was refused: GitHub's auto-merge, over GraphQL.
+      if (path === '/graphql' && method === 'POST') {
+        const variables = ((body ?? {}) as { variables?: { id?: string } }).variables ?? {};
+        for (const [fullName, pulls] of byRepository) {
+          const pull = pulls.find((candidate) => nodeIdOf(fullName, candidate) === variables.id);
+          if (!pull) continue;
+          pull.auto_merge = true;
+          touch(pull);
+          return {
+            status: 200,
+            body: { data: { enablePullRequestAutoMerge: { clientMutationId: null } } },
+          };
+        }
+        return { status: 200, body: { errors: [{ message: 'Could not resolve to a node' }] } };
       }
       const repo = /^\/repos\/([^/]+)\/([^/]+)\/(.+)$/.exec(path);
       if (!repo) return null;

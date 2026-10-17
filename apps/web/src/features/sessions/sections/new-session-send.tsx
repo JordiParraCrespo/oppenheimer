@@ -1,4 +1,3 @@
-import type { CreateSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCreateSession,
   useHosts,
@@ -7,19 +6,22 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useRef } from 'react';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { NewSessionComposer } from '../components/new-session-composer';
+import { useAutoStart } from '../hooks/use-auto-start';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
-import { toCheckouts, toLaunchInput } from '../lib/session-options';
+import { hasPlace, toCreateInput } from '../lib/session-options';
 
 /**
  * The composer of New session and the requests the draft makes: an upload per
  * image, then the create that names them. During render it reads only whether
- * a host is picked and paired, whether the pick names one repository (the
- * composer cannot send without both, 05) and the request's state; the rest of
+ * a host is picked and paired, whether the draft names a place — one
+ * repository for a new worktree, a folder for a folder session (the composer
+ * cannot send without both, 05, 24) —, whether the agent needs a first task
+ * (the blank terminal does not) and the request's state; the rest of
  * the draft and the projects are read once, on send, so an effort pick or a
  * projects refetch never reaches it. The chips arrive as elements so a host
  * pick, which re-renders this section, does not re-render them.
@@ -35,14 +37,17 @@ export function NewSessionSend({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const search = useSearch({ from: '/_authenticated/sessions/new' });
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
   // What `start` posts, not what the picker holds, so the gate and the body agree.
-  const hasCheckout = useWatch({
+  const placed = useWatch({
     control,
-    name: 'scope',
-    compute: (picked) => toCheckouts(picked).length > 0,
+    name: ['where', 'scope', 'folder'],
+    compute: ([where, scope, folder]) => hasPlace({ where, scope, folder }),
   });
+  // The blank terminal has no agent to read a task, so it starts on nothing.
+  const taskOptional = useWatch({ control, name: 'agent', compute: (agent) => agent === 'shell' });
   // Whether the picked host is still one this workspace has. A remembered host
   // that was removed since the last visit would otherwise leave send enabled
   // with an id the API refuses. A boolean, so a refetch re-renders this only
@@ -90,33 +95,30 @@ export function NewSessionSend({
 
   async function start(prompt: string, files: File[]) {
     const draft = getValues();
-    const [checkout] = toCheckouts(draft.scope);
-    if (!draft.hostId || hostKnown === false || !checkout) return;
+    if (hostKnown === false || !toCreateInput(draft, { prompt, attachmentIds: [] })) return;
     create.reset();
     upload.reset();
     const attachmentIds = await attach(files);
     if (!attachmentIds) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
-    const input: CreateSessionInput = {
-      hostId: draft.hostId,
-      agent: draft.agent,
-      ...(projectId ? { projectId } : {}),
-      checkouts: [checkout],
-      launch: toLaunchInput(draft),
-      prompt,
-      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
-    };
+    const input = toCreateInput({ ...draft, projectId }, { prompt, attachmentIds });
+    if (!input) return;
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
     create.mutate({ idempotencyKey: attempt.current.key, input });
   }
+
+  useAutoStart(search.start === true, Boolean(hostId) && hostKnown === true && placed, () =>
+    start('', []),
+  );
 
   return (
     <div className="flex flex-col gap-4.5">
       <NewSessionComposer
         onSubmit={start}
         busy={upload.isPending || create.isPending}
-        disabled={!hostId || hostKnown === false || !hasCheckout}
+        taskOptional={taskOptional}
+        disabled={!hostId || hostKnown === false || !placed}
         scope={scope}
         tools={tools}
         engine={engine}

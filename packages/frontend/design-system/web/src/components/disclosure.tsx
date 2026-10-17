@@ -10,12 +10,11 @@ import { cn } from '../lib/utils';
  * Disclosure — a fold inside a dialog or a step: one row that reads as a
  * label, an optional "optional" beside it, a summary on the right when the
  * fold is closed, and a chevron that turns over 140ms; under it, the
- * content, 14px down. Add a host folds the install command and the agent
- * prompt behind "Inspect command and prompt"; the project dialog folds its
- * Defaults (`design/version1/SessionsConsole.dc.html`, `AddHost.dc.html`).
+ * content, 14px down. The project dialog folds its Defaults
+ * (`design/version1/SessionsConsole.dc.html`).
  *
- * The trigger is the whole row. `tone="muted"` is the Inspect row, whose
- * label is a 13px muted line rather than a field label.
+ * The trigger is the whole row. `tone="muted"` is a fold whose label is a
+ * 13px muted line rather than a field label.
  *
  * ```tsx
  * <Disclosure>
@@ -46,7 +45,7 @@ function DisclosureTrigger({
   meta?: React.ReactNode;
   /** What the fold holds, printed on the right while it is closed. */
   summary?: React.ReactNode;
-  /** `label`: the 14px medium field label. `muted`: the 13px muted line of Inspect. */
+  /** `label`: the 14px medium field label. `muted`: a 13px muted line. */
   tone?: 'label' | 'muted';
 }) {
   return (

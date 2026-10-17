@@ -55,9 +55,9 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useHostPresence: () => {
+  useSuspenseHostPresence: () => {
     const data = useSyncExternalStore(world.subscribe, () => world.get().hosts);
-    return { data, isPending: false, error: null };
+    return { data, error: null };
   },
   useRenameHost: () => ({ mutate: vi.fn(), isPending: false, error: null }),
 }));

@@ -47,7 +47,7 @@ usage() {
 usage: OPPENHEIMER_REGISTRATION_TOKEN=<token> install.sh --url <control plane URL> [options]
 
   --url         your control plane, e.g. https://app.oppenheimer.dev
-  --workspaces  where sessions' code lives (default: ~/oppenheimer-ai/workspaces;
+  --workspaces  where sessions' code lives (default: ~/oppenheimer;
                 asked on a terminal when not given)
   --name        a name for this host (default: this machine's hostname)
   --channel     stable (default) or beta
@@ -211,7 +211,7 @@ ensure_tools() {
 # the directory, proves it writable, resolves symlinks); these are the ones
 # worth failing on before anything is downloaded.
 choose_workspaces() {
-	default="$HOME/oppenheimer-ai/workspaces"
+	default="$HOME/oppenheimer"
 	if [ -z "$WORKSPACES" ] && has_tty; then
 		WORKSPACES="$(ask 'Where should session code live on this machine?' "$default")"
 	fi

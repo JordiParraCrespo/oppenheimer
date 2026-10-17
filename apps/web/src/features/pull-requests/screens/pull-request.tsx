@@ -1,36 +1,46 @@
-import type { DiffLayout } from '@oppenheimer/design-system-web';
+import { type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
-import { PaneBar } from '@oppenheimer/frontend-web';
+import { PaneBar, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type PullRequestView, pullRequestSearch } from '../lib/pull-request-search';
-import { PullRequestBriefing } from '../sections/pull-request-briefing';
 import { PullRequestChanges } from '../sections/pull-request-changes';
+import { PullRequestChat } from '../sections/pull-request-chat';
 import { PullRequestDescription } from '../sections/pull-request-description';
 import { PullRequestToolbar } from '../sections/pull-request-toolbar';
 import { ReviewPopover } from '../sections/review-popover';
 
 /**
- * A pull request: the bar and one of its three views. The review's pending
+ * A pull request: the bar and one of its three views, Description, Changes
+ * and Chat, the review session's terminal, which the route hands in as
+ * `terminal` because the terminal is the sessions feature's. The review's pending
  * line comments are shared by two of them — written on Changes, posted from
  * Submit review — and the diff's layout is switched in the bar and drawn on
  * Changes, so both live here.
  *
  * The bar sits in the shell's slot above the page (`PaneBar`), so it stays put
  * while the view scrolls under it; each view is a page the shell frames at
- * the measure the route reads off `?view=`.
+ * the measure the route reads off `?view=`. Each view reads under Suspense,
+ * so its placeholder and a first failure are drawn here, around it.
  */
 export function PullRequestScreen({
   address,
   view,
+  terminal,
 }: {
   address: PullRequestAddress;
   view: PullRequestView;
+  terminal: (sessionId: string) => ReactNode;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [pending, setPending] = useState<LineCommentInput[]>([]);
   const [layout, setLayout] = useState<DiffLayout>('unified');
-  const setView = (next: PullRequestView) => navigate({ to: '.', search: pullRequestSearch(next) });
+  // A view is the same page read another way: it keeps the queue the pull
+  // request was opened from, so Back still returns to it.
+  const setView = (next: PullRequestView) =>
+    navigate({ to: '.', search: pullRequestSearch(next), state: true });
 
   return (
     <>
@@ -53,20 +63,52 @@ export function PullRequestScreen({
       </PaneBar>
       {
         {
-          description: <PullRequestDescription address={address} />,
-          briefing: (
-            <PullRequestBriefing address={address} onReviewChanges={() => setView('changes')} />
+          // Keyed per view: a failure caught on one view must not stay on screen
+          // in place of the other.
+          description: (
+            <QueryState key="description">
+              <QueryState.Pending>
+                <Skeleton className="h-96 w-full" />
+              </QueryState.Pending>
+              <QueryState.Error fallback={t('pullRequests.detail.loadFailed')} />
+              <QueryState.Data>
+                <PullRequestDescription address={address} />
+              </QueryState.Data>
+            </QueryState>
           ),
           changes: (
-            <PullRequestChanges
-              address={address}
-              layout={layout}
-              pending={pending}
-              onAddPending={(comment) => setPending((current) => [...current, comment])}
-              onDiscardPending={(index) =>
-                setPending((current) => current.filter((_, i) => i !== index))
-              }
-            />
+            <QueryState key="changes">
+              <QueryState.Pending>
+                <Skeleton className="min-h-0 w-full flex-1" />
+              </QueryState.Pending>
+              <QueryState.Error fallback={t('pullRequests.changes.loadFailed')} />
+              <QueryState.Data>
+                <PullRequestChanges
+                  address={address}
+                  layout={layout}
+                  pending={pending}
+                  onAddPending={(comment) => setPending((current) => [...current, comment])}
+                  onDiscardPending={(index) =>
+                    setPending((current) => current.filter((_, i) => i !== index))
+                  }
+                />
+              </QueryState.Data>
+            </QueryState>
+          ),
+          chat: (
+            <QueryState key="chat">
+              <QueryState.Pending>
+                <Skeleton className="min-h-0 w-full flex-1" />
+              </QueryState.Pending>
+              <QueryState.Error fallback={t('pullRequests.reviewSession.loadFailed')} />
+              <QueryState.Data>
+                <PullRequestChat
+                  address={address}
+                  terminal={terminal}
+                  onClose={() => setView('description')}
+                />
+              </QueryState.Data>
+            </QueryState>
           ),
         }[view]
       }

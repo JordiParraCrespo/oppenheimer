@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+html,body{margin:0;height:100%;background:var(--background,#000)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes op-spin{to{transform:rotate(360deg)}}
+@keyframes op-chat-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes op-chat-shimmer{0%,100%{opacity:.55}50%{opacity:1}}
+[data-chatscroll]::-webkit-scrollbar{width:10px}[data-chatscroll]::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:980px;border:3px solid transparent;background-clip:content-box}
+textarea::placeholder{color:var(--fg-subtle)}
+</style>
+<script src="./rail-order.js"></script>
+<script src="./catalog.js"></script>
+</helmet>
+<div data-theme="{{ theme }}" onClick="{{ closeMenus }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
+
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<a class="op-rail__btn" href="./SessionsConsole.dc.html" aria-label="Sessions" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></a>
+<button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Employees"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></button>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests</span></a>
+<a class="op-rail__btn" href="./Routines.dc.html" aria-label="Automations" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></a>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
+</nav>
+
+<sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ true }}">
+<nav class="op-sidebar" style="width:288px;min-width:288px;overflow:hidden">
+<div class="op-sidebar__head" style="display:flex;align-items:center;gap:8px">
+<span class="op-wordmark" style="font-size:18px;flex:1">Oppenheimer</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="New chat" title="New chat" onClick="{{ newThread }}" style="background:{{ newBg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+<div style="padding:0 12px 6px">
+<label style="display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border-radius:10px;background:var(--hover-surface);color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input value="{{ botQuery }}" onChange="{{ onBotQuery }}" placeholder="Search bots" aria-label="Search bots" style="flex:1;min-width:0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:14px"></label>
+</div>
+<div class="op-sidebar__scroll">
+<sc-if value="{{ noOwnBots }}"><div style="margin:8px 6px 0;padding:14px;border-radius:14px;background:var(--hover-surface);display:flex;flex-direction:column;gap:8px"><span style="font-size:13.5px;font-weight:500">No bots yet</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Bots you create appear here. Start from a template, or describe the job and the bot writes its own instructions.</span><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ newThread }}" style="align-self:flex-start;margin-top:2px">New bot</button></div></sc-if>
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+<div onDragOver="{{ g.over }}" onDragLeave="{{ g.leave }}" onDrop="{{ g.drop }}" style="display:flex;flex-direction:column;margin:8px 6px 0;padding-bottom:2px;border-radius:14px;background:{{ g.dropBg }};transition:background 80ms cubic-bezier(.4,0,.2,1)">
+<div style="position:relative;display:flex;align-items:center;gap:2px;height:30px;padding:0 4px 0 2px" onClick="{{ stop }}">
+<sc-if value="{{ g.notRenaming }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ g.toggle }}" onDoubleClick="{{ g.startRename }}" aria-expanded="{{ g.open }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:4px;height:26px;padding:0 6px;border:0;border-radius:8px;background:none;color:var(--fg-subtle);font:inherit;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;text-align:left;cursor:pointer" style-hover="color:var(--fg)"><span style="display:flex;transform:{{ g.chev }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="12" hint-size="12px,12px"></x-import></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:0;opacity:.8">{{ g.count }}</span><sc-if value="{{ g.readOnly }}"><span title="Built-in agents. Settings open from each one." style="display:flex;margin-left:auto;padding-right:4px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="11" hint-size="11px,11px"></x-import></span></sc-if></button></sc-if>
+<sc-if value="{{ g.renaming }}"><input ref="{{ gRef }}" value="{{ gDraft }}" onChange="{{ onGDraft }}" onKeyDown="{{ gKey }}" onBlur="{{ commitG }}" aria-label="Group name" style="flex:1;min-width:0;height:26px;margin-left:4px;padding:0 8px;box-sizing:border-box;border:1px solid var(--primary);border-radius:8px;outline:0;box-shadow:0 0 0 3px var(--ring);background:var(--card);color:var(--fg);font:inherit;font-size:13px"></sc-if>
+<sc-if value="{{ g.canEdit }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Group options" onClick="{{ g.menuToggle }}" style="width:24px;height:24px;background:{{ g.menuBg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="14" hint-size="14px,14px"></x-import></button></sc-if>
+<sc-if value="{{ g.menuOpen }}">
+<div role="menu" style="position:absolute;right:0;top:calc(100% + 4px);z-index:30;width:200px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<button type="button" role="menuitem" onClick="{{ g.startRename }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="14" hint-size="14px,14px"></x-import></span>Rename group</button>
+<button type="button" role="menuitem" onClick="{{ g.remove }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--danger);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></span>Delete group</button>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ g.bots }}" as="b" hint-placeholder-count="2">
+<button type="button" draggable="{{ b.draggable }}" onDragStart="{{ b.drag }}" onDragEnd="{{ b.dragEnd }}" onClick="{{ b.open }}" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border:0;border-radius:14px;background:{{ b.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span title="{{ b.sciName }}" style="position:relative;flex:none;width:36px;height:36px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">{{ b.ini }}<img src="{{ b.img }}" alt="" onError="{{ b.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><sc-if value="{{ b.live }}"><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:{{ b.weight }};letter-spacing:-0.009em">{{ b.title }}</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ b.age }}</span></span><span style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:{{ b.prevColor }}">{{ b.preview }}</span><sc-if value="{{ b.unread }}"><span aria-label="Unread" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--primary)"></span></sc-if><sc-if value="{{ b.needs }}"><span aria-label="Needs input" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--warning)"></span></sc-if></span></span>
+</button>
+</sc-for>
+<sc-if value="{{ g.empty }}"><div style="margin:2px 4px 4px;padding:10px 12px;border:1px dashed var(--border-subtle);border-radius:10px;font-size:12.5px;color:var(--fg-subtle)">No bots yet. Drag one here.</div></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<button type="button" onClick="{{ newGroup }}" style="display:flex;align-items:center;gap:8px;margin:10px 6px 0;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>New group</button>
+<sc-if value="{{ noBots }}"><div style="padding:16px 18px;font-size:13px;line-height:1.5;color:var(--fg-muted)">No bots match <span style="color:var(--fg)">{{ botQuery }}</span>.</div></sc-if>
+</div>
+<div class="op-sidebar__foot" style="border-top:0;display:flex;flex-direction:column;gap:2px">
+<a class="op-navitem" href="./Settings.dc.html" style="text-decoration:none;color:inherit"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span></a>
+</div>
+</nav>
+</sc-if>
+
+<main style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--background)">
+<header style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--border-subtle)">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Toggle sidebar" onClick="{{ toggleSidebar }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="panel-left" size="15" hint-size="15px,15px"></x-import></button>
+<span style="flex:1;min-width:0;display:flex;align-items:center;gap:8px">
+<sc-if value="{{ isNew }}"><span style="flex:none;font-size:14px;color:var(--fg-muted)">To:</span>
+<div style="position:relative;flex:1;min-width:0;max-width:420px">
+<input ref="{{ toRef }}" value="{{ botTo }}" onChange="{{ onBotTo }}" onKeyDown="{{ botToKey }}" onFocus="{{ openTo }}" placeholder="Search or create bots" aria-label="Choose a bot" style="width:100%;height:30px;padding:0 4px;box-sizing:border-box;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:14px">
+<sc-if value="{{ toOpen }}">
+<div role="listbox" onClick="{{ stop }}" style="position:absolute;left:-6px;top:calc(100% + 6px);z-index:30;width:320px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ toMatches }}" as="m" hint-placeholder-count="3">
+<button type="button" role="option" onClick="{{ m.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:10px;background:{{ m.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer"><span style="flex:none;width:28px;height:28px;border-radius:980px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="14" hint-size="14px,14px"></x-import></span><span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:13.5px;font-weight:500">{{ m.title }}</span><span style="font-size:12px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.role }}</span></span></button>
+</sc-for>
+<sc-if value="{{ canCreate }}"><button type="button" onClick="{{ createFromTo }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:10px;background:{{ createBg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer"><span style="flex:none;width:28px;height:28px;border-radius:980px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></span><span style="font-size:13.5px">Create bot <span style="font-weight:500">{{ botToTrim }}</span></span></button></sc-if>
+</div>
+</sc-if>
+</div>
+<span style="flex:1"></span></sc-if>
+<sc-if value="{{ hasBot }}"><div style="position:relative;flex:none" onClick="{{ stop }}">
+<button type="button" onClick="{{ avToggle }}" aria-label="Change avatar" title="Change avatar" aria-expanded="{{ avOpen }}" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:980px;background:{{ avBtnBg }};cursor:pointer" style-hover="background:var(--hover-surface)"><span title="{{ hb.sciName }}" style="position:relative;flex:none;width:26px;height:26px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;letter-spacing:-0.01em">{{ hb.ini }}<img src="{{ hb.img }}" alt="" onError="{{ hb.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span></button>
+<sc-if value="{{ avOpen }}">
+<div role="dialog" aria-label="Avatar" style="position:absolute;left:0;top:calc(100% + 8px);z-index:30;width:300px;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:14px;padding:2px 0"><span title="{{ hb.sciName }}" style="position:relative;flex:none;width:56px;height:56px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;letter-spacing:-0.01em">{{ hb.ini }}<img src="{{ hb.img }}" alt="" onError="{{ hb.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">{{ hb.sciName }}</span><span style="font-size:12px;color:var(--fg-muted)">{{ hb.field }}</span></span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--fg-muted)">Photo</span>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px"><sc-for list="{{ avSci }}" as="x" hint-placeholder-count="12"><button type="button" aria-label="{{ x.name }}" title="{{ x.name }}" aria-pressed="{{ x.on }}" onClick="{{ x.pick }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px 6px;border:0;border-radius:10px;background:{{ x.bg }};color:var(--fg);font:inherit;cursor:pointer;min-width:0" style-hover="background:var(--hover-surface)"><span title="{{ x.sciName }}" style="position:relative;flex:none;width:36px;height:36px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;letter-spacing:-0.01em">{{ x.ini }}<img src="{{ x.img }}" alt="" onError="{{ x.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><span style="max-width:100%;font-size:11.5px;color:{{ x.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ x.short }}</span></button></sc-for></div></div>
+<button type="button" onClick="{{ avShuffle }}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;border:0;border-radius:980px;background:var(--hover-surface);color:var(--fg);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--control-hover)">Surprise me</button>
+</div>
+</sc-if>
+</div></sc-if>
+<sc-if value="{{ showTitle }}" hint-placeholder-val="{{ true }}"><span onClick="{{ editBot }}" onDoubleClick="{{ startRename }}" title="{{ titleHint }}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em;color:{{ titleColor }};cursor:default">{{ title }}</span></sc-if>
+<sc-if value="{{ renaming }}"><input ref="{{ renameRef }}" value="{{ renameVal }}" onChange="{{ onRename }}" onKeyDown="{{ renameKey }}" onBlur="{{ commitRename }}" aria-label="Thread title" style="flex:1;min-width:0;max-width:420px;height:28px;padding:0 8px;box-sizing:border-box;border:1px solid var(--primary);border-radius:10px;outline:0;box-shadow:0 0 0 3px var(--ring);background:var(--card);color:var(--fg);font:inherit;font-size:14px;font-weight:500"></sc-if>
+<sc-if value="{{ never }}"><button type="button" onClick="{{ copyBranch }}" title="Copy branch name" style="display:inline-flex;align-items:center;gap:5px;flex:none;height:22px;padding:0 8px;border:0;border-radius:980px;background:var(--hover-surface);color:var(--fg-muted);font-family:var(--font-mono);font-size:11px;cursor:pointer" style-hover="background:var(--control-hover);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ branchIcon }}" size="11" hint-size="11px,11px"></x-import>{{ branchLabel }}</button></sc-if>
+<sc-if value="{{ never }}"><span title="Pinned" style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="12" hint-size="12px,12px"></x-import></span></sc-if>
+</span>
+<sc-if value="{{ running }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span>Running</span></sc-if>
+<sc-if value="{{ hasBot }}">
+<div style="position:relative">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Bot options" aria-expanded="{{ headerMenu }}" onClick="{{ toggleHeaderMenu }}" style="background:{{ headerMenuBg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button>
+<sc-if value="{{ headerMenu }}">
+<div role="menu" onClick="{{ stop }}" style="position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:220px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ headerItems }}" as="h" hint-placeholder-count="6">
+<sc-if value="{{ h.sep }}"><div style="height:1px;margin:4px 6px;background:var(--border-subtle)"></div></sc-if>
+<button type="button" role="menuitem" onClick="{{ h.run }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:{{ h.color }};font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;color:{{ h.iconColor }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ h.icon }}" size="14" hint-size="14px,14px"></x-import></span><span style="flex:1">{{ h.label }}</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ h.kbd }}</span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</header>
+<sc-if value="{{ toast }}"><div role="status" style="position:fixed;left:50%;bottom:28px;z-index:60;transform:translateX(-50%);display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:980px;background:var(--fg);color:var(--background);font-size:13px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import>{{ toast }}</div></sc-if>
+<sc-if value="{{ confirmDelete }}">
+<div onClick="{{ cancelDelete }}" style="position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--overlay);backdrop-filter:blur(3px)">
+<div role="dialog" aria-modal="true" aria-labelledby="del-title" onClick="{{ stop }}" style="width:100%;max-width:420px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;padding:24px;border-radius:28px;background:var(--card);box-shadow:var(--shadow-modal);animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;flex-direction:column;gap:8px"><span id="del-title" style="font-size:17px;font-weight:600;letter-spacing:-0.014em">Delete {{ title }}?</span><span style="font-size:14px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">The bot, its instructions and its conversation are removed. Runs it already finished stay in the run history.</span></div>
+<div style="display:flex;justify-content:flex-end;gap:8px"><button class="op-btn op-btn--md" type="button" onClick="{{ cancelDelete }}">Cancel</button><button type="button" onClick="{{ doDelete }}" style="height:34px;padding:0 16px;border:0;border-radius:980px;background:var(--danger);color:#fff;font:inherit;font-size:14px;cursor:pointer">Delete bot</button></div>
+</div>
+</div>
+</sc-if>
+
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:{{ stageJustify }};padding-bottom:{{ stagePad }}">
+<div data-chatscroll="true" ref="{{ scrollRef }}" onScroll="{{ onChatScroll }}" style="flex:{{ scrollFlex }};min-height:0;overflow-y:auto;overflow-x:hidden">
+<sc-if value="{{ isEmpty }}">
+<div style="height:100%;box-sizing:border-box;padding:0 20px 24px;display:flex;align-items:flex-end;justify-content:center">
+<div style="width:100%;max-width:{{ colWidth }};display:flex;flex-direction:column;gap:24px">
+<h1 style="margin:0;text-align:center;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1;text-wrap:balance">{{ greeting }}</h1>
+<sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Start from a template</span>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+<sc-for list="{{ templates }}" as="tp" hint-placeholder-count="4">
+<button type="button" onClick="{{ tp.pick }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border:0;border-radius:18px;background:var(--card);color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--control-hover)"><span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ tp.icon }}" size="16" hint-size="16px,16px"></x-import></span><span style="font-size:14px;font-weight:500">{{ tp.name }}</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ tp.desc }}</span></button>
+</sc-for>
+</div>
+<span style="font-size:12.5px;color:var(--fg-subtle)">Or type below. A new bot starts blank and proposes its own instructions.</span>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ hasThread }}" hint-placeholder-val="{{ true }}">
+<div style="max-width:{{ colWidth }};margin:0 auto;padding:28px 20px 40px;display:flex;flex-direction:column;gap:18px">
+<sc-for list="{{ msgs }}" as="m" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+
+<sc-if value="{{ m.isUser }}">
+<div onMouseEnter="{{ m.enter }}" onMouseLeave="{{ m.leave }}" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:8px">
+<div style="max-width:80%;padding:12px 20px;box-sizing:border-box;background:var(--card);border-radius:28px;font-size:15px;line-height:1.55;letter-spacing:-0.011em;white-space:pre-wrap;word-break:break-word;text-wrap:pretty">{{ m.text }}</div>
+<div style="display:flex;align-items:center;gap:2px;color:var(--fg-subtle);opacity:{{ m.actOp }};transition:opacity 140ms cubic-bezier(.4,0,.2,1)"><span style="padding-right:4px;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums">{{ m.time }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy message" onClick="{{ m.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.copyIcon }}" size="13" hint-size="13px,13px"></x-import></button><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Edit message" onClick="{{ m.edit }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="13" hint-size="13px,13px"></x-import></button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ m.isWork }}">
+<div role="list" aria-label="Agent steps" style="display:flex;flex-direction:column;margin-bottom:-6px">
+<sc-for list="{{ m.steps }}" as="s" hint-placeholder-count="3">
+<div role="listitem" style="display:flex;flex-direction:column">
+<button type="button" onClick="{{ s.toggle }}" aria-expanded="{{ s.openS }}" style="align-self:flex-start;max-width:100%;display:inline-flex;align-items:center;gap:10px;min-height:34px;margin-left:-8px;padding:0 8px;border:0;border-radius:10px;background:none;color:{{ s.titleColor }};font:inherit;font-size:15px;letter-spacing:-0.011em;text-align:left;cursor:{{ s.cursor }};transition:color 80ms cubic-bezier(.4,0,.2,1)" style-hover="color:{{ s.hoverColor }}">
+<span style="flex:none;display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title }}</span>
+<sc-if value="{{ s.hasDiff }}"><span style="flex:none;display:flex;gap:6px;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums"><span style="color:var(--success)">{{ s.add }}</span><span style="color:var(--danger)">{{ s.del }}</span></span></sc-if>
+<sc-if value="{{ s.hasMeta }}"><span style="flex:none;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:{{ s.metaColor }}">{{ s.meta }}</span></sc-if>
+<sc-if value="{{ s.expandable }}"><span style="flex:none;display:flex;transform:{{ s.chevRot }};transition:transform 140ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></span></sc-if>
+</button>
+<sc-if value="{{ s.showNote }}"><p style="margin:0 0 8px;padding-left:26px;font-size:14px;line-height:1.6;color:var(--fg-muted);white-space:pre-wrap;text-wrap:pretty;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">{{ s.note }}</p></sc-if>
+<sc-if value="{{ s.showOut }}">
+<div style="margin:2px 0 10px 26px;border-radius:14px;background:var(--card);overflow:hidden;animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="max-height:256px;overflow:auto;padding:12px 0;font-family:var(--font-mono);font-size:12.5px;line-height:1.65"><sc-for list="{{ s.lines }}" as="ln" hint-placeholder-count="3"><div style="display:flex;min-width:max-content;background:{{ ln.bg }}"><span style="flex:none;width:40px;padding-right:14px;box-sizing:border-box;text-align:right;color:var(--fg-subtle);font-variant-numeric:tabular-nums;user-select:none">{{ ln.n }}</span><sc-if value="{{ ln.hasSign }}"><span style="flex:none;width:14px;color:{{ ln.signColor }}">{{ ln.sign }}</span></sc-if><span style="padding-right:16px;white-space:{{ s.ws }}"><sc-for list="{{ ln.segs }}" as="g"><span style="color:{{ g.c }}">{{ g.t }}</span></sc-for></span></div></sc-for></div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ m.isAssistant }}">
+<div style="display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.6;letter-spacing:-0.011em">
+<sc-for list="{{ m.blocks }}" as="b" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column">
+<sc-if value="{{ b.isP }}"><p style="margin:0;text-wrap:pretty"><sc-for list="{{ b.segs }}" as="g"><sc-if value="{{ g.isCode }}"><code style="padding:2px 6px;border-radius:6px;background:var(--card);font-family:var(--font-mono);font-size:0.86em;white-space:nowrap">{{ g.t }}</code></sc-if><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></p></sc-if>
+<sc-if value="{{ b.isList }}">
+<ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+<sc-for list="{{ b.items }}" as="it"><li style="text-wrap:pretty;padding-left:2px"><sc-for list="{{ it.segs }}" as="g"><sc-if value="{{ g.isCode }}"><code style="padding:2px 6px;border-radius:6px;background:var(--card);font-family:var(--font-mono);font-size:0.86em;white-space:nowrap">{{ g.t }}</code></sc-if><sc-if value="{{ g.isBold }}"><strong style="font-weight:600">{{ g.t }}</strong></sc-if><sc-if value="{{ g.isPlain }}"><span>{{ g.t }}</span></sc-if></sc-for></li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{ b.isCodeBlock }}">
+<div style="margin:4px 0;border-radius:18px;background:var(--card);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:12px 10px 0 22px"><span style="flex:1;min-width:0;font-size:14px;font-weight:500;color:var(--fg)">{{ b.lang }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy code" title="Copy" onClick="{{ b.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ b.copyIcon }}" size="14" hint-size="14px,14px"></x-import></button></div>
+<div style="padding:8px 0 18px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.7"><sc-for list="{{ b.lines }}" as="ln" hint-placeholder-count="3"><div style="display:flex;min-width:max-content;background:{{ ln.bg }}"><span style="flex:none;width:44px;padding-right:14px;box-sizing:border-box;text-align:right;color:var(--fg-subtle);font-variant-numeric:tabular-nums;user-select:none">{{ ln.n }}</span><sc-if value="{{ ln.hasSign }}"><span style="flex:none;width:14px;color:{{ ln.signColor }}">{{ ln.sign }}</span></sc-if><span style="padding-right:22px;white-space:{{ b.ws }}"><sc-for list="{{ ln.segs }}" as="g"><span style="color:{{ g.c }}">{{ g.t }}</span></sc-for></span></div></sc-for></div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ m.done }}">
+<div style="display:flex;align-items:center;gap:2px;margin:-4px 0 0 -6px;color:var(--fg-subtle)">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy reply"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="13" hint-size="13px,13px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Retry"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="refresh" size="13" hint-size="13px,13px"></x-import></button>
+<span style="margin-left:6px;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums">{{ m.meta }}</span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ m.isB2b }}">
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;font-size:13.5px">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px">
+<span style="display:flex;padding-top:3px;color:var(--fg-muted);transform:{{ m.rot }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;color:var(--fg-muted)">{{ m.dirLabel }} <span style="color:var(--fg);font-weight:500">{{ m.bot }}</span></span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ m.time }}</span></span><span style="line-height:1.5;text-wrap:pretty">{{ m.text }}</span></span>
+</div>
+<sc-if value="{{ m.hasReply }}">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-top:1px solid var(--border-subtle);background:var(--hover-surface)">
+<span style="display:flex;padding-top:3px;color:var(--fg-muted);transform:{{ m.replyRot }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="color:var(--fg-muted)">{{ m.replyLabel }}</span><span style="line-height:1.5;text-wrap:pretty">{{ m.reply }}</span></span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ m.isDecision }}">
+<div role="separator" aria-label="{{ m.label }}" style="display:flex;align-items:center;gap:10px;min-height:24px;font-size:12.5px;color:var(--fg-muted)"><span style="flex:1;height:1px;background:var(--border-subtle)"></span><span style="flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:6px"><span style="display:flex;color:{{ m.tone }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="12" hint-size="12px,12px"></x-import></span><span style="flex:none">{{ m.label }}</span><code style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px;color:var(--fg)">{{ m.detail }}</code><span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">· {{ m.time }}</span></span><span style="flex:1;height:1px;background:var(--border-subtle)"></span></div>
+</sc-if>
+
+<sc-if value="{{ m.isProposal }}">
+<div style="display:flex;flex-direction:column;border-radius:18px;background:var(--card);overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;padding:10px 10px 10px 16px;flex-wrap:wrap">
+<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="14" hint-size="14px,14px"></x-import></span>
+<span style="font-family:var(--font-mono);font-size:12.5px">INSTRUCTIONS.md</span>
+<span style="height:20px;padding:0 8px;display:inline-flex;align-items:center;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg-muted)">Proposed by {{ m.by }}</span>
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--success)">{{ m.adds }}</span>
+<span style="flex:1"></span>
+<sc-if value="{{ m.pending }}"><a href="{{ m.reviewHref }}" style="height:28px;display:inline-flex;align-items:center;padding:0 10px;border-radius:980px;color:var(--fg-muted);font-size:13px;text-decoration:none" style-hover="background:var(--hover-surface);color:var(--fg)">Review in settings</a><button type="button" onClick="{{ m.reject }}" style="height:28px;padding:0 12px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">Reject</button><button type="button" onClick="{{ m.accept }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:0;border-radius:980px;background:var(--hover-surface);color:var(--fg);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--control-hover)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import>Accept</button></sc-if>
+<sc-if value="{{ m.decided }}"><span style="padding-right:6px;font-size:12.5px;color:var(--fg-muted)">{{ m.statusLabel }}</span></sc-if>
+</div>
+<pre style="margin:0;padding:10px 16px 14px;border-top:1px solid var(--border-subtle);font-family:var(--font-mono);font-size:12.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;opacity:{{ m.op }}"><sc-for list="{{ m.lines }}" as="l"><span style="display:block;color:{{ l.color }}">{{ l.t }}</span></sc-for></pre>
+</div>
+</sc-if>
+
+</div>
+</sc-for>
+
+<sc-if value="{{ running }}">
+<div role="status" style="display:flex;align-items:center;gap:10px;min-height:34px;font-size:15px;letter-spacing:-0.011em;color:var(--fg-muted)">
+<span style="flex:none;display:flex;animation:op-spin 900ms linear infinite"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="loader" size="16" hint-size="16px,16px"></x-import></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;animation:op-chat-shimmer 1.4s cubic-bezier(.4,0,.2,1) infinite">{{ liveLabel }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ elapsed }}</span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+
+<div style="flex:none;padding:0 20px 16px">
+<div style="position:relative;max-width:{{ colWidth }};margin:0 auto">
+<sc-if value="{{ showJump }}"><button type="button" aria-label="Scroll to latest" onClick="{{ jumpDown }}" style="position:absolute;left:50%;bottom:calc(100% + 12px);z-index:15;transform:translateX(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-subtle);border-radius:980px;background:var(--card);color:var(--fg);cursor:pointer;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)" style-hover="background:var(--control-hover)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="16" hint-size="16px,16px"></x-import></button></sc-if>
+
+<sc-if value="{{ slashOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;left:4px;right:4px;bottom:calc(100% + 8px);z-index:20;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="padding:6px 10px 4px;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Commands</div>
+<sc-for list="{{ slashItems }}" as="c" hint-placeholder-count="4">
+<button type="button" onClick="{{ c.pick }}" onMouseEnter="{{ c.hover }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:{{ c.bg }};color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer">
+<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ c.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="font-weight:500">{{ c.name }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">{{ c.desc }}</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ c.cmd }}</span>
+</button>
+</sc-for>
+<sc-if value="{{ slashEmpty }}"><div style="padding:8px 10px 10px;font-size:13px;color:var(--fg-muted)">No command matches <span style="font-family:var(--font-mono)">{{ draft }}</span></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasPending }}">
+<div role="group" aria-label="Approval needed" style="padding:16px 20px 10px;border:1px solid {{ composerBorder }};border-bottom:0;border-radius:28px 28px 0 0;background:var(--card);display:flex;flex-direction:column;gap:10px;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span>Needs input<span style="flex:1"></span><span>{{ pend.why }}</span></div>
+<span style="font-size:15px;font-weight:500;line-height:1.35">{{ pend.prompt }} <span style="margin-left:4px;font-size:13px;font-weight:400;color:var(--fg-subtle)">{{ pend.tool }}</span></span>
+<pre style="margin:0;padding:8px 10px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word">{{ pend.detail }}</pre>
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ pendActions }}" as="a" hint-placeholder-count="3">
+<button type="button" onClick="{{ a.pick }}" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="flex:none;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:980px;border:1px solid var(--border);color:var(--fg-muted);font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums">{{ a.n }}</span><span style="flex:1;min-width:0;font-size:14px;line-height:1.35"><span style="font-weight:500">{{ a.label }}</span><span style="margin-left:6px;font-size:13px;color:var(--fg-subtle)">{{ a.desc }}</span></span></button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="border-radius:{{ composerRadius }};background:var(--card);border:1px solid {{ composerBorder }};border-top-color:{{ composerTop }};transition:border-color 140ms cubic-bezier(.4,0,.2,1)">
+<textarea ref="{{ taRef }}" value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKey }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" rows="{{ rows }}" placeholder="{{ placeholder }}" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px 8px;border:0;outline:0;resize:none;background:none;color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.55;letter-spacing:-0.011em"></textarea>
+<div style="display:flex;align-items:center;gap:4px;padding:0 12px 12px 12px">
+<button type="button" aria-label="Add context" title="Add context" style="flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin-right:4px;border:1px solid var(--border);border-radius:980px;background:var(--background);color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)" style-active="transform:scale(.975)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="16" hint-size="16px,16px"></x-import></button>
+
+<div style="position:relative">
+<button type="button" onClick="{{ toggleApproval }}" title="{{ approvalLabel }}" style="white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:980px;background:{{ approvalBg }};color:{{ approvalColor }};font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ approvalIcon }}" size="13" hint-size="13px,13px"></x-import><span style="display:{{ approvalTextDisplay }}">{{ approvalLabel }}</span><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ approvalOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:280px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ approvalOpts }}" as="o" hint-placeholder-count="3">
+<button type="button" onClick="{{ o.pick }}" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;padding-top:2px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ o.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:13.5px;font-weight:500">{{ o.label }}</span><span style="font-size:12px;line-height:1.4;color:{{ o.descColor }}">{{ o.desc }}</span></span>
+<sc-if value="{{ o.on }}"><span style="display:flex;padding-top:2px;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<span style="flex:1"></span>
+<span role="button" tabindex="0" onClick="{{ compactNow }}" title="{{ ctxTitle }}" style="display:{{ ctxDisplay }};align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:980px;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle);cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><span style="width:28px;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ ctxPct }};background:var(--fg-muted);border-radius:980px;transition:width 400ms cubic-bezier(.4,0,.2,1)"></span></span>{{ ctxPct }}</span>
+
+<div style="position:relative">
+<button type="button" onClick="{{ toggleModel }}" style="white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:980px;background:{{ modelBg }};color:var(--fg);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface)">{{ modelName }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ modelOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;right:0;bottom:calc(100% + 8px);z-index:20;width:260px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="padding:6px 10px 4px;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Model</div>
+<sc-for list="{{ modelOpts }}" as="o" hint-placeholder-count="3">
+<button type="button" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="flex:1">{{ o.name }}</span><span style="font-size:12px;color:var(--fg-subtle)">{{ o.vendor }}</span>
+<span style="display:flex;width:14px;color:var(--primary)"><sc-if value="{{ o.on }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></sc-if></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div style="position:relative">
+<button type="button" onClick="{{ toggleEffort }}" style="white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:980px;background:{{ effortBg }};color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface)">{{ effortBtnLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ effortOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;right:0;bottom:calc(100% + 8px);z-index:20;width:268px;box-sizing:border-box;padding:13px 14px;display:flex;flex-direction:column;gap:11px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px">
+<span style="font-size:13px;color:var(--fg-muted)">Effort</span>
+<span class="op-effort__value" key="{{ effortKey }}" style="font-size:13px;color:var(--fg)">{{ effortLabel }}</span>
+<span style="flex:1"></span>
+<span style="display:flex;color:var(--fg-subtle)" title="How long the agent may think before it answers. Higher effort costs more and takes longer."><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="help-circle" size="15" hint-size="15px,15px"></x-import></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted)"><span>Faster</span><span>Smarter</span></div>
+<div class="op-effort" data-effort="{{ effortKey }}" ref="{{ effortRef }}" role="slider" tabindex="0" aria-label="Effort" aria-valuemin="1" aria-valuemax="5" aria-valuenow="{{ effortIndex }}" aria-valuetext="{{ effortLabel }}" onPointerDown="{{ effortDown }}" onKeyDown="{{ effortKeyDown }}">
+<div class="op-effort__fill" ref="{{ effortFillRef }}"></div>
+<div class="op-effort__dots">
+<sc-for list="{{ effortStops }}" as="e" hint-placeholder-count="5"><span class="op-effort__dot"></span></sc-for>
+</div>
+<span class="op-effort__knob" ref="{{ effortKnobRef }}"></span>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Dictate"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="15" hint-size="15px,15px"></x-import></button>
+<sc-if value="{{ running }}">
+<button type="button" aria-label="Stop run" title="Stop run" onClick="{{ stopRun }}" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer" style-active="transform:scale(.975)"><span style="width:9px;height:9px;border-radius:2px;background:currentColor"></span></button>
+</sc-if>
+<sc-if value="{{ idle }}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-label="Send" onClick="{{ send }}" disabled="{{ cantSend }}" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;margin-left:4px;border:0;border-radius:980px;background:var(--primary);color:#fff;cursor:pointer;opacity:{{ sendOpacity }};transition:opacity 80ms" style-active="transform:scale(.975)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="16" hint-size="16px,16px"></x-import></button>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;columnWidth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Standard&quot;,&quot;Wide&quot;],&quot;default&quot;:&quot;Standard&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;expandTrace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showSidebar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;emptyWorkspace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const parseInline = (s) => {
+  const out = []; const re = /(`[^`]+`|\*\*[^*]+\*\*)/g; let last = 0, m;
+  while ((m = re.exec(s))) {
+    if (m.index > last) out.push({ t: s.slice(last, m.index), k: 'p' });
+    const tok = m[0];
+    out.push(tok[0] === '`' ? { t: tok.slice(1, -1), k: 'c' } : { t: tok.slice(2, -2), k: 'b' });
+    last = m.index + tok.length;
+  }
+  if (last < s.length) out.push({ t: s.slice(last), k: 'p' });
+  return out;
+};
+const SYNTAX = new Set(['ts', 'tsx', 'js', 'jsx', 'javascript', 'typescript']);
+const KW = /^(const|let|var|await|async|return|function|export|import|from|new|if|else|for|of|in|try|catch|finally|throw|type|interface|default|class|extends|true|false|null|undefined)$/;
+const highlight = (line) => {
+  if (!line) return [{ t: ' ', c: 'var(--fg)' }];
+  const out = []; const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`[^`]*`)|(<\/?[A-Za-z][\w.]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([=+\-*!?:&|]+|=>)/g; let last = 0, m;
+  while ((m = re.exec(line))) {
+    if (m.index > last) out.push({ t: line.slice(last, m.index), c: 'var(--fg)' });
+    let c = 'var(--fg)';
+    if (m[1]) c = 'var(--term-dim)'; else if (m[2]) c = 'var(--term-success)'; else if (m[3]) c = 'var(--term-accent)'; else if (m[4]) c = 'var(--term-warning)';
+    else if (m[5]) { const after = line.slice(m.index + m[0].length); c = KW.test(m[5]) ? 'var(--term-danger)' : /^\s*\(/.test(after) ? 'var(--term-accent)' : /^[A-Z]/.test(m[5]) ? 'var(--term-warning)' : 'var(--fg)'; }
+    else if (m[6]) c = 'var(--term-danger)';
+    out.push({ t: m[0], c }); last = m.index + m[0].length;
+  }
+  if (last < line.length) out.push({ t: line.slice(last), c: 'var(--fg)' });
+  return out;
+};
+const segsOf = (s) => parseInline(s).map(g => ({ t: g.t, isCode: g.k === 'c', isBold: g.k === 'b', isPlain: g.k === 'p' }));
+// md: paragraphs separated by blank lines; "- " lines → list; ```lang ... ``` → code
+const parseMd = (md) => {
+  const blocks = []; const parts = md.split(/\n\n/);
+  for (const p of parts) {
+    if (p.startsWith('```')) { const lines = p.split('\n'); blocks.push({ type: 'code', lang: lines[0].slice(3) || 'text', code: lines.slice(1).filter(l => l !== '```').join('\n') }); }
+    else if (p.startsWith('- ')) blocks.push({ type: 'list', items: p.split('\n').map(l => l.replace(/^- /, '')) });
+    else blocks.push({ type: 'p', text: p });
+  }
+  return blocks;
+};
+
+const AV_COLORS = [['Mint', 'oklch(0.74 0.13 175)'], ['Tangerine', 'oklch(0.72 0.18 50)'], ['Snow', 'oklch(0.96 0 0)'], ['Sky', 'oklch(0.74 0.12 240)'], ['Lilac', 'oklch(0.74 0.12 300)'], ['Lemon', 'oklch(0.88 0.15 100)'], ['Coral', 'oklch(0.72 0.15 20)'], ['Moss', 'oklch(0.70 0.12 135)']];
+const AV_SCI = [['e1', 'Photo 1', './assets/employees/e1.png', ''], ['e2', 'Photo 2', './assets/employees/e2.png', ''], ['e3', 'Photo 3', './assets/employees/e3.png', ''], ['e4', 'Photo 4', './assets/employees/e4.png', ''], ['e5', 'Photo 5', './assets/employees/e5.png', ''], ['e6', 'Photo 6', './assets/employees/e6.png', ''], ['e7', 'Photo 7', './assets/employees/e7.png', ''], ['e8', 'Photo 8', './assets/employees/e8.png', ''], ['e9', 'Photo 9', './assets/employees/e9.png', '']];
+const sciImg = (f) => f;
+const sciIni = n => n.replace(/^J\. /, '').split(' ').map(w => w[0]).join('').slice(0, 2);
+const hideImg = e => { e.currentTarget.style.display = 'none'; };
+const AV_DEFAULT = { t1: [0, 'e7'], t2: [2, 'e5'], t3: [1, 'e6'], t4: [3, 'e8'] };
+const avOf = (id, th) => { const d = AV_DEFAULT[id] || [Math.abs([...String(id)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) % AV_COLORS.length, AV_SCI[Math.abs([...String(id)].reduce((a, c) => (a * 17 + c.charCodeAt(0)) | 0, 3)) % AV_SCI.length][0]];
+  const c = th.av ?? d[0], k = th.sci || d[1], x = AV_SCI.find(y => y[0] === k) || AV_SCI[0]; return { av: AV_COLORS[c][1], c, k, sciName: x[1], field: x[3], img: sciImg(x[2]), ini: sciIni(x[1]), onErr: hideImg }; };
+const EFFORTS = [
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'max', label: 'Max' },
+];
+
+const T1 = [
+  { role: 'user', time: '09:12', text: 'When a run is stopped from the console, in-flight tool calls keep running until they time out. Wire cancel through the agent gateway so the step actually aborts.' },
+  { role: 'work', label: 'Worked for 1m 13s', steps: [
+    { icon: 'cpu', verb: 'Thought', target: '', meta: '4s', note: 'stopRun() only flips run.status. Tool calls already in flight never see it, so cancel has to reach the step itself — one AbortController per step, owned by the run.' },
+    { icon: 'search', verb: 'Searched', target: 'abortSignal', meta: '14 results' },
+    { icon: 'file-text', verb: 'Read', target: 'gateway/cancel.ts' },
+    { icon: 'file-text', verb: 'Read', target: 'runner/step.ts' },
+    { icon: 'file-text', verb: 'Edited', target: 'runner/step.ts', add: '+42', del: '−8', lang: 'diff', out: ' export async function runStep(run, step) {\n-  return tool.call(step.input);\n+  const ctrl = new AbortController();\n+  run.registerStep(step.id, ctrl);\n+  try {\n+    return await tool.call(step.input, { signal: ctrl.signal });\n+  } finally {\n+    run.releaseStep(step.id);\n+  }\n }' },
+    { icon: 'file-text', verb: 'Edited', target: 'gateway/cancel.ts', add: '+17', del: '−3', lang: 'diff', out: ' export async function cancelRun(run) {\n-  run.status = "stopped";\n+  for (const ctrl of run.liveSteps()) ctrl.abort();\n+  await run.settle({ timeoutMs: 5000 });\n+  run.status = "stopped";\n }' },
+    { icon: 'terminal', verb: 'Ran', target: 'pnpm test runner', meta: '2 failed', status: 'error', out: 'FAIL  runner/step.test.ts\n  ✕ aborts a tool that ignores the signal (5012 ms)\n  ✕ releases the step after abort\n\nTests: 2 failed, 36 passed, 38 total' },
+    { icon: 'file-text', verb: 'Edited', target: 'runner/step.ts', add: '+6', del: '−1' },
+    { icon: 'terminal', verb: 'Ran', target: 'pnpm test runner', meta: '40 passed', out: 'PASS  runner/step.test.ts\nPASS  gateway/cancel.test.ts\n\nTests: 40 passed, 40 total\nTime:  6.21 s' },
+  ] },
+  { role: 'b2b', dir: 'out', bot: 'Plan Bot', time: '09:13', text: 'Which task is the cancel-path fix linked to?', reply: '“Stop cancels in-flight tool calls” in XRP Mobile, milestone Public beta. Owner: XRP Mobile agent.' },
+  { role: 'assistant', meta: 'Claude Sonnet 4.6 · 3.1k tokens', md:
+`The stop path now reaches the tool layer. Previously \`stopRun()\` only flipped the run state, so steps already inside a tool call never heard about it.
+
+- **One signal per step.** Each step gets its own \`AbortController\`, created in \`runner/step.ts\` and registered on the run so the gateway can find it.
+- **Gateway fans out.** \`gateway/cancel.ts\` aborts every live controller for the run, then waits up to 5s for steps to settle before marking the run stopped.
+- **Completed work is kept.** Only in-flight calls are cancelled; finished steps and their outputs stay in the trace.
+
+\`\`\`ts
+const ctrl = new AbortController();
+run.registerStep(step.id, ctrl);
+await tool.call(input, { signal: ctrl.signal });
+\`\`\`
+
+Tests pass, including two new cases for a tool that ignores the signal. Plan Bot linked this to **Stop cancels in-flight tool calls** in XRP Mobile, so I'll push \`synara/cancel-path\` and open the pull request against it.` },
+];
+const T2 = [
+  { role: 'user', time: 'Yesterday', text: 'Draft a quota warning for workspaces above 90% of their monthly minutes.' },
+  { role: 'assistant', meta: 'GPT-5.2 Codex · 1.2k tokens', md: 'Added a banner to the workspace header that appears at 90% and names the figure: `9,140 / 10,000 minutes used`. It links to billing and dismisses for 24h.' },
+];
+const T1_PENDING = { prompt: 'Push synara/cancel-path to origin?', tool: 'Bash', detail: 'git push -u origin synara/cancel-path', why: 'Ask for approval is on' };
+const PUSH_REPLY = 'Pushed. Opened **PR #668** from `synara/cancel-path` into `main` and linked it to the task. 2 checks are running; I will tell you when they finish.';
+const DENY_REPLY = 'Stopped before pushing. The branch stays local on `jordis-mac-studio`. Tell me what to change and I will pick it up from here.';
+const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const LIVE_VERB = { Read: 'Reading', Searched: 'Searching', Edited: 'Editing', Ran: 'Running', Opened: 'Opening', Wrote: 'Writing' };
+const proposalLines = (job) => ['# Instructions', '', '+ ## Job', '+ ' + job, '+', '+ ## Rules', '+ - Work only in the projects and repositories I have access to.', '+ - Ask before merging, deleting, pushing or deploying.', '+ - When a task ends, report what changed, with numbers.'];
+const T3_JOB = 'Watch the nightly builds on build-01 and tell me which tests turned flaky.';
+const REPLIES = [
+  `Yes — I'll add it. The console will show **Cancelling** on the run row while steps settle, then switch to **Stopped** once the gateway confirms.
+
+- The state comes from the existing \`run.status\` stream, so no new endpoint is needed.
+- If the grace period expires, the row shows the count of steps that were force-killed.
+
+I'll open a PR on \`synara/cancel-path\` when the console change is in.`,
+  `Done. I kept the change scoped to the files already touched in this thread and re-ran \`pnpm test runner\` — everything passes.`,
+];
+
+class Component extends DCLogic {
+  state = {
+    active: 't1', sidebar: true, groups: [{ id: 'g1', name: 'Engineering', open: true }, { id: 'g2', name: 'Research', open: true }], gMenu: null, gRen: null, gDraft: '', dropG: undefined,
+    threads: {
+      t1: { title: 'Release Bot', role: 'Ships changes and watches runs', icon: 'zap', age: '2m', group: 'g1', pending: T1_PENDING, msgs: T1.map((m, i) => ({ ...m, id: 'a' + i, open: false })) },
+      t2: { title: 'Quota Bot', role: 'Billing, limits and usage', icon: 'database', age: '1d', group: 'g1', msgs: T2.map((m, i) => ({ ...m, id: 'b' + i })) },
+      t3: { title: 'New Bot', role: 'No instructions yet', icon: 'bot', age: '3h', unread: true, msgs: [
+        { id: 'c0', role: 'assistant', md: 'What would you most like help with? Tell me the job and I will write my own instructions from it.', meta: 'Claude Sonnet 4.6' },
+        { id: 'c1', role: 'user', text: T3_JOB, time: '06:40' },
+        { id: 'c2', role: 'work', label: 'Worked for 9s', open: false, steps: [{ icon: 'file-text', verb: 'Read', target: '.github/workflows/nightly.yml' }, { icon: 'search', verb: 'Searched', target: 'retry: flaky', meta: '3 results' }] },
+        { id: 'c3', role: 'assistant', md: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time in settings.', meta: 'Claude Sonnet 4.6 · 0.6k tokens' },
+        { id: 'c4', role: 'proposal', status: 'pending', job: T3_JOB, lines: proposalLines(T3_JOB) }] },
+      t4: { title: 'Research Bot', role: 'Reads the web and cites sources', icon: 'globe', age: '4d', group: 'g2', msgs: [{ id: 'd0', role: 'user', text: 'Compare the cancellation semantics of the three agent SDKs we use.', time: 'Oct 7' }, { id: 'd1', role: 'assistant', md: 'Only one of the three propagates an abort into in-flight tool calls; the other two stop at the next step boundary.', meta: 'Claude Opus 4.6' }, { id: 'd2', role: 'b2b', dir: 'in', bot: 'Release Bot', time: 'Oct 7', text: 'Find the SDK changelog entry for AbortSignal support.', reply: 'Sent 3 changelog links, newest first.' }] },
+      pm: { title: 'Project manager', role: 'Runs the project agents on Plan', builtin: true, ini: 'PM', age: '1h', msgs: [{ id: 'p0', role: 'user', text: 'What is blocked across projects?', time: '08:02' }, { id: 'p1', role: 'work', label: 'Checked 3 projects', open: false, steps: [{ icon: 'check-circle', verb: 'Read', target: 'XRP Mobile · 14 tasks' }, { icon: 'check-circle', verb: 'Read', target: 'Atlas · 9 tasks' }, { icon: 'check-circle', verb: 'Read', target: 'Client sites · 4 tasks' }] }, { id: 'p2', role: 'assistant', md: 'Two tasks are blocked, both in XRP Mobile and both waiting on review. One task has no project; I can file it under Atlas.', meta: 'Claude Opus 4.6' }] },
+      mm: { title: 'Merge manager', role: 'Lands pull requests through project agents', builtin: true, ini: 'MM', age: '3h', msgs: [{ id: 'q0', role: 'assistant', md: '4 pull requests are ready. I will ask each project agent to rebase its pull requests first and stop on any red check.', meta: 'Claude Opus 4.6' }] },
+    },
+    draft: '', focused: false, slashIdx: 0,
+    approval: 'ask', approvalOpen: false, model: (window.OP_CATALOG || {}).defaultModel || 'sonnet', effort: 'high', effortShown: 'high', effortOpen: false, modelOpen: false,
+    headerMenu: false, renaming: false, renameVal: '', confirmDelete: false, toast: null, branchCopied: false,
+    botQuery: '', botTo: '', toOpen: false, toIdx: 0,
+    trayOpen: null, project: 'synara', env: 'worktree', base: 'main',
+    running: false, runStart: 0, now: Date.now(), streamId: null, revealed: 0, liveStep: 0, replyN: 0, copied: null,
+  };
+  scrollRef = React.createRef(); taRef = React.createRef();
+
+  componentWillUnmount() { document.removeEventListener('keydown', this._numKey); clearInterval(this._catWait); window.removeEventListener('resize', this._measure); if (this._ro) this._ro.disconnect(); clearInterval(this.tick); clearTimeout(this.to); this._effortEnd(); }
+  _effortTrack = React.createRef(); _effortKnob = React.createRef(); _effortFill = React.createRef();
+  effortIndex() { return Math.max(0, EFFORTS.findIndex(o => o.value === this.state.effort)); }
+  syncEffort() {
+    const t = this._effortTrack.current, k = this._effortKnob.current, f = this._effortFill.current;
+    if (!t || !k || !f) return;
+    const w = t.clientWidth, kw = k.offsetWidth || 30;
+    const x = Math.round((w - kw) * (this.effortIndex() / (EFFORTS.length - 1)));
+    k.style.transform = 'translateX(' + x + 'px)';
+    f.style.transform = 'translateX(' + (x + kw - w) + 'px)';
+  }
+  effortFromX(cx) {
+    const el = this._effortTrack.current; if (!el) return null;
+    const r = el.getBoundingClientRect(); if (!r.width) return null;
+    const i = Math.floor(((cx - r.left) / r.width) * EFFORTS.length);
+    return EFFORTS[Math.max(0, Math.min(EFFORTS.length - 1, i))].value;
+  }
+  _effortMove = e => { const v = this.effortFromX(e.clientX); if (v && v !== this.state.effort) this.setState({ effort: v }); };
+  _effortEnd = () => {
+    document.removeEventListener('pointermove', this._effortMove);
+    document.removeEventListener('pointerup', this._effortEnd);
+    document.removeEventListener('pointercancel', this._effortEnd);
+  };
+  effortDown = e => {
+    e.stopPropagation(); e.preventDefault();
+    const v = this.effortFromX(e.clientX); if (v) this.setState({ effort: v });
+    document.addEventListener('pointermove', this._effortMove);
+    document.addEventListener('pointerup', this._effortEnd);
+    document.addEventListener('pointercancel', this._effortEnd);
+  };
+  effortKeyDown = e => {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : e.key === 'Home' ? -EFFORTS.length : e.key === 'End' ? EFFORTS.length : 0;
+    if (!step) return; e.preventDefault(); e.stopPropagation();
+    this.setState({ effort: EFFORTS[Math.max(0, Math.min(EFFORTS.length - 1, this.effortIndex() + step))].value });
+  };
+  componentDidUpdate() {
+    this.syncEffort();
+    const s = this.state, t = this.cur();
+    const now = { revealed: s.revealed, active: s.active, running: s.running, len: t ? t.msgs.length : 0 };
+    const p = this._prev || {};
+    this._prev = now;
+    const el = this.scrollRef.current;
+    if (el && (p.revealed !== now.revealed || p.active !== now.active || p.running !== now.running || p.len !== now.len)) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+  _measure = () => { const el = this.taRef.current; if (!el) return; const w = el.parentElement.clientWidth; const narrow = w < 620; if (narrow !== this.state.narrow) this.setState({ narrow }); };
+  _numKey = e => { const t = this.cur(); if (!t || !t.pending) return; const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'textarea') return; const k = { '1': 'approve', '2': 'always', '3': 'deny' }[e.key]; if (k) { e.preventDefault(); this.decide(k); } };
+  catalog() { return window.OP_CATALOG || { models: [], approvals: [], templates: [] }; }
+  decide(kind) {
+    const id = this.state.active, t = this.cur(); if (!t || !t.pending) return;
+    const p = t.pending, d = new Date(), time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const label = { approve: 'You approved', always: 'You always allowed', deny: 'You denied' }[kind];
+    this.setThread(id, x => ({ ...x, pending: null, msgs: [...x.msgs, { id: 'k' + Date.now(), role: 'decision', label, detail: p.detail, time }] }));
+    if (kind === 'deny') { this.setThread(id, x => ({ ...x, msgs: [...x.msgs, { id: 'n' + Date.now(), role: 'assistant', md: DENY_REPLY, meta: this.modelLabel() }] })); return; }
+    if (kind === 'always') this.flash('Pushes always allowed. Change it in Approvals.');
+    this.setState({ running: true, runStart: Date.now(), now: Date.now(), revealed: 0, liveStep: 0, streamId: null });
+    this.startRun(id, { reply: PUSH_REPLY, steps: [{ icon: 'terminal', verb: 'Ran', target: p.detail }, { icon: 'git-pull-request', verb: 'Opened', target: 'PR #668 → main' }] });
+  }
+  fromTemplate(tp) {
+    const id = 't' + Date.now(), names = Object.values(this.state.threads).map(b => b.title);
+    let name = tp.botName, n = 2; while (names.includes(name)) name = tp.botName + ' ' + n++;
+    this.setState(s => ({ active: id, draft: '', threads: { [id]: { title: name, role: tp.role, template: tp.name, mine: true, age: 'now', msgs: [{ id: id + 'h', role: 'assistant', md: tp.hello, meta: this.modelLabel() }] }, ...s.threads } }));
+    this.flash('Created ' + name + ' from ' + tp.name);
+  }
+  componentDidMount() {
+    document.addEventListener('keydown', this._numKey);
+    if (!window.OP_CATALOG) this._catWait = setInterval(() => { if (window.OP_CATALOG) { clearInterval(this._catWait); this.forceUpdate(); } }, 50);
+    this._measure(); window.addEventListener('resize', this._measure);
+    if (window.ResizeObserver && this.taRef.current) { this._ro = new ResizeObserver(this._measure); this._ro.observe(this.taRef.current.parentElement); } const el = this.scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }
+
+  renameRef = React.createRef(); toRef = React.createRef(); gRef = React.createRef();
+  commitG() { const s = this.state; if (!s.gRen) return; const v = s.gDraft.trim(); this.setState(x => ({ gRen: null, groups: v ? x.groups.map(g => g.id === x.gRen ? { ...g, name: v } : g) : x.groups })); }
+  toMatches() { const q = this.state.botTo.trim().toLowerCase(); return Object.entries(this.state.threads).filter(([, b]) => !q || b.title.toLowerCase().includes(q) || (b.role || '').toLowerCase().includes(q)).slice(0, 6); }
+  openBot(id) { this.setThread(id, b => ({ ...b, unread: false })); this.setState({ active: id, draft: '', botTo: '', toOpen: false }); }
+  createBot(name) { const id = 't' + Date.now(); this.setState(s => ({ active: id, botTo: '', toOpen: false, threads: { [id]: { title: name, role: 'No instructions yet', icon: 'bot', age: 'now', mine: true, msgs: [] }, ...s.threads } })); this.flash('Created ' + name); }
+  flash(msg) { clearTimeout(this._toast); this.setState({ toast: msg }); this._toast = setTimeout(() => this.setState({ toast: null }), 1800); }
+  startRename = () => { const t = this.cur(); if (!t) return; this.setState({ renaming: true, renameVal: t.title, headerMenu: false }); setTimeout(() => { const el = this.renameRef.current; if (el) { el.focus(); el.select(); } }, 0); };
+  commitRename = () => { if (!this.state.renaming) return; const v = this.state.renameVal.trim(); if (v) this.setThread(this.state.active, t => ({ ...t, title: v })); this.setState({ renaming: false }); };
+  removeThread(id, msg) {
+    if (this.state.running && this.state.active === id) this.stopRun();
+    this.setState(s => { const th = { ...s.threads }; delete th[id]; return { threads: th, active: null, headerMenu: false, confirmDelete: false }; });
+    this.flash(msg);
+  }
+  cur() { const t = this.state.active ? this.state.threads[this.state.active] : null; if (t && this.props.emptyWorkspace && !t.builtin && !t.mine) return null; return t; }
+  setThread(id, fn) { this.setState(s => ({ threads: { ...s.threads, [id]: fn(s.threads[id]) } })); }
+
+  commands() {
+    return [
+      { name: 'Plan', cmd: '/plan', icon: 'layers', desc: 'Agree on steps before the agent edits files' },
+      { name: 'Goal', cmd: '/goal', icon: 'check-circle', desc: 'Set a persistent goal for this thread' },
+      { name: 'Fork', cmd: '/fork', icon: 'git-branch', desc: 'Branch this thread into a new worktree' },
+      { name: 'Compact', cmd: '/compact', icon: 'minus', desc: 'Summarise history to free context' },
+      { name: 'Model', cmd: '/model', icon: 'cpu', desc: 'Switch model for the next turn' },
+      { name: 'Automation', cmd: '/automation', icon: 'zap', desc: 'Schedule this prompt as a routine' },
+      { name: 'Export', cmd: '/export', icon: 'download', desc: 'Download thread and trace as JSON' },
+    ];
+  }
+  slashMatches() {
+    const d = this.state.draft;
+    if (!d.startsWith('/') || /\s/.test(d)) return null;
+    return this.commands().filter(c => c.cmd.startsWith(d.toLowerCase()));
+  }
+
+  send = () => {
+    const text = this.state.draft.trim(); if (!text || this.state.running) return;
+    let id = this.state.active;
+    const pt = this.cur();
+    if (pt && pt.pending) { const d = new Date(), tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); const det = pt.pending.detail; this.setThread(id, x => ({ ...x, pending: null, msgs: [...x.msgs, { id: 'k' + Date.now(), role: 'decision', label: 'You denied', detail: det, time: tm }] })); }
+    if (!id) {
+      id = 't' + Date.now();
+      const title = 'New Bot';
+      const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').split('-').slice(0, 3).join('-') || 'thread';
+      this.setState(s => ({ active: id, trayOpen: null, threads: { [id]: { title, role: 'No instructions yet', icon: 'bot', age: 'now', mine: true, msgs: [] }, ...s.threads } }));
+    }
+    const now = new Date(); const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    setTimeout(() => {
+      this.setThread(id, t => ({ ...t, age: 'now', msgs: [...t.msgs, { id: 'u' + Date.now(), role: 'user', text, time }] }));
+      this.setState({ draft: '', running: true, runStart: Date.now(), now: Date.now(), revealed: 0, liveStep: 0, streamId: null });
+      const th = this.state.threads[id];
+      const wantsProposal = th && th.role === 'No instructions yet' && !th.msgs.some(m => m.role === 'proposal' && m.status !== 'rejected');
+      this.startRun(id, wantsProposal ? {
+        steps: [{ icon: 'search', verb: 'Searched', target: 'workspace access', meta: '3 projects' }, { icon: 'file-text', verb: 'Wrote', target: 'INSTRUCTIONS.md (proposal)' }],
+        reply: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time in settings.',
+        after: () => this.setThread(id, x => ({ ...x, msgs: [...x.msgs, { id: 'pr' + Date.now(), role: 'proposal', status: 'pending', job: text, lines: proposalLines(text) }] })),
+      } : null);
+    }, 0);
+  };
+  startRun(id, opts) {
+    clearInterval(this.tick); clearTimeout(this.to);
+    const reply = (opts && opts.reply) || REPLIES[this.state.replyN % REPLIES.length];
+    this._after = opts && opts.after;
+    this.tick = setInterval(() => this.setState({ now: Date.now() }), 250);
+    const stepsPlan = (opts && opts.steps) || [
+      { icon: 'file-text', verb: 'Read', target: 'console/RunRow.tsx' },
+      { icon: 'search', verb: 'Searched', target: 'run.status', meta: '6 results' },
+      { icon: 'file-text', verb: 'Edited', target: 'console/RunRow.tsx', add: '+21', del: '−4' },
+    ];
+    this._plan = stepsPlan;
+    let k = 0;
+    const stepTick = () => {
+      if (!this.state.running) return;
+      if (k < stepsPlan.length) { this.setState({ liveStep: k }); k++; this.to = setTimeout(stepTick, 900); return; }
+      const secs = Math.max(1, Math.round((Date.now() - this.state.runStart) / 1000));
+      const sid = 's' + Date.now();
+      this.setThread(id, t => ({ ...t, msgs: [...t.msgs,
+        { id: 'w' + sid, role: 'work', label: 'Worked for ' + secs + 's', steps: stepsPlan, open: false },
+        { id: sid, role: 'assistant', md: reply, meta: this.modelLabel() + ' · ' + (0.8 + reply.length / 400).toFixed(1) + 'k tokens', streaming: true }] }));
+      this.setState({ streamId: sid, revealed: 0 });
+      const stream = () => {
+        if (!this.state.running) return;
+        const r = this.state.revealed + 6 + Math.floor(Math.random() * 8);
+        if (r >= reply.length) { this.finish(id, sid); return; }
+        this.setState({ revealed: r }); this.to = setTimeout(stream, 28);
+      };
+      stream();
+    };
+    this.to = setTimeout(stepTick, 600);
+  }
+  finish(id, sid, stopped) {
+    clearInterval(this.tick); clearTimeout(this.to);
+    this.setThread(id, t => ({ ...t, msgs: t.msgs.map(m => m.id === sid ? { ...m, streaming: false, md: stopped ? m.md.slice(0, this.state.revealed) : m.md, meta: stopped ? 'Stopped · completed work kept' : m.meta } : m) }));
+    this.setState(s => ({ running: false, streamId: null, replyN: s.replyN + 1 }));
+    const after = this._after; this._after = null; if (after && !stopped) after();
+  }
+  stopRun = () => {
+    const id = this.state.active;
+    if (this.state.streamId) this.finish(id, this.state.streamId, true);
+    else { clearInterval(this.tick); clearTimeout(this.to); this.setThread(id, t => ({ ...t, msgs: [...t.msgs, { id: 'x' + Date.now(), role: 'assistant', md: 'Run stopped before any edits were made.', meta: 'Stopped' }] })); this.setState({ running: false }); }
+  };
+  modelLabel() { const m = this.catalog().models.find(x => x.k === this.state.model); return m ? m.name : ''; }
+
+  onKey = (e) => {
+    const list = this.slashMatches();
+    if (list && list.length) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(s => ({ slashIdx: (s.slashIdx + 1) % list.length })); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(s => ({ slashIdx: (s.slashIdx - 1 + list.length) % list.length })); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); this.pickCmd(list[Math.min(this.state.slashIdx, list.length - 1)]); return; }
+      if (e.key === 'Escape') { e.preventDefault(); this.setState({ draft: '' }); return; }
+    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
+  };
+  pickCmd(c) { this.setState({ draft: c.cmd + ' ', slashIdx: 0 }); this.taRef.current && this.taRef.current.focus(); }
+
+  renderVals() {
+    const s = this.state; const t = this.cur();
+    const theme = this.props.theme ?? 'dark';
+    const showSidebar = (this.props.showSidebar ?? true) && s.sidebar;
+    const colWidth = (this.props.columnWidth ?? 'Standard') === 'Wide' ? '60rem' : '46rem';
+    const autoTrace = this.props.expandTrace ?? false;
+
+    const row = (id, th) => ({
+      ...th, open: () => this.openBot(id),
+      bg: s.active === id ? 'var(--selected-surface)' : 'transparent',
+      ...avOf(id, th), ...(th.builtin ? { img: PIXEL, ini: th.ini, sciName: th.title } : {}),
+      draggable: th.builtin ? 'false' : 'true',
+      live: s.running && s.active === id, unread: !!th.unread && !th.pending, needs: !!th.pending, weight: th.unread || th.pending ? 600 : 500,
+      prevColor: th.unread || th.pending ? 'var(--fg)' : 'var(--fg-muted)',
+      preview: (() => { if (th.pending) return 'Needs input · ' + th.pending.prompt; const pr = th.msgs.find(m => m.role === 'proposal' && m.status === 'pending'); if (pr) return 'Proposed INSTRUCTIONS.md'; const m = [...th.msgs].reverse().find(x => x.role === 'user' || x.role === 'assistant'); if (!m) return th.role || 'No messages yet'; const raw = m.text || m.md || (m.label || ''); const txt = raw.replace(/[\x60*#>-]/g, '').replace(/\s+/g, ' ').trim(); return (m.role === 'user' ? 'You: ' : '') + txt; })(),
+      dot: s.running && s.active === id ? 'var(--success)' : (th.msgs.length ? 'var(--fg-subtle)' : 'var(--border)'),
+      anim: s.running && s.active === id ? 'op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite' : 'none',
+    });
+    const bq = s.botQuery.trim().toLowerCase();
+    const emptyWs = !!this.props.emptyWorkspace;
+    const visible = Object.entries(s.threads).filter(([, b]) => b.builtin || b.mine || !emptyWs);
+    const entries = visible.filter(([, b]) => !bq || b.title.toLowerCase().includes(bq) || (b.role || '').toLowerCase().includes(bq));
+    const userGroups = s.groups.filter(g => !emptyWs || g.mine);
+    const gIds = userGroups.map(g => g.id);
+    const rowD = (id, th) => ({ ...row(id, th), drag: e => { this._drag = id; try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch (er) {} }, dragEnd: () => { this._drag = null; this.setState({ dropG: undefined }); } });
+    const groupsV = userGroups.concat([{ id: null, name: 'Ungrouped', open: s.ungOpen !== false }, { id: 'builtin', name: 'Built-in', open: s.biOpen !== false, readOnly: true }]).map(g => {
+      const bots = entries.filter(([, th]) => (th.builtin ? 'builtin' : (gIds.includes(th.group) ? th.group : null)) === g.id).map(([id, th]) => rowD(id, th));
+      const editable = g.id !== null && !g.readOnly, ren = editable && s.gRen === g.id;
+      return { ...g, readOnly: !!g.readOnly, bots, count: bots.length, empty: bots.length === 0 && editable, canEdit: editable, renaming: ren, notRenaming: !ren,
+        open: g.open, chev: g.open ? 'rotate(90deg)' : 'none', hide: !editable && bots.length === 0 && s.dropG === undefined,
+        menuOpen: s.gMenu === g.id && editable, menuBg: s.gMenu === g.id ? 'var(--hover-surface)' : 'transparent',
+        dropBg: s.dropG === g.id ? 'var(--selected-surface)' : 'transparent',
+        toggle: () => g.id === 'builtin' ? this.setState(x => ({ biOpen: x.biOpen === false })) : g.id === null ? this.setState(x => ({ ungOpen: x.ungOpen === false })) : this.setState(x => ({ groups: x.groups.map(y => y.id === g.id ? { ...y, open: !y.open } : y) })),
+        menuToggle: e => { e.stopPropagation(); this.setState(x => ({ gMenu: x.gMenu === g.id ? null : g.id })); },
+        startRename: () => { if (!editable) return; this.setState({ gMenu: null, gRen: g.id, gDraft: g.name }); setTimeout(() => { const el = this.gRef.current; if (el) { el.focus(); el.select(); } }, 20); },
+        remove: () => { this.setState(x => ({ gMenu: null, groups: x.groups.filter(y => y.id !== g.id), threads: Object.fromEntries(Object.entries(x.threads).map(([k, v]) => [k, v.group === g.id ? { ...v, group: null } : v])) })); this.flash('Group deleted'); },
+        over: e => { if (!this._drag || g.readOnly) return; e.preventDefault(); if (this.state.dropG !== g.id) this.setState({ dropG: g.id }); },
+        leave: e => { if (!e.currentTarget.contains(e.relatedTarget) && this.state.dropG === g.id) this.setState({ dropG: null }); },
+        drop: e => { if (g.readOnly) return; e.preventDefault(); const id = this._drag; this._drag = null; this.setState({ dropG: undefined }); if (id) { this.setThread(id, x => ({ ...x, group: g.id })); this.flash(g.id ? 'Moved to ' + g.name : 'Removed from group'); } } };
+    }).filter(g => !g.hide);
+
+    const copyKey = (key, text) => { try { navigator.clipboard.writeText(text); } catch (e) {} this.setState({ copied: key }); setTimeout(() => this.setState(x => x.copied === key ? { copied: null } : null), 1400); };
+    const codeRows = (code, lang) => String(code).replace(/\n$/, '').split('\n').map((t, i) => {
+      const diff = lang === 'diff', c = diff ? t[0] : '', add = c === '+', del = c === '-';
+      const body = diff && (add || del || c === ' ') ? t.slice(1) : t;
+      const segs = SYNTAX.has(lang) || diff ? highlight(body) : [{ t: body || ' ', c: /^(FAIL|\s*✕)/.test(body) ? 'var(--term-danger)' : /^(PASS|\s*✓)/.test(body) ? 'var(--fg)' : 'var(--fg)' }];
+      return { n: i + 1, hasSign: diff, sign: add ? '+' : del ? '−' : '', segs,
+        bg: add ? 'color-mix(in oklch, var(--success) 12%, transparent)' : del ? 'color-mix(in oklch, var(--danger) 12%, transparent)' : 'transparent',
+        signColor: add ? 'var(--success)' : del ? 'var(--danger)' : 'var(--fg-subtle)' };
+    });
+    const msgs = (t ? t.msgs : []).map(m => {
+      if (m.role === 'user') { const ck = m.id + ':u'; return { isUser: true, text: m.text, time: m.time, actOp: s.hoverMsg === m.id ? 1 : 0, enter: () => this.setState({ hoverMsg: m.id }), leave: () => this.setState(x => x.hoverMsg === m.id ? { hoverMsg: null } : null), copyIcon: s.copied === ck ? 'check' : 'copy', copy: () => copyKey(ck, m.text), edit: () => { this.setState({ draft: m.text }); setTimeout(() => { const el = this.taRef.current; if (el) el.focus(); }, 20); } }; }
+      if (m.role === 'b2b') { const out = m.dir === 'out'; return { isB2b: true, bot: m.bot, text: m.text, time: m.time, dirLabel: out ? 'Sent to' : 'From', rot: out ? 'none' : 'rotate(180deg)', replyRot: out ? 'rotate(180deg)' : 'none', hasReply: !!m.reply, reply: m.reply, replyLabel: out ? m.bot + ' replied' : 'Replied' }; }
+      if (m.role === 'decision') return { isDecision: true, label: m.label, detail: m.detail, time: m.time, tone: /denied/.test(m.label) ? 'var(--danger)' : 'var(--fg-subtle)' };
+      if (m.role === 'proposal') {
+        const setP = st => this.setThread(s.active, th => ({ ...th, role: st === 'accepted' ? (m.job.length > 48 ? m.job.slice(0, 46).trim() + '…' : m.job) : th.role, msgs: th.msgs.map(x => x.id === m.id ? { ...x, status: st } : x) }));
+        const pending = m.status === 'pending';
+        return { isProposal: true, by: t.title, adds: '+' + m.lines.filter(l => l[0] === '+').length, pending, decided: !pending,
+          statusLabel: m.status === 'accepted' ? 'Accepted · revision 1' : 'Rejected', op: m.status === 'rejected' ? 0.5 : 1,
+          reviewHref: './BotSettings.dc.html?bot=' + encodeURIComponent(s.active) + '&tab=instr',
+          lines: m.lines.map(l => ({ t: l, color: l[0] === '+' ? 'var(--success)' : 'var(--fg-muted)' })),
+          accept: () => { setP('accepted'); this.flash('Saved as INSTRUCTIONS.md revision 1'); }, reject: () => { setP('rejected'); this.flash('Proposal rejected'); } };
+      }
+      if (m.role === 'work') {
+        const open = m.open ?? autoTrace;
+        const os = m.openSteps || {}, n = m.steps.length, nErr = m.steps.filter(x => x.status === 'error').length;
+        return { isWork: true, label: m.label, open, openS: open ? 'true' : 'false', chevRot: open ? 'rotate(90deg)' : 'none',
+          summary: n + ' steps' + (nErr ? ' · ' + nErr + ' failed, recovered' : ''), doneLabel: 'Done',
+          toggle: () => this.setThread(s.active, th => ({ ...th, msgs: th.msgs.map(x => x.id === m.id ? { ...x, open: !open } : x) })),
+          steps: m.steps.map((st, i) => {
+            const err = st.status === 'error', exp = !!(st.out || st.note), so = os[i] !== undefined ? !!os[i] : (exp && autoTrace), ck = m.id + ':s' + i;
+            const title = st.verb === 'Thought' ? 'Thought' : err && st.verb === 'Ran' ? 'Failed to run ' + st.target : st.verb + ' ' + st.target;
+            const out = st.out ? codeRows(st.out, st.lang) : [];
+            return { ...st, icon: st.verb === 'Thought' ? 'check-circle' : st.icon, title, ws: st.lang === 'diff' ? 'pre' : 'pre-wrap',
+              titleColor: err ? 'var(--danger)' : 'var(--fg-muted)', hoverColor: err ? 'var(--danger)' : exp ? 'var(--fg)' : 'var(--fg-muted)', hasDiff: !!st.add, hasMeta: !!st.meta && !st.add && st.verb !== 'Thought', expandable: exp, flat: !exp, open: so, openS: so ? 'true' : 'false',
+              cursor: exp ? 'pointer' : 'default', hoverBg: exp ? 'var(--hover-surface)' : 'transparent', chevRot: so ? 'rotate(90deg)' : 'none',
+              iconColor: err ? 'var(--danger)' : 'var(--fg-subtle)', verbColor: err ? 'var(--danger)' : 'var(--fg-muted)', metaColor: err ? 'var(--danger)' : 'var(--fg-subtle)',
+              railBg: 'var(--border-subtle)', showNote: so && !!st.note, showOut: so && !!st.out,
+              outTitle: st.lang === 'diff' ? st.target : '$ ' + st.target, outCount: out.length + (out.length === 1 ? ' line' : ' lines'), lines: out,
+              copyIcon: s.copied === ck ? 'check' : 'copy', copy: e => { e.stopPropagation(); copyKey(ck, st.out); },
+              toggle: () => exp && this.setThread(s.active, th => ({ ...th, msgs: th.msgs.map(x => x.id === m.id ? { ...x, openSteps: { ...(x.openSteps || {}), [i]: !so } } : x) })) };
+          }) };
+      }
+      const md = m.streaming ? m.md.slice(0, s.revealed) : m.md;
+      const blocks = parseMd(md).map((b, bi) => {
+        const key = m.id + ':' + bi;
+        if (b.type === 'code') { const rows = codeRows(b.code, b.lang); return { isCodeBlock: true, ws: 'pre', lang: b.lang || 'text', code: b.code, lines: rows, count: rows.length + (rows.length === 1 ? ' line' : ' lines'), copyIcon: s.copied === key ? 'check' : 'copy', copy: () => copyKey(key, b.code) }; }
+        if (b.type === 'list') return { isList: true, items: b.items.map(it => ({ segs: segsOf(it) })) };
+        return { isP: true, segs: segsOf(b.text) };
+      });
+      return { isAssistant: true, blocks, done: !m.streaming, meta: m.meta };
+    });
+
+    const live = [
+      { icon: 'file-text', label: 'Reading console/RunRow.tsx' },
+      { icon: 'search', label: 'Searching run.status' },
+      { icon: 'file-text', label: 'Editing console/RunRow.tsx' },
+    ];
+    const secs = Math.max(0, Math.floor((s.now - s.runStart) / 1000));
+    const plan = this._plan, ps = plan && plan[s.liveStep];
+    const liveLabel = s.streamId ? 'Writing' : ps ? (LIVE_VERB[ps.verb] || ps.verb) + ' ' + ps.target : live[s.liveStep % 3].label;
+    const liveIcon = s.streamId ? 'activity' : ps ? ps.icon : live[s.liveStep % 3].icon;
+
+    const sm = this.slashMatches();
+    const slashIdx = sm ? Math.min(s.slashIdx, Math.max(0, sm.length - 1)) : 0;
+
+    const cat = this.catalog();
+    const approvals = cat.approvals;
+    const ap = approvals.find(a => a.k === s.approval) || { label: 'Ask for approval', icon: 'shield' };
+    const models = cat.models;
+    const lines = s.draft.split('\n').length;
+    const used = t ? Math.min(92, Math.max(6, 6 + (t.msgs.reduce((a, m) => a + ((m.md || m.text || '').length), 0) - (t.ctxOff || 0)) / 60)) : 0;
+
+    return {
+      theme, showSidebar, colWidth,
+      toggleSidebar: () => this.setState(x => ({ sidebar: !x.sidebar })),
+      newThread: () => this.setState({ active: null, draft: '' }),
+      isNew: !t, groups: groupsV, noBots: entries.length === 0 && !!bq,
+      noOwnBots: !bq && !visible.some(([, b]) => !b.builtin),
+      templates: cat.templates.map(tp => ({ ...tp, pick: () => this.fromTemplate(tp) })),
+      hasPending: !!(t && t.pending), noPending: !(t && t.pending), pend: (t && t.pending) || {},
+      pendActions: [
+        { n: '1', label: 'Approve', desc: 'Run it this once', pick: () => this.decide('approve') },
+        { n: '2', label: 'Always allow', desc: 'Pushes to synara/* branches, for this bot', pick: () => this.decide('always') },
+        { n: '3', label: 'Deny', desc: 'Stop, keep the branch local', pick: () => this.decide('deny') },
+      ],
+      gRef: this.gRef, gDraft: s.gDraft, onGDraft: e => this.setState({ gDraft: e.target.value }),
+      commitG: () => this.commitG(), gKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.commitG(); } if (e.key === 'Escape') this.setState({ gRen: null }); },
+      newGroup: () => { const id = 'g' + Date.now(); this.setState(x => ({ groups: x.groups.concat({ id, name: 'New group', open: true, mine: true }), gRen: id, gDraft: 'New group' })); setTimeout(() => { const el = this.gRef.current; if (el) { el.focus(); el.select(); } }, 20); },
+      newBg: !t ? 'var(--hover-surface)' : '',
+      botQuery: s.botQuery, onBotQuery: (e) => this.setState({ botQuery: e.target.value }),
+      hasBot: !!t, showTitle: !!t && !s.renaming, never: false,
+      botIcon: t ? t.icon : 'bot', botRole: t ? t.role : '',
+      ...(() => { if (!t) return { hb: {}, avColors: [], avSci: [], avOpen: false }; const a = { ...avOf(s.active, t), ...(t.builtin ? { img: PIXEL, ini: t.ini, sciName: t.title } : {}) };
+        const upd = patch => this.setState(x => ({ threads: { ...x.threads, [x.active]: { ...x.threads[x.active], ...patch } } }));
+        return { hb: a, avOpen: !!s.avOpen, avBtnBg: s.avOpen ? 'var(--hover-surface)' : 'transparent',
+          avToggle: e => { e.stopPropagation(); if (t.builtin) { this.flash('Built-in agents keep their identity'); return; } this.setState(x => ({ avOpen: !x.avOpen })); },
+          avColors: AV_COLORS.map(([name, v], i) => ({ name, v, on: a.c === i, ring: a.c === i ? '0 0 0 2px var(--card), 0 0 0 4px var(--fg)' : 'inset 0 0 0 1px var(--border-subtle)', pick: () => upd({ av: i }) })),
+          avSci: AV_SCI.map(([k, name, file]) => ({ name, img: sciImg(file), ini: sciIni(name), onErr: hideImg, sciName: name, short: '', on: a.k === k, bg: a.k === k ? 'var(--selected-surface)' : 'transparent', fg: a.k === k ? 'var(--fg)' : 'var(--fg-muted)', pick: () => upd({ sci: k }) })),
+          avShuffle: () => upd({ sci: AV_SCI[Math.floor(Math.random() * AV_SCI.length)][0] }) }; })(),
+      botTo: s.botTo, botToTrim: s.botTo.trim(), toRef: this.toRef, toOpen: !t && s.toOpen,
+      openTo: () => this.setState({ toOpen: true }),
+      onBotTo: (e) => this.setState({ botTo: e.target.value, toOpen: true, toIdx: 0 }),
+      botToKey: (e) => {
+        const list = this.toMatches(); const n = list.length + (s.botTo.trim() ? 1 : 0);
+        if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(x => ({ toIdx: (x.toIdx + 1) % Math.max(1, n) })); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(x => ({ toIdx: (x.toIdx - 1 + n) % Math.max(1, n) })); }
+        else if (e.key === 'Enter') { e.preventDefault(); const i = Math.min(s.toIdx, n - 1); if (i >= 0 && i < list.length) this.openBot(list[i][0]); else if (s.botTo.trim()) this.createBot(s.botTo.trim()); }
+        else if (e.key === 'Escape') { this.setState({ toOpen: false }); }
+      },
+      toMatches: this.toMatches().map(([id, b], i) => ({ title: b.title, role: b.role, icon: b.icon, bg: i === s.toIdx ? 'var(--hover-surface)' : 'transparent', pick: () => this.openBot(id) })),
+      canCreate: !!s.botTo.trim() && !Object.values(s.threads).some(b => b.title.toLowerCase() === s.botTo.trim().toLowerCase()),
+      createBg: s.toIdx === this.toMatches().length ? 'var(--hover-surface)' : 'transparent',
+      createFromTo: () => this.createBot(s.botTo.trim()),
+      stageJustify: 'flex-start', stagePad: '0', scrollFlex: '1 1 0',
+      greeting: t ? t.title + ' is ready. ' + (t.role === 'No instructions yet' ? 'Tell it what job to do.' : t.role + '.') : (visible.some(([, b]) => !b.builtin) ? 'Pick a bot, or just start typing.' : 'Make your first bot.'),
+      titleColor: t ? 'var(--fg)' : 'var(--fg-muted)', titleHint: t ? 'Bot settings' : '',
+      editBot: () => { if (s.active) location.href = './BotSettings.dc.html?bot=' + encodeURIComponent(s.active); },
+      ctxTitle: 'Context used · click to compact now',
+      compactNow: () => { if (!t || used <= 8) return; this.setThread(s.active, x => ({ ...x, ctxOff: (x.ctxOff || 0) + (used - 6) * 60 })); this.flash('Context compacted'); },
+      renaming: s.renaming, notRenaming: !s.renaming, renameVal: s.renameVal, renameRef: this.renameRef,
+      onRename: (e) => this.setState({ renameVal: e.target.value }),
+      renameKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.commitRename(); } if (e.key === 'Escape') { e.preventDefault(); this.setState({ renaming: false }); } },
+      startRename: this.startRename, commitRename: this.commitRename,
+      isPinned: !!(t && t.pinned),
+      branchLabel: s.branchCopied ? 'Copied' : (t ? t.branch : ''), branchIcon: s.branchCopied ? 'check' : 'git-branch',
+      copyBranch: () => { try { navigator.clipboard.writeText(t.branch); } catch (e) {} this.setState({ branchCopied: true }); clearTimeout(this._bc); this._bc = setTimeout(() => this.setState({ branchCopied: false }), 1400); },
+      headerMenu: s.headerMenu, headerMenuBg: s.headerMenu ? 'var(--hover-surface)' : '',
+      toggleHeaderMenu: (e) => { e.stopPropagation(); this.setState(x => ({ headerMenu: !x.headerMenu, approvalOpen: false, modelOpen: false, effortOpen: false, trayOpen: null })); },
+      headerItems: t && t.builtin ? [
+        { icon: 'settings', label: 'Settings', kbd: '', run: () => { location.href = './BotSettings.dc.html?bot=' + encodeURIComponent(s.active); } },
+        { icon: 'copy', label: 'Copy link', kbd: '', run: () => { try { navigator.clipboard.writeText(location.href.split('#')[0] + '#' + s.active); } catch (e) {} this.setState({ headerMenu: false }); this.flash('Link copied'); } },
+      ].map(h => ({ sep: false, ...h, color: 'var(--fg)', iconColor: 'var(--fg-muted)' })) : t ? [
+        { icon: 'settings', label: 'Edit bot', kbd: '', run: () => { location.href = './BotSettings.dc.html?bot=' + encodeURIComponent(s.active); } },
+        { icon: 'file-text', label: 'Rename', kbd: '', run: this.startRename },
+        ...userGroups.filter(g => g.id !== t.group).map(g => ({ icon: 'folder', label: 'Move to ' + g.name, kbd: '', run: () => { this.setThread(s.active, x => ({ ...x, group: g.id })); this.setState({ headerMenu: false }); this.flash('Moved to ' + g.name); } })),
+        ...(gIds.includes(t.group) ? [{ icon: 'x', label: 'Remove from group', kbd: '', run: () => { this.setThread(s.active, x => ({ ...x, group: null })); this.setState({ headerMenu: false }); this.flash('Removed from group'); } }] : []),
+        { icon: 'copy', label: 'Duplicate bot', kbd: '', run: () => { const id = 't' + Date.now(); this.setState(x => ({ headerMenu: false, active: id, threads: { [id]: { ...t, title: t.title + ' copy', pinned: false, age: 'now', msgs: t.msgs.map(m => ({ ...m })) }, ...x.threads } })); this.flash('Bot duplicated'); } },
+        { icon: 'copy', label: 'Copy link', kbd: '', run: () => { try { navigator.clipboard.writeText(location.href.split('#')[0] + '#' + s.active); } catch (e) {} this.setState({ headerMenu: false }); this.flash('Link copied'); } },
+        { icon: 'download', label: 'Export as JSON', kbd: '', run: () => { const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.json'; a.click(); this.setState({ headerMenu: false }); } },
+        { sep: true, icon: 'folder', label: 'Archive', kbd: '', run: () => this.removeThread(s.active, 'Bot archived') },
+        { icon: 'x', label: 'Delete', kbd: '', danger: true, run: () => this.setState({ headerMenu: false, confirmDelete: true }) },
+      ].map(h => ({ sep: false, ...h, color: h.danger ? 'var(--danger)' : 'var(--fg)', iconColor: h.danger ? 'var(--danger)' : 'var(--fg-muted)' })) : [],
+      toast: s.toast, confirmDelete: s.confirmDelete,
+      cancelDelete: () => this.setState({ confirmDelete: false }),
+      doDelete: () => this.removeThread(s.active, 'Bot deleted'),
+      tray: [
+        { k: 'project', icon: 'folder', title: 'Project', font: 'var(--font-sans)', value: s.project,
+          opts: [{ v: 'synara', label: 'synara', desc: 'Emanuele-web04/synara' }, { v: 'console', label: 'console', desc: 'oppenheimer/console' }, { v: 'gateway', label: 'gateway', desc: 'oppenheimer/gateway' }] },
+        { k: 'env', icon: 'cpu', title: 'Run in', font: 'var(--font-sans)', value: s.env === 'local' ? 'Local checkout' : 'New worktree',
+          opts: [{ v: 'worktree', label: 'New worktree', desc: 'Isolated branch, safe to run in parallel' }, { v: 'local', label: 'Local checkout', desc: 'Edits your working copy directly' }] },
+        { k: 'base', icon: 'git-branch', title: 'Branch from', font: 'var(--font-mono)', value: s.base,
+          opts: [{ v: 'main', label: 'main' }, { v: 'release/2.4', label: 'release/2.4' }, { v: 'synara/gateway-v2', label: 'synara/gateway-v2' }] },
+      ].map(p => ({ ...p, open: s.trayOpen === p.k, bg: s.trayOpen === p.k ? 'var(--hover-surface)' : 'transparent',
+        toggle: (e) => { e.stopPropagation(); this.setState(x => ({ trayOpen: x.trayOpen === p.k ? null : p.k, approvalOpen: false, modelOpen: false, effortOpen: false, headerMenu: false })); },
+        opts: p.opts.map(o => ({ ...o, hasDesc: !!o.desc, desc: o.desc || '', on: (p.k === 'project' ? s.project : p.k === 'env' ? s.env : s.base) === o.v, pick: () => this.setState({ [p.k]: o.v, trayOpen: null }) })) })),
+      title: t ? t.title : 'New chat', branch: '',
+      hasThread: !!t && t.msgs.length > 0, isEmpty: !t || t.msgs.length === 0,
+      msgs, running: s.running, idle: !s.running, liveLabel, liveIcon, elapsed: secs + 's', liveStepLabel: s.streamId ? '' : plan ? 'Step ' + (s.liveStep + 1) + ' of ' + plan.length : '',
+      scrollRef: this.scrollRef, taRef: this.taRef,
+      showJump: !!s.away && !!t && t.msgs.length > 0,
+      onChatScroll: e => { const el = e.currentTarget, away = el.scrollHeight - el.scrollTop - el.clientHeight > 120; if (away !== !!this.state.away) this.setState({ away }); },
+      jumpDown: () => { const el = this.scrollRef.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); },
+      draft: s.draft, rows: Math.min(8, Math.max(2, lines)),
+      placeholder: t ? (t.pending ? 'Or tell ' + t.title + ' what to do instead' : 'Message ' + t.title) : 'Message a new bot',
+      onDraft: (e) => this.setState({ draft: e.target.value, slashIdx: 0 }),
+      onKey: this.onKey, onFocus: () => this.setState({ focused: true }), onBlur: () => this.setState({ focused: false }),
+      composerBorder: s.focused ? 'var(--border)' : 'transparent',
+      composerRadius: t && t.pending ? '0 0 28px 28px' : '28px',
+      composerTop: t && t.pending ? 'var(--border-subtle)' : (s.focused ? 'var(--border)' : 'transparent'),
+      send: this.send, stopRun: this.stopRun, cantSend: !s.draft.trim(), sendOpacity: s.draft.trim() ? 1 : 0.4,
+      slashOpen: !!sm, slashEmpty: !!sm && sm.length === 0,
+      slashItems: (sm || []).map((c, i) => ({ ...c, bg: i === slashIdx ? 'var(--hover-surface)' : 'transparent', pick: () => this.pickCmd(c), hover: () => this.setState({ slashIdx: i }) })),
+      stop: (e) => e.stopPropagation(),
+      closeMenus: () => (s.gMenu || s.approvalOpen || s.modelOpen || s.effortOpen || s.headerMenu || s.trayOpen || s.toOpen || s.avOpen) && this.setState({ gMenu: null, avOpen: false, approvalOpen: false, modelOpen: false, effortOpen: false, headerMenu: false, trayOpen: null, toOpen: false }),
+      approvalOpen: s.approvalOpen, approvalLabel: ap.label, approvalIcon: ap.icon,
+      approvalBg: s.approvalOpen ? 'var(--hover-surface)' : 'transparent',
+      approvalColor: s.approval === 'full' ? 'var(--warning)' : 'var(--fg-muted)',
+      toggleApproval: (e) => { e.stopPropagation(); this.setState(x => ({ approvalOpen: !x.approvalOpen, modelOpen: false, effortOpen: false })); },
+      approvalOpts: approvals.map(a => ({ ...a, on: a.k === s.approval, descColor: a.k === 'full' ? 'var(--warning)' : 'var(--fg-muted)', pick: () => this.setState({ approval: a.k, approvalOpen: false }) })),
+      modelOpen: s.modelOpen, modelName: this.modelLabel(),
+      modelBg: s.modelOpen ? 'var(--hover-surface)' : 'transparent',
+      toggleModel: (e) => { e.stopPropagation(); this.setState(x => ({ modelOpen: !x.modelOpen, approvalOpen: false, effortOpen: false })); },
+      modelOpts: models.map(m => ({ ...m, on: m.k === s.model, pick: () => this.setState({ model: m.k }) })),
+      effortOpen: s.effortOpen, effortBg: s.effortOpen ? 'var(--hover-surface)' : 'transparent',
+      effortLabel: EFFORTS[this.effortIndex()].label,
+      effortBtnLabel: (EFFORTS.find(o => o.value === (s.effortOpen ? s.effortShown : s.effort)) || EFFORTS[0]).label,
+      toggleEffort: (e) => { e.stopPropagation(); this.setState(x => ({ effortOpen: !x.effortOpen, effortShown: x.effortOpen ? x.effortShown : x.effort, approvalOpen: false, modelOpen: false })); },
+      effortStops: EFFORTS, effortKey: s.effort, effortIndex: this.effortIndex() + 1,
+      effortRef: this._effortTrack, effortKnobRef: this._effortKnob, effortFillRef: this._effortFill,
+      effortDown: this.effortDown, effortKeyDown: this.effortKeyDown,
+      ctxPct: Math.round(used) + '%',
+      ctxDisplay: s.narrow ? 'none' : 'inline-flex', approvalTextDisplay: s.narrow ? 'none' : 'inline',
+    };
+  }
+}
+</script>
+</body>
+</html>

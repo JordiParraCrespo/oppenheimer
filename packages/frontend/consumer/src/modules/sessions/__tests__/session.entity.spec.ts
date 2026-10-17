@@ -26,6 +26,7 @@ function session(
     checkouts?: SessionCheckoutEntity[];
     cwdCheckoutId?: string | null;
     hints?: string[];
+    folderPath?: string;
   } = {},
 ): SessionEntity {
   return new SessionEntity(
@@ -44,6 +45,8 @@ function session(
     overrides.stoppedAt ?? null,
     overrides.hints ?? [],
     new Date('2026-06-15T12:00:00Z'),
+    overrides.folderPath ? 'folder' : 'worktree',
+    overrides.folderPath ?? null,
   );
 }
 
@@ -117,6 +120,15 @@ describe('the checkouts a session carries', () => {
 
     expect(work.cwdCheckout).toBeUndefined();
     expect(work.scopeLabel).toBeNull();
+  });
+
+  /** A folder session has no checkout to name; its folder is the scope. */
+  it('reads the status line off the folder of a folder session', () => {
+    const work = session({ folderPath: '/home/jordi/code/atlas' });
+
+    expect(work.isFolder).toBe(true);
+    expect(work.scopeLabel).toBe('/home/jordi/code/atlas');
+    expect(work.inProject('project-2').folderPath).toBe('/home/jordi/code/atlas');
   });
 });
 

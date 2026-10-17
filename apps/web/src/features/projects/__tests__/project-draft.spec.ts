@@ -5,10 +5,13 @@ import { projectBlock, projectInputOf } from '../lib/project-draft';
 const row = (id: string, isDefault: boolean) => ({ id, isDefault, branch: 'main' });
 
 describe('projectBlock', () => {
-  it('asks for a name first, then a repository, then a default', () => {
+  it('asks for a name first, then a default among the repositories it holds', () => {
     expect(projectBlock('  ', [])).toBe('name');
-    expect(projectBlock('XRP', [])).toBe('repositories');
     expect(projectBlock('XRP', [row('a', false)])).toBe('default');
+  });
+
+  it('saves a named project that holds no repository', () => {
+    expect(projectBlock('Taxes', [])).toBeNull();
   });
 
   it('is ready once a named project holds a default repository', () => {
@@ -43,8 +46,9 @@ describe('projectInputOf', () => {
     ).toEqual([]);
   });
 
-  it('sends neither the name nor an empty list for Unassigned', () => {
+  it('sends no name for Unassigned, and an emptied list as empty', () => {
     expect(projectInputOf(values([]), { fixed: true })).toEqual({
+      repositories: [],
       defaultHostId: null,
       defaultAgent: null,
     });

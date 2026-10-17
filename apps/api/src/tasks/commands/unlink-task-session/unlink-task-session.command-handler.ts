@@ -17,11 +17,16 @@ export class UnlinkTaskSessionCommandHandler
     private readonly tasks: TaskRepositoryPort,
   ) {}
 
-  async execute({ scope, taskId, sessionId }: UnlinkTaskSessionCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    actor,
+    taskId,
+    sessionId,
+  }: UnlinkTaskSessionCommand): Promise<AggregateID> {
     const task = requireFound(await this.tasks.findOneById(scope, taskId), TaskErrors.NOT_FOUND, {
       detail: `No task with id ${taskId}`,
     });
-    await this.tasks.detach(task, sessionId);
+    await this.tasks.detach(task.actingAs(actor), sessionId);
     return task.id;
   }
 }

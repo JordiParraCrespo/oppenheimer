@@ -1,4 +1,5 @@
 import { SortableSessionItem } from '@oppenheimer/design-system-web';
+import { Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
@@ -10,6 +11,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
+import { sessionGlyph } from '../lib/session-glyph';
 import { projectsForMove } from '../lib/session-groups';
 
 /**
@@ -96,6 +98,7 @@ export function SessionRow({
     onError: onWrite,
   });
   const age = compactAge(session.createdAt, now);
+  const glyph = sessionGlyph(session);
 
   function commitRename() {
     const name = draft?.trim();
@@ -121,6 +124,8 @@ export function SessionRow({
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}
+      // The branch is the row's own default glyph.
+      icon={glyph === 'terminal' ? <SquareTerminal /> : glyph === 'folder' ? <Folder /> : undefined}
       active={active}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
       menuOpen={menuOpen}

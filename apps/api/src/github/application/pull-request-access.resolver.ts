@@ -335,6 +335,18 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     await this.forget(repository);
   }
 
+  async enableAutoMerge(
+    scope: AccessScope,
+    userId: string,
+    address: PullRequestAddress,
+    method: 'squash' | 'merge' | 'rebase',
+  ): Promise<boolean> {
+    const { repository, actor, head, nodeId } = await this.forWrite(scope, userId, address);
+    const enabled = await this.pulls.enableAutoMerge(actorCredential(actor), nodeId, method, head);
+    await this.forget(repository);
+    return enabled;
+  }
+
   /** The repository, the caller's own token and the head commit a write lands on. */
   private async forWrite(scope: AccessScope, userId: string, address: PullRequestAddress) {
     const repository = await this.repositoryOf(scope, address);
@@ -346,7 +358,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     }
     const credential = await this.readCredential(scope, address.installationId);
     const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
-    return { repository, actor, head: pull.headSha };
+    return { repository, actor, head: pull.headSha, nodeId: pull.nodeId };
   }
 
   private async forget(repository: WorkspaceRepository): Promise<void> {

@@ -4,16 +4,16 @@ import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 /** The board's columns, in the frames' order (`Tasks.dc.html`). */
 export const COLUMNS: readonly TaskStatus[] = ['later', 'todo', 'doing', 'done'];
 
-/** What the board is narrowed to: a project (its id) and a goal, either or neither. */
+/** What the board is narrowed to: a project (its id) and a milestone, either or neither. */
 export interface BoardFilter {
   projectId?: string;
-  goalId?: string;
+  milestoneId?: string;
 }
 
 function passes(task: TaskEntity, filter: BoardFilter): boolean {
   return (
     (!filter.projectId || task.projectId === filter.projectId) &&
-    (!filter.goalId || task.goalId === filter.goalId)
+    (!filter.milestoneId || task.milestoneId === filter.milestoneId)
   );
 }
 

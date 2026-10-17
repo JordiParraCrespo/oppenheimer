@@ -22,6 +22,7 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
+import { userActor } from '../../domain/plan-change.types';
 import type { TaskEntity } from '../../domain/task.entity';
 import { StartTaskSessionResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -76,6 +77,7 @@ export class StartTaskSessionHttpController {
     >(
       new StartTaskSessionCommand({
         scope,
+        actor: userActor(userId),
         userId,
         taskId: id,
         input: body,

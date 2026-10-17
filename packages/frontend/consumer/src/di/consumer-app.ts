@@ -1,6 +1,8 @@
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
 import type { AutomationsRepository } from '../modules/automations';
 import { AutomationsModule } from '../modules/automations';
+import type { BotsRepository } from '../modules/bots';
+import { BotsModule } from '../modules/bots';
 import type { CalendarRepository } from '../modules/calendar';
 import { CalendarModule } from '../modules/calendar';
 import type { HostsRepository } from '../modules/hosts';
@@ -31,6 +33,7 @@ export const consumerModules = [
   SessionsModule,
   ProjectsModule,
   AutomationsModule,
+  BotsModule,
   PullRequestsModule,
   TasksModule,
   CalendarModule,
@@ -87,12 +90,17 @@ export class ConsumerApp {
     return this.kernel.container.get(TOKENS.AutomationsRepository);
   }
 
+  /** The Employees section: bots, their sidebar groups, their soul and instructions, their memory. */
+  get bots(): BotsRepository {
+    return this.kernel.container.get(TOKENS.BotsRepository);
+  }
+
   /** Pull requests on GitHub: the queue, a briefing, reviews and merges in the user's name, analytics. */
   get pullRequests(): PullRequestsRepository {
     return this.kernel.container.get(TOKENS.PullRequestsRepository);
   }
 
-  /** Plan's board: tasks, the goals over them, and the sessions a task started or links. */
+  /** Plan's board: tasks, the milestones over them, and the sessions a task started or links. */
   get tasks(): TasksRepository {
     return this.kernel.container.get(TOKENS.TasksRepository);
   }

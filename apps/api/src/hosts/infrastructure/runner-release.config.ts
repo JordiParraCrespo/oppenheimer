@@ -87,7 +87,7 @@ export class RunnerReleaseConfig {
       '- Tell me which machine you are on (uname -n, uname -sr, whoami) and ask whether it',
       '  is the one I mean. If it is not, stop: the token below pairs one machine only.',
       '- Ask me where session code should live. Add --workspaces with that path to the',
-      '  command, or leave it off for ~/oppenheimer-ai/workspaces.',
+      '  command, or leave it off for ~/oppenheimer.',
       '- Ask me which coding agents this machine should have: claude (Claude Code), codex,',
       '  opencode, grok, and gh (the GitHub CLI); claude and gh unless I say otherwise.',
       '  Add --agents with them, comma-separated, or --agents none. The runner installs',

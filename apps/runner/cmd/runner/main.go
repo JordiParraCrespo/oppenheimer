@@ -162,7 +162,7 @@ func register(ctx context.Context, args []string) (int, error) {
 	fs.StringVar(&opts.URL, "url", "", "control plane URL (required)")
 	fs.StringVar(&opts.Name, "name", "", "name for this host (default: its hostname)")
 	fs.StringVar(&opts.Channel, "channel", "", "release channel: stable or beta")
-	fs.StringVar(&opts.Workspaces, "workspaces", "", "directory sessions' checkouts live in (default: ~/oppenheimer-ai/workspaces)")
+	fs.StringVar(&opts.Workspaces, "workspaces", "", "the work folder, where stores and sessions' checkouts live (default: ~/oppenheimer)")
 	fs.BoolVar(&opts.Force, "force", false, "re-pair a host that already has an identity")
 	fs.BoolVar(&opts.KeepExisting, "keep-existing", false, "if already paired to this control plane, keep that and do not spend the token")
 	fs.BoolVar(&opts.AllowContainer, "allow-container", false, "pair a machine that looks like a container or CI job anyway")

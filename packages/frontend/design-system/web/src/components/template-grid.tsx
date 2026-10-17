@@ -63,4 +63,53 @@ function TemplateItem({
   );
 }
 
-export { TemplateGrid, TemplateItem };
+/**
+ * TemplateTiles — starting points picked by clicking the whole tile (a new
+ * bot's Blank, GitHub, Sessions, Plan): as many 150px columns as fit, 8px
+ * apart. Each `TemplateTile` is a button on the card at the 18px radius, its
+ * glyph in muted ink over the name at 14px medium and a 12.5px line; the
+ * pointer takes it to the control's hover grey. `TemplateGrid` stays for
+ * templates read before they are added (the automations'), with their trigger
+ * and an Add button.
+ */
+function TemplateTiles({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="template-tiles"
+      className={cn('grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2', className)}
+      {...props}
+    />
+  );
+}
+
+function TemplateTile({
+  icon,
+  name,
+  description,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'button'>, 'type' | 'children'> & {
+  icon: React.ReactNode;
+  name: React.ReactNode;
+  description?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      data-slot="template-tile"
+      className={cn(
+        'flex flex-col items-start gap-2 rounded-lg bg-card p-3.5 text-left text-fg outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring',
+        className,
+      )}
+      {...props}
+    >
+      <span aria-hidden className="flex text-fg-muted [&_svg:not([class*=size-])]:size-4">
+        {icon}
+      </span>
+      <span className="text-operate font-medium">{name}</span>
+      {description ? <span className="text-[12.5px] leading-[1.45] text-pretty text-fg-muted">{description}</span> : null}
+    </button>
+  );
+}
+
+export { TemplateGrid, TemplateItem, TemplateTile, TemplateTiles };

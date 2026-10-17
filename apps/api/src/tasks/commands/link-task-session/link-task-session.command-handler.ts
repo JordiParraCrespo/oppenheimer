@@ -26,6 +26,7 @@ export class LinkTaskSessionCommandHandler
     const task = requireFound(await this.tasks.findOneById(scope, taskId), TaskErrors.NOT_FOUND, {
       detail: `No task with id ${taskId}`,
     });
+    task.actingAs(command.actor);
     const outcome = await this.tasks.attach(
       task,
       { sessionId, origin: 'linked', linkedByUserId: command.userId, linkedAt: new Date() },

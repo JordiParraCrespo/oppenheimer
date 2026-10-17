@@ -37,12 +37,14 @@ function snapshot(missing: Part[]): PullRequestSnapshot {
       updatedAt: '2026-10-05T12:00:00Z',
       closedAt: '2026-10-05T12:00:00Z',
       requestedReviewers: [],
+      nodeId: 'PR_7',
       body: '',
       additions: 3,
       deletions: 1,
       changedFiles: 1,
       mergeable: true,
       mergeableState: 'clean',
+      fromFork: false,
     },
     files: missing.includes('files')
       ? { value: null, refusal: 'forbidden' }
@@ -128,5 +130,25 @@ describe('a pull request read in part', () => {
       { what: 'checks', refusal: 'forbidden' },
       { what: 'pull_requests', refusal: 'rate_limited' },
     ]);
+  });
+
+  it('orders the queue deepest lane first, and the longest wait first within a lane', () => {
+    const row = mapper.toRow(snapshot([]), 'ana', NOW);
+    const at = (number: number, lane: 'deep' | 'medium' | 'quick', waitingSeconds: number) => ({
+      ...row,
+      scope: 'mine' as const,
+      number,
+      lane,
+      waitingSeconds,
+    });
+    const queue = mapper.toQueue(
+      [at(1, 'quick', 90_000), at(2, 'deep', 60), at(3, 'medium', 600), at(4, 'deep', 7_200)],
+      'mine',
+      'ana',
+      [],
+    );
+    expect(queue.items.map((item) => item.number)).toEqual([4, 2, 3, 1]);
+    // The oldest wait is the queue's, not the first row's.
+    expect(queue.oldestWaitingSeconds).toBe(90_000);
   });
 });

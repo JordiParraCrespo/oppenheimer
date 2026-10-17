@@ -77,6 +77,11 @@ function readApiError(err: APIError): BetterAuthFailure {
   };
 }
 
+/** Better Auth's own code on an `APIError`, when it set one. */
+export function upstreamCodeOf(err: APIError): string | undefined {
+  return readApiError(err).upstreamCode;
+}
+
 /**
  * Builds the `invoke` helper a façade module wraps every `auth.api.*` call in.
  *

@@ -373,8 +373,12 @@ stores a fresh one.
 
 `GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
 protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
-request waits. Approving answers `200` with `merged: false` instead of this
-code, because the approval itself landed.
+request waits. Approve and merge answers `200` with `merged: false` instead of
+this code, because the approval itself landed; it then asks GitHub to merge it
+once the required checks pass (`autoMerge: true`), or leaves it waiting when
+the repository does not allow auto-merge (`autoMerge: false`). If GitHub refuses that
+request for another reason, the answer is `GITHUB_015` for a rate limit and
+`GITHUB_009` otherwise; the approval has still landed.
 
 `GITHUB_015` is GitHub's rate limit: the primary hourly budget of an
 installation, a user token or the App, or a secondary limit. GitHub refuses
@@ -394,6 +398,10 @@ and keeps nothing of a pull request but which repositories the caller watches.
 | Code                               | Title                                | HTTP |
 | ---------------------------------- | ------------------------------------ | ---- |
 | `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
+| `PULLS_002` <a id="pulls_002" /> | A pull request from a fork cannot be reviewed in a session yet | 409  |
+
+`PULLS_002` answers a review session started on a pull request whose head
+branch is in a fork: a host fetches the base repository's branches only.
 
 ## Projects
 
@@ -411,7 +419,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
-| `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
 
@@ -423,10 +431,11 @@ project" is a question only the module that owns sessions can answer, asked over
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
 
-`PROJECTS_006` is a repository list a project cannot hold: none, none offered by
-default, one repository twice, more than twenty, or a blank base branch. The
+`PROJECTS_006` is a repository list a project cannot hold: repositories with none
+offered by default, one repository twice, more than twenty, or a blank base branch. The
 `detail` names which. The request schema refuses the same bodies earlier; this is the
-project holding its own invariants whatever the caller.
+project holding its own invariants whatever the caller. An empty list is not
+one of them: a project may hold no repository.
 
 `PROJECTS_007` should never be seen: the last slug a new project tries carries part
 of its own id. It is reported rather than retried.
@@ -470,21 +479,41 @@ are never reissued.
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 | `SESSIONS_019` <a id="sessions_019" /> | An attached file is no longer waiting           | 410  |
 | `SESSIONS_020` <a id="sessions_020" /> | Too many files are waiting to be sent           | 429  |
-| `SESSIONS_021` <a id="sessions_021" /> | That share link does not open anything          | 404  |
-| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this share link                 | 401  |
-| `SESSIONS_023` <a id="sessions_023" /> | This share link is not shared with you          | 403  |
-| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold | 409 |
+| `SESSIONS_021` <a id="sessions_021" /> | That session is not shared, or no longer        | 404  |
+| `SESSIONS_022` <a id="sessions_022" /> | Sign in to open this shared session             | 401  |
+| `SESSIONS_023` <a id="sessions_023" /> | This session is not shared with you             | 403  |
+| `SESSIONS_024` <a id="sessions_024" /> | This session has as many share links as it can hold (no longer raised) | 409 |
+| `SESSIONS_025` <a id="sessions_025" /> | This host's runner cannot start a session in a folder | 409 |
+| `SESSIONS_026` <a id="sessions_026" /> | This host's runner cannot list its folders      | 409  |
+| `SESSIONS_027` <a id="sessions_027" /> | The host is offline, so its folders cannot be listed | 503 |
+| `SESSIONS_028` <a id="sessions_028" /> | That folder does not exist on the host          | 404  |
+| `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
+| `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
+| `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
 
-`SESSIONS_021`–`SESSIONS_024` belong to share links
-(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_021` is one answer for
-a secret that was never issued, a link revoked or expired, and a link to a closed
-session: the holder can only ask for a new one either way. `SESSIONS_022` and
-`SESSIONS_023` are apart because each has its own next step — sign in, or ask to be
-named; a list of people matches a verified email only. `SESSIONS_024` is twenty live
-links on one session.
+`SESSIONS_021`–`SESSIONS_023` belong to sharing a session
+(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_022` comes first, for
+anybody signed out, before the address is looked up, so a signed-out caller learns
+nothing about it. `SESSIONS_021` is one answer for an address that was never shared,
+a share stopped or expired, and a share of a closed session: the guest can only ask
+for it to be shared again either way. `SESSIONS_023` is apart because its next step
+is its own — ask to be named; a list of people matches a verified email only.
+`SESSIONS_024` was twenty live share links on one session; since 2026-10-13 a
+session has one share, and the code stays reserved so it is never reused.
+
+`SESSIONS_025`–`SESSIONS_031` belong to sessions in a folder already on the host
+(`product/versions/mvp/24-session-places.md`). `025` is a create with a `folder` for a
+host whose live runner did not announce `session.folder`: it would refuse a session with
+no checkouts, and updating the runner is the fix. A host with no link right now is not
+refused: the session is recorded and its next hello is sent it. `026`–`031` answer the
+folder picker, `GET /hosts/{id}/folders`, which asks the host's runner live and caches
+nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to the host,
+`031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
+`FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
+a runner gives reads as `030`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -579,22 +608,107 @@ on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
 `overlapping`, the rate caps, `missed`), and a reason that would repeat every time
 pauses the automation with a `pausedReason`.
 
+## Bots
+
+A bot is a worker you talk to: who it is, its soul and instructions with their
+history, and what it remembers, kept in the API; its turns run on its home host.
+See `product/versions/mvp/25-bots.md`.
+
+| Code                                 | Title                                        | HTTP |
+| ------------------------------------ | -------------------------------------------- | ---- |
+| `BOTS_001` <a id="bots_001" />       | Bot not found                                | 404  |
+| `BOTS_002` <a id="bots_002" />       | Bots belong to an organization               | 400  |
+| `BOTS_003` <a id="bots_003" />       | Bot group not found                          | 404  |
+| `BOTS_004` <a id="bots_004" />       | A group with that name already exists        | 409  |
+| `BOTS_005` <a id="bots_005" />       | Bot document not found                       | 404  |
+| `BOTS_006` <a id="bots_006" />       | The document was changed since it was loaded | 409  |
+| `BOTS_007` <a id="bots_007" />       | Revision not found                           | 404  |
+| `BOTS_008` <a id="bots_008" />       | Memory fact not found                        | 404  |
+| `BOTS_009` <a id="bots_009" />       | The bot remembers as much as it can          | 422  |
+| `BOTS_010` <a id="bots_010" />       | That model cannot run a bot                  | 422  |
+| `BOTS_011` <a id="bots_011" />       | Model providers are not configured on this server | 503 |
+| `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
+| `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
+| `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
+| `BOTS_015` <a id="bots_015" />       | Approval not found                           | 404  |
+| `BOTS_016` <a id="bots_016" />       | The approval was already decided             | 409  |
+| `BOTS_017` <a id="bots_017" />       | ChatGPT connects by signing in, not with a key | 422 |
+| `BOTS_018` <a id="bots_018" />       | The ChatGPT sign-in expired                  | 410  |
+| `BOTS_019` <a id="bots_019" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
+| `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
+| `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
+| `BOTS_022` <a id="bots_022" />       | The bot has a turn queued or running         | 409  |
+
+`BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
+another workspace.
+
+`BOTS_004` compares names without case: "Engineering" and "engineering" are one
+group.
+
+`BOTS_005` is a document name other than `soul` and `instructions`, the two a bot
+has.
+
+`BOTS_006` is optimistic concurrency: a save carries the `baseRevision` the editor
+loaded, and a save over a newer one is refused rather than silently winning. When
+the save was stale, the problem's `revision` extension is the revision that is
+current now. Reload and save again.
+
+`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
+turn. Forget one first.
+
+`BOTS_010` is a model id the bot's provider does not offer
+(`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.
+
+`BOTS_011` is a server with no `BOTS_PROVIDER_KEY`: no workspace can store a
+model provider's key, so no bot can answer. `BOTS_012` is a provider other than
+`anthropic`, `glm`, `openai` or `chatgpt` in `/model-providers/:provider`.
+
+`BOTS_013` is a message to a bot whose provider has no key in the workspace;
+store one in Settings → Model providers. A turn that finds the key gone when
+it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
+or not in the caller's workspace.
+
+`BOTS_015` is an approval (a Needs input card) that is not this bot's, or not
+in the caller's workspace. `BOTS_016` is a decision on one that was already
+approved, denied, or expired because a new message was sent to the bot: read
+the approvals again; the card is gone.
+
+`BOTS_017` to `BOTS_021` are the ChatGPT provider, which runs on a sign-in to a
+ChatGPT subscription instead of a key. `BOTS_017` is `PUT
+/model-providers/chatgpt`: sign in with `POST /model-providers/chatgpt/login`
+instead. `BOTS_018` is a poll of a sign-in that is past its fifteen minutes,
+that ChatGPT refused, or that was started in another workspace; start again.
+`BOTS_019` is OpenAI's sign-in server refusing for rate (or too many calls to it
+waiting), with `Retry-After`. `BOTS_020` is that server not answering, or
+answering something unusable. A ChatGPT sign-in that ChatGPT later refuses to
+refresh is removed, and the bot's next turn fails with `BOTS_013`. `BOTS_021`
+is a turn that needed the token refreshed while another API replica was
+refreshing it; it fails at once rather than wait, and the next message runs on
+the refreshed token.
+
+`BOTS_022` is `DELETE /bots/:id/conversation` while one of the bot's turns is
+queued or running: the turn would go on writing into a conversation that is
+gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
+
+A home host the caller may not use answers `HOSTS_001`, as a session's does.
+
 ## Tasks
 
-Plan's board: tasks, the goals over them, and the sessions a task started or
+Plan's board: tasks, the milestones over them, and the sessions a task started or
 links. See `product/versions/mvp/17-plan.md`.
 
 | Code                                 | Title                                    | HTTP |
 | ------------------------------------ | ---------------------------------------- | ---- |
 | `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
-| `TASKS_002` <a id="tasks_002" />     | Goal not found                           | 404  |
+| `TASKS_002` <a id="tasks_002" />     | Milestone not found                      | 404  |
 | `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
 | `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
 | `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
 | `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
-| `TASKS_007` <a id="tasks_007" />     | That goal belongs to another project     | 409  |
+| `TASKS_007` <a id="tasks_007" />     | That milestone belongs to another project | 409 |
+| `TASKS_008` <a id="tasks_008" />     | It changed since you read it             | 409  |
 
-`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, goal or
+`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, milestone or
 session in another workspace.
 
 `TASKS_004` is a project that is missing or archived: nothing new is filed under a
@@ -603,8 +717,13 @@ retired project.
 `TASKS_006` is a move that named a task to land after which is no longer in that
 column, or is the task being moved. The board was stale; reload it.
 
-`TASKS_007` is a request whose goal and project disagree. A goal brings its own
+`TASKS_007` is a request whose milestone and project disagree. A milestone brings its own
 project, so leave `projectId` out when choosing one.
+
+`TASKS_008` is a write that named the version it read (`expectedVersion`, or
+`If-Match` on a delete) after someone else had written the task or milestone.
+Nothing changed; read it again and decide again. A write that names no version
+always lands, and still moves the version on.
 
 ## Calendar
 
@@ -623,6 +742,7 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
 | `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
 | `CALENDAR_010` <a id="calendar_010" />   | Google Calendar's rate limit was reached; try again shortly | 429 |
+| `CALENDAR_011` <a id="calendar_011" />   | That is as many Google accounts as the calendar takes | 409 |
 
 `CALENDAR_003` is a range that runs backwards or covers more than 62 days.
 
@@ -635,8 +755,12 @@ else's. Start again from Connect Google Calendar.
 `CALENDAR_006` is Google refusing the code, returning no refresh token, or a
 consent screen where the calendar permission was left unticked.
 
-`CALENDAR_007` is no connection, or one Google has since revoked (or one sealed
-under a `CALENDAR_TOKEN_KEY` that was replaced): connect again.
+`CALENDAR_007` is no such connection of the caller's (a reconnect of an account
+since removed), or one Google has since revoked (or one sealed under a
+`CALENDAR_TOKEN_KEY` that was replaced): connect again.
+
+`CALENDAR_011` is a sixth Google account: a person connects five at most.
+Remove one, or reconnect one already listed, which does not count again.
 
 ## Inbound events
 
@@ -656,7 +780,7 @@ Neither reaches a person. `INBOUND_002` is a webhook delivery without GitHub's
 The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
-`HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
+`HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
@@ -685,6 +809,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
 | `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
 | `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
+| `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
+| `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
+| `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -710,6 +837,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
+| `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
+| `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

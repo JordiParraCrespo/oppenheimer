@@ -119,6 +119,16 @@ The API binds this one-call LLM client from the `LLM_*` settings and uses it for
 short, best-effort calls such as naming a session. See the package README
 (`packages/backend/llm/README.md`).
 
+## `@oppenheimer/backend-agents`
+
+The engines a bot's turn runs on: one `BotEngine` port, with the Claude Agent
+SDK behind providers `anthropic` and `glm` and the OpenAI Agents SDK behind
+`openai`. `createBotEngine().run(request)` streams the turn as plain events
+(text, tool steps, usage, one `done`); the key is passed per call and never
+read from the environment. `FakeBotEngine` replays scripted turns for tests.
+See the package README (`packages/backend/agents/README.md`) and
+`product/versions/mvp/25-bots.md` §2.
+
 ## `@oppenheimer/backend-storage`
 
 File storage abstraction with local filesystem and S3 implementations.

@@ -431,13 +431,15 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         resume: Object.freeze(['--resume', '<conversation>']),
       }),
       permission: Object.freeze({
-        // `--permission-mode` choices, read off claude 2.1.278's own `--help`.
+        // `--permission-mode` choices, read off claude 2.1.300's own `--help`.
+        // `auto` is Claude Code's auto mode, which checks each action before
+        // it runs; `acceptEdits` would still prompt on every shell command.
         ask: Object.freeze({
           argv: Object.freeze(['--permission-mode', 'manual']),
           env: Object.freeze({}),
         }),
         auto: Object.freeze({
-          argv: Object.freeze(['--permission-mode', 'acceptEdits']),
+          argv: Object.freeze(['--permission-mode', 'auto']),
           env: Object.freeze({}),
         }),
         full: Object.freeze({

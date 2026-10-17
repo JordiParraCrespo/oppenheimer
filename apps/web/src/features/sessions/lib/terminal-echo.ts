@@ -1,6 +1,7 @@
 import type { Terminal } from '@xterm/xterm';
 import { EchoLatency } from './echo-latency';
 import { bindLatencyReadout } from './latency-readout';
+import type { TerminalRendererKind } from './terminal-renderer';
 import { readTerminalTheme } from './terminal-theme';
 import { bindTypeahead } from './typeahead';
 
@@ -16,6 +17,8 @@ export interface TerminalEchoOptions {
   readOnly: boolean;
   /** Whether predictions may draw: the `terminal_typeahead` flag. */
   typeahead: () => boolean;
+  /** Which renderer draws the grid, for predictions to be drawn the way it draws. */
+  renderer: () => TerminalRendererKind;
   /** Which path the stream's bytes take, for the readout (`SessionStream.onPath`). */
   onPath?: (listener: (path: string) => void) => () => void;
 }
@@ -44,6 +47,7 @@ export function bindTerminalEcho(
         shouldDraw: () =>
           options.typeahead() && (latency.quantile(0.5) ?? 0) >= TYPEAHEAD_MIN_LATENCY_MS,
         readColors: readTypeaheadColors,
+        renderer: options.renderer,
         onConfirm: (ms) => latency.add(ms),
         // A guess the host has not confirmed in a few round trips was wrong.
         timeoutMs: () => Math.max(1000, 4 * (latency.quantile(0.95) ?? 0)),

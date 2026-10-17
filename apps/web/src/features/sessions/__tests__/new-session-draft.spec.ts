@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { rememberFolder } from '../lib/folder-memory';
 import { initialDraft, rememberDraft } from '../lib/new-session-draft';
 import { defaultModelFor } from '../lib/session-options';
 
 /**
- * What New session remembers between visits. A permission level is never
- * restored: every visit opens on `full`, whatever the last one picked. Scope
- * never comes back either, and anything in storage the catalog does not
- * recognise is ignored.
+ * What New session remembers between visits. The permission level opens on
+ * `auto` and then on the last level picked. Scope never comes back, and
+ * anything in storage the catalog does not recognise is ignored.
  */
 
 const KEY = 'oppenheimer.new-session.draft';
@@ -22,12 +22,14 @@ afterEach(() => {
 describe('initialDraft', () => {
   it('opens on the fallback with nothing remembered', () => {
     expect(initialDraft()).toEqual({
+      where: 'worktree',
       projectId: null,
       hostId: null,
       scope: [],
+      folder: null,
       agent: 'claude-code',
       model: defaultModelFor('claude-code'),
-      permission: 'full',
+      permission: 'auto',
       efforts: {},
     });
   });
@@ -58,16 +60,22 @@ describe('initialDraft', () => {
     expect(initialDraft().efforts).toEqual({ codex: 'infinite' });
   });
 
-  it.each(['ask', 'auto', 'full'])(
-    'never restores a permission level or a scope, whatever storage holds (%s)',
+  it.each(['ask', 'auto', 'full'] as const)(
+    'restores the last permission level picked, never a scope (%s)',
     (permission) => {
       store({ permission, scope: [{ id: 'inst:1', branch: 'main' }] });
 
       const draft = initialDraft();
-      expect(draft.permission).toBe('full');
+      expect(draft.permission).toBe(permission);
       expect(draft.scope).toEqual([]);
     },
   );
+
+  it('opens on auto when storage holds a level the catalog does not have', () => {
+    store({ permission: 'yolo' });
+
+    expect(initialDraft().permission).toBe('auto');
+  });
 
   it("drops a model that is not the remembered agent's, taking that agent's default", () => {
     store({ agent: 'codex', model: 'claude-opus-5-5' });
@@ -92,15 +100,18 @@ describe('initialDraft', () => {
 });
 
 describe('rememberDraft', () => {
-  it('writes only the five choices worth carrying, and they read back', () => {
+  it('writes only the seven choices worth carrying, and they read back', () => {
     rememberDraft({
+      where: 'folder',
       projectId: 'p1',
       hostId: 'h1',
       agent: 'codex',
       model: 'gpt-6-astra',
+      permission: 'ask',
       efforts: { codex: 'low' },
-      // A caller holding the whole draft passes it; the rest must not be written.
-      ...({ permission: 'full', scope: [{ id: 'x', branch: 'y' }] } as object),
+      // A caller holding the whole draft passes it; the scope and the folder
+      // must not be written: the folder is remembered per host, on its own.
+      ...({ scope: [{ id: 'x', branch: 'y' }], folder: '/tmp' } as object),
     });
 
     expect(Object.keys(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).sort()).toEqual([
@@ -108,11 +119,15 @@ describe('rememberDraft', () => {
       'efforts',
       'hostId',
       'model',
+      'permission',
       'projectId',
+      'where',
     ]);
     expect(initialDraft()).toMatchObject({
+      where: 'folder',
       projectId: 'p1',
       agent: 'codex',
+      permission: 'ask',
       efforts: { codex: 'low' },
     });
   });
@@ -124,12 +139,61 @@ describe('rememberDraft', () => {
 
     expect(() =>
       rememberDraft({
+        where: 'worktree',
         projectId: null,
         hostId: null,
         agent: 'claude-code',
         model: null,
+        permission: 'auto',
         efforts: {},
       }),
     ).not.toThrow();
+  });
+});
+
+/**
+ * Where a session runs is remembered like the other chips, and a folder is
+ * remembered per host: a path on one machine means nothing on another.
+ */
+describe('where and the folder', () => {
+  it('drops a place the catalog does not have', () => {
+    store({ where: 'container' });
+
+    expect(initialDraft().where).toBe('worktree');
+  });
+
+  it("opens on the remembered host's last folder", () => {
+    store({ where: 'folder', hostId: 'h1' });
+    rememberFolder('h1', { path: '/home/jordi/code/atlas', home: '/home/jordi' });
+    rememberFolder('h2', { path: '/srv/app', home: '/root' });
+
+    expect(initialDraft()).toMatchObject({
+      where: 'folder',
+      hostId: 'h1',
+      folder: '/home/jordi/code/atlas',
+    });
+  });
+
+  /**
+   * Settings' Open terminal: `?where=folder&host=…&path=~&agent=shell`. A path
+   * under `~` waits for the host's home rather than opening on the last folder.
+   */
+  it('takes the place, host and agent an address names, and no folder for a path under ~', () => {
+    store({ where: 'worktree', hostId: 'h1', agent: 'codex', model: 'gpt-6-astra' });
+    rememberFolder('h2', { path: '/srv/app', home: '/root' });
+
+    expect(
+      initialDraft({ where: 'folder', hostId: 'h2', agent: 'shell', path: '~' }),
+    ).toMatchObject({
+      where: 'folder',
+      hostId: 'h2',
+      agent: 'shell',
+      model: defaultModelFor('shell'),
+      folder: null,
+    });
+  });
+
+  it('opens on an absolute path the address names', () => {
+    expect(initialDraft({ where: 'folder', path: '/srv/app' }).folder).toBe('/srv/app');
   });
 });

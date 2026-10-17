@@ -102,7 +102,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote, "main"); err != nil {
 		t.Fatalf("clone of a private repository for a session: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
+	if _, err := os.Stat(filepath.Join(layout.Store(repo), "HEAD")); err != nil {
 		t.Fatalf("the mirror is not there: %v", err)
 	}
 	asked, _ := os.ReadFile(seen)
@@ -116,7 +116,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	}
 
 	// And so does the push when the session closes.
-	worktree := layout.Worktree(repo, "session-private")
+	worktree := checkout(layout, "session-private")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/private", "main", true); err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestPushForNoSessionIsRefusedBeforeTheNetwork(t *testing.T) {
 	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "session-unmarked")
+	worktree := checkout(layout, "session-unmarked")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/unmarked", "main", true); err != nil {
 		t.Fatal(err)
 	}
@@ -164,13 +164,13 @@ func TestEnsureSaysWhatIsMissingWhenAPrivateCloneHasNoCredential(t *testing.T) {
 		if strings.Contains(prob.Detail, "could not read Username") {
 			t.Fatalf("the detail relays git's prompt, which nobody was shown: %s", prob.Detail)
 		}
-		if !strings.Contains(prob.Detail, repo) {
+		if !strings.Contains(prob.Detail, repo.FullName) {
 			t.Fatalf("the detail does not name the repository: %s", prob.Detail)
 		}
 	}
 
 	// Nothing half-made is left for the next attempt to trip on.
-	entries, err := os.ReadDir(filepath.Dir(layout.Mirror(repo)))
+	entries, err := os.ReadDir(filepath.Dir(layout.Store(repo)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func TestOnlyTheRunnersHelperIsAsked(t *testing.T) {
 func TestEnsureClearsAnEmptyMirrorAnOlderRunnerLeft(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
-	if err := os.MkdirAll(layout.Mirror(repo), 0o700); err != nil {
+	if err := os.MkdirAll(layout.Store(repo), 0o700); err != nil {
 		t.Fatal(err)
 	}
 
@@ -302,7 +302,7 @@ func TestAddAdoptsTheWorktreeItAlreadyMadeForTheSameBranch(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "redelivered")
+	worktree := checkout(layout, "redelivered")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/redelivered", "main", true); err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestAddFinishesAWorktreeWhoseAddWasKilled(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "killed")
+	worktree := checkout(layout, "killed")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/killed", "main", true); err != nil {
 		t.Fatal(err)
 	}
@@ -341,7 +341,7 @@ func TestAddFinishesAWorktreeWhoseAddWasKilled(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(worktree, "README.md")); err != nil {
 		t.Fatal("the checkout was not completed")
 	}
-	if list := git(t, layout.Mirror(repo), "worktree", "list", "--porcelain"); strings.Contains(list, "locked") {
+	if list := git(t, layout.Store(repo), "worktree", "list", "--porcelain"); strings.Contains(list, "locked") {
 		t.Fatalf("the worktree is still locked:\n%s", list)
 	}
 	if dirty, err := c.Dirty(ctx, worktree); err != nil || dirty {
@@ -356,7 +356,7 @@ func TestAddReplacesARegistrationWhoseDirectoryIsGone(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	worktree := layout.Worktree(repo, "vanished")
+	worktree := checkout(layout, "vanished")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/vanished", "main", true); err != nil {
 		t.Fatal(err)
 	}
@@ -383,9 +383,12 @@ func TestAddReusesABranchAKilledAttemptCreatedWithoutItsWorktree(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	git(t, layout.Mirror(repo), "branch", "oppenheimer/orphan", "origin/main")
+	// The store's history arrives in the background, writing its config;
+	// a branch made by hand beside it would race that write.
+	c.Wait()
+	git(t, layout.Store(repo), "branch", "oppenheimer/orphan", "origin/main")
 
-	worktree := layout.Worktree(repo, "orphan")
+	worktree := checkout(layout, "orphan")
 	if err := c.Add(ctx, repo, worktree, "oppenheimer/orphan", "main", true); err != nil {
 		t.Fatalf("add with the branch already cut: %v", err)
 	}
@@ -398,13 +401,14 @@ func TestAddKeepsABranchThatHasWorkOfItsOwn(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
-	mirror := layout.Mirror(repo)
+	mirror := layout.Store(repo)
+	c.Wait() // as above: the background deepen writes the store's config
 	git(t, mirror, "branch", "oppenheimer/busy", "origin/main")
 	tip := strings.TrimSpace(git(t, mirror, "-c", "user.email=t@example.com", "-c", "user.name=T",
 		"commit-tree", "-m", "work", "-p", "oppenheimer/busy", "oppenheimer/busy^{tree}"))
 	git(t, mirror, "update-ref", "refs/heads/oppenheimer/busy", tip)
 
-	err := c.Add(ctx, repo, layout.Worktree(repo, "busy"), "oppenheimer/busy", "main", true)
+	err := c.Add(ctx, repo, checkout(layout, "busy"), "oppenheimer/busy", "main", true)
 
 	if err == nil {
 		t.Fatal("a branch with commits of its own must not be reset to the base")

@@ -12,7 +12,18 @@ export interface ProvisioningContext {
   agent: string;
   /** The host's reason for a failed start, once the log carries it. */
   failure: string | null;
+  /**
+   * A folder session's folder, as shown: nothing is cloned and no branch is
+   * made, so the start is the host, opening the folder, and the agent
+   * (`product/versions/mvp/24-session-places.md` §3).
+   */
+  folder?: string | null;
+  /** The blank terminal: its last step starts a shell, not an agent. */
+  shell?: boolean;
 }
+
+/** A start step as this pane draws it: the host's own, or a folder session's one `open`. */
+type ShownStep = Omit<SessionStartStep, 'id'> & { id: SessionStartStep['id'] | 'open' };
 
 /** Before the first read answers, every step is pending. */
 export const PENDING_START: SessionStartStep[] = SESSION_START_STEPS.map((id) => ({
@@ -32,18 +43,46 @@ export function provisioningSteps(
   context: ProvisioningContext,
   t: TFunction,
 ): Step[] {
-  return steps.map((step) => {
+  const shown: readonly ShownStep[] = context.folder ? folderSteps(steps) : steps;
+  return shown.map((step) => {
     const key = `sessions.provisioning.steps.${step.id}` as const;
-    const label = t(`${key}.label`, {
-      host: context.host,
-      repo: context.repo,
-      agent: context.agent,
-    });
+    const label =
+      step.id === 'agent' && context.shell
+        ? t('sessions.provisioning.steps.agent.shell')
+        : t(`${key}.label`, {
+            host: context.host,
+            repo: context.repo,
+            agent: context.agent,
+            path: context.folder ?? '',
+          });
     return { id: step.id, label, meta: meta(step, context, t), state: step.state };
   });
 }
 
-function meta(step: SessionStartStep, context: ProvisioningContext, t: TFunction) {
+/**
+ * A folder session's start: the host, then the folder — the one step that
+ * stands for what a worktree session spends on the clone and the branch,
+ * which a runner reports for a folder only if it reports them at all — then
+ * the agent. Opening the folder is done once the agent has started, under way
+ * once the host has the session, and failed when either of its steps did.
+ */
+function folderSteps(steps: readonly SessionStartStep[]): ShownStep[] {
+  const byId = new Map(steps.map((step) => [step.id, step]));
+  const host = byId.get('host');
+  const agent = byId.get('agent');
+  const opening = [byId.get('clone'), byId.get('worktree')].filter((step) => step !== undefined);
+  const state: SessionStartStep['state'] = opening.some((step) => step.state === 'failed')
+    ? 'failed'
+    : agent && agent.state !== 'pending'
+      ? 'done'
+      : opening.some((step) => step.state === 'running') || host?.state === 'done'
+        ? 'running'
+        : 'pending';
+  const open: ShownStep = { id: 'open', state, durationMs: null, download: false };
+  return [host, open, agent].filter((step) => step !== undefined);
+}
+
+function meta(step: ShownStep, context: ProvisioningContext, t: TFunction) {
   const key = `sessions.provisioning.steps.${step.id}` as const;
   switch (step.state) {
     case 'failed':
@@ -60,6 +99,7 @@ function meta(step: SessionStartStep, context: ProvisioningContext, t: TFunction
     case 'done':
       if (step.id === 'host') return t('sessions.provisioning.steps.host.done');
       if (step.id === 'agent') return t('sessions.provisioning.steps.agent.done');
+      if (step.id === 'open') return t('sessions.provisioning.steps.open.done');
       if (step.id === 'worktree') return context.branch;
       return step.durationMs === null
         ? undefined

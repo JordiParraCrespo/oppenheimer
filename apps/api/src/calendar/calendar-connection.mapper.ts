@@ -20,6 +20,8 @@ export class CalendarConnectionMapper
     record.userId = entity.userId;
     record.provider = entity.provider;
     record.accountEmail = entity.accountEmail;
+    record.accountSubject = entity.accountSubject;
+    record.colorIndex = entity.colorIndex;
     record.refreshTokenSealed = entity.refreshTokenSealed;
     record.scopes = entity.scopes;
     record.status = entity.status;
@@ -36,6 +38,8 @@ export class CalendarConnectionMapper
         userId: record.userId,
         provider: record.provider,
         accountEmail: record.accountEmail,
+        accountSubject: record.accountSubject ?? null,
+        colorIndex: record.colorIndex ?? 0,
         refreshTokenSealed: record.refreshTokenSealed,
         scopes: record.scopes ?? [],
         status: record.status,
@@ -43,12 +47,14 @@ export class CalendarConnectionMapper
     });
   }
 
-  /** Never the token: only whether there is a connection and whose it is. */
-  toResponse(entity: CalendarConnectionEntity | null): GoogleCalendarConnectionResponseDto {
+  /** Never the token: the account, its state and its colour. */
+  toResponse(entity: CalendarConnectionEntity): GoogleCalendarConnectionResponseDto {
     const dto = new GoogleCalendarConnectionResponseDto();
-    dto.connected = entity !== null;
-    dto.accountEmail = entity?.accountEmail ?? null;
-    dto.status = entity?.status ?? null;
+    dto.id = entity.id;
+    dto.accountEmail = entity.accountEmail;
+    dto.status = entity.status;
+    dto.colorIndex = entity.colorIndex;
+    dto.connectedAt = entity.createdAt.toISOString();
     return dto;
   }
 }

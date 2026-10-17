@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -29,6 +30,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/binaries"
@@ -62,6 +64,9 @@ type App struct {
 	// Worktrees is the sessions' git, kept for waiting on the spare worktree
 	// it makes after a create (CreateSession).
 	Worktrees *gitadapter.Client
+	// WorkFolder is the work folder's own bookkeeping: its layout file and
+	// the markers of the folders the runner makes there.
+	WorkFolder *workfolder.Folder
 	// Link is the control-plane link while `run` holds one.
 	Link *link.Client
 	// Credentials answers the git credential helper while `run` holds a link.
@@ -105,6 +110,7 @@ func New(version string) (*App, error) {
 		Prober:        system.New(),
 		Updater:       lockedUpdater{paths: paths, next: system.Updater{}},
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
+		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
@@ -131,6 +137,7 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	layout := sessionsdomain.Layout{Root: paths.Workspaces}
+	places := workfolder.New(workfolder.Options{Layout: layout})
 	worktrees := gitadapter.New(gitadapter.Options{
 		Layout:           layout,
 		CredentialHelper: credentialHelper(),
@@ -144,18 +151,9 @@ func New(version string) (*App, error) {
 		Classifier: manifest.New(manifest.Options{Dir: paths.Manifests()}),
 		Store:      sessionstate.New(paths.State()),
 		Files:      filestore.New(paths.Files()),
+		Places:     places,
 		Layout:     layout,
-		Env: func(session sessionsdomain.Session) map[string]string {
-			env := map[string]string{
-				"OPPENHEIMER_SESSION": session.ID,
-				"OPPENHEIMER_SOCKET":  paths.Socket(),
-				"OPPENHEIMER_REPO":    session.Repo,
-			}
-			for key, value := range shellCredentialHelper(paths) {
-				env[key] = value
-			}
-			return env
-		},
+		Env:        func(session sessionsdomain.Session) map[string]string { return sessionEnv(paths, session) },
 		// A session never starts an agent CLI its updater is replacing.
 		Gate: agentGate{paths: paths},
 	})
@@ -164,6 +162,7 @@ func New(version string) (*App, error) {
 	}
 	app.Sessions = sessions
 	app.Worktrees = worktrees
+	app.WorkFolder = places
 	app.Terminals = terminals
 
 	binStore, err := binaries.New(binaries.Options{
@@ -187,6 +186,25 @@ func New(version string) (*App, error) {
 		})
 	}
 	return app, nil
+}
+
+// sessionEnv is a session's tmux environment. A worktree session's git asks
+// the runner's credential helper for the session's own token; a folder
+// session's folder is the person's, so its git keeps the person's own
+// credentials and is told nothing (24 §3).
+func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
+	env := map[string]string{
+		"OPPENHEIMER_SESSION": session.ID,
+		"OPPENHEIMER_SOCKET":  paths.Socket(),
+	}
+	if session.Place == sessionsdomain.PlaceFolder {
+		return env
+	}
+	env["OPPENHEIMER_REPO"] = session.Repo
+	for key, value := range shellCredentialHelper(paths) {
+		env[key] = value
+	}
+	return env
 }
 
 // DefaultReleaseBaseURL is where signed releases live when a control plane

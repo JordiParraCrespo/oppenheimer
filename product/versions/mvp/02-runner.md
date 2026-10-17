@@ -630,7 +630,7 @@ One tree, named here and pointed at from 09:
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3
-~/oppenheimer-ai/workspaces/<org>/{repos/<store>.git, sessions/<slug>/<dir>}   the user's code (10)
+~/oppenheimer/<account>/<workspace>/{repos/<store>.git, sessions/<slug>/<dir>}   the work folder, the user's code (24 §2)
 ```
 
 **The boot path trusts tmux.** It is the only one of the three that

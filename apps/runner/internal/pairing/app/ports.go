@@ -31,10 +31,12 @@ type RegisterRequest struct {
 	Facts     json.RawMessage `json:"facts,omitempty"`
 }
 
-// RegisterResponse is what the control plane answers with: the host's id and
-// the key fingerprint the runner pins from then on.
+// RegisterResponse is what the control plane answers with: the host's id, the
+// account it is now paired with, and the key fingerprint the runner pins from
+// then on.
 type RegisterResponse struct {
 	HostID         string `json:"hostId"`
+	AccountID      string `json:"accountId"`
 	Fingerprint    string `json:"fingerprint"`
 	Channel        string `json:"channel,omitempty"`
 	ReleaseBaseURL string `json:"releaseBaseUrl,omitempty"`

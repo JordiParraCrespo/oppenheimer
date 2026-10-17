@@ -37,9 +37,9 @@ type Paths struct {
 	Home string
 	// UserHome is the account's home directory.
 	UserHome string
-	// Workspaces is where sessions' checkouts live: ~/oppenheimer-ai/workspaces
-	// unless the user chose another directory at install (saved in
-	// config.json) or RUNNER_WORKSPACES says otherwise.
+	// Workspaces is the work folder, where stores and sessions' checkouts live
+	// (24 §2): ~/oppenheimer unless the user chose another directory at
+	// install (saved in config.json) or RUNNER_WORKSPACES says otherwise.
 	Workspaces string
 	// WorkspacesSource says which of those three decided Workspaces, for
 	// `status` and `workspaces`: "env", "config" or "default".
@@ -81,9 +81,9 @@ func ResolvePaths() (Paths, error) {
 	return Paths{Home: home, UserHome: userHome, Workspaces: workspaces, WorkspacesSource: source}, nil
 }
 
-// DefaultWorkspaces is where sessions live when nobody chose otherwise.
+// DefaultWorkspaces is the work folder when nobody chose otherwise.
 func DefaultWorkspaces(userHome string) string {
-	return filepath.Join(userHome, "oppenheimer-ai", "workspaces")
+	return filepath.Join(userHome, "oppenheimer")
 }
 
 // syncedFolders are directories a desktop sync client owns. A git worktree an

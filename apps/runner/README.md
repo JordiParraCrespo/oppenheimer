@@ -32,10 +32,10 @@ the way this host proves who it is, and they go when the link lands.
 | ------- | ------------ |
 | `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
 | `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
-| `runner workspaces [--set DIR]` | where sessions' checkouts live and why; `--set` moves it for new sessions, refused while any session's worktree is still on disk under the old directory |
+| `runner workspaces [--set DIR]` | the work folder (where stores and sessions' checkouts live) and why; `--set` moves it for new sessions, refused while any session's folder is still on disk under the old one |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). Says when the control plane could not be told. Never touches the workspaces directory |
-| `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself |
+| `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
@@ -59,9 +59,26 @@ Exit codes are a public contract that scripts branch on: 0 ok, 1 failure,
   state/              update.json, sessions.json
   manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock
-~/oppenheimer-ai/workspaces/<owner>/<repo>/main             the fetch source, never edited
-~/oppenheimer-ai/workspaces/<owner>/<repo>/worktrees/<slug>  one per session
+  images/             files pasted into sessions, one directory per session
+
+~/oppenheimer/                                   the work folder (--workspaces, RUNNER_WORKSPACES)
+  layout.json                                    {"version": 2}
+  <account-id>/.oppenheimer/meta.json            {"kind":"account"}
+  <account-id>/<workspace-id>/
+    .oppenheimer/meta.json                       {"kind":"workspace","slug":…}
+    repos/<owner>--<repo>.git                    a bare store, found by GitHub id (oppenheimer.repo-id)
+    repos/.spares/<owner>--<repo>                the worktree the next create takes
+    sessions/<slug>/.oppenheimer/meta.json       {"kind":"session","id":…}
+    sessions/<slug>/<directory>                  the checkout the agent works in
 ```
+
+The layout is `product/versions/mvp/24-session-places.md` §2. Every level is
+named by an id that never changes, and only a folder whose marker names the
+session being closed is ever deleted. A session the CLI makes has no
+control-plane ids and uses `local` for both. A **folder session** runs in a
+directory that was already on the host — the person's, never written to,
+never deleted, its git on the person's own credentials — and closing it only
+ends its terminal.
 
 Sessions live in a tmux server on its own socket (`tmux -L oppenheimer`), so
 the runner never collides with the user's own tmux and the server outlives
