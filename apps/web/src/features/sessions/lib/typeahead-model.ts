@@ -148,7 +148,29 @@ function skipLeadingPrompt(
 ): number {
   let at = start;
   while (at + 2 <= cursor && isPromptMark(char(at)) && blank(at + 1)) at += 2;
-  return at;
+  return afterPromptEnd(at, cursor, char, blank);
+}
+
+/** The glyphs a shell or REPL prompt ends on: `$`, `#`, `%`, `>`, `❯`, `›`, `»`, `➜`, `λ`. */
+const isPromptEnd = (char: string) => '$#%>❯›»➜λ'.includes(char) && char !== '';
+
+/**
+ * Past the last prompt ending and its blank before the cursor. Bash's
+ * `user@host:~/dir$ ` has no gap before its `$`, so the prompt and the
+ * reader's text are one run, and a Backspace past the text was guessed into
+ * the path. Text the reader typed with such a pair in it (`ls > out`) only
+ * goes unpredicted before it, never drawn wrong.
+ */
+function afterPromptEnd(
+  start: number,
+  cursor: number,
+  char: (col: number) => string,
+  blank: (col: number) => boolean,
+): number {
+  for (let at = cursor - 2; at >= start; at -= 1) {
+    if (isPromptEnd(char(at)) && blank(at + 1)) return at + 2;
+  }
+  return start;
 }
 
 /** The line after `key`, or `null` when the key's effect cannot be known. */

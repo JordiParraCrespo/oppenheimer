@@ -181,6 +181,27 @@ describe('TypeaheadModel', () => {
     }
   });
 
+  it('never deletes a shell prompt that starts with its own text (`user@host:~/dir$ `)', () => {
+    // Bash's default prompt has no gap before its `$`, so the reader's text
+    // and the prompt read as one run; Backspace past the text ate the path.
+    for (const prompt of [
+      'doctor@optiplex-240:~/oppenheimer-ai/workspaces$ ',
+      '[me@box ~]# ',
+      'me@box ~ % ',
+    ]) {
+      const line = `${prompt}a`;
+      const { screen, host } = grid(line, line.length, 80);
+      const model = new TypeaheadModel(clock().now);
+      keys(model, screen, ['b']);
+      host(`${line}b`, line.length + 1);
+      model.reconcile(screen);
+      keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
+      const cells = model.view()?.cells ?? [];
+      expect(Math.min(...cells.map((cell) => cell.col))).toBe(prompt.length);
+      expect(cells.find((cell) => cell.cursor)?.col).toBe(prompt.length);
+    }
+  });
+
   it('leaves a list bullet the reader typed deletable (`- item` is text, not prompt)', () => {
     const { screen, host } = grid('\u2502 > - a', 7);
     const model = new TypeaheadModel(clock().now);
