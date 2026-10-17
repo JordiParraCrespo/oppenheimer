@@ -279,9 +279,17 @@ from the plan above, the build is the decision; the plan stays as written.
   `recorder` slot, where `VoiceRecorderBar` takes the foot row's place
   without changing the box's height.
 - **The mic shows only when someone can hear it**: `voice_dictation` on
-  (a release flag, default on, expiring 2027-04-30) and either the
+  (a release flag, default off like every new feature's, so a deployment
+  targets it through the flag admin API, `/v1/feature-flags/admin/voice_dictation`;
+  it expires 2027-04-30) and either the
   workspace's ChatGPT sign-in or the deployment's `voice_transcription`
   capability (`VOICE_STT_*`).
+- **The recorder is a `ScriptProcessorNode`, knowingly.** It is
+  deprecated, and Chrome only calls it when it reaches the context's
+  destination (it outputs silence there). It is in every browser today and
+  needs no separate module; an `AudioWorklet` needs its processor served as
+  a file of its own, which the CSP admits but slice 1 did not need. Slice 3
+  moves the recorder to the kit, and the worklet comes with that move.
 - **The vocabulary comes from the console**: the project, repository and
   host names New session has loaded, cut to the API's limits by the same
   `vocabularyTerms` the API reads them with.

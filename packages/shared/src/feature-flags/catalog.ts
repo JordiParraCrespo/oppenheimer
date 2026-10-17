@@ -121,7 +121,7 @@ export const FEATURE_FLAGS = {
     kind: 'release',
     owner: 'console',
     type: 'boolean',
-    defaultValue: true,
+    defaultValue: false,
     client: true,
     bucketBy: 'user',
     expiresAt: '2027-04-30',
