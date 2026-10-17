@@ -33,6 +33,17 @@ describe('encodeWav', () => {
     expect(view.getInt16(44, true)).toBe(Math.round(0.5 * 0x7fff - 0.5));
   });
 
+  it('stretches a microphone slower than the target rate, so the header never lies about speed', async () => {
+    const ramp = new Float32Array([0, 0.5, 1, 0.5]);
+    const view = await bytesOf(encodeWav([ramp], 8_000, 16_000));
+
+    expect(view.getUint32(24, true)).toBe(16_000);
+    expect(view.getUint32(40, true)).toBe(8 * 2);
+    // Every other sample is the one the microphone gave; the ones between are halfway.
+    expect(view.getInt16(44 + 2 * 2, true)).toBe(Math.trunc(0.5 * 0x7fff));
+    expect(view.getInt16(44 + 1 * 2, true)).toBe(Math.trunc(0.25 * 0x7fff));
+  });
+
   it('clips what is louder than full scale instead of wrapping it', async () => {
     const view = await bytesOf(encodeWav([new Float32Array([2, -2])], 16_000, 16_000));
     expect(view.getInt16(44, true)).toBe(0x7fff);
