@@ -76,11 +76,14 @@ export {
 } from './components/chat-cards';
 export type { ChatComposerLabels } from './components/chat-composer';
 export { ChatComposer } from './components/chat-composer';
+export type { DictationSlot } from './components/chat-composer-extras';
 export {
   ComposerContextMeter,
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from './components/chat-composer-extras';
 export type { ComposerTask } from './components/chat-composer-stack';

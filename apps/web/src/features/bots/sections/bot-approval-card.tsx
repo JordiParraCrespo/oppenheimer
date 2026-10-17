@@ -1,6 +1,10 @@
 import { Button, Card } from '@oppenheimer/design-system-web';
 import { Shield } from '@oppenheimer/design-system-web/icons';
-import { useBotPendingApproval, useDecideBotApproval } from '@oppenheimer/frontend-consumer/react';
+import {
+  useBotPendingApproval,
+  useDecideBotApproval,
+  useVoiceDictation,
+} from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +24,7 @@ export function BotApprovalCard({ botId, name }: { botId: string; name: string }
   // A card someone else settled (a second tab, a new message) is read again.
   const decide = useDecideBotApproval({ onError: () => void refetch() });
   const [denying, setDenying] = useState(false);
+  const voice = useVoiceDictation();
 
   if (!approval) return null;
   const answer = (decision: 'approve' | 'deny', note?: string) =>
@@ -48,6 +53,7 @@ export function BotApprovalCard({ botId, name }: { botId: string; name: string }
         {denying ? (
           <ApprovalNoteForm
             name={name}
+            voice={voice}
             isPending={decide.isPending}
             onSubmit={({ note }) => answer('deny', note)}
             onCancel={() => setDenying(false)}
