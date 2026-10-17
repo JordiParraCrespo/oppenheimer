@@ -14,7 +14,8 @@ export function useKeyedProvider(
   provider: BotProvider,
   onMove: (next: { provider: BotProvider; model: null }) => void,
 ): void {
-  const { data: target } = useModelProviders({
+  const { data: target, isFetchedAfterMount } = useModelProviders({
+    refetchOnMount: 'always',
     select: (rows) =>
       keyedProviderFor(
         rows.filter((row) => row.configured).map((row) => row.provider),
@@ -24,13 +25,14 @@ export function useKeyedProvider(
   const tried = useRef<string | null>(null);
   const move = useEffectEvent((to: BotProvider) => onMove({ provider: to, model: null }));
 
-  // Saves the bot on the server. Each move is asked once, so a refused save
-  // that snaps the bot back is said above the box, not retried in a loop.
+  // Saves the bot on the server, on keys read since the chat opened (a cached
+  // list may predate a key added or removed elsewhere). Each move is asked
+  // once, so a refused save that snaps the bot back is said above the box.
   useEffect(() => {
-    if (!target) return;
+    if (!target || !isFetchedAfterMount) return;
     const step = `${provider}>${target}`;
     if (tried.current === step) return;
     tried.current = step;
     move(target);
-  }, [provider, target]);
+  }, [provider, target, isFetchedAfterMount]);
 }
