@@ -78,6 +78,17 @@ describe('VoiceTranscriptionResolver', () => {
     ).resolves.toMatchObject({ provider: 'speech_key' });
   });
 
+  it('tries the next provider when asking whether one is available fails', async () => {
+    const broken = provider('chatgpt');
+    broken.availableFor.mockRejectedValue(new Error('connection terminated'));
+    const next = provider('speech_key');
+
+    await expect(resolverOver(broken, next).hear(ORG, CLIP, NOW)).resolves.toMatchObject({
+      provider: 'speech_key',
+    });
+    expect(broken.grantFor).not.toHaveBeenCalled();
+  });
+
   it("answers a rate limit at once, without spending the next provider's budget", async () => {
     const limited = provider('chatgpt');
     limited.transcribe.mockRejectedValue(new AppError(VoiceErrors.RATE_LIMITED));

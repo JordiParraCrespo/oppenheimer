@@ -29,15 +29,20 @@ export class VoiceTranscriptionResolver {
   constructor(private readonly registry: SpeechProviderRegistry) {}
 
   async hear(organizationId: string, clip: VoiceClip, now: Date): Promise<HeardClip> {
-    const providers = await this.registry.availableFor(organizationId);
     let first: unknown = null;
-    for (const provider of providers) {
+    let tried = false;
+    for (const provider of this.registry.all()) {
       try {
+        // Asked here, in order, so a provider whose lookup fails is that
+        // provider failing: the next one is still tried.
+        if (!(await provider.availableFor(organizationId))) continue;
+        tried = true;
         const grant = await provider.grantFor(organizationId, now);
         const raw = await provider.transcribe(clip, grant);
         return { raw, provider: provider.id, polishOn: grant.polishOn };
       } catch (error) {
         if (isRateLimit(error)) throw error;
+        tried = true;
         first ??= error;
         this.logger.warn({
           message: 'A speech provider could not transcribe; trying the next',
@@ -47,7 +52,7 @@ export class VoiceTranscriptionResolver {
         });
       }
     }
-    if (first !== null) throw first;
+    if (tried) throw first;
     throw new AppError(VoiceErrors.NOT_CONFIGURED);
   }
 }
