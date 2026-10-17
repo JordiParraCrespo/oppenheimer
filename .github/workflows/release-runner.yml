@@ -75,6 +75,22 @@ jobs:
             dist/runner/install.sh
             dist/runner/${{ steps.release.outputs.channel }}.json
 
+      # The gha-vm runners ship without the GitHub CLI, so this fetches a
+      # pinned release and checks it against a digest written here.
+      - name: Install the GitHub CLI
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_VERSION: 2.62.0
+          GH_SHA256: 41c8b0698ad3003cb5c44bde672a1ffd5f818595abd80162fbf8cc999418446a
+        run: |
+          dir="$RUNNER_TEMP/gh"
+          mkdir -p "$dir"
+          tgz="gh_${GH_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/$tgz" -o "$dir/$tgz"
+          echo "$GH_SHA256  $dir/$tgz" | sha256sum -c -
+          tar -xzf "$dir/$tgz" -C "$dir" --strip-components=1
+          echo "$dir/bin" >> "$GITHUB_PATH"
+
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/')
         env:

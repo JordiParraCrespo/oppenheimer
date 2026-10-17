@@ -60,4 +60,10 @@ export const HostErrors = {
     message: 'No file is waiting for that command',
     httpStatus: 404,
   },
+  /** Something only a connected runner can do was asked of a host with no live link. */
+  OFFLINE: {
+    code: 'HOSTS_008',
+    message: 'The host is not connected',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

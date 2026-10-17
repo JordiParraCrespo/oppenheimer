@@ -843,7 +843,6 @@
       "required": [
         "type",
         "commandId",
-        "version",
         "channel"
       ]
     },

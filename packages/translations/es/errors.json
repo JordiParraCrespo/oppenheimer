@@ -145,6 +145,7 @@
     "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
     "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
     "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+    "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
     "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
     "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
     "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",

@@ -1,4 +1,4 @@
-import { Module, type Provider } from '@nestjs/common';
+import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
@@ -12,6 +12,8 @@ import { UsersModule } from '../users/user.module';
 import { AutomationAccountErasure } from './application/automation-account-erasure.resolver';
 import { AutomationLimitsResolver } from './application/automation-limits.resolver';
 import { AutomationPlanFactory } from './application/automation-plan.factory';
+import type { AutomationRunTargetPort } from './application/automation-run-target.port';
+import { AutomationRunTargetRegistry } from './application/automation-run-target.registry';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
@@ -57,6 +59,7 @@ import { AutomationTriggerSubjectOrmEntity } from './database/automation-trigger
 import { AutomationRetentionProcessor } from './infrastructure/automation-retention.processor';
 import { AutomationRunsProcessor } from './infrastructure/automation-runs.processor';
 import { AutomationSchedulesProcessor } from './infrastructure/automation-schedules.processor';
+import { SessionRunTarget } from './infrastructure/session-run-target.adapter';
 import { FindAutomationHttpController } from './queries/find-automation/find-automation.http.controller';
 import { FindAutomationQueryHandler } from './queries/find-automation/find-automation.query-handler';
 import { FindAutomationRunHttpController } from './queries/find-automation-run/find-automation-run.http.controller';
@@ -160,6 +163,8 @@ const queryHandlers: Provider[] = [
     AutomationLimitsResolver,
     OwnerScopeResolver,
     RunDispatchResolver,
+    AutomationRunTargetRegistry,
+    ...runTargetProviders([SessionRunTarget]),
     ExternalEventReceivedDomainEventHandler,
     HostUnpairedPausesAutomationsDomainEventHandler,
     ProjectArchivedPausesAutomationsDomainEventHandler,
@@ -171,7 +176,38 @@ const queryHandlers: Provider[] = [
     { provide: AUTOMATION_RUN_REPOSITORY, useClass: AutomationRunRepository },
     { provide: AUTOMATION_SETTINGS_REPOSITORY, useClass: AutomationSettingsRepository },
   ],
-  // The run a session was started for, so the workspace feed can say that run moved.
-  exports: [AUTOMATION_RUN_REPOSITORY],
+  // The run a session was started for, so the workspace feed can say that run
+  // moved; the registry, for the targets other modules contribute.
+  exports: [AUTOMATION_RUN_REPOSITORY, AutomationRunTargetRegistry],
 })
-export class AutomationsModule {}
+export class AutomationsModule {
+  /**
+   * The providers a module adds to carry out runs of its own kind
+   * (`26-bot-routines.md` §3):
+   *
+   * ```ts
+   * providers: [...AutomationsModule.contributeRunTargets([BotRoutineTarget])]
+   * ```
+   *
+   * Constructed in the contributing module's injector, so the adapter injects
+   * that module's own ports, as `InboundEventsModule.contributeSources` does;
+   * the registry refuses a second adapter for a kind at boot.
+   */
+  static contributeRunTargets(targets: Type<AutomationRunTargetPort>[]): Provider[] {
+    return runTargetProviders(targets);
+  }
+}
+
+function runTargetProviders(targets: Type<AutomationRunTargetPort>[]): Provider[] {
+  return targets.flatMap((target) => [
+    target,
+    {
+      provide: Symbol.for(`AUTOMATION_RUN_TARGET:${target.name}`),
+      inject: [AutomationRunTargetRegistry, target],
+      useFactory: (registry: AutomationRunTargetRegistry, adapter: AutomationRunTargetPort) => {
+        registry.registerAll([adapter]);
+        return adapter;
+      },
+    },
+  ]);
+}

@@ -197,6 +197,7 @@ would confirm the id.
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
+| `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -222,6 +223,10 @@ on screen in the same write, so it never runs into the cap.
 settings and the control plane's own signing key there is nothing to hand a
 machine that wants to pair, so the host routes say so and the rest of the API is
 unaffected.
+
+`HOSTS_008` answers Update runner (`POST /v1/hosts/{id}/update`) for a host
+with no live link: the request goes down the link, so there is nothing to send
+it on. A runner that is offline checks for updates itself when it comes back.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
