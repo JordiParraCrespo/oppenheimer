@@ -59,13 +59,10 @@ export const BOT_MEMORY_FACTS_MAX = 200;
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
 
-/** What a bot created without a name is called, numbered when the workspace has one. */
-export const BOT_DEFAULT_NAME = 'New Bot';
-
 /**
  * A new bot's `SOUL.md`, the design's template with `{name}` replaced by the
- * bot's name. Its `INSTRUCTIONS.md` starts empty: the bot's first answer
- * proposes one (slice 3).
+ * bot's name. Its `INSTRUCTIONS.md` starts empty: in its first chat the bot
+ * asks for its job and writes them itself.
  */
 export const BOT_SOUL_TEMPLATE =
   '# Soul\n\nYou are {name}. You speak like a calm colleague: short sentences, numbers over adjectives, no exclamation marks.\n\nYou never pretend a step finished when it did not.\n';
@@ -212,8 +209,8 @@ const memoryFactContentSchema = z.string().trim().min(1).max(BOT_MEMORY_FACT_MAX
 const positionSchema = z.number().int().min(0).max(10_000);
 
 /**
- * `POST /bots`. Everything is optional: a blank bot is "New Bot" (numbered
- * when the workspace has one), on the next avatar colour, ungrouped, with no
+ * `POST /bots`. Everything is optional: a blank bot takes the next first
+ * name the workspace does not have ("Juno", "Milo"…), on the next avatar colour, ungrouped, with no
  * home host until one is chosen.
  */
 export const createBotSchema = z.object({

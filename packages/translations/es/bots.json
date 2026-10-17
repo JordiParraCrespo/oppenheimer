@@ -8,7 +8,7 @@
     "noMatch": "Ningún bot coincide con «{{query}}».",
     "ungrouped": "Sin grupo",
     "emptyTitle": "Aún no hay bots",
-    "emptyBody": "Los bots que crees aparecen aquí. Crea uno, dile qué trabajo tiene que hacer y ajústalo en su configuración.",
+    "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
     "emptyGroup": "Aún no hay bots en este grupo.",
     "noMessages": "Aún no hay mensajes",
     "newGroup": "Nuevo grupo",
@@ -28,8 +28,7 @@
   },
   "landing": {
     "titleEmpty": "Crea tu primer bot.",
-    "title": "Elige un bot o crea uno nuevo.",
-    "note": "Un bot nuevo empieza en blanco. Dile qué trabajo tiene que hacer y ajústalo en su configuración."
+    "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
   },
   "chat": {
     "toggleSidebar": "Mostrar u ocultar la barra lateral",

@@ -32,11 +32,27 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('- Staging is devbox.');
   });
 
-  it('asks for the job while INSTRUCTIONS.md is empty, and carries it once written', () => {
-    expect(composeBotSystemPrompt(base)).toContain('You have no instructions yet');
+  it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
+    expect(composeBotSystemPrompt(base)).toContain('# Getting started');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
-    expect(written).not.toContain('You have no instructions yet');
+    expect(written).not.toContain('# Getting started');
+  });
+
+  it('lists the setup steps of the tools its turn offers, and points at Settings without them', () => {
+    const equipped = composeBotSystemPrompt({
+      ...base,
+      tools: [
+        { name: 'get_self', description: 'Reads you.' },
+        { name: 'edit_instructions', description: 'Rewrites it.', setupStep: 'Write it down.' },
+        { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
+      ],
+    });
+    expect(equipped).toMatch(/3\. Write it down\.\n4\. Remember them\.\n5\. If no step above/);
+
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n3\. If no step above .*Settings → Instructions/,
+    );
   });
 
   it('closes the list of what it can do, and lists our tools by their first sentence', () => {

@@ -2212,7 +2212,7 @@ export const findBots = <ThrowOnError extends boolean = false>(options?: Options
 /**
  * Create a bot
  *
- * A blank bot: "New Bot" unless named, numbered when the workspace has the name, last in its group, with a soul that says its name and empty instructions.
+ * A blank bot: the next free first name ("Juno", "Milo"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.
  */
 export const createBot = <ThrowOnError extends boolean = false>(options: Options<CreateBotData, ThrowOnError>): RequestResult<CreateBotResponses, CreateBotErrors, ThrowOnError> => (options.client ?? client).post<CreateBotResponses, CreateBotErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

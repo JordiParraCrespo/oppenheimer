@@ -239,7 +239,7 @@ function settleFacts(
   );
 }
 
-/** A blank bot ("New Bot"), ungrouped. Open its chat with the answer. */
+/** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 export function useCreateBot(options?: UseMutationOptions<BotEntity, Error, void>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

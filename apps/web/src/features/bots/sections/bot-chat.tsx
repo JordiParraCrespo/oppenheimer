@@ -14,11 +14,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
-import { BotEngineChips } from '@/features/bots/components/bot-engine-chips';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
+import { BotEngine } from './bot-engine';
 import { BotTranscript } from './bot-transcript';
 
 /**
@@ -103,7 +103,7 @@ export function BotChat({ botId }: { botId: string }) {
               />
             }
             engine={
-              <BotEngineChips
+              <BotEngine
                 provider={bot.provider}
                 model={bot.model}
                 effort={bot.effort}

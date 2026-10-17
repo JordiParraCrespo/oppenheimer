@@ -2,13 +2,12 @@ import {
   RoutineItem,
   SidebarListHead,
   SidebarProjectHeader,
-  SidebarSearch,
   useNow,
 } from '@oppenheimer/design-system-web';
 import { GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import { useReviewSessions } from '@oppenheimer/frontend-consumer/react';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { ErrorAlert, formatAge } from '@oppenheimer/frontend-web';
+import { ErrorAlert, formatAge, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +18,7 @@ import { reviewGroups } from '../lib/review-session';
  * For review: the reader's review sessions not closed, grouped by repository,
  * each row the pull request it reviews and opening its Chat tab. They are
  * listed here and never under Sessions. The search filters in the browser:
- * the list arrives whole. One clock for every row's age. Nothing is drawn
+ * the list arrives whole, and the field hands it the settled word. One clock for every row's age. Nothing is drawn
  * until there is a review session, unless the list could not be read.
  */
 export function ReviewSessionsList() {
@@ -41,11 +40,9 @@ export function ReviewSessionsList() {
   return (
     <div className="flex flex-col pt-2">
       <SidebarListHead label={t('pullRequests.sidebar.forReview')} count={sessions.length} />
-      <SidebarSearch
-        value={query}
-        onValueChange={setQuery}
-        placeholder={t('pullRequests.sidebar.searchReviews')}
-        aria-label={t('pullRequests.sidebar.searchReviews')}
+      <SidebarSearchField
+        onChange={setQuery}
+        label={t('pullRequests.sidebar.searchReviews')}
         clearLabel={t('pullRequests.sidebar.clearSearch')}
       />
       {groups.map((group) => {

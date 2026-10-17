@@ -32,7 +32,7 @@ export function ChangeEmailDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-105">
+      <DialogContent closeLabel={t('common.close')}>
         {change.isSuccess ? (
           <>
             <DialogHeader>

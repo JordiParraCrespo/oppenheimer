@@ -296,7 +296,7 @@ export class BotsRepository {
     return toBot(data);
   }
 
-  /** A blank bot: "New Bot" (numbered when the workspace has one), ungrouped. */
+  /** A blank bot: the next free first name ("Juno", "Milo"…), ungrouped. */
   @MapApiError(BotsErrors.SAVE_FAILED)
   async create(): Promise<BotEntity> {
     const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);

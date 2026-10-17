@@ -45,7 +45,11 @@ export class BotToolboxFactory {
    * session (every tool), or a token's scopes (only the tools they cover).
    */
   catalog(granted: readonly Scope[] | null): BotPromptTool[] {
-    return this.definitions(granted).map(({ name, description }) => ({ name, description }));
+    return this.definitions(granted).map(({ name, description, setupStep }) => ({
+      name,
+      description,
+      setupStep,
+    }));
   }
 
   /** The same tools, bound to one turn. */
