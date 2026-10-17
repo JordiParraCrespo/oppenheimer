@@ -32,10 +32,14 @@ const keys = (model: TypeaheadModel, screen: TypeaheadScreen, data: string[]) =>
 };
 
 /** What the overlay would show on the row, laid over the host's line. */
-function shown(model: TypeaheadModel, hostLine: string): { text: string; cursor: number } | null {
+function shown(
+  model: TypeaheadModel,
+  hostLine: string,
+  cols = 40,
+): { text: string; cursor: number } | null {
   const view = model.view();
   if (!view) return null;
-  const cells = hostLine.padEnd(40, ' ').split('');
+  const cells = hostLine.padEnd(cols, ' ').split('');
   let cursor = -1;
   for (const cell of view.cells) {
     cells[cell.col] = cell.char;
@@ -196,10 +200,23 @@ describe('TypeaheadModel', () => {
       host(`${line}b`, line.length + 1);
       model.reconcile(screen);
       keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
-      const cells = model.view()?.cells ?? [];
-      expect(Math.min(...cells.map((cell) => cell.col))).toBe(prompt.length);
-      expect(cells.find((cell) => cell.cursor)?.col).toBe(prompt.length);
+      expect(shown(model, `${line}b`, 80)).toEqual({
+        text: prompt.trimEnd(),
+        cursor: prompt.length,
+      });
     }
+  });
+
+  it('stops a Backspace guess at a prompt end the reader typed (`ls > out`), never past it', () => {
+    const { screen, host } = grid('$ ls > ou', 9);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['t']);
+    host('$ ls > out', 10);
+    model.reconcile(screen);
+    // Three take back `out`; the fourth is left to the host rather than
+    // guessed through `> `, which may as well be a prompt.
+    keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
+    expect(shown(model, '$ ls > out')).toEqual({ text: '$ ls >', cursor: 7 });
   });
 
   it('leaves a list bullet the reader typed deletable (`- item` is text, not prompt)', () => {

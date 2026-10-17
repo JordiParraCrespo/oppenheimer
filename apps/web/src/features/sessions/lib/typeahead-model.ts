@@ -129,18 +129,31 @@ const isPromptMark = (char: string) =>
   !'-*+\u2022'.includes(char);
 
 /**
+ * The glyphs a shell or REPL prompt ends on, the only ones looked for in the
+ * middle of a run: `$`, `#`, `%`, `>`, `❯`, `›`, `»`, `➜`, `λ`.
+ */
+const PROMPT_ENDS = ['$', '#', '%', '>', '\u276f', '\u203a', '\u00bb', '\u279c', '\u03bb'];
+
+/**
  * Where the reader's text starts on a row whose run of text begins at
- * `start`: past each prompt mark and the blank after it (`❯ `, `> `, `$ `, a
- * box's `│ `), which are the program's. A Backspace guessed into them deleted
- * the prompt until the host refused and the line sprang back.
+ * `start`. A Backspace guessed into a prompt deleted it until the host
+ * refused and the line sprang back, so the text starts after whichever of
+ * these is further right:
+ *
+ * - **Leading marks**: each prompt mark and the blank after it at the start
+ *   of the run (`❯ `, `> `, `$ `, a box's `│ `).
+ * - **The last prompt end** (`PROMPT_ENDS`) and its blank before the cursor.
+ *   Bash's `user@host:~/dir$ ` has no gap before its `$`, so it and the
+ *   reader's text are one run.
+ *
+ * Both err the same way: text the reader typed that holds such a pair
+ * (`- item`, `ls > out`) only goes unpredicted before it, never drawn wrong.
  *
  * Read off the row rather than fixed where an epoch's first key landed: Up
  * recalls a line and starts an epoch with the cursor at its end, and a floor
- * there would leave every deletion of the recalled text unpredicted. Text
- * the reader typed that starts with a mark and a blank (`- item`) only goes
- * unpredicted at its start, never drawn wrong.
+ * there would leave every deletion of the recalled text unpredicted.
  */
-function skipLeadingPrompt(
+function textStart(
   start: number,
   cursor: number,
   char: (col: number) => string,
@@ -148,29 +161,10 @@ function skipLeadingPrompt(
 ): number {
   let at = start;
   while (at + 2 <= cursor && isPromptMark(char(at)) && blank(at + 1)) at += 2;
-  return afterPromptEnd(at, cursor, char, blank);
-}
-
-/** The glyphs a shell or REPL prompt ends on: `$`, `#`, `%`, `>`, `❯`, `›`, `»`, `➜`, `λ`. */
-const isPromptEnd = (char: string) => '$#%>❯›»➜λ'.includes(char) && char !== '';
-
-/**
- * Past the last prompt ending and its blank before the cursor. Bash's
- * `user@host:~/dir$ ` has no gap before its `$`, so the prompt and the
- * reader's text are one run, and a Backspace past the text was guessed into
- * the path. Text the reader typed with such a pair in it (`ls > out`) only
- * goes unpredicted before it, never drawn wrong.
- */
-function afterPromptEnd(
-  start: number,
-  cursor: number,
-  char: (col: number) => string,
-  blank: (col: number) => boolean,
-): number {
-  for (let at = cursor - 2; at >= start; at -= 1) {
-    if (isPromptEnd(char(at)) && blank(at + 1)) return at + 2;
+  for (let end = cursor - 2; end >= at; end -= 1) {
+    if (PROMPT_ENDS.includes(char(end)) && blank(end + 1)) return end + 2;
   }
-  return start;
+  return at;
 }
 
 /** The line after `key`, or `null` when the key's effect cannot be known. */
@@ -233,7 +227,7 @@ function regionAt(screen: TypeaheadScreen, row: number, col: number): Region | n
   const blank = (x: number) => x < 0 || x >= screen.cols || isBlank(screen.cell(row, x).char);
   let runStart = col;
   while (runStart > 0 && !(blank(runStart - 1) && blank(runStart - 2))) runStart -= 1;
-  const start = skipLeadingPrompt(runStart, col, (x) => screen.cell(row, x).char, blank);
+  const start = textStart(runStart, col, (x) => screen.cell(row, x).char, blank);
   let textEnd = col;
   while (textEnd < screen.cols && !(blank(textEnd) && blank(textEnd + 1))) textEnd += 1;
   let end = textEnd;
