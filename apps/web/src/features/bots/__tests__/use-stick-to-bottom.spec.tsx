@@ -1,12 +1,14 @@
 import { act, cleanup, render } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStickToBottom } from '../hooks/use-stick-to-bottom';
 
 /**
  * The chat follows the answer to what you just sent, even when you had
- * scrolled up to read. The regression this guards: once the conversation
- * fills the API's window, sending evicts the oldest message, so the number
- * of your messages on screen stays the same and a count saw no send.
+ * scrolled up to read: the message glides up and the chat lands on it. The
+ * regressions this guards: once the conversation fills the API's window,
+ * sending evicts the oldest message, so the number of your messages on
+ * screen stays the same and a count saw no send; and a reader who takes
+ * hold of the scroll mid-glide is not pulled back down.
  */
 
 let grow: (() => void) | undefined;
@@ -23,12 +25,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   grow = undefined;
 });
 
 function Harness({ sent }: { sent: string[] }) {
-  const { scroller, content } = useStickToBottom();
+  const { scroller, content, spacer } = useStickToBottom();
   return (
     <div ref={scroller} data-testid="scroller">
       <div ref={content}>
@@ -36,6 +39,7 @@ function Harness({ sent }: { sent: string[] }) {
           <div key={id} data-slot="chat-user-message" data-message-id={id} />
         ))}
       </div>
+      <div ref={spacer} />
     </div>
   );
 }
@@ -63,6 +67,7 @@ function scrollUp(box: HTMLElement) {
 
 describe('useStickToBottom', () => {
   it('pins to the message you sent when the window is full and the count stays the same', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
     const view = render(<Harness sent={['m1', 'm2', 'm3']} />);
     const box = view.getByTestId('scroller');
     measure(box);
@@ -75,6 +80,21 @@ describe('useStickToBottom', () => {
     // You send: the oldest falls out of the window, the newest is yours.
     view.rerender(<Harness sent={['m2', 'm3', 'm4']} />);
     act(() => grow?.());
+    act(() => vi.advanceTimersByTime(400));
     expect(box.scrollTop).toBe(1000);
+  });
+
+  it('leaves the reader where they took hold of the scroll mid-glide', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+    const view = render(<Harness sent={['m1']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+
+    view.rerender(<Harness sent={['m1', 'm2']} />);
+    act(() => grow?.());
+    box.dispatchEvent(new Event('wheel'));
+    scrollUp(box);
+    act(() => vi.advanceTimersByTime(400));
+    expect(box.scrollTop).toBe(100);
   });
 });
