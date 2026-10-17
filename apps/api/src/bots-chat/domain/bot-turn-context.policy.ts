@@ -83,5 +83,7 @@ export function formatNow(now: Date, timeZone: string): string {
   }).formatToParts(now);
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((candidate) => candidate.type === type)?.value ?? '';
-  return `${part('weekday')}, ${part('day')} ${part('month')} ${part('year')}, ${part('hour')}:${part('minute')} (${timeZone}, ${part('timeZoneName')})`;
+  // ICU spells a zero offset "GMT" or "GMT+00:00" depending on its version.
+  const offset = part('timeZoneName') === 'GMT' ? 'GMT+00:00' : part('timeZoneName');
+  return `${part('weekday')}, ${part('day')} ${part('month')} ${part('year')}, ${part('hour')}:${part('minute')} (${timeZone}, ${offset})`;
 }

@@ -30,9 +30,11 @@ describe('composeTurnContext', () => {
     expect(composeTurnContext({ ...base, timeZone: 'Europe/Madrid' })).toContain(
       'It is Thursday, 15 October 2026, 11:00 (Europe/Madrid, GMT+02:00)',
     );
-    expect(composeTurnContext(base)).toContain('It is Thursday, 15 October 2026, 09:00 (UTC, GMT)');
+    expect(composeTurnContext(base)).toContain(
+      'It is Thursday, 15 October 2026, 09:00 (UTC, GMT+00:00)',
+    );
     expect(composeTurnContext({ ...base, timeZone: 'Mars/Olympus' })).toContain(
-      'It is Thursday, 15 October 2026, 09:00 (UTC, GMT)',
+      'It is Thursday, 15 October 2026, 09:00 (UTC, GMT+00:00)',
     );
   });
 
