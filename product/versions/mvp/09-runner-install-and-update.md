@@ -317,8 +317,10 @@ putting the user's credentials on it.
   Hosts (`POST /v1/hosts/{id}/update`), off while the host is offline
   (`HOSTS_008`). It sends no `version`, so the runner takes the newest
   release on its channel now, skipping the safe window, and is left
-  unpinned; a pinned host stays on its pin. The answer is "sent", not
-  "done": the row's runner version moves when the runner reconnects. A
+  unpinned; a pinned host refuses (`UPD_004`) and stays on its pin. The
+  answer is "sent", not "done": the row's runner version moves when the
+  runner reconnects, and does not when it was already current or the
+  update failed. A
   downgrade is allowed to a retained version at or above
   `min_supported`, with a warning.
 - **A managed install defers.** If the running binary is not under

@@ -16,9 +16,11 @@ menu on Settings → Hosts (09 §5, "Manual control").
   the host's link through a new `HostUpdatePort` the links module binds,
   and answers `202`. A host with no live link is `HOSTS_008` (409).
 - `@oppenheimer/shared`: `host.update`'s `version` is optional. Absent, the
-  runner installs the newest release on its channel and stays unpinned;
-  present, it pins, as before.
-- `@oppenheimer/runner`: the generated `HostUpdate` omits an empty `version`.
+  runner installs the newest release on its channel and stays unpinned (a
+  pinned host refuses); present, it pins, as before.
+- `@oppenheimer/runner`: the generated `HostUpdate` omits an empty `version`,
+  and a versionless `host.update` respects a pin (`ApplyOptions.KeepPin`):
+  it skips the safe window, but a pinned host refuses with `UPD_004`.
 - `@oppenheimer/api-client`: `updateHostRunner`.
 - `@oppenheimer/frontend-consumer`: `HostsRepository.updateRunner` and
   `useUpdateHostRunner`.

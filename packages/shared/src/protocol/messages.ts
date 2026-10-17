@@ -589,8 +589,9 @@ export type FsListingMessage = z.infer<typeof fsListingSchema>;
  * signed by an offline key and not trusted because the control plane said so.
  *
  * `version` pins the host to that release; absent, the runner installs the
- * newest its channel offers now, skipping the safe window, and stays unpinned.
- * The console's Update runner sends it absent.
+ * newest its channel offers now, skipping the safe window, and stays unpinned,
+ * and a host already pinned refuses rather than leave its pin. The console's
+ * Update runner sends it absent.
  */
 export const hostUpdateSchema = z.object({
   type: z.literal('host.update'),

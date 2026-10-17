@@ -15,7 +15,7 @@
   "projectDeleted": "Se ha eliminado «{{name}}».",
   "hostRenamed": "Renombrado a «{{name}}».",
   "hostRemoved": "Se ha quitado «{{name}}».",
-  "hostUpdateRequested": "Actualizando el runner de «{{name}}». Se volverá a conectar con la nueva versión en un minuto o así.",
+  "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",
   "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
   "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
   "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
