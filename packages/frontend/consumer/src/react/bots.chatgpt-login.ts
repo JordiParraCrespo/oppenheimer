@@ -7,7 +7,7 @@ import {
   type ChatgptLoginState,
   isChatgptLoginExpired,
 } from '../modules/bots/bot.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys, invalidateModelProviders } from './bots.queries';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
 
@@ -55,7 +55,7 @@ export function useChatgptLogin({ enabled = true }: { enabled?: boolean } = {}):
           try {
             const state = await app.bots.pollChatgptLogin(login.flowId);
             if (state === 'connected') {
-              await queryClient.invalidateQueries({ queryKey: botsKeys.providers() });
+              await invalidateModelProviders(queryClient);
             }
             return state;
           } catch (error) {

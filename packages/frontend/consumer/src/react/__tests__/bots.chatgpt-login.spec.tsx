@@ -7,6 +7,7 @@ import { TOKENS } from '../../di/tokens';
 import { ChatgptLoginEntity } from '../../modules/bots/bot.entity';
 import { useChatgptLogin } from '../bots.chatgpt-login';
 import { botsKeys } from '../bots.queries';
+import { voiceKeys } from '../voice.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -51,7 +52,7 @@ describe('useChatgptLogin', () => {
     expect(repository.startChatgptLogin).not.toHaveBeenCalled();
   });
 
-  it('shows one code, and re-reads the providers once the person approves it', async () => {
+  it('shows one code, and re-reads the providers and dictation once the person approves it', async () => {
     const { wrapper, repository, invalidate } = setup(async () => 'connected');
     const { result } = renderHook(() => useChatgptLogin(), { wrapper });
 
@@ -60,6 +61,7 @@ describe('useChatgptLogin', () => {
     expect(repository.startChatgptLogin).toHaveBeenCalledTimes(1);
     expect(repository.pollChatgptLogin).toHaveBeenCalledWith('flow-1');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: botsKeys.providers() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: voiceKeys.all });
   });
 
   it('reads a lapsed code as expired, not as an error, and restarts with a new one', async () => {
