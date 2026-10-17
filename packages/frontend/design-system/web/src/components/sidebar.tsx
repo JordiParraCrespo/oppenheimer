@@ -508,7 +508,7 @@ function SidebarProjectHeader({
       data-current={current || undefined}
       data-tone={tone}
       className={cn(
-        'group/project relative flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-2.5 transition-colors duration-fast hover:bg-hover-surface',
+        'group/project relative mb-0.5 flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-2.5 transition-colors duration-fast hover:bg-hover-surface',
         sortable && 'touch-none',
         className,
       )}
