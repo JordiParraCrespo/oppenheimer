@@ -82,3 +82,6 @@ where these land is the first open question below.
   The console records WAV itself, the route asks `sessions:write`, and the
   recorder stays in the sessions feature until a second surface needs it
   (`voice.md`, "Slice 1 as built").
+- 2026-10-17: voice's providers are one `SpeechProvider` interface and an
+  ordered list; the console reads `GET /v1/voice/status` instead of
+  deciding availability itself (`voice.md`).

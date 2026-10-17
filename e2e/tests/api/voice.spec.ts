@@ -31,6 +31,15 @@ function wav(): Buffer {
 }
 
 test.describe('Voice', () => {
+  test('says the workspace can dictate, on the deployment speech server', async () => {
+    const owner = await provisionedUser('voice-status');
+
+    const response = await owner.api.get('/api/v1/voice/status');
+
+    expect(response.status(), await response.text()).toBe(200);
+    expect(await response.json()).toEqual({ available: true, providers: ['speech_key'] });
+  });
+
   test('transcribes a WAV on the deployment speech server and tidies it', async () => {
     const owner = await provisionedUser('voice');
 

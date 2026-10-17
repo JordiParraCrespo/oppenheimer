@@ -1,8 +1,31 @@
 'use client';
 
-import { type UseMutationOptions, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@oppenheimer/frontend-core/react';
+import type { VoiceStatusDto } from '@oppenheimer/shared/schemas/voice';
+import { type UseMutationOptions, type UseQueryOptions, useMutation } from '@tanstack/react-query';
 import type { VoiceTranscription } from '../modules/voice';
 import { useConsumerApp } from './context';
+
+const voiceKeys = {
+  all: ['voice'] as const,
+  status: () => [...voiceKeys.all, 'status'] as const,
+};
+
+/**
+ * Whether the workspace can dictate (`GET /voice/status`). A sign-in made in
+ * Settings changes the answer, so it is not cached for long; a reader that
+ * needs only the yes or no narrows it with `select`.
+ */
+export function useVoiceStatus<TData = VoiceStatusDto>(
+  options?: Omit<UseQueryOptions<VoiceStatusDto, Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+  return useQuery<VoiceStatusDto, Error, TData>({
+    queryKey: voiceKeys.status(),
+    queryFn: () => app.voice.status(),
+    ...options,
+  });
+}
 
 export interface TranscribeVoiceVariables {
   /** The recording, as the WAV the kit's `useDictation` hands over. */

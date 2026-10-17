@@ -42,7 +42,7 @@ export class TranscribeVoiceCommandHandler
       new Date(),
     );
     const polished = heard.raw
-      ? await this.polish.polish(heard.raw, vocabularyTerms(command.vocabulary), heard.chatgpt)
+      ? await this.polish.polish(heard.raw, vocabularyTerms(command.vocabulary), heard.polishOn)
       : null;
     return VoiceTranscriptionMapper.toResponse(heard, polished);
   }

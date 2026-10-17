@@ -297,6 +297,31 @@ to ChatGPT, so whether the route answers a server that names itself is
 still slice 0's question, and the first real dictation on a signed-in
 workspace answers it.
 
+## Speech providers behind one interface (2026-10-17)
+
+The first build hard-coded "ChatGPT sign-in, then the deployment's key" in
+`VoiceTranscriptionResolver`, and the console decided whether to show the
+mic from a capability and the providers list. Both now ask one list:
+
+- **`SpeechProvider`** (`apps/api/src/voice/application/speech-provider.port.ts`):
+  an `id`, a cheap `availableFor(organizationId)`, a `grantFor` that hands
+  over the provider's credential and the model the polish may run on, and
+  `transcribe`.
+- **`SpeechProviderRegistry`**, built in `voice.module.ts`, is the ordered
+  list. The resolver hears a clip on the first available provider, tries the
+  next when it fails for any reason but a rate limit, and answers the first
+  failure when all fail; `VOICE_005` when none is available.
+- **`GET /v1/voice/status`** answers which providers can hear the
+  workspace, and the console shows the mic when one can. The
+  `voice_transcription` capability stays in the startup log and leaves the
+  client list.
+- **The polish runs on the provider's model credential** when it brings
+  one (any bot provider, through the bot engine), on `LLM_*` otherwise.
+
+Adding a provider is a class implementing `SpeechProvider` (with a gateway
+of its own behind an `UpstreamLimiter`), its id in `VOICE_PROVIDERS`, and its
+place in the registry's list.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake

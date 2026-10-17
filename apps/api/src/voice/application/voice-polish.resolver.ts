@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { LlmService } from '@oppenheimer/backend-llm';
 import { botDefaultModel } from '@oppenheimer/shared';
-import type { TurnCredential } from '../../bots/application/turn-credentials.port';
+
 import {
   cleanPolished,
   needsPolish,
@@ -14,14 +14,17 @@ import {
   voicePolishMessage,
 } from '../domain/voice-polish.policy';
 import { VOICE_POLISH_ENGINE } from '../voice.di-tokens';
+import type { PolishModel } from './speech-provider.port';
 
 /**
  * Tidies a transcript into writing (`product/next-steps/voice.md`, step 2).
  *
- * **Polish first, the words as heard if it is not quick.** On a ChatGPT
- * sign-in the polish runs on the same sign-in (ChatGPT's Codex backend, the
- * way a bot's conversation summary does); without one, on the deployment's
- * LLM (`LLM_*`) if it has one. It gets `VOICE_POLISH_TIMEOUT_MS`; on no model,
+ * **Polish first, the words as heard if it is not quick.** When the
+ * provider that heard the clip brings a model credential (a ChatGPT sign-in
+ * does), the polish runs on it, through the bot engine the way a bot's
+ * conversation summary does; otherwise on the deployment's LLM (`LLM_*`) if
+ * it has one. `VOICE_POLISH_MODEL` names the model on a provider's
+ * credential; unset, it is that provider's default. It gets `VOICE_POLISH_TIMEOUT_MS`; on no model,
  * a timeout, a refusal or an answer that is not a tidied transcript, the
  * answer is null and the person gets the raw transcript. Nothing here
  * throws: a polish is not worth failing a dictation.
@@ -39,13 +42,13 @@ export class VoicePolishResolver {
   async polish(
     raw: string,
     vocabulary: readonly string[],
-    chatgpt: TurnCredential | null,
+    model: PolishModel | null,
   ): Promise<string | null> {
     if (!needsPolish(raw)) return null;
     const message = voicePolishMessage(raw, vocabulary);
     try {
-      const answer = chatgpt
-        ? await this.onChatgpt(chatgpt, message)
+      const answer = model
+        ? await this.onProviderModel(model, message)
         : await this.onDeploymentLlm(message);
       return answer === null ? null : cleanPolished(answer, raw);
     } catch (error) {
@@ -56,14 +59,17 @@ export class VoicePolishResolver {
     }
   }
 
-  private async onChatgpt(access: TurnCredential, message: string): Promise<string> {
-    const model = this.chatgptModel;
+  private async onProviderModel(
+    { provider, credential }: PolishModel,
+    message: string,
+  ): Promise<string> {
+    const model = this.polishModel ?? botDefaultModel(provider).id;
     const scratchDir = await mkdtemp(join(tmpdir(), 'voice-polish-'));
     try {
       return await this.engine.complete({
-        provider: 'chatgpt',
-        apiKey: access.apiKey,
-        accountId: access.accountId,
+        provider,
+        apiKey: credential.apiKey,
+        accountId: credential.accountId,
         model,
         // Tidying is not reasoning; a model that takes no effort setting ignores it.
         effort: 'low',
@@ -89,8 +95,8 @@ export class VoicePolishResolver {
     return completion.text;
   }
 
-  private get chatgptModel(): string {
-    return this.config.get<string>('voice.polishModel') ?? botDefaultModel('chatgpt').id;
+  private get polishModel(): string | undefined {
+    return this.config.get<string>('voice.polishModel');
   }
 
   private get timeoutMs(): number {

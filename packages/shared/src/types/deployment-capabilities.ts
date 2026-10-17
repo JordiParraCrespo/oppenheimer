@@ -23,8 +23,8 @@
  * Calendar: the Google client and the key its refresh tokens are sealed under.
  *
  * `voice_transcription` says whether the deployment has a speech-to-text key
- * of its own (`VOICE_STT_*`). A workspace signed in to ChatGPT dictates
- * without one; this is the fallback every other workspace dictates on.
+ * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
+ * dictate is `GET /voice/status`, which asks every speech provider.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -76,9 +76,6 @@ export const CLIENT_CAPABILITIES = [
   // to answer. Without it the console says so instead of offering a form
   // whose save would fail.
   'bot_providers',
-  // Whether the deployment can transcribe without a ChatGPT sign-in, so the
-  // composer's mic shows for a workspace that has none.
-  'voice_transcription',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

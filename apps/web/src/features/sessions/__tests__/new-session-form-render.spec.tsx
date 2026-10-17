@@ -131,7 +131,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     submittedAt: 0,
   }),
   useTranscribeVoice: () => ({ mutateAsync: vi.fn(), isPending: false, error: null }),
-  useModelProviders: () => ({ data: false, isPending: false }),
+  useVoiceStatus: () => ({ data: false, isPending: false }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({

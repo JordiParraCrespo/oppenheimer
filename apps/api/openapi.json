@@ -17269,6 +17269,52 @@
         "tags": ["Voice"]
       }
     },
+    "/api/v1/voice/status": {
+      "get": {
+        "description": "The speech providers available to the workspace, in the order a dictation tries them. Empty: nobody can hear a recording, and the console shows no mic.",
+        "operationId": "findVoiceStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Whether the workspace can dictate",
+        "tags": ["Voice"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -26095,6 +26141,24 @@
         },
         "required": ["text", "raw", "provider", "polished"]
       },
+      "VoiceStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "description": "At least one provider can hear a recording."
+          },
+          "providers": {
+            "type": "array",
+            "description": "The providers available, in the order a dictation tries them.",
+            "items": {
+              "type": "string",
+              "enum": ["chatgpt", "speech_key"]
+            }
+          }
+        },
+        "required": ["available", "providers"]
+      },
       "LivenessResponseDto": {
         "type": "object",
         "properties": {
@@ -26133,10 +26197,6 @@
             "type": "boolean",
             "description": "A workspace can store model provider keys, which bots run on."
           },
-          "voice_transcription": {
-            "type": "boolean",
-            "description": "The deployment has its own speech-to-text server, so a workspace not signed in to ChatGPT can dictate."
-          },
           "github_app_install_url": {
             "type": "string",
             "nullable": true,
@@ -26151,7 +26211,6 @@
           "google_calendar",
           "hosts",
           "bot_providers",
-          "voice_transcription",
           "github_app_install_url"
         ]
       },

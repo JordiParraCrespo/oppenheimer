@@ -239,6 +239,7 @@ export type {
   UserResponseDto,
   UserSessionResponseDto,
   UserSettingsResponseDto,
+  VoiceStatusResponseDto,
   VoiceTranscriptionResponseDto,
   WatchedRepositoryDto,
   WorkspaceMemberResponseDto,

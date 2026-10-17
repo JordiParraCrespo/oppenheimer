@@ -61,7 +61,11 @@ export function vocabularyTerms(raw: string | readonly string[] | undefined): st
   return [...terms];
 }
 
-/** Who heard the clip: the workspace's ChatGPT sign-in, or the deployment's own key. */
+/**
+ * Who can hear a clip: the workspace's ChatGPT sign-in, or the deployment's
+ * own key. A new speech provider adds its id here and nowhere else in this
+ * package (`SpeechProvider` in `apps/api/src/voice/application/`).
+ */
 export const VOICE_PROVIDERS = ['chatgpt', 'speech_key'] as const;
 export type VoiceProvider = (typeof VOICE_PROVIDERS)[number];
 
@@ -74,4 +78,10 @@ export interface VoiceTranscriptionDto {
   provider: VoiceProvider;
   /** Whether `text` is the polish's, or the raw transcript because no polish was quick enough. */
   polished: boolean;
+}
+
+/** `GET /voice/status`: the providers that can hear this workspace, in the order a dictation tries them. */
+export interface VoiceStatusDto {
+  available: boolean;
+  providers: VoiceProvider[];
 }
