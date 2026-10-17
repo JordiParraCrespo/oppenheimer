@@ -23,7 +23,7 @@ export class SpeechKeyResolver implements SpeechProvider<null> {
     return { access: null, polishOn: null };
   }
 
-  transcribe(clip: VoiceClip): Promise<string> {
+  transcribe(clip: VoiceClip, _grant: SpeechGrant<null>): Promise<string> {
     return this.gateway.transcribe(clip);
   }
 }
