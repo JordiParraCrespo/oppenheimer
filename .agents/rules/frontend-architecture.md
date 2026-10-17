@@ -300,7 +300,9 @@ name the jobs and split *those*.
   nothing. A route whose screen has something for that bar declares
   `staticData.bar: 'own'` and its screen draws it: the kit's `PageBar` with
   its slots filled (a bot's chat), or a toolbar of its own led by
-  `SidebarToggle` (a pull request). An empty `PageBar` is never the answer.
+  `SidebarToggle` (a pull request), in every state it draws, its failure
+  included. An empty `PageBar` on a route the shell draws for is never the
+  answer.
 - **`full` is only a box that is the pane** and must not scroll outside
   itself: the session terminal. A state of it that is not a route (a session
   still being prepared) renders the kit's `PageFrame`, the one caller outside
