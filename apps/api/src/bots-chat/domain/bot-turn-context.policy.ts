@@ -79,11 +79,39 @@ export function formatNow(now: Date, timeZone: string): string {
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
-    timeZoneName: 'longOffset',
   }).formatToParts(now);
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((candidate) => candidate.type === type)?.value ?? '';
-  // ICU spells a zero offset "GMT" or "GMT+00:00" depending on its version.
-  const offset = part('timeZoneName') === 'GMT' ? 'GMT+00:00' : part('timeZoneName');
-  return `${part('weekday')}, ${part('day')} ${part('month')} ${part('year')}, ${part('hour')}:${part('minute')} (${timeZone}, ${offset})`;
+  return `${part('weekday')}, ${part('day')} ${part('month')} ${part('year')}, ${part('hour')}:${part('minute')} (${timeZone}, ${offsetLabel(now, timeZone)})`;
+}
+
+/**
+ * The zone's offset at `now` as "GMT±HH:MM", computed rather than read from
+ * ICU's `longOffset`, which spells a zero offset "GMT" or "GMT+00:00"
+ * depending on its version.
+ */
+function offsetLabel(now: Date, timeZone: string): string {
+  const wall = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const field = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(wall.find((candidate) => candidate.type === type)?.value);
+  const wallAsUtc = Date.UTC(
+    field('year'),
+    field('month') - 1,
+    field('day'),
+    field('hour'),
+    field('minute'),
+  );
+  const minutes = Math.round((wallAsUtc - Math.floor(now.getTime() / 60_000) * 60_000) / 60_000);
+  const sign = minutes < 0 ? '-' : '+';
+  const hh = String(Math.floor(Math.abs(minutes) / 60)).padStart(2, '0');
+  const mm = String(Math.abs(minutes) % 60).padStart(2, '0');
+  return `GMT${sign}${hh}:${mm}`;
 }
