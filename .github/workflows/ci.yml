@@ -129,5 +129,13 @@ jobs:
           tags: |
             ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.app }}:latest
             ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.app }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # The layer cache lives in GHCR, as Deploy dev's does: the Actions
+          # cache downloads at 2-5 MB/s on the gha-vm runners, GHCR at
+          # 17-50 MB/s. This reads Deploy dev's cache of the same image too
+          # (same Dockerfile and platform) and writes its own, on main only.
+          # `mode=max` keeps the build stages' layers; the cache is stored as
+          # a plain OCI image manifest, the form GHCR accepts.
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.app }}:buildcache-ci
+            type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.app }}:buildcache-dev
+          cache-to: ${{ github.ref == 'refs/heads/main' && format('type=registry,ref=ghcr.io/{0}/oppenheimer-{1}:buildcache-ci,mode=max,image-manifest=true,oci-mediatypes=true', env.REPO_LC, matrix.app) || '' }}
