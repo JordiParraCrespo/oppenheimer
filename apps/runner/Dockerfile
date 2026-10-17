@@ -4,7 +4,9 @@ WORKDIR /src
 ARG VERSION=dev
 # The runner depends on the shared modules in packages/go through relative
 # replace directives, so the workspace layout is reproduced inside the image.
-COPY go.work ./
+# go.work stays out: it lists every Go module in the repo (e2e/netsim among
+# them), which the image does not carry, and the replaces are enough.
+ENV GOWORK=off
 COPY packages/go/ ./packages/go/
 COPY apps/runner/go.mod apps/runner/go.sum ./apps/runner/
 RUN --mount=type=cache,target=/go/pkg/mod cd apps/runner && go mod download
