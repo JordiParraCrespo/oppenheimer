@@ -15,8 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
 
 /**
- * The bar over a pull request, its one header: the sidebar toggle every
- * console page opens with, back to the queue and its three views, GitHub,
+ * The bar over a pull request, its one header and the page's bar (the
+ * route's `bar: 'own'`): the sidebar toggle, back to the queue and its three views, GitHub,
  * and Submit review. The views stay the same on every view; Changes adds
  * the diff's layout beside them. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.

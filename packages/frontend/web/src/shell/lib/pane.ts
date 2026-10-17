@@ -35,6 +35,13 @@ declare module '@tanstack/react-router' {
      * its views are search params.
      */
     pane?: PaneDeclaration;
+    /**
+     * `own`: the screen draws the bar above its page itself, with something
+     * in its slots (a bot's chat, through `PageBar`) or as a toolbar of its
+     * own led by `SidebarToggle` (a pull request's). Absent, the shell draws
+     * the bar every console page opens with: the sidebar toggle alone.
+     */
+    bar?: 'own';
   }
 }
 
@@ -42,6 +49,11 @@ declare module '@tanstack/react-router' {
  * The innermost match that declares a pane wins, so a layout route can set one
  * for its whole subtree and a single screen can still override it.
  */
+/** Whether a route in the chain draws its own bar, so the shell draws none. */
+export function screenOwnsBar(matches: readonly { staticData: { bar?: 'own' } }[]): boolean {
+  return matches.some((match) => match.staticData.bar === 'own');
+}
+
 export function resolveContentPane(
   matches: readonly { staticData: { pane?: PaneDeclaration }; search?: unknown }[],
 ): ContentPane {

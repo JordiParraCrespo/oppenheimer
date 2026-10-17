@@ -1,4 +1,3 @@
-import { PageBar } from '@oppenheimer/frontend-web';
 import { createFileRoute } from '@tanstack/react-router';
 import { SessionScreen } from '@/features/sessions/screens/session';
 import { SessionTaskLink } from '@/features/tasks/sections/session-task-link';
@@ -20,16 +19,11 @@ function SessionRoute() {
   // different socket and a different scrollback, not the same component with
   // new props. Without it xterm would keep the previous session's grid.
   // The task chip is the tasks feature's: the route composes the two.
-  // The bar is the route's, not the screen's: a pull request's Chat view
-  // shows the same screen under a toolbar of its own.
   return (
-    <>
-      <PageBar />
-      <SessionScreen
-        key={sessionId}
-        sessionId={sessionId}
-        statusItem={<SessionTaskLink sessionId={sessionId} />}
-      />
-    </>
+    <SessionScreen
+      key={sessionId}
+      sessionId={sessionId}
+      statusItem={<SessionTaskLink sessionId={sessionId} />}
+    />
   );
 }
