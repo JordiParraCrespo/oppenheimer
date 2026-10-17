@@ -33,6 +33,11 @@ const KNOB = 30;
  * shift the composer's foot row and the popover with it. It catches up when
  * the drag ends or the popover closes. The button is as wide as its longest
  * stop, so the label changing never moves it.
+ *
+ * A caller that saves the pick somewhere remote passes `onValueCommit`
+ * instead of (or beside) `onValueChange`: the picker then keeps the pick as
+ * its own while it is open and hands it over once, when it closes, if it
+ * differs from `value`. A drag across five stops is one save, not five.
  */
 function EffortSlider<V extends string>({
   stops,
@@ -158,6 +163,7 @@ function EffortPicker<V extends string>({
   stops,
   value,
   onValueChange,
+  onValueCommit,
   label = 'Effort',
   fasterLabel = 'Faster',
   smarterLabel = 'Smarter',
@@ -167,7 +173,9 @@ function EffortPicker<V extends string>({
 }: {
   stops: readonly EffortStop<V>[];
   value: V;
-  onValueChange: (value: V) => void;
+  onValueChange?: (value: V) => void;
+  /** The pick, once, when the popover closes; only when it changed. */
+  onValueCommit?: (value: V) => void;
   label?: string;
   fasterLabel?: string;
   smarterLabel?: string;
@@ -178,13 +186,24 @@ function EffortPicker<V extends string>({
   const [open, setOpen] = React.useState(false);
   // The value a drag started from, shown by the button until it ends.
   const [held, setHeld] = React.useState<V | null>(null);
+  // The pick not yet committed, for a caller that commits on close.
+  const [draft, setDraft] = React.useState<V | null>(null);
   const hintId = React.useId();
-  const current = stops.find((stop) => stop.value === value) ?? stops[0];
-  const shown = stops.find((stop) => stop.value === (held ?? value)) ?? stops[0];
+  const picked = draft ?? value;
+  const current = stops.find((stop) => stop.value === picked) ?? stops[0];
+  const shown = stops.find((stop) => stop.value === (held ?? picked)) ?? stops[0];
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (!next) setHeld(null);
+    if (next) return;
+    setHeld(null);
+    setDraft(null);
+    if (draft !== null && draft !== value) onValueCommit?.(draft);
+  }
+
+  function onPick(next: V) {
+    if (onValueCommit) setDraft(next);
+    onValueChange?.(next);
   }
 
   return (
@@ -215,7 +234,7 @@ function EffortPicker<V extends string>({
       >
         <div className="flex items-center gap-2 text-[13px]">
           <span className="text-fg-muted">{label}</span>
-          <span key={value} className="motion-safe:animate-effort-in text-fg">
+          <span key={picked} className="motion-safe:animate-effort-in text-fg">
             {current?.label}
           </span>
           <span className="flex-1" />
@@ -234,9 +253,9 @@ function EffortPicker<V extends string>({
           </div>
           <EffortSlider
             stops={stops}
-            value={value}
-            onValueChange={onValueChange}
-            onDraggingChange={(dragging) => setHeld(dragging ? value : null)}
+            value={picked}
+            onValueChange={onPick}
+            onDraggingChange={(dragging) => setHeld(dragging ? picked : null)}
             aria-label={label}
             aria-describedby={hintId}
           />

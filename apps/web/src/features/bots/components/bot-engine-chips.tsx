@@ -15,6 +15,8 @@ import {
  * workspace has set up (`configured`) and of the bot's own, grouped by
  * provider (a pick sets both), and, when the model has a notion of it, how
  * hard it thinks. Each pick is the bot's from then on; the caller saves it.
+ * The effort is handed over once, when its popover closes, so sliding
+ * across the stops is one save rather than one per stop.
  */
 export function BotEngineChips({
   provider,
@@ -54,7 +56,7 @@ export function BotEngineChips({
       {levels ? (
         <EffortPicker
           value={levels.value}
-          onValueChange={onEffortChange}
+          onValueCommit={onEffortChange}
           disabled={disabled}
           label={t('sessions.new.effort.label')}
           fasterLabel={t('sessions.new.effort.faster')}
