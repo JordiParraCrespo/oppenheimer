@@ -47,6 +47,8 @@ import { PutModelProviderCredentialCommandHandler } from './commands/put-model-p
 import { PutModelProviderCredentialHttpController } from './commands/put-model-provider-credential/put-model-provider-credential.http.controller';
 import { RevertBotDocumentCommandHandler } from './commands/revert-bot-document/revert-bot-document.command-handler';
 import { RevertBotDocumentHttpController } from './commands/revert-bot-document/revert-bot-document.http.controller';
+import { SetDefaultModelProviderCommandHandler } from './commands/set-default-model-provider/set-default-model-provider.command-handler';
+import { SetDefaultModelProviderHttpController } from './commands/set-default-model-provider/set-default-model-provider.http.controller';
 import { StartChatgptLoginCommandHandler } from './commands/start-chatgpt-login/start-chatgpt-login.command-handler';
 import { StartChatgptLoginHttpController } from './commands/start-chatgpt-login/start-chatgpt-login.http.controller';
 import { UpdateBotCommandHandler } from './commands/update-bot/update-bot.command-handler';
@@ -111,6 +113,7 @@ const httpControllers = [
   FindModelProviderCredentialsHttpController,
   PutModelProviderCredentialHttpController,
   DeleteModelProviderCredentialHttpController,
+  SetDefaultModelProviderHttpController,
   StartChatgptLoginHttpController,
   PollChatgptLoginHttpController,
 ];
@@ -130,6 +133,7 @@ const commandHandlers: Provider[] = [
   ClearBotMemoryCommandHandler,
   PutModelProviderCredentialCommandHandler,
   DeleteModelProviderCredentialCommandHandler,
+  SetDefaultModelProviderCommandHandler,
   StartChatgptLoginCommandHandler,
   PollChatgptLoginCommandHandler,
 ];

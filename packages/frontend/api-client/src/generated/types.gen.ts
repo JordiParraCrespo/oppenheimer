@@ -3106,6 +3106,10 @@ export type ModelProviderCredentialResponseDto = {
      */
     keyHint: string | null;
     updatedAt: string | null;
+    /**
+     * Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is.
+     */
+    isDefault: boolean;
 };
 
 export type PutModelProviderCredentialRequest = {
@@ -11334,6 +11338,46 @@ export type PutModelProviderCredentialResponses = {
 };
 
 export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
+
+export type SetDefaultModelProviderData = {
+    body?: never;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}/default';
+};
+
+export type SetDefaultModelProviderErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_023 — That model provider has no key
+     */
+    409: ProblemDetailsDto;
+};
+
+export type SetDefaultModelProviderError = SetDefaultModelProviderErrors[keyof SetDefaultModelProviderErrors];
+
+export type SetDefaultModelProviderResponses = {
+    204: void;
+};
+
+export type SetDefaultModelProviderResponse = SetDefaultModelProviderResponses[keyof SetDefaultModelProviderResponses];
 
 export type StartChatgptLoginData = {
     body?: never;

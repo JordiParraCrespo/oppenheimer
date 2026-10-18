@@ -16,6 +16,11 @@ export interface ModelProviderCredentialProps {
   keyHint: string;
   /** Who stored it last; null once that account is gone. */
   updatedByUserId: string | null;
+  /**
+   * The workspace marked this key's provider as the one new bots start on. Not
+   * the resolved default: with none marked, `defaultBotProvider` falls back.
+   */
+  markedDefault: boolean;
 }
 
 /** How many of a key's last characters the console may show. */
@@ -45,7 +50,10 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
     keyHint: string;
     updatedByUserId: string;
   }): ModelProviderCredentialEntity {
-    const credential = new ModelProviderCredentialEntity({ id: randomUUID(), props: { ...props } });
+    const credential = new ModelProviderCredentialEntity({
+      id: randomUUID(),
+      props: { ...props, markedDefault: false },
+    });
     credential.validate();
     return credential;
   }
@@ -68,6 +76,10 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
 
   get updatedByUserId(): string | null {
     return this.props.updatedByUserId;
+  }
+
+  get markedDefault(): boolean {
+    return this.props.markedDefault;
   }
 
   public validate(): void {

@@ -16497,6 +16497,84 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/model-providers/{provider}/default": {
+      "put": {
+        "description": "Only a provider the workspace has a key for. Bots already made keep their provider; a bot created naming none starts on this one, at its default model.",
+        "operationId": "setDefaultModelProvider",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_023 — That model provider has no key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a model provider the one new bots start on",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/model-providers/chatgpt/login": {
       "post": {
         "description": "ChatGPT's device code flow, as the Codex CLI runs it: the person types `userCode` on `verificationUrl` and the console polls with `flowId` until the sign-in is stored. Bots on the `chatgpt` provider then run on that ChatGPT subscription.",
@@ -25968,9 +26046,13 @@
             "type": "string",
             "nullable": true,
             "format": "date-time"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is."
           }
         },
-        "required": ["provider", "configured", "keyHint", "updatedAt"]
+        "required": ["provider", "configured", "keyHint", "updatedAt", "isDefault"]
       },
       "PutModelProviderCredentialRequest": {
         "type": "object",
