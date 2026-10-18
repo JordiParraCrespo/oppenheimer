@@ -96,6 +96,17 @@ failure every `curl | sh` has unless it is written this way.
      stops the install **before the token is spent**, so the same command
      works once the tool is there. `claude` missing is a hint, not a
      failure (02 §10).
+   - **which agent CLIs to install** (`--agents`, decided 2026-10-12): the
+     ones of `claude`, `codex`, `opencode`, `grok` and `gh` this machine
+     lacks are listed, and the answer defaults to the missing ones of
+     Claude Code and gh, so Enter leaves a host that can run a Claude Code
+     session and open a pull request. Unlike git and tmux these need no
+     sudo — each is a release checked against its vendor's checksum, or
+     an npm package, into the user's home, run by the runner (02 §10) —
+     which is why they are offered by default rather than behind a typed
+     yes. With no terminal only `--agents` installs
+     anything, and the agent prompt Add host hands out asks the person
+     which ones and passes them.
 5. **Fetch the signed release manifest** for the host's channel and, where
    OpenSSL 3 is available, **check its Ed25519 signature** against the
    release keys `scripts/runner/release.sh` stamps into the copy of the
@@ -122,7 +133,11 @@ failure every `curl | sh` has unless it is written this way.
    only a `.app` would.
 8. **Register** (§3) with `--keep-existing`, the token in the runner's
    environment, and **install the service** (§4).
-9. **Confirm**: print `runner status` — the host id, the key fingerprint,
+9. **Install the chosen agent CLIs** with `runner agents install` and
+   `runner tools install gh`, after the service, so a failed one costs
+   that agent and not the pairing: the installer prints the retry line and
+   carries on.
+10. **Confirm**: print `runner status` — the host id, the key fingerprint,
    the version, the preflight table, and where sessions will live. The
    same table is what the console shows on the host's row.
 
@@ -394,8 +409,9 @@ putting the user's credentials on it.
    When an updater fails (`HOST_009` from `runner agents update`, a
    warning in the service log), the CLI is almost always installed where
    the runner's account cannot write: `npm install -g` as root, or a
-   system package. Reinstall it as the account the runner runs as (Claude
-   Code's own installer puts it in `~/.local/bin`), or keep it current by
+   system package. Reinstall it as the account the runner runs as
+   (`runner agents install claude` puts Claude Code in `~/.local/bin`, from
+   its verified release binary), or keep it current by
    other means and set `RUNNER_AGENT_UPDATES=off` before `runner install`,
    which the service unit then carries.
 5. Update telemetry: is "version, channel, last outcome" per host enough

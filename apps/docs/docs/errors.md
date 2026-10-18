@@ -844,6 +844,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
+| `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
@@ -902,6 +904,13 @@ tightened by the runner itself.
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
 open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
+
+`HOST_010` is `runner agents install` or `runner tools install` asked for
+something it does not install: a name in neither catalog, a platform with no
+installer, or `git`/`tmux`, which need root. For those two the detail is the
+exact package-manager command to run. `HOST_011` is an install that ran and
+failed, or finished without the tool appearing on `PATH`; the detail is the
+installer's last line.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

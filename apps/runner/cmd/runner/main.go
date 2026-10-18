@@ -9,7 +9,8 @@
 //	runner sessions     list, create, attach to and close sessions on this host
 //	runner workspaces   where sessions' checkouts live, or move it
 //	runner update       check, apply, pin or roll back a version
-//	runner agents       keep the agent CLIs (claude, codex, …) current
+//	runner agents       install the agent CLIs (claude, codex, …) and keep them current
+//	runner tools        the host tools (git, tmux, gh): what is there, install gh
 //	runner credential-helper  git's credential helper, over the local socket
 //	runner selfcheck    what a staged binary must pass before it is activated
 //	runner serve        the control-plane-facing HTTP service (containers)
@@ -34,6 +35,7 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/cli"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/config"
+	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/server"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/logging"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -87,6 +89,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return update(ctx, args)
 	case "agents":
 		return agents(ctx, args)
+	case "tools":
+		return tools(ctx, args)
 	case "credential-helper":
 		// git calls this with the operation as its one argument.
 		operation := ""
@@ -252,16 +256,42 @@ func update(ctx context.Context, args []string) (int, error) {
 	})
 }
 
-// agents dispatches the agent-CLI subcommands. `update` is the only one: the
-// round `run` does hourly, now, on this host.
+// agents dispatches the agent-CLI subcommands: `update`, the round `run`
+// does hourly, now, on this host; and `install <name>`, the catalog's
+// installer, user-level.
 func agents(ctx context.Context, args []string) (int, error) {
-	if len(args) != 1 || args[0] != "update" {
-		usage(os.Stderr)
-		return cli.ExitUsage, errors.New("usage: runner agents update")
+	switch {
+	case len(args) == 1 && args[0] == "update":
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.AgentsUpdate(ctx, os.Stdout)
+		})
+	case len(args) == 2 && args[0] == "install":
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.InstallTool(ctx, os.Stdout, hostdomain.InstallAgent, args[1])
+		})
 	}
-	return withApp(ctx, func(ctx context.Context, app *cli.App) error {
-		return app.AgentsUpdate(ctx, os.Stdout)
-	})
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner agents update | runner agents install <" +
+		strings.Join(hostdomain.Installable(hostdomain.InstallAgent), "|") + ">")
+}
+
+// tools dispatches the host-tool subcommands: `ls` (the default) prints what
+// is there and how to get what is not; `install <name>` installs one the
+// runner can (gh), and names the package manager's command for one it cannot.
+func tools(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && (args[0] == "ls" || args[0] == "list")):
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.Tools(ctx, os.Stdout)
+		})
+	case len(args) == 2 && args[0] == "install":
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.InstallTool(ctx, os.Stdout, hostdomain.InstallTool, args[1])
+		})
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner tools [ls] | runner tools install <" +
+		strings.Join(hostdomain.Installable(hostdomain.InstallTool), "|") + ">")
 }
 
 // sessions dispatches the session subcommands. They are what a person uses on
@@ -417,6 +447,11 @@ func usage(w *os.File) {
   runner update [--check|--force|--pin V|--unpin|--rollback]
   runner agents update            bring every installed agent CLI to its latest release
                                   (run does it on its own unless RUNNER_AGENT_UPDATES=off)
+  runner agents install <name>    install an agent CLI (claude, codex, opencode, grok) as you,
+                                  from a checksum-verified release or npm; no sudo
+  runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
+  runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
+                                  manager's command is printed, the runner never uses sudo)
   runner credential-helper get    git's credential protocol, answered over the socket
   runner selfcheck                what a staged binary must pass to be activated
   runner serve                    the HTTP service on a TCP port (containers)

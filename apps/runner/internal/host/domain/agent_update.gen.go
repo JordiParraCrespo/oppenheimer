@@ -7,7 +7,8 @@ package domain
 // executable it runs on: the argv, appended to that executable, that updates
 // the CLI in place without asking. An agent whose updater asks has no row.
 var agentUpdates = map[string][]string{
-	"claude": {"update"},
-	"codex":  {"update"},
-	"grok":   {"update"},
+	"claude":   {"update"},
+	"codex":    {"update"},
+	"opencode": {"upgrade", "--method", "<method>"},
+	"grok":     {"update"},
 }
