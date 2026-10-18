@@ -21,7 +21,7 @@ export function BotChatScroller({ children }: { children: ReactNode }) {
   return (
     <ChatScroll value={{ scroller, room, hold }}>
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 pb-10">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-4 pt-6 pb-10 sm:px-8">
           <div ref={content}>{children}</div>
           <div ref={room} aria-hidden />
         </div>

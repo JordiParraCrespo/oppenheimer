@@ -18,11 +18,15 @@ import { cn } from '../lib/utils';
  * `EditorPageBody` takes the measure as `size`, one per width in the design
  * export's frames:
  *
- * - `status` (420px) and `composer` (720px) are a column centred in the pane
+ * - `status` (420px) and `composer` (760px) are a column centred in the pane
  *   both ways: a session being prepared, New session's composer.
- * - `narrow` (760px), a form, a single card or an article; `wide` (920px), a
- *   page that holds a table or a briefing; `board` (1240px), Plan's columns.
- *   These open at the top.
+ * - `narrow` (760px), a form, a single card or an article; `wide` (1040px), a
+ *   page that holds a table or a briefing, the session terminal's width;
+ *   `board` (1240px), Plan's columns. These open 24px under the page bar.
+ *
+ * Four widths and one gutter (32px, 16px on a phone) are the whole system: a
+ * composer, a bot's chat and Settings take the 760px of `narrow`, so a page
+ * never invents a width of its own.
  * - `fluid`, no measure and no gutter, for a page that is the pane edge to
  *   edge (a diff): the body fills the frame, so the page never scrolls and
  *   the screen owns its scrolling columns.
@@ -63,12 +67,12 @@ type EditorPageSize = 'status' | 'composer' | 'narrow' | 'wide' | 'board' | 'flu
 const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
   // `.op-provision__inner`, centred in the pane.
   status: 'my-auto max-w-105 py-8',
-  // `.op-newsession`, centred in the pane.
-  composer: 'my-auto max-w-180 py-12',
-  // `op-rpage__body` opens 24px down; `op-rp__inner`, 28px.
+  // `.op-newsession`, centred in the pane, at the reading measure.
+  composer: 'my-auto max-w-190 py-12',
+  // Every page that opens at the top opens 24px under the page bar.
   narrow: 'max-w-190 pt-6 pb-18',
-  wide: 'max-w-230 pt-7 pb-18',
-  board: 'max-w-310 pt-7 pb-18',
+  wide: 'max-w-260 pt-6 pb-18',
+  board: 'max-w-310 pt-6 pb-18',
   fluid: 'min-h-0 flex-1 gap-0 px-0 sm:px-0',
 };
 

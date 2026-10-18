@@ -30,7 +30,7 @@ export function BotSettingsScreen({ botId, children }: { botId: string; children
       <div className="flex min-h-0 flex-1">
         <BotSettingsNav botId={botId} />
         <SettingsMain>
-          <SettingsContent>{children}</SettingsContent>
+          <SettingsContent className="pt-6">{children}</SettingsContent>
         </SettingsMain>
       </div>
     </div>
