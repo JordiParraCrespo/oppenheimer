@@ -14,12 +14,20 @@ import { cn } from '../lib/utils';
  * current row is lit (the sidebar's active surface) and medium weight. It is
  * the version-1 glass rail at 264px: the sidebar surface at 72% over the
  * page, blurred (`design/version1/ds-base.js`, `.op-sidebar`).
+ *
+ * Under 768px there is no room for a column beside the page, so the nav is a
+ * strip across the top that scrolls sideways: the same rows in one line, the
+ * group labels dropped, the hairline under it instead of beside it.
  */
 function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
     <nav
       data-slot="settings-nav"
-      className={cn('flex w-[264px] shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar/72 px-3 pt-[18px] text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]', className)}
+      className={cn(
+        'no-scrollbar flex w-full shrink-0 items-center gap-1 overflow-x-auto border-b border-sidebar-border bg-sidebar/72 px-3 py-2 text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]',
+        'md:w-[264px] md:flex-col md:items-stretch md:overflow-visible md:border-r md:border-b-0 md:pt-[18px] md:pb-0',
+        className,
+      )}
       {...props}
     />
   );
@@ -27,8 +35,12 @@ function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
 
 function SettingsNavGroup({ label, className, children, ...props }: React.ComponentProps<'div'> & { label: React.ReactNode }) {
   return (
-    <div data-slot="settings-nav-group" className={cn('mt-1 flex flex-col gap-0.5 [&+&]:mt-3.5', className)} {...props}>
-      <span className="eyebrow px-2.5 py-1.5 leading-(--leading-body)">{label}</span>
+    <div
+      data-slot="settings-nav-group"
+      className={cn('flex shrink-0 items-center gap-0.5 md:mt-1 md:flex-col md:items-stretch md:[&+&]:mt-3.5', className)}
+      {...props}
+    >
+      <span className="eyebrow hidden px-2.5 py-1.5 leading-(--leading-body) md:block">{label}</span>
       {children}
     </div>
   );
@@ -54,7 +66,7 @@ function SettingsNavItem({
       {
         type: 'button',
         className: cn(
-          'flex h-8 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
+          'flex h-8 w-auto shrink-0 items-center gap-2.5 rounded-sm px-2.5 md:w-full md:shrink text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
           className,
         ),
         children: (
@@ -82,7 +94,7 @@ function SettingsNavBack({ className, children, ...props }: React.ComponentProps
     <SettingsNavItem
       data-slot="settings-nav-back"
       icon={<ChevronLeftIcon />}
-      className={cn('mb-1 text-fg-muted', className)}
+      className={cn('text-fg-muted md:mb-1', className)}
       {...props}
     >
       {children}

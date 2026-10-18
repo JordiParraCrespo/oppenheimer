@@ -96,12 +96,15 @@ function EditorPageBody({
   );
 }
 
-/** A page's first row: the view tabs on the left, its one action pushed right. */
+/**
+ * A page's first row: the view tabs on the left, its one action pushed right.
+ * On a narrow page the tabs keep their line and the action wraps under them.
+ */
 function EditorPageTop({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="editor-page-top"
-      className={cn('mb-1 flex items-center gap-3 [&>:last-child:not(:first-child)]:ml-auto', className)}
+      className={cn('mb-1 flex flex-wrap items-center gap-3 *:shrink-0 [&>:last-child:not(:first-child)]:ml-auto', className)}
       {...props}
     />
   );

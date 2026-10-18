@@ -200,7 +200,10 @@ function Composer({
             {dictation.recorder}
           </div>
         ) : (
-        <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
+        // The row wraps on a narrow box: the engine and send keep together
+        // and take the next line on the right, so the box never outgrows
+        // the screen.
+        <div data-slot="composer-foot" className="flex flex-wrap items-center gap-1.5 px-2.5 pb-2.5">
           {onAttach ? (
             <IconButton
               aria-label={label.attach}
@@ -213,7 +216,7 @@ function Composer({
             </IconButton>
           ) : null}
           {tools}
-          <span className="flex-1" />
+          <span className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
           {engine}
           {dictation?.mic}
           <ComposerSendButton
@@ -231,6 +234,7 @@ function Composer({
               <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
             )}
           </ComposerSendButton>
+          </span>
         </div>
         )}
       </div>

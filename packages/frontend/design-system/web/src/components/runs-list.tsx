@@ -37,7 +37,10 @@ function RunsListFilters({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-const GRID = 'grid grid-cols-[minmax(0,1fr)_minmax(0,220px)_124px] items-center gap-4 px-3';
+// Under 640px the routine column goes: the run and its time are what a row
+// is read for.
+const GRID =
+  'grid grid-cols-[minmax(0,1fr)_124px] items-center gap-4 px-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,220px)_124px]';
 
 function RunsListHead({
   columns = ['Run', 'Routine', 'Time'],
@@ -52,7 +55,7 @@ function RunsListHead({
       {...props}
     >
       {columns.map((column, i) => (
-        <span key={`${i}-${String(column)}`} role="columnheader">
+        <span key={`${i}-${String(column)}`} role="columnheader" className={i === 1 ? 'hidden sm:block' : undefined}>
           {column}
         </span>
       ))}
@@ -104,7 +107,7 @@ function RunRow({
         </span>
         <span className="truncate">{title}</span>
       </span>
-      <span role="cell" className="flex min-w-0 items-center gap-[7px] text-[13px] text-fg-muted">
+      <span role="cell" className="hidden min-w-0 items-center gap-[7px] text-[13px] text-fg-muted sm:flex">
         <ZapIcon className="size-3.5 shrink-0" aria-hidden />
         <span className="truncate">{routine}</span>
       </span>

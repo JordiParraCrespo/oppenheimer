@@ -27,10 +27,10 @@ export function BotSettingsScreen({ botId, children }: { botId: string; children
           <BotSettingsTopBar botId={botId} />
         </QueryState.Data>
       </QueryState>
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <BotSettingsNav botId={botId} />
         <SettingsMain>
-          <SettingsContent className="pt-6">{children}</SettingsContent>
+          <SettingsContent className="md:pt-6">{children}</SettingsContent>
         </SettingsMain>
       </div>
     </div>

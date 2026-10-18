@@ -8,7 +8,8 @@ const groupClass = 'flex flex-col overflow-hidden rounded-lg border border-borde
 /**
  * SettingsGroup — one card per group of settings, one row per setting:
  * the label and a one-line hint on the left, the control on the right,
- * hairlines between. `SettingsSaveRow` appears at the foot only when
+ * hairlines between; on a box too narrow for both, the control goes under
+ * the label. `SettingsSaveRow` appears at the foot only when
  * something changed (Discard, Save changes), and reads "Saved" for a
  * moment after. A `tone="danger"` group holds the one destructive setting
  * (Delete account) with its red button.
@@ -45,10 +46,10 @@ function SettingsRow({
   return (
     <div
       data-slot="settings-row"
-      className={cn('flex items-center gap-4 border-t border-border-subtle px-5 py-4 first:border-t-0', className)}
+      className={cn('flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-border-subtle px-5 py-4 first:border-t-0', className)}
       {...props}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className="flex min-w-0 flex-[1_1_12rem] flex-col gap-0.5">
         <span className="text-operate font-medium text-fg">{label}</span>
         {hint ? <span className="text-[13px] text-fg-muted">{hint}</span> : null}
       </div>
@@ -56,7 +57,7 @@ function SettingsRow({
         <div
           data-slot="settings-row-control"
           className={cn(
-            'flex shrink-0 items-center gap-2 text-sm text-fg-muted',
+            'flex min-w-0 max-w-full shrink-0 items-center gap-2 text-sm text-fg-muted',
             control === 'field' && 'w-70 max-w-full *:min-w-0 *:flex-1',
           )}
         >

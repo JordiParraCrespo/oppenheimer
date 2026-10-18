@@ -109,9 +109,10 @@ function ChatComposer({
             {dictation.recorder}
           </div>
         ) : (
-          <div data-slot="chat-composer-foot" className="flex items-center gap-1 px-3 pb-3">
+          // Wraps on a narrow box, the engine and send together on the right.
+          <div data-slot="chat-composer-foot" className="flex flex-wrap items-center gap-1 px-3 pb-3">
             {tools}
-            <span className="flex-1" />
+            <span className="ml-auto flex flex-wrap items-center justify-end">
             {engine}
             {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
             <ComposerSendButton
@@ -132,6 +133,7 @@ function ChatComposer({
                 <ArrowUpIcon className="size-4" strokeWidth={2.2} />
               )}
             </ComposerSendButton>
+            </span>
           </div>
         )}
       </div>

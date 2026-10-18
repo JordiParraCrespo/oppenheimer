@@ -15,7 +15,9 @@ import { cn } from '../lib/utils';
  * the frames' 34px title, no glyph, and its facts under it in a
  * `PageHeaderMeta` with `indent={false}`, each a `PageHeaderStat`. Handed to
  * the row as `meta`, the facts sit under the title in one column and the
- * actions align with their line, as the frames draw it.
+ * actions align with their line, as the frames draw it. On a page too narrow
+ * for the title and the actions, the actions wrap under the title rather than
+ * cutting it short.
  */
 function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   return (
@@ -81,7 +83,7 @@ function PageHeaderRow({
     typeof title === 'string' ? (
       <h1
         className={cn(
-          'm-0 min-w-0 flex-1 truncate font-semibold text-fg',
+          'm-0 min-w-48 max-w-full flex-1 truncate font-semibold text-fg',
           size === 'display'
             ? 'text-[34px] leading-[1.1] tracking-[-0.022em]'
             : size === 'lg'
@@ -100,7 +102,7 @@ function PageHeaderRow({
       data-size={size}
       className={cn(
         'flex min-w-0 gap-3',
-        meta ? 'flex-wrap items-end gap-x-5' : 'items-center',
+        meta ? 'flex-wrap items-end gap-x-5' : 'flex-wrap items-center',
         size === 'lg' && 'gap-3.5',
         className,
       )}
