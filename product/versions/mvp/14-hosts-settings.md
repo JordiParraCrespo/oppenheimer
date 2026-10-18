@@ -77,7 +77,10 @@ already on the wire for it.
 - **Remove can also clean the machine up** (decided 2026-10-18, asked for
   by the owner while testing: "stop everything and start again"). The
   dialog has a box, "Also delete everything on this machine", which sends
-  `DELETE /hosts/{id}?wipe=true`. The event carries `wipe`; the relay
+  `POST /hosts/{id}/wipe` instead of the `DELETE`: a route of its own
+  because it closes sessions, so it needs `sessions:write` (and delete on
+  Session) as well as `hosts:write`, and a token holding only the latter
+  cannot delete work. The event carries `wipe`; the relay
   closes the link with the same terminal `4410` and the reason
   `host-unpaired-wipe` (`RUNNER_LINK_CLOSE_REASONS.WIPE`), and the runner
   then force-closes every session it holds instead of stopping it: tmux

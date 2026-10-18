@@ -172,6 +172,7 @@
   "POST /v1/github/webhook": "session-only",
   "POST /v1/hosts/pairing": ["hosts:write"],
   "POST /v1/hosts/:id/update": ["hosts:write"],
+  "POST /v1/hosts/:id/wipe": ["hosts:write", "sessions:write"],
   "POST /v1/hosts/register": "session-only",
   "POST /v1/installations": ["repositories:write"],
   "POST /v1/installations/install-state": ["repositories:write"],

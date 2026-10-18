@@ -6146,12 +6146,7 @@ export type UnpairHostData = {
     path: {
         id: string;
     };
-    query?: {
-        /**
-         * Also clean the machine up: its runner closes every session instead of stopping it, removing each worktree and session folder without pushing. Reaches only a host whose link is open now.
-         */
-        wipe?: boolean;
-    };
+    query?: never;
     url: '/api/v1/hosts/{id}';
 };
 
@@ -6276,6 +6271,41 @@ export type FindHostTimelineResponses = {
 };
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
+
+export type WipeHostData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/wipe';
+};
+
+export type WipeHostErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type WipeHostError = WipeHostErrors[keyof WipeHostErrors];
+
+export type WipeHostResponses = {
+    /**
+     * Host unpaired, its runner told to clean up
+     */
+    204: void;
+};
+
+export type WipeHostResponse = WipeHostResponses[keyof WipeHostResponses];
 
 export type UpdateHostRunnerData = {
     body?: never;

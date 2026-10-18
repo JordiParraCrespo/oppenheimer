@@ -137,7 +137,7 @@ export class HostsRepository {
   @MapApiError(HostsErrors.REMOVE_FAILED)
   async remove(id: string, wipe = false): Promise<void> {
     await unwrap(
-      heyApiSdk.unpairHost({ path: { id }, query: wipe ? { wipe } : undefined }),
+      wipe ? heyApiSdk.wipeHost({ path: { id } }) : heyApiSdk.unpairHost({ path: { id } }),
       HostsErrors.REMOVE_FAILED,
     );
   }

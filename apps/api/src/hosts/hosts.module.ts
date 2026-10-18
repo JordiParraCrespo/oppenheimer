@@ -33,6 +33,7 @@ import { UnpairHostCommandHandler } from './commands/unpair-host/unpair-host.com
 import { UnpairHostHttpController } from './commands/unpair-host/unpair-host.http.controller';
 import { UpdateHostRunnerCommandHandler } from './commands/update-host-runner/update-host-runner.command-handler';
 import { UpdateHostRunnerHttpController } from './commands/update-host-runner/update-host-runner.http.controller';
+import { WipeHostHttpController } from './commands/wipe-host/wipe-host.http.controller';
 import { HostOrmEntity } from './database/host.orm-entity';
 import { HostRepository } from './database/host.repository';
 import { HostEventOrmEntity } from './database/host-event.orm-entity';
@@ -91,6 +92,7 @@ const httpControllers = [
   FindHostTimelineHttpController,
   RenameHostHttpController,
   UnpairHostHttpController,
+  WipeHostHttpController,
   UpdateHostRunnerHttpController,
 ];
 

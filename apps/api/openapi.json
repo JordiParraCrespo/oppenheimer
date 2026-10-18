@@ -5716,15 +5716,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "wipe",
-            "required": false,
-            "in": "query",
-            "description": "Also clean the machine up: its runner closes every session instead of stopping it, removing each worktree and session folder without pushing. Reaches only a host whose link is open now.",
-            "schema": {
-              "type": "boolean"
-            }
           }
         ],
         "responses": {
@@ -5833,6 +5824,64 @@
           }
         ],
         "summary": "A host’s timeline, newest first",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/{id}/wipe": {
+      "post": {
+        "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
+        "operationId": "wipeHost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired, its runner told to clean up"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host and clean its machine up",
         "tags": ["Hosts"]
       }
     },
