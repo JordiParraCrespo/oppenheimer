@@ -98,7 +98,9 @@ function SettingsHeading({ className, ...props }: React.ComponentProps<'h2'>) {
  * what sits first (who made it, as a 22px pill: "You", "Release Bot");
  * then the text at 14px over a `meta` line in 12px subtle, where `kind`
  * is an 18px tag on the hover wash ("Preference", "Repo", "Key ending in
- * wzKr") that never wraps, and the meta wraps in the room it leaves. `actions` hold
+ * wzKr") that never wraps, and the meta wraps in the room it leaves. On a
+ * narrow card (`wrap-lead`) the meta goes under the tag and the actions under
+ * the text, rather than squeezing either into a column. `actions` hold
  * what the row does (Revert, edit and delete icon buttons, a `Switch`), or a
  * word in their place ("Current"). `muted` is a record the bot can read but
  * not change (a fact shared from another bot). An edit in place passes the
@@ -128,7 +130,7 @@ function SettingsListRow({
       data-slot="settings-list-row"
       data-muted={muted || undefined}
       className={cn(
-        'flex min-h-13 gap-3 border-t border-border-subtle py-3 pr-3 pl-5 first:border-t-0',
+        'flex min-h-13 flex-wrap gap-x-3 gap-y-2 border-t border-border-subtle py-3 pr-3 pl-5 first:border-t-0',
         align === 'center' ? 'items-center' : 'items-start',
         className,
       )}
@@ -139,16 +141,16 @@ function SettingsListRow({
           {lead}
         </span>
       ) : null}
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
+      <span className="wrap-lead flex flex-col gap-1">
         <span className={cn('text-[14px] leading-[1.45] text-pretty', muted ? 'text-fg-muted' : 'text-fg')}>{children}</span>
         {meta || kind ? (
-          <span className="flex items-start gap-2 text-[12px] text-fg-subtle">
+          <span className="flex flex-wrap items-start gap-x-2 gap-y-1 text-[12px] text-fg-subtle">
             {kind ? (
               <span className="inline-flex h-4.5 shrink-0 items-center whitespace-nowrap rounded-xs bg-hover-surface px-1.5 text-fg-muted">
                 {kind}
               </span>
             ) : null}
-            {meta ? <span className="min-w-0 flex-1 leading-4.5">{meta}</span> : null}
+            {meta ? <span className="wrap-lead leading-4.5">{meta}</span> : null}
           </span>
         ) : null}
       </span>
