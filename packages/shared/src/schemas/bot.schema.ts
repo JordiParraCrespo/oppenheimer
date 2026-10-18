@@ -92,6 +92,11 @@ export const BOT_PROVIDER_PREFERENCE: readonly BotProvider[] = Object.freeze([
   'glm',
 ]);
 
+/** The first provider in `BOT_PROVIDER_PREFERENCE` that has a key; undefined when none does. */
+export function preferredKeyedProvider(keyed: readonly BotProvider[]): BotProvider | undefined {
+  return BOT_PROVIDER_PREFERENCE.find((provider) => keyed.includes(provider));
+}
+
 /** One model a bot may run on, as the composer's model chip lists it. */
 export interface BotModel {
   readonly id: string;

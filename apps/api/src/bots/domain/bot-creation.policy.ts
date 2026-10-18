@@ -4,6 +4,7 @@ import {
   BOT_PROVIDER_PREFERENCE,
   type BotPermission,
   type BotProvider,
+  preferredKeyedProvider,
 } from '@oppenheimer/shared';
 
 /** The level a bot made in the console starts at: Approve for me. */
@@ -14,14 +15,11 @@ const BOT_DEFAULT_PROVIDER: BotProvider = BOT_PROVIDER_PREFERENCE[0];
 
 /**
  * The provider a bot made with none named starts on: the first, in
- * `BOT_PROVIDER_PREFERENCE` (Anthropic, ChatGPT, OpenAI, GLM), that has a
- * key, else Anthropic, so a new bot never sits on a provider with no key
- * while another has one.
+ * `BOT_PROVIDER_PREFERENCE`, that has a key, else the head of that order,
+ * so a new bot never sits on a provider with no key while another has one.
  */
 export function providerForNewBot(keyed: readonly BotProvider[]): BotProvider {
-  return (
-    BOT_PROVIDER_PREFERENCE.find((provider) => keyed.includes(provider)) ?? BOT_DEFAULT_PROVIDER
-  );
+  return preferredKeyedProvider(keyed) ?? BOT_DEFAULT_PROVIDER;
 }
 
 /**
