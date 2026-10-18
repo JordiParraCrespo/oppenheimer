@@ -213,8 +213,8 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 
 ### Flag, privacy, cost
 
-- A `voice-dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
-  (a temporary release flag with an expiry), read with `useFeatureFlag`
+- A `voice_dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
+  (an `ops` kill switch, on by default), read with `useFeatureFlag`
   and `@RequireFlag`.
 - **Privacy.** Three things leave the control plane, and the promise
   covers all three: the audio and the vocabulary hint go to the
@@ -279,9 +279,10 @@ from the plan above, the build is the decision; the plan stays as written.
   `recorder` slot, where `VoiceRecorderBar` takes the foot row's place
   without changing the box's height.
 - **The mic shows only when someone can hear it**: `voice_dictation` on
-  (a release flag, default off like every new feature's, so a deployment
-  targets it through the flag admin API, `/v1/feature-flags/admin/voice_dictation`;
-  it expires 2027-04-30) and either the
+  (an `ops` flag, default on with no expiry: the feature's kill switch,
+  which a deployment turns off through the flag admin API,
+  `/v1/feature-flags/admin/voice_dictation`, and a saved "off" stays off)
+  and either the
   workspace's ChatGPT sign-in or the deployment's `voice_transcription`
   capability (`VOICE_STT_*`).
 - **The recorder is a `ScriptProcessorNode`, knowingly.** It is

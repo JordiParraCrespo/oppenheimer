@@ -527,6 +527,9 @@ earlier note:
   light-touch brief modelled on Wispr Flow, and the names also go to an
   OpenAI-compatible speech server as its `prompt` ("Dictation quality,
   first pass").
+- `next-steps/voice.md` shipped `voice_dictation` as a release flag,
+  default off. On 2026-10-18 it became an `ops` flag defaulting to `true`,
+  the feature's kill switch.
 - Note 09 had `runner uninstall` exit 0 when the control plane could not
   be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
   control. On 2026-10-18, after an owner's uninstall hid a failed
@@ -545,3 +548,10 @@ earlier note:
   workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the
   owner asked for ChatGPT instead: the fallback order is Anthropic,
   ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`).
+- Note 25 had `ask_bot` give another bot a task and wait for its answer.
+  On 2026-10-18 it was built so the answer comes back as a new turn of the
+  asker instead: one turn per bot runs at a time and a turn has four
+  minutes, so an ask that waited could time out or leave two bots waiting
+  on each other. The sender is recorded rather than claimed, messages
+  holding a credential are refused, and the chain is decided under a lock,
+  from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").

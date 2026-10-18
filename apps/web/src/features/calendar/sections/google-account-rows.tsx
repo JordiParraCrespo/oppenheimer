@@ -95,9 +95,10 @@ export function GoogleAccountRows() {
       />
       {removing ? (
         <ConfirmDialog
-          title={t('calendar.google.removeTitle')}
-          description={t('calendar.google.removeDescription', { email: removing.accountEmail })}
+          title={t('calendar.google.removeTitle', { email: removing.accountEmail })}
+          description={t('calendar.google.removeDescription')}
           confirmLabel={t('calendar.google.remove')}
+          pendingLabel={t('calendar.google.removing')}
           pending={remove.isPending}
           error={remove.error}
           errorFallback={t('calendar.google.removeFailed')}

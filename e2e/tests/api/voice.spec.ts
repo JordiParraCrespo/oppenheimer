@@ -9,8 +9,9 @@ import { provisionedUser } from '../../support/web';
  * workspace is not signed in to ChatGPT, so the deployment's own speech
  * server hears it — the stub (`support/namer-stub.ts`), which hears one fixed
  * sentence and tidies it as the polish does. ChatGPT's own route is the
- * gateway spec's; no run here reaches it. `voice_dictation` is a release
- * flag, off until a deployment targets it, so each test turns it on.
+ * gateway spec's; no run here reaches it. `voice_dictation` is on by
+ * default; each test still turns it on, so a deployment that switched it
+ * off does not fail the suite.
  */
 
 /** One second of 16 kHz mono 16-bit silence, as the console records it. */

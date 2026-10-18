@@ -314,6 +314,14 @@ export type BotMemoryFactDto = z.infer<typeof botMemoryFactSchema>;
 export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled', 'failed'] as const;
 export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
 
+/**
+ * Which of a bot's waiting turns runs first (`25-bots.md` §4.6,
+ * `BotQueueLanes`): yours, then what other bots sent it, then work nobody
+ * waits on. Within a lane, the oldest first.
+ */
+export const BOT_TURN_LANES = ['owner', 'bots', 'background'] as const;
+export type BotTurnLane = (typeof BOT_TURN_LANES)[number];
+
 /** A turn that has not ended: the chat shows it as working, and Stop applies to it. */
 export const BOT_ACTIVE_TURN_STATUSES = [
   'queued',
@@ -334,12 +342,13 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 /**
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
- * and the card's line. The words stay in the message for the bot.
+ * and the card's line; or a message from another bot, or its answer
+ * (§4.6). The words stay in the message for the bot.
  */
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
 
-export interface BotMessageEvent {
+export interface BotApprovalEvent {
   kind: 'approval';
   outcome: BotEventOutcome;
   /** The approved or denied call's tool. */
@@ -347,6 +356,43 @@ export interface BotMessageEvent {
   /** The card's line: what the call does, in words. */
   summary: string;
 }
+
+/**
+ * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`
+ * §4.6): its turn ended with an answer, failed, or was stopped.
+ */
+export const BOT_REPLY_OUTCOMES = ['answered', 'failed', 'cancelled'] as const;
+export type BotReplyOutcome = (typeof BOT_REPLY_OUTCOMES)[number];
+
+/**
+ * A message another bot sent this one through `message_bot` or `ask_bot`
+ * (`25-bots.md` §4.6). The sender is the bot whose turn made the call, as
+ * Oppenheimer recorded it, never a name the message claims; its name is the
+ * one it had when it sent. The words are the message's content.
+ */
+export interface BotPeerMessageEvent {
+  kind: 'bot_message';
+  /** Null once the sending bot is deleted. */
+  fromBotId: string | null;
+  fromBotName: string;
+  /** Sent with `ask_bot`: this bot's answer goes back to the sender. */
+  expectsReply: boolean;
+}
+
+/** The answer to an `ask_bot` call, delivered to the bot that asked. */
+export interface BotPeerReplyEvent {
+  kind: 'bot_reply';
+  /** The bot that answered; null once it is deleted. */
+  fromBotId: string | null;
+  fromBotName: string;
+  outcome: BotReplyOutcome;
+}
+
+export type BotMessageEvent = BotApprovalEvent | BotPeerMessageEvent | BotPeerReplyEvent;
+
+/** The kinds of event, for a reader that checks one before trusting its fields. */
+export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'bot_message', 'bot_reply'] as const;
+export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
 export const BOT_MESSAGE_MAX = 16_000;

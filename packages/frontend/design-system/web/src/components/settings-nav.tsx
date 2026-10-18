@@ -14,21 +14,39 @@ import { cn } from '../lib/utils';
  * current row is lit (the sidebar's active surface) and medium weight. It is
  * the version-1 glass rail at 264px: the sidebar surface at 72% over the
  * page, blurred (`design/version1/ds-base.js`, `.op-sidebar`).
+ *
+ * It has two layouts, and the width picks one with no script or re-render:
+ * the `STRIP` under 768px, where there is no room for a column beside the
+ * page (the same rows side by side, wrapping onto a second line rather than
+ * cutting a row off at the edge, the group labels dropped, the hairline under
+ * it), and the `RAIL` from 768px. Each part
+ * below names its two layouts the same way. The parent puts the nav above
+ * the page or beside it (`SettingsShell`).
  */
+const NAV = {
+  surface:
+    'shrink-0 border-sidebar-border bg-sidebar/72 text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]',
+  strip: 'flex w-full flex-wrap items-center gap-1 border-b px-3 py-2',
+  rail: 'md:w-[264px] md:flex-col md:flex-nowrap md:items-stretch md:border-r md:border-b-0 md:pt-[18px] md:pb-0',
+};
+
 function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
-  return (
-    <nav
-      data-slot="settings-nav"
-      className={cn('flex w-[264px] shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar/72 px-3 pt-[18px] text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]', className)}
-      {...props}
-    />
-  );
+  return <nav data-slot="settings-nav" className={cn(NAV.surface, NAV.strip, NAV.rail, className)} {...props} />;
 }
+
+const GROUP = {
+  strip: 'flex flex-wrap items-center gap-0.5',
+  rail: 'md:mt-1 md:flex-col md:items-stretch md:[&+&]:mt-3.5',
+};
 
 function SettingsNavGroup({ label, className, children, ...props }: React.ComponentProps<'div'> & { label: React.ReactNode }) {
   return (
-    <div data-slot="settings-nav-group" className={cn('mt-1 flex flex-col gap-0.5 [&+&]:mt-3.5', className)} {...props}>
-      <span className="eyebrow px-2.5 py-1.5 leading-(--leading-body)">{label}</span>
+    <div
+      data-slot="settings-nav-group"
+      className={cn(GROUP.strip, GROUP.rail, className)}
+      {...props}
+    >
+      <span className="eyebrow hidden px-2.5 py-1.5 leading-(--leading-body) md:block">{label}</span>
       {children}
     </div>
   );
@@ -54,7 +72,7 @@ function SettingsNavItem({
       {
         type: 'button',
         className: cn(
-          'flex h-8 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
+          'flex h-8 w-auto shrink-0 items-center gap-2.5 rounded-sm px-2.5 md:w-full md:shrink text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
           className,
         ),
         children: (
@@ -82,7 +100,7 @@ function SettingsNavBack({ className, children, ...props }: React.ComponentProps
     <SettingsNavItem
       data-slot="settings-nav-back"
       icon={<ChevronLeftIcon />}
-      className={cn('mb-1 text-fg-muted', className)}
+      className={cn('text-fg-muted md:mb-1', className)}
       {...props}
     >
       {children}

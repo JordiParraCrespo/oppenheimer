@@ -37,6 +37,8 @@
     "docker:dev:down": "docker compose -f docker/docker-compose.dev.yml down",
     "docker:up": "docker compose -f docker/docker-compose.dev.yml up -d",
     "docker:down": "docker compose -f docker/docker-compose.dev.yml down",
+    "monitoring:up": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/monitoring/compose.mjs up -d",
+    "monitoring:down": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/monitoring/compose.mjs down",
     "docker:prod": "docker compose --env-file .env -f docker/docker-compose.prod.yml up -d",
     "docker:prod:down": "docker compose --env-file .env -f docker/docker-compose.prod.yml down",
     "generate:openapi": "pnpm --filter @oppenheimer/api generate:openapi",
