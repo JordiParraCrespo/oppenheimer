@@ -43,7 +43,7 @@ export class ModelProviderCredentialOrmEntity {
   @Column({ type: 'varchar', length: 4 })
   keyHint!: string;
 
-  /** The provider new bots start on (`1791002700000-AddModelProviderDefault`); one per workspace at most. */
+  /** The provider new bots start on (`1791002800000-AddModelProviderDefault`); one per workspace at most. */
   @Column({ type: 'boolean', default: false })
   markedDefault!: boolean;
 

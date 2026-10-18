@@ -44,14 +44,14 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
         configured: true,
         keyHint: '12ab',
         updatedAt: updatedAt.toISOString(),
-        isDefault: true,
+        isDefault: false,
       },
       {
         provider: 'openai',
         configured: true,
         keyHint: '9f3a',
         updatedAt: updatedAt.toISOString(),
-        isDefault: false,
+        isDefault: true,
       },
       { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
     ]);

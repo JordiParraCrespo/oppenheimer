@@ -71,6 +71,11 @@ worker runs it and streams what happens back to the chat.
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
   | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
 
+  A bot made with no provider named, or left on one with no key, goes to
+  the first provider the workspace has a key or sign-in for, in the order
+  Anthropic, ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`, 2026-10-18;
+  it was the catalog order before, which put GLM ahead of ChatGPT).
+
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that
@@ -78,8 +83,8 @@ worker runs it and streams what happens back to the chat.
 - **A new bot starts on the workspace's default provider**, at its
   default model. Settings → Model providers marks one provider with a key
   or a ChatGPT sign-in as the default (**Make default**); with none
-  marked it is Anthropic when it has a key, else the first provider in
-  the list above that has one, so a workspace with one key starts its
+  marked it is the first with a key or sign-in in the order above
+  (`BOT_PROVIDER_PREFERENCE`), so a workspace with one key starts its
   bots on that one; with no key at all it is Anthropic. Removing the
   default's key falls back the same way. Bots already made keep their
   provider.
@@ -570,8 +575,8 @@ The decisions it produced:
   their own; the approval chip is a preset over them. It replaces
   2026-10-14's "*Ask for approval* comes with slice 4".
 - 2026-10-15: **a new bot starts on the workspace's default provider**:
-  the one marked in Settings → Model providers, else Anthropic when it
-  has a key, else the first provider with one (§2).
+  the one marked in Settings → Model providers, else the first with a
+  key in `BOT_PROVIDER_PREFERENCE` (§2).
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
 - 2026-10-15: **ChatGPT is a fourth provider**, on the OpenAI engine,

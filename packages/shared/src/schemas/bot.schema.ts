@@ -80,6 +80,23 @@ export function botSoulFor(name: string): string {
 export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai', 'chatgpt'] as const;
 export type BotProvider = (typeof BOT_PROVIDERS)[number];
 
+/**
+ * The order a bot falls back through when its provider has no key, or a new
+ * bot names none: Anthropic, then ChatGPT and OpenAI, GLM last. It is not the
+ * catalog order, which is how the model button lists them.
+ */
+export const BOT_PROVIDER_PREFERENCE: readonly BotProvider[] = Object.freeze([
+  'anthropic',
+  'chatgpt',
+  'openai',
+  'glm',
+]);
+
+/** The first provider in `BOT_PROVIDER_PREFERENCE` that has a key; undefined when none does. */
+export function preferredKeyedProvider(keyed: readonly BotProvider[]): BotProvider | undefined {
+  return BOT_PROVIDER_PREFERENCE.find((provider) => keyed.includes(provider));
+}
+
 /** One model a bot may run on, as the composer's model chip lists it. */
 export interface BotModel {
   readonly id: string;

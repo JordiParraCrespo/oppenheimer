@@ -491,8 +491,9 @@ describe('bots (integration)', () => {
   it('marks one default per workspace, keeps it across a key replace, and refuses a provider with no key', async () => {
     await credentials.put(credential('glm-key-1111'));
     await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
-    expect(await credentials.defaultProvider(scope())).toBe('glm');
+    expect(await credentials.defaultProvider(scope())).toBe('openai');
     expect(await credentials.setDefault(scope(), 'glm')).toBe(true);
+    expect(await credentials.defaultProvider(scope())).toBe('glm');
     expect(await credentials.setDefault(scope(), 'openai')).toBe(true);
     await credentials.put(credential('openai-key-3333', organizationId, 'openai'));
     const marked = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
