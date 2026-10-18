@@ -25959,25 +25959,45 @@
             "nullable": true,
             "description": "An approval: the card's line, what the call does in words."
           },
+          "activity": {
+            "type": "string",
+            "enum": ["saved", "changed", "paused", "resumed", "deleted", "ran", "failed", null],
+            "nullable": true
+          },
           "automationId": {
             "type": "string",
             "nullable": true,
             "format": "uuid",
-            "description": "A routine: the automation that fired."
+            "description": "A routine: the automation."
           },
           "runId": {
             "type": "string",
             "nullable": true,
             "format": "uuid",
-            "description": "A routine: the run this turn is."
+            "description": "A routine: the run, for an activity that has one."
           },
           "name": {
             "type": "string",
             "nullable": true,
-            "description": "A routine: its name when it fired."
+            "description": "A routine: its name at the time."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "A routine: why, in words, for a pause or a failure."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary", "automationId", "runId", "name"]
+        "required": [
+          "kind",
+          "outcome",
+          "tool",
+          "summary",
+          "activity",
+          "automationId",
+          "runId",
+          "name",
+          "reason"
+        ]
       },
       "BotMessageResponseDto": {
         "type": "object",

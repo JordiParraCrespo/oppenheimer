@@ -326,6 +326,21 @@ export type BotEventKind = (typeof BOT_EVENT_KINDS)[number];
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
 
+/**
+ * What happened to a routine, as one activity whatever path made it
+ * (`26-bot-routines.md` §4, "In the chat"): a change, a run, or a failure.
+ */
+export const BOT_ROUTINE_ACTIVITIES = [
+  'saved',
+  'changed',
+  'paused',
+  'resumed',
+  'deleted',
+  'ran',
+  'failed',
+] as const;
+export type BotRoutineActivity = (typeof BOT_ROUTINE_ACTIVITIES)[number];
+
 export type BotMessageEvent =
   | {
       kind: 'approval';
@@ -337,12 +352,15 @@ export type BotMessageEvent =
     }
   | {
       kind: 'routine';
-      /** The routine (an automation whose run target is the bot) that fired. */
+      activity: BotRoutineActivity;
+      /** The routine: an automation whose run target is the bot. */
       automationId: string;
-      /** The run this turn is. */
-      runId: string;
-      /** The routine's name when it fired. */
+      /** The run, for an activity that has one (`ran`, `failed`). */
+      runId: string | null;
+      /** The routine's name at the time. */
       name: string;
+      /** Why, in words, for `paused` and `failed`. */
+      reason: string | null;
     };
 
 /** Why a bot turn exists: a message of yours, an approval's decision, or a routine's run. */

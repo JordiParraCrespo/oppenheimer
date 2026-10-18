@@ -107,9 +107,11 @@ describe('BotRoutineTarget', () => {
     });
     expect(opening.event).toEqual({
       kind: 'routine',
+      activity: 'ran',
       automationId: context.automation.id,
       runId: run.id,
       name: 'Morning PR digest',
+      reason: null,
     });
     expect(opening.content).toContain('List the open pull requests.');
     expect(ref).toEqual({ kind: 'bot_turn', turnId: (turn as { id: string }).id });

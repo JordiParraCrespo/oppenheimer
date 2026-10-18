@@ -43,7 +43,14 @@ describe('BotEventLine', () => {
       id: 'e2',
       role: 'event',
       content: 'Your routine "Morning PR digest" is running now…',
-      event: { kind: 'routine', automationId: 'a-1', runId: 'r-1', name: 'Morning PR digest' },
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: 'a-1',
+        runId: 'r-1',
+        name: 'Morning PR digest',
+        reason: null,
+      },
     } as unknown as BotMessageEntity;
     render(<BotEventLine message={message} />);
     expect(screen.getByText('bots.chat.event.routine|Morning PR digest')).toBeTruthy();

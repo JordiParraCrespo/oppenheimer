@@ -1,6 +1,5 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
-import { DeleteAutomationCommand } from '../../../automations/commands/delete-automation/delete-automation.command';
 import { SaveBotRoutineCommand } from '../../../automations/commands/save-bot-routine/save-bot-routine.command';
 import type { AutomationEntity } from '../../../automations/domain/automation.entity';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
@@ -11,7 +10,8 @@ import type { BotToolContext } from '../bot-tool.factory';
 /**
  * `update_routine` (`26-bot-routines.md` §4), as Grok Bot's one routine tool:
  * what it asks for and what it runs as it comes. What breaks this: a pause or
- * a list raising a card the owner has to click, a save that runs without one,
+ * a list raising a card the owner has to click, a save or a run the bot
+ * starts going ahead without one,
  * a routine saved with a broader credential than the turn's, or another bot's
  * routine touched.
  */
@@ -88,13 +88,15 @@ describe('update_routine', () => {
     expect(result.content).toContain(`${ROUTINE} "Morning PR digest"`);
   });
 
-  it('asks before resuming and before deleting, which cost something', async () => {
+  it('asks before resuming, deleting or running one now, which spend or lose something', async () => {
     const { call, approvals, execute } = setup();
     await call({ action: 'resume', routine_id: ROUTINE });
     await call({ action: 'delete', routine_id: ROUTINE });
-    expect(approvals.request).toHaveBeenCalledTimes(2);
+    await call({ action: 'run_now', routine_id: ROUTINE });
+    expect(approvals.request).toHaveBeenCalledTimes(3);
     expect(approvals.request.mock.calls[1][0].summary).toBe('Delete routine "Morning PR digest"');
-    expect(execute).not.toHaveBeenCalledWith(expect.any(DeleteAutomationCommand));
+    expect(approvals.request.mock.calls[2][0].summary).toBe('Run routine "Morning PR digest"');
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("saves an approved routine with the turn's zone and the turn's credential scopes", async () => {
@@ -134,7 +136,7 @@ describe('update_routine', () => {
   it("refuses a routine that is not this bot's, in words, and touches nothing", async () => {
     const { call, execute } = setup();
     const result = await call({
-      action: 'run_now',
+      action: 'pause',
       routine_id: '0d9f6a4e-0000-4000-8000-000000000009',
     });
     expect(result).toMatchObject({ isError: true });

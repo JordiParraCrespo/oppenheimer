@@ -12,6 +12,7 @@ import type { AutomationEntity } from '../../automations/domain/automation.entit
 import type { AutomationListing } from '../../automations/domain/automation-read.types';
 import { FindBotRoutinesQuery } from '../../automations/queries/find-bot-routines/find-bot-routines.query';
 import { routineTriggers } from '../bot-routine-tool.mapper';
+import { ROUTINE_ACTIONS, routineCallAsks } from '../domain/bot-routine.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { cut, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import { describeTrigger } from './bot-automation-tools.factory';
@@ -26,9 +27,6 @@ import {
 const PROMPT_MAX = 8_000;
 const NAME_MAX = 200;
 const TRIGGERS_MAX = 5;
-
-/** The actions that cost something to run, which ask the owner first (`26-bot-routines.md` §4). */
-const ASKING_ACTIONS = new Set(['create', 'update', 'resume', 'delete']);
 
 const scheduleTrigger = z.object({
   source: z.literal('schedule'),
@@ -61,7 +59,7 @@ const githubTrigger = z.object({
 const input = z
   .object({
     action: z
-      .enum(['list', 'create', 'update', 'pause', 'resume', 'delete', 'run_now'])
+      .enum(ROUTINE_ACTIONS)
       .describe('What to do. Every action but list answers your whole list of routines.'),
     routine_id: z
       .uuid()
@@ -94,9 +92,8 @@ type RoutineCall = z.output<typeof input>;
 
 /**
  * A bot's own routines (`26-bot-routines.md` §4), as Grok Bot has them: one
- * tool, made and changed in chat. Saving, changing, resuming and deleting a
- * routine ask the owner first; pausing one, running one now and listing them
- * do not. Every action answers the whole list again, so the bot never acts on
+ * tool, made and changed in chat. Which calls ask the owner first is
+ * `routineCallAsks`: everything but listing and pausing. Every action answers the whole list again, so the bot never acts on
  * a stale picture.
  */
 @Injectable()
@@ -114,8 +111,8 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_routine',
       scope: 'automations:write',
-      asks: (call) => ASKING_ACTIONS.has(call.action),
-      description: `Your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs") or when a GitHub event happens. list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Creating, changing, resuming and deleting ask the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
+      asks: (call) => routineCallAsks(call.action),
+      description: `Your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs") or when a GitHub event happens. list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
       input,
       normalize: (call, context) => this.checked(call, context),
       summarize: async (call, context) => {
@@ -128,6 +125,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
           update: 'Change',
           resume: 'Resume',
           delete: 'Delete',
+          run_now: 'Run',
         };
         const verb = verbs[call.action] ?? call.action;
         return `${verb} routine "${routine.name}"`;
@@ -167,30 +165,28 @@ export class BotRoutineToolsFactory implements BotToolArea {
           credentialScopes: context.credentialScopes,
         }),
       );
+    if (call.action === 'list') return;
+    if (call.action === 'create') {
+      await save(null, changes(call));
+      return;
+    }
+    const routine = await this.routineOf(call.routine_id, context);
     switch (call.action) {
-      case 'list':
-        return;
-      case 'create':
-        await save(null, changes(call));
-        return;
       case 'update':
-        await save(call.routine_id ?? null, { ...changes(call), enabled: undefined });
+        await save(routine.id, { ...changes(call), enabled: undefined });
         return;
       case 'pause':
-        await save(call.routine_id ?? null, { enabled: false });
+        await save(routine.id, { enabled: false });
         return;
       case 'resume':
-        await save(call.routine_id ?? null, { enabled: true });
+        await save(routine.id, { enabled: true });
         return;
-      case 'delete': {
-        const routine = await this.routineOf(call.routine_id, context);
+      case 'delete':
         await this.commandBus.execute(
           new DeleteAutomationCommand({ scope: context.owner, automationId: routine.id }),
         );
         return;
-      }
-      case 'run_now': {
-        const routine = await this.routineOf(call.routine_id, context);
+      case 'run_now':
         await this.commandBus.execute(
           new RunAutomationCommand({
             scope: context.owner,
@@ -199,7 +195,6 @@ export class BotRoutineToolsFactory implements BotToolArea {
           }),
         );
         return;
-      }
     }
   }
 

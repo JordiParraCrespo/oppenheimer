@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { BOT_EVENT_OUTCOMES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_ROUTINE_ACTIVITIES,
+  type BotMessageEvent,
+  type BotMessageRole,
+} from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
@@ -100,9 +105,11 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
     outcome: null,
     tool: null,
     summary: null,
+    activity: null,
     automationId: null,
     runId: null,
     name: null,
+    reason: null,
   };
   return event.kind === 'approval'
     ? {
@@ -115,21 +122,26 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
     : {
         ...none,
         kind: 'routine',
+        activity: event.activity,
         automationId: event.automationId,
         runId: event.runId,
         name: event.name,
+        reason: event.reason,
       };
 }
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
   if (raw?.kind === 'routine') {
-    if (typeof raw.automationId !== 'string' || typeof raw.runId !== 'string') return null;
+    const activity = BOT_ROUTINE_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.automationId !== 'string') return null;
     return {
       kind: 'routine',
+      activity,
       automationId: raw.automationId,
-      runId: raw.runId,
+      runId: typeof raw.runId === 'string' ? raw.runId : null,
       name: String(raw.name ?? ''),
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
   if (raw?.kind !== 'approval') return null;

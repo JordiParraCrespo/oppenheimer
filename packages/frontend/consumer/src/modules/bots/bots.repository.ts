@@ -138,8 +138,15 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
 /** The response's flat event as the kind it is; a kind missing its fields reads as none. */
 function toEvent(dto: BotMessageEventResponseDto): BotMessageEvent | null {
   if (dto.kind === 'routine') {
-    return dto.automationId && dto.runId
-      ? { kind: 'routine', automationId: dto.automationId, runId: dto.runId, name: dto.name ?? '' }
+    return dto.activity && dto.automationId
+      ? {
+          kind: 'routine',
+          activity: dto.activity,
+          automationId: dto.automationId,
+          runId: dto.runId,
+          name: dto.name ?? '',
+          reason: dto.reason,
+        }
       : null;
   }
   return dto.outcome

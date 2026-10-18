@@ -22,6 +22,28 @@ export function routineSourceKey(automationId: string, runId: string): string {
   return `${routinePrefix(automationId)}${runId}`;
 }
 
+/** What a bot can do to its routines through `update_routine`. */
+export const ROUTINE_ACTIONS = [
+  'list',
+  'create',
+  'update',
+  'pause',
+  'resume',
+  'delete',
+  'run_now',
+] as const;
+export type RoutineAction = (typeof ROUTINE_ACTIONS)[number];
+
+/**
+ * Whether the owner has to consent to the bot doing this to a routine
+ * (`26-bot-routines.md` §4): only what spends nothing and can be undone runs
+ * without a card, which is reading the list and pausing. A run the bot starts
+ * is spend nobody clicked for, so `run_now` asks like a save does.
+ */
+export function routineCallAsks(action: RoutineAction): boolean {
+  return action !== 'list' && action !== 'pause';
+}
+
 /** Every turn of one routine's runs begins with this. */
 export function routinePrefix(automationId: string): string {
   return `automation-run:${automationId}:`;
@@ -59,9 +81,11 @@ export function routineTurn(
     content: routineOpening(firing),
     event: {
       kind: 'routine',
+      activity: 'ran',
       automationId: firing.automationId,
       runId: firing.runId,
       name: firing.name,
+      reason: null,
     },
     steps: [],
     position: 0,

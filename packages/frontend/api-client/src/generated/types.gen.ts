@@ -3143,18 +3143,23 @@ export type BotMessageEventResponseDto = {
      * An approval: the card's line, what the call does in words.
      */
     summary: string | null;
+    activity: 'saved' | 'changed' | 'paused' | 'resumed' | 'deleted' | 'ran' | 'failed' | null;
     /**
-     * A routine: the automation that fired.
+     * A routine: the automation.
      */
     automationId: string | null;
     /**
-     * A routine: the run this turn is.
+     * A routine: the run, for an activity that has one.
      */
     runId: string | null;
     /**
-     * A routine: its name when it fired.
+     * A routine: its name at the time.
      */
     name: string | null;
+    /**
+     * A routine: why, in words, for a pause or a failure.
+     */
+    reason: string | null;
 };
 
 export type BotMessageResponseDto = {

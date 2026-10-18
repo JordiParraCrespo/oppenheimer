@@ -330,9 +330,11 @@ describe('bots chat (integration)', () => {
       role: 'event',
       event: {
         kind: 'routine',
+        activity: 'ran',
         automationId: firing.automationId,
         runId: firing.runId,
         name: firing.name,
+        reason: null,
       },
     });
   });

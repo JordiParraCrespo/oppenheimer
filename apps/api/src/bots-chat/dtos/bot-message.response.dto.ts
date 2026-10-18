@@ -4,9 +4,11 @@ import {
   BOT_EVENT_KINDS,
   BOT_EVENT_OUTCOMES,
   BOT_MESSAGE_ROLES,
+  BOT_ROUTINE_ACTIVITIES,
   type BotEventKind,
   type BotEventOutcome,
   type BotMessageRole,
+  type BotRoutineActivity,
 } from '@oppenheimer/shared';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
@@ -34,8 +36,8 @@ export class BotToolStepResponseDto {
 
 /**
  * What an event says happened: an approval decided (how, and the card's
- * line), or a routine that fired (which, and its run). The fields of the
- * other kind are null.
+ * line), or a routine's activity (which routine, what happened, its run).
+ * The fields of the other kind are null.
  */
 export class BotMessageEventResponseDto {
   @ApiProperty({ enum: BOT_EVENT_KINDS })
@@ -58,11 +60,14 @@ export class BotMessageEventResponseDto {
   })
   summary!: string | null;
 
+  @ApiProperty(nullableEnum(BOT_ROUTINE_ACTIVITIES))
+  activity!: BotRoutineActivity | null;
+
   @ApiProperty({
     nullable: true,
     type: String,
     format: 'uuid',
-    description: 'A routine: the automation that fired.',
+    description: 'A routine: the automation.',
   })
   automationId!: string | null;
 
@@ -70,16 +75,23 @@ export class BotMessageEventResponseDto {
     nullable: true,
     type: String,
     format: 'uuid',
-    description: 'A routine: the run this turn is.',
+    description: 'A routine: the run, for an activity that has one.',
   })
   runId!: string | null;
 
   @ApiProperty({
     nullable: true,
     type: String,
-    description: 'A routine: its name when it fired.',
+    description: 'A routine: its name at the time.',
   })
   name!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'A routine: why, in words, for a pause or a failure.',
+  })
+  reason!: string | null;
 }
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
