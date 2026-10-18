@@ -87,6 +87,7 @@ export function BoardColumns() {
   };
   const milestone = filter.milestoneId ? milestones.get(filter.milestoneId) : undefined;
   const filed = milestone?.name ?? (filter.projectId ? projectNames.get(filter.projectId) : null);
+  const filing = filingOf(filter, read.milestones, unassignedId);
 
   const card = (task: TaskEntity, lifted = false) => {
     const view = cardView(task, context);
@@ -186,7 +187,7 @@ export function BoardColumns() {
                         create.mutate({
                           title,
                           status,
-                          ...filingOf(filter, read.milestones, unassignedId),
+                          ...filing,
                         })
                       }
                     />

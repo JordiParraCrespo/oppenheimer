@@ -153,4 +153,12 @@ describe('filingOf', () => {
       milestoneId: null,
     });
   });
+
+  it('keeps a filtered milestone the list no longer has, so the API reports it gone', () => {
+    // Dropping it would file the task under Unassigned without a word.
+    expect(filingOf({ milestoneId: 'm-gone' }, milestones, 'p-unassigned')).toEqual({
+      projectId: 'p-unassigned',
+      milestoneId: 'm-gone',
+    });
+  });
 });

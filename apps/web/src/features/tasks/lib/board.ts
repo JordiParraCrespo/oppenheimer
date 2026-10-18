@@ -1,4 +1,4 @@
-import { compareRank, type TaskEntity } from '@oppenheimer/frontend-consumer';
+import { compareRank, type MilestoneEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 /** The board's columns, in the frames' order (`Tasks.dc.html`). */
@@ -13,11 +13,13 @@ export interface BoardFilter {
 /**
  * Where a task added from the board is filed: a milestone brings its own project
  * (the API refuses a project that disagrees with it), else the filtered project,
- * else the workspace's Unassigned one.
+ * else the workspace's Unassigned one. A filtered milestone the list no longer
+ * has is still sent, so the API says it is gone rather than the task quietly
+ * landing elsewhere.
  */
 export function filingOf(
   filter: BoardFilter,
-  milestones: readonly { id: string; projectId: string }[],
+  milestones: readonly Pick<MilestoneEntity, 'id' | 'projectId'>[],
   unassignedId: string | undefined,
 ): { projectId: string | undefined; milestoneId: string | null } {
   const milestone = filter.milestoneId
@@ -25,7 +27,7 @@ export function filingOf(
     : undefined;
   return {
     projectId: milestone?.projectId ?? (filter.projectId || unassignedId),
-    milestoneId: milestone?.id ?? null,
+    milestoneId: filter.milestoneId ?? null,
   };
 }
 
