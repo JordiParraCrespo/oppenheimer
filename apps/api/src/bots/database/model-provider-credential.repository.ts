@@ -6,6 +6,7 @@ import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import { BotResource } from '../bots.resource';
 import type { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
+import { defaultBotProvider } from '../domain/model-provider-default.policy';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 import { ModelProviderCredentialOrmEntity } from './model-provider-credential.orm-entity';
 import type { ModelProviderCredentialRepositoryPort } from './model-provider-credential.repository.port';
@@ -50,8 +51,14 @@ export class ModelProviderCredentialRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async defaultProvider(scope: AccessScope): Promise<BotProvider> {
+    return defaultBotProvider(await this.findAll(scope));
+  }
+
   async put(credential: ModelProviderCredentialEntity): Promise<void> {
     // One row per workspace and provider: a second key replaces the first.
+    // `markedDefault` is left out of the update, so a replaced key keeps its
+    // mark; `setDefault` is the only writer of it.
     await this.repository
       .createQueryBuilder()
       .insert()
@@ -71,8 +78,8 @@ export class ModelProviderCredentialRepository
       const rows = manager.getRepository(ModelProviderCredentialOrmEntity);
       if (!(await rows.exists({ where: { organizationId, provider } }))) return false;
       // UQ_model_provider_credential_default is checked row by row: the old mark goes first.
-      await rows.update({ organizationId, isDefault: true }, { isDefault: false });
-      await rows.update({ organizationId, provider }, { isDefault: true });
+      await rows.update({ organizationId, markedDefault: true }, { markedDefault: false });
+      await rows.update({ organizationId, provider }, { markedDefault: true });
       return true;
     });
   }

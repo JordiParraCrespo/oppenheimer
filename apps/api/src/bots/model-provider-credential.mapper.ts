@@ -23,7 +23,7 @@ export class ModelProviderCredentialMapper
     record.sealedKey = entity.sealedKey;
     record.keyHint = entity.keyHint;
     record.updatedByUserId = entity.updatedByUserId;
-    record.isDefault = entity.isDefault;
+    record.markedDefault = entity.markedDefault;
     record.updatedAt = entity.updatedAt;
     return record;
   }
@@ -39,15 +39,20 @@ export class ModelProviderCredentialMapper
         sealedKey: record.sealedKey,
         keyHint: record.keyHint,
         updatedByUserId: record.updatedByUserId,
-        isDefault: record.isDefault,
+        markedDefault: record.markedDefault,
       },
     });
   }
 
-  /** What the console may know of a key: that it is there, its last characters, when. Never the key. */
+  /**
+   * What the console may know of a key: that it is there, its last characters,
+   * when, and whether new bots start on it. Never the key. `isDefault` is the
+   * resolved default (`defaultBotProvider`), never the stored mark: the list
+   * passes it, and a key read on its own is resolved as the only one.
+   */
   toResponse(
     entity: ModelProviderCredentialEntity,
-    isDefault = entity.isDefault,
+    isDefault = defaultBotProvider([entity]) === entity.provider,
   ): ModelProviderCredentialResponseDto {
     const dto = new ModelProviderCredentialResponseDto();
     dto.provider = entity.provider;

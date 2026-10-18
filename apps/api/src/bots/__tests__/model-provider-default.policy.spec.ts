@@ -8,7 +8,7 @@ import { defaultBotProvider } from '../domain/model-provider-default.policy';
  * with only an OpenAI key gets Anthropic bots that cannot answer, or the
  * provider a person marked is ignored.
  */
-const key = (provider: BotProvider, storedAt: string, isDefault = false) =>
+const key = (provider: BotProvider, storedAt: string, markedDefault = false) =>
   ModelProviderCredentialEntity.create({
     id: randomUUID(),
     createdAt: new Date(storedAt),
@@ -19,7 +19,7 @@ const key = (provider: BotProvider, storedAt: string, isDefault = false) =>
       sealedKey: Buffer.from('sealed'),
       keyHint: 'abcd',
       updatedByUserId: null,
-      isDefault,
+      markedDefault,
     },
   });
 

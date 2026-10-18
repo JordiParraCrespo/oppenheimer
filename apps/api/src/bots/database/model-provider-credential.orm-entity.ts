@@ -21,7 +21,7 @@ import {
 })
 @Index('UQ_model_provider_credential_default', ['organizationId'], {
   unique: true,
-  where: '"isDefault"',
+  where: '"markedDefault"',
 })
 @Check('CHK_model_provider_credential_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
 export class ModelProviderCredentialOrmEntity {
@@ -42,7 +42,7 @@ export class ModelProviderCredentialOrmEntity {
 
   /** The provider new bots start on (`1791002300000-AddModelProviderDefault`); one per workspace at most. */
   @Column({ type: 'boolean', default: false })
-  isDefault!: boolean;
+  markedDefault!: boolean;
 
   @Column({ type: 'uuid', nullable: true })
   updatedByUserId!: string | null;

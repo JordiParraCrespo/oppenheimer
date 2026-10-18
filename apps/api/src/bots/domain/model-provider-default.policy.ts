@@ -13,7 +13,7 @@ export const FALLBACK_BOT_PROVIDER: BotProvider = 'anthropic';
 export function defaultBotProvider(
   credentials: readonly ModelProviderCredentialEntity[],
 ): BotProvider {
-  const marked = credentials.find((credential) => credential.isDefault);
+  const marked = credentials.find((credential) => credential.markedDefault);
   if (marked) return marked.provider;
   const [first] = [...credentials].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   return first?.provider ?? FALLBACK_BOT_PROVIDER;

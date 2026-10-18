@@ -9,7 +9,6 @@ import type { ModelProviderCredentialRepositoryPort } from '../../../database/mo
 import type { BotEntity } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
-import { ModelProviderCredentialEntity } from '../../../domain/model-provider-credential.entity';
 import { CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
@@ -42,8 +41,10 @@ function setup(names: string[] = []) {
     assertUsable: vi.fn<HostAccessPort['assertUsable']>(async () => ({ probedTools: null })),
   } satisfies HostAccessPort;
   const credentials = {
-    findAll: vi.fn<ModelProviderCredentialRepositoryPort['findAll']>(async () => []),
-  } satisfies Pick<ModelProviderCredentialRepositoryPort, 'findAll'>;
+    defaultProvider: vi.fn<ModelProviderCredentialRepositoryPort['defaultProvider']>(
+      async () => 'anthropic',
+    ),
+  } satisfies Pick<ModelProviderCredentialRepositoryPort, 'defaultProvider'>;
   const handler = new CreateBotCommandHandler(
     bots as unknown as BotRepositoryPort,
     groups as unknown as BotGroupRepositoryPort,
@@ -87,14 +88,7 @@ describe('CreateBotCommandHandler', () => {
 
   it("starts a bot that names no provider on the workspace's default, and one that names one on it", async () => {
     const { handler, credentials, written, bots } = setup();
-    const marked = ModelProviderCredentialEntity.createNew({
-      organizationId,
-      provider: 'openai',
-      sealedKey: Buffer.from('sealed'),
-      keyHint: 'abcd',
-      updatedByUserId: userId,
-    });
-    credentials.findAll.mockResolvedValue([marked]);
+    credentials.defaultProvider.mockResolvedValue('openai');
     await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
     expect(written().bot.provider).toBe('openai');
     bots.insert.mockClear();

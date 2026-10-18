@@ -1,4 +1,4 @@
-import { Button, SettingsGroup, SettingsListRow } from '@oppenheimer/design-system-web';
+import { SettingsGroup, SettingsListRow } from '@oppenheimer/design-system-web';
 import {
   useRemoveModelProviderKey,
   useSetDefaultModelProvider,
@@ -9,6 +9,7 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ModelProviderActions } from '../components/model-provider-actions';
 import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
 
 /**
@@ -26,8 +27,10 @@ export function ModelProviders() {
   const [editing, setEditing] = useState<BotProvider | null>(null);
   const remove = useRemoveModelProviderKey();
   const makeDefault = useSetDefaultModelProvider();
-  const unavailable = deployment !== undefined && !deployment.bot_providers;
-  const unavailableReason = unavailable ? t('settings.modelProviders.unavailable') : undefined;
+  const unavailableReason =
+    deployment !== undefined && !deployment.bot_providers
+      ? t('settings.modelProviders.unavailable')
+      : undefined;
 
   return (
     <>
@@ -57,48 +60,18 @@ export function ModelProviders() {
                   : t('settings.modelProviders.noKey')
               }
               actions={
-                <>
-                  {row.isDefault ? (
-                    t('settings.modelProviders.default')
-                  ) : row.configured ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('settings.modelProviders.makeDefaultLabel', {
-                        provider: label,
-                      })}
-                      pending={makeDefault.isPending && makeDefault.variables === row.provider}
-                      disabled={makeDefault.isPending}
-                      onClick={() => makeDefault.mutate(row.provider)}
-                    >
-                      {t('settings.modelProviders.makeDefault')}
-                    </Button>
-                  ) : null}
-                  {row.configured ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('settings.modelProviders.removeLabel', { provider: label })}
-                      pending={remove.isPending && remove.variables === row.provider}
-                      disabled={unavailable}
-                      title={unavailableReason}
-                      onClick={() => remove.mutate(row.provider)}
-                    >
-                      {t('settings.modelProviders.remove')}
-                    </Button>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={unavailable}
-                    title={unavailableReason}
-                    onClick={() => setEditing(row.provider)}
-                  >
-                    {row.configured
-                      ? t('settings.modelProviders.replace')
-                      : t('settings.modelProviders.add')}
-                  </Button>
-                </>
+                <ModelProviderActions
+                  label={label}
+                  configured={row.configured}
+                  isDefault={row.isDefault}
+                  unavailableReason={unavailableReason}
+                  makingDefault={makeDefault.isPending && makeDefault.variables === row.provider}
+                  defaultBusy={makeDefault.isPending}
+                  removing={remove.isPending && remove.variables === row.provider}
+                  onMakeDefault={() => makeDefault.mutate(row.provider)}
+                  onRemove={() => remove.mutate(row.provider)}
+                  onEdit={() => setEditing(row.provider)}
+                />
               }
             >
               {label}

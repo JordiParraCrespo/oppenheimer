@@ -10,7 +10,7 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
  * key reaches the response.
  */
 const updatedAt = new Date('2026-10-01T09:30:00.000Z');
-const stored = (provider: 'glm' | 'openai', keyHint: string, isDefault = false) =>
+const stored = (provider: 'glm' | 'openai', keyHint: string, markedDefault = false) =>
   ModelProviderCredentialEntity.create({
     id: randomUUID(),
     createdAt: updatedAt,
@@ -21,7 +21,7 @@ const stored = (provider: 'glm' | 'openai', keyHint: string, isDefault = false) 
       sealedKey: Buffer.from('sealed-bytes'),
       keyHint,
       updatedByUserId: randomUUID(),
-      isDefault,
+      markedDefault,
     },
   });
 

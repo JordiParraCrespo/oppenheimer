@@ -18,7 +18,6 @@ import { userActor } from '../../domain/bot.types';
 import { BotDocumentEntity } from '../../domain/bot-document.entity';
 import { avatarColorFor, uniqueBotName } from '../../domain/bot-naming.policy';
 import { BotErrors } from '../../domain/bots.errors';
-import { defaultBotProvider } from '../../domain/model-provider-default.policy';
 import { CreateBotCommand } from './create-bot.command';
 
 /**
@@ -27,7 +26,7 @@ import { CreateBotCommand } from './create-bot.command';
  * last in its group. It is born with a `SOUL.md` that says its name and an
  * empty `INSTRUCTIONS.md`, both at revision 1, so its history starts with its
  * creation. A home host, when given, is one the caller may use. A bot that
- * names no provider starts on the workspace's default (`defaultBotProvider`).
+ * names no provider starts on the workspace's default.
  */
 @CommandHandler(CreateBotCommand)
 export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand, AggregateID> {
@@ -51,7 +50,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     const homeHostId = input.homeHostId ?? null;
     if (homeHostId) await this.hosts.assertUsable(scope, homeHostId);
 
-    const provider = input.provider ?? defaultBotProvider(await this.credentials.findAll(scope));
+    const provider = input.provider ?? (await this.credentials.defaultProvider(scope));
     const taken = await this.bots.namesIn(scope);
     const bot = BotEntity.createNew({
       organizationId: scope.organizationId,

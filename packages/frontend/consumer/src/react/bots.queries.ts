@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
-import type { BotDocumentName, BotProvider } from '@oppenheimer/shared/schemas/bot';
+import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -21,7 +21,6 @@ import {
   BotEntity,
   type BotGroupEntity,
   type BotMemoryFactEntity,
-  type ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotInput,
 } from '../modules/bots/bot.entity';
@@ -486,70 +485,6 @@ export function useClearBotMemory(options?: UseMutationOptions<void, Error, stri
     mutationFn: (id: string) => app.bots.clearMemory(id),
     ...withCacheOnSuccess(options, (_data, id) =>
       queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []),
-    ),
-  });
-}
-
-function useModelProviderListQuery() {
-  const app = useConsumerApp();
-  return { queryKey: botsKeys.providerList(), queryFn: () => app.bots.findModelProviders() };
-}
-
-/** The model providers, for a reader that draws nothing while they load (the composer). */
-export function useModelProviders<TData = ModelProviderEntity[]>(
-  options?: Omit<UseQueryOptions<ModelProviderEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
-) {
-  return useQuery<ModelProviderEntity[], Error, TData>({
-    ...useModelProviderListQuery(),
-    ...options,
-  });
-}
-
-/** The workspace's model providers, each with whether it has a key, under a Suspense `QueryState`. */
-export function useSuspenseModelProviders() {
-  return useSuspenseQuery<ModelProviderEntity[], Error>(useModelProviderListQuery());
-}
-
-interface ModelProviderKeyVariables {
-  provider: BotProvider;
-  apiKey: string;
-}
-
-/** Stores a provider's key. The answer carries no key, so the list is read again for its hint. */
-export function usePutModelProviderKey(
-  options?: UseMutationOptions<void, Error, ModelProviderKeyVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ provider, apiKey }: ModelProviderKeyVariables) =>
-      app.bots.putModelProviderKey(provider, apiKey),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
-    ),
-  });
-}
-
-/** Makes a provider, one with a key, the one new bots start on. */
-export function useSetDefaultModelProvider(options?: UseMutationOptions<void, Error, BotProvider>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: BotProvider) => app.bots.setDefaultModelProvider(provider),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
-    ),
-  });
-}
-
-/** Forgets a provider's key, and with it the default when it was the one. */
-export function useRemoveModelProviderKey(options?: UseMutationOptions<void, Error, BotProvider>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: BotProvider) => app.bots.removeModelProviderKey(provider),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
     ),
   });
 }

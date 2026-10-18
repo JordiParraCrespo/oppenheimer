@@ -16,15 +16,15 @@ export class AddModelProviderDefault1791002300000 implements MigrationInterface 
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE model_provider_credential ADD COLUMN "isDefault" boolean DEFAULT false NOT NULL`,
+      `ALTER TABLE model_provider_credential ADD COLUMN "markedDefault" boolean DEFAULT false NOT NULL`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "UQ_model_provider_credential_default" ON model_provider_credential USING btree ("organizationId") WHERE "isDefault"`,
+      `CREATE UNIQUE INDEX "UQ_model_provider_credential_default" ON model_provider_credential USING btree ("organizationId") WHERE "markedDefault"`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX "UQ_model_provider_credential_default"`);
-    await queryRunner.query(`ALTER TABLE model_provider_credential DROP COLUMN "isDefault"`);
+    await queryRunner.query(`ALTER TABLE model_provider_credential DROP COLUMN "markedDefault"`);
   }
 }
