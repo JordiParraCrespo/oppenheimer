@@ -451,8 +451,9 @@ none. Its repositories and defaults can be edited like any project's; its name a
 its place cannot.
 
 `PROJECTS_009` keeps that project's name its own: another project named
-"Unassigned", in any case, would list as a second Unassigned group. A project
-named so before the rule keeps loading and can be renamed to anything else.
+"Unassigned", or the label any locale gives it ("Sin asignar"), in any case,
+would list as a second Unassigned group. A project named so before the rule
+keeps loading and can be renamed to anything else.
 
 `PROJECTS_004` is no longer raised. It answered a session's first repository whose
 auto-created project was archived; projects are no longer created from repositories,

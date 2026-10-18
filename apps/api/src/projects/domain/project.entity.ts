@@ -19,12 +19,24 @@ export const UNASSIGNED_PROJECT_NAME = 'Unassigned';
 export const UNASSIGNED_PROJECT_SLUG = 'unassigned';
 
 /**
- * Whether `name` would read as the Unassigned project's, whatever its case or
- * spacing. Only the workspace's own Unassigned project carries it: a second one
- * shows in the sidebar as a second Unassigned group nobody can tell apart.
+ * What the console calls the Unassigned project in each locale
+ * (`projects.unassigned` in `@oppenheimer/translations`, which the domain may
+ * not import; `project.entity.spec.ts` holds the two lists together).
+ */
+export const UNASSIGNED_PROJECT_LABELS: readonly string[] = [
+  UNASSIGNED_PROJECT_NAME,
+  'Sin asignar',
+];
+
+/**
+ * Whether `name` would read as the Unassigned project's in any locale, whatever
+ * its case or spacing. Only the workspace's own Unassigned project carries it:
+ * a second one shows in the sidebar as a second Unassigned group nobody can
+ * tell apart.
  */
 export function isReservedProjectName(name: string): boolean {
-  return name.trim().toLowerCase() === UNASSIGNED_PROJECT_NAME.toLowerCase();
+  const candidate = name.trim().toLocaleLowerCase();
+  return UNASSIGNED_PROJECT_LABELS.some((label) => label.toLocaleLowerCase() === candidate);
 }
 
 export interface ProjectProps {

@@ -1,6 +1,8 @@
 import { ArgumentInvalidException, ArgumentNotProvidedException } from '@oppenheimer/backend-ddd';
+import en from '@oppenheimer/translations/en/index.json';
+import es from '@oppenheimer/translations/es/index.json';
 import { describe, expect, it } from 'vitest';
-import { ProjectEntity } from '../domain/project.entity';
+import { ProjectEntity, UNASSIGNED_PROJECT_LABELS } from '../domain/project.entity';
 
 const REPOSITORIES = [
   {
@@ -136,12 +138,20 @@ describe('a project’s repositories and defaults', () => {
   });
 
   it('refuses the Unassigned project’s name, in any case, to any other project', () => {
-    for (const name of ['Unassigned', 'unassigned ', ' UNASSIGNED']) {
+    for (const name of ['Unassigned', 'unassigned ', ' UNASSIGNED', 'Sin asignar', 'sin ASIGNAR']) {
       expect(() => ProjectEntity.createNew({ ...VALID, name })).toThrow(ArgumentInvalidException);
       expect(() => ProjectEntity.createNew(VALID).rename(name)).toThrow(ArgumentInvalidException);
       expect(() => ProjectEntity.createNew(VALID).configure({ name })).toThrow(
         ArgumentInvalidException,
       );
+    }
+  });
+
+  it('reserves the label every locale gives the Unassigned project', () => {
+    // A locale added to the console without its label here would let a
+    // look-alike back into that locale's sidebar.
+    for (const catalog of [en, es]) {
+      expect(UNASSIGNED_PROJECT_LABELS).toContain(catalog.projects.unassigned);
     }
   });
 
