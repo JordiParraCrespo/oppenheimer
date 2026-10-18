@@ -1,10 +1,9 @@
-import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web';
+import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
 import type { PullRequestScope } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { PULL_REQUEST_SCOPES } from '@oppenheimer/shared/schemas/pull-request';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { FigurePlaceholder } from '../components/figure-placeholder';
 import { useQueueSearch } from '../hooks/use-queue-search';
 
 /**
@@ -31,7 +30,13 @@ export function QueueScopes() {
           <SegmentedControlItem
             key={value}
             value={value}
-            count={scopes ? scopes[value] : <FigurePlaceholder className="w-1.5" />}
+            count={
+              scopes ? (
+                scopes[value]
+              ) : (
+                <Skeleton shape="sm" className="inline-block h-2.5 w-1.5 align-[-0.05em]" />
+              )
+            }
           >
             {t(`pullRequests.queue.scopes.${value}`)}
           </SegmentedControlItem>

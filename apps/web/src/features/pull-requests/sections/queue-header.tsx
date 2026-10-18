@@ -6,11 +6,11 @@ import {
   PageHeaderRow,
   PageHeaderSep,
   PageHeaderStat,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { ArrowRight } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
-import { FigurePlaceholder } from '../components/figure-placeholder';
 import { useOpenPullRequest } from '../hooks/use-open-pull-request';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReviewNextShortcut } from '../hooks/use-review-next-shortcut';
@@ -50,13 +50,25 @@ export function QueueHeader() {
       />
       <PageHeaderMeta indent={false}>
         <PageHeaderStat
-          value={queue ? rows.filter((row) => row.canMerge).length : <FigurePlaceholder />}
+          value={
+            queue ? (
+              rows.filter((row) => row.canMerge).length
+            ) : (
+              <Skeleton shape="sm" className="inline-block h-2.5 w-2 align-[-0.05em]" />
+            )
+          }
         >
           {t('pullRequests.queue.ready')}
         </PageHeaderStat>
         <PageHeaderSep />
         <PageHeaderStat
-          value={queue ? rows.filter((row) => row.hasConflicts).length : <FigurePlaceholder />}
+          value={
+            queue ? (
+              rows.filter((row) => row.hasConflicts).length
+            ) : (
+              <Skeleton shape="sm" className="inline-block h-2.5 w-2 align-[-0.05em]" />
+            )
+          }
         >
           {t('pullRequests.queue.conflicts')}
         </PageHeaderStat>
@@ -65,7 +77,7 @@ export function QueueHeader() {
           {t('pullRequests.queue.oldest')}{' '}
           <span className="figures text-fg">
             {!queue ? (
-              <FigurePlaceholder className="w-8" />
+              <Skeleton shape="sm" className="inline-block h-2.5 w-8 align-[-0.05em]" />
             ) : rows.length ? (
               formatWait(oldest)
             ) : (
