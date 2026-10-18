@@ -61,41 +61,60 @@ const CUTOFF = 0.45;
 const ZERO_CROSSINGS = 12;
 
 /**
- * `input` at `outputRate`, through a Blackman-windowed sinc low-pass at
- * {@link CUTOFF} of the lower rate. Averaging each output sample's share of
- * the input, as this did before, let 10 kHz through at -6 dB on the way
- * from 48 kHz to 16 kHz, so the hiss of an "s" or an "f" folded back over
- * the 2–8 kHz that tells them apart. Going up (a headset in call mode
- * records at 8 kHz), the same filter interpolates, so the header's rate is
- * always the samples' rate.
- *
- * The rates are whole numbers, so an output sample falls at one of
- * `outputRate / gcd` offsets between input samples (one at 48 kHz, 160 at
- * 44.1 kHz): the taps for each are worked out once, and each output sample
- * is a dot product.
+ * A polyphase low-pass from `inputRate` to `outputRate`: a Blackman-windowed
+ * sinc at {@link CUTOFF} of the lower rate. The rates are whole numbers, so
+ * an output sample falls at one of `phases` offsets between input samples
+ * (one at 48 kHz, 160 at 44.1 kHz), and `bank` holds the `taps` weights for
+ * each, row by row. Output sample `i` sits `i * stride / phases` input
+ * samples in, and its window starts `reach - 1` before that.
  */
-export function resample(input: Float32Array, inputRate: number, outputRate: number): Float32Array {
-  if (inputRate === outputRate) return input;
+interface FilterBank {
+  bank: Float32Array;
+  taps: number;
+  reach: number;
+  phases: number;
+  stride: number;
+}
+
+function designFilter(inputRate: number, outputRate: number): FilterBank {
   // The cutoff in cycles per input sample, doubled: the sinc's zero crossings fall 1/band apart.
   const band = (2 * CUTOFF * Math.min(inputRate, outputRate)) / inputRate;
   const reach = Math.ceil(ZERO_CROSSINGS / band);
   const taps = 2 * reach;
   const common = gcd(inputRate, outputRate);
   const phases = outputRate / common;
-  const stride = inputRate / common;
-
   const bank = new Float32Array(phases * taps);
   for (let phase = 0; phase < phases; phase++) {
     for (let k = 0; k < taps; k++) {
       const x = (k - reach + 1 - phase / phases) * band;
-      const away = Math.abs(x);
-      if (away >= ZERO_CROSSINGS) continue;
-      const sinc = x === 0 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
-      const w = Math.PI * (away / ZERO_CROSSINGS + 1);
-      bank[phase * taps + k] = band * sinc * (0.42 - 0.5 * Math.cos(w) + 0.08 * Math.cos(2 * w));
+      bank[phase * taps + k] = band * sinc(x) * blackman(Math.abs(x) / ZERO_CROSSINGS);
     }
   }
+  return { bank, taps, reach, phases, stride: inputRate / common };
+}
 
+function sinc(x: number): number {
+  return x === 0 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+}
+
+/** The Blackman window at `away` of its half-width from the centre: 1 there, 0 at the edge and beyond. */
+function blackman(away: number): number {
+  if (away >= 1) return 0;
+  const w = Math.PI * (away + 1);
+  return 0.42 - 0.5 * Math.cos(w) + 0.08 * Math.cos(2 * w);
+}
+
+/**
+ * `input` at `outputRate`, through {@link designFilter}'s low-pass.
+ * Averaging each output sample's share of the input, as this did before,
+ * let 10 kHz through at -6 dB on the way from 48 kHz to 16 kHz, so the hiss
+ * of an "s" or an "f" folded back over the 2–8 kHz that tells them apart.
+ * Going up (a headset in call mode records at 8 kHz), the same filter
+ * interpolates, so the header's rate is always the samples' rate.
+ */
+export function resample(input: Float32Array, inputRate: number, outputRate: number): Float32Array {
+  if (inputRate === outputRate) return input;
+  const { bank, taps, reach, phases, stride } = designFilter(inputRate, outputRate);
   const output = new Float32Array(Math.floor((input.length * phases) / stride));
   for (let i = 0; i < output.length; i++) {
     const at = Math.floor((i * stride) / phases);

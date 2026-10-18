@@ -63,6 +63,19 @@ describe('resample', () => {
     return Math.sqrt(sum / middle.length) / Math.SQRT1_2;
   };
 
+  /** Amplitude of the `hz` component in the middle half, one DFT bin, relative to full scale. */
+  const toneLevel = (samples: Float32Array, hz: number, rate: number) => {
+    const from = samples.length / 4;
+    const to = (samples.length * 3) / 4;
+    let re = 0;
+    let im = 0;
+    for (let i = from; i < to; i++) {
+      re += samples[i] * Math.cos((2 * Math.PI * hz * i) / rate);
+      im += samples[i] * Math.sin((2 * Math.PI * hz * i) / rate);
+    }
+    return (2 * Math.hypot(re, im)) / (to - from);
+  };
+
   it.each([48_000, 44_100])('passes speech at %i Hz through untouched', (rate) => {
     for (const hz of [200, 1_000, 3_000, 6_000]) {
       expect(gain(resample(sine(hz, rate), rate, 16_000))).toBeCloseTo(1, 1);
@@ -80,9 +93,11 @@ describe('resample', () => {
   );
 
   it('interpolates a slower microphone without adding tones of its own', () => {
-    const up = resample(sine(1_000, 8_000), 8_000, 16_000);
+    const up = resample(sine(2_000, 8_000), 8_000, 16_000);
     expect(up).toHaveLength(16_000);
-    expect(gain(up)).toBeCloseTo(1, 1);
+    expect(toneLevel(up, 2_000, 16_000)).toBeCloseTo(1, 1);
+    // Doubling the rate without a filter mirrors 2 kHz to 6 kHz, above what the microphone heard.
+    expect(toneLevel(up, 6_000, 16_000)).toBeLessThan(0.01);
   });
 });
 
