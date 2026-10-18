@@ -22,7 +22,7 @@ server:
 
 1. Set `METRICS_TOKEN` in the root `.env` (`openssl rand -hex 32`) and
    restart the API; without it `/api/v1/metrics` is a 404.
-2. `pnpm monitoring:up`, then <http://localhost:9090>: Status → Targets shows
+2. `pnpm monitoring:up`, then `http://localhost:9090`: Status → Targets shows
    `oppenheimer-api` up, Alerts shows the rules.
 3. After editing a rule, `curl -X POST localhost:9090/-/reload` re-reads it.
    `pnpm monitoring:down` stops it; `docker compose -f

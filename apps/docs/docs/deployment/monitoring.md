@@ -95,7 +95,7 @@ Every series also carries `app="api"`.
 kept in the repository as the source of truth and loaded by whoever runs the
 monitoring stack; its README has the scrape config. On a development machine,
 `pnpm monitoring:up` runs Prometheus with those rules against the local API
-(set `METRICS_TOKEN` in `.env` first) at <http://localhost:9090>. The rules cover the API
+(set `METRICS_TOKEN` in `.env` first) at `http://localhost:9090`. The rules cover the API
 being absent or restarting, the 5xx ratio overall and by route, p95 latency,
 clients aborting, event-loop lag and heap, an outbox row left undelivered for
 five minutes, failed outbox rows and queue jobs, and the backlog sampler
