@@ -3,7 +3,7 @@
 import { useRender } from '@base-ui/react/use-render';
 import { mergeProps } from '@base-ui/react/merge-props';
 import { ChevronLeftIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -65,8 +65,16 @@ function SettingsNavItem({
     count?: React.ReactNode;
     active?: boolean;
   }) {
+  const ref = React.useRef<HTMLButtonElement>(null);
+  // The phone's strip scrolls sideways and shows no scrollbar, so the page
+  // you are on is brought into view when it opens; on the rail it already is,
+  // and nothing moves.
+  React.useEffect(() => {
+    if (active) ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [active]);
   return useRender({
     defaultTagName: 'button',
+    ref,
     props: mergeProps<'button'>(
       {
         type: 'button',

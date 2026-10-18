@@ -2003,7 +2003,7 @@ export function RoutineItemsDemo() {
 export function SettingsShellDemo() {
   return (
     <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
-      <SettingsShell className="h-full">
+      <SettingsShell className="h-full flex-col md:flex-row">
         <SettingsNav>
           <SettingsNavBack>Back to console</SettingsNavBack>
           <SettingsNavGroup label="Account">
