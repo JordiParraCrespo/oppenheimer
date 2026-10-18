@@ -422,7 +422,8 @@ func usage(w *os.File) {
   runner serve                    the HTTP service on a TCP port (containers)
   runner version
 
-Exit codes: 0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable.
+Exit codes: 0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable,
+7 incomplete (uninstall erased the identity, but the host is still paired at the control plane).
 `)
 }
 

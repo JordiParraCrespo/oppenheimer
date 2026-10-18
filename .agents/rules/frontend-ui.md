@@ -30,7 +30,7 @@ multi-line, so a grep for `export` misses most of them.
 | A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
 | A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
-| "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |
+| "Nothing here" / "still loading"      | `EmptyState`; a placeholder in the shape of what loads (below) | a centred paragraph, a grey slab of a guessed height |
 | Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
 | Lifecycle state | `Badge` with `active` / `paused` / `ended` / `draft` | `secondary`, `outline`, `destructive` |
 | Quiet metadata chip                   | `Badge variant="neutral"`     | `secondary`                                           |
@@ -314,9 +314,61 @@ looks like once it is in the right place.
 
 ## Never ship a placeholder number
 
-If the real value is not available, render nothing. A component names the
+If the real value is not available, render nothing (or, while its read is
+pending, a placeholder bar that keeps its width). A component names the
 total it wants and the shell resolves it from a query (`useNavCounts` in
 `app-sidebar.tsx`); an unresolved total is `undefined` and renders no badge.
+
+## A placeholder has the shape of what replaces it
+
+A `QueryState.Pending` draws the page that is coming, not a grey box: when
+the data lands, nothing on screen moves except the bars turning into words.
+The pull-request feature (`apps/web/src/features/pull-requests/components/*-skeleton.tsx`)
+is the reference.
+
+- **Draw inside the real container.** The placeholder renders the same
+  `Card`, `Panel`, `SettingsGroup`, `PullRequestTable` the data renders in,
+  so corners, borders, widths and container breakpoints come for free. A
+  row's placeholder is the design system's `<Row>Skeleton` beside the row,
+  on the row's own grid (`PullRequestRowSkeleton`), or the row itself with
+  its data left out (`PersonRow` with no `login`): one owner for the shape.
+- **Write what is static.** Column heads, section and panel titles, a page
+  title that reads only the URL, a tab's label: real text, not bars. Only
+  what the read answers is a placeholder. A header that needs no data sits
+  outside the `QueryState` (or is drawn by both slots) so it never blinks.
+- **A bar per line, at the line's height.** Each `Skeleton` sits in a box the
+  height of the text line, control or row it stands for (`h-5` for a body
+  line, the row's `min-h-*`), with widths that vary like text. Count rows as
+  the list usually holds, not a full page.
+- **Never a value the data has not given.** A count, a total or a wait not
+  answered yet is a small inline bar, or nothing; never `0`, `—` or "none"
+  (see "Never ship a placeholder number"). A count slot keeps its width, so
+  the tabs or chips around it do not move when it lands.
+- **The shape that is coming.** When the loaded view can be one of two
+  shapes (a terminal or the panel that starts one), choose from what is
+  already cached; when nothing tells, draw the quieter one.
+- **Quiet for assistive technology.** `Skeleton` is `aria-hidden` and pulses
+  only under `motion-safe`; the placeholder's root carries `aria-busy` and one
+  `<span role="status" className="sr-only">{t('common.loading')}</span>`.
+- **Named and placed.** More than a bar or two is a `<View>Skeleton` in the
+  feature's `components/` (or a `sections/` one when it must read a cache to
+  pick its shape), one component per file.
+
+`pnpm check:structure` fails a `QueryState.Pending` that holds nothing but
+`Skeleton`s with a slab among them: a block 64px tall or more, or one that
+fills its frame (`scripts/skeleton-shape.mjs`). A pane that really is one block
+until it answers says so inside the slot,
+`{/* A block stands in here: <why> */}`. The files that held slabs when the
+check landed are `SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs`, each
+with its count: debt, held to that count (one more slab fails), and the list
+only shrinks. Whether a named placeholder has the right shape is
+`/frontend-audit`'s `U7`. Before a pull request, photograph each placeholder
+held beside its loaded page (`/local-stack`, "Show a visual change").
+
+Why: every placeholder in Pull requests was one slab of a guessed height (a
+320px block for a 650px queue, 384px for a 1,300px page, no rail beside the
+description), the queue header said "0 ready" while it loaded, and each page
+jumped when its data arrived.
 
 ## Translate everything the user can read, including downloads
 

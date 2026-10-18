@@ -600,6 +600,31 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 	return ended, errors.Join(errs...)
 }
 
+// WipeAll is EndAll, then a forced Close of every session not closed yet:
+// nothing is pushed, uncommitted work is not a reason to keep a worktree, and
+// each worktree and session folder goes. A folder session's folder is the
+// person's and stays, as in any Close. It is what an owner who removes a host
+// and asks for it to be cleaned up wants (14); nothing else deletes work like
+// this. It answers the sessions it closed.
+func (s *Service) WipeAll(ctx context.Context) ([]string, error) {
+	if _, err := s.EndAll(ctx); err != nil {
+		return nil, err
+	}
+	var closed []string
+	var errs []error
+	for _, session := range s.List() {
+		if session.State == domain.StateClosed {
+			continue
+		}
+		if _, err := s.Close(ctx, session.ID, CloseInput{Force: true}); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		closed = append(closed, session.ID)
+	}
+	return closed, errors.Join(errs...)
+}
+
 // hold marks a command as working on a session until the returned release
 // runs. Observations are dropped while one is, and taking the hold moves the
 // revision on, so a refresh that read the session before the command started

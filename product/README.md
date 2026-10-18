@@ -521,6 +521,25 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- `next-steps/voice.md` said the polish is skipped when the raw transcript
+  is clean and short, and that the ChatGPT route's names reach it only
+  through the polish. On 2026-10-18 (#393) every clip is polished, with a
+  light-touch brief modelled on Wispr Flow, and the names also go to an
+  OpenAI-compatible speech server as its `prompt` ("Dictation quality,
+  first pass").
+- Note 09 had `runner uninstall` exit 0 when the control plane could not
+  be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
+  control. On 2026-10-18, after an owner's uninstall hid a failed
+  revocation (issue #394), it exits 7 (`PAIR_009`), prints the underlying
+  failure, and points at Settings → Hosts → Remove or
+  `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
+  origins and the commands that move it (09 §4).
+- `versions/mvp/14-hosts-settings.md` had removing a host only stop its
+  sessions, every checkout kept. On 2026-10-18 the owner, testing on a
+  host, asked for a way to stop everything and start again: the remove
+  dialog has an "Also delete everything on this machine" box, and an
+  online host then closes every session, worktrees removed and nothing
+  pushed (14, "Remove can also clean the machine up").
 - Note 25 had `ask_bot` give another bot a task and wait for its answer.
   On 2026-10-18 it was built so the answer comes back as a new turn of the
   asker instead: one turn per bot runs at a time and a turn has four

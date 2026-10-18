@@ -1,14 +1,16 @@
 /**
  * A recording as the WAV the API takes (`VOICE_SAMPLE_RATE`, 16-bit PCM,
- * mono): the microphone's float samples, averaged down to the target rate
- * and clipped to 16 bits, behind a 44-byte RIFF header.
+ * mono): the microphone's float samples, averaged down to the target rate,
+ * the silence before the first word and after the last cut off
+ * ({@link trimSilence}), and clipped to 16 bits, behind a 44-byte RIFF
+ * header.
  */
 export function encodeWav(
   chunks: readonly Float32Array[],
   inputRate: number,
   outputRate: number,
 ): Blob {
-  const samples = downsample(chunks, inputRate, outputRate);
+  const samples = trimSilence(downsample(chunks, inputRate, outputRate), outputRate);
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
   const text = (offset: number, value: string) => {
@@ -78,10 +80,81 @@ function upsample(input: Float32Array, step: number): Float32Array {
   return output;
 }
 
+/** The window speech is told from silence in: 20 ms, about one syllable's attack. */
+const FRAME_SECONDS = 0.02;
+
+/**
+ * How much quiet is kept either side of the speech: 300 ms, longer than a
+ * soft first or last consonant ("f", "s") that sits under the threshold.
+ */
+const PAD_SECONDS = 0.3;
+
+/**
+ * Below this RMS a frame is silence, however quiet the rest is: about
+ * -50 dBFS, under a laptop fan.
+ */
+const SILENCE_FLOOR = 0.003;
+
+/**
+ * Speech is louder than the room by at least this much: four times the
+ * quietest tenth of the clip's frames (12 dB), whatever the microphone's
+ * gain.
+ */
+const SPEECH_OVER_ROOM = 4;
+
+/**
+ * Speech may sit this far under the clip's loud frames and still count: a
+ * tenth (20 dB). "Loud" is the 90th percentile, not the loudest frame, so a
+ * cough or a bump on the mic is not the measure.
+ */
+const SPEECH_UNDER_LOUD = 0.1;
+
+/**
+ * The samples from just before the first frame that sounds like speech to
+ * just after the last one, {@link PAD_SECONDS} either side. A frame is
+ * speech when it clears {@link SPEECH_OVER_ROOM} or {@link SPEECH_UNDER_LOUD},
+ * whichever is lower, so a doubt keeps audio: one loud transient cannot lift
+ * the bar over the voice, and a clip that is all speech has no quiet tenth
+ * to lift it either. The pause while
+ * the person reaches for the mic and the one before they press stop are
+ * what speech models fill with "Thanks for watching!", and they are upload
+ * and wait for nothing. A clip with no frame above {@link SILENCE_FLOOR} is
+ * sent whole: what to make of it is the API's call, not a guess here.
+ */
+export function trimSilence(samples: Float32Array, rate: number): Float32Array {
+  const frame = Math.max(1, Math.round(rate * FRAME_SECONDS));
+  const frames = Math.ceil(samples.length / frame);
+  const levelAt = (f: number) => rms(samples.subarray(f * frame, (f + 1) * frame));
+
+  const levels = Array.from({ length: frames }, (_, f) => levelAt(f)).sort((a, b) => a - b);
+  const room = levels[Math.floor(frames * 0.1)] ?? 0;
+  const loud = levels[Math.floor(frames * 0.9)] ?? 0;
+  const threshold = Math.max(
+    SILENCE_FLOOR,
+    Math.min(room * SPEECH_OVER_ROOM, loud * SPEECH_UNDER_LOUD),
+  );
+  if ((levels[frames - 1] ?? 0) < threshold) return samples;
+
+  let first = 0;
+  while (levelAt(first) < threshold) first++;
+  let last = frames - 1;
+  while (levelAt(last) < threshold) last--;
+
+  const pad = Math.round(rate * PAD_SECONDS);
+  return samples.subarray(
+    Math.max(0, first * frame - pad),
+    Math.min(samples.length, (last + 1) * frame + pad),
+  );
+}
+
 /** A chunk's loudness for the waveform, 0–1: its RMS, lifted so speech fills the bar. */
 export function levelOf(chunk: Float32Array): number {
+  return Math.min(1, rms(chunk) * 4);
+}
+
+function rms(chunk: Float32Array): number {
   if (chunk.length === 0) return 0;
   let sum = 0;
   for (const sample of chunk) sum += sample * sample;
-  return Math.min(1, Math.sqrt(sum / chunk.length) * 4);
+  return Math.sqrt(sum / chunk.length);
 }

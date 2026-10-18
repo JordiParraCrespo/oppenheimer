@@ -10,6 +10,7 @@ import { ProjectsModule } from '../projects/projects.module';
 import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
+import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
 import { SessionAttachmentsResolver } from './application/session-attachments.resolver';
@@ -206,6 +207,7 @@ const adapters: Provider[] = [
     ...HostsModule.contributeUsage([SessionHostUsage]),
     ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
     HostUnpairedStopsSessionsDomainEventHandler,
+    HostUnpairedClosesSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },
   ],

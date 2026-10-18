@@ -1,20 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { cleanPolished, needsPolish, voicePolishMessage } from '../domain/voice-polish.policy';
+import {
+  cleanPolished,
+  VOICE_POLISH_SYSTEM_PROMPT,
+  voicePolishMessage,
+} from '../domain/voice-polish.policy';
 
 /**
- * The polish's rules that are not the model's: when a transcript is worth a
- * call, what the model is sent, and which answers are a tidied transcript
- * rather than the model doing something else with it.
+ * The polish's rules that are not the model's: what the model is sent, and
+ * which answers are a tidied transcript rather than the model doing
+ * something else with it. What the model makes of the brief is the eval's
+ * (`scripts/evals/voice/`).
  */
 describe('voice polish policy', () => {
-  it('skips the call for a short, clean dictation, and not for one with fillers or a correction', () => {
-    expect(needsPolish('')).toBe(false);
-    expect(needsPolish('fix the login page')).toBe(false);
-    expect(needsPolish('um fix the login page')).toBe(true);
-    expect(needsPolish('fix the login, no wait, the signup page')).toBe(true);
-    expect(needsPolish('fix the login redirect loop that sends people back to the start')).toBe(
-      true,
-    );
+  it("opens with the line the local stack's stub recognises the polish by", () => {
+    // e2e/support/namer-stub.ts tidies a request whose brief starts this way and names any other.
+    expect(VOICE_POLISH_SYSTEM_PROMPT.startsWith('You turn dictated speech')).toBe(true);
+  });
+
+  it('quotes the fillers and spoken commands of every language dictated here', () => {
+    for (const word of ['"um"', '"o sea"', '"doncs"', '"punto y aparte"', '"punt i a part"']) {
+      expect(VOICE_POLISH_SYSTEM_PROMPT).toContain(word);
+    }
   });
 
   it('sends the transcript and the vocabulary fenced off as data', () => {
