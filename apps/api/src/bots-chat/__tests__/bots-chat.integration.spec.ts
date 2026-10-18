@@ -746,7 +746,11 @@ describe('bots chat (integration)', () => {
     const history = await messages.findHistory(organizationId, bot.id, turn.id, null, 40);
     expect(history.map((item) => item.id)).toEqual([line.id]);
     const uncovered = await messages.findUncovered(organizationId, bot.id, null, 10);
-    expect(uncovered).toEqual([expect.objectContaining({ id: line.id, turnEnded: true })]);
+    // The line has no turn to wait for; the queued message still waits on its own.
+    expect(uncovered.map((item) => [item.id, item.turnEnded])).toEqual([
+      [line.id, true],
+      [message.id, false],
+    ]);
 
     // A bot deleted since: the line has nowhere to go, and nothing is stored.
     const gone = routineActivityLine({
