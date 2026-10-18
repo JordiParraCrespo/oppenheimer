@@ -102,7 +102,7 @@
   },
   "modelProviders": {
     "title": "Model providers",
-    "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again.",
+    "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again. New bots start on the default provider.",
     "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
     "loadFailed": "Couldn’t load the model providers.",
     "keyEnding": "Key ending in {{hint}}",
@@ -112,6 +112,10 @@
     "remove": "Remove",
     "removeLabel": "Remove the {{provider}} key",
     "removeFailed": "Couldn’t remove the key.",
+    "default": "Default",
+    "makeDefault": "Make default",
+    "makeDefaultLabel": "Start new bots on {{provider}}",
+    "makeDefaultFailed": "Couldn’t change the default provider.",
     "providers": {
       "anthropic": "Claude models, through Anthropic’s API.",
       "glm": "GLM models, through z.ai.",

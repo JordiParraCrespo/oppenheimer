@@ -10,7 +10,7 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
  * key reaches the response.
  */
 const updatedAt = new Date('2026-10-01T09:30:00.000Z');
-const stored = (provider: 'glm' | 'openai', keyHint: string) =>
+const stored = (provider: 'glm' | 'openai', keyHint: string, markedDefault = false) =>
   ModelProviderCredentialEntity.create({
     id: randomUUID(),
     createdAt: updatedAt,
@@ -21,6 +21,7 @@ const stored = (provider: 'glm' | 'openai', keyHint: string) =>
       sealedKey: Buffer.from('sealed-bytes'),
       keyHint,
       updatedByUserId: randomUUID(),
+      markedDefault,
     },
   });
 
@@ -31,10 +32,36 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
     const list = mapper.toResponseList([stored('openai', '9f3a'), stored('glm', '12ab')]);
     expect(list.map((row) => row.provider)).toEqual([...BOT_PROVIDERS]);
     expect(list).toEqual([
-      { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null },
-      { provider: 'glm', configured: true, keyHint: '12ab', updatedAt: updatedAt.toISOString() },
-      { provider: 'openai', configured: true, keyHint: '9f3a', updatedAt: updatedAt.toISOString() },
-      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null },
+      {
+        provider: 'anthropic',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+      },
+      {
+        provider: 'glm',
+        configured: true,
+        keyHint: '12ab',
+        updatedAt: updatedAt.toISOString(),
+        isDefault: false,
+      },
+      {
+        provider: 'openai',
+        configured: true,
+        keyHint: '9f3a',
+        updatedAt: updatedAt.toISOString(),
+        isDefault: true,
+      },
+      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
     ]);
+  });
+
+  it('says exactly one provider is the default, Anthropic when no key is stored', () => {
+    expect(mapper.toResponseList([]).filter((row) => row.isDefault)).toMatchObject([
+      { provider: 'anthropic' },
+    ]);
+    const list = mapper.toResponseList([stored('openai', '9f3a'), stored('glm', '12ab', true)]);
+    expect(list.filter((row) => row.isDefault)).toMatchObject([{ provider: 'glm' }]);
   });
 });
