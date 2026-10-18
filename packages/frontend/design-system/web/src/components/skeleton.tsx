@@ -9,6 +9,9 @@ import { cn } from '../lib/utils';
  * - `pill`: a round mark, like the account avatar on Connect GitHub.
  * - `none`: a pane that fills its frame edge to edge (an opening session's
  *   terminal).
+ *
+ * A placeholder is hidden from assistive technology (the region it sits in
+ * says it is loading, once) and pulses only when the reader allows motion.
  */
 const SHAPES = {
   none: 'rounded-none',
@@ -25,8 +28,9 @@ function Skeleton({
 }: React.ComponentProps<'div'> & { shape?: keyof typeof SHAPES }) {
   return (
     <div
+      aria-hidden
       data-slot="skeleton"
-      className={cn('animate-pulse bg-track-off', SHAPES[shape], className)}
+      className={cn('motion-safe:animate-pulse bg-track-off', SHAPES[shape], className)}
       {...props}
     />
   );

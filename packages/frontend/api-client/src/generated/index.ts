@@ -225,6 +225,7 @@ export {
   updateUserSettings,
   uploadAvatar,
   uploadSessionAttachment,
+  wipeHost,
 } from './sdk.gen';
 export type {
   AcceptInvitationData,
@@ -1566,6 +1567,11 @@ export type {
   VoiceStatusResponseDto,
   VoiceTranscriptionResponseDto,
   WatchedRepositoryDto,
+  WipeHostData,
+  WipeHostError,
+  WipeHostErrors,
+  WipeHostResponse,
+  WipeHostResponses,
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
 } from './types.gen';

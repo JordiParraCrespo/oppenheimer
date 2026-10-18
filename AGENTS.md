@@ -429,6 +429,11 @@ pnpm changeset          # Create a changeset for versioning
   arguments, the skill ports every export sync since the last port
   (`last-port.json` in the skill) end to end, captures and pull request
   included
+- A read's loading placeholder has the shape of what replaces it: the
+  data's own container, static labels written, a bar per line, never a `0`
+  for a value not given (`.agents/rules/frontend-ui.md`). `pnpm
+  check:structure` fails a `QueryState.Pending` that is only a slab, and
+  `/frontend-audit` reports the rest as `U7`
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up

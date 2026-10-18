@@ -165,11 +165,11 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		Logger:          logger,
 		// Unpaired is terminal. Recorded in the identity so the next boot does
 		// not dial either and `runner status` can say why the host is quiet.
-		OnUnpaired: func() {
+		OnUnpaired: func(wipe bool) {
 			if _, err := a.Pairing.MarkRevoked(); err != nil {
 				logger.Error("could not record that this host was unpaired", slog.Any("error", err))
 			}
-			handler.unpaired(ctx)
+			handler.unpaired(ctx, wipe)
 		},
 	})
 	if err != nil {
@@ -205,7 +205,9 @@ var (
 // unpaired is a person removing this host, and removing a host stops the
 // sessions on it (03, 14): the control plane has already recorded each one
 // stopped, and an agent left running would work where no console can see it.
-// Stopping keeps every checkout on disk — it is not a close.
+// Stopping keeps every checkout on disk — it is not a close — unless the
+// owner also asked for the machine to be cleaned up (wipe): then every
+// session is closed too, its worktree and folder removed, nothing pushed.
 //
 // The order is the point. Commands in flight are cancelled and the lanes
 // closed and drained first, so a create still cloning cannot start its tmux
@@ -215,23 +217,27 @@ var (
 // There is no second verdict to try again on, so a stop that fails is retried
 // for as long as the daemon lives — which, unpaired, is quietly, until the
 // service manager stops it.
-func (h *linkHandler) unpaired(ctx context.Context) {
+func (h *linkHandler) unpaired(ctx context.Context, wipe bool) {
 	if h.endLife != nil {
 		h.endLife()
 	}
 	if !h.lanes.close(unpairedDrain) {
 		h.logger.Warn("commands were still running when this host was unpaired; stopping its sessions anyway")
 	}
+	end, verb := h.app.Sessions.EndAll, "stopped"
+	if wipe {
+		end, verb = h.app.Sessions.WipeAll, "closed and removed"
+	}
 	wait := unpairedRetry
 	for {
-		ended, err := h.app.Sessions.EndAll(context.WithoutCancel(ctx))
+		ended, err := end(context.WithoutCancel(ctx))
 		if len(ended) > 0 {
-			h.logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
+			h.logger.Info(verb+" the sessions of this unpaired host", slog.Any("sessions", ended))
 		}
 		if err == nil {
 			return
 		}
-		h.logger.Error("could not stop every session of this unpaired host; trying again",
+		h.logger.Error("could not end every session of this unpaired host; trying again",
 			slog.Any("error", err), slog.Duration("in", wait))
 		select {
 		case <-ctx.Done():

@@ -1,6 +1,6 @@
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { generateKeyPairSync, randomUUID } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -35,6 +35,7 @@ import type {
   SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
 import type { SessionReconciliationPort } from '../../sessions/application/session-reconciliation.port';
+import { HostUnpairedDomainEventHandler } from '../application/event-handlers/host-unpaired.domain-event-handler';
 import { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
@@ -434,5 +435,27 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
         .map((e) => `  ${e.idempotencyKey} ${e.kind} ${e.payload}`)
         .join('\n')}\n`,
     );
+  }, 30_000);
+
+  it('removed with a clean-up, closes the stopped session and deletes its worktree', async () => {
+    const worktrees = () =>
+      readdirSync(join(w.scratch, 'workspaces'), { recursive: true, encoding: 'utf8' }).filter(
+        // The bare store under repos/ stays, branch refs and all: a fresh clone
+        // later is what the clean-up spares.
+        (path) => path.endsWith('hello-world') && !path.includes('/repos/'),
+      );
+    // The stop above kept the worktree for a Restart.
+    expect(worktrees()).not.toEqual([]);
+
+    new HostUnpairedDomainEventHandler(w.registry).handle({ aggregateId: HOST, wipe: true });
+
+    await until(
+      'the runner to close its sessions',
+      () => (w.log.join('').includes('closed and removed the sessions') ? true : undefined),
+      20_000,
+    );
+    expect(worktrees()).toEqual([]);
+    // Unpaired is terminal: the runner does not dial again.
+    expect(w.log.join('')).toContain('the link will not redial');
   }, 30_000);
 });

@@ -1,6 +1,7 @@
-import { SettingsTitle, Skeleton } from '@oppenheimer/design-system-web';
+import { SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { WatchedRepositoriesSkeleton } from '../components/watched-repositories-skeleton';
 import { WatchRepositorySearch } from '../sections/watch-repository-search';
 import { WatchedRepositories } from '../sections/watched-repositories';
 
@@ -21,7 +22,7 @@ export function WatchedRepositoriesSettingsScreen() {
       />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton className="h-26 w-full" />
+          <WatchedRepositoriesSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('pullRequests.watch.loadFailed')} />
         <QueryState.Data>

@@ -222,38 +222,33 @@ export const Route = createFileRoute('/_authenticated/settings/things')({
 ## 5. Screen and section
 
 ```tsx
-// features/things/screens/things-settings.tsx: composes, never subscribes for a child
+// features/things/screens/things-settings.tsx: the read's three rungs, around the section that reads
 export function ThingsSettingsScreen() {
   const { t } = useTranslation();
   return (
     <>
       <SettingsTitle title={t('settings.things.title')} description={t('settings.things.description')} />
       <CreateThingCard />
-      <ThingList />
+      <QueryState>
+        <QueryState.Pending>
+          <ThingListSkeleton />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('settings.things.failed')} />
+        <QueryState.Data>
+          <ThingList />
+        </QueryState.Data>
+      </QueryState>
     </>
   );
 }
 ```
 
 ```tsx
-// features/things/sections/thing-list.tsx: asks for what it draws, renders every state
+// features/things/sections/thing-list.tsx: reads under Suspense, so `data` is never undefined
 export function ThingList() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
-  const things = useThings();
-
-  if (things.isPending) return <Skeleton className="h-16 w-full" />;
-  if (things.isError) {
-    // Instead of the list, never above an empty one: "no things" would be false.
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          {resolveError(things.error, t('settings.things.failed')).message}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  if (things.data.length === 0) {
+  const { data: things, error } = useSuspenseThings();
+  if (things.length === 0) {
     return (
       <EmptyState>
         <EmptyState.Header>
@@ -264,14 +259,62 @@ export function ThingList() {
     );
   }
   return (
-    <div className="flex flex-col gap-2.5">
-      {things.data.map((thing) => (
-        <ThingRow key={thing.id} thing={thing} />
+    <>
+      {/* A refetch that fails keeps the rows and says so above them. */}
+      <ErrorAlert error={error} fallback={t('settings.things.failed')} />
+      <div className="flex flex-col gap-2.5">
+        {things.map((thing) => (
+          <ThingRow key={thing.id} thing={thing} />
+        ))}
+      </div>
+    </>
+  );
+}
+```
+
+```tsx
+// features/things/components/thing-list-skeleton.tsx: the list's shape before its first answer
+/**
+ * The list as it will land: its container and gap, rows in the row's own
+ * frame at the row's height, a bar per line of the row at that line's height.
+ */
+export function ThingListSkeleton() {
+  const { t } = useTranslation();
+  return (
+    <div aria-busy className="flex flex-col gap-2.5">
+      <span role="status" className="sr-only">
+        {t('common.loading')}
+      </span>
+      {['w-40', 'w-32', 'w-36'].map((width) => (
+        <div
+          key={width}
+          aria-hidden
+          className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+        >
+          <div className="flex flex-col">
+            <span className="flex h-6 items-center">
+              <Skeleton shape="sm" className={`h-3.5 ${width}`} />
+            </span>
+            <span className="flex h-5 items-center">
+              <Skeleton shape="sm" className="h-3 w-24" />
+            </span>
+          </div>
+          <Skeleton shape="pill" className="h-5.5 w-14" />
+        </div>
       ))}
     </div>
   );
 }
 ```
+
+The placeholder is the rule in `.agents/rules/frontend-ui.md`, "A placeholder
+has the shape of what replaces it": the data's own container, static text
+written, a bar per line at the line's height, no `0` for a value not given.
+When the row is a component of its own, prefer the row drawn with its data
+left out (`PersonRow` without a `login` in `features/pull-requests`) or a
+`<Row>Skeleton` beside it in the design system (`PullRequestRowSkeleton`), so
+the shape has one owner. `pnpm check:structure` fails a `Pending` that is
+only a slab (`<Skeleton className="h-16 w-full" />`).
 
 Check each design-system component's props in its file before copying a
 call: `EmptyState` is a compound (`EmptyState.Header`, `.Media`, `.Title`,

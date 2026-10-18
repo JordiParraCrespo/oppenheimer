@@ -189,7 +189,13 @@ describe('usePairingTokens', () => {
 
 describe('host writes', () => {
   const cases = [
-    { name: 'remove', method: 'remove', hook: useRemoveHost, variables: 'h-1', called: ['h-1'] },
+    {
+      name: 'remove',
+      method: 'remove',
+      hook: useRemoveHost,
+      variables: { id: 'h-1', wipe: true },
+      called: ['h-1', true],
+    },
     {
       name: 'rename',
       method: 'rename',

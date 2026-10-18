@@ -367,6 +367,53 @@ personal dictionary stay for later.
   needs its processor served as a module of its own and nothing in this
   slice needed it. It stays deprecated-but-working, said in the code.
 
+## Dictation quality, first pass (2026-10-18)
+
+Issue #393: dictation should be as good as Wispr Flow. The owner dictates
+their prompts with a tool that already does it well, and what it writes is
+the target: the speaker's own words and language, stutters and false starts
+gone ("what, what I am doing" becomes "what I am doing"), punctuation and
+capitals added, nothing reworded or summarised. This pass closes the gaps
+that need no new table or screen:
+
+- **The names reach the speech model.** The vocabulary the console sends
+  goes to an OpenAI-compatible server as `prompt` (`speechPrompt` in
+  `apps/api/src/voice/domain/voice-speech.policy.ts`): the screen's names,
+  then Oppenheimer, Claude Code, Codex, ChatGPT, GitHub and tmux, cut at a
+  whole name within 600 characters, the part Whisper reads. A list, not a
+  sentence, because a sentence in one language pulls the model towards
+  transcribing in it. ChatGPT's route gets no `prompt`: no known client sends
+  one, and the names still reach that path through the polish.
+- **Language is detected, not given.** The console sends no `language`, so
+  the model hears Spanish, Catalan, English and a mix of them as said. A
+  per-person preference waits for the eval to show it helps.
+- **Every clip is polished.** The skip for eight words or fewer is gone: a
+  short command comes back as typed ("Fix the login page."). The brief is
+  rewritten for a light touch: keep the words, tone and language (never
+  translate, mixed stays mixed); drop fillers in all three languages,
+  stutters, false starts and self-corrections; spoken punctuation and
+  layout ("new line", "punto y aparte") are commands; a spoken enumeration
+  is a list; code in backticks; a sound-alike of a vocabulary name is that
+  name.
+- **What a speech model makes up from silence is dropped.** Whisper-class
+  models write subtitle credits over silence ("Subtítulos realizados por la
+  comunidad de Amara.org", "Thanks for watching!"); those are cut from the
+  end of a transcript, and a transcript that was only that is empty. "Thank
+  you" and "gracias" stay: people say them to bots.
+- **The console trims the silence** before the first word and after the
+  last (300 ms kept either side), which is where those hallucinations come
+  from, and is upload and wait for nothing. A clip with no speech in it is
+  sent whole.
+- **The eval exists**: `scripts/evals/voice/` sends real clips through the
+  API and scores word error rate, raw and polished, against Wispr Flow's
+  text for the same clip, plus names spelled right and latency. The clips
+  are the owner's to record; they stay git-ignored.
+
+Left for later, in #393's order: the field's current text as context for
+both steps, a personal dictionary learned from edits (its own consent and
+table), streaming partials, and whether ChatGPT's route stays first in line
+once the eval has numbers for it.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake

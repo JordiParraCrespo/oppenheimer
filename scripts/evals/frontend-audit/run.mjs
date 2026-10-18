@@ -84,13 +84,13 @@ function parseArgs(argv) {
   return args;
 }
 
-function run(cmd, cmdArgs, cwd, { timeoutMs = 15 * 60_000 } = {}) {
+function run(cmd, cmdArgs, cwd, { timeoutMs = 15 * 60_000, env = {} } = {}) {
   const result = spawnSync(cmd, cmdArgs, {
     cwd,
     encoding: 'utf8',
     timeout: timeoutMs,
     maxBuffer: 256 * 1024 * 1024,
-    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', ...env },
   });
   return {
     ok: result.status === 0,
@@ -216,11 +216,21 @@ function runAgent(dir, prompt, { model, timeout }) {
     'claude',
     ['-p', prompt, '--output-format', 'json', '--model', model, '--allowedTools', AGENT_TOOLS],
     dir,
-    { timeoutMs: timeout * 60_000 },
+    // A case changes `apps/web`, and nothing here is photographed: without
+    // this the screenshot guard's Stop hook holds the auditor's last turn,
+    // and the answer ends on that instead of the JSON block.
+    { timeoutMs: timeout * 60_000, env: { OPPENHEIMER_SCREENSHOT_GUARD: 'off' } },
   );
   const summary = { ok: result.ok, seconds: Math.round((Date.now() - started) / 1000) };
   try {
-    const json = JSON.parse(result.out.slice(result.out.indexOf('{')));
+    // The CLI's answer is the last line of its stdout; anything before it
+    // (a hook's notice, a warning) may hold a brace of its own.
+    const line = (result.stdout ?? result.out)
+      .trim()
+      .split('\n')
+      .reverse()
+      .find((l) => l.startsWith('{'));
+    const json = JSON.parse(line);
     return {
       ...summary,
       cost_usd: json.total_cost_usd,

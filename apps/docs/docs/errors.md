@@ -810,7 +810,7 @@ others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
-for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
+for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything else.
 
 | Code                                   | Title                                        | HTTP |
 | -------------------------------------- | -------------------------------------------- | ---- |
@@ -844,6 +844,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `PAIR_005` <a id="pair_005" />         | The control plane URL is not usable          | 400  |
 | `PAIR_006` <a id="pair_006" />         | The control plane could not be reached       | 502  |
 | `PAIR_007` <a id="pair_007" />         | The control plane is limiting registrations  | 429  |
+| `PAIR_008` <a id="pair_008" />         | The control plane refused to unpair this host | 401  |
+| `PAIR_009` <a id="pair_009" />         | This host was erased here but is still paired at the control plane | 502  |
 | `SVC_001` <a id="svc_001" />           | No service manager for this platform         | 400  |
 | `SVC_002` <a id="svc_002" />           | The runner service could not be installed    | 500  |
 | `SVC_003` <a id="svc_003" />           | The runner service is not installed          | 404  |

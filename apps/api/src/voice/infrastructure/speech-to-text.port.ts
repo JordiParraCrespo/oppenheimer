@@ -3,6 +3,12 @@ export interface VoiceClip {
   data: Buffer;
   /** ISO 639-1, when the speaker's language is known; the model guesses otherwise. */
   language?: string;
+  /**
+   * Names the speech model should expect (`speechPrompt`), for a provider
+   * that takes a hint. Never a sentence: one in a language pulls the model
+   * towards it.
+   */
+  prompt?: string;
 }
 
 /** A ChatGPT sign-in's access, as `TURN_CREDENTIALS` hands it out. A live credential: never logged. */

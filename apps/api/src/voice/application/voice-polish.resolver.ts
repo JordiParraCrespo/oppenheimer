@@ -9,7 +9,6 @@ import { botDefaultModel } from '@oppenheimer/shared';
 
 import {
   cleanPolished,
-  needsPolish,
   VOICE_POLISH_SYSTEM_PROMPT,
   voicePolishMessage,
 } from '../domain/voice-polish.policy';
@@ -18,6 +17,8 @@ import type { PolishModel } from './speech-provider.port';
 
 /**
  * Tidies a transcript into writing (`product/next-steps/voice.md`, step 2).
+ * Every clip is tidied, a short one too: "fix the login page" should come
+ * back as "Fix the login page." the way it would have been typed.
  *
  * **Polish first, the words as heard if it is not quick.** When the
  * provider that heard the clip brings a model credential (a ChatGPT sign-in
@@ -44,7 +45,7 @@ export class VoicePolishResolver {
     vocabulary: readonly string[],
     model: PolishModel | null,
   ): Promise<string | null> {
-    if (!needsPolish(raw)) return null;
+    if (!raw.trim()) return null;
     const message = voicePolishMessage(raw, vocabulary);
     try {
       const answer = model
@@ -89,7 +90,8 @@ export class VoicePolishResolver {
       system: VOICE_POLISH_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: message }],
       temperature: 0,
-      maxTokens: 1024,
+      // Two minutes of fast speech is about 400 words; the answer is no longer.
+      maxTokens: 2048,
       timeoutMs: this.timeoutMs,
     });
     return completion.text;

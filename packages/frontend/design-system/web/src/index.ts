@@ -357,6 +357,7 @@ export { PullRequestHeader } from './components/pull-request-header';
 export {
   MergeButton,
   PullRequestRow,
+  PullRequestRowSkeleton,
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';

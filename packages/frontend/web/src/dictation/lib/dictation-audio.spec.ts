@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DictationMeter, formatElapsed } from './dictation-meter';
-import { encodeWav, levelOf } from './wav';
+import { encodeWav, levelOf, trimSilence } from './wav';
 
 /**
  * What the recorder hands the API and draws: the microphone's samples as a
@@ -48,6 +48,57 @@ describe('encodeWav', () => {
     const view = await bytesOf(encodeWav([new Float32Array([2, -2])], 16_000, 16_000));
     expect(view.getInt16(44, true)).toBe(0x7fff);
     expect(view.getInt16(46, true)).toBe(-0x8000);
+  });
+});
+
+describe('trimSilence', () => {
+  const RATE = 16_000;
+  /** `seconds` of a 200 Hz tone at `amplitude`, or of silence at 0. */
+  const tone = (seconds: number, amplitude: number) =>
+    Float32Array.from(
+      { length: seconds * RATE },
+      (_, i) => amplitude * Math.sin((2 * Math.PI * 200 * i) / RATE),
+    );
+  const joined = (...parts: Float32Array[]) => {
+    const out = new Float32Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let at = 0;
+    for (const part of parts) {
+      out.set(part, at);
+      at += part.length;
+    }
+    return out;
+  };
+
+  it('cuts the quiet before the first word and after the last, keeping 300 ms either side', () => {
+    const clip = joined(tone(2, 0.001), tone(1, 0.3), tone(0.5, 0), tone(1, 0.3), tone(3, 0.001));
+
+    const trimmed = trimSilence(clip, RATE);
+
+    // The pause between the words stays; the two seconds before and three after go.
+    expect(trimmed.length / RATE).toBeCloseTo(0.3 + 2.5 + 0.3, 1);
+  });
+
+  it('sends a clip with nothing above the floor whole, for the API to judge', () => {
+    const hum = tone(2, 0.002);
+    expect(trimSilence(hum, RATE)).toHaveLength(hum.length);
+  });
+
+  it('keeps the voice when a click far louder than it ends the clip', () => {
+    // A second of quiet, two of a soft voice, a 60 ms bump at full scale, a second of quiet.
+    const clip = joined(tone(1, 0.001), tone(2, 0.02), tone(0.06, 1), tone(1, 0.001));
+
+    // The voice and the bump stay, with the padding either side.
+    expect(trimSilence(clip, RATE).length / RATE).toBeCloseTo(0.3 + 2.06 + 0.3, 1);
+  });
+
+  it('cuts nothing from a clip that is speech from end to end', () => {
+    const speech = joined(tone(1, 0.3), tone(0.2, 0.05), tone(1, 0.3));
+    expect(trimSilence(speech, RATE)).toHaveLength(speech.length);
+  });
+
+  it('keeps a quiet speaker: speech is told from the room, not from a fixed level', () => {
+    const clip = joined(tone(1, 0.0005), tone(1, 0.02), tone(1, 0.0005));
+    expect(trimSilence(clip, RATE).length / RATE).toBeCloseTo(1.6, 1);
   });
 });
 
