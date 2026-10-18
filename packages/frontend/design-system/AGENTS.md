@@ -65,7 +65,9 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `ChipSelectTrigger` in its `tab` variant (borderless, muted, no chevron),
   so where the work happens reads as one sentence over the box.
 - **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
-  switches between the sessions and routines lists; the sidebar groups rows
+  switches between the sessions and routines lists (under 768px it is a
+  tab bar along the bottom of the screen, and the page beside it keeps
+  clear with `RAIL_BAR_CLEARANCE`); the sidebar groups rows
   under `SidebarProjectHeader`s whose actions appear on hover, with
   `SidebarSearch` and the facet chips above the groups and `SidebarEmptyRow`
   inside an empty one. A `SessionItem` takes its ellipsis as `action` and its

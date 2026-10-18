@@ -1,4 +1,10 @@
-import { SettingsContent, SettingsMain, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  cn,
+  RAIL_BAR_CLEARANCE,
+  SettingsContent,
+  SettingsMain,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +20,8 @@ export function BotSettingsScreen({ botId, children }: { botId: string; children
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
+    // The rail beside it is a bar along the bottom on a phone; keep clear of it.
+    <div className={cn('flex min-w-0 flex-1 flex-col', RAIL_BAR_CLEARANCE)}>
       <QueryState>
         <QueryState.Pending>
           <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle px-4">
@@ -27,10 +34,10 @@ export function BotSettingsScreen({ botId, children }: { botId: string; children
           <BotSettingsTopBar botId={botId} />
         </QueryState.Data>
       </QueryState>
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <BotSettingsNav botId={botId} />
         <SettingsMain>
-          <SettingsContent className="pt-6">{children}</SettingsContent>
+          <SettingsContent offset="bar">{children}</SettingsContent>
         </SettingsMain>
       </div>
     </div>

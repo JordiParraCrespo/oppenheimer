@@ -19,7 +19,8 @@ export const Route = createFileRoute('/_authenticated/settings')({
 
 function SettingsLayout() {
   return (
-    <SettingsShell>
+    // On a phone the nav is a strip over the page (`SettingsNav`).
+    <SettingsShell className="flex-col md:flex-row">
       <SettingsSidebar
         back="/sessions/new"
         groups={[

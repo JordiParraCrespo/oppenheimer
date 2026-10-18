@@ -1734,7 +1734,7 @@
       "merged": "PRs merged",
       "from": "from {{value}}",
       "series": "Series",
-      "both": "Created and merged",
+      "both": "Both",
       "perDay": "Pull requests created and merged per day",
       "hover": "Hover a day",
       "reviewedByYou": "Reviewed by you",
