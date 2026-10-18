@@ -25955,9 +25955,15 @@
           "summary": {
             "type": "string",
             "description": "The card's line: what the call does, in words."
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session an approved `start_session` started; null for any other event."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary"]
+        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
       },
       "BotMessageResponseDto": {
         "type": "object",

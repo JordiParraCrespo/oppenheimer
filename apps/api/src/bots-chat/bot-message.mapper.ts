@@ -62,7 +62,9 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
     }));
-    dto.event = entity.event ? { ...entity.event } : null;
+    dto.event = entity.event
+      ? { ...entity.event, sessionId: entity.event.sessionId ?? null }
+      : null;
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
@@ -101,5 +103,6 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     outcome,
     tool: String(raw.tool ?? ''),
     summary: String(raw.summary ?? ''),
+    sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
   };
 }

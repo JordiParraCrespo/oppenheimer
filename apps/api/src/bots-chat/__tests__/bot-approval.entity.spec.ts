@@ -1,5 +1,5 @@
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
-import { approvalEvent } from '../domain/bot-approval.policy';
+import { approvalEvent, approvalEventOf } from '../domain/bot-approval.policy';
 
 /**
  * A Needs input card is decided once (`25-bots.md` §5): pending moves to
@@ -109,5 +109,30 @@ describe('approvalEvent', () => {
     expect(approvalEvent(approval, ' ')).toBe(
       'The person denied: Start Claude Code on build-02\nTheir note: Use staging',
     );
+  });
+});
+
+describe('approvalEventOf', () => {
+  const SESSION = '0b6c3f0e-5a7d-4c1e-9f2a-1d2e3f4a5b6c';
+
+  it('carries the session an approved start_session started, for the chat to link to', () => {
+    const approval = pending();
+    approval.approve('user-1', NOW);
+    approval.recordResult(
+      `Started session ${SESSION} on host h-1. The agent works on its own.`,
+      false,
+    );
+    expect(approvalEventOf(approval)).toMatchObject({ outcome: 'approved', sessionId: SESSION });
+  });
+
+  it('carries no session for a failed or denied call', () => {
+    const failed = pending();
+    failed.approve('user-1', NOW);
+    failed.recordResult(`Started session ${SESSION} on host h-1.`, true);
+    expect(approvalEventOf(failed)).toMatchObject({ outcome: 'failed', sessionId: null });
+
+    const denied = pending();
+    denied.deny('user-1', NOW, null);
+    expect(approvalEventOf(denied)).toMatchObject({ outcome: 'denied', sessionId: null });
   });
 });

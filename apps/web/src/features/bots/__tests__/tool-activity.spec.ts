@@ -5,6 +5,7 @@ import {
   planItems,
   readableOutput,
   runningStep,
+  startedSession,
   toolAction,
   toolTarget,
 } from '../lib/tool-activity';
@@ -95,5 +96,30 @@ describe('planItems', () => {
       { text: 'Write it up', state: 'pending' },
     ]);
     expect(planItems({})).toEqual([]);
+  });
+});
+
+describe('startedSession', () => {
+  const SESSION = '0b6c3f0e-5a7d-4c1e-9f2a-1d2e3f4a5b6c';
+  const step = (name: string, output: string | null, isError = false) => ({
+    callId: 'c1',
+    name,
+    input: {},
+    output,
+    isError,
+  });
+
+  it('is the session a start_session call started, under its MCP name too', () => {
+    const output = `Started session ${SESSION} on host h-1. The agent works on its own.`;
+    expect(startedSession(step('start_session', output))).toBe(SESSION);
+    expect(startedSession(step('mcp__oppenheimer__start_session', output))).toBe(SESSION);
+  });
+
+  it('is nothing for another tool, a failed call, one still running, or an answer that started none', () => {
+    const output = `Started session ${SESSION} on host h-1.`;
+    expect(startedSession(step('get_session', output))).toBeNull();
+    expect(startedSession(step('start_session', output, true))).toBeNull();
+    expect(startedSession(step('start_session', null))).toBeNull();
+    expect(startedSession(step('start_session', 'Not done yet: this needs approval.'))).toBeNull();
   });
 });

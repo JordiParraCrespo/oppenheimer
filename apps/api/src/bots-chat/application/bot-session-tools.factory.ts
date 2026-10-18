@@ -100,6 +100,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         const offline = result.hints.includes('host_offline')
           ? ' The host is offline: the session is queued and starts when it comes back.'
           : '';
+        // `startedSessionId` (@oppenheimer/shared) reads the id back off this opening, for the chat's link.
         return `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own; read it later with get_session.`;
       },
     });

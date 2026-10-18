@@ -42,6 +42,14 @@ export class BotMessageEventResponseDto {
 
   @ApiProperty({ description: "The card's line: what the call does, in words." })
   summary!: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The session an approved `start_session` started; null for any other event.',
+  })
+  sessionId!: string | null;
 }
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */

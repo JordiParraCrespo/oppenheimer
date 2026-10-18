@@ -1046,6 +1046,7 @@
         "cancel": "Cancel",
         "failed": "Could not answer the request."
       },
+      "openSession": "Open session",
       "event": {
         "approved": "You approved: {{summary}}",
         "denied": "You denied: {{summary}}",

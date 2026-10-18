@@ -3143,6 +3143,10 @@ export type BotMessageEventResponseDto = {
      * The card's line: what the call does, in words.
      */
     summary: string;
+    /**
+     * The session an approved `start_session` started; null for any other event.
+     */
+    sessionId: string | null;
 };
 
 export type BotMessageResponseDto = {
