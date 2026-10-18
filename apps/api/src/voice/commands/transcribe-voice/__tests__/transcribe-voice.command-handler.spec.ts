@@ -28,13 +28,16 @@ function wav(): Buffer {
   return out;
 }
 
-const CHATGPT = { apiKey: 'access-placeholder', accountId: 'acct-1' };
+const CHATGPT = {
+  provider: 'chatgpt',
+  credential: { apiKey: 'access-placeholder', accountId: 'acct-1' },
+};
 
 function setup(polished: string | null) {
   const transcription: Pick<VoiceTranscriptionResolver, 'hear'> = {
     hear: vi
       .fn()
-      .mockResolvedValue({ raw: 'um fix the login', provider: 'chatgpt', chatgpt: CHATGPT }),
+      .mockResolvedValue({ raw: 'um fix the login', provider: 'chatgpt', polishOn: CHATGPT }),
   };
   const polish: Pick<VoicePolishResolver, 'polish'> = {
     polish: vi.fn().mockResolvedValue(polished),

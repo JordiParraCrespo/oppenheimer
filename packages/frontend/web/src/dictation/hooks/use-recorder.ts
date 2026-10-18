@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { DictationMeter } from '../lib/dictation-meter';
 import { encodeWav, levelOf } from '../lib/wav';
 
-/** Where a dictation is: nothing, asking for the microphone, or recording. */
-export type DictationState = 'idle' | 'waiting' | 'recording';
+/** Where a recording is: nothing, asking for the microphone, or recording. */
+export type RecorderState = 'idle' | 'waiting' | 'recording';
 
 /** Why the microphone could not be opened: refused by the person or the browser, or none there. */
-export type DictationFailure = 'denied' | 'unavailable';
+export type MicrophoneFailure = 'denied' | 'unavailable';
 
-export interface Dictation {
-  state: DictationState;
-  failure: DictationFailure | null;
+export interface Recorder {
+  state: RecorderState;
+  failure: MicrophoneFailure | null;
   /** The live levels and time, for the recorder bar alone to subscribe to. */
   meter: DictationMeter;
   start: () => void;
@@ -46,8 +46,8 @@ const CHUNK = 4096;
 /**
  * Records one dictation from the microphone (`product/next-steps/voice.md`)
  * and hands it to `onRecorded` as the WAV the API takes: 16-bit PCM, mono, at
- * `sampleRate`. It knows nothing of where the audio goes next; the screen
- * that uses it does.
+ * `sampleRate`. It knows nothing of where the audio goes next; `useDictation`,
+ * above it, does.
  *
  * Plain Web Audio rather than `MediaRecorder`, because the browsers record
  * Opus or AAC and ChatGPT's dictation route takes WAV: the samples are kept
@@ -58,7 +58,7 @@ const CHUNK = 4096;
  * latest `onRecorded`, and whatever is open when the screen unmounts is
  * closed, so the browser's recording light goes out.
  */
-export function useDictation({
+export function useRecorder({
   onRecorded,
   sampleRate,
   maxSeconds,
@@ -66,9 +66,9 @@ export function useDictation({
   onRecorded: (wav: Blob) => void;
   sampleRate: number;
   maxSeconds: number;
-}): Dictation {
-  const [state, setState] = useState<DictationState>('idle');
-  const [failure, setFailure] = useState<DictationFailure | null>(null);
+}): Recorder {
+  const [state, setState] = useState<RecorderState>('idle');
+  const [failure, setFailure] = useState<MicrophoneFailure | null>(null);
   const [meter] = useState(() => new DictationMeter());
   const recording = useRef<Recording | null>(null);
   // Bumped by every start, stop and cancel, so a microphone that answers after
@@ -135,8 +135,8 @@ export function useDictation({
     };
     source.connect(processor);
     // A processor that reaches no destination is never called in Chrome; its output is silence.
-    // ScriptProcessorNode is deprecated and kept on purpose for slice 1; the AudioWorklet that
-    // replaces it comes when the recorder moves to the kit (`product/next-steps/voice.md`).
+    // ScriptProcessorNode is deprecated and kept on purpose: it needs no module of its own,
+    // which an AudioWorklet does (`product/next-steps/voice.md`).
     processor.connect(context.destination);
     recording.current = open;
     setState('recording');

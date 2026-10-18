@@ -1,6 +1,7 @@
 import {
   RoutineItem,
   SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   useNow,
 } from '@oppenheimer/design-system-web';
@@ -48,7 +49,7 @@ export function ReviewSessionsList() {
       {groups.map((group) => {
         const open = !closed.has(group.repository);
         return (
-          <div key={group.repository} className="flex flex-col">
+          <SidebarProjectGroup key={group.repository}>
             <SidebarProjectHeader
               name={group.repository.split('/').pop()}
               count={group.sessions.length}
@@ -63,7 +64,7 @@ export function ReviewSessionsList() {
               }
             />
             {open ? (
-              <div className="flex flex-col gap-0.5 px-3 pb-1">
+              <div className="flex flex-col gap-0.5 pb-1">
                 {group.sessions.map((session) => {
                   const link = pullRequestLink(session, 'chat');
                   return (
@@ -79,7 +80,7 @@ export function ReviewSessionsList() {
                 })}
               </div>
             ) : null}
-          </div>
+          </SidebarProjectGroup>
         );
       })}
     </div>

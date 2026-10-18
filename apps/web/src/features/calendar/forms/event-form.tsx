@@ -9,11 +9,14 @@ import {
   Textarea,
 } from '@oppenheimer/design-system-web';
 import {
+  DictationField,
+  dictateIntoField,
   ErrorAlert,
   type ResolvedErrorMessage,
   TimeField,
   useDatePickerCopy,
   useZodResolver,
+  type VoiceInput,
 } from '@oppenheimer/frontend-web';
 import {
   type CreateCalendarEventDto,
@@ -27,12 +30,13 @@ export type EventFormValues = input<typeof createCalendarEventSchema>;
 
 /**
  * A personal event (`20-plan-calendar.md` §2): a title, a day, all day or from
- * a start to an end on it, and notes. An end that is not after the start is
- * refused on the end field.
+ * a start to an end on it, and notes, which can be dictated. An end that is
+ * not after the start is refused on the end field.
  */
 export function EventForm({
   values,
   today,
+  voice,
   pending,
   error,
   submitLabel,
@@ -42,6 +46,7 @@ export function EventForm({
 }: {
   values: EventFormValues;
   today: string;
+  voice: VoiceInput;
   pending: boolean;
   error: ResolvedErrorMessage | null;
   submitLabel: string;
@@ -50,7 +55,7 @@ export function EventForm({
   onDelete?: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, control, handleSubmit, setValue, formState } = useForm<
+  const { register, control, handleSubmit, getValues, setValue, formState } = useForm<
     EventFormValues,
     unknown,
     CreateCalendarEventDto
@@ -139,7 +144,9 @@ export function EventForm({
       )}
       <Field>
         <FieldLabel htmlFor="event-notes">{t('calendar.event.notes')}</FieldLabel>
-        <Textarea {...register('notes')} id="event-notes" rows={3} />
+        <DictationField voice={voice} onText={dictateIntoField({ getValues, setValue }, 'notes')}>
+          <Textarea {...register('notes')} id="event-notes" rows={3} />
+        </DictationField>
       </Field>
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />
       <div className="flex items-center gap-2">

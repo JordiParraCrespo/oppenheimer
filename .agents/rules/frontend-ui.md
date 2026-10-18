@@ -60,6 +60,7 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
+| The bar a console page opens on, with the sidebar toggle | nothing: the shell draws it. With something in it, `staticData.bar: 'own'` on the route and the kit's `PageBar` (`leading`, `title`, `meta`, `status`, `tabs`, `actions`); a toolbar of the screen's own leads with `SidebarToggle` | `ChatHeader` with a toggle of its own, a `useSidebar` button in a feature, an empty `PageBar` |
 | A console page (the automations, Plan, Pull requests, New session) | the route's `staticData.pane` measure, which the shell frames; `PaneBar` for a bar that stays above the page; `EditorPageTop` for a page's tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | `EditorPage` in a route or a screen, a hand-rolled scroll column, a `max-w-*` column of its own |
 | A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` (`apps/web/src/lib/console.ts`, over the kit's `createDialogSlot`) | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
@@ -112,7 +113,8 @@ multi-line, so a grep for `export` misses most of them.
 | A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` (`round` for a bot chat's way back to the latest turn) | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
 | Panels on top of the chat composer, or one notice there | `ComposerStack` + `ComposerStackRow`, `ComposerTaskList`; `ComposerNotice` | a `Card` above the `Composer` |
 | A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel`; in a bot's chat, `ComposerApproval` in `ChatComposer`'s `above` | a `Dialog`, a `RadioGroup`, an `ApprovalPanel` stacked over the composer |
-| Dictation, the context meter, the `/` and `@` menus | `VoiceRecorderBar`, `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
+| A field someone writes prose into (a prompt, notes, a comment, a document) | dictation: a host that frames its own field (`Composer`, `ChatComposer`, `DiffCommentDraft`, `ReviewDecision`) takes `dictation={dictationSlots(useDictation(…))}`, a plain `Textarea` sits in the kit's `DictationField`; the text goes in through `dictateInto` / `dictateIntoField`, the `voice` is the product package's `useVoiceDictation()`, one per screen | a recorder of the feature's own, a mic `IconButton`, `getUserMedia` in a feature, an append written by hand |
+| The context meter, the `/` and `@` menus | `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
 | The chat's header, open threads, find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` (`align="center"` over `TemplateTiles` + `TemplateTile` for a new bot) | `SessionPaneHeader`, a tab strip of your own |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat

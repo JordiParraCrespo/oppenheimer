@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Gestionar el acceso a repositorios",
       "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+    },
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Detener la grabación",
+      "cancel": "Cancelar la grabación",
+      "waiting": "Esperando al micrófono…",
+      "transcribing": "Transcribiendo…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+      "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+      "failed": "No se ha podido transcribir la grabación."
     }
   },
   "validation": {
@@ -646,17 +656,7 @@
         "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
         "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
       },
-      "failed": "No se pudo crear la sesión.",
-      "dictation": {
-        "dictate": "Dictar",
-        "stop": "Detener la grabación",
-        "cancel": "Cancelar la grabación",
-        "waiting": "Esperando al micrófono…",
-        "transcribing": "Transcribiendo…",
-        "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
-        "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
-        "failed": "No se ha podido transcribir la grabación."
-      }
+      "failed": "No se pudo crear la sesión."
     },
     "session": {
       "status": {
@@ -931,7 +931,6 @@
       "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {
-      "toggleSidebar": "Mostrar u ocultar la barra lateral",
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
@@ -2262,7 +2261,7 @@
     "users": "Usuarios",
     "roles": "Roles",
     "featureFlags": "Indicadores de funcionalidad",
-    "toggleSidebar": "Mostrar u ocultar el menú",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
     "commandTitle": "Paleta de comandos",

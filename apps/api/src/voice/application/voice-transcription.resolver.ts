@@ -1,78 +1,66 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { VoiceProvider } from '@oppenheimer/shared';
-import type {
-  TurnCredential,
-  TurnCredentialsPort,
-} from '../../bots/application/turn-credentials.port';
-import { TURN_CREDENTIALS } from '../../bots/bots.di-tokens';
 import { VoiceErrors } from '../domain/voice.errors';
-import type {
-  ChatgptSpeechPort,
-  KeyedSpeechPort,
-  VoiceClip,
-} from '../infrastructure/speech-to-text.port';
-import { CHATGPT_SPEECH, KEYED_SPEECH } from '../voice.di-tokens';
+import type { VoiceClip } from '../infrastructure/speech-to-text.port';
+import type { PolishModel } from './speech-provider.port';
+import { SpeechProviderRegistry } from './speech-provider.registry';
 
-/** What was heard, by whom, and the sign-in it was heard on (for the polish to run on too). */
+/** What was heard, by whom, and the model credential the polish may run on. */
 export interface HeardClip {
   raw: string;
   provider: VoiceProvider;
-  chatgpt: TurnCredential | null;
+  polishOn: PolishModel | null;
 }
 
 /**
- * Who hears a workspace's clip (`product/next-steps/voice.md`): its ChatGPT
- * sign-in (Settings → Model providers) when it has one, the deployment's own
- * speech-to-text server otherwise, and nobody (`VOICE_005`) when it has
- * neither.
- *
- * The sign-in is found, read and refreshed through the bots module's
- * `TURN_CREDENTIALS` alone, the same way a bot's turn reads it, so voice never
- * keeps a second copy of the tokens. ChatGPT's dictation route is
- * undocumented: when it cannot transcribe (`VOICE_006`) or the sign-in has
- * lapsed, a deployment with its own server tries that instead of failing the
- * dictation; a refusal for rate (`VOICE_007`) is not retried elsewhere.
+ * Who hears a workspace's clip (`product/next-steps/voice.md`): the first
+ * provider in `SpeechProviderRegistry` available for the workspace, and the
+ * next one when it fails. A refusal for rate (`VOICE_007`) is not retried on
+ * another provider: it is the provider saying "not now", and spending a
+ * second provider's budget on it hides that. When every available provider
+ * failed, the first failure is the answer, since it is the provider the
+ * workspace would have used; when none is available, `VOICE_005`.
  */
 @Injectable()
 export class VoiceTranscriptionResolver {
   private readonly logger = new Logger(VoiceTranscriptionResolver.name);
 
-  constructor(
-    @Inject(TURN_CREDENTIALS) private readonly credentials: TurnCredentialsPort,
-    @Inject(CHATGPT_SPEECH) private readonly chatgpt: ChatgptSpeechPort,
-    @Inject(KEYED_SPEECH) private readonly keyed: KeyedSpeechPort,
-  ) {}
+  constructor(private readonly registry: SpeechProviderRegistry) {}
 
   async hear(organizationId: string, clip: VoiceClip, now: Date): Promise<HeardClip> {
-    const signedIn = await this.credentials.has(organizationId, 'chatgpt');
-    if (!signedIn) return this.hearOnKey(clip);
-
-    try {
-      const access = await this.credentials.forTurn(organizationId, 'chatgpt', now);
-      const raw = await this.chatgpt.transcribe(clip, {
-        accessToken: access.apiKey,
-        accountId: access.accountId,
-      });
-      return { raw, provider: 'chatgpt', chatgpt: access };
-    } catch (error) {
-      if (!this.keyed.isConfigured() || !this.mayFallBack(error)) throw error;
-      this.logger.warn({
-        message: "ChatGPT could not transcribe; using the deployment's speech server",
-        organizationId,
-        code: error instanceof AppError ? error.code : undefined,
-      });
-      return this.hearOnKey(clip);
+    let first: unknown = null;
+    let tried = false;
+    for (const provider of this.registry.all()) {
+      try {
+        // Asked here, in order, so a provider whose lookup fails is that
+        // provider failing: the next one is still tried.
+        if (!(await provider.availableFor(organizationId))) continue;
+        tried = true;
+        const grant = await provider.grantFor(organizationId, now);
+        const raw = await provider.transcribe(clip, grant);
+        return { raw, provider: provider.id, polishOn: grant.polishOn };
+      } catch (error) {
+        if (isRateLimit(error)) throw error;
+        tried = true;
+        first ??= error;
+        // The detail says which answer it was ("answered 403 (as text/html)"):
+        // the code alone says only that the provider refused, not why.
+        const { code, detail } = error instanceof AppError ? error : {};
+        this.logger.warn({
+          message: 'A speech provider could not transcribe; trying the next',
+          organizationId,
+          provider: provider.id,
+          code,
+          detail,
+        });
+      }
     }
+    if (tried) throw first;
+    throw new AppError(VoiceErrors.NOT_CONFIGURED);
   }
+}
 
-  private async hearOnKey(clip: VoiceClip): Promise<HeardClip> {
-    if (!this.keyed.isConfigured()) throw new AppError(VoiceErrors.NOT_CONFIGURED);
-    return { raw: await this.keyed.transcribe(clip), provider: 'speech_key', chatgpt: null };
-  }
-
-  /** Anything but a rate limit: a refused or changed route, an unreachable ChatGPT, a lapsed sign-in. */
-  private mayFallBack(error: unknown): boolean {
-    return !(error instanceof AppError && error.code === VoiceErrors.RATE_LIMITED.code);
-  }
+function isRateLimit(error: unknown): boolean {
+  return error instanceof AppError && error.code === VoiceErrors.RATE_LIMITED.code;
 }

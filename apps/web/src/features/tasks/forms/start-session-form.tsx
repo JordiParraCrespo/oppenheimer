@@ -8,7 +8,13 @@ import {
   Textarea,
 } from '@oppenheimer/design-system-web';
 import { Cpu, GitBranch } from '@oppenheimer/design-system-web/icons';
-import { ErrorAlert, type ResolvedErrorMessage } from '@oppenheimer/frontend-web';
+import {
+  DictationField,
+  dictateIntoField,
+  ErrorAlert,
+  type ResolvedErrorMessage,
+  type VoiceInput,
+} from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +25,7 @@ import { asAgent, type StartSessionValues } from '../lib/start-session';
  * The launch dialog's form (`18-plan-product.md` §4): the prompt, prefilled
  * from the task, and the repository, host, agent and model, defaulted from the
  * project. ⌘↩ starts. `offline` is the note for a host that is away, and the
- * button then reads Queue session.
+ * button then reads Queue session. The prompt can be dictated.
  *
  * Validated with React Hook Form's own rules: the body the API checks is built
  * from these choices (`toStartSession`), not typed into them.
@@ -29,6 +35,7 @@ export function StartSessionForm({
   repositories,
   hosts,
   offline,
+  voice,
   pending,
   error,
   onSubmit,
@@ -39,13 +46,16 @@ export function StartSessionForm({
   hosts: ChipSelectOption[];
   /** The note under the pickers when the picked host is offline. */
   offline: (hostId: string) => ReactNode;
+  voice: VoiceInput;
   pending: boolean;
   error: ResolvedErrorMessage | null;
   onSubmit: (values: StartSessionValues) => void;
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, control, handleSubmit } = useForm<StartSessionValues>({ values });
+  const { register, control, handleSubmit, getValues, setValue } = useForm<StartSessionValues>({
+    values,
+  });
   const hostId = useWatch({ control, name: 'hostId' });
   const note = hostId ? offline(hostId) : null;
   const submit = handleSubmit(onSubmit);
@@ -64,7 +74,9 @@ export function StartSessionForm({
     >
       <Field>
         <FieldLabel htmlFor="start-prompt">{t('tasks.start.prompt')}</FieldLabel>
-        <Textarea {...register('prompt')} id="start-prompt" rows={5} />
+        <DictationField voice={voice} onText={dictateIntoField({ getValues, setValue }, 'prompt')}>
+          <Textarea {...register('prompt')} id="start-prompt" rows={5} />
+        </DictationField>
       </Field>
       <div className="flex flex-wrap items-center gap-2">
         <Controller

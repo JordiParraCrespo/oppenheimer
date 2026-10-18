@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Manage repository access",
       "failed": "Could not open GitHub. Try again in a moment."
+    },
+    "dictation": {
+      "dictate": "Dictate",
+      "stop": "Stop recording",
+      "cancel": "Cancel recording",
+      "waiting": "Waiting for the microphone…",
+      "transcribing": "Transcribing…",
+      "denied": "The browser was not allowed to use the microphone. Allow it for this site, then dictate again.",
+      "unavailable": "No microphone could be opened. Plug one in or pick another in your system settings, then dictate again.",
+      "failed": "The recording could not be transcribed."
     }
   },
   "validation": {
@@ -644,17 +654,7 @@
         "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
         "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
-      "failed": "The session could not be created.",
-      "dictation": {
-        "dictate": "Dictate",
-        "stop": "Stop recording",
-        "cancel": "Cancel recording",
-        "waiting": "Waiting for the microphone…",
-        "transcribing": "Transcribing…",
-        "denied": "The browser was not allowed to use the microphone. Allow it for this site, then dictate again.",
-        "unavailable": "No microphone could be opened. Plug one in or pick another in your system settings, then dictate again.",
-        "failed": "The recording could not be transcribed."
-      }
+      "failed": "The session could not be created."
     },
     "session": {
       "status": {
@@ -929,7 +929,6 @@
       "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
     },
     "chat": {
-      "toggleSidebar": "Toggle sidebar",
       "actions": "Bot options",
       "settings": "Settings",
       "delete": "Delete bot",
