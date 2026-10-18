@@ -3,10 +3,10 @@
     "id": "es-login-loop",
     "clip": "clips/es-login-loop.wav",
     "language": "es",
-    "expected": "Arregla el bucle de redirección del login en `apps/web`. Cuando el usuario no tiene workspace, lo manda a /onboarding y vuelve atrás.",
-    "vocabulary": ["oppenheimer", "apps/web"],
-    "names": ["apps/web"],
-    "wispr": "Arregla el bucle de redirección del login en apps/web. Cuando el usuario no tiene workspace, lo manda a onboarding y vuelve atrás."
+    "expected": "Arregla el bucle de redirección del login en `src/auth/login.ts`. Cuando el usuario no tiene workspace, lo manda a /onboarding y vuelve atrás.",
+    "vocabulary": ["oppenheimer", "src/auth/login.ts"],
+    "names": ["src/auth/login.ts"],
+    "wispr": "Arregla el bucle de redirección del login en src/auth/login.ts. Cuando el usuario no tiene workspace, lo manda a onboarding y vuelve atrás."
   },
   {
     "id": "mixed-review",
