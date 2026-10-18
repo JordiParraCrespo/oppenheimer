@@ -521,3 +521,9 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- `versions/mvp/14-hosts-settings.md` had removing a host only stop its
+  sessions, every checkout kept. On 2026-10-18 the owner, testing on a
+  host, asked for a way to stop everything and start again: the remove
+  dialog has an "Also delete everything on this machine" box, and an
+  online host then closes every session, worktrees removed and nothing
+  pushed (14, "Remove can also clean the machine up").

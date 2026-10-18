@@ -130,8 +130,15 @@ export class HostsRepository {
     await unwrap(heyApiSdk.updateHostRunner({ path: { id } }), HostsErrors.UPDATE_FAILED);
   }
 
+  /**
+   * `wipe` also cleans the machine up: its runner closes every session, removing
+   * each worktree without pushing. Only a host online now hears it.
+   */
   @MapApiError(HostsErrors.REMOVE_FAILED)
-  async remove(id: string): Promise<void> {
-    await unwrap(heyApiSdk.unpairHost({ path: { id } }), HostsErrors.REMOVE_FAILED);
+  async remove(id: string, wipe = false): Promise<void> {
+    await unwrap(
+      heyApiSdk.unpairHost({ path: { id }, query: wipe ? { wipe } : undefined }),
+      HostsErrors.REMOVE_FAILED,
+    );
   }
 }

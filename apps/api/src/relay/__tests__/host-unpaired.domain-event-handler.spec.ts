@@ -1,4 +1,4 @@
-import { RUNNER_LINK_CLOSE_CODES } from '@oppenheimer/shared/protocol';
+import { RUNNER_LINK_CLOSE_CODES, RUNNER_LINK_CLOSE_REASONS } from '@oppenheimer/shared/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import type { LinkRegistryPort, RunnerLink } from '../../links/application/link-registry.port';
 import { HostUnpairedDomainEventHandler } from '../application/event-handlers/host-unpaired.domain-event-handler';
@@ -15,6 +15,16 @@ describe('HostUnpairedDomainEventHandler', () => {
     new HostUnpairedDomainEventHandler(registry(link)).handle({ aggregateId: HOST });
 
     expect(link.close).toHaveBeenCalledWith(RUNNER_LINK_CLOSE_CODES.UNPAIRED, 'host unpaired');
+  });
+
+  it('says in the reason when the owner asked for the machine to be cleaned up', () => {
+    const link = { hostId: HOST, close: vi.fn() } as unknown as RunnerLink;
+    new HostUnpairedDomainEventHandler(registry(link)).handle({ aggregateId: HOST, wipe: true });
+
+    expect(link.close).toHaveBeenCalledWith(
+      RUNNER_LINK_CLOSE_CODES.UNPAIRED,
+      RUNNER_LINK_CLOSE_REASONS.WIPE,
+    );
   });
 
   it('does nothing for a host with no link on this instance', () => {

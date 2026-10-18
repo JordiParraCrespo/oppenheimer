@@ -15,6 +15,11 @@ import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
  * (`StopSessionCommandHandler`), so each session keeps its checkouts and log; the
  * relay closing the link ends the tmux sessions on a runner that is still up.
  *
+ * A removal that asked for the machine to be cleaned up closes instead, and every
+ * session not resolved yet, stopped ones included: the host was told to close them
+ * all as its link closed (`RUNNER_LINK_CLOSE_REASONS.WIPE`), so their worktrees are
+ * going and the console should not offer a restart into one.
+ *
  * Delivery is at least once, so the entry is keyed by the domain event's id. Nothing
  * is dispatched: the host was just told, terminally, that it is no longer one.
  */
@@ -28,26 +33,30 @@ export class HostUnpairedStopsSessionsDomainEventHandler {
   ) {}
 
   @OnEvent(HostUnpairedDomainEvent.name)
-  async handle(event: Pick<HostUnpairedDomainEvent, 'id' | 'aggregateId'>): Promise<void> {
-    const running = await this.sessions.findRunningOnHostForSystem(event.aggregateId);
-    for (const session of running) {
+  async handle(
+    event: Pick<HostUnpairedDomainEvent, 'id' | 'aggregateId'> & { wipe?: boolean },
+  ): Promise<void> {
+    const kind = event.wipe ? SESSION_EVENT_KINDS.CLOSED : SESSION_EVENT_KINDS.STOPPED;
+    const ended = event.wipe
+      ? await this.sessions.findUnresolvedOnHostForSystem(event.aggregateId)
+      : await this.sessions.findRunningOnHostForSystem(event.aggregateId);
+    for (const session of ended) {
       await this.sessions.appendEvents(session, [
         {
-          idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-            event.id,
-            SESSION_EVENT_KINDS.STOPPED,
-          ),
+          idempotencyKey: WorkSessionEntity.apiIdempotencyKey(event.id, kind),
           source: 'api',
-          kind: SESSION_EVENT_KINDS.STOPPED,
-          payload: { requestedBy: 'host.unpaired' },
+          kind,
+          payload: { requestedBy: event.wipe ? 'host.unpaired.wipe' : 'host.unpaired' },
         },
       ]);
     }
-    if (running.length > 0) {
+    if (ended.length > 0) {
       this.logger.log({
-        message: 'stopped the sessions of a removed host',
+        message: event.wipe
+          ? 'closed the sessions of a removed host it was told to clean up'
+          : 'stopped the sessions of a removed host',
         hostId: event.aggregateId,
-        stopped: running.length,
+        ended: ended.length,
       });
     }
   }

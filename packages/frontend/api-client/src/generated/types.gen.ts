@@ -6146,7 +6146,12 @@ export type UnpairHostData = {
     path: {
         id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Also clean the machine up: its runner closes every session instead of stopping it, removing each worktree and session folder without pushing. Reaches only a host whose link is open now.
+         */
+        wipe?: boolean;
+    };
     url: '/api/v1/hosts/{id}';
 };
 
