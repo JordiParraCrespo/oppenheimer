@@ -203,11 +203,17 @@ putting the user's credentials on it.
   would keep working after the uninstall with no control plane and no
   console. `--force` ends the sessions and keeps their checkouts; a
   session it cannot end stops the uninstall before the identity is
-  erased, so the host stays paired and a second run can finish. It says
-  when the control plane could not be reached — the host is then still
-  listed and its key still trusted until it is unpaired there
-  (`DELETE /v1/hosts/{id}`; the console has no unpair control yet) — and
-  it **never touches the workspaces directory**, which is the user's
+  erased, so the host stays paired and a second run can finish. When the
+  control plane does not unpair the host (unreachable, timed out, refused
+  the key, failed), the identity is still erased but the command **exits
+  7 with `PAIR_009`**, not 0: it prints the underlying failure (request,
+  status, the control plane's sentence, never the bearer) and how a
+  signed-in person finishes it — Remove under Settings → Hosts, or
+  `DELETE /api/v1/hosts/{id}` with an API token holding `hosts:write` —
+  because the host is still listed and its key still trusted until then.
+  An earlier version of this note said the console had no unpair control
+  and printed `DELETE /v1/hosts/{id}` with exit 0 (issue #394). It
+  **never touches the workspaces directory**, which is the user's
   code. Binaries and logs under `~/.oppenheimer` are left for the user to
   delete, and it prints both paths.
 - **Where sessions live** is chosen at install (`--workspaces`) and saved
