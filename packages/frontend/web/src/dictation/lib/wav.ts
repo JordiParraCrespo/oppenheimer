@@ -83,7 +83,10 @@ function upsample(input: Float32Array, step: number): Float32Array {
 /** The window speech is told from silence in: 20 ms, about one syllable's attack. */
 const FRAME_SECONDS = 0.02;
 
-/** How much quiet is kept either side of the speech, so a soft first or last consonant survives. */
+/**
+ * How much quiet is kept either side of the speech: 300 ms, longer than a
+ * soft first or last consonant ("f", "s") that sits under the threshold.
+ */
 const PAD_SECONDS = 0.3;
 
 /**
@@ -93,28 +96,35 @@ const PAD_SECONDS = 0.3;
 const SILENCE_FLOOR = 0.003;
 
 /**
+ * How far under the loudest frame a frame may be and still count as speech:
+ * a tenth of its RMS, 20 dB down, which is where a room's hum sits under a
+ * speaking voice whatever the microphone's gain.
+ */
+const SPEECH_RELATIVE_TO_LOUDEST = 0.1;
+
+/**
  * The samples from just before the first frame that sounds like speech to
- * just after the last one. A frame is speech when it is louder than a tenth
- * of the loudest frame (20 dB down) and above {@link SILENCE_FLOOR}. The
- * pause while the person reaches for the mic and the one before they press
- * stop are what speech models fill with "Thanks for watching!", and they
- * are upload and wait for nothing. A clip with no frame above the floor is
+ * just after the last one, {@link PAD_SECONDS} either side. The pause while
+ * the person reaches for the mic and the one before they press stop are
+ * what speech models fill with "Thanks for watching!", and they are upload
+ * and wait for nothing. A clip with no frame above {@link SILENCE_FLOOR} is
  * sent whole: what to make of it is the API's call, not a guess here.
  */
 export function trimSilence(samples: Float32Array, rate: number): Float32Array {
   const frame = Math.max(1, Math.round(rate * FRAME_SECONDS));
   const frames = Math.ceil(samples.length / frame);
-  const levels = new Float32Array(frames);
+  const levelAt = (f: number) => rms(samples.subarray(f * frame, (f + 1) * frame));
+
   let loudest = 0;
-  for (let f = 0; f < frames; f++) {
-    levels[f] = rms(samples.subarray(f * frame, (f + 1) * frame));
-    loudest = Math.max(loudest, levels[f]);
-  }
-  const threshold = Math.max(SILENCE_FLOOR, loudest / 10);
-  const first = levels.findIndex((level) => level >= threshold);
-  if (first === -1) return samples;
+  for (let f = 0; f < frames; f++) loudest = Math.max(loudest, levelAt(f));
+  const threshold = Math.max(SILENCE_FLOOR, loudest * SPEECH_RELATIVE_TO_LOUDEST);
+  if (loudest < threshold) return samples;
+
+  let first = 0;
+  while (levelAt(first) < threshold) first++;
   let last = frames - 1;
-  while (levels[last] < threshold) last--;
+  while (levelAt(last) < threshold) last--;
+
   const pad = Math.round(rate * PAD_SECONDS);
   return samples.subarray(
     Math.max(0, first * frame - pad),

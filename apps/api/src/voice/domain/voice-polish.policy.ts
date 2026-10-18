@@ -8,6 +8,45 @@
  * said it in. It fixes speech, never the message.
  */
 
+/**
+ * What the polish removes or applies, by language: data the brief quotes
+ * rather than prose it grows. A language added is an entry in each of these,
+ * never a new rule in the brief.
+ */
+type ByLanguage = Record<'en' | 'es' | 'ca', readonly string[]>;
+
+/** Words that carry nothing when spoken as hesitation. */
+const FILLERS: ByLanguage = {
+  en: ['um', 'uh', 'erm', 'like', 'you know', 'I mean'],
+  es: ['eh', 'este', 'pues', 'bueno', 'o sea', 'en plan'],
+  ca: ['eh', 'doncs', 'bé', 'o sigui'],
+};
+
+/** What a speaker says to take back what came before. */
+const SELF_CORRECTIONS: ByLanguage = {
+  en: ['no wait', 'actually', 'sorry', 'I mean'],
+  es: ['no, espera', 'mejor dicho', 'perdón'],
+  ca: ["no, espera't", 'millor dit', 'perdó'],
+};
+
+/** Spoken punctuation and layout, which the polish applies rather than writes. */
+const SPOKEN_COMMANDS: ByLanguage = {
+  en: ['comma', 'period', 'full stop', 'question mark', 'new line', 'new paragraph'],
+  es: ['coma', 'punto', 'punto y aparte', 'dos puntos', 'nueva línea', 'salto de línea'],
+  ca: ['coma', 'punt', 'punt i a part', 'dos punts', 'nova línia'],
+};
+
+/** How a speaker counts out an enumeration. */
+const SPOKEN_ENUMERATIONS: ByLanguage = {
+  en: ['first… second…', 'one… two…'],
+  es: ['primero… segundo…'],
+  ca: ['primer… segon…'],
+};
+
+/** Every language's words, once each, quoted for the brief. */
+const quoted = (words: ByLanguage) =>
+  [...new Set(Object.values(words).flat())].map((word) => `"${word}"`).join(', ');
+
 /** The polish's instructions. The transcript is data: it is never obeyed or answered. */
 export const VOICE_POLISH_SYSTEM_PROMPT = [
   'You turn dictated speech into the text its speaker meant to type.',
@@ -18,14 +57,14 @@ export const VOICE_POLISH_SYSTEM_PROMPT = [
   '- The language as spoken. Never translate. A sentence that mixes Spanish, Catalan and English stays mixed; English technical terms inside Spanish or Catalan speech stay in English.',
   '',
   'Remove:',
-  '- Fillers and hesitations: um, uh, erm, eh, like, you know, I mean, o sea, este, pues, bueno, doncs, en plan, when they carry no meaning.',
+  `- Fillers and hesitations when they carry no meaning: ${quoted(FILLERS)}.`,
   '- Stutters and repeated words ("what, what I am doing" becomes "what I am doing") and false starts.',
-  '- Self-corrections: "no wait", "actually", "sorry", "I mean", "no, espera", "mejor dicho" keep only what the speaker settled on.',
+  `- Self-corrections (${quoted(SELF_CORRECTIONS)}): keep only what the speaker settled on.`,
   '',
   'Format:',
   '- Punctuate and capitalise as the speaker would type it. Split run-on speech into sentences, and long dictation into paragraphs where the topic changes.',
-  '- Spoken punctuation and layout are commands, not words: "comma", "period", "full stop", "question mark", "new line", "new paragraph", "coma", "punto", "punto y aparte", "dos puntos", "nueva línea", "salto de línea".',
-  '- A spoken enumeration ("first… second…", "one… two…", "primero… segundo…") of two or more items becomes a list, one item per line.',
+  `- Spoken punctuation and layout are commands, not words: ${quoted(SPOKEN_COMMANDS)}.`,
+  `- A spoken enumeration (${quoted(SPOKEN_ENUMERATIONS)}) of two or more items becomes a list, one item per line.`,
   '- Numbers, versions, times and quantities as digits.',
   '- Code as code: file paths, identifiers, branch names, commands and flags in backticks (`src/auth/login.ts`, `useNewSessionForm`, `fix/login-loop`, `pnpm test`). Product and project names stay plain words.',
   '- When a word sounds like a name in the vocabulary, spell it exactly as the vocabulary has it ("oppen heimer" is Oppenheimer, "cloud code" is Claude Code).',

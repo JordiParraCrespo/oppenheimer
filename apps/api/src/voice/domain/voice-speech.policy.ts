@@ -48,33 +48,34 @@ export function speechPrompt(vocabulary: readonly string[]): string {
  * does say those to a bot.
  */
 const SILENCE_HALLUCINATIONS = [
-  /subt[ií]tulos? (realizados? )?por la comunidad de amara\.org/i,
-  /subt[ií]tols? (realitzats? )?per la comunitat d'amara\.org/i,
-  /subtitles? by the amara\.org community/i,
-  /(thanks|thank you)( so much)? for watching!?/i,
-  /(please|like and) subscribe( to (my|the|our) channel)?!?/i,
-  /gracias por ver (el|este) v[ií]deo\.?/i,
-  /¡?suscr[ií]bete al canal!?/i,
-  /[♪♫]+/,
+  'subt[ií]tulos? (?:realizados? )?por la comunidad de amara\\.org',
+  "subt[ií]tols? (?:realitzats? )?per la comunitat d'amara\\.org",
+  'subtitles? by the amara\\.org community',
+  '(?:thanks|thank you)(?: so much)? for watching',
+  '(?:please|like and) subscribe(?: to (?:my|the|our) channel)?',
+  'gracias por ver (?:el|este) v[ií]deo',
+  '¡?suscr[ií]bete al canal',
+  '[♪♫]+',
 ];
 
 /**
+ * Any one of {@link SILENCE_HALLUCINATIONS} closing the text: at its start or
+ * after a space or a mark, with only punctuation after it.
+ */
+const HALLUCINATED_ENDING = new RegExp(
+  `(?:^|(?<=[\\s.,!?¡¿]))(?:${SILENCE_HALLUCINATIONS.join('|')})[\\s.,!?]*$`,
+  'i',
+);
+
+/**
  * The transcript without what the model made up from silence: each known
- * hallucination is dropped from the end, as often as it repeats, and a
+ * hallucination is dropped from the end, as often as they stack, and a
  * transcript that was only that is empty.
  */
 export function withoutSilenceHallucinations(raw: string): string {
   let text = raw.trim();
-  for (let changed = true; changed && text; ) {
-    changed = false;
-    for (const pattern of SILENCE_HALLUCINATIONS) {
-      const ending = new RegExp(`(^|[\\s.,!?¡¿])(${pattern.source})[\\s.,!?]*$`, pattern.flags);
-      const match = ending.exec(text);
-      if (match) {
-        text = text.slice(0, match.index + match[1].length).trim();
-        changed = true;
-      }
-    }
+  for (let match = HALLUCINATED_ENDING.exec(text); match; match = HALLUCINATED_ENDING.exec(text)) {
+    text = text.slice(0, match.index).trim();
   }
   return text;
 }

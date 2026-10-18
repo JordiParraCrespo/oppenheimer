@@ -17,6 +17,12 @@ describe('voice polish policy', () => {
     expect(VOICE_POLISH_SYSTEM_PROMPT.startsWith('You turn dictated speech')).toBe(true);
   });
 
+  it('quotes the fillers and spoken commands of every language dictated here', () => {
+    for (const word of ['"um"', '"o sea"', '"doncs"', '"punto y aparte"', '"punt i a part"']) {
+      expect(VOICE_POLISH_SYSTEM_PROMPT).toContain(word);
+    }
+  });
+
   it('sends the transcript and the vocabulary fenced off as data', () => {
     expect(voicePolishMessage('fix it', ['oppenheimer', 'apps/web'])).toBe(
       '<vocabulary>\noppenheimer\napps/web\n</vocabulary>\n\n<transcript>\nfix it\n</transcript>',
