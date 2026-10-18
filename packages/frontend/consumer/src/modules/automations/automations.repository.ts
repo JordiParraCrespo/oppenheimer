@@ -33,7 +33,8 @@ function filterOf(dto: AutomationTriggerResponseDto['filter']): TriggerFilter {
   return dto?.op === 'equals' && dto.value ? { op: 'equals', value: dto.value } : { op: 'any' };
 }
 
-function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null {
+/** A saved trigger as the console reads it; a kind this client does not know reads as none. */
+export function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null {
   if (dto.source === 'schedule' && dto.schedule) {
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };

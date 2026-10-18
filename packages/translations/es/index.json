@@ -1068,6 +1068,7 @@
         "profile": "Perfil",
         "instructions": "Instrucciones",
         "memory": "Memoria",
+        "routines": "Rutinas",
         "homeHost": "Máquina principal"
       },
       "profile": {
@@ -1172,6 +1173,33 @@
         "forget": "Olvidar «{{fact}}»",
         "forgetFailed": "No se ha podido olvidar el dato.",
         "loadFailed": "No se ha podido cargar lo que recuerda el bot."
+      },
+      "routines": {
+        "title": "Rutinas",
+        "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
+        "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+        "askInChat": "Pedir en el chat",
+        "schedule": "Horario · {{when}}",
+        "github": "GitHub · {{when}}",
+        "more": "{{when}} y {{count}} más",
+        "last": "Última",
+        "next": "Próxima",
+        "never": "Nunca",
+        "on": "Activa",
+        "pause": "Pausar",
+        "resume": "Reanudar",
+        "run": "Ejecutar ahora",
+        "running": "Ejecutándose…",
+        "edit": "Editar en el chat",
+        "delete": "Eliminar rutina",
+        "editPrompt": "Edita tu rutina: {{name}}",
+        "deleteTitle": "¿Eliminar «{{name}}»?",
+        "deleteBody": "Se elimina la rutina y se detienen sus próximas ejecuciones. No se puede deshacer.",
+        "deleting": "Eliminando…",
+        "deleteFailed": "No se pudo eliminar la rutina.",
+        "switchFailed": "No se pudo cambiar la rutina.",
+        "runFailed": "No se pudo ejecutar la rutina.",
+        "loadFailed": "No se pudieron cargar las rutinas del bot."
       },
       "homeHost": {
         "title": "Máquina principal",

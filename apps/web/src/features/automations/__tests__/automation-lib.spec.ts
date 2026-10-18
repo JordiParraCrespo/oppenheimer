@@ -4,6 +4,7 @@ import {
   HostEntity,
   ProjectEntity,
 } from '@oppenheimer/frontend-consumer';
+import { daysText, scheduleText } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
@@ -18,7 +19,7 @@ import {
 } from '../lib/automation-draft';
 import { nextRunText, runState, sidebarMeta } from '../lib/automation-view';
 import { dayOffset, localDate } from '../lib/time';
-import { automationTriggerText, daysText, scheduleText } from '../lib/trigger-text';
+import { automationTriggerText } from '../lib/trigger-text';
 
 /**
  * The editor's draft, the words a trigger reads as, and what a row prints.

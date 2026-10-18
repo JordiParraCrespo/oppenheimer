@@ -21,12 +21,14 @@ import {
   BotEntity,
   type BotGroupEntity,
   type BotMemoryFactEntity,
+  type BotRoutineEntity,
   type ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotInput,
 } from '../modules/bots/bot.entity';
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
+import { usePollWhile } from './live-poll';
 import { seedDetails } from './seed-details';
 import { voiceKeys } from './voice.queries';
 
@@ -48,6 +50,8 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
+  routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
@@ -173,6 +177,23 @@ export function useSuspenseBotMemory(id: string) {
   return useSuspenseQuery<BotMemoryFactEntity[], Error>({
     queryKey: botsKeys.memoryList(id),
     queryFn: () => app.bots.findMemory(id),
+  });
+}
+
+/**
+ * A bot's routines, oldest first, under a Suspense `QueryState`, polling
+ * while one of them is running (`26-bot-routines.md` §7).
+ */
+export function useSuspenseBotRoutines(id: string) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<BotRoutineEntity[], Error>({
+    queryKey: botsKeys.routineList(id),
+    queryFn: () => app.bots.findRoutines(id),
+    ...usePollWhile<BotRoutineEntity[]>(
+      'liveRun',
+      botsKeys.routineList(id),
+      (rows) => rows?.some((routine) => routine.isRunning) ?? false,
+    ),
   });
 }
 
@@ -554,5 +575,60 @@ export function useRemoveModelProviderKey(options?: UseMutationOptions<void, Err
   return useMutation({
     mutationFn: (provider: BotProvider) => app.bots.removeModelProviderKey(provider),
     ...withCacheOnSuccess(options, () => invalidateModelProviders(queryClient)),
+  });
+}
+
+export interface BotRoutineVariables {
+  id: string;
+  routineId: string;
+}
+
+export interface SetBotRoutineEnabledVariables extends BotRoutineVariables {
+  enabled: boolean;
+}
+
+/**
+ * The Routines tab's switch. The row reads the answer from the list read
+ * again, which also carries its next run from now.
+ */
+export function useSetBotRoutineEnabled(
+  options?: UseMutationOptions<void, Error, SetBotRoutineEnabledVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, routineId, enabled }: SetBotRoutineEnabledVariables) =>
+      app.bots.setRoutineEnabled(id, routineId, enabled),
+    ...withCacheOnSuccess(options, (_data, { id }) =>
+      queryClient.invalidateQueries({ queryKey: botsKeys.routines(id) }),
+    ),
+  });
+}
+
+/** Run now: the list is read again, so the routine reads running and its poll starts. */
+export function useRunBotRoutine(options?: UseMutationOptions<void, Error, BotRoutineVariables>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, routineId }: BotRoutineVariables) => app.bots.runRoutine(id, routineId),
+    ...withCacheOnSuccess(options, (_data, { id }) =>
+      queryClient.invalidateQueries({ queryKey: botsKeys.routines(id) }),
+    ),
+  });
+}
+
+export function useDeleteBotRoutine(
+  options?: UseMutationOptions<void, Error, BotRoutineVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, routineId }: BotRoutineVariables) => app.bots.deleteRoutine(id, routineId),
+    ...withCacheOnSuccess(options, (_data, { id, routineId }) =>
+      queryClient.setQueryData<BotRoutineEntity[]>(
+        botsKeys.routineList(id),
+        (rows) => rows && without<BotRoutineEntity>(routineId)(rows),
+      ),
+    ),
   });
 }

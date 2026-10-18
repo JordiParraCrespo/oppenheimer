@@ -1063,6 +1063,7 @@
         "profile": "Profile",
         "instructions": "Instructions",
         "memory": "Memory",
+        "routines": "Routines",
         "homeHost": "Home host"
       },
       "profile": {
@@ -1166,6 +1167,33 @@
         "forget": "Forget “{{fact}}”",
         "forgetFailed": "Could not forget the fact.",
         "loadFailed": "Could not load what the bot remembers."
+      },
+      "routines": {
+        "title": "Routines",
+        "subtitle": "Work the bot does on a schedule or when something happens.",
+        "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+        "askInChat": "Ask in chat",
+        "schedule": "Schedule · {{when}}",
+        "github": "GitHub · {{when}}",
+        "more": "{{when}} and {{count}} more",
+        "last": "Last",
+        "next": "Next",
+        "never": "Never",
+        "on": "On",
+        "pause": "Pause",
+        "resume": "Resume",
+        "run": "Run now",
+        "running": "Running…",
+        "edit": "Edit in chat",
+        "delete": "Delete routine",
+        "editPrompt": "Edit your routine: {{name}}",
+        "deleteTitle": "Delete “{{name}}”?",
+        "deleteBody": "This deletes the routine and stops its future runs. This can't be undone.",
+        "deleting": "Deleting…",
+        "deleteFailed": "Could not delete the routine.",
+        "switchFailed": "Could not change the routine.",
+        "runFailed": "Could not run the routine.",
+        "loadFailed": "Could not load the bot's routines."
       },
       "homeHost": {
         "title": "Home host",

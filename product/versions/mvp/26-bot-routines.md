@@ -1,8 +1,8 @@
 # 26 — Bot routines: how a bot wakes on its own
 
 **Decided 2026-10-16, in review; built in the slices of §8. Built so
-far: slices A and B**: the run-target port, and bot routines in the API
-(a bot saves and runs its routines from chat). Note 25
+far: slices A, B and the tab of C**: the run-target port, bot routines in
+the API (a bot saves and runs its routines from chat), and the Routines tab. Note 25
 builds a bot that only works when you write to it. This note is how it
 works when you do not: on a schedule (its heartbeat), on an event, or
 when a session ends. The 2026-10-13 export already draws it:
@@ -286,10 +286,14 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   opening message (its `ran` activity and "Routine · *name*" line), and
   `update_routine` with its consent policy. The console's session lists
   leave routines out until C draws them.
-- **C. The Routines tab** of §7, bot routines on `/automations`, the
-  activity listener with the other activities and the failure notice, and
-  the `bot_provider_missing` pause (until then a routine whose bot has no
-  usable provider is skipped, not paused).
+- **C. The Routines tab** of §7, in two pull requests. The first is the
+  tab: `GET`, `PATCH`, `POST …/run` and `DELETE` under
+  `/bots/:id/routines`, dispatching the commands `update_routine` does, and
+  a `RoutineCard` per routine (switch, Run now, Edit in chat, Delete). The
+  second: bot routines on `/automations`, the activity listener with the
+  other activities and the failure notice, and the `bot_provider_missing`
+  pause (until then a routine whose bot has no usable provider is skipped,
+  not paused).
 - **D. Heartbeat comfort.** `nothing_to_report`, `spread`, and the spend
   guard with its two cards.
 - **E. More triggers.** "When a session ends" (§5), then a webhook with a

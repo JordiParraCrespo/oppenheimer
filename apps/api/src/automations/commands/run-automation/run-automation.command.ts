@@ -4,6 +4,8 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 export class RunAutomationCommand extends CommandBase {
   readonly scope: AccessScope;
   readonly automationId: string;
+  /** Set from a bot's Routines tab: the automation must be that bot's routine. */
+  readonly botId?: string;
   /** The caller's `Idempotency-Key`: a retried Run now is the same run. */
   readonly idempotencyKey: string | null;
 
@@ -11,6 +13,7 @@ export class RunAutomationCommand extends CommandBase {
     super(props);
     this.scope = props.scope;
     this.automationId = props.automationId;
+    this.botId = props.botId;
     this.idempotencyKey = props.idempotencyKey;
   }
 }

@@ -31,6 +31,7 @@ import {
   AutomationRevisionResponseDto,
   AutomationTriggerResponseDto,
 } from './dtos/automation.response.dto';
+import { BotRoutineResponseDto } from './dtos/bot-routine.response.dto';
 
 type Json = Record<string, unknown>;
 
@@ -285,6 +286,26 @@ export class AutomationMapper {
     dto.version = entity.version;
     dto.runCount = digest?.runCount ?? 0;
     dto.lastRuns = (digest?.lastRuns ?? []).map((run) => this.runs.toSummary(run));
+    dto.createdAt = entity.createdAt;
+    dto.updatedAt = entity.updatedAt;
+    return dto;
+  }
+
+  /** A bot's routine as its Routines tab reads it: a prompt and when, no host or project. */
+  toRoutineResponse(
+    entity: AutomationEntity,
+    digest: AutomationRunDigest | undefined,
+  ): BotRoutineResponseDto {
+    const dto = new BotRoutineResponseDto();
+    dto.id = entity.id;
+    dto.name = entity.name;
+    dto.prompt = entity.revision.prompt;
+    dto.status = digest?.running ? 'running' : entity.isPaused ? 'paused' : 'active';
+    dto.pausedReason = entity.pausedReason;
+    dto.nextRunAt = entity.isPaused ? null : entity.nextRunAt();
+    dto.triggers = entity.triggers.map((trigger) => this.triggerToResponse(trigger));
+    const [last] = digest?.lastRuns ?? [];
+    dto.lastRun = last ? this.runs.toSummary(last) : null;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
     return dto;

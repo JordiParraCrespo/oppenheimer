@@ -60,6 +60,7 @@ import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './ro
 import { Route as AuthenticatedBotsBotIdSettingsInstructionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/instructions'
 import { Route as AuthenticatedBotsBotIdSettingsMemoryRouteImport } from './routes/_authenticated/bots_.$botId.settings/memory'
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
+import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
 
@@ -340,6 +341,12 @@ const AuthenticatedBotsBotIdSettingsProfileRoute =
     path: '/profile',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsRoutinesRoute =
+  AuthenticatedBotsBotIdSettingsRoutinesRouteImport.update({
+    id: '/routines',
+    path: '/routines',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedBotsBotIdSettingsRunsOnRoute =
   AuthenticatedBotsBotIdSettingsRunsOnRouteImport.update({
     id: '/runs-on',
@@ -401,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
+  '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
@@ -447,6 +455,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
+  '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
@@ -503,6 +512,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/_authenticated/bots_/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
+  '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
@@ -557,6 +567,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
     | '/bots/$botId/settings/profile'
+    | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings/'
@@ -603,6 +614,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
     | '/bots/$botId/settings/profile'
+    | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings'
@@ -658,6 +670,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/instructions'
     | '/_authenticated/bots_/$botId/settings/memory'
     | '/_authenticated/bots_/$botId/settings/profile'
+    | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
     | '/_authenticated/bots_/$botId/settings/'
@@ -1033,6 +1046,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsProfileRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/routines': {
+      id: '/_authenticated/bots_/$botId/settings/routines'
+      path: '/routines'
+      fullPath: '/bots/$botId/settings/routines'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/bots_/$botId/settings/runs-on': {
       id: '/_authenticated/bots_/$botId/settings/runs-on'
       path: '/runs-on'
@@ -1179,6 +1199,7 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsInstructionsRoute: typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   AuthenticatedBotsBotIdSettingsMemoryRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRoute
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
+  AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   AuthenticatedBotsBotIdSettingsIndexRoute: typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -1193,6 +1214,8 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsMemoryRoute,
     AuthenticatedBotsBotIdSettingsProfileRoute:
       AuthenticatedBotsBotIdSettingsProfileRoute,
+    AuthenticatedBotsBotIdSettingsRoutinesRoute:
+      AuthenticatedBotsBotIdSettingsRoutinesRoute,
     AuthenticatedBotsBotIdSettingsRunsOnRoute:
       AuthenticatedBotsBotIdSettingsRunsOnRoute,
     AuthenticatedBotsBotIdSettingsIndexRoute:

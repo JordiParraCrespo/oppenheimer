@@ -1,0 +1,52 @@
+import {
+  Controller,
+  Delete,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+  UseInterceptors,
+  Version,
+} from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { AccessScope } from '@oppenheimer/backend-authz';
+import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { DeleteAutomationCommand } from '../delete-automation/delete-automation.command';
+
+@ApiTags('Bots')
+@ApiBearerAuth()
+@ApiAuthProblemResponses()
+@UseGuards(ApiAuthGuard, PoliciesGuard)
+@UseInterceptors(AccessScopeInterceptor)
+@Controller('bots')
+export class DeleteBotRoutineHttpController {
+  constructor(private readonly commandBus: CommandBus) {}
+
+  @Delete(':id/routines/:routineId')
+  @Version('1')
+  @HttpCode(204)
+  @CheckPolicies({ action: 'delete', subject: 'Automation' })
+  @RequireScopes('automations:write')
+  @ApiOperation({
+    summary: 'Delete a bot’s routine',
+    description: 'Its triggers stop now and it runs no more. Its past runs are kept.',
+  })
+  @ApiResponse({ status: 204 })
+  @ApiProblemResponse({ status: 404, description: 'Routine not found', code: 'AUTOMATIONS_001' })
+  async remove(
+    @CurrentAccessScope() scope: AccessScope,
+    @Param('id', new ParseUUIDPipe()) botId: string,
+    @Param('routineId', new ParseUUIDPipe()) routineId: string,
+  ): Promise<void> {
+    await this.commandBus.execute<DeleteAutomationCommand, string>(
+      new DeleteAutomationCommand({ scope, automationId: routineId, botId }),
+    );
+  }
+}

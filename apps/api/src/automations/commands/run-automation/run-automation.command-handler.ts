@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireFound } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AUTOMATION_REPOSITORY, AUTOMATION_RUN_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
@@ -31,6 +31,9 @@ export class RunAutomationCommandHandler
       await this.automations.findOneById(command.scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
+    if (command.botId !== undefined && automation.botId !== command.botId) {
+      throw new AppError(AutomationErrors.NOT_FOUND);
+    }
     const run = AutomationRunEntity.fire(
       {
         organizationId: automation.organizationId,

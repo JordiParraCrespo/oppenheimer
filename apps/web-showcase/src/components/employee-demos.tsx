@@ -187,6 +187,7 @@ export function RoutineCardsDemo() {
         next="Tomorrow 09:00"
         active={on.digest}
         onActiveChange={(v) => setOn((s) => ({ ...s, digest: v }))}
+        onRun={() => {}}
         onEdit={() => {}}
         onDelete={() => {}}
       />
@@ -199,6 +200,8 @@ export function RoutineCardsDemo() {
         next="—"
         active={on.triage}
         onActiveChange={(v) => setOn((s) => ({ ...s, triage: v }))}
+        onRun={() => {}}
+        running
         onEdit={() => {}}
         onDelete={() => {}}
       />
@@ -388,7 +391,7 @@ export function EmployeesSection() {
         title="RoutineCard"
         meta="routine-card.tsx"
         desc="Something a bot does on its own, read in full on its settings: the name, the Switch (Pause / Resume) and the edit and delete buttons; the trigger as a glyph and a line; the prompt in muted ink; the last and next run in mono. A paused card fades to 60%. Editing, the caller's form replaces the read view inside the same card. The sidebar's workspace automations stay RoutineItem."
-        code={`<RoutineCard name="Morning digest" icon={<ClockIcon />} trigger="Schedule · Weekdays at 09:00" prompt="…" last="Today 09:00" next="Tomorrow 09:00" active={on} onActiveChange={setOn} onEdit={edit} onDelete={remove} />`}
+        code={`<RoutineCard name="Morning digest" icon={<ClockIcon />} trigger="Schedule · Weekdays at 09:00" prompt="…" last="Today 09:00" next="Tomorrow 09:00" active={on} onActiveChange={setOn} onRun={run} running={live} onEdit={edit} onDelete={remove} />`}
       >
         <RoutineCardsDemo />
       </Spec>
