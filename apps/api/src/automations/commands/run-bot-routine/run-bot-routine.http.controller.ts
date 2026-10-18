@@ -19,7 +19,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { RunAutomationCommand } from '../run-automation/run-automation.command';
+import { RunBotRoutineCommand } from './run-bot-routine.command';
 
 @ApiTags('Bots')
 @ApiBearerAuth()
@@ -53,13 +53,8 @@ export class RunBotRoutineHttpController {
     @Param('routineId', new ParseUUIDPipe()) routineId: string,
     @Headers('idempotency-key') idempotencyKey?: string,
   ): Promise<void> {
-    await this.commandBus.execute<RunAutomationCommand, string>(
-      new RunAutomationCommand({
-        scope,
-        automationId: routineId,
-        botId,
-        idempotencyKey: idempotencyKey ?? null,
-      }),
+    await this.commandBus.execute<RunBotRoutineCommand, string>(
+      new RunBotRoutineCommand({ scope, botId, routineId, idempotencyKey: idempotencyKey ?? null }),
     );
   }
 }

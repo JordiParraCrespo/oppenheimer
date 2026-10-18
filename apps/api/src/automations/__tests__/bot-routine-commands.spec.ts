@@ -1,17 +1,19 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { Some } from 'oxide.ts';
-import { DeleteAutomationCommand } from '../commands/delete-automation/delete-automation.command';
-import { DeleteAutomationCommandHandler } from '../commands/delete-automation/delete-automation.command-handler';
-import { RunAutomationCommand } from '../commands/run-automation/run-automation.command';
-import { RunAutomationCommandHandler } from '../commands/run-automation/run-automation.command-handler';
+import { BotRoutineResolver } from '../application/bot-routine.resolver';
+import { DeleteBotRoutineCommand } from '../commands/delete-bot-routine/delete-bot-routine.command';
+import { DeleteBotRoutineCommandHandler } from '../commands/delete-bot-routine/delete-bot-routine.command-handler';
+import { RunBotRoutineCommand } from '../commands/run-bot-routine/run-bot-routine.command';
+import { RunBotRoutineCommandHandler } from '../commands/run-bot-routine/run-bot-routine.command-handler';
 import type { AutomationRepositoryPort } from '../database/automation.repository.port';
 import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
 import { AutomationEntity } from '../domain/automation.entity';
 import { triggerFromInput } from '../domain/trigger-config.policy';
 
 /**
- * Run now and Delete from a bot's Routines tab (`26-bot-routines.md` §7) name
- * the bot in the path, and act only on that bot's routine. What breaks this:
+ * Run now and Delete for a bot (its Routines tab, `26-bot-routines.md` §7,
+ * and its own tool) name the bot, and act only on that bot's routine, through
+ * the one `BotRoutineResolver` that Save uses too. What breaks this:
  * one bot's tab running or deleting another bot's routine by its id, or a
  * session automation's. Neither answers anything but not found, and neither
  * writes.
@@ -47,8 +49,8 @@ function setup() {
     routine,
     save,
     insertFiring,
-    run: new RunAutomationCommandHandler(automations, runs),
-    remove: new DeleteAutomationCommandHandler(automations),
+    run: new RunBotRoutineCommandHandler(new BotRoutineResolver(automations), runs),
+    remove: new DeleteBotRoutineCommandHandler(new BotRoutineResolver(automations), automations),
   };
 }
 
@@ -58,15 +60,15 @@ describe("a bot's routine, run or deleted from its tab", () => {
   it('runs and deletes the routine of the bot the path names', async () => {
     const { routine, run, remove, insertFiring, save } = setup();
     await run.execute(
-      new RunAutomationCommand({
+      new RunBotRoutineCommand({
         scope,
-        automationId: routine.id,
         botId: 'bot-1',
+        routineId: routine.id,
         idempotencyKey: null,
       }),
     );
     await remove.execute(
-      new DeleteAutomationCommand({ scope, automationId: routine.id, botId: 'bot-1' }),
+      new DeleteBotRoutineCommand({ scope, botId: 'bot-1', routineId: routine.id }),
     );
     expect(insertFiring).toHaveBeenCalledTimes(1);
     expect(save).toHaveBeenCalledTimes(1);
@@ -76,18 +78,16 @@ describe("a bot's routine, run or deleted from its tab", () => {
     const { routine, run, remove, insertFiring, save } = setup();
     await expect(
       run.execute(
-        new RunAutomationCommand({
+        new RunBotRoutineCommand({
           scope,
-          automationId: routine.id,
           botId: 'bot-2',
+          routineId: routine.id,
           idempotencyKey: null,
         }),
       ),
     ).rejects.toMatchObject({ code: 'AUTOMATIONS_001' });
     await expect(
-      remove.execute(
-        new DeleteAutomationCommand({ scope, automationId: routine.id, botId: 'bot-2' }),
-      ),
+      remove.execute(new DeleteBotRoutineCommand({ scope, botId: 'bot-2', routineId: routine.id })),
     ).rejects.toMatchObject({ code: 'AUTOMATIONS_001' });
     expect(insertFiring).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();

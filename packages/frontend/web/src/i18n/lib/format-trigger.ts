@@ -98,8 +98,26 @@ export type TriggerWords =
   | ({ source: 'schedule' } & ScheduleWords)
   | { source: 'github'; event: GithubEventType };
 
-export function triggerText(trigger: TriggerWords, locale: string, t: TFunction): string {
+function triggerText(trigger: TriggerWords, locale: string, t: TFunction): string {
   return trigger.source === 'schedule'
     ? scheduleText(trigger, locale, t)
     : eventText(trigger.event, t);
+}
+
+/**
+ * A list of triggers as one line: the first in words, and how many more
+ * ("Weekdays at 09:00 +2"), or "Manual only" with none. `label` dresses the
+ * first one's words for where they show (a bot's card says "Schedule · …");
+ * the table takes them as they are.
+ */
+export function triggerListText(
+  triggers: readonly TriggerWords[],
+  locale: string,
+  t: TFunction,
+  label: (trigger: TriggerWords, words: string) => string = (_trigger, words) => words,
+): string {
+  const [first, ...rest] = triggers;
+  if (!first) return t('automations.trigger.manual');
+  const summary = label(first, triggerText(first, locale, t));
+  return rest.length ? t('automations.trigger.more', { summary, count: rest.length }) : summary;
 }

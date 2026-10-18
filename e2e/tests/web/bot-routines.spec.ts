@@ -34,10 +34,10 @@ test("a bot's routine on its Routines tab, from the card to Delete", async ({ pa
   await expect(card).toContainText('List the open pull requests.');
 
   // The switch pauses it on the server, and turns it back on.
-  await card.getByRole('switch', { name: 'On' }).click();
+  await card.getByRole('switch', { name: 'Run “Morning PR digest” on its own' }).click();
   await expect(card).toHaveAttribute('data-paused', 'true');
   await expect.poll(() => routinePausedAt(routineId)).not.toBeNull();
-  await card.getByRole('switch', { name: 'On' }).click();
+  await card.getByRole('switch', { name: 'Run “Morning PR digest” on its own' }).click();
   await expect(card).not.toHaveAttribute('data-paused', 'true');
   await expect.poll(() => routinePausedAt(routineId)).toBeNull();
 

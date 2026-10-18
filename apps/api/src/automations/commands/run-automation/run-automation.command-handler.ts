@@ -1,13 +1,13 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError, requireFound } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AUTOMATION_REPOSITORY, AUTOMATION_RUN_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import { AutomationRunEntity } from '../../domain/automation-run.entity';
 import { AutomationErrors } from '../../domain/automations.errors';
-import { manualCauseSummary } from '../../domain/run-launch.policy';
+import { manualFiring } from '../../domain/run-launch.policy';
 import { RunAutomationCommand } from './run-automation.command';
 
 /**
@@ -31,22 +31,8 @@ export class RunAutomationCommandHandler
       await this.automations.findOneById(command.scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
-    if (command.botId !== undefined && !automation.isRoutineOf(command.botId)) {
-      throw new AppError(AutomationErrors.NOT_FOUND);
-    }
     const run = AutomationRunEntity.fire(
-      {
-        organizationId: automation.organizationId,
-        automationId: automation.id,
-        revisionId: automation.revision.id,
-        triggerId: null,
-        cause: 'manual',
-        causeKey: `manual:${command.idempotencyKey ?? command.id}`,
-        causeSummary: manualCauseSummary(),
-        inboundEventId: null,
-        scheduledFor: null,
-        requestedByUserId: command.scope.userId,
-      },
+      manualFiring(automation, command.scope.userId, command.idempotencyKey ?? command.id),
       new Date(),
     );
     return (await this.runs.insertFiring(run, command.metadata.correlationId)).runId;

@@ -120,6 +120,7 @@ function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
     dto.name,
     dto.prompt,
     dto.status,
+    dto.pausedReason != null,
     dto.nextRunAt ? new Date(dto.nextRunAt) : null,
     dto.triggers.flatMap((trigger) => triggerOf(trigger) ?? []),
     dto.lastRun ? { status: dto.lastRun.status, createdAt: new Date(dto.lastRun.createdAt) } : null,
@@ -447,9 +448,12 @@ export class BotsRepository {
 
   /** Run now: one run, paused or not. */
   @MapApiError(BotsErrors.RUN_ROUTINE_FAILED)
-  async runRoutine(id: string, routineId: string): Promise<void> {
+  async runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
     await unwrap(
-      heyApiSdk.runBotRoutine({ path: { id, routineId } }),
+      heyApiSdk.runBotRoutine({
+        path: { id, routineId },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
       BotsErrors.RUN_ROUTINE_FAILED,
     );
   }

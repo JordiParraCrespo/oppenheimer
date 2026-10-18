@@ -14,6 +14,7 @@ import { AutomationLimitsResolver } from './application/automation-limits.resolv
 import { AutomationPlanFactory } from './application/automation-plan.factory';
 import type { AutomationRunTargetPort } from './application/automation-run-target.port';
 import { AutomationRunTargetRegistry } from './application/automation-run-target.registry';
+import { BotRoutineResolver } from './application/bot-routine.resolver';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
@@ -31,6 +32,7 @@ import { CreateAutomationCommandHandler } from './commands/create-automation/cre
 import { CreateAutomationHttpController } from './commands/create-automation/create-automation.http.controller';
 import { DeleteAutomationCommandHandler } from './commands/delete-automation/delete-automation.command-handler';
 import { DeleteAutomationHttpController } from './commands/delete-automation/delete-automation.http.controller';
+import { DeleteBotRoutineCommandHandler } from './commands/delete-bot-routine/delete-bot-routine.command-handler';
 // Static routes before parameterized ones: `automation-runs/history` before
 // `automation-runs/:id`.
 import { DeleteBotRoutineHttpController } from './commands/delete-bot-routine/delete-bot-routine.http.controller';
@@ -46,6 +48,7 @@ import { ResumeAutomationCommandHandler } from './commands/resume-automation/res
 import { ResumeAutomationHttpController } from './commands/resume-automation/resume-automation.http.controller';
 import { RunAutomationCommandHandler } from './commands/run-automation/run-automation.command-handler';
 import { RunAutomationHttpController } from './commands/run-automation/run-automation.http.controller';
+import { RunBotRoutineCommandHandler } from './commands/run-bot-routine/run-bot-routine.command-handler';
 import { RunBotRoutineHttpController } from './commands/run-bot-routine/run-bot-routine.http.controller';
 import { SaveBotRoutineCommandHandler } from './commands/save-bot-routine/save-bot-routine.command-handler';
 import { UpdateAutomationCommandHandler } from './commands/update-automation/update-automation.command-handler';
@@ -106,6 +109,8 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
+  RunBotRoutineCommandHandler,
+  DeleteBotRoutineCommandHandler,
   CreateAutomationCommandHandler,
   UpdateAutomationCommandHandler,
   PauseAutomationCommandHandler,
@@ -172,6 +177,7 @@ const queryHandlers: Provider[] = [
     AutomationMapper,
     AutomationRunMapper,
     AutomationPlanFactory,
+    BotRoutineResolver,
     AutomationLimitsResolver,
     OwnerScopeResolver,
     RunDispatchResolver,

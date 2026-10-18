@@ -18,7 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { DeleteAutomationCommand } from '../delete-automation/delete-automation.command';
+import { DeleteBotRoutineCommand } from './delete-bot-routine.command';
 
 @ApiTags('Bots')
 @ApiBearerAuth()
@@ -45,8 +45,8 @@ export class DeleteBotRoutineHttpController {
     @Param('id', new ParseUUIDPipe()) botId: string,
     @Param('routineId', new ParseUUIDPipe()) routineId: string,
   ): Promise<void> {
-    await this.commandBus.execute<DeleteAutomationCommand, string>(
-      new DeleteAutomationCommand({ scope, automationId: routineId, botId }),
+    await this.commandBus.execute<DeleteBotRoutineCommand, string>(
+      new DeleteBotRoutineCommand({ scope, botId, routineId }),
     );
   }
 }

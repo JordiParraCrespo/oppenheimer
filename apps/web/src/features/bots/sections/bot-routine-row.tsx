@@ -41,14 +41,16 @@ export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotR
         active={!routine.isPaused}
         onActiveChange={(enabled) => toggle.mutate({ id: botId, routineId: routine.id, enabled })}
         running={routine.isRunning || run.isPending}
-        onRun={() => run.mutate({ id: botId, routineId: routine.id })}
+        onRun={() =>
+          run.mutate({ id: botId, routineId: routine.id, idempotencyKey: crypto.randomUUID() })
+        }
         onEdit={() => {
           fillBotDraft(botId, t('bots.settings.routines.editPrompt', { name: routine.name }));
           void navigate({ to: '/bots/$botId', params: { botId } });
         }}
         onDelete={() => setDeleting(true)}
         labels={{
-          active: t('bots.settings.routines.on'),
+          active: t('bots.settings.routines.switch', { name: routine.name }),
           pause: t('bots.settings.routines.pause'),
           resume: t('bots.settings.routines.resume'),
           run: t('bots.settings.routines.run'),

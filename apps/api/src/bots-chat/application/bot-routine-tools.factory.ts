@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
 import { z } from 'zod/v4';
-import { DeleteAutomationCommand } from '../../automations/commands/delete-automation/delete-automation.command';
-import { RunAutomationCommand } from '../../automations/commands/run-automation/run-automation.command';
+import { DeleteBotRoutineCommand } from '../../automations/commands/delete-bot-routine/delete-bot-routine.command';
+import { RunBotRoutineCommand } from '../../automations/commands/run-bot-routine/run-bot-routine.command';
 import {
   type BotRoutineChanges,
   SaveBotRoutineCommand,
@@ -212,14 +212,19 @@ export class BotRoutineToolsFactory implements BotToolArea {
         return;
       case 'delete':
         await this.commandBus.execute(
-          new DeleteAutomationCommand({ scope: context.owner, automationId: routine.id }),
+          new DeleteBotRoutineCommand({
+            scope: context.owner,
+            botId: context.botId,
+            routineId: routine.id,
+          }),
         );
         return;
       case 'run_now':
         await this.commandBus.execute(
-          new RunAutomationCommand({
+          new RunBotRoutineCommand({
             scope: context.owner,
-            automationId: routine.id,
+            botId: context.botId,
+            routineId: routine.id,
             idempotencyKey: idempotencyKeyOf(context.turnId, call),
           }),
         );

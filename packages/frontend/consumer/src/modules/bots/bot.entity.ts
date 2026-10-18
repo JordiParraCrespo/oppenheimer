@@ -219,16 +219,15 @@ export class BotRoutineEntity {
     public readonly id: string,
     public readonly name: string,
     public readonly prompt: string,
+    /** `running` while a run is going, paused or not: the pause is {@link isPaused}. */
     public readonly status: AutomationStatus,
+    /** Whether its triggers are paused; a paused routine can still be run now. */
+    public readonly isPaused: boolean,
     public readonly nextRunAt: Date | null,
     public readonly triggers: AutomationTrigger[],
     public readonly lastRun: BotRoutineLastRun | null,
     public readonly updatedAt: Date,
   ) {}
-
-  get isPaused(): boolean {
-    return this.status === 'paused';
-  }
 
   /** A run is queued or its turn is running. */
   get isRunning(): boolean {

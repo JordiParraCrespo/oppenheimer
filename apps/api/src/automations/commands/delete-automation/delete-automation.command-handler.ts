@@ -22,9 +22,6 @@ export class DeleteAutomationCommandHandler
       await this.automations.findOneById(command.scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
-    if (command.botId !== undefined && !automation.isRoutineOf(command.botId)) {
-      throw new AppError(AutomationErrors.NOT_FOUND);
-    }
     automation.delete(new Date());
     if ((await this.automations.save(automation, automation.version)) === 'conflict') {
       throw new AppError(AutomationErrors.VERSION_CONFLICT);
