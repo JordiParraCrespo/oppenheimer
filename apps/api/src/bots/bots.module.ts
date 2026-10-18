@@ -6,6 +6,7 @@ import { HostsModule } from '../hosts/hosts.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';
 import { ChatgptCredentialResolver } from './application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from './application/model-provider.resolver';
+import { NewBotProviderResolver } from './application/new-bot-provider.resolver';
 import { TurnCredentialsResolver } from './application/turn-credentials.resolver';
 import { BotMapper } from './bot.mapper';
 import { BotDocumentMapper } from './bot-document.mapper';
@@ -178,6 +179,7 @@ const queryHandlers: Provider[] = [
     ModelProviderCredentialMapper,
     ChatgptSignInMapper,
     ModelProviderResolver,
+    NewBotProviderResolver,
     ChatgptCredentialResolver,
     { provide: PROVIDER_KEY_SEALER, useClass: AesProviderKeySealerAdapter },
     { provide: CHATGPT_AUTH, useClass: OpenAiChatgptAuthAdapter },

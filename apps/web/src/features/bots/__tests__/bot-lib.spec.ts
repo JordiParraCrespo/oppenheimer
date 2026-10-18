@@ -10,6 +10,7 @@ import {
   botEngineValue,
   botModel,
   botProviderOptions,
+  keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
 import { botSections, firstBot } from '../lib/bot-groups';
@@ -130,9 +131,23 @@ describe('botProviderOptions', () => {
     ]);
   });
 
-  it("keeps the bot's own provider when it has no key, so its model still shows", () => {
-    expect(groups(botProviderOptions(['openai'], 'glm'))).toEqual(['glm', 'openai']);
+  it('never offers a provider with no key beside one that has', () => {
+    expect(groups(botProviderOptions(['openai'], 'anthropic'))).toEqual(['openai']);
+  });
+
+  it("keeps the bot's own provider when none has a key, so its model still shows", () => {
     expect(groups(botProviderOptions([], 'anthropic'))).toEqual(['anthropic']);
+  });
+});
+
+describe('keyedProviderFor', () => {
+  it('moves a bot with no key to the first provider, in catalog order, that has one', () => {
+    expect(keyedProviderFor(['openai', 'glm'], 'anthropic')).toBe('glm');
+  });
+
+  it('leaves a bot whose provider has a key, or when no provider has one', () => {
+    expect(keyedProviderFor(['anthropic', 'openai'], 'anthropic')).toBeUndefined();
+    expect(keyedProviderFor([], 'anthropic')).toBeUndefined();
   });
 });
 

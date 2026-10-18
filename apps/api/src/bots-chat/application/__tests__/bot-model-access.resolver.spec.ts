@@ -42,7 +42,7 @@ function setup(
       {
         findForTurn: async () => (options.bot === false ? None : Some(bot)),
       } as unknown as BotRepositoryPort,
-      { forTurn },
+      { forTurn, has: async () => true },
     ),
   };
 }

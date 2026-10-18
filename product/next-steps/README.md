@@ -78,3 +78,10 @@ where these land is the first open question below.
   an OpenAI-compatible key as the fallback. The route is undocumented;
   if it only answers clients posing as the Codex app, the fallback
   takes over.
+- 2026-10-17: voice slice 1 built: dictation into New session's composer.
+  The console records WAV itself, the route asks `sessions:write`, and the
+  recorder stays in the sessions feature until a second surface needs it
+  (`voice.md`, "Slice 1 as built").
+- 2026-10-17: voice's providers are one `SpeechProvider` interface and an
+  ordered list; the console reads `GET /v1/voice/status` instead of
+  deciding availability itself (`voice.md`).

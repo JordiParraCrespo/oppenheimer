@@ -8,6 +8,12 @@ paths:
 
 # External integrations and their rate limits
 
+How a third-party service is shaped (the capability as one interface, each
+vendor a provider in one ordered list) is
+[`provider-integrations.md`](./provider-integrations.md) and the
+`/integrate-provider` skill. This rule is what every provider's gateway owes
+the system it calls.
+
 Every system we integrate meters us: GitHub, Google, an LLM provider, an email
 API, the next one. **An integration is not done until it respects that
 system's rate limit.** A limit we ignore does not stay an error message: the

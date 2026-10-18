@@ -15,3 +15,4 @@ export { retentionConfig } from './retention.config';
 export { sessionsConfig } from './sessions.config';
 export { storageConfig } from './storage.config';
 export { throttlingConfig } from './throttling.config';
+export { speechKeyIsConfigured, voiceConfig } from './voice.config';

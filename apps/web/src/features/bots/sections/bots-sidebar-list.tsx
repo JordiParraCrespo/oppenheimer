@@ -37,7 +37,7 @@ export function BotsSidebarList() {
         clearLabel={t('bots.sidebar.clearSearch')}
       />
       <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} className="mx-3 mb-2" />
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-1.5 pb-5">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {bots.length === 0 ? <BotsEmptyCard /> : null}
         {term && sections.length === 0 && bots.length > 0 ? (
           <SidebarEmptyRow className="mt-2 ml-3.5">

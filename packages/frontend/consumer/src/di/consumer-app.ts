@@ -23,6 +23,8 @@ import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import type { TasksRepository } from '../modules/tasks';
 import { TasksModule } from '../modules/tasks';
+import type { VoiceRepository } from '../modules/voice';
+import { VoiceModule } from '../modules/voice';
 import { TOKENS } from './tokens';
 
 /**
@@ -42,6 +44,7 @@ export const consumerModules = [
   PermissionsModule,
   OrganizationsModule,
   ProfileModule,
+  VoiceModule,
 ];
 
 /**
@@ -108,6 +111,11 @@ export class ConsumerApp {
   /** Plan's calendar: the workspace's events and the viewer's Google Calendar. */
   get calendar(): CalendarRepository {
     return this.kernel.container.get(TOKENS.CalendarRepository);
+  }
+
+  /** Dictation: a recording in, the text it says out. */
+  get voice(): VoiceRepository {
+    return this.kernel.container.get(TOKENS.VoiceRepository);
   }
 
   get hosts(): HostsRepository {
