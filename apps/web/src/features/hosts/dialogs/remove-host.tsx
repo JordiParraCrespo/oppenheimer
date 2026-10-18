@@ -1,6 +1,8 @@
+import { Checkbox, Field, FieldLabel } from '@oppenheimer/design-system-web';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRemoveHost } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -8,9 +10,16 @@ import { useTranslation } from 'react-i18next';
  * it costs from the host's own count. The sessions running on it are stopped
  * (their logs kept) and its runner's token is revoked
  * (`product/versions/mvp/14-hosts-settings.md`).
+ *
+ * The box cleans the machine up as well, for starting again from nothing: the
+ * runner closes every session instead of stopping it, and each worktree goes
+ * without a push. It travels on the link as it closes, so an offline host
+ * cannot be offered it.
  */
 export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose: () => void }) {
   const { t } = useTranslation();
+  const [wipe, setWipe] = useState(false);
+  const boxId = useId();
   const remove = useRemoveHost({
     onSuccess: () => {
       notifySuccess('hostRemoved', { name: host.name });
@@ -33,7 +42,23 @@ export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose:
       error={remove.error}
       errorFallback={t('hosts.settings.removeFailed')}
       onClose={onClose}
-      onConfirm={() => remove.mutate(host.id)}
-    />
+      onConfirm={() => remove.mutate({ id: host.id, wipe: host.online && wipe })}
+    >
+      {/* The label sits beside the box, not around it: wrapping a checked box
+          gives FieldLabel the selected-card background. */}
+      <Field orientation="horizontal" className="items-start">
+        <Checkbox
+          id={boxId}
+          checked={host.online && wipe}
+          onCheckedChange={(checked) => setWipe(checked === true)}
+          disabled={!host.online || remove.isPending}
+        />
+        <FieldLabel htmlFor={boxId}>
+          {host.online
+            ? t('hosts.settings.wipe')
+            : t('hosts.settings.wipeOffline', { name: host.name })}
+        </FieldLabel>
+      </Field>
+    </ConfirmDialog>
   );
 }

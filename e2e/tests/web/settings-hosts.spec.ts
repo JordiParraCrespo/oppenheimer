@@ -72,6 +72,10 @@ test('lists, renames and removes a host from Settings', async ({ page }) => {
   await expect(dialog).toContainText(
     'No sessions are running on build-03. The runner’s token is revoked and automations targeting it are paused.',
   );
+  // Cleaning the machine up rides its link as it closes, so an offline host
+  // is not offered it, and the box says why.
+  await expect(dialog.getByRole('checkbox')).toBeDisabled();
+  await expect(dialog).toContainText('build-03 is offline, so it can’t be cleaned up from here.');
   await dialog.getByRole('button', { name: 'Remove host' }).click();
 
   await expect(page.getByTestId('host-card')).toHaveCount(0);

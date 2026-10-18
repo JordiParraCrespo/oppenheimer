@@ -75,6 +75,8 @@
     "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
     "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
     "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+    "wipe": "Borrar también todo lo de esta máquina: cerrar cada sesión y eliminar su worktree, incluido el trabajo sin confirmar. No se sube nada.",
+    "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
     "openTerminal": "Abrir terminal",
     "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
   }
