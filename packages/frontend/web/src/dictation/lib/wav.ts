@@ -1,7 +1,7 @@
 /**
  * A recording as the WAV the API takes (`VOICE_SAMPLE_RATE`, 16-bit PCM,
- * mono): the microphone's float samples, averaged down to the target rate,
- * the silence before the first word and after the last cut off
+ * mono): the microphone's float samples, resampled to the target rate
+ * ({@link resample}), the silence before the first word and after the last cut off
  * ({@link trimSilence}), and clipped to 16 bits, behind a 44-byte RIFF
  * header.
  */
@@ -10,7 +10,7 @@ export function encodeWav(
   inputRate: number,
   outputRate: number,
 ): Blob {
-  const samples = trimSilence(downsample(chunks, inputRate, outputRate), outputRate);
+  const samples = trimSilence(resample(joinChunks(chunks), inputRate, outputRate), outputRate);
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
   const text = (offset: number, value: string) => {
@@ -36,48 +36,81 @@ export function encodeWav(
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
-/**
- * The chunks as one run at `outputRate`: above it, each output sample the
- * mean of the input it covers; below it (a headset in call mode records at
- * 8 kHz), each one interpolated between its two neighbours, so the header's
- * rate is always the samples' rate.
- */
-function downsample(
-  chunks: readonly Float32Array[],
-  inputRate: number,
-  outputRate: number,
-): Float32Array {
-  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const input = new Float32Array(total);
+function joinChunks(chunks: readonly Float32Array[]): Float32Array {
+  const joined = new Float32Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0));
   let at = 0;
   for (const chunk of chunks) {
-    input.set(chunk, at);
+    joined.set(chunk, at);
     at += chunk.length;
   }
+  return joined;
+}
+
+/**
+ * Where the low-pass filter cuts, as a share of the lower rate: 0.45, so at
+ * 16 kHz it passes speech to about 7 kHz and stops before the 8 kHz the
+ * output can hold.
+ */
+const CUTOFF = 0.45;
+
+/**
+ * The filter's half-width in zero crossings of its sinc: 12 passes 6 kHz
+ * whole and has 9 kHz 80 dB down, so a sibilant's hiss is gone before it
+ * can fold back into the speech band. Wider costs time on every clip.
+ */
+const ZERO_CROSSINGS = 12;
+
+/**
+ * `input` at `outputRate`, through a Blackman-windowed sinc low-pass at
+ * {@link CUTOFF} of the lower rate. Averaging each output sample's share of
+ * the input, as this did before, let 10 kHz through at -6 dB on the way
+ * from 48 kHz to 16 kHz, so the hiss of an "s" or an "f" folded back over
+ * the 2–8 kHz that tells them apart. Going up (a headset in call mode
+ * records at 8 kHz), the same filter interpolates, so the header's rate is
+ * always the samples' rate.
+ *
+ * The rates are whole numbers, so an output sample falls at one of
+ * `outputRate / gcd` offsets between input samples (one at 48 kHz, 160 at
+ * 44.1 kHz): the taps for each are worked out once, and each output sample
+ * is a dot product.
+ */
+export function resample(input: Float32Array, inputRate: number, outputRate: number): Float32Array {
   if (inputRate === outputRate) return input;
-  if (inputRate < outputRate) return upsample(input, inputRate / outputRate);
-  const ratio = inputRate / outputRate;
-  const output = new Float32Array(Math.floor(total / ratio));
+  // The cutoff in cycles per input sample, doubled: the sinc's zero crossings fall 1/band apart.
+  const band = (2 * CUTOFF * Math.min(inputRate, outputRate)) / inputRate;
+  const reach = Math.ceil(ZERO_CROSSINGS / band);
+  const taps = 2 * reach;
+  const common = gcd(inputRate, outputRate);
+  const phases = outputRate / common;
+  const stride = inputRate / common;
+
+  const bank = new Float32Array(phases * taps);
+  for (let phase = 0; phase < phases; phase++) {
+    for (let k = 0; k < taps; k++) {
+      const x = (k - reach + 1 - phase / phases) * band;
+      const away = Math.abs(x);
+      if (away >= ZERO_CROSSINGS) continue;
+      const sinc = x === 0 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+      const w = Math.PI * (away / ZERO_CROSSINGS + 1);
+      bank[phase * taps + k] = band * sinc * (0.42 - 0.5 * Math.cos(w) + 0.08 * Math.cos(2 * w));
+    }
+  }
+
+  const output = new Float32Array(Math.floor((input.length * phases) / stride));
   for (let i = 0; i < output.length; i++) {
-    const from = Math.floor(i * ratio);
-    const to = Math.min(total, Math.floor((i + 1) * ratio));
+    const at = Math.floor((i * stride) / phases);
+    const row = (i * stride - at * phases) * taps;
+    const first = at - reach + 1;
+    const to = Math.min(taps, input.length - first);
     let sum = 0;
-    for (let j = from; j < to; j++) sum += input[j];
-    output[i] = to > from ? sum / (to - from) : 0;
+    for (let k = Math.max(0, -first); k < to; k++) sum += input[first + k] * bank[row + k];
+    output[i] = sum;
   }
   return output;
 }
 
-/** `input` at `1 / step` times its rate, each sample between its two neighbours. */
-function upsample(input: Float32Array, step: number): Float32Array {
-  const output = new Float32Array(Math.floor(input.length / step));
-  for (let i = 0; i < output.length; i++) {
-    const at = i * step;
-    const before = Math.floor(at);
-    const after = Math.min(input.length - 1, before + 1);
-    output[i] = input[before] + (input[after] - input[before]) * (at - before);
-  }
-  return output;
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
 }
 
 /** The window speech is told from silence in: 20 ms, about one syllable's attack. */
