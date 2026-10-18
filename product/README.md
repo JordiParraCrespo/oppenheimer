@@ -515,3 +515,9 @@ earlier note:
   bar overshooting the dates. On 2026-10-15 the owner had it end on the last
   milestone's day, as a timeline bar does in Notion; the three-week lead-in
   before the first milestone or today stays (23 §1).
+- `next-steps/voice.md` planned slice 3 as the task dialog, the terminal
+  paste, a hotkey and a dictionary, and said the recorder's `AudioWorklet`
+  would come when it moved to the kit. On 2026-10-17 the owner asked for
+  dictation in every prose input as one shared piece: the fields shipped
+  first (the kit's `dictation` concern), the rest stays for later, and the
+  recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").

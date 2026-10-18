@@ -10,29 +10,55 @@ import { NewSessionComposer } from '../components/new-session-composer';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+  // The kit's i18n concern registers itself when the kit loads.
+  initReactI18next: { type: '3rdParty', init: () => {} },
+  Trans: ({ i18nKey }: { i18nKey: string }) => i18nKey,
 }));
 
 /**
- * The recorder, without a microphone: the state a test sets, a real meter,
- * and the `onRecorded` the composer handed it, for a test to call as a
- * finished recording would.
+ * The kit's dictation, without a microphone: the phase a test sets, a meter
+ * a test pushes levels into, and the `onText` the composer handed it, for a
+ * test to call as a finished transcription would. What the hook itself does
+ * with a recording is the kit's spec (`use-dictation.spec.ts`).
  */
-const dictation = vi.hoisted(() => ({
-  state: 'idle' as 'idle' | 'waiting' | 'recording',
-  onRecorded: null as null | ((wav: Blob) => void),
-}));
-vi.mock('../hooks/use-dictation', async () => {
-  const { DictationMeter } = await import('../lib/dictation-meter');
-  const meter = new DictationMeter();
+const dictation = vi.hoisted(() => {
+  const listeners = new Set<() => void>();
+  let reading = { levels: [] as number[], elapsedMs: 0 };
   return {
-    meter,
-    useDictation: ({ onRecorded }: { onRecorded: (wav: Blob) => void }) => {
-      dictation.onRecorded = onRecorded;
+    phase: null as null | 'waiting' | 'recording' | 'transcribing',
+    onText: null as null | ((text: string) => void),
+    meter: {
+      subscribe: (listener: () => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+      read: () => reading,
+      push: (level: number, elapsedMs: number) => {
+        reading = { levels: [...reading.levels, level], elapsedMs };
+        for (const listener of listeners) listener();
+      },
+    },
+  };
+});
+vi.mock('@oppenheimer/frontend-web', async (importOriginal) => {
+  const kit = await importOriginal<typeof import('@oppenheimer/frontend-web')>();
+  return {
+    ...kit,
+    useDictation: ({
+      voice,
+      onText,
+    }: {
+      voice: { available: boolean };
+      onText: (text: string) => void;
+    }) => {
+      dictation.onText = onText;
       return {
-        state: dictation.state,
-        failure: null,
-        meter,
-        start: vi.fn(),
+        available: voice.available,
+        recording: dictation.phase === 'recording',
+        phase: dictation.phase,
+        problem: null,
+        meter: dictation.meter,
+        toggle: vi.fn(),
         stop: vi.fn(),
         cancel: vi.fn(),
       };
@@ -40,9 +66,11 @@ vi.mock('../hooks/use-dictation', async () => {
   };
 });
 
+const VOICE = { available: true, transcribe: vi.fn() };
+
 afterEach(() => {
   cleanup();
-  dictation.state = 'idle';
+  dictation.phase = null;
 });
 
 function Chip({ onRender, label }: { onRender: () => void; label: string }) {
@@ -57,6 +85,7 @@ describe('NewSessionComposer', () => {
 
     render(
       <NewSessionComposer
+        voice={VOICE}
         onSubmit={vi.fn()}
         tools={<Chip onRender={onTool} label="permission" />}
         engine={<Chip onRender={onEngine} label="engine" />}
@@ -77,7 +106,7 @@ describe('NewSessionComposer', () => {
 
   it('hands the finished sentence up once, trimmed', () => {
     const onSubmit = vi.fn();
-    render(<NewSessionComposer onSubmit={onSubmit} />);
+    render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
 
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: '  Fix the wallet list  ' } });
@@ -89,7 +118,7 @@ describe('NewSessionComposer', () => {
 
   it('sends nothing for a task of whitespace', () => {
     const onSubmit = vi.fn();
-    render(<NewSessionComposer onSubmit={onSubmit} />);
+    render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '   ' } });
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
@@ -98,7 +127,7 @@ describe('NewSessionComposer', () => {
   });
 
   it('keeps the draft after submitting, so a failure loses nothing', () => {
-    render(<NewSessionComposer onSubmit={vi.fn()} />);
+    render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
 
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: 'Fix the wallet list' } });
@@ -121,7 +150,7 @@ describe('NewSessionComposer', () => {
 
     it('hands the picked images up with the sentence, and lists each as a chip', () => {
       const onSubmit = vi.fn();
-      const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
+      const { container } = render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
       const file = png();
 
       pick(container, [file]);
@@ -138,7 +167,9 @@ describe('NewSessionComposer', () => {
       // A file rides a written task: the create schema refuses files with no
       // prompt, so Send must not let one through empty.
       const onSubmit = vi.fn();
-      const { container } = render(<NewSessionComposer onSubmit={onSubmit} taskOptional />);
+      const { container } = render(
+        <NewSessionComposer voice={VOICE} onSubmit={onSubmit} taskOptional />,
+      );
       const textarea = screen.getByRole('textbox');
 
       const send = () =>
@@ -157,7 +188,7 @@ describe('NewSessionComposer', () => {
 
     it('takes an image pasted into the field as an attachment', () => {
       const onSubmit = vi.fn();
-      render(<NewSessionComposer onSubmit={onSubmit} />);
+      render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
       const file = png('pasted.png');
       const textarea = screen.getByRole('textbox');
 
@@ -170,7 +201,7 @@ describe('NewSessionComposer', () => {
 
     it('refuses a file over the size cap, and says why', () => {
       const onSubmit = vi.fn();
-      const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
+      const { container } = render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
 
       pick(container, [png('huge.png', 5 * 1024 * 1024 + 1)]);
       expect(screen.getByRole('alert')).toBeTruthy();
@@ -183,7 +214,7 @@ describe('NewSessionComposer', () => {
     });
 
     it('takes a PDF, text and an unlabelled screenshot, and refuses what a session never takes', () => {
-      render(<NewSessionComposer onSubmit={vi.fn()} />);
+      render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
       const textarea = screen.getByRole('textbox');
 
       fireEvent.paste(textarea, {
@@ -210,7 +241,7 @@ describe('NewSessionComposer', () => {
 
     it('lets a chip be removed before sending', () => {
       const onSubmit = vi.fn();
-      const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
+      const { container } = render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
 
       pick(container, [png()]);
       const chip = screen.getByText('screen.png').parentElement;
@@ -223,63 +254,43 @@ describe('NewSessionComposer', () => {
   });
 
   describe('dictation', () => {
-    it("draws a recording's levels in the recorder bar alone", async () => {
-      const { meter } = (await import('../hooks/use-dictation')) as unknown as {
-        meter: import('../lib/dictation-meter').DictationMeter;
-      };
-      dictation.state = 'recording';
+    it("draws a recording's levels in the recorder bar alone", () => {
+      dictation.phase = 'recording';
       const onEngine = vi.fn();
       render(
         <NewSessionComposer
+          voice={VOICE}
           onSubmit={vi.fn()}
           engine={<Chip onRender={onEngine} label="engine" />}
-          dictation={{ transcribe: vi.fn(), transcribing: false }}
         />,
       );
       onEngine.mockClear();
 
       act(() => {
-        meter.push(0.2, 300);
-        meter.push(0.6, 700);
-        meter.push(0.4, 1_200);
+        dictation.meter.push(0.2, 300);
+        dictation.meter.push(0.6, 700);
+        dictation.meter.push(0.4, 1_200);
       });
 
       expect(onEngine).not.toHaveBeenCalled();
       expect(screen.getByText('0:01')).toBeTruthy();
     });
 
-    it('adds what was said to the end of the draft, to be read before sending', async () => {
-      const transcribe = vi.fn().mockResolvedValue('fix the login redirect.');
-      render(
-        <NewSessionComposer onSubmit={vi.fn()} dictation={{ transcribe, transcribing: false }} />,
-      );
+    it('adds what was said to the end of the draft, to be read before sending', () => {
+      render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
       const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: 'Then ' } });
 
-      const wav = new Blob(['wav'], { type: 'audio/wav' });
-      await act(async () => {
-        await dictation.onRecorded?.(wav);
-      });
+      act(() => dictation.onText?.('fix the login redirect.'));
 
-      expect(transcribe).toHaveBeenCalledWith(wav);
       expect(textarea.value).toBe('Then fix the login redirect.');
     });
 
-    it('leaves the draft alone when nothing came back', async () => {
+    it('shows no mic while nobody can hear the workspace', () => {
       render(
-        <NewSessionComposer
-          onSubmit={vi.fn()}
-          dictation={{ transcribe: vi.fn().mockResolvedValue(null), transcribing: false }}
-        />,
+        <NewSessionComposer voice={{ available: false, transcribe: vi.fn() }} onSubmit={vi.fn()} />,
       );
-      const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
-      fireEvent.change(textarea, { target: { value: 'Fix it' } });
-
-      await act(async () => {
-        await dictation.onRecorded?.(new Blob());
-      });
-
-      expect(textarea.value).toBe('Fix it');
+      expect(screen.queryByRole('button', { name: 'common.dictation.dictate' })).toBeNull();
     });
   });
 });

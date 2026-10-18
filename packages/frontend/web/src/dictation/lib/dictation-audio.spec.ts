@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DictationMeter, formatElapsed } from '../lib/dictation-meter';
-import { encodeWav, levelOf } from '../lib/wav';
+import { DictationMeter, formatElapsed } from './dictation-meter';
+import { encodeWav, levelOf } from './wav';
 
 /**
  * What the recorder hands the API and draws: the microphone's samples as a

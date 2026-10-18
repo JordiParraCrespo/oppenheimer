@@ -29,6 +29,7 @@ import {
 } from '@oppenheimer/design-system-web/segmented-control';
 import { SlugInput, type SlugStatus } from '@oppenheimer/design-system-web/slug-input';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
+import { DictationButton, VoiceRecorderBar } from '@oppenheimer/design-system-web/chat-composer-extras';
 import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   Dialog,
@@ -791,8 +792,21 @@ export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: stri
         attachments={files}
         onRemoveAttachment={(id) => setFiles((f) => f.filter((x) => x.id !== id))}
         onAttach={full ? () => setFiles((f) => [...f, { id: String(Date.now()), name: 'notes.txt' }]) : undefined}
-        onRecord={full ? () => setRecording((r) => !r) : undefined}
-        recording={recording}
+        dictation={
+          full
+            ? {
+                mic: <DictationButton recording={recording} onClick={() => setRecording((r) => !r)} />,
+                recorder: recording ? (
+                  <VoiceRecorderBar
+                    levels={[0.2, 0.5, 0.8, 0.4, 0.6, 0.3]}
+                    elapsed="0:03"
+                    onCancel={() => setRecording(false)}
+                    onStop={() => setRecording(false)}
+                  />
+                ) : undefined,
+              }
+            : undefined
+        }
         tools={full ? <PermissionDemo /> : undefined}
         engine={
           full ? (
