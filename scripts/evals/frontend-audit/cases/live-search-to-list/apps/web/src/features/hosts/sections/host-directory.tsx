@@ -1,4 +1,4 @@
-import { SidebarSearch, Skeleton } from '@oppenheimer/design-system-web';
+import { SidebarSearch } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { HostRows } from '../components/host-rows';
  *
  * The list is short enough to filter in the browser, so the search narrows
  * what is already loaded rather than asking the API again.
+ * Nothing is drawn under the search until the list first answers.
  */
 export function HostDirectory() {
   const { t } = useTranslation();
@@ -23,11 +24,7 @@ export function HostDirectory() {
         placeholder={t('sessions.new.host.search')}
         aria-label={t('sessions.new.host.search')}
       />
-      {isPending ? (
-        <Skeleton className="h-8 w-full" />
-      ) : (
-        <HostRows hosts={hosts ?? []} query={query} />
-      )}
+      {isPending ? null : <HostRows hosts={hosts ?? []} query={query} />}
     </div>
   );
 }
