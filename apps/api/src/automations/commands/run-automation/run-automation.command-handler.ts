@@ -31,7 +31,7 @@ export class RunAutomationCommandHandler
       await this.automations.findOneById(command.scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
-    if (command.botId !== undefined && automation.botId !== command.botId) {
+    if (command.botId !== undefined && !automation.isRoutineOf(command.botId)) {
       throw new AppError(AutomationErrors.NOT_FOUND);
     }
     const run = AutomationRunEntity.fire(

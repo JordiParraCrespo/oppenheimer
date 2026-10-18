@@ -11,6 +11,7 @@ import type {
   RunTargetContext,
   RunTargetDecision,
 } from '../application/automation-run-target.port';
+import { sessionTargetOf } from '../application/session-target.policy';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AUTOMATION_RUN_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
@@ -57,7 +58,7 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
 
   async decide(context: RunTargetContext): Promise<RunTargetDecision<CreateSessionDto>> {
     const { run, automation, limits, now } = context;
-    const hostId = automation.sessionRevision.hostId;
+    const { hostId } = sessionTargetOf(automation).revision;
     // A run live past the run limit is being stopped; it holds no place.
     const liveSince = new Date(now.getTime() - limits.maxRunSeconds * 1000);
     const [otherLive, liveOnHost, freeDisk] = await Promise.all([
@@ -121,14 +122,15 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
   /** The session a run that passed every guard starts, or why it cannot. */
   private sessionOf(context: RunTargetContext): RunTargetDecision<CreateSessionDto> {
     const { automation, event } = context;
-    const prompt = composeRunPrompt(automation.sessionRevision.prompt, event);
+    const { revision } = sessionTargetOf(automation);
+    const prompt = composeRunPrompt(revision.prompt, event);
     if (prompt === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
     try {
       return {
         kind: 'launch',
         input: this.mapper.toSessionInput(
           automation,
-          runCheckout(automation.sessionRevision.repositories, event),
+          runCheckout(revision.repositories, event),
           prompt,
         ),
       };

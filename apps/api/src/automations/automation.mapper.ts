@@ -10,6 +10,7 @@ import {
   type ScheduleFrequency,
   type TriggerFilter,
 } from '@oppenheimer/shared/automations';
+import { sessionTargetOf } from './application/session-target.policy';
 import { AutomationRunMapper } from './automation-run.mapper';
 import type { AutomationOrmEntity } from './database/automation.orm-entity';
 import type { AutomationRevisionOrmEntity } from './database/automation-revision.orm-entity';
@@ -18,7 +19,7 @@ import type { AutomationTriggerOrmEntity } from './database/automation-trigger.o
 import { AutomationEntity } from './domain/automation.entity';
 import type {
   AutomationRepository,
-  AutomationRevisionProps,
+  AutomationTarget,
   AutomationTriggerProps,
   ScheduleTriggerConfig,
   SessionRevisionProps,
@@ -84,17 +85,9 @@ export class AutomationMapper {
       updatedAt: new Date(record.updatedAt),
       props: {
         organizationId: record.organizationId,
-        projectId: record.projectId,
-        runTarget: record.runTarget === 'bot' ? 'bot' : 'session',
-        botId: record.botId,
-        credentialScopes: Array.isArray(record.credentialScopes)
-          ? record.credentialScopes.filter((scope): scope is Scope =>
-              (SCOPES as readonly string[]).includes(scope),
-            )
-          : null,
+        target: this.targetToDomain(record, revision),
         ownerUserId: record.ownerUserId,
         name: record.name,
-        revision: this.revisionToDomain(revision),
         triggers: triggers
           .slice()
           .sort((a, b) => a.position - b.position)
@@ -109,9 +102,37 @@ export class AutomationMapper {
     });
   }
 
-  revisionToDomain(record: AutomationRevisionOrmEntity): AutomationRevisionProps {
-    const repositories: AutomationRepository[] = Array.isArray(record.repositories)
-      ? record.repositories.map((item) => {
+  /**
+   * What the automation's runs start, read from its `runTarget` column: the
+   * row says which kind it is, and the CHECK constraints hold the columns
+   * each kind needs, so the revision's shape follows the kind and is never
+   * guessed from which columns are empty.
+   */
+  targetToDomain(
+    record: AutomationOrmEntity,
+    revision: AutomationRevisionOrmEntity,
+  ): AutomationTarget {
+    const common = {
+      id: revision.id,
+      number: revision.number,
+      prompt: revision.prompt,
+      createdByUserId: revision.createdByUserId,
+      createdAt: new Date(revision.createdAt),
+    };
+    if (record.runTarget === 'bot') {
+      return {
+        kind: 'bot',
+        botId: String(record.botId),
+        credentialScopes: Array.isArray(record.credentialScopes)
+          ? record.credentialScopes.filter((scope): scope is Scope =>
+              (SCOPES as readonly string[]).includes(scope),
+            )
+          : null,
+        revision: { kind: 'bot', ...common },
+      };
+    }
+    const repositories: AutomationRepository[] = Array.isArray(revision.repositories)
+      ? revision.repositories.map((item) => {
           const repository = asRecord(item);
           return {
             installationId: String(repository.installationId ?? ''),
@@ -120,29 +141,19 @@ export class AutomationMapper {
           };
         })
       : [];
-    if (record.hostId === null || record.agent === null) {
-      return {
-        kind: 'bot',
-        id: record.id,
-        number: record.number,
-        prompt: record.prompt,
-        createdByUserId: record.createdByUserId,
-        createdAt: new Date(record.createdAt),
-      };
-    }
     return {
       kind: 'session',
-      id: record.id,
-      number: record.number,
-      hostId: record.hostId,
-      agent: record.agent,
-      model: record.model,
-      permission: record.permission === 'full' ? 'full' : 'auto',
-      effort: record.effort,
-      prompt: record.prompt,
-      repositories,
-      createdByUserId: record.createdByUserId,
-      createdAt: new Date(record.createdAt),
+      projectId: String(record.projectId),
+      revision: {
+        kind: 'session',
+        ...common,
+        hostId: String(revision.hostId),
+        agent: String(revision.agent),
+        model: revision.model,
+        permission: revision.permission === 'full' ? 'full' : 'auto',
+        effort: revision.effort,
+        repositories,
+      },
     };
   }
 
@@ -189,10 +200,7 @@ export class AutomationMapper {
     return {
       id: entity.id,
       organizationId: entity.organizationId,
-      projectId: entity.projectId,
-      runTarget: entity.runTarget,
-      botId: entity.botId,
-      credentialScopes: entity.credentialScopes ? [...entity.credentialScopes] : null,
+      ...this.targetToRecord(entity.target),
       ownerUserId: entity.ownerUserId,
       name: entity.name,
       currentRevisionId: entity.revision.id,
@@ -205,8 +213,22 @@ export class AutomationMapper {
     };
   }
 
+  /** The target's own columns: a routine has no project, a session automation no bot. */
+  private targetToRecord(
+    target: AutomationTarget,
+  ): Pick<AutomationOrmEntity, 'projectId' | 'runTarget' | 'botId' | 'credentialScopes'> {
+    return target.kind === 'bot'
+      ? {
+          projectId: null,
+          runTarget: 'bot',
+          botId: target.botId,
+          credentialScopes: target.credentialScopes ? [...target.credentialScopes] : null,
+        }
+      : { projectId: target.projectId, runTarget: 'session', botId: null, credentialScopes: null };
+  }
+
   revisionToRecord(entity: AutomationEntity): Omit<AutomationRevisionOrmEntity, 'createdAt'> {
-    const revision = entity.revision;
+    const { revision } = entity.target;
     const common = {
       id: revision.id,
       organizationId: entity.organizationId,
@@ -271,7 +293,8 @@ export class AutomationMapper {
     const dto = new AutomationResponseDto();
     dto.id = entity.id;
     dto.organizationId = entity.organizationId;
-    dto.projectId = entity.sessionProjectId;
+    const target = sessionTargetOf(entity);
+    dto.projectId = target.projectId;
     dto.ownerUserId = entity.ownerUserId;
     dto.ownedByMe = entity.ownerUserId === viewerId;
     dto.name = entity.name;
@@ -279,7 +302,7 @@ export class AutomationMapper {
     dto.pausedAt = entity.pausedAt;
     dto.pausedReason = entity.pausedReason;
     dto.nextRunAt = entity.isPaused ? null : entity.nextRunAt();
-    dto.revision = this.revisionToResponse(entity.sessionRevision);
+    dto.revision = this.revisionToResponse(target.revision);
     dto.triggers = entity.triggers.map((trigger) => this.triggerToResponse(trigger));
     dto.overlap = entity.overlap;
     dto.maxRunsPerHour = entity.maxRunsPerHour;

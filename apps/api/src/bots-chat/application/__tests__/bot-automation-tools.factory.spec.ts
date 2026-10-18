@@ -24,6 +24,7 @@ const context: BotToolContext = {
   timeZone: 'Europe/Madrid',
   permission: 'auto',
   budget: new BotTurnBudget(),
+  credentialScopes: null,
   approvals: { request: vi.fn() },
 };
 
@@ -45,13 +46,12 @@ function setup(answer: (query: unknown) => unknown) {
 const automation = {
   id: AUTOMATION,
   name: 'Nightly tests',
-  projectId: PROJECT,
   isPaused: false,
   pausedReason: null,
   overlap: 'skip',
   maxRunsPerHour: null,
-  get sessionRevision() {
-    return this.revision;
+  get target() {
+    return { kind: 'session', projectId: PROJECT, revision: this.revision };
   },
   revision: {
     number: 3,

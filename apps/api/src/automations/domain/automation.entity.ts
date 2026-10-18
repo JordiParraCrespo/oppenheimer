@@ -14,6 +14,7 @@ import type {
 import type {
   AutomationRevisionProps,
   AutomationRunTargetKind,
+  AutomationTarget,
   AutomationTriggerProps,
   SessionRevisionProps,
 } from './automation.types';
@@ -21,19 +22,11 @@ import { nextFireOf } from './trigger-config.policy';
 
 export interface AutomationProps {
   organizationId: string;
-  /** Null only for a bot routine, which belongs to no project. */
-  projectId: string | null;
-  /** What its runs start; fixed for the automation's life. */
-  runTarget: AutomationRunTargetKind;
-  /** The bot a routine wakes; set exactly when `runTarget` is `bot`. */
-  botId: string | null;
-  /** The scopes of the credential that saved it; null for a browser session. */
-  credentialScopes: readonly Scope[] | null;
+  /** What its runs start, and what only that kind has; fixed for the automation's life. */
+  target: AutomationTarget;
   /** Whose runs these are: every run acts as this person (§Q5). */
   ownerUserId: string;
   name: string;
-  /** What a run executes now. A change to it is the next revision, never an edit. */
-  revision: AutomationRevisionProps;
   /** In the editor's order. Replaced whole on a save. */
   triggers: AutomationTriggerProps[];
   pausedAt: Date | null;
@@ -73,14 +66,23 @@ export interface CreateRoutineProps {
   now: Date;
 }
 
+/** An edit of what every automation has: its name, its triggers and its limits. */
 export interface AutomationChanges {
   name?: string;
-  projectId?: string;
-  revision?: Partial<RevisionInput>;
   triggers?: AutomationTriggerProps[];
   overlap?: AutomationOverlapPolicy | null;
   maxRunsPerHour?: number | null;
-  /** The scopes of the credential that saved what runs; a routine's runs keep within them. */
+}
+
+/** An edit of a session automation's own part: its project and what a run executes. */
+export interface SessionChanges {
+  projectId?: string;
+  revision?: Partial<RevisionInput>;
+}
+
+/** An edit of a routine's own part: its prompt, and the scopes of the credential behind it. */
+export interface RoutineChanges {
+  prompt?: string;
   credentialScopes?: readonly Scope[] | null;
 }
 
@@ -120,20 +122,24 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       id: randomUUID(),
       props: {
         organizationId: props.organizationId,
-        projectId: props.projectId,
-        runTarget: 'session',
-        botId: null,
-        credentialScopes: null,
+        target: {
+          kind: 'session',
+          projectId: props.projectId,
+          revision: {
+            ...props.revision,
+            kind: 'session',
+            effort: effortLevelFor(
+              props.revision.agent,
+              props.revision.model,
+              props.revision.effort,
+            ),
+            id: randomUUID(),
+            number: 1,
+            createdAt: props.now,
+          },
+        },
         ownerUserId: props.ownerUserId,
         name: props.name.trim(),
-        revision: {
-          ...props.revision,
-          kind: 'session',
-          effort: effortLevelFor(props.revision.agent, props.revision.model, props.revision.effort),
-          id: randomUUID(),
-          number: 1,
-          createdAt: props.now,
-        },
         triggers: props.triggers,
         pausedAt: props.active ? null : props.now,
         pausedReason: props.active ? null : 'user',
@@ -155,20 +161,21 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       id: randomUUID(),
       props: {
         organizationId: props.organizationId,
-        projectId: null,
-        runTarget: 'bot',
-        botId: props.botId,
-        credentialScopes: props.credentialScopes,
+        target: {
+          kind: 'bot',
+          botId: props.botId,
+          credentialScopes: props.credentialScopes,
+          revision: {
+            kind: 'bot',
+            prompt: props.prompt,
+            id: randomUUID(),
+            number: 1,
+            createdByUserId: props.ownerUserId,
+            createdAt: props.now,
+          },
+        },
         ownerUserId: props.ownerUserId,
         name: props.name.trim(),
-        revision: {
-          kind: 'bot',
-          prompt: props.prompt,
-          id: randomUUID(),
-          number: 1,
-          createdByUserId: props.ownerUserId,
-          createdAt: props.now,
-        },
         triggers: props.triggers,
         pausedAt: props.active ? null : props.now,
         pausedReason: props.active ? null : 'user',
@@ -187,45 +194,27 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
   get organizationId(): string {
     return this.props.organizationId;
   }
-  get projectId(): string | null {
-    return this.props.projectId;
-  }
-  get botId(): string | null {
-    return this.props.botId;
-  }
-  get credentialScopes(): readonly Scope[] | null {
-    return this.props.credentialScopes;
-  }
   get ownerUserId(): string {
     return this.props.ownerUserId;
   }
   get name(): string {
     return this.props.name;
   }
-  get revision(): AutomationRevisionProps {
-    return this.props.revision;
+  /** What its runs start; narrow on `kind` for the project, the bot or the revision's details. */
+  get target(): AutomationTarget {
+    return this.props.target;
   }
   get runTarget(): AutomationRunTargetKind {
-    return this.props.runTarget;
+    return this.props.target.kind;
   }
-  /**
-   * The revision of a session automation. The paths that read it (the editor,
-   * the console's listings, the session target) only ever hold one, so a bot
-   * routine here is a bug, not a refusal.
-   */
-  get sessionRevision(): SessionRevisionProps {
-    const revision = this.props.revision;
-    if (revision.kind !== 'session') {
-      throw new ArgumentInvalidException(`Automation ${this.id} is a bot routine, not a session's`);
-    }
-    return revision;
+  /** Whether this is a routine of that bot; anything else is not that bot's to touch. */
+  isRoutineOf(botId: string): boolean {
+    const { target } = this.props;
+    return target.kind === 'bot' && target.botId === botId;
   }
-  /** The project of a session automation, which always has one. */
-  get sessionProjectId(): string {
-    if (this.props.projectId === null) {
-      throw new ArgumentInvalidException(`Automation ${this.id} belongs to no project`);
-    }
-    return this.props.projectId;
+  /** The current revision, whichever kind: its number and prompt are every revision's. */
+  get revision(): AutomationRevisionProps {
+    return this.props.target.revision;
   }
   get triggers(): readonly AutomationTriggerProps[] {
     return this.props.triggers;
@@ -258,28 +247,66 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     return this.revised;
   }
 
-  /**
-   * Apply an editor save. A change to anything a run executes becomes the next
-   * revision; everything else is edited in place. Triggers are replaced whole,
-   * because the editor holds the whole list.
-   */
-  change(changes: AutomationChanges, by: string, now: Date): void {
+  /** Edit what every automation has. Triggers are replaced whole, because the editor holds them all. */
+  change(changes: AutomationChanges, now: Date): void {
     this.assertLive();
     if (changes.name !== undefined) this.props.name = changes.name.trim();
-    if (changes.projectId !== undefined) this.props.projectId = changes.projectId;
     if (changes.overlap !== undefined) this.props.overlap = changes.overlap;
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
-    if (changes.credentialScopes !== undefined) {
-      this.props.credentialScopes = changes.credentialScopes;
-    }
-    if (changes.revision && this.revisionDiffers(changes.revision)) {
-      this.props.revision = this.nextRevision(changes.revision, by, now);
-      this.revised = true;
-    }
     if (changes.triggers !== undefined) {
       this.props.triggers = changes.triggers;
       this.schedule(now);
     }
+    this.touch();
+  }
+
+  /**
+   * Edit a session automation's own part. A change to anything a run
+   * executes is the next revision; the project is edited in place.
+   */
+  reviseSession(changes: SessionChanges, by: string, now: Date): void {
+    this.assertLive();
+    const target = this.props.target;
+    if (target.kind !== 'session') {
+      throw new ArgumentInvalidException(`Automation ${this.id} is a routine, not a session's`);
+    }
+    const revision =
+      changes.revision && sessionRevisionDiffers(target.revision, changes.revision)
+        ? nextSessionRevision(target.revision, changes.revision, by, now)
+        : target.revision;
+    this.revised = this.revised || revision !== target.revision;
+    this.props.target = { ...target, projectId: changes.projectId ?? target.projectId, revision };
+    this.touch();
+  }
+
+  /**
+   * Edit a routine's own part: a new prompt is its next revision, and the
+   * scopes are those of the credential behind the edit.
+   */
+  reviseRoutine(changes: RoutineChanges, by: string, now: Date): void {
+    this.assertLive();
+    const target = this.props.target;
+    if (target.kind !== 'bot') {
+      throw new ArgumentInvalidException(`Automation ${this.id} is a session's, not a routine`);
+    }
+    const revision =
+      changes.prompt !== undefined && changes.prompt !== target.revision.prompt
+        ? {
+            kind: 'bot' as const,
+            prompt: changes.prompt,
+            id: randomUUID(),
+            number: target.revision.number + 1,
+            createdByUserId: by,
+            createdAt: now,
+          }
+        : target.revision;
+    this.revised = this.revised || revision !== target.revision;
+    this.props.target = {
+      ...target,
+      credentialScopes:
+        changes.credentialScopes === undefined ? target.credentialScopes : changes.credentialScopes,
+      revision,
+    };
     this.touch();
   }
 
@@ -330,48 +357,6 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     );
   }
 
-  private nextRevision(
-    changes: Partial<RevisionInput>,
-    by: string,
-    now: Date,
-  ): AutomationRevisionProps {
-    const current = this.props.revision;
-    const numbered = {
-      id: randomUUID(),
-      number: current.number + 1,
-      createdByUserId: by,
-      createdAt: now,
-    };
-    if (current.kind === 'bot') {
-      // A routine's revision is its prompt; where and how it runs is its bot's.
-      return { kind: 'bot', prompt: changes.prompt ?? current.prompt, ...numbered };
-    }
-    // The effort is judged on the whole next revision, since an edit can
-    // change the agent or the model without touching it (`effortLevelFor`).
-    const next = { ...current, ...changes };
-    return { ...next, effort: effortLevelFor(next.agent, next.model, next.effort), ...numbered };
-  }
-
-  private revisionDiffers(next: Partial<RevisionInput>): boolean {
-    const current = this.props.revision;
-    if (current.kind === 'bot') {
-      return next.prompt !== undefined && next.prompt !== current.prompt;
-    }
-    for (const field of REVISION_FIELDS) {
-      if (next[field] !== undefined && next[field] !== current[field]) return true;
-    }
-    if (next.repositories !== undefined) {
-      const key = (list: RevisionInput['repositories']) =>
-        // The pair a session's checkout sends: a rotated installation is a
-        // different checkout of the same repository.
-        list
-          .map((repository) => `${repository.installationId}:${repository.githubRepoId}`)
-          .join(',');
-      if (key(next.repositories) !== key(current.repositories)) return true;
-    }
-    return false;
-  }
-
   private assertLive(): void {
     if (this.isDeleted) throw new ArgumentInvalidException('A deleted automation cannot change');
   }
@@ -388,23 +373,21 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (!this.props.name?.trim()) {
       throw new ArgumentNotProvidedException('An automation needs a name');
     }
-    if (!this.props.revision.prompt?.trim()) {
+    const { target } = this.props;
+    if (!target.revision.prompt?.trim()) {
       throw new ArgumentNotProvidedException('An automation needs instructions');
     }
     if (!this.isDeleted && this.props.triggers.length === 0) {
       throw new ArgumentInvalidException('Any trigger starts a run, and there is none');
     }
-    const revision = this.props.revision;
-    if ((this.props.runTarget === 'bot') !== (revision.kind === 'bot')) {
-      throw new ArgumentInvalidException('A revision is of the kind its automation runs');
-    }
-    if (revision.kind === 'bot') {
-      if (!this.props.botId) throw new ArgumentNotProvidedException('A routine belongs to a bot');
+    if (target.kind === 'bot') {
+      if (!target.botId) throw new ArgumentNotProvidedException('A routine belongs to a bot');
       return;
     }
-    if (!this.props.projectId) {
+    if (!target.projectId) {
       throw new ArgumentNotProvidedException('A session automation belongs to a project');
     }
+    const revision = target.revision;
     if (revision.repositories.length === 0) {
       throw new ArgumentInvalidException('An automation works in at least one repository');
     }
@@ -420,4 +403,43 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       }
     }
   }
+}
+
+/**
+ * A session automation's next revision. The effort is judged on the whole
+ * next revision, since an edit can change the agent or the model without
+ * touching it (`effortLevelFor`).
+ */
+function nextSessionRevision(
+  current: SessionRevisionProps,
+  changes: Partial<RevisionInput>,
+  by: string,
+  now: Date,
+): SessionRevisionProps {
+  const next = { ...current, ...changes };
+  return {
+    ...next,
+    effort: effortLevelFor(next.agent, next.model, next.effort),
+    id: randomUUID(),
+    number: current.number + 1,
+    createdByUserId: by,
+    createdAt: now,
+  };
+}
+
+function sessionRevisionDiffers(
+  current: SessionRevisionProps,
+  next: Partial<RevisionInput>,
+): boolean {
+  for (const field of REVISION_FIELDS) {
+    if (next[field] !== undefined && next[field] !== current[field]) return true;
+  }
+  if (next.repositories !== undefined) {
+    const key = (list: RevisionInput['repositories']) =>
+      // The pair a session's checkout sends: a rotated installation is a
+      // different checkout of the same repository.
+      list.map((repository) => `${repository.installationId}:${repository.githubRepoId}`).join(',');
+    if (key(next.repositories) !== key(current.repositories)) return true;
+  }
+  return false;
 }

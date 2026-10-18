@@ -304,7 +304,7 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         [
           sessionId,
           automation.organizationId,
-          automation.projectId,
+          automation.target.kind === 'session' ? automation.target.projectId : null,
           userId,
           hostId,
           `run-${sessionId.slice(0, 8)}`,
@@ -514,9 +514,11 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await automations.insert(routine);
 
       const read = (await automations.findOneById(scope(), routine.id)).unwrap();
-      expect(read).toMatchObject({ runTarget: 'bot', botId, projectId: null });
+      expect(read).toMatchObject({ runTarget: 'bot' });
+      expect(read.target).toMatchObject({ kind: 'bot', botId });
+      expect(read.target).not.toHaveProperty('projectId');
       expect(read.revision).toMatchObject({ kind: 'bot', prompt: 'List the open pull requests.' });
-      expect(read.credentialScopes).toEqual(['automations:read']);
+      expect(read.target).toMatchObject({ credentialScopes: ['automations:read'] });
       // The console's list is session automations'; the bot's list is its routines.
       const listed = await automations.findAll(scope(), {});
       expect(listed.map((automation) => automation.id)).not.toContain(routine.id);
@@ -567,25 +569,22 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await automations.insert(routine);
 
       const edited = (await automations.findOneById(scope(), routine.id)).unwrap();
-      edited.change(
-        {
-          revision: { prompt: 'Review the week, briefly.' },
-          credentialScopes: ['automations:read'],
-        },
+      edited.reviseRoutine(
+        { prompt: 'Review the week, briefly.', credentialScopes: ['automations:read'] },
         userId,
         new Date(),
       );
       expect(await automations.save(edited, edited.version)).toBe('saved');
       const paused = (await automations.findOneById(scope(), routine.id)).unwrap();
-      expect(paused.credentialScopes).toEqual(['automations:read']);
+      expect(paused.target).toMatchObject({ credentialScopes: ['automations:read'] });
       paused.pause('user', new Date());
       expect(await automations.save(paused, paused.version)).toBe('saved');
-      expect(
-        (await automations.findOneById(scope(), routine.id)).unwrap().credentialScopes,
-      ).toEqual(['automations:read']);
+      expect((await automations.findOneById(scope(), routine.id)).unwrap().target).toMatchObject({
+        credentialScopes: ['automations:read'],
+      });
     });
 
-    it("records the bot turn its run became, reads the run's status from it, and keeps it off the run page", async () => {
+    it("records the bot turn its run became, and reads the run's status from it", async () => {
       const botId = await insertBot();
       const routine = AutomationEntity.createRoutine({
         organizationId,
@@ -633,11 +632,12 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         status: 'running',
         projectId: null,
       });
+      // The run page reads it too: no project, agent or host, which are its bot's.
       await expect(
         new FindAutomationRunQueryHandler(runs).execute(
           new FindAutomationRunQuery({ scope: scope(), runId: run.id }),
         ),
-      ).rejects.toMatchObject({ code: 'AUTOMATIONS_008' });
+      ).resolves.toMatchObject({ status: 'running', projectId: null, agent: null, hostId: null });
     });
   });
 

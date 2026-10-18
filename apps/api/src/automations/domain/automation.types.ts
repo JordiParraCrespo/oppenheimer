@@ -1,3 +1,4 @@
+import type { Scope } from '@oppenheimer/shared';
 import type {
   AutomationOverlapPolicy,
   AutomationPausedReason,
@@ -65,6 +66,24 @@ export interface SessionRevisionProps extends RevisionCommon {
 
 export type AutomationRevisionProps = SessionRevisionProps | BotRevisionProps;
 
+/**
+ * What an automation's runs start, with what only that kind has
+ * (`26-bot-routines.md` §3). Fixed for the automation's life: a session
+ * automation is in a project and its revision says where and how a session
+ * runs; a routine wakes its bot, within the scopes of the credential that
+ * last saved what it runs. Callers narrow on `kind`, so the session-only
+ * surface does not exist on a routine.
+ */
+export type AutomationTarget =
+  | { kind: 'session'; projectId: string; revision: SessionRevisionProps }
+  | {
+      kind: 'bot';
+      botId: string;
+      /** Null for a browser session, which carries no scopes. */
+      credentialScopes: readonly Scope[] | null;
+      revision: BotRevisionProps;
+    };
+
 /** A schedule trigger's config: the rule without its zone, which is a column. */
 export type ScheduleTriggerConfig = Omit<ScheduleRule, 'timezone'>;
 
@@ -100,3 +119,6 @@ export interface AutomationLimits {
 }
 
 export type { AutomationPausedReason, RunCheckoutRule };
+
+export type SessionTarget = Extract<AutomationTarget, { kind: 'session' }>;
+export type BotTarget = Extract<AutomationTarget, { kind: 'bot' }>;

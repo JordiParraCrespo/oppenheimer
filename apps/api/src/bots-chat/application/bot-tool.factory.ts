@@ -82,7 +82,7 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * first. Its validated call becomes a Needs input card, the model is told
    * to end its turn, and the call runs only when the owner approves it.
    */
-  asks?: boolean | ((input: z.output<Input>) => boolean);
+  asks?: boolean;
   /**
    * What the card says the call will do, in words, from its input: "Start
    * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
@@ -198,11 +198,6 @@ function askingFirst<Input extends z.ZodType>(
     run: async (input, options) => {
       const parsed = spec.input.safeParse(input ?? {});
       if (!parsed.success) return tool.run(input, options);
-      // A tool that asks for some calls only (`update_routine` asks to save
-      // a routine, not to pause one) runs the others as they come.
-      if (typeof spec.asks === 'function' && !spec.asks(parsed.data)) {
-        return tool.run(input, options);
-      }
       try {
         return { content: await askOwner(spec, context, parsed.data) };
       } catch (error) {

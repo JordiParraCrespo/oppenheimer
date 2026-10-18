@@ -1,11 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { nullableEnum } from '@oppenheimer/backend-core';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
-  BOT_EVENT_KINDS,
   BOT_EVENT_OUTCOMES,
   BOT_MESSAGE_ROLES,
   BOT_ROUTINE_ACTIVITIES,
-  type BotEventKind,
   type BotEventOutcome,
   type BotMessageRole,
   type BotRoutineActivity,
@@ -34,67 +31,55 @@ export class BotToolStepResponseDto {
   isError!: boolean;
 }
 
-/**
- * What an event says happened: an approval decided (how, and the card's
- * line), or a routine's activity (which routine, what happened, its run).
- * The fields of the other kind are null.
- */
-export class BotMessageEventResponseDto {
-  @ApiProperty({ enum: BOT_EVENT_KINDS })
-  kind!: BotEventKind;
+/** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
+export class BotApprovalEventResponseDto {
+  @ApiProperty({ enum: ['approval'] })
+  kind!: 'approval';
 
-  @ApiProperty(nullableEnum(BOT_EVENT_OUTCOMES))
-  outcome!: BotEventOutcome | null;
+  @ApiProperty({ enum: BOT_EVENT_OUTCOMES })
+  outcome!: BotEventOutcome;
 
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    description: 'An approval: the tool the decided call was for.',
-  })
-  tool!: string | null;
+  @ApiProperty({ description: 'The tool the decided call was for.' })
+  tool!: string;
 
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    description: "An approval: the card's line, what the call does in words.",
-  })
-  summary!: string | null;
+  @ApiProperty({ description: "The card's line: what the call does, in words." })
+  summary!: string;
+}
 
-  @ApiProperty(nullableEnum(BOT_ROUTINE_ACTIVITIES))
-  activity!: BotRoutineActivity | null;
+/** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */
+export class BotRoutineEventResponseDto {
+  @ApiProperty({ enum: ['routine'] })
+  kind!: 'routine';
+
+  @ApiProperty({ enum: BOT_ROUTINE_ACTIVITIES })
+  activity!: BotRoutineActivity;
+
+  @ApiProperty({ format: 'uuid', description: 'The routine.' })
+  automationId!: string;
 
   @ApiProperty({
     nullable: true,
     type: String,
     format: 'uuid',
-    description: 'A routine: the automation.',
-  })
-  automationId!: string | null;
-
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    format: 'uuid',
-    description: 'A routine: the run, for an activity that has one.',
+    description: 'The run, for an activity that has one (`ran`, `failed`).',
   })
   runId!: string | null;
 
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    description: 'A routine: its name at the time.',
-  })
-  name!: string | null;
+  @ApiProperty({ description: 'Its name at the time.' })
+  name!: string;
 
   @ApiProperty({
     nullable: true,
     type: String,
-    description: 'A routine: why, in words, for a pause or a failure.',
+    description: 'Why, in words, for a pause or a failure.',
   })
   reason!: string | null;
 }
 
+export type BotMessageEventResponseDto = BotApprovalEventResponseDto | BotRoutineEventResponseDto;
+
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
+@ApiExtraModels(BotApprovalEventResponseDto, BotRoutineEventResponseDto)
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -112,9 +97,12 @@ export class BotMessageResponseDto {
   steps!: BotToolStepResponseDto[];
 
   @ApiProperty({
-    type: BotMessageEventResponseDto,
+    oneOf: [
+      { $ref: getSchemaPath(BotApprovalEventResponseDto) },
+      { $ref: getSchemaPath(BotRoutineEventResponseDto) },
+    ],
     nullable: true,
-    description: 'What an event says happened; null on every other role.',
+    description: 'What an event says happened, by `kind`; null on every other role.',
   })
   event!: BotMessageEventResponseDto | null;
 
