@@ -55,7 +55,10 @@ function fakeRemote() {
     reconnectNow: vi.fn(),
     dispose: vi.fn(),
   };
-  return { remote, emit: (chunk: string) => data.forEach((l) => l(chunk, () => {})) };
+  const emit = (chunk: string) => {
+    for (const l of data) l(chunk, () => {});
+  };
+  return { remote, emit };
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
