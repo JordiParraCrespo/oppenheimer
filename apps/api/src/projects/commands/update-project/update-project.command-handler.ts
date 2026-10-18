@@ -33,19 +33,19 @@ export class UpdateProjectCommandHandler
     }
 
     const project = found.unwrap();
-    if (project.isUnassigned && changes.name !== undefined && changes.name !== project.name) {
-      throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
-        detail: 'The Unassigned project keeps its name',
-      });
-    }
-    if (
-      changes.name !== undefined &&
-      changes.name !== project.name &&
-      isReservedProjectName(changes.name)
-    ) {
-      throw new AppError(ProjectErrors.NAME_RESERVED, {
-        detail: `“${changes.name}” would list as a second Unassigned project`,
-      });
+    // A rename is refused for the Unassigned project itself, and onto its name
+    // for any other; the aggregate holds both, these give each its own code.
+    if (changes.name !== undefined && changes.name !== project.name) {
+      if (project.isUnassigned) {
+        throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
+          detail: 'The Unassigned project keeps its name',
+        });
+      }
+      if (isReservedProjectName(changes.name)) {
+        throw new AppError(ProjectErrors.NAME_RESERVED, {
+          detail: `“${changes.name}” would list as a second Unassigned project`,
+        });
+      }
     }
 
     await this.settings.assertUsableHost(scope, changes.defaultHostId);
