@@ -15,8 +15,9 @@ import { useTranslation } from 'react-i18next';
  *
  * The close refuses unpushed work unless the caller accepts losing it; this
  * dialog's box is where that is accepted, not a hidden flag. A failure stays
- * next to the button, never a toast — a host that is offline among them,
- * since the close never reached it and the row comes back.
+ * next to the button, never a toast. A host that is offline is not a failure:
+ * the API keeps the close owed and sends it when the host is back, and the
+ * row reads "Deleting…" until then.
  *
  * A session whose host refused the last delete opens with the refusal on top,
  * in the host's words: usually work that is not pushed, which the box accepts
