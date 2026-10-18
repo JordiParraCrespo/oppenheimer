@@ -22,6 +22,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { queryStateSlotProblems } from './query-state-slots.mjs';
 import { skeletonSlabProblems } from './skeleton-shape.mjs';
+import { SLAB_DEBT } from './skeleton-slab-debt.mjs';
 
 // `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
@@ -591,35 +592,15 @@ for (const file of queryStateFiles) {
 }
 
 // A placeholder has the shape of what replaces it; `skeleton-shape.mjs`
-// fails a `QueryState.Pending` that is only a slab. The files below held
-// slabs when the check landed, each with how many: debt to pay off by drawing
-// the real container. A file is held to its count, not let off: one more slab
-// fails, and one fewer fails until its count here comes down, so the list
-// only shrinks and a new slab cannot hide behind it.
-const SLAB_DEBT = new Map([
-  // oppenheimer:begin web
-  ['apps/web/src/features/bots/screens/bot-home-host.tsx', 1],
-  ['apps/web/src/features/bots/screens/bot-instructions.tsx', 1],
-  ['apps/web/src/features/bots/screens/bot-memory.tsx', 1],
-  ['apps/web/src/features/bots/screens/model-providers-settings.tsx', 1],
-  ['apps/web/src/features/bots/sections/bot-documents.tsx', 1],
-  ['apps/web/src/features/bots/sections/bot-profile.tsx', 1],
-  ['apps/web/src/features/calendar/dialogs/event.tsx', 1],
-  ['apps/web/src/features/calendar/sections/google-accounts-card.tsx', 1],
-  ['apps/web/src/features/hosts/sections/host-list.tsx', 1],
-  ['apps/web/src/features/profile/sections/devices.tsx', 1],
-  ['apps/web/src/features/tasks/dialogs/start-session.tsx', 1],
-  ['apps/web/src/features/tasks/dialogs/task.tsx', 1],
-  ['apps/web/src/features/tasks/screens/milestones.tsx', 1],
-  // oppenheimer:end web
-]);
+// fails a `QueryState.Pending` that is only a slab. `skeleton-slab-debt.mjs`
+// holds the files that held slabs when the check landed, each to its count.
 for (const file of queryStateFiles) {
   const name = relative(root, file);
   const slabs = skeletonSlabProblems(readFileSync(file, 'utf8'));
   const owed = SLAB_DEBT.get(name) ?? 0;
   if (slabs.length < owed) {
     fail(
-      `${name}: holds ${slabs.length} slab${slabs.length === 1 ? '' : 's'}, SLAB_DEBT says ${owed} — lower its count in scripts/check-frontend-structure.mjs (remove it at zero)`,
+      `${name}: holds ${slabs.length} slab${slabs.length === 1 ? '' : 's'}, SLAB_DEBT says ${owed} — lower its count in scripts/skeleton-slab-debt.mjs (remove it at zero)`,
     );
     continue;
   }

@@ -34,6 +34,7 @@ function check(files, extra = {}) {
     'check-frontend-structure.mjs',
     'query-state-slots.mjs',
     'skeleton-shape.mjs',
+    'skeleton-slab-debt.mjs',
   ]) {
     copyFileSync(new URL(`./${script}`, import.meta.url), join(root, 'scripts', script));
   }

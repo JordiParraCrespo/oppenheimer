@@ -84,13 +84,13 @@ function parseArgs(argv) {
   return args;
 }
 
-function run(cmd, cmdArgs, cwd, { timeoutMs = 15 * 60_000 } = {}) {
+function run(cmd, cmdArgs, cwd, { timeoutMs = 15 * 60_000, env = {} } = {}) {
   const result = spawnSync(cmd, cmdArgs, {
     cwd,
     encoding: 'utf8',
     timeout: timeoutMs,
     maxBuffer: 256 * 1024 * 1024,
-    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', ...env },
   });
   return {
     ok: result.status === 0,
@@ -155,18 +155,6 @@ function applyCase(dir, testCase) {
   git(dir, 'commit', '-q', '-m', testCase.commit);
 }
 
-// A case changes `apps/web`, so the screenshot guard's Stop hook would hold
-// the auditor's last turn for pictures, and the answer would end on that
-// instead of the JSON block. Nothing here is photographed: record it so.
-function excuseScreenshots(dir) {
-  const result = run(
-    'pnpm',
-    ['screens', '--not-visual', 'an audit eval case: nothing is photographed'],
-    dir,
-  );
-  if (!result.ok) throw new Error(`pnpm screens --not-visual failed:\n${result.out.slice(-2000)}`);
-}
-
 // ---- validate: the fixtures test the prompt, not the scripts ----------------
 
 function mechanicalFailures(dir, files) {
@@ -228,7 +216,10 @@ function runAgent(dir, prompt, { model, timeout }) {
     'claude',
     ['-p', prompt, '--output-format', 'json', '--model', model, '--allowedTools', AGENT_TOOLS],
     dir,
-    { timeoutMs: timeout * 60_000 },
+    // A case changes `apps/web`, and nothing here is photographed: without
+    // this the screenshot guard's Stop hook holds the auditor's last turn,
+    // and the answer ends on that instead of the JSON block.
+    { timeoutMs: timeout * 60_000, env: { OPPENHEIMER_SCREENSHOT_GUARD: 'off' } },
   );
   const summary = { ok: result.ok, seconds: Math.round((Date.now() - started) / 1000) };
   try {
@@ -404,7 +395,6 @@ function main() {
       for (let trial = 1; trial <= args.trials; trial += 1) {
         resetWorktree(dir, base);
         applyCase(dir, testCase);
-        excuseScreenshots(dir);
         const casePrompt = prompt.replace('{base}', base);
         log(`\n▶ ${testCase.id}${args.trials > 1 ? ` #${trial}` : ''}: ${args.model} auditing…`);
         const agent = runAgent(dir, casePrompt, args);
