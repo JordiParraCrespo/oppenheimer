@@ -85,12 +85,19 @@ func (s *Store) trustClaude(dir string) error {
 			return err
 		}
 	}
+	// JSON `null` decodes to a nil map, and a write to one panics.
+	if root == nil {
+		root = map[string]json.RawMessage{}
+	}
 
 	projects := map[string]map[string]json.RawMessage{}
 	if existing, ok := root["projects"]; ok {
 		if err := json.Unmarshal(existing, &projects); err != nil {
 			return err
 		}
+	}
+	if projects == nil {
+		projects = map[string]map[string]json.RawMessage{}
 	}
 	project := projects[dir]
 	if project == nil {

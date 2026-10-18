@@ -101,3 +101,24 @@ func TestTrustLeavesAFolderAlreadyTrustedUntouched(t *testing.T) {
 		t.Fatalf("rewrote a trusted folder's file:\n%s", after)
 	}
 }
+
+// `null` where a map belongs decodes to a nil map; marking a folder must
+// still work rather than panic the runner mid-launch.
+func TestTrustSurvivesNullWhereAMapBelongs(t *testing.T) {
+	for _, before := range []string{`null`, `{"projects":null}`, `{"projects":{"/x":null}}`} {
+		config := filepath.Join(t.TempDir(), ".claude.json")
+		work := t.TempDir()
+		if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
+			t.Fatalf("%s: %v", before, err)
+		}
+
+		entry := read(t, config)["projects"].(map[string]any)[work].(map[string]any)
+		if entry["hasTrustDialogAccepted"] != true {
+			t.Fatalf("%s: entry = %v", before, entry)
+		}
+	}
+}
