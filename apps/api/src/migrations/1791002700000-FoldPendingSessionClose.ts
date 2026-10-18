@@ -39,8 +39,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * a close that came right before it. The table holds a few thousand rows at
  * most, so one statement in the boot transaction is enough.
  */
-export class FoldPendingSessionClose1791002600000 implements MigrationInterface {
-  name = 'FoldPendingSessionClose1791002600000';
+export class FoldPendingSessionClose1791002700000 implements MigrationInterface {
+  name = 'FoldPendingSessionClose1791002700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
