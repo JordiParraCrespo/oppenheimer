@@ -528,9 +528,8 @@ earlier note:
   OpenAI-compatible speech server as its `prompt` ("Dictation quality,
   first pass").
 - `next-steps/voice.md` shipped `voice_dictation` as a release flag,
-  default off, that each deployment turned on. On 2026-10-18 the owner
-  asked for dictation on by default: it is an `ops` flag defaulting to
-  `true`, the feature's kill switch ("On by default").
+  default off. On 2026-10-18 it became an `ops` flag defaulting to `true`,
+  the feature's kill switch.
 - Note 09 had `runner uninstall` exit 0 when the control plane could not
   be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
   control. On 2026-10-18, after an owner's uninstall hid a failed

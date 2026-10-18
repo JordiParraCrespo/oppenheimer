@@ -213,8 +213,8 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 
 ### Flag, privacy, cost
 
-- A `voice-dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
-  (a temporary release flag with an expiry), read with `useFeatureFlag`
+- A `voice_dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
+  (an `ops` kill switch, on by default), read with `useFeatureFlag`
   and `@RequireFlag`.
 - **Privacy.** Three things leave the control plane, and the promise
   covers all three: the audio and the vocabulary hint go to the
@@ -279,9 +279,10 @@ from the plan above, the build is the decision; the plan stays as written.
   `recorder` slot, where `VoiceRecorderBar` takes the foot row's place
   without changing the box's height.
 - **The mic shows only when someone can hear it**: `voice_dictation` on
-  (a release flag, default off like every new feature's, so a deployment
-  targets it through the flag admin API, `/v1/feature-flags/admin/voice_dictation`;
-  it expires 2027-04-30) and either the
+  (an `ops` flag, default on with no expiry: the feature's kill switch,
+  which a deployment turns off through the flag admin API,
+  `/v1/feature-flags/admin/voice_dictation`, and a saved "off" stays off)
+  and either the
   workspace's ChatGPT sign-in or the deployment's `voice_transcription`
   capability (`VOICE_STT_*`).
 - **The recorder is a `ScriptProcessorNode`, knowingly.** It is
@@ -413,17 +414,6 @@ Left for later, in #393's order: the field's current text as context for
 both steps, a personal dictionary learned from edits (its own consent and
 table), streaming partials, and whether ChatGPT's route stays first in line
 once the eval has numbers for it.
-
-## On by default (2026-10-18)
-
-Slice 1 shipped `voice_dictation` as a release flag, default off, so each
-deployment had to turn it on through the flag admin API before anyone saw a
-mic. With dictation in every prose field, the owner asked for it on by
-default. It is now an `ops` flag defaulting to `true`, with no expiry: the
-feature's kill switch, the way `terminal_typeahead` is. Nothing else
-changes: the mic still shows only where a speech provider can hear the
-workspace (its ChatGPT sign-in or the deployment's `VOICE_STT_*`), and a
-deployment that saved the flag off stays off until someone turns it on.
 
 ## How we know it works
 
