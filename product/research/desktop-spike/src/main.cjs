@@ -25,8 +25,41 @@ function runnerGet(route) {
   });
 }
 
+// handle -> { ws, owner, inflight, paused }. An attachment belongs to the page
+// that opened it, and only that page may drive it.
 const attachments = new Map();
 let nextHandle = 1;
+
+// The credit window, as on the relay (01, "Flow control"): past HIGH bytes the
+// page has not drained, stop reading the socket, which stalls the runner's
+// write and its PTY read and leaves the backlog in tmux; read again below LOW.
+const HIGH = 1024 * 1024;
+const LOW = 256 * 1024;
+
+function closeOwnedBy(ownerId) {
+  for (const a of attachments.values()) if (a.owner === ownerId) a.ws.close();
+}
+
+// A page that reloads, navigates or is destroyed never runs its cleanup, and
+// on macOS the app outlives its windows: its attachments go with it.
+const watched = new Set();
+function watch(contents) {
+  if (watched.has(contents.id)) return;
+  watched.add(contents.id);
+  const id = contents.id;
+  contents.on('did-start-navigation', (details) => {
+    if (details.isMainFrame && !details.isSameDocument) closeOwnedBy(id);
+  });
+  contents.once('destroyed', () => {
+    watched.delete(id);
+    closeOwnedBy(id);
+  });
+}
+
+function owned(event, handle) {
+  const a = attachments.get(handle);
+  return a && a.owner === event.sender.id ? a : undefined;
+}
 
 ipcMain.handle('local:has-session', async (_e, id) => {
   try {
@@ -39,23 +72,32 @@ ipcMain.handle('local:has-session', async (_e, id) => {
 
 ipcMain.handle('local:attach', (event, id, window, cols, rows) => {
   const handle = nextHandle++;
+  const sender = event.sender;
+  watch(sender);
   const url = `ws+unix://${SOCKET}:/v1/sessions/${encodeURIComponent(id)}/attach?window=${window}&cols=${cols}&rows=${rows}`;
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url, { perMessageDeflate: false });
     ws.binaryType = 'nodebuffer';
+    const a = { ws, owner: sender.id, inflight: 0, paused: false };
     let open = false;
     ws.on('open', () => {
       open = true;
       ws._socket.setNoDelay?.(true);
-      attachments.set(handle, ws);
+      attachments.set(handle, a);
       resolve(handle);
     });
     ws.on('message', (data, isBinary) => {
-      if (isBinary && !event.sender.isDestroyed()) event.sender.send('local:data', handle, data);
+      if (!isBinary || sender.isDestroyed()) return;
+      a.inflight += data.length;
+      if (!a.paused && a.inflight > HIGH) {
+        a.paused = true;
+        ws.pause();
+      }
+      sender.send('local:data', handle, data);
     });
     ws.on('close', () => {
       attachments.delete(handle);
-      if (open && !event.sender.isDestroyed()) event.sender.send('local:close', handle);
+      if (open && !sender.isDestroyed()) sender.send('local:close', handle);
     });
     ws.on('error', (err) => {
       if (!open) reject(err);
@@ -63,13 +105,22 @@ ipcMain.handle('local:attach', (event, id, window, cols, rows) => {
   });
 });
 
-ipcMain.on('local:write', (_e, handle, data) =>
-  attachments.get(handle)?.send(Buffer.from(data, 'utf8'), { binary: true }),
+ipcMain.on('local:credit', (event, handle, bytes) => {
+  const a = owned(event, handle);
+  if (!a) return;
+  a.inflight = Math.max(0, a.inflight - bytes);
+  if (a.paused && a.inflight < LOW) {
+    a.paused = false;
+    a.ws.resume();
+  }
+});
+ipcMain.on('local:write', (event, handle, data) =>
+  owned(event, handle)?.ws.send(Buffer.from(data, 'utf8'), { binary: true }),
 );
-ipcMain.on('local:resize', (_e, handle, cols, rows) =>
-  attachments.get(handle)?.send(JSON.stringify({ type: 'resize', cols, rows })),
+ipcMain.on('local:resize', (event, handle, cols, rows) =>
+  owned(event, handle)?.ws.send(JSON.stringify({ type: 'resize', cols, rows })),
 );
-ipcMain.on('local:close', (_e, handle) => attachments.get(handle)?.close());
+ipcMain.on('local:close', (event, handle) => owned(event, handle)?.ws.close());
 
 function createWindow() {
   const win = new BrowserWindow({

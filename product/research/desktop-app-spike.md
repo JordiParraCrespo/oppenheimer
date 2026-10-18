@@ -21,12 +21,17 @@ console).
   there (`apps/runner/internal/cli/local_attach.go`): a WebSocket, binary
   frames PTY bytes both ways, text frames a resize. Only this account can
   dial it, which is the whole of its authorization.
-- **The console picks local first.** `DesktopSessionStream`
-  (`packages/frontend/consumer/src/modules/sessions/stream/desktop-stream.ts`)
+- **The console picks local first.** `LocalFirstSessionStream`
+  (`packages/frontend/consumer/src/modules/sessions/stream/local-first-stream.ts`)
   asks the bridge whether this machine's runner holds the session; if so it
   attaches through the socket, and if not, or if that fails or later closes,
-  it hands the stream to the attach socket with its WebRTC path (22). In a
-  browser there is no bridge and nothing changes.
+  it hands the stream to the attach socket with its WebRTC path (22). The
+  bridge is a port (`LocalTerminals`) the web app binds at composition when
+  the preload is there; in a browser nothing is bound and nothing changes.
+  The terminal's drained bytes go back as credit, and the shell stops
+  reading the runner past 1 MiB outstanding, so a slow pane leaves its
+  backlog in tmux as on the relay. A page that reloads or closes takes its
+  attachments with it.
 
 Rejected: spawning `tmux attach` from Electron with `node-pty`, as Orca
 does. It is a native module per platform and per Electron version (Orca's

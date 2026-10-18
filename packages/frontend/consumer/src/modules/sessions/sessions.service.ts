@@ -12,7 +12,7 @@ import type {
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
-import { DesktopSessionStream, desktopBridge } from './stream/desktop-stream';
+import { LocalFirstSessionStream, type LocalTerminals } from './stream/local-first-stream';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
@@ -23,6 +23,9 @@ export class SessionsService {
     @inject(TOKENS.ApiBaseUrl)
     @optional()
     private readonly apiBaseUrl: string = '',
+    @inject(TOKENS.LocalTerminals)
+    @optional()
+    private readonly localTerminals?: LocalTerminals,
   ) {}
 
   findAll(): Promise<SessionEntity[]> {
@@ -123,8 +126,9 @@ export class SessionsService {
         issueTicket: () => this.issueAttachTicket(id, window),
         direct: options.direct,
       });
-    // Inside the desktop app, a session on this machine skips the network (27).
-    const bridge = desktopBridge();
-    return bridge ? new DesktopSessionStream(bridge, id, window, remote) : remote();
+    // Where the shell can reach this machine's runner, a session on it skips the network.
+    return this.localTerminals
+      ? new LocalFirstSessionStream(this.localTerminals, id, window, remote)
+      : remote();
   }
 }

@@ -1,25 +1,27 @@
 import type { SessionStream, StreamEnd, StreamPath, StreamStatus } from './session-stream';
 
 /**
- * The desktop app's bridge (`apps/desktop/src/preload.cjs`), present only when
- * the console runs inside it. It reaches the runner on this machine through
- * the runner's local socket, so a session whose host is this machine is
- * attached with no control plane and no network in between
- * (`product/versions/mvp/27-desktop-app.md`).
+ * Terminals on this machine, reached without the network: the runner's local
+ * socket, through whatever shell the console runs in. The desktop app supplies
+ * one (`product/research/desktop-app-spike.md`); a browser supplies none, and
+ * the platform binds it at composition (`localTerminalsModule`), so nothing
+ * here knows which shell it is.
  */
-export interface DesktopBridge {
+export interface LocalTerminals {
   /** Whether the runner on this machine holds the session. */
   hasSession(sessionId: string): Promise<boolean>;
   attach(sessionId: string, window: number, cols: number, rows: number): Promise<number>;
   write(handle: number, data: string): void;
   resize(handle: number, cols: number, rows: number): void;
+  /**
+   * Bytes the terminal has drained. The shell stops reading the runner while
+   * too many are outstanding, so a slow pane leaves its backlog in tmux, as
+   * the relay's credit window does (01, "Flow control").
+   */
+  credit(handle: number, bytes: number): void;
   close(handle: number): void;
   onData(handle: number, listener: (chunk: Uint8Array) => void): () => void;
   onClose(handle: number, listener: () => void): () => void;
-}
-
-export function desktopBridge(): DesktopBridge | undefined {
-  return (globalThis as { oppenheimerDesktop?: DesktopBridge }).oppenheimerDesktop;
 }
 
 type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
@@ -31,7 +33,7 @@ type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
  * or if the local attach fails. Listeners registered before the choice are
  * replayed onto whichever stream wins.
  */
-export class DesktopSessionStream implements SessionStream {
+export class LocalFirstSessionStream implements SessionStream {
   private readonly dataListeners = new Set<DataListener>();
   private readonly statusListeners = new Set<(s: StreamStatus) => void>();
   private readonly endListeners = new Set<(r: StreamEnd) => void>();
@@ -44,7 +46,7 @@ export class DesktopSessionStream implements SessionStream {
   private unsubscribe: (() => void)[] = [];
 
   constructor(
-    private readonly bridge: DesktopBridge,
+    private readonly bridge: LocalTerminals,
     private readonly sessionId: string,
     private readonly window: number,
     private readonly remote: () => SessionStream,
@@ -72,7 +74,14 @@ export class DesktopSessionStream implements SessionStream {
       this.handle = handle;
       this.unsubscribe.push(
         this.bridge.onData(handle, (chunk) => {
-          for (const listener of this.dataListeners) listener(chunk, () => {});
+          // One credit per chunk, however many listeners drain it.
+          let credited = false;
+          const consumed = () => {
+            if (credited) return;
+            credited = true;
+            this.bridge.credit(handle, chunk.byteLength);
+          };
+          for (const listener of this.dataListeners) listener(chunk, consumed);
         }),
         this.bridge.onClose(handle, () => {
           // The runner went (a restart, an update) or the window closed: fall
