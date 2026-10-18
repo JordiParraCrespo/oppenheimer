@@ -87,7 +87,7 @@ export const BotErrors = {
     message: 'Approval not found',
     httpStatus: 404,
   },
-  /** It was approved, denied, or expired by a new message, before this decision arrived. */
+  /** It was approved, denied, or expired (a new message, or its time ran out), before this decision arrived. */
   APPROVAL_DECIDED: {
     code: 'BOTS_016',
     message: 'The approval was already decided',
@@ -128,5 +128,23 @@ export const BotErrors = {
     code: 'BOTS_022',
     message: 'The bot has a turn queued or running',
     httpStatus: 409,
+  },
+  /** A decision on a card past its `expiresAt`: it is expired now, and nothing ran. */
+  APPROVAL_EXPIRED: {
+    code: 'BOTS_023',
+    message: 'The approval expired',
+    httpStatus: 410,
+  },
+  /** A yes whose `callDigest` is not this card's call: what was shown is not what would run. */
+  APPROVAL_CALL_MISMATCH: {
+    code: 'BOTS_024',
+    message: 'The approval is for a different call',
+    httpStatus: 409,
+  },
+  /** The decider may not do what the card's tool does (its policy, as the route it stands in for checks). */
+  APPROVAL_NOT_ALLOWED: {
+    code: 'BOTS_025',
+    message: 'You may not approve this call',
+    httpStatus: 403,
   },
 } as const satisfies Record<string, ErrorDefinition>;

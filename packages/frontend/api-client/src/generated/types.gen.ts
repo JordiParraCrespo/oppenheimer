@@ -3224,6 +3224,14 @@ export type BotApprovalResponseDto = {
      * What will happen, in words.
      */
     summary: string;
+    /**
+     * The digest of this card’s call (its id, tool and input). An approval names it, so it approves exactly the call shown.
+     */
+    callDigest: string;
+    /**
+     * Past this a pending card can no longer be decided: it expires.
+     */
+    expiresAt: string;
     status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
     /**
      * What the call answered when it ran on a yes; null before, and for a no.
@@ -3241,6 +3249,7 @@ export type BotApprovalResponseDto = {
 export type DecideBotApprovalRequest = {
     decision: 'approve' | 'deny';
     note?: string;
+    callDigest?: string;
 };
 
 export type VoiceTranscriptionResponseDto = {
@@ -11594,7 +11603,7 @@ export type DecideBotApprovalErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 / BOTS_025 — Your roles or credential do not permit this, or what the call does
      */
     403: ProblemDetailsDto;
     /**
@@ -11604,9 +11613,13 @@ export type DecideBotApprovalErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * BOTS_016 — The approval was already decided
+     * BOTS_016 / BOTS_024 — Already decided, or a yes for another call
      */
     409: ProblemDetailsDto;
+    /**
+     * BOTS_023 — The approval expired
+     */
+    410: ProblemDetailsDto;
 };
 
 export type DecideBotApprovalError = DecideBotApprovalErrors[keyof DecideBotApprovalErrors];

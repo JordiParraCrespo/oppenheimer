@@ -4,6 +4,7 @@ import { None, Some } from 'oxide.ts';
 import { z } from 'zod/v4';
 import type { BotRepositoryPort } from '../../../../bots/database/bot.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
+import type { BotActorAbilityResolver } from '../../../application/bot-actor-ability.resolver';
 import { BotApprovedCallResolver } from '../../../application/bot-approved-call.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
 import { type BotToolArea, defineBotTool } from '../../../application/bot-tool.factory';
@@ -26,7 +27,9 @@ import { RunApprovedCallCommandHandler } from '../run-approved-call.command-hand
  * credential's scopes cover the tool; the answer and the turn that reports it
  * are one write, and that turn gets the same intersection. A token limited to
  * `bots:write` approving a card raised in the browser runs nothing. A job
- * retried after the result landed does nothing.
+ * retried after the result landed does nothing. A stored call that no longer
+ * has the digest the yes named, or a tool whose role rule the owner no longer
+ * holds, runs nothing and ends failed.
  */
 const OWNER = 'owner-1';
 
@@ -36,6 +39,8 @@ function setup(
     decidedWith?: readonly Scope[] | null;
     alreadyRan?: boolean;
     fails?: boolean;
+    tampered?: boolean;
+    ownerMay?: boolean;
   } = {},
 ) {
   const bot = BotEntity.createNew({
@@ -66,8 +71,9 @@ function setup(
     input: { task: 'Fix the test' },
     summary: 'Start Claude Code on build-02: Fix the test',
   });
-  approval.approve(OWNER, new Date(), options.decidedWith ?? null);
+  approval.approve(OWNER, new Date(), approval.callDigest, options.decidedWith ?? null);
   approval.markPersisted();
+  if (options.tampered) approval.input.task = 'Delete the repository';
   if (options.alreadyRan) approval.recordResult('Started session s-0.', false);
 
   const run = vi.fn(async (input: { task: string }) => {
@@ -82,6 +88,7 @@ function setup(
         asks: true,
         description: 'Starts a session.',
         input: z.object({ task: z.string() }),
+        policy: { action: 'create', subject: 'Session' },
         run,
       }),
     ],
@@ -112,7 +119,9 @@ function setup(
     bots as unknown as BotRepositoryPort,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    new BotApprovedCallResolver(owners, toolbox),
+    new BotApprovedCallResolver(owners, toolbox, {
+      may: async () => options.ownerMay ?? true,
+    } as unknown as BotActorAbilityResolver),
   );
   const execute = () =>
     handler.execute(new RunApprovedCallCommand({ approvalId: approval.id, by: 'Ana' }));
@@ -184,6 +193,24 @@ describe('RunApprovedCallCommandHandler', () => {
     const { approval, execute } = setup({ fails: true });
     await execute();
     expect(approval.status).toBe('failed');
+  });
+
+  it('runs nothing, and ends failed, when the stored call is not the one the yes named', async () => {
+    const { approval, run, execute } = setup({ tampered: true });
+    await execute();
+    expect(run).not.toHaveBeenCalled();
+    expect(approval).toMatchObject({
+      status: 'failed',
+      result: 'Not run: the stored call is not the one that was approved.',
+    });
+  });
+
+  it('runs nothing, and ends failed, when the owner no longer holds the tool’s role rule', async () => {
+    const { approval, run, execute } = setup({ ownerMay: false });
+    await execute();
+    expect(run).not.toHaveBeenCalled();
+    expect(approval.status).toBe('failed');
+    expect(approval.result).toContain('may not create Session');
   });
 
   it('does nothing when the job is retried after the result landed', async () => {

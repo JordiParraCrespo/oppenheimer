@@ -22,6 +22,19 @@ export class BotApprovalResponseDto {
   @ApiProperty({ description: 'What will happen, in words.' })
   summary!: string;
 
+  @ApiProperty({
+    description:
+      'The digest of this card’s call (its id, tool and input). An approval names it, so it approves exactly the call shown.',
+  })
+  callDigest!: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'Past this a pending card can no longer be decided: it expires.',
+  })
+  expiresAt!: string;
+
   @ApiProperty({ enum: BOT_APPROVAL_STATUSES })
   status!: BotApprovalStatus;
 

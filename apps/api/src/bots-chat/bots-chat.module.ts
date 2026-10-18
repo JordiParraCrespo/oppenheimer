@@ -5,6 +5,8 @@ import { createBotEngine } from '@oppenheimer/backend-agents';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
+import { BotActorAbilityResolver } from './application/bot-actor-ability.resolver';
+import { BotApprovalExpiryResolver } from './application/bot-approval-expiry.resolver';
 import { BotApprovalRequestFactory } from './application/bot-approval-request.factory';
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
@@ -141,6 +143,8 @@ const queryHandlers: Provider[] = [
     BotSummaryTriggerPolicy,
     BotModelAccessResolver,
     BotApprovalRequestFactory,
+    BotApprovalExpiryResolver,
+    BotActorAbilityResolver,
     BotApprovedCallResolver,
     BotOwnerScopeResolver,
     BotToolboxFactory,

@@ -20,6 +20,8 @@ interface Approval {
   id: string;
   tool: string;
   summary: string;
+  callDigest: string;
+  expiresAt: string;
   status: string;
   note: string | null;
   result: string | null;
@@ -47,7 +49,7 @@ test('a bot with no card lists none, and a decision on a card that is not its ow
   expect(await listed.json()).toEqual([]);
   await expectProblemDocument(
     await api.post(`/api/v1/bots/${bot.id}/approvals/${randomUUID()}/decision`, {
-      data: { decision: 'approve' },
+      data: { decision: 'approve', callDigest: 'a'.repeat(64) },
     }),
     { status: 404, code: 'BOTS_015' },
   );
@@ -90,7 +92,7 @@ test('a start_session under Approve for me waits on a card, and a denial is repo
   expect(await denied.json()).toMatchObject({ status: 'denied', note: 'Not on this machine' });
   await expectProblemDocument(
     await api.post(`/api/v1/bots/${bot.id}/approvals/${card.id}/decision`, {
-      data: { decision: 'approve' },
+      data: { decision: 'approve', callDigest: card.callDigest },
     }),
     { status: 409, code: 'BOTS_016' },
   );
@@ -149,7 +151,7 @@ test('approving a card answers at once, runs the call in its job, and the bot re
   const [card] = await pending();
 
   const approved = await api.post(`/api/v1/bots/${bot.id}/approvals/${card.id}/decision`, {
-    data: { decision: 'approve' },
+    data: { decision: 'approve', callDigest: card.callDigest },
   });
   expect(approved.status(), await approved.text()).toBe(201);
   expect(await approved.json()).toMatchObject({ status: 'approved', result: null });

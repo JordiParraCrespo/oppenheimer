@@ -380,15 +380,25 @@ export type BotApprovalDecision = (typeof BOT_APPROVAL_DECISIONS)[number];
 /** What the person may add to a decision: why they denied it, or what to do instead. */
 export const BOT_APPROVAL_NOTE_MAX = 1_000;
 
-/** `POST /bots/:id/approvals/:approvalId/decision`. */
-export const decideBotApprovalSchema = z.object({
+const decideBotApprovalFields = z.object({
   decision: z.enum(BOT_APPROVAL_DECISIONS),
   note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+  /** The card's `callDigest`: a yes approves the call the person was shown, and only that one. */
+  callDigest: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/)
+    .optional(),
 });
+
+/** `POST /bots/:id/approvals/:approvalId/decision`. An approval names the call it approves. */
+export const decideBotApprovalSchema = decideBotApprovalFields.refine(
+  (body) => body.decision !== 'approve' || body.callDigest !== undefined,
+  { path: ['callDigest'], message: 'An approval names the call it approves' },
+);
 export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
 
 /** What the console's Deny asks for: the note alone, optional. */
-export const denyBotApprovalSchema = decideBotApprovalSchema.pick({ note: true });
+export const denyBotApprovalSchema = decideBotApprovalFields.pick({ note: true });
 export type DenyBotApprovalDto = z.infer<typeof denyBotApprovalSchema>;
 
 /** `GET /bots/:id/approvals`: newest first, every status unless one is named. */

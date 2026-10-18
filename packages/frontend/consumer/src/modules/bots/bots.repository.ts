@@ -158,6 +158,8 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
     dto.status,
     dto.result,
     new Date(dto.createdAt),
+    dto.callDigest,
+    new Date(dto.expiresAt),
   );
 }
 
@@ -259,20 +261,26 @@ export class BotsRepository {
   }
 
   /**
-   * Answers a card: `approve` runs the call the bot asked for, `deny` runs
-   * nothing; either way the bot is told, with the note, and reports back.
+   * Answers a card: `approve` runs the call the bot asked for, named by the
+   * card's `callDigest`, `deny` runs nothing; either way the bot is told,
+   * with the note, and reports back.
    */
   @MapApiError(BotsErrors.DECIDE_APPROVAL_FAILED)
   async decideApproval(
     id: string,
     approvalId: string,
     decision: BotApprovalDecision,
-    note?: string,
+    options: { note?: string; callDigest?: string } = {},
   ): Promise<BotApprovalEntity> {
+    const note = options.note?.trim();
     const data = await unwrapBody(
       heyApiSdk.decideBotApproval({
         path: { id, approvalId },
-        body: { decision, ...(note?.trim() ? { note: note.trim() } : {}) },
+        body: {
+          decision,
+          ...(note ? { note } : {}),
+          ...(decision === 'approve' ? { callDigest: options.callDigest } : {}),
+        },
       }),
       BotsErrors.DECIDE_APPROVAL_FAILED,
     );

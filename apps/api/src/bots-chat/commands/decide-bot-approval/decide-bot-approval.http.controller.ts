@@ -48,15 +48,21 @@ export class DecideBotApprovalHttpController {
   @ApiOperation({
     summary: "Answer a bot's Needs input card",
     description:
-      "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+      "`approve` names the card's `callDigest` and queues exactly that call, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat. A card past its `expiresAt` cannot be decided: it expires.",
   })
   @ApiResponse({ status: 201, type: BotApprovalResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
   @ApiProblemResponse({ status: 404, description: 'Approval not found', code: 'BOTS_015' })
   @ApiProblemResponse({
     status: 409,
-    description: 'The approval was already decided',
-    code: 'BOTS_016',
+    description: 'Already decided, or a yes for another call',
+    code: ['BOTS_016', 'BOTS_024'],
+  })
+  @ApiProblemResponse({ status: 410, description: 'The approval expired', code: 'BOTS_023' })
+  @ApiProblemResponse({
+    status: 403,
+    description: 'Your roles or credential do not permit this, or what the call does',
+    code: ['AUTH_002', 'TOKEN_004', 'TOKEN_005', 'TOKEN_006', 'TOKEN_007', 'BOTS_025'],
   })
   async decide(
     @CurrentAccessScope() scope: AccessScope,
@@ -75,6 +81,7 @@ export class DecideBotApprovalHttpController {
         note: body.note ?? null,
         deciderName: name ?? '',
         credentialScopes: credential ? credential.scopes : null,
+        callDigest: body.callDigest ?? null,
       }),
     );
     const approval = await this.queryBus.execute<FindBotApprovalQuery, BotApprovalEntity>(

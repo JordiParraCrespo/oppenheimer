@@ -13,6 +13,8 @@ export class DecideBotApprovalCommand extends CommandBase {
   readonly deciderName: string;
   /** The deciding credential's scopes; null for a browser session. */
   readonly credentialScopes: readonly Scope[] | null;
+  /** The digest of the call a yes approves, as the card showed it; null with a no. */
+  readonly callDigest: string | null;
 
   constructor(props: CommandProps<DecideBotApprovalCommand>) {
     super(props);
@@ -23,5 +25,6 @@ export class DecideBotApprovalCommand extends CommandBase {
     this.note = props.note ?? null;
     this.deciderName = props.deciderName;
     this.credentialScopes = props.credentialScopes ?? null;
+    this.callDigest = props.callDigest ?? null;
   }
 }

@@ -212,6 +212,18 @@ export function botCreationSummary(name: string, plan: BotCreationPlan): string 
   return `Create bot "${name}" on ${engineLabelOf(provider, plan.model)}${group}${clipped ? `: ${clipped}` : ''}`;
 }
 
+/** What a `delete_bot` card says: the bot by name and id, and that it cannot be undone. */
+export function botDeletionSummary(bot: { id: string; name: string }): string {
+  return `Delete bot "${bot.name}" for good, with its soul, instructions, memory and chat (${bot.id})`;
+}
+
+/** What the tool answers once the bot is deleted, or was already gone when an approved call ran again. */
+export function botDeletedAnswer(bot: { id: string; name: string }, alreadyGone = false): string {
+  return alreadyGone
+    ? `Bot ${bot.id} "${bot.name}" is already gone; nothing more to delete.`
+    : `Deleted bot ${bot.id} "${bot.name}", with its soul, instructions, memory and chat. It cannot be brought back.`;
+}
+
 /** What the tool answers once the bot exists. */
 export function botCreatedAnswer(bot: BotEntity, groupName: string | null): string {
   const group = groupName ? `, in group ${groupName}` : '';

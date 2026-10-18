@@ -1,14 +1,20 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
+import { AppError } from '@oppenheimer/backend-core';
 import { BOT_AVATAR_COLORS } from '@oppenheimer/shared';
 import { CreateBotCommand } from '../../../bots/commands/create-bot/create-bot.command';
+import { DeleteBotCommand } from '../../../bots/commands/delete-bot/delete-bot.command';
 import { BotEntity } from '../../../bots/domain/bot.entity';
 import { BotGroupEntity } from '../../../bots/domain/bot-group.entity';
+import { BotErrors } from '../../../bots/domain/bots.errors';
 import { FindBotQuery } from '../../../bots/queries/find-bot/find-bot.query';
 import { FindBotGroupsQuery } from '../../../bots/queries/find-bot-groups/find-bot-groups.query';
 import { FindBotsQuery } from '../../../bots/queries/find-bots/find-bots.query';
 import { FindModelProviderCredentialsQuery } from '../../../bots/queries/find-model-provider-credentials/find-model-provider-credentials.query';
+import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
+import type { BotActorAbilityResolver } from '../bot-actor-ability.resolver';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotPeerToolsFactory } from '../bot-bots-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -20,11 +26,18 @@ import type { BotToolContext } from '../bot-tool.factory';
  * `create_bot`, which asks under Approve for me and otherwise dispatches the
  * console's own create command as the owner, marked as the creator's, on the
  * creator's engine unless told otherwise, never looser than the creator, and
- * once per call. The write itself is the command's and the integration spec's.
+ * once per call; and `delete_bot`, which always asks, refuses itself, a bot
+ * named wrong, a busy one and an owner without `delete Bot` before any card,
+ * and checks all of it again when the approved call runs. The writes
+ * themselves are the commands' and the integration spec's.
  */
 const owner = emptyScope('owner-1', 'org-1');
 const SELF_ID = '11111111-1111-4111-8111-111111111111';
 const PEER_ID = '22222222-2222-4222-8222-222222222222';
+const noTurns = {
+  findForConversation: vi.fn(async () => []),
+} as unknown as BotTurnRepositoryPort;
+const mayDelete = { may: vi.fn(async () => true) } as unknown as BotActorAbilityResolver;
 const context: BotToolContext = {
   owner,
   organizationId: 'org-1',
@@ -64,6 +77,8 @@ function setup(answer: (query: unknown) => unknown) {
   const factory = new BotPeerToolsFactory(
     queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
+    noTurns,
+    mayDelete,
   );
   const call = (name: string, input: unknown) => {
     const found = factory.definitions().find((definition) => definition.name === name);
@@ -187,6 +202,8 @@ describe('create_bot', () => {
     const factory = new BotPeerToolsFactory(
       queryBus as unknown as QueryBus,
       commandBus as unknown as CommandBus,
+      noTurns,
+      mayDelete,
     );
     const definition = factory.definitions().find((candidate) => candidate.name === 'create_bot');
     if (!definition) throw new Error('no create_bot');
@@ -414,5 +431,165 @@ describe('create_bot', () => {
     expect(keys[0]).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
     expect(keys[1]).toBe(keys[0]);
     expect(keys[2]).not.toBe(keys[0]);
+  });
+});
+
+describe('delete_bot', () => {
+  const grace = bot(PEER_ID, 'Grace', 'Reviews pull requests');
+
+  function deleting(
+    permission: BotToolContext['permission'],
+    options: { exists?: () => boolean; busy?: boolean; ownerMay?: boolean } = {},
+  ) {
+    const exists = options.exists ?? (() => true);
+    const queryBus = {
+      execute: vi.fn(async (query: unknown) => {
+        if (query instanceof FindBotQuery && query.botId === PEER_ID && exists()) return grace;
+        throw new AppError(BotErrors.NOT_FOUND);
+      }),
+    };
+    const commandBus = { execute: vi.fn(async () => PEER_ID) };
+    const running = BotTurnEntity.queue({
+      organizationId: 'org-1',
+      botId: PEER_ID,
+      requestedByUserId: 'owner-1',
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+      timeZone: null,
+      credentialScopes: null,
+    });
+    const turns = {
+      findForConversation: vi.fn(async () => (options.busy ? [running] : [])),
+    };
+    const abilities = { may: vi.fn(async () => options.ownerMay ?? true) };
+    const approvals = {
+      request: vi.fn<BotApprovalRequesterPort['request']>(async () => ({
+        status: 'requested',
+        approvalId: 'approval-1',
+      })),
+    };
+    const factory = new BotPeerToolsFactory(
+      queryBus as unknown as QueryBus,
+      commandBus as unknown as CommandBus,
+      turns as unknown as BotTurnRepositoryPort,
+      abilities as unknown as BotActorAbilityResolver,
+    );
+    const definition = factory.definitions().find((candidate) => candidate.name === 'delete_bot');
+    if (!definition) throw new Error('no delete_bot');
+    const call = (input: unknown) =>
+      definition
+        .bind({ ...context, permission, approvals })
+        .run(input, { signal: new AbortController().signal });
+    const approved = (input: Record<string, unknown>) =>
+      definition.runApproved(
+        input,
+        { ...context, permission, approvalId: 'approval-1' },
+        new AbortController().signal,
+      );
+    return { definition, commandBus, turns, abilities, approvals, call, approved };
+  }
+
+  it('is a bots:write tool held to the delete Bot rule its route checks', () => {
+    const { definition } = deleting('auto');
+    expect(definition.scope).toBe('bots:write');
+    expect(definition.policy).toEqual({ action: 'delete', subject: 'Bot' });
+  });
+
+  it('always asks, under Full access too: a card naming the bot, for 15 minutes, nothing deleted', async () => {
+    const { commandBus, approvals, abilities, call } = deleting('full');
+    const result = await call({ bot_id: PEER_ID, name: 'Grace' });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'delete_bot',
+        input: { bot_id: PEER_ID, name: 'Grace' },
+        summary: `Delete bot "Grace" for good, with its soul, instructions, memory and chat (${PEER_ID})`,
+        ttlMs: 15 * 60 * 1000,
+      }),
+    );
+    expect(abilities.may).toHaveBeenCalledWith(
+      'org-1',
+      'owner-1',
+      {
+        action: 'delete',
+        subject: 'Bot',
+      },
+      { id: PEER_ID, organizationId: 'org-1' },
+    );
+    expect(result.content).toContain('End your turn now');
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses to delete itself, the bot the person is talking to, raising no card', async () => {
+    const { approvals, call } = deleting('auto');
+    const result = await call({ bot_id: SELF_ID, name: 'Ada' });
+    expect(result).toMatchObject({ isError: true });
+    expect(result.content).toContain('you cannot delete yourself');
+    expect(approvals.request).not.toHaveBeenCalled();
+  });
+
+  it('refuses a name that is not the bot’s, naming the one it has, raising no card', async () => {
+    const { approvals, call } = deleting('auto');
+    const result = await call({ bot_id: PEER_ID, name: 'grace' });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain(`bot ${PEER_ID} is named "Grace", not "grace"`);
+    expect(approvals.request).not.toHaveBeenCalled();
+  });
+
+  it('refuses a bot the workspace does not have, raising no card', async () => {
+    const { approvals, call } = deleting('auto', { exists: () => false });
+    const result = await call({ bot_id: PEER_ID, name: 'Grace' });
+    expect(result.content).toContain(`the workspace has no bot ${PEER_ID}`);
+    expect(approvals.request).not.toHaveBeenCalled();
+  });
+
+  it('refuses a bot that is answering right now, raising no card', async () => {
+    const { approvals, call } = deleting('auto', { busy: true });
+    const result = await call({ bot_id: PEER_ID, name: 'Grace' });
+    expect(result.content).toContain('"Grace" is answering right now');
+    expect(approvals.request).not.toHaveBeenCalled();
+  });
+
+  it('refuses for an owner who may not delete bots, raising no card', async () => {
+    const { approvals, call } = deleting('auto', { ownerMay: false });
+    const result = await call({ bot_id: PEER_ID, name: 'Grace' });
+    expect(result.content).toContain('may not delete bots');
+    expect(approvals.request).not.toHaveBeenCalled();
+  });
+
+  it('deletes it on the approved call, as the owner, with the console’s own command', async () => {
+    const { commandBus, approved } = deleting('auto');
+    const result = await approved({ bot_id: PEER_ID, name: 'Grace' });
+    expect(result).toEqual({
+      content: `Deleted bot ${PEER_ID} "Grace", with its soul, instructions, memory and chat. It cannot be brought back.`,
+      isError: false,
+    });
+    const command = commandBus.execute.mock.calls[0][0] as unknown as DeleteBotCommand;
+    expect(command).toBeInstanceOf(DeleteBotCommand);
+    expect(command).toMatchObject({ scope: owner, botId: PEER_ID });
+  });
+
+  it('checks again when the approved call runs: a bot busy by then is not deleted', async () => {
+    const { commandBus, approved } = deleting('auto', { busy: true });
+    const result = await approved({ bot_id: PEER_ID, name: 'Grace' });
+    expect(result.isError).toBe(true);
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('answers an approved call run again after the bot is gone as done, deleting nothing', async () => {
+    const { commandBus, approved } = deleting('auto', { exists: () => false });
+    const result = await approved({ bot_id: PEER_ID, name: 'Grace' });
+    expect(result).toEqual({
+      content: `Bot ${PEER_ID} "Grace" is already gone; nothing more to delete.`,
+      isError: false,
+    });
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses itself on an approved call too', async () => {
+    const { commandBus, approved } = deleting('auto');
+    const result = await approved({ bot_id: SELF_ID, name: 'Ada' });
+    expect(result.isError).toBe(true);
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 });

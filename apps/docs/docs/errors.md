@@ -643,6 +643,9 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
 | `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
 | `BOTS_022` <a id="bots_022" />       | The bot has a turn queued or running         | 409  |
+| `BOTS_023` <a id="bots_023" />       | The approval expired                         | 410  |
+| `BOTS_024` <a id="bots_024" />       | The approval is for a different call         | 409  |
+| `BOTS_025` <a id="bots_025" />       | You may not approve this call                | 403  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -675,8 +678,15 @@ or not in the caller's workspace.
 
 `BOTS_015` is an approval (a Needs input card) that is not this bot's, or not
 in the caller's workspace. `BOTS_016` is a decision on one that was already
-approved, denied, or expired because a new message was sent to the bot: read
-the approvals again; the card is gone.
+approved, denied, or expired because a new message was sent to the bot or its
+time ran out: read the approvals again; the card is gone. `BOTS_023` is a
+decision on a card past its `expiresAt` (a day by default, 15 minutes for
+`delete_bot`): the decision expires it instead, nothing runs, and the bot has
+to ask again. `BOTS_024` is an `approve` whose `callDigest` is not the card's,
+or that names none: a yes approves exactly the call the card shows, so read
+the card again and approve what it says. `BOTS_025` is an `approve` by
+someone whose roles do not allow what the call does (`delete_bot` needs
+`delete Bot`, as `DELETE /bots/:id` does); they can still deny it.
 
 `BOTS_017` to `BOTS_021` are the ChatGPT provider, which runs on a sign-in to a
 ChatGPT subscription instead of a key. `BOTS_017` is `PUT

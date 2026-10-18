@@ -14,6 +14,7 @@ import type {
   BotToolArea,
   BotToolContext,
   BotToolDefinition,
+  BotToolPolicy,
 } from './bot-tool.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 
@@ -80,6 +81,11 @@ export class BotToolboxFactory {
       };
     }
     return definition.runApproved(call.input, context, signal);
+  }
+
+  /** The role rule a tool's call needs beyond its scope, if it has one; null for a tool gone since. */
+  policyOf(tool: string): BotToolPolicy | null {
+    return this.definitions(null).find((candidate) => candidate.name === tool)?.policy ?? null;
   }
 
   private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {

@@ -5,6 +5,9 @@ import { botDefaultModel } from '@oppenheimer/shared';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
 import { BotErrors } from '../../../bots/domain/bots.errors';
+import { BotActorAbilityResolver } from '../../application/bot-actor-ability.resolver';
+import { BotApprovalExpiryResolver } from '../../application/bot-approval-expiry.resolver';
+import { BotToolboxFactory } from '../../application/bot-toolbox.factory';
 import {
   BOT_APPROVAL_REPOSITORY,
   BOT_STREAM,
@@ -22,7 +25,10 @@ import { DecideBotApprovalCommand } from './decide-bot-approval.command';
 /**
  * The owner answers a Needs input card (`25-bots.md` §5). The decision is a
  * conditional write on `pending`, so a second click, or a click racing a new
- * message, loses with `BOTS_016` and writes nothing. What it owes commits
+ * message, loses with `BOTS_016` and writes nothing. A card past its time is
+ * expired instead (`BOTS_023`). A yes names the digest of the call it saw
+ * (`BOTS_024` for another), and its decider must hold the tool's role rule
+ * (`BOTS_025`), as its route would check them. What it owes commits
  * with it: a yes stages the `run-approved-call` job (the call runs there, so
  * a crash leaves a job to retry, never a card stuck approved); a no queues
  * the bot's turn that is told so. The deciding credential's scopes are kept
@@ -38,6 +44,9 @@ export class DecideBotApprovalCommandHandler
     @Inject(BOT_APPROVAL_REPOSITORY) private readonly approvals: BotApprovalRepositoryPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
+    private readonly expiry: BotApprovalExpiryResolver,
+    private readonly toolbox: BotToolboxFactory,
+    private readonly abilities: BotActorAbilityResolver,
   ) {}
 
   async execute(command: DecideBotApprovalCommand): Promise<string> {
@@ -48,13 +57,21 @@ export class DecideBotApprovalCommandHandler
       BotErrors.APPROVAL_NOT_FOUND,
     );
     if (approval.status !== 'pending') throw new AppError(BotErrors.APPROVAL_DECIDED);
+    const now = new Date();
+    if (await this.expiry.retire(approval, now)) throw new AppError(BotErrors.APPROVAL_EXPIRED);
 
     let effects: BotApprovalEffects;
     if (decision === 'approve') {
-      approval.approve(scope.userId, new Date(), credentialScopes);
+      const digest = command.callDigest ?? '';
+      if (!approval.isFor(digest)) throw new AppError(BotErrors.APPROVAL_CALL_MISMATCH);
+      const policy = this.toolbox.policyOf(approval.tool);
+      if (policy && !(await this.abilities.may(bot.organizationId, scope.userId, policy))) {
+        throw new AppError(BotErrors.APPROVAL_NOT_ALLOWED);
+      }
+      approval.approve(scope.userId, now, digest, credentialScopes);
       effects = { runCall: { by: deciderName } };
     } else {
-      approval.deny(scope.userId, new Date(), note, credentialScopes);
+      approval.deny(scope.userId, now, note, credentialScopes);
       const found = await this.turns.findOne(scope, bot.id, approval.turnId);
       const asked = found.isSome() ? found.unwrap() : null;
       effects = {

@@ -149,7 +149,8 @@
       "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
       "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
       "cancel": "Cancelar",
-      "failed": "No se pudo responder a la solicitud."
+      "failed": "No se pudo responder a la solicitud.",
+      "expired": "Esta solicitud ha caducado y ya no puede ejecutarse. Pídeselo de nuevo a {{name}} si aún lo quieres."
     },
     "event": {
       "approved": "Aprobaste: {{summary}}",

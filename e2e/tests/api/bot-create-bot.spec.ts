@@ -23,6 +23,8 @@ interface Approval {
   id: string;
   tool: string;
   summary: string;
+  callDigest: string;
+  expiresAt: string;
   status: string;
   result: string | null;
 }
@@ -104,7 +106,7 @@ test('under Approve for me the creation waits on a card, and approving it create
   expect(await bots()).toHaveLength(1);
 
   const approved = await api.post(`/api/v1/bots/${bot.id}/approvals/${card.id}/decision`, {
-    data: { decision: 'approve' },
+    data: { decision: 'approve', callDigest: card.callDigest },
   });
   expect(approved.status(), await approved.text()).toBe(201);
   await expect

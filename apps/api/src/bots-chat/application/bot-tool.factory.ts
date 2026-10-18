@@ -75,8 +75,19 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * posts to GitHub, creates a bot): under Approve for me it asks the owner
    * first. Its validated call becomes a Needs input card, the model is told
    * to end its turn, and the call runs only when the owner approves it.
+   * `always` asks under Full access too: what it does cannot be undone
+   * (`delete_bot`), so no preset runs it unattended.
    */
-  asks?: boolean;
+  asks?: boolean | 'always';
+  /** How long its card waits before it expires; a day (`BOT_APPROVAL_TTL_MS`) when omitted. */
+  approvalTtlMs?: number;
+  /**
+   * The role rule (CASL) the route this tool stands in for checks, when it is
+   * more than the scope says (`DELETE /bots/:id` checks `delete Bot`). The
+   * owner must hold it when the call runs, and whoever decides its card when
+   * they approve it, so a card never lends anyone a permission.
+   */
+  policy?: BotToolPolicy;
   /**
    * What the card says the call will do, in words, from its input: "Start
    * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
@@ -106,12 +117,19 @@ export interface BotToolSpec<Input extends z.ZodType> {
   ): Promise<string>;
 }
 
+/** A role rule a tool's call needs, as `@CheckPolicies` names one. */
+export interface BotToolPolicy {
+  action: string;
+  subject: string;
+}
+
 /** A declared tool, ready to be bound to a turn. */
 export interface BotToolDefinition {
   readonly name: string;
   readonly description: string;
   readonly setupStep?: string;
   readonly scope: Scope;
+  readonly policy?: BotToolPolicy;
   /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
   /**
@@ -157,6 +175,7 @@ export function defineBotTool<Input extends z.ZodType>(
     description: spec.description,
     setupStep: spec.setupStep,
     scope: spec.scope,
+    policy: spec.policy,
     bind: (context) => {
       const tool: BotEngineTool = {
         name: spec.name,
@@ -170,7 +189,8 @@ export function defineBotTool<Input extends z.ZodType>(
           return call(parsed.data, context, signal);
         },
       };
-      return spec.asks && context.permission !== 'full' ? askingFirst(tool, spec, context) : tool;
+      const asks = spec.asks === 'always' || (spec.asks && context.permission !== 'full');
+      return asks ? askingFirst(tool, spec, context) : tool;
     },
     runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
   };
@@ -217,6 +237,7 @@ async function askOwner<Input extends z.ZodType>(
     tool: spec.name,
     input: stored,
     summary,
+    ttlMs: spec.approvalTtlMs,
   });
   return outcome.status === 'requested'
     ? askedForApproval(summary)

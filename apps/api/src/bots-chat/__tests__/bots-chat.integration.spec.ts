@@ -509,6 +509,22 @@ describe('bots chat (integration)', () => {
     ).toEqual([]);
   });
 
+  it('reads a card back with its digest and window, its call intact through jsonb, and sees a changed input', async () => {
+    const bot = await create('Binder');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const stored = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    expect(stored.callDigest).toBe(card.callDigest);
+    expect(stored.expiresAt).toEqual(card.expiresAt);
+    // jsonb keeps no key order; the digest is over sorted keys, so the stored call still matches.
+    expect(stored.callIntact).toBe(true);
+    await dataSource.query(
+      `UPDATE bot_approval SET "input" = jsonb_set("input", '{task}', '"Something else"') WHERE id = $1`,
+      [card.id],
+    );
+    expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap().callIntact).toBe(false);
+  });
+
   it('lets one decision win however many land at once: the rest lose and change nothing', async () => {
     const bot = await create('Racer');
     const card = await asked(bot);
@@ -518,7 +534,7 @@ describe('bots chat (integration)', () => {
     );
     const decided = copies.map((copy, index) => {
       const approval = copy.unwrap();
-      if (index % 3 === 0) approval.approve(userId, new Date());
+      if (index % 3 === 0) approval.approve(userId, new Date(), approval.callDigest);
       else if (index % 3 === 1) approval.deny(userId, new Date(), 'no');
       else approval.expire(new Date());
       return approval;
@@ -587,7 +603,7 @@ describe('bots chat (integration)', () => {
     const card = await asked(bot);
     await approvals.insertPending(card);
     const loaded = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
-    loaded.approve(userId, new Date(), ['bots:write']);
+    loaded.approve(userId, new Date(), loaded.callDigest, ['bots:write']);
     expect(await approvals.saveTransition(loaded, { runCall: { by: 'Ana' } }, null)).toBe(true);
     const jobs: { topic: string; payload: { approvalId: string; by: string } }[] =
       await dataSource.query(

@@ -528,3 +528,11 @@ earlier note:
   failure, and points at Settings → Hosts → Remove or
   `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
   origins and the commands that move it (09 §4).
+- Note 25 §4.8 listed deleting bots among what a bot is never given, and a
+  Needs input card waited until it was decided or the person wrote to the
+  bot. On 2026-10-18 the owner asked for one-click approval of an exact
+  tool call, with bot deletion as its first use: `delete_bot` always asks
+  (Full access too), never on itself, a bot named wrong or one that is
+  answering; every card now expires (a day, 15 minutes for a deletion),
+  a yes names the digest of the call it approves, and a tool's role rule
+  binds both the approver and the owner (25 §4.6, §4.8, §5).

@@ -18,6 +18,8 @@ export class BotApprovalMapper
     record.tool = entity.tool;
     record.input = entity.input;
     record.summary = entity.summary;
+    record.callDigest = entity.callDigest;
+    record.expiresAt = entity.expiresAt;
     record.status = entity.status;
     record.result = entity.result;
     record.note = entity.note;
@@ -39,6 +41,8 @@ export class BotApprovalMapper
         tool: record.tool,
         input: asInput(record.input),
         summary: record.summary,
+        callDigest: record.callDigest,
+        expiresAt: record.expiresAt,
         status: record.status as BotApprovalStatus,
         result: record.result,
         note: record.note,
@@ -56,6 +60,8 @@ export class BotApprovalMapper
     dto.tool = entity.tool;
     dto.input = entity.input;
     dto.summary = entity.summary;
+    dto.callDigest = entity.callDigest;
+    dto.expiresAt = entity.expiresAt.toISOString();
     dto.status = entity.status;
     dto.result = entity.result;
     dto.note = entity.note;

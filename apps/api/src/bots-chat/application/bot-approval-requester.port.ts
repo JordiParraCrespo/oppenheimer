@@ -9,6 +9,8 @@ export interface BotApprovalCall {
   input: Record<string, unknown>;
   /** What will happen, in words, built by the tool from its input. */
   summary: string;
+  /** How long the card waits before it expires; the default day when omitted. */
+  ttlMs?: number;
 }
 
 /**

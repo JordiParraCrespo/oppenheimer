@@ -4,6 +4,10 @@ import type { Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
+import type { BotActorAbilityResolver } from '../../../application/bot-actor-ability.resolver';
+import { BotApprovalExpiryResolver } from '../../../application/bot-approval-expiry.resolver';
+import type { BotToolPolicy } from '../../../application/bot-tool.factory';
+import type { BotToolboxFactory } from '../../../application/bot-toolbox.factory';
 import type {
   BotApprovalEffects,
   BotApprovalRepositoryPort,
@@ -23,7 +27,10 @@ import { DecideBotApprovalCommandHandler } from '../decide-bot-approval.command-
  * an event saying it was denied, with the note, under what both the asking
  * turn's and the decider's scopes cover. A decision that loses the
  * conditional write, or arrives on a card already decided, is `BOTS_016` and
- * announces nothing. The race is the integration suite's.
+ * announces nothing. A card past its time is expired, not decided
+ * (`BOTS_023`); a yes that names another call's digest (`BOTS_024`), or comes
+ * from someone without the tool's role rule (`BOTS_025`), writes nothing. The
+ * race is the integration suite's.
  */
 const scope: AccessScope = {
   userId: randomUUID(),
@@ -33,8 +40,17 @@ const scope: AccessScope = {
   bypass: false,
 };
 
+const DAY = 24 * 60 * 60 * 1000;
+
 function setup(
-  options: { decided?: boolean; loses?: boolean; askedWith?: readonly Scope[] | null } = {},
+  options: {
+    decided?: boolean;
+    loses?: boolean;
+    askedWith?: readonly Scope[] | null;
+    raisedAt?: Date;
+    policy?: BotToolPolicy;
+    mayDecide?: boolean;
+  } = {},
 ) {
   const bot = BotEntity.createNew({
     organizationId: scope.organizationId as string,
@@ -56,14 +72,17 @@ function setup(
     timeZone: 'Europe/Madrid',
     credentialScopes: options.askedWith ?? null,
   });
-  const approval = BotApprovalEntity.request({
-    organizationId: bot.organizationId,
-    botId: bot.id,
-    turnId: asked.id,
-    tool: 'start_session',
-    input: { task: 'Fix the test', project_id: 'p-1' },
-    summary: 'Start Claude Code on build-02 in acme/xrp: Fix the test',
-  });
+  const approval = BotApprovalEntity.request(
+    {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: asked.id,
+      tool: 'start_session',
+      input: { task: 'Fix the test', project_id: 'p-1' },
+      summary: 'Start Claude Code on build-02 in acme/xrp: Fix the test',
+    },
+    options.raisedAt ?? new Date(),
+  );
   if (options.decided) approval.expire(new Date());
   const approvals = {
     findOne: vi.fn(async () => Some(approval)),
@@ -75,16 +94,21 @@ function setup(
     findOne: vi.fn(async () => Some(asked)),
   } satisfies Partial<BotTurnRepositoryPort>;
   const stream: BotStreamPort = { publish: vi.fn(async () => undefined), subscribe: vi.fn() };
+  const abilities = { may: vi.fn(async () => options.mayDecide ?? true) };
   const handler = new DecideBotApprovalCommandHandler(
     { bot: async () => bot } as BotLookupPort,
     approvals as unknown as BotApprovalRepositoryPort,
     turns as unknown as BotTurnRepositoryPort,
     stream,
+    new BotApprovalExpiryResolver(approvals as unknown as BotApprovalRepositoryPort, stream),
+    { policyOf: () => options.policy ?? null } as unknown as BotToolboxFactory,
+    abilities as unknown as BotActorAbilityResolver,
   );
   const decide = (
     decision: 'approve' | 'deny',
     note: string | null = null,
     credentialScopes: readonly Scope[] | null = null,
+    callDigest: string | null = decision === 'approve' ? approval.callDigest : null,
   ) =>
     handler.execute(
       new DecideBotApprovalCommand({
@@ -95,10 +119,11 @@ function setup(
         note,
         deciderName: 'Ana',
         credentialScopes,
+        callDigest,
       }),
     );
   const effects = () => approvals.saveTransition.mock.calls[0][1] as BotApprovalEffects;
-  return { bot, approval, approvals, stream, decide, effects };
+  return { bot, approval, approvals, abilities, stream, decide, effects };
 }
 
 describe('DecideBotApprovalCommandHandler', () => {
@@ -152,6 +177,41 @@ describe('DecideBotApprovalCommandHandler', () => {
     const { approvals, decide } = setup({ decided: true });
     await expect(decide('deny')).rejects.toMatchObject({ code: 'BOTS_016' });
     expect(approvals.saveTransition).not.toHaveBeenCalled();
+  });
+
+  it('expires a card past its time instead of deciding it, with BOTS_023, and runs nothing', async () => {
+    const { approval, approvals, stream, decide } = setup({
+      raisedAt: new Date(Date.now() - 2 * DAY),
+    });
+    await expect(decide('approve')).rejects.toMatchObject({ code: 'BOTS_023' });
+    expect(approval).toMatchObject({ status: 'expired', decidedByUserId: null });
+    expect(approvals.saveTransition).toHaveBeenCalledTimes(1);
+    expect(approvals.saveTransition.mock.calls[0][1]).toBeUndefined();
+    expect(stream.publish).toHaveBeenCalledWith(approval.botId, {
+      type: 'approval',
+      approvalId: approval.id,
+      status: 'expired',
+    });
+  });
+
+  it('refuses a yes naming another call, or none, with BOTS_024, writing nothing', async () => {
+    const { approval, approvals, stream, decide } = setup();
+    const other = 'f'.repeat(64);
+    await expect(decide('approve', null, null, other)).rejects.toMatchObject({ code: 'BOTS_024' });
+    await expect(decide('approve', null, null, null)).rejects.toMatchObject({ code: 'BOTS_024' });
+    expect(approval.status).toBe('pending');
+    expect(approvals.saveTransition).not.toHaveBeenCalled();
+    expect(stream.publish).not.toHaveBeenCalled();
+  });
+
+  it('refuses a yes from someone without the tool’s role rule with BOTS_025, but lets them say no', async () => {
+    const policy = { action: 'delete', subject: 'Bot' };
+    const { bot, approval, approvals, abilities, decide } = setup({ policy, mayDecide: false });
+    await expect(decide('approve')).rejects.toMatchObject({ code: 'BOTS_025' });
+    expect(abilities.may).toHaveBeenCalledWith(bot.organizationId, scope.userId, policy);
+    expect(approvals.saveTransition).not.toHaveBeenCalled();
+    await decide('deny');
+    expect(approval.status).toBe('denied');
   });
 
   it('answers BOTS_015 for an approval that is not this bot’s', async () => {

@@ -26,6 +26,8 @@ import { BOT_APPROVAL_RESULT_MAX, BOT_APPROVAL_SUMMARY_MAX } from '../domain/bot
 @Check('CHK_bot_approval_tool', `char_length("tool") > 0`)
 @Check('CHK_bot_approval_summary', `char_length("summary") > 0`)
 @Check('CHK_bot_approval_decided', `("status" = 'pending') = ("decidedAt" IS NULL)`)
+@Check('CHK_bot_approval_call_digest', `"callDigest" ~ '^[0-9a-f]{64}$'`)
+@Check('CHK_bot_approval_expires', `"expiresAt" > "createdAt"`)
 export class BotApprovalOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -48,6 +50,13 @@ export class BotApprovalOrmEntity {
 
   @Column({ type: 'varchar', length: BOT_APPROVAL_SUMMARY_MAX })
   summary!: string;
+
+  /** The digest a yes must name (`approvalCallDigest`), set once with the card. */
+  @Column({ type: 'varchar', length: 64 })
+  callDigest!: string;
+
+  @Column({ type: TIMESTAMP_COLUMN_TYPE })
+  expiresAt!: Date;
 
   @Column({ type: 'varchar', length: 16, default: 'pending' })
   status!: string;

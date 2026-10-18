@@ -2574,7 +2574,7 @@ export const findBotApprovals = <ThrowOnError extends boolean = false>(options: 
 /**
  * Answer a bot's Needs input card
  *
- * `approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.
+ * `approve` names the card's `callDigest` and queues exactly that call, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat. A card past its `expiresAt` cannot be decided: it expires.
  */
 export const decideBotApproval = <ThrowOnError extends boolean = false>(options: Options<DecideBotApprovalData, ThrowOnError>): RequestResult<DecideBotApprovalResponses, DecideBotApprovalErrors, ThrowOnError> => (options.client ?? client).post<DecideBotApprovalResponses, DecideBotApprovalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

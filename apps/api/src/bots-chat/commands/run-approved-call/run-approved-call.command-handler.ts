@@ -18,7 +18,8 @@ import { RunApprovedCallCommand } from './run-approved-call.command';
 /**
  * Carries out an approved call (`25-bots.md` §5), from the job the yes staged.
  * It runs only while the approval is approved with no result: a retry after
- * the result landed does nothing. The call runs as the owner under what both
+ * the result landed does nothing, and only while the stored call still has the
+ * digest the yes named. The call runs as the owner under what both
  * the asking turn's and the deciding credential's scopes cover; its answer
  * and the turn that reports it back are written together, conditioned on no
  * result yet, so a second run of the job never reports twice. The call
@@ -50,12 +51,10 @@ export class RunApprovedCallCommandHandler
       asked ? asked.credentialScopes : [],
       approval.decidedWithScopes,
     );
-    const answer = await this.calls.resolve(
-      bot.unwrap(),
-      approval,
-      granted,
-      asked?.timeZone ?? null,
-    );
+    // The row's call must still be the one the yes named: a changed input runs nothing.
+    const answer = approval.callIntact
+      ? await this.calls.resolve(bot.unwrap(), approval, granted, asked?.timeZone ?? null)
+      : { content: 'Not run: the stored call is not the one that was approved.', isError: true };
     approval.recordResult(answer.content, answer.isError);
     const owner = bot.unwrap();
     // An approver whose account is gone gets no report: there is nobody to send it as.

@@ -17115,7 +17115,7 @@
     },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
-        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+        "description": "`approve` names the card's `callDigest` and queues exactly that call, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat. A card past its `expiresAt` cannot be decided: it expires.",
         "operationId": "decideBotApproval",
         "parameters": [
           {
@@ -17167,7 +17167,7 @@
             }
           },
           "403": {
-            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 / BOTS_025 — Your roles or credential do not permit this, or what the call does",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17187,7 +17187,17 @@
             }
           },
           "409": {
-            "description": "BOTS_016 — The approval was already decided",
+            "description": "BOTS_016 / BOTS_024 — Already decided, or a yes for another call",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "BOTS_023 — The approval expired",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -26129,6 +26139,15 @@
             "type": "string",
             "description": "What will happen, in words."
           },
+          "callDigest": {
+            "type": "string",
+            "description": "The digest of this card’s call (its id, tool and input). An approval names it, so it approves exactly the call shown."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Past this a pending card can no longer be decided: it expires."
+          },
           "status": {
             "type": "string",
             "enum": ["pending", "approved", "denied", "expired", "failed"]
@@ -26164,6 +26183,8 @@
           "tool",
           "input",
           "summary",
+          "callDigest",
+          "expiresAt",
           "status",
           "result",
           "note",
@@ -26182,6 +26203,10 @@
           "note": {
             "type": "string",
             "maxLength": 1000
+          },
+          "callDigest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
           }
         },
         "required": ["decision"]

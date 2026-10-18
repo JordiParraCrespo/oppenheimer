@@ -278,6 +278,7 @@ that did not cover the tool never runs.
 | `ask_bot` | Give another bot a task and wait for its answer | auto |
 | `message_bot` | Send another bot a message without waiting | auto |
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
+| `delete_bot` | Delete another bot for good, by id and its exact name | always ask |
 
 `ask_bot` runs a turn in the other bot, marked as coming from the first
 one; both chats show it. A bot that creates a bot makes it **yours**,
@@ -314,6 +315,29 @@ input is the name, description, soul, instructions, provider, model
   group by id), so a yes creates what the card showed even if the
   creator's engine changed while it waited. The card reads
   `Create bot "Scout" on GLM GLM-5.3, in group Research: Finds papers`.
+
+`delete_bot` (built 2026-10-18) is the first tool that **always asks**:
+under Full access too, because a deleted bot, its soul, instructions,
+memory and chat do not come back. It dispatches the console's own delete
+command as the owner, and four rules keep a slip from costing a bot
+(`botDeletionRefusal`), held when the card is raised, so nobody is asked
+to approve what would be refused, and again when the approved call runs,
+against the bots as they are then:
+
+- **Never itself.** The bot the person is talking to cannot delete itself;
+  the person can, from its settings.
+- **By id and its exact current name.** A name that does not match is
+  refused with the name the bot has, so a mixed-up id deletes nothing; a
+  bot renamed while the card waited is refused at the click.
+- **Never a bot that is answering.** One with a turn queued or running is
+  refused: deleting it would cut that off.
+- **Only what the owner may do.** The owner must hold `delete Bot`, the
+  rule `DELETE /bots/:id` checks, and so must whoever approves the card.
+
+Its card waits 15 minutes, not a day: a deletion is decided while the
+conversation that asked for it is fresh, or asked for again. An approved
+call whose job runs again after the bot is gone answers that it is
+already gone, deleting nothing.
 
 Two named policies bound bots talking to bots. Both belong to the turn
 queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a
@@ -352,7 +376,8 @@ a time (§2).
 ### 4.8 Never given to a bot
 Pairing, unpairing or uninstalling hosts; connecting or disconnecting
 GitHub and calendars; members, roles, API tokens, admin, feature flags;
-sharing sessions; deleting bots.
+sharing sessions. Deleting bots was on this list until 2026-10-18; it is
+`delete_bot` now (§4.6), which no preset runs unattended.
 
 ## 5. Permissions
 
@@ -409,6 +434,25 @@ How the card works (built 2026-10-15, `bot_approval`):
   denial.
 - **Writing to the bot instead expires the card.** The new turn starts
   fresh; nobody decided, and the bot is not told.
+- **A card expires on its own** (built 2026-10-18, `expiresAt`): a day
+  after it was raised, or its tool's own window (15 minutes for
+  `delete_bot`). Past it, a decision expires the card instead, `BOTS_023`,
+  and nothing runs; the bot asking again expires it too and raises the new
+  one in its place. Nothing sweeps them: a card is expired the first time
+  anyone looks, and the console stops offering Approve once its time is up.
+- **A yes approves one exact call** (built 2026-10-18, `callDigest`). A
+  card carries the digest of its id, tool and input (sha256 over JSON with
+  sorted keys); Approve sends it back, and a yes naming another digest, or
+  none, is `BOTS_024` and does nothing. So a person approves the call they
+  were shown, and a digest from one card never approves another. The job
+  checks the stored input against the digest again before it runs, and a
+  call that no longer matches ends `failed`, run nothing.
+- **A card never lends a permission.** A tool may name the role rule its
+  route checks (`delete_bot`: `delete Bot`). The decider must hold it to
+  approve (`BOTS_025`; denying needs nothing), and the owner must still
+  hold it when the job runs, or it ends `failed`, run nothing.
+- **Always ask.** A tool marked so asks under Full access too; the
+  presets cannot turn it off (`delete_bot`).
 - **Not built yet:** *Always allow* (it needs Settings → Permissions), Off,
   a card for a bot-to-bot or background turn (they will need a timeout
   where yours has none), and the asking tools of the other areas.

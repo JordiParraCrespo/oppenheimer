@@ -97,6 +97,42 @@ describe('defineBotTool, an asking tool', () => {
     expect(approvals.request).not.toHaveBeenCalled();
   });
 
+  it('asks under Full access too when it always asks, with its own window for the card', async () => {
+    const run = vi.fn(async () => 'Deleted');
+    const tool = defineBotTool({
+      name: 'delete_thing',
+      asks: 'always',
+      approvalTtlMs: 60_000,
+      scope: 'bots:write',
+      description: 'Deletes a thing.',
+      input: z.object({ id: z.string() }),
+      summarize: (input) => `Delete ${input.id}`,
+      run,
+    });
+    const request = vi.fn<BotApprovalRequesterPort['request']>(async () => ({
+      status: 'requested',
+      approvalId: 'approval-1',
+    }));
+    const result = await tool
+      .bind({
+        owner: emptyScope('owner-1', 'org-1'),
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        turnId: 'turn-1',
+        homeHostId: null,
+        timeZone: 'UTC',
+        permission: 'full',
+        budget: new BotTurnBudget(),
+        approvals: { request },
+      })
+      .run({ id: 't-1' }, { signal: new AbortController().signal });
+    expect(run).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'delete_thing', summary: 'Delete t-1', ttlMs: 60_000 }),
+    );
+    expect(result.content).toContain('End your turn now');
+  });
+
   it('carries out an approved call straight to its run: no asking, its approval id passed on', async () => {
     const { run, approvals } = setup();
     const tool = defineBotTool({

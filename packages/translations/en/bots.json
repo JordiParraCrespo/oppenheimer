@@ -146,7 +146,8 @@
       "noteLabel": "What should {{name}} do instead?",
       "notePlaceholder": "Optional: why not, or what to do instead",
       "cancel": "Cancel",
-      "failed": "Could not answer the request."
+      "failed": "Could not answer the request.",
+      "expired": "This request expired, so it can no longer run. Ask {{name}} again if you still want it."
     },
     "event": {
       "approved": "You approved: {{summary}}",

@@ -30,6 +30,8 @@ export interface DecideBotApprovalVariables {
   approvalId: string;
   decision: BotApprovalDecision;
   note?: string;
+  /** The card's `callDigest`, with an approval: it approves the call that was shown. */
+  callDigest?: string;
 }
 
 /**
@@ -42,8 +44,8 @@ export function useDecideBotApproval(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, approvalId, decision, note }: DecideBotApprovalVariables) =>
-      app.bots.decideApproval(id, approvalId, decision, note),
+    mutationFn: ({ id, approvalId, decision, note, callDigest }: DecideBotApprovalVariables) =>
+      app.bots.decideApproval(id, approvalId, decision, { note, callDigest }),
     ...withCacheOnSuccess(options, (_approval, { id }) =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),

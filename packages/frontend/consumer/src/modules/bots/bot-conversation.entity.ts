@@ -106,9 +106,18 @@ export class BotApprovalEntity {
     /** What the call answered when it ran; `null` before, and for a no. */
     public readonly result: string | null,
     public readonly createdAt: Date,
+    /** Names the exact call: an approval sends it back, so it approves what was shown. */
+    public readonly callDigest: string,
+    /** Past this a pending card can no longer be decided. */
+    public readonly expiresAt: Date,
   ) {}
 
   get isPending(): boolean {
     return this.status === 'pending';
+  }
+
+  /** Whether, at `now` (ms), the card can no longer be decided. */
+  isExpiredAt(now: number): boolean {
+    return this.isPending && now >= this.expiresAt.getTime();
   }
 }
