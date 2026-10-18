@@ -21706,6 +21706,37 @@
           "branch"
         ]
       },
+      "SessionCloseRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "requestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the close was asked for."
+          },
+          "acceptUnpushedWork": {
+            "type": "boolean",
+            "description": "Whether the close may remove a worktree with unpushed work."
+          }
+        },
+        "required": ["requestedAt", "acceptUnpushedWork"]
+      },
+      "SessionCloseRefusalResponseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The runner’s catalog code, e.g. `GIT_003` for a branch that could not be pushed.",
+            "example": "GIT_003"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Git’s or the runner’s own words, verbatim.",
+            "nullable": true
+          }
+        },
+        "required": ["code"]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -21808,6 +21839,26 @@
             "items": {
               "type": "string"
             }
+          },
+          "closeRequest": {
+            "nullable": true,
+            "description": "A close owed to the host and not yet answered. Null when none is.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionCloseRequestResponseDto"
+              }
+            ]
+          },
+          "closeRefusal": {
+            "nullable": true,
+            "description": "Why the host refused the last close. Null when it did not, or it was asked again.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionCloseRefusalResponseDto"
+              }
+            ]
           },
           "createdAt": {
             "format": "date-time",

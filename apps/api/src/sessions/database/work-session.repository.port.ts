@@ -119,7 +119,10 @@ export interface RecentFolder {
  * read only through their session, keeping one tenant predicate instead of three.
  */
 export interface WorkSessionRepositoryPort {
-  /** Every unresolved session on a host, unscoped: the host proved who it is. */
+  /**
+   * Every unresolved session on a host (`starting`, `open` and `failed`, which a
+   * person may delete too), unscoped: the host proved who it is.
+   */
   findUnresolvedForHostForMachine(hostId: string): Promise<HostSessionRow[]>;
 
   /**

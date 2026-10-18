@@ -1444,6 +1444,28 @@ export type SessionCheckoutResponseDto = {
     branch: string;
 };
 
+export type SessionCloseRequestResponseDto = {
+    /**
+     * When the close was asked for.
+     */
+    requestedAt: string;
+    /**
+     * Whether the close may remove a worktree with unpushed work.
+     */
+    acceptUnpushedWork: boolean;
+};
+
+export type SessionCloseRefusalResponseDto = {
+    /**
+     * The runner’s catalog code, e.g. `GIT_003` for a branch that could not be pushed.
+     */
+    code: string;
+    /**
+     * Git’s or the runner’s own words, verbatim.
+     */
+    detail?: string | null;
+};
+
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
@@ -1496,6 +1518,14 @@ export type SessionResponseDto = {
      * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
      */
     hints: Array<string>;
+    /**
+     * A close owed to the host and not yet answered. Null when none is.
+     */
+    closeRequest?: SessionCloseRequestResponseDto | null;
+    /**
+     * Why the host refused the last close. Null when it did not, or it was asked again.
+     */
+    closeRefusal?: SessionCloseRefusalResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };

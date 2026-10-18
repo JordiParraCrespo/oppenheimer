@@ -88,6 +88,15 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     new Date(data.createdAt),
     data.place,
     data.folderPath ?? null,
+    data.closeRequest
+      ? {
+          requestedAt: new Date(data.closeRequest.requestedAt),
+          acceptUnpushedWork: data.closeRequest.acceptUnpushedWork,
+        }
+      : null,
+    data.closeRefusal
+      ? { code: data.closeRefusal.code, detail: data.closeRefusal.detail ?? null }
+      : null,
   );
 }
 
@@ -271,8 +280,9 @@ export class SessionsRepository {
    * resolved so its directory name and branch are never reissued. Work that is
    * not pushed refuses the close unless the caller accepts losing it.
    *
-   * A close the API took but could not hand to an offline host is refused
-   * here: the API does not send it again, so nothing would ever resolve it.
+   * A close the API took but could not hand to an offline host answers like
+   * any other, with `host_offline` in its hints and the close owed on the row:
+   * the API sends it again when the host reconnects.
    */
   @MapApiError(SessionsErrors.CLOSE_FAILED)
   async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
@@ -283,9 +293,7 @@ export class SessionsRepository {
       }),
       SessionsErrors.CLOSE_FAILED,
     );
-    const session = toEntity(data);
-    if (session.isHostOffline) throw new AppError(SessionsErrors.CLOSE_HOST_OFFLINE);
-    return session;
+    return toEntity(data);
   }
 
   /**

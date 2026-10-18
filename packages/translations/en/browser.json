@@ -214,7 +214,6 @@
       "FLAG_006": "That segment is still used by a flag. Remove it from the flag's rules first.",
       "FLAG_007": "Those segment conditions are not valid.",
       "SESSIONS_012": "That file is over 5 MB. Save a smaller copy, then try again.",
-      "SESSIONS_CLIENT_019": "The host is offline, so the session was not deleted. Try again once it is back.",
       "SESSIONS_013": "A session takes images (PNG, JPEG, GIF, WebP), PDFs and text files. Executables, archives, scripts, SVG and HTML are refused.",
       "SESSIONS_014": "This session is stopped. Restart it to give its prompt a file.",
       "SESSIONS_015": "No file was attached. Paste or drop the file again.",
@@ -729,7 +728,11 @@
       "delete": "Delete",
       "writeFailed": "That change did not land. Try again.",
       "loadFailed": "Could not load your sessions.",
-      "share": "Share…"
+      "share": "Share…",
+      "deleting": "Deleting…",
+      "deletingHint": "Waiting for its host to remove it. If the host is offline, it is removed when the host is back.",
+      "notDeleted": "Not deleted",
+      "notDeletedHint": "Its host refused to delete it. Delete it again to see why."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -738,7 +741,10 @@
       "deleting": "Deleting…",
       "failed": "The session could not be deleted.",
       "discard": "Also discard work that is not pushed",
-      "descriptionFolder": "Ends the terminal. The folder stays as it is."
+      "keeps": "Deleting stops if the session has work that is not pushed.",
+      "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+      "refused": "Its host did not delete it",
+      "refusedUnknown": "The host refused to remove the session."
     },
     "filters": {
       "label": "Filter sessions",
