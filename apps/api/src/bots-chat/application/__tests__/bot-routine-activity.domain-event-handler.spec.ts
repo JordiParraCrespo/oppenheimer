@@ -5,12 +5,12 @@
  * when it was written. What the line says is `bot-routine.policy.spec.ts`.
  */
 import type { QueryBus } from '@nestjs/cqrs';
-import type { BotRoutineRef } from '../../../../automations/domain/automation-read.types';
-import { FindBotRoutineRefQuery } from '../../../../automations/queries/find-bot-routine-ref/find-bot-routine-ref.query';
-import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
-import type { BotMessageEntity } from '../../../domain/bot-message.entity';
-import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
-import { BotRoutineActivityDomainEventHandler } from '../bot-routine-activity.domain-event-handler';
+import type { BotRoutineRef } from '../../../automations/domain/automation-read.types';
+import { FindBotRoutineRefQuery } from '../../../automations/queries/find-bot-routine-ref/find-bot-routine-ref.query';
+import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
+import type { BotMessageEntity } from '../../domain/bot-message.entity';
+import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
+import { BotRoutineActivityDomainEventHandler } from '../event-handlers/bot-routine-activity.domain-event-handler';
 
 function setup(options: { stored?: boolean; routine?: BotRoutineRef | null } = {}) {
   const insertOnce = vi.fn(async (_line: BotMessageEntity) => options.stored ?? true);
