@@ -5,7 +5,6 @@ import {
   type BotDocumentRevisionResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
-  type BotMessageEventResponseDto,
   type BotMessageResponseDto,
   type BotResponseDto,
   type BotTurnResponseDto,
@@ -135,23 +134,18 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   );
 }
 
-/** The response's flat event as the kind it is; a kind missing its fields reads as none. */
-function toEvent(dto: BotMessageEventResponseDto): BotMessageEvent | null {
-  if (dto.kind === 'routine') {
-    return dto.activity && dto.automationId
-      ? {
-          kind: 'routine',
-          activity: dto.activity,
-          automationId: dto.automationId,
-          runId: dto.runId,
-          name: dto.name ?? '',
-          reason: dto.reason,
-        }
-      : null;
-  }
-  return dto.outcome
-    ? { kind: 'approval', outcome: dto.outcome, tool: dto.tool ?? '', summary: dto.summary ?? '' }
-    : null;
+/** The response's event as the domain's: the wire is already the union, kind by kind. */
+function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent {
+  return dto.kind === 'routine'
+    ? {
+        kind: 'routine',
+        activity: dto.activity,
+        automationId: dto.automationId,
+        runId: dto.runId ?? null,
+        name: dto.name,
+        reason: dto.reason ?? null,
+      }
+    : { kind: 'approval', outcome: dto.outcome, tool: dto.tool, summary: dto.summary };
 }
 
 function toTurn(dto: BotTurnResponseDto): BotTurnEntity {

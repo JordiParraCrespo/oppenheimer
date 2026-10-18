@@ -56,31 +56,32 @@ const githubTrigger = z.object({
   branch: z.string().optional().describe('Only for this branch; any branch when absent.'),
 });
 
-const input = z
-  .object({
-    action: z
-      .enum(ROUTINE_ACTIONS)
-      .describe('What to do. Every action but list answers your whole list of routines.'),
-    routine_id: z
-      .uuid()
-      .optional()
-      .describe('The routine to act on (from list); not for create or list.'),
-    name: z.string().trim().min(1).max(NAME_MAX).optional(),
-    prompt: z
-      .string()
-      .trim()
-      .min(1)
-      .max(PROMPT_MAX)
-      .optional()
-      .describe('What you will do each time it runs, written to yourself.'),
-    triggers: z
-      .array(z.union([scheduleTrigger, githubTrigger]))
-      .min(1)
-      .max(TRIGGERS_MAX)
-      .optional()
-      .describe('When it runs; any one starts a run. Replaces the set on update.'),
-    enabled: z.boolean().optional().describe('Create only: start paused with false. Default true.'),
-  })
+const routineInput = z.object({
+  action: z
+    .enum(ROUTINE_ACTIONS)
+    .describe('What to do. Every action but list answers your whole list of routines.'),
+  routine_id: z
+    .uuid()
+    .optional()
+    .describe('The routine to act on (from list); not for create or list.'),
+  name: z.string().trim().min(1).max(NAME_MAX).optional(),
+  prompt: z
+    .string()
+    .trim()
+    .min(1)
+    .max(PROMPT_MAX)
+    .optional()
+    .describe('What you will do each time it runs, written to yourself.'),
+  triggers: z
+    .array(z.union([scheduleTrigger, githubTrigger]))
+    .min(1)
+    .max(TRIGGERS_MAX)
+    .optional()
+    .describe('When it runs; any one starts a run. Replaces the set on update.'),
+  enabled: z.boolean().optional().describe('Create only: start paused with false. Default true.'),
+});
+
+const input = routineInput
   .refine((call) => call.action !== 'create' || (call.name && call.prompt && call.triggers), {
     message: 'create needs a name, a prompt and at least one trigger',
   })
@@ -93,8 +94,8 @@ type RoutineCall = z.output<typeof input>;
 /**
  * A bot's own routines (`26-bot-routines.md` §4), as Grok Bot has them: one
  * tool, made and changed in chat. Which calls ask the owner first is
- * `routineCallAsks`: everything but listing and pausing. Every action answers the whole list again, so the bot never acts on
- * a stale picture.
+ * `routineCallAsks`: everything but listing and pausing. Every action
+ * answers the whole list again, so the bot never acts on a stale picture.
  */
 @Injectable()
 export class BotRoutineToolsFactory implements BotToolArea {
@@ -107,15 +108,43 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return [this.updateRoutine()];
   }
 
+  /**
+   * One tool, two bindings of it: the asking one for the calls the owner
+   * consents to and the direct one for the rest, picked per call by
+   * `routineCallAsks`. The shared tool binding stays a yes or a no; the
+   * per-call rule is this tool's own.
+   */
   private updateRoutine(): BotToolDefinition {
-    return defineBotTool({
+    const asking = defineBotTool({ ...this.routineSpec(), asks: true });
+    const direct = defineBotTool(this.routineSpec());
+    return {
+      ...asking,
+      bind: (context) => {
+        const ask = asking.bind(context);
+        const run = direct.bind(context);
+        return {
+          ...ask,
+          run: (call, options) => {
+            const action = routineInput.shape.action.safeParse(actionOf(call));
+            // An action the schema refuses goes to the asking binding, whose
+            // own validation answers it as any bad call is answered.
+            return action.success && !routineCallAsks(action.data)
+              ? run.run(call, options)
+              : ask.run(call, options);
+          },
+        };
+      },
+    };
+  }
+
+  private routineSpec() {
+    return {
       name: 'update_routine',
-      scope: 'automations:write',
-      asks: (call) => routineCallAsks(call.action),
+      scope: 'automations:write' as const,
       description: `Your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs") or when a GitHub event happens. list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
       input,
-      normalize: (call, context) => this.checked(call, context),
-      summarize: async (call, context) => {
+      normalize: (call: RoutineCall, context: BotToolCallContext) => this.checked(call, context),
+      summarize: async (call: RoutineCall, context: BotToolCallContext) => {
         if (call.action === 'create') {
           const when = (call.triggers ?? []).map((trigger) => describeCall(trigger)).join(' or ');
           return `Save routine "${call.name}": ${when}. ${cut(call.prompt ?? '', 160)}`;
@@ -130,11 +159,11 @@ export class BotRoutineToolsFactory implements BotToolArea {
         const verb = verbs[call.action] ?? call.action;
         return `${verb} routine "${routine.name}"`;
       },
-      run: async (call, context) => {
+      run: async (call: RoutineCall, context: BotToolCallContext) => {
         await this.act(this.checked(call, context), context);
         return this.listing(context);
       },
-    });
+    };
   }
 
   /** The call with its triggers checked, or the refusal that says what to fix. */
@@ -249,4 +278,9 @@ function describeCall(trigger: NonNullable<RoutineCall['triggers']>[number]): st
   return trigger.frequency === 'hourly'
     ? `hourly at minute ${trigger.minute}`
     : `${trigger.frequency} at ${at}`;
+}
+
+/** The action a raw call names, before the schema has read it. */
+function actionOf(call: unknown): unknown {
+  return typeof call === 'object' && call !== null && 'action' in call ? call.action : undefined;
 }

@@ -56,8 +56,10 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
 
   async decide(context: RunTargetContext): Promise<RunTargetDecision<RoutineLaunch>> {
     const { automation, run, event, now } = context;
-    const botId = automation.botId;
-    if (!botId) throw new Error(`Automation ${automation.id} runs on a bot but names none`);
+    const { target } = automation;
+    // The registry hands this target only automations whose kind is `bot`.
+    if (target.kind !== 'bot') throw new Error(`Automation ${automation.id} is not a routine`);
+    const { botId } = target;
 
     const model = await this.access.ownModel(automation.organizationId, botId, now);
     if (!model) return { kind: 'skip', reason: 'not_launchable', pause: null };
@@ -79,7 +81,7 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
           effort: bot.effort,
           // A schedule's times are in its zone; anything else, in UTC.
           timeZone: trigger?.timezone ?? null,
-          credentialScopes: automation.credentialScopes,
+          credentialScopes: target.credentialScopes,
         },
         { automationId: automation.id, runId: run.id, name: automation.name, instructions },
       ),

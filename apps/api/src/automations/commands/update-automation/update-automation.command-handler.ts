@@ -3,6 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
+import { sessionTargetOf } from '../../application/session-target.policy';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import type { RevisionInput } from '../../domain/automation.entity';
@@ -31,7 +32,7 @@ export class UpdateAutomationCommandHandler
       AutomationErrors.NOT_FOUND,
     );
     // The editor's routes are a session automation's; a bot routine changes through its bot.
-    if (automation.runTarget !== 'session') throw new AppError(AutomationErrors.NOT_FOUND);
+    sessionTargetOf(automation);
     if (automation.version !== input.version) throw new AppError(AutomationErrors.VERSION_CONFLICT);
     const now = new Date();
 
@@ -58,15 +59,13 @@ export class UpdateAutomationCommandHandler
     automation.change(
       {
         name: input.name,
-        projectId: input.projectId,
-        revision,
         triggers: input.triggers ? this.plan.triggers(input.triggers, now) : undefined,
         overlap: input.overlap,
         maxRunsPerHour: input.maxRunsPerHour,
       },
-      scope.userId,
       now,
     );
+    automation.reviseSession({ projectId: input.projectId, revision }, scope.userId, now);
     const outcome = await this.automations.save(automation, input.version);
     if (outcome === 'conflict') throw new AppError(AutomationErrors.VERSION_CONFLICT);
     return automation.id;

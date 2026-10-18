@@ -23215,7 +23215,9 @@
           },
           "projectId": {
             "type": "string",
-            "format": "uuid"
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null for a bot routine’s run, which belongs to no project."
           },
           "status": {
             "type": "string",
@@ -23267,7 +23269,9 @@
             "type": "number"
           },
           "agent": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a bot routine’s run: the bot’s own provider runs it."
           },
           "model": {
             "type": "string",
@@ -23275,7 +23279,9 @@
           },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null for a bot routine’s run, which starts no session."
           },
           "createdAt": {
             "format": "date-time",
@@ -25912,6 +25918,62 @@
         },
         "required": ["status"]
       },
+      "BotApprovalEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["approval"]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["approved", "denied", "failed"]
+          },
+          "tool": {
+            "type": "string",
+            "description": "The tool the decided call was for."
+          },
+          "summary": {
+            "type": "string",
+            "description": "The card's line: what the call does, in words."
+          }
+        },
+        "required": ["kind", "outcome", "tool", "summary"]
+      },
+      "BotRoutineEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["routine"]
+          },
+          "activity": {
+            "type": "string",
+            "enum": ["saved", "changed", "paused", "resumed", "deleted", "ran", "failed"]
+          },
+          "automationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The routine."
+          },
+          "runId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The run, for an activity that has one (`ran`, `failed`)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name at the time."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, in words, for a pause or a failure."
+          }
+        },
+        "required": ["kind", "activity", "automationId", "runId", "name", "reason"]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -25936,68 +25998,6 @@
           }
         },
         "required": ["callId", "name", "input", "output", "isError"]
-      },
-      "BotMessageEventResponseDto": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["approval", "routine"]
-          },
-          "outcome": {
-            "type": "string",
-            "enum": ["approved", "denied", "failed", null],
-            "nullable": true
-          },
-          "tool": {
-            "type": "string",
-            "nullable": true,
-            "description": "An approval: the tool the decided call was for."
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true,
-            "description": "An approval: the card's line, what the call does in words."
-          },
-          "activity": {
-            "type": "string",
-            "enum": ["saved", "changed", "paused", "resumed", "deleted", "ran", "failed", null],
-            "nullable": true
-          },
-          "automationId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid",
-            "description": "A routine: the automation."
-          },
-          "runId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid",
-            "description": "A routine: the run, for an activity that has one."
-          },
-          "name": {
-            "type": "string",
-            "nullable": true,
-            "description": "A routine: its name at the time."
-          },
-          "reason": {
-            "type": "string",
-            "nullable": true,
-            "description": "A routine: why, in words, for a pause or a failure."
-          }
-        },
-        "required": [
-          "kind",
-          "outcome",
-          "tool",
-          "summary",
-          "activity",
-          "automationId",
-          "runId",
-          "name",
-          "reason"
-        ]
       },
       "BotMessageResponseDto": {
         "type": "object",
@@ -26025,14 +26025,17 @@
             }
           },
           "event": {
-            "nullable": true,
-            "description": "What an event says happened; null on every other role.",
             "type": "object",
-            "allOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/BotMessageEventResponseDto"
+                "$ref": "#/components/schemas/BotApprovalEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotRoutineEventResponseDto"
               }
-            ]
+            ],
+            "nullable": true,
+            "description": "What an event says happened, by `kind`; null on every other role."
           },
           "createdAt": {
             "type": "string",

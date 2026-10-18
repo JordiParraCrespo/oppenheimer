@@ -11,8 +11,10 @@ import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity'
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import {
+  BotApprovalEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
+  BotRoutineEventResponseDto,
 } from './dtos/bot-message.response.dto';
 
 @Injectable()
@@ -99,35 +101,11 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
   };
 }
 
-/** An event as the response carries it: one flat shape, the other kind's fields null. */
+/** An event as the response carries it: the kind it is, with that kind's fields only. */
 function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
-  const none = {
-    outcome: null,
-    tool: null,
-    summary: null,
-    activity: null,
-    automationId: null,
-    runId: null,
-    name: null,
-    reason: null,
-  };
   return event.kind === 'approval'
-    ? {
-        ...none,
-        kind: 'approval',
-        outcome: event.outcome,
-        tool: event.tool,
-        summary: event.summary,
-      }
-    : {
-        ...none,
-        kind: 'routine',
-        activity: event.activity,
-        automationId: event.automationId,
-        runId: event.runId,
-        name: event.name,
-        reason: event.reason,
-      };
+    ? Object.assign(new BotApprovalEventResponseDto(), event)
+    : Object.assign(new BotRoutineEventResponseDto(), event);
 }
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */

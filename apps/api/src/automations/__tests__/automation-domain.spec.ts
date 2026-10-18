@@ -96,11 +96,11 @@ describe('the automation aggregate', () => {
 
   it('makes a new revision only for what a run executes', () => {
     const entity = automation();
-    entity.change({ name: 'Renamed', triggers: [daily(6)] }, 'user-2', now);
+    entity.change({ name: 'Renamed', triggers: [daily(6)] }, now);
     expect(entity.revision.number).toBe(1);
-    entity.change({ revision: { prompt: 'Audit the manifests.' } }, 'user-2', now);
+    entity.reviseSession({ revision: { prompt: 'Audit the manifests.' } }, 'user-2', now);
     expect(entity.revision.number).toBe(1); // unchanged value, no revision
-    entity.change({ revision: { prompt: 'Audit and bump.' } }, 'user-2', now);
+    entity.reviseSession({ revision: { prompt: 'Audit and bump.' } }, 'user-2', now);
     expect(entity.revision).toMatchObject({
       number: 2,
       prompt: 'Audit and bump.',
@@ -112,21 +112,21 @@ describe('the automation aggregate', () => {
   // keeps only a level its agent and model offer, judged on the whole revision.
   it('keeps only an effort the revision’s model offers', () => {
     const entity = automation();
-    entity.change(
+    entity.reviseSession(
       { revision: { agent: 'codex', model: 'gpt-5.6-sol', effort: 'ultra' } },
       'user-2',
       now,
     );
-    expect(entity.sessionRevision.effort).toBe('ultra');
+    expect(sessionRevisionOf(entity).effort).toBe('ultra');
     // Luna has no `ultra`, and the edit names only the model.
-    entity.change({ revision: { model: 'gpt-5.6-luna' } }, 'user-2', now);
+    entity.reviseSession({ revision: { model: 'gpt-5.6-luna' } }, 'user-2', now);
     expect(entity.revision).toMatchObject({ model: 'gpt-5.6-luna', effort: null });
-    entity.change(
+    entity.reviseSession(
       { revision: { agent: 'claude-code', model: 'claude-haiku-4-5', effort: 'high' } },
       'user-2',
       now,
     );
-    expect(entity.sessionRevision.effort).toBeNull();
+    expect(sessionRevisionOf(entity).effort).toBeNull();
   });
 
   it('refuses a GitHub trigger on a repository the automation does not work in', () => {
@@ -244,26 +244,23 @@ describe('a bot routine', () => {
 
   it('runs on its bot, with no project and no host: its revision is its prompt', () => {
     const entity = routine();
-    expect(entity).toMatchObject({
-      runTarget: 'bot',
-      botId: 'bot-1',
-      projectId: null,
-      name: 'Morning PR digest',
-    });
+    expect(entity).toMatchObject({ runTarget: 'bot', name: 'Morning PR digest' });
+    expect(entity.target).toMatchObject({ kind: 'bot', botId: 'bot-1', credentialScopes: null });
+    expect(entity.target).not.toHaveProperty('projectId');
     expect(entity.revision).toMatchObject({
       kind: 'bot',
       number: 1,
       prompt: 'List the open pull requests.',
     });
+    expect(entity.isRoutineOf('bot-1')).toBe(true);
+    expect(entity.isRoutineOf('bot-2')).toBe(false);
     expect(entity.nextRunAt()).not.toBeNull();
-    // The paths that read a session's revision never hold a routine.
-    expect(() => entity.sessionRevision).toThrow();
   });
 
-  it('takes a new prompt as its next revision, and ignores where a session would run', () => {
+  it('takes a new prompt as its next revision, and the scopes of whoever made it', () => {
     const entity = routine();
-    entity.change(
-      { revision: { prompt: 'List them, oldest first.', hostId: 'host-9' } },
+    entity.reviseRoutine(
+      { prompt: 'List them, oldest first.', credentialScopes: ['automations:read'] },
       'user-2',
       now,
     );
@@ -272,9 +269,16 @@ describe('a bot routine', () => {
       number: 2,
       prompt: 'List them, oldest first.',
     });
-    expect(entity.revision).not.toHaveProperty('hostId');
-    entity.change({ revision: { prompt: 'List them, oldest first.' } }, 'user-2', now);
+    expect(entity.target).toMatchObject({ credentialScopes: ['automations:read'] });
+    entity.reviseRoutine({ prompt: 'List them, oldest first.' }, 'user-2', now);
     expect(entity.revision.number).toBe(2);
+  });
+
+  it('refuses a session edit on a routine, and a routine edit on a session automation', () => {
+    expect(() =>
+      routine().reviseSession({ revision: { hostId: 'host-9' } }, 'user-2', now),
+    ).toThrow();
+    expect(() => automation().reviseRoutine({ prompt: 'x' }, 'user-2', now)).toThrow();
   });
 });
 
@@ -432,3 +436,9 @@ describe('the history window', () => {
     ]);
   });
 });
+
+function sessionRevisionOf(entity: AutomationEntity) {
+  const { target } = entity;
+  if (target.kind !== 'session') throw new Error('expected a session automation');
+  return target.revision;
+}

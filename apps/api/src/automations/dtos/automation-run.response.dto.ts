@@ -81,8 +81,13 @@ export class AutomationRunResponseDto {
   @ApiProperty({ description: 'The automation was deleted; the list reads “Deleted automation”.' })
   automationDeleted!: boolean;
 
-  @ApiProperty({ format: 'uuid' })
-  projectId!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'Null for a bot routine’s run, which belongs to no project.',
+  })
+  projectId!: string | null;
 
   @ApiProperty({ enum: AUTOMATION_RUN_STATUSES })
   status!: AutomationRunStatus;
@@ -118,14 +123,23 @@ export class AutomationRunResponseDto {
   @ApiProperty()
   revisionNumber!: number;
 
-  @ApiProperty()
-  agent!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'Null for a bot routine’s run: the bot’s own provider runs it.',
+  })
+  agent!: string | null;
 
   @ApiPropertyOptional({ nullable: true, type: String })
   model!: string | null;
 
-  @ApiProperty({ format: 'uuid' })
-  hostId!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'Null for a bot routine’s run, which starts no session.',
+  })
+  hostId!: string | null;
 
   @ApiProperty()
   createdAt!: Date;

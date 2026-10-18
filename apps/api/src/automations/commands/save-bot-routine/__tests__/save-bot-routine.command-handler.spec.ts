@@ -64,13 +64,13 @@ describe('SaveBotRoutineCommandHandler', () => {
       'automations:read',
     ]);
     expect(save).toHaveBeenCalledTimes(1);
-    expect(routine.credentialScopes).toEqual(['automations:read']);
+    expect(routine.target).toMatchObject({ credentialScopes: ['automations:read'] });
   });
 
   it('leaves the scopes as they were on a pause from a browser session', async () => {
     const { routine, saveWith } = setup();
     await saveWith({ enabled: false }, null);
     expect(routine.isPaused).toBe(true);
-    expect(routine.credentialScopes).toEqual(['automations:write']);
+    expect(routine.target).toMatchObject({ credentialScopes: ['automations:write'] });
   });
 });

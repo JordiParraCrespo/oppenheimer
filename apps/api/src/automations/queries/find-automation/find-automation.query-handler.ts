@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError, requireFound } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import { RUN_HISTORY_DAYS } from '@oppenheimer/shared/automations';
+import { sessionTargetOf } from '../../application/session-target.policy';
 import { AUTOMATION_REPOSITORY, AUTOMATION_RUN_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
@@ -26,7 +27,7 @@ export class FindAutomationQueryHandler
       AutomationErrors.NOT_FOUND,
     );
     // The console's automation is a session's; a bot routine is read through its bot.
-    if (automation.runTarget !== 'session') throw new AppError(AutomationErrors.NOT_FOUND);
+    sessionTargetOf(automation);
     const digests = await this.runs.digests(
       query.scope,
       [automation.id],

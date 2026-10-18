@@ -57,17 +57,14 @@ export class SaveBotRoutineCommandHandler
       await this.automations.findOneById(scope, command.routineId),
       AutomationErrors.NOT_FOUND,
     );
-    if (routine.runTarget !== 'bot' || routine.botId !== command.botId) {
-      throw new AppError(AutomationErrors.NOT_FOUND);
-    }
+    if (!routine.isRoutineOf(command.botId)) throw new AppError(AutomationErrors.NOT_FOUND);
     const version = routine.version;
     const edits =
       changes.name !== undefined || changes.prompt !== undefined || triggers !== undefined;
-    routine.change(
+    routine.change({ name: changes.name, triggers }, now);
+    routine.reviseRoutine(
       {
-        name: changes.name,
-        revision: changes.prompt === undefined ? undefined : { prompt: changes.prompt },
-        triggers,
+        prompt: changes.prompt,
         credentialScopes: edits ? command.credentialScopes : undefined,
       },
       scope.userId,
