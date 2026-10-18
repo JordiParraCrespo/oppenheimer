@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DictationMeter, formatElapsed } from './dictation-meter';
-import { encodeWav, levelOf, trimSilence } from './wav';
+import { encodeWav, levelOf, resample, trimSilence } from './wav';
 
 /**
  * What the recorder hands the API and draws: the microphone's samples as a
@@ -14,7 +14,7 @@ async function bytesOf(blob: Blob): Promise<DataView> {
 }
 
 describe('encodeWav', () => {
-  it('writes a 16-bit mono PCM header at the target rate, the samples averaged down to it', async () => {
+  it('writes a 16-bit mono PCM header at the target rate, the samples resampled to it', async () => {
     const second = new Float32Array(48_000).fill(0.5);
     const view = await bytesOf(
       encodeWav([second.subarray(0, 24_000), second.subarray(24_000)], 48_000, 16_000),
@@ -30,24 +30,74 @@ describe('encodeWav', () => {
     expect(view.getUint16(34, true)).toBe(16);
     expect(view.getUint32(40, true)).toBe(16_000 * 2);
     expect(view.byteLength).toBe(44 + 16_000 * 2);
-    expect(view.getInt16(44, true)).toBe(Math.round(0.5 * 0x7fff - 0.5));
+    // Mid-clip, away from the filter's edges, the level comes through unchanged.
+    expect(view.getInt16(44 + 8_000 * 2, true) / 0x7fff).toBeCloseTo(0.5, 2);
   });
 
   it('stretches a microphone slower than the target rate, so the header never lies about speed', async () => {
-    const ramp = new Float32Array([0, 0.5, 1, 0.5]);
-    const view = await bytesOf(encodeWav([ramp], 8_000, 16_000));
+    const second = new Float32Array(8_000).fill(0.5);
+    const view = await bytesOf(encodeWav([second], 8_000, 16_000));
 
     expect(view.getUint32(24, true)).toBe(16_000);
-    expect(view.getUint32(40, true)).toBe(8 * 2);
-    // Every other sample is the one the microphone gave; the ones between are halfway.
-    expect(view.getInt16(44 + 2 * 2, true)).toBe(Math.trunc(0.5 * 0x7fff));
-    expect(view.getInt16(44 + 1 * 2, true)).toBe(Math.trunc(0.25 * 0x7fff));
+    expect(view.getUint32(40, true)).toBe(16_000 * 2);
   });
 
   it('clips what is louder than full scale instead of wrapping it', async () => {
     const view = await bytesOf(encodeWav([new Float32Array([2, -2])], 16_000, 16_000));
     expect(view.getInt16(44, true)).toBe(0x7fff);
     expect(view.getInt16(46, true)).toBe(-0x8000);
+  });
+});
+
+describe('resample', () => {
+  /** `seconds` of a `hz` tone at full scale, sampled at `rate`. */
+  const sine = (hz: number, rate: number, seconds = 1) =>
+    Float32Array.from({ length: seconds * rate }, (_, i) =>
+      Math.sin((2 * Math.PI * hz * i) / rate),
+    );
+  /** RMS of the middle half, clear of the filter's edges, relative to a full-scale sine's. */
+  const gain = (samples: Float32Array) => {
+    const middle = samples.subarray(samples.length / 4, (samples.length * 3) / 4);
+    let sum = 0;
+    for (const sample of middle) sum += sample * sample;
+    return Math.sqrt(sum / middle.length) / Math.SQRT1_2;
+  };
+
+  /** Amplitude of the `hz` component in the middle half, one DFT bin, relative to full scale. */
+  const toneLevel = (samples: Float32Array, hz: number, rate: number) => {
+    const from = samples.length / 4;
+    const to = (samples.length * 3) / 4;
+    let re = 0;
+    let im = 0;
+    for (let i = from; i < to; i++) {
+      re += samples[i] * Math.cos((2 * Math.PI * hz * i) / rate);
+      im += samples[i] * Math.sin((2 * Math.PI * hz * i) / rate);
+    }
+    return (2 * Math.hypot(re, im)) / (to - from);
+  };
+
+  it.each([48_000, 44_100])('passes speech at %i Hz through untouched', (rate) => {
+    for (const hz of [200, 1_000, 3_000, 6_000]) {
+      expect(gain(resample(sine(hz, rate), rate, 16_000))).toBeCloseTo(1, 1);
+    }
+  });
+
+  it.each([48_000, 44_100])(
+    'stops what a 16 kHz clip cannot hold at %i Hz, instead of folding it into the speech band',
+    (rate) => {
+      // A sibilant's 10–14 kHz would land at 2–6 kHz. Averaging let 10 kHz through at -6 dB.
+      for (const hz of [9_000, 10_000, 12_000, 14_000]) {
+        expect(gain(resample(sine(hz, rate), rate, 16_000))).toBeLessThan(0.01);
+      }
+    },
+  );
+
+  it('interpolates a slower microphone without adding tones of its own', () => {
+    const up = resample(sine(2_000, 8_000), 8_000, 16_000);
+    expect(up).toHaveLength(16_000);
+    expect(toneLevel(up, 2_000, 16_000)).toBeCloseTo(1, 1);
+    // Doubling the rate without a filter mirrors 2 kHz to 6 kHz, above what the microphone heard.
+    expect(toneLevel(up, 6_000, 16_000)).toBeLessThan(0.01);
   });
 });
 
