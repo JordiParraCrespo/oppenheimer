@@ -1,5 +1,9 @@
 import type { RunState } from '@oppenheimer/design-system-web';
-import type { AutomationEntity, AutomationRunEntity } from '@oppenheimer/frontend-consumer';
+import type {
+  AutomationEntity,
+  AutomationRunEntity,
+  BotRoutineEntity,
+} from '@oppenheimer/frontend-consumer';
 import {
   formatCountdown,
   formatShortDuration,
@@ -84,6 +88,20 @@ export function nextRunText(
       : t('automations.next.none');
   }
   return nextInstantText(next, now, locale, t);
+}
+
+/** A bot routine's next run, as `nextRunText` says an automation's. */
+export function routineNextText(
+  routine: BotRoutineEntity,
+  now: number,
+  locale: string,
+  t: TFunction,
+): string {
+  if (routine.isPaused) return t('automations.next.none');
+  if (routine.nextRunAt) return nextInstantText(routine.nextRunAt, now, locale, t);
+  return routine.triggers.some((trigger) => trigger.source === 'github')
+    ? t('automations.next.onEvent')
+    : t('automations.next.none');
 }
 
 export function nextInstantText(next: Date, now: number, locale: string, t: TFunction): string {

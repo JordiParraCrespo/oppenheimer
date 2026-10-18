@@ -56,3 +56,34 @@ test("a bot's routine on its Routines tab, from the card to Delete", async ({ pa
   await expect(confirm).toBeHidden();
   await expect(page.getByText(/Ask it in chat to set one up/)).toBeVisible();
 });
+
+/**
+ * What became of a routine reaches its bot's chat whatever changed it, and
+ * the workspace's routines are on `/automations` (§4 "In the chat", §7).
+ * What breaks this: a change on the tab that the chat never hears of, a line
+ * written twice, or a routine `/automations` does not list.
+ */
+test("a routine's change in its bot's chat, and the routine on /automations", async ({ page }) => {
+  const owner = await provisionedUser('botroutineline');
+  await owner.api.put('/api/v1/model-providers/glm', { data: { apiKey: 'e2e-placeholder' } });
+  const bot = (await (
+    await owner.api.post('/api/v1/bots', { data: { name: 'Juno', provider: 'glm' } })
+  ).json()) as { id: string };
+  const routineId = await insertBotRoutine(bot.id, 'Morning PR digest', 'List the open PRs.');
+  await signInAs(page, owner.user);
+
+  // Paused from the tab while the chat is open: the line arrives on its own, once.
+  await page.goto(`/bots/${bot.id}`);
+  const paused = await owner.api.patch(`/api/v1/bots/${bot.id}/routines/${routineId}`, {
+    data: { enabled: false },
+  });
+  expect(paused.ok()).toBeTruthy();
+  await expect(page.getByText('Paused routine “Morning PR digest”')).toHaveCount(1);
+
+  // `/automations` lists it under its bot, and the row opens the bot's Routines tab.
+  await page.goto('/automations');
+  const row = page.getByRole('row', { name: 'Morning PR digest' });
+  await expect(row).toContainText('Runs on Juno');
+  await row.click();
+  await expect(page).toHaveURL(new RegExp(`/bots/${bot.id}/settings/routines$`));
+});

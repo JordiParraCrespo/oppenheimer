@@ -530,3 +530,8 @@ earlier note:
   (only `list` and `pause` run without a card), and routine changes,
   runs and failures became one activity event written by one listener
   (26 §4, §6, "Decided").
+- 2026-10-18, building bot routines' slice C: a routine's activity lines
+  belong to no turn, so a turn's several changes are not folded into one
+  "Routines in this change" group yet, and a routine turn that failed is
+  shown by its turn rather than by a second `failed` notice (26 §4 "In the
+  chat", "Decided").

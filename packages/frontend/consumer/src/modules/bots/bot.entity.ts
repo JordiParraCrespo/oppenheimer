@@ -217,6 +217,8 @@ export interface BotRoutineLastRun {
 export class BotRoutineEntity {
   constructor(
     public readonly id: string,
+    /** The bot that runs it. */
+    public readonly botId: string,
     public readonly name: string,
     public readonly prompt: string,
     /** `running` while a run is going, paused or not: the pause is {@link isPaused}. */

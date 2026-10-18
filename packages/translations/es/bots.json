@@ -156,7 +156,25 @@
       "approved": "Aprobaste: {{summary}}",
       "denied": "Denegaste: {{summary}}",
       "failed": "Aprobaste y falló: {{summary}}",
-      "routine": "Rutina · {{name}}"
+      "routine": "Rutina · {{name}}",
+      "routineSaved": "Rutina creada: “{{name}}”",
+      "routineChanged": "Rutina cambiada: “{{name}}”",
+      "routinePaused": "Rutina en pausa: “{{name}}”",
+      "routinePausedBecause": "Rutina en pausa: “{{name}}”, porque {{reason}}",
+      "routineResumed": "Rutina reanudada: “{{name}}”",
+      "routineDeleted": "Rutina eliminada: “{{name}}”",
+      "routineFailed": "La rutina “{{name}}” no se ejecutó: {{reason}}",
+      "openRoutines": "Abrir rutinas"
+    },
+    "routineReason": {
+      "expired": "esperó demasiado para empezar",
+      "automation_rate_limited": "alcanzó su límite de ejecuciones por hora",
+      "workspace_rate_limited": "el espacio de trabajo alcanzó su límite de ejecuciones por hora",
+      "missed": "pasó su hora mientras no podía ejecutarse",
+      "agent_unavailable": "el agente no pudo arrancar",
+      "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
+      "owner_lost_access": "su propietario ya no puede ejecutarla",
+      "unknown": "algo salió mal"
     }
   },
   "settings": {
