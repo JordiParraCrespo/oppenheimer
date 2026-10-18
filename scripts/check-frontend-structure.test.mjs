@@ -30,7 +30,11 @@ function check(files, extra = {}) {
   const root = mkdtempSync(join(tmpdir(), 'oppenheimer-structure-'));
   roots.push(root);
   mkdirSync(join(root, 'scripts'));
-  for (const script of ['check-frontend-structure.mjs', 'query-state-slots.mjs']) {
+  for (const script of [
+    'check-frontend-structure.mjs',
+    'query-state-slots.mjs',
+    'skeleton-shape.mjs',
+  ]) {
     copyFileSync(new URL(`./${script}`, import.meta.url), join(root, 'scripts', script));
   }
   // A feature is named after a module of the kernel or of the product package.

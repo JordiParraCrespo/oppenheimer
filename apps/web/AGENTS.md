@@ -40,6 +40,22 @@
   app does not run it — left alone it follows `prefers-color-scheme` and
   disagrees with the theme toggle.
 
+## While a read loads
+
+- **A placeholder has the shape of what replaces it.** `QueryState.Pending`
+  draws a `<View>Skeleton` from the feature's `components/`: the data's own
+  container, static labels written, a bar per line at the line's height, and
+  never a `0` for a count not given. The pull-request feature is the
+  reference; the rule is `.agents/rules/frontend-ui.md`, "A placeholder has
+  the shape of what replaces it".
+- `pnpm check:structure` fails a `Pending` that is only a slab (`<Skeleton
+  className="h-80 w-full" />`); `SLAB_DEBT` in
+  `scripts/check-frontend-structure.mjs` lists the files that held one when
+  the check landed, and only shrinks. `/frontend-audit` reports the rest as
+  `U7`.
+- A change to a placeholder is a visual change: photograph it held beside
+  its loaded page (`/local-stack`).
+
 ## Before pushing
 
 ```bash
@@ -73,6 +89,9 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   the route composes, and the screen that branches on a session's state is the
   one that asked for it. `pnpm check:structure` fails a query a screen holds
   for one sibling, and a prop that is only forwarded.
+- A grey slab of a guessed height in `QueryState.Pending`, or a `?? 0` count
+  while the read is pending: the page jumps, or says "none", before the data
+  lands.
 - Hand-rolling an error callout while `Alert` sits exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
 
 Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);

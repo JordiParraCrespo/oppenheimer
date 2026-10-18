@@ -21,6 +21,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { queryStateSlotProblems } from './query-state-slots.mjs';
+import { skeletonSlabProblems } from './skeleton-shape.mjs';
 
 // `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
@@ -587,6 +588,39 @@ for (const file of queryStateFiles) {
   for (const { line, message } of queryStateSlotProblems(readFileSync(file, 'utf8'))) {
     fail(`${relative(root, file)}:${line}: ${message}`);
   }
+}
+
+// A placeholder has the shape of what replaces it; `skeleton-shape.mjs`
+// fails a `QueryState.Pending` that is only a slab. The files below held one
+// when the check landed: each is debt to pay off by drawing the real
+// container, and the list only shrinks — a file that no longer holds a slab
+// fails until it comes off it, so a new one cannot hide behind the list.
+const SLAB_DEBT = new Set([
+  'apps/web/src/features/bots/screens/bot-home-host.tsx',
+  'apps/web/src/features/bots/screens/bot-instructions.tsx',
+  'apps/web/src/features/bots/screens/bot-memory.tsx',
+  'apps/web/src/features/bots/screens/model-providers-settings.tsx',
+  'apps/web/src/features/bots/sections/bot-documents.tsx',
+  'apps/web/src/features/bots/sections/bot-profile.tsx',
+  'apps/web/src/features/calendar/dialogs/event.tsx',
+  'apps/web/src/features/calendar/sections/google-accounts-card.tsx',
+  'apps/web/src/features/hosts/sections/host-list.tsx',
+  'apps/web/src/features/profile/sections/devices.tsx',
+  'apps/web/src/features/tasks/dialogs/start-session.tsx',
+  'apps/web/src/features/tasks/dialogs/task.tsx',
+  'apps/web/src/features/tasks/screens/milestones.tsx',
+]);
+for (const file of queryStateFiles) {
+  const name = relative(root, file);
+  const slabs = skeletonSlabProblems(readFileSync(file, 'utf8'));
+  if (SLAB_DEBT.has(name)) {
+    if (slabs.length === 0)
+      fail(
+        `${name}: holds no slab any more — take it off SLAB_DEBT in scripts/check-frontend-structure.mjs`,
+      );
+    continue;
+  }
+  for (const { line, message } of slabs) fail(`${name}:${line}: ${message}`);
 }
 
 // docs: every workspace package documented, frontend surfaces with an ARCHITECTURE.md

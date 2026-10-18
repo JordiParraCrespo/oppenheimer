@@ -174,8 +174,13 @@ from step 1.
   `ENDPOINT_POLICIES['<METHOD> <route>']` (`@oppenheimer/shared/permissions`),
   never a literal rule list.
 - **States:** every read renders four states:
-  - loading: `Skeleton`, or nothing until the first answer when the frame
-    draws nothing there (`host-list.tsx`);
+  - loading: a placeholder in the shape of what replaces it, in
+    `QueryState.Pending` (a `<View>Skeleton` in `components/` drawn in the
+    data's own container, static labels written, a bar per line at the
+    line's height, never a `0` for a count not given; frontend-ui.md "A
+    placeholder has the shape of what replaces it"), or nothing until the
+    first answer when the frame draws nothing there. `pnpm check:structure`
+    fails a slot that is only a slab;
   - empty: `EmptyState`, or the design's own empty card (`HostsEmpty`);
   - **failed:** an `Alert variant="destructive"` with the `useErrorMessage()`
     sentence and a retry where one helps, rendered *instead of* the list.
