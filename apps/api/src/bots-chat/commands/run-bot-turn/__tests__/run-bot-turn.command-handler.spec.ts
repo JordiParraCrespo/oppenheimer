@@ -7,6 +7,7 @@ import {
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { BotErrors } from '../../../../bots/domain/bots.errors';
+import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
@@ -69,6 +70,10 @@ function setup(
       };
     }),
   };
+  const summaries = { afterTurn: vi.fn(async () => false) } satisfies Pick<
+    BotSummaryTriggerPolicy,
+    'afterTurn'
+  >;
   const handler = new RunBotTurnCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     messages as unknown as BotMessageRepositoryPort,
@@ -76,8 +81,9 @@ function setup(
     new FakeBotEngine(script),
     context as unknown as BotTurnContextResolver,
     new TurnCancelWatchFactory(turns as unknown as BotTurnRepositoryPort),
+    summaries as unknown as BotSummaryTriggerPolicy,
   );
-  return { handler, turns, messages, stream };
+  return { handler, turns, messages, stream, summaries };
 }
 
 const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
@@ -86,7 +92,7 @@ const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
 describe('RunBotTurnCommandHandler', () => {
   it('claims the turn, stores the reply, and ends completed with its usage', async () => {
     const turn = queued();
-    const { handler, turns, messages, stream } = setup(turn, () => [
+    const { handler, turns, messages, stream, summaries } = setup(turn, () => [
       { type: 'text.delta', text: 'Hello' },
       { type: 'text.done', text: 'Hello' },
       { type: 'usage', inputTokens: 12, outputTokens: 3 },
@@ -99,6 +105,8 @@ describe('RunBotTurnCommandHandler', () => {
     );
     expect(turn).toMatchObject({ status: 'completed', inputTokens: 12, outputTokens: 3 });
     expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
+    // Once it has ended, whether the conversation needs summarizing.
+    expect(summaries.afterTurn).toHaveBeenCalledWith(turn, expect.any(String));
     expect(vi.mocked(stream.publish).mock.calls.map(([, event]) => event.type)).toEqual([
       'turn',
       'text',
@@ -132,10 +140,11 @@ describe('RunBotTurnCommandHandler', () => {
   it('leaves the turn queued, and runs nothing, when the bot is busy', async () => {
     const turn = queued();
     const script = vi.fn(() => [] as FakeScriptEvent[]);
-    const { handler, turns } = setup(turn, script, { claim: 'busy' });
+    const { handler, turns, summaries } = setup(turn, script, { claim: 'busy' });
     await run(handler, turn.id);
     expect(script).not.toHaveBeenCalled();
     expect(turns.finish).not.toHaveBeenCalled();
+    expect(summaries.afterTurn).not.toHaveBeenCalled();
   });
 
   it('fails a turn found running, rather than running it twice', async () => {

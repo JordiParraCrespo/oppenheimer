@@ -118,6 +118,10 @@ export class BotSelfToolsFactory implements BotToolArea {
     return defineBotTool({
       name: name === 'soul' ? 'edit_soul' : 'edit_instructions',
       scope: 'bots:write',
+      setupStep:
+        name === 'instructions'
+          ? 'Write INSTRUCTIONS.md with `edit_instructions` (read its revision with `get_self` first): short sections "Job", "How I work", "Never without asking" and "How I report", rules rather than prose, under 200 words, in the person\'s language.'
+          : undefined,
       description: `Rewrites your ${file} (${what}) with the whole new text, saved as a new revision the person can read and revert. Read it with get_self first and pass its revision as base_revision: if it changed since, nothing is saved and you read it again. At most ${BOT_DOCUMENT_MAX} characters. ${name === 'soul' ? 'Your job and rules go in edit_instructions.' : 'Your persona and tone go in edit_soul.'}`,
       input: z.strictObject({
         content: z
@@ -164,6 +168,8 @@ export class BotSelfToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_profile',
       scope: 'bots:write',
+      setupStep:
+        'Set your description with `update_profile` to the job in a few words, specific enough to tell you apart from other bots (for example "Reviews pull requests on acme/web"). Keep your name unless they ask for another.',
       description: `Changes your own name and/or description (what you are for, as the sidebar and other bots see it). Name 1 to ${BOT_NAME_MAX} characters, description at most ${BOT_DESCRIPTION_MAX}. Not a revision: the person sees it in the chat and changes it back in Settings → Profile. Persona and job go in edit_soul and edit_instructions.`,
       input: z
         .strictObject({
@@ -206,6 +212,8 @@ export class BotSelfToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'remember',
       scope: 'bots:write',
+      setupStep:
+        'Save what you learned about them that will matter later (their repositories, their hosts, when they work) with `remember`, saying where you learned it.',
       description: `Saves one fact to your memory, in a sentence of at most ${BOT_MEMORY_FACT_MAX} characters, for every later conversation. Only when "Learn automatically" is on in your settings; when it is off nothing is saved, and you ask the person in the chat first. Keep facts durable (preferences, names, decisions), one per call; you hold at most ${BOT_MEMORY_FACTS_MAX}, so forget one that no longer holds. Check recall first to avoid duplicates.`,
       input: z.strictObject({
         fact: z

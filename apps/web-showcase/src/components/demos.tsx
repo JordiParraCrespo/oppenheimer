@@ -29,6 +29,7 @@ import {
 } from '@oppenheimer/design-system-web/segmented-control';
 import { SlugInput, type SlugStatus } from '@oppenheimer/design-system-web/slug-input';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
+import { DictationButton, VoiceRecorderBar } from '@oppenheimer/design-system-web/chat-composer-extras';
 import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   Dialog,
@@ -791,8 +792,21 @@ export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: stri
         attachments={files}
         onRemoveAttachment={(id) => setFiles((f) => f.filter((x) => x.id !== id))}
         onAttach={full ? () => setFiles((f) => [...f, { id: String(Date.now()), name: 'notes.txt' }]) : undefined}
-        onRecord={full ? () => setRecording((r) => !r) : undefined}
-        recording={recording}
+        dictation={
+          full
+            ? {
+                mic: <DictationButton recording={recording} onClick={() => setRecording((r) => !r)} />,
+                recorder: recording ? (
+                  <VoiceRecorderBar
+                    levels={[0.2, 0.5, 0.8, 0.4, 0.6, 0.3]}
+                    elapsed="0:03"
+                    onCancel={() => setRecording(false)}
+                    onStop={() => setRecording(false)}
+                  />
+                ) : undefined,
+              }
+            : undefined
+        }
         tools={full ? <PermissionDemo /> : undefined}
         engine={
           full ? (
@@ -904,9 +918,11 @@ function RowMenu({
 /** The rail's items in the reader's order, a group of the shell's one drag. */
 function SortableRail({ items, sessions }: { items: readonly string[]; sessions: number }) {
   const counts: Record<string, number> = { sessions, pulls: 18, automations: 5 };
+  // A specimen in a frame, not the console's chrome: the column at every
+  // width, never the phone's bar along the bottom of the screen.
   return (
-    <Rail>
-      <RailMark>O</RailMark>
+    <Rail className="relative inset-auto h-auto w-14 flex-col justify-start border-t-0 border-r px-0 py-3.5 pb-3.5">
+      <RailMark className="flex">O</RailMark>
       <SortableGroup id="rail" items={items} accepts={['rail-item']}>
         <div className="flex flex-col gap-1.5">
           {items.map((id) => {
@@ -1989,7 +2005,7 @@ export function RoutineItemsDemo() {
 export function SettingsShellDemo() {
   return (
     <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
-      <SettingsShell className="h-full">
+      <SettingsShell className="h-full flex-col md:flex-row">
         <SettingsNav>
           <SettingsNavBack>Back to console</SettingsNavBack>
           <SettingsNavGroup label="Account">

@@ -32,6 +32,20 @@ export const RUNNER_LINK_CLOSE_CODES = Object.freeze({
 });
 
 /**
+ * The reasons a close may carry on top of its code. A reason only refines a code
+ * the runner already acts on, so a runner too old to know one still does the
+ * code's part and nothing worse.
+ */
+export const RUNNER_LINK_CLOSE_REASONS = Object.freeze({
+  /**
+   * On `UNPAIRED`: the owner also asked for the machine to be cleaned up. The
+   * runner closes every session as well as stopping it — worktrees and session
+   * folders removed, nothing pushed — instead of keeping the checkouts.
+   */
+  WIPE: 'host-unpaired-wipe',
+});
+
+/**
  * The header on the control plane's own handshake refusal. A bare `410` is not
  * trusted — any proxy in front of the control plane can answer one — and a host
  * that took a stranger's as "unpaired" would stop dialling for good, so the

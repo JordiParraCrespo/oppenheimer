@@ -5,8 +5,15 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { botEffort, botEngineValue, botModel, providerOfMark } from '../lib/bot-engine';
-import { botSections } from '../lib/bot-groups';
+import {
+  botEffort,
+  botEngineValue,
+  botModel,
+  botProviderOptions,
+  keyedProviderFor,
+  providerOfMark,
+} from '../lib/bot-engine';
+import { botSections, firstBot } from '../lib/bot-groups';
 import { revisionNote } from '../lib/revision-note';
 
 /**
@@ -110,5 +117,49 @@ describe('revisionNote', () => {
     expect(revisionNote(revision({}), t)).toBe(
       'bots.settings.instructions.edited:{"file":"INSTRUCTIONS.md"}',
     );
+  });
+});
+
+describe('botProviderOptions', () => {
+  const groups = (options: ReturnType<typeof botProviderOptions>) =>
+    options.map((option) => providerOfMark(option.id));
+
+  it('offers only the providers the workspace has set up, in catalog order', () => {
+    expect(groups(botProviderOptions(['openai', 'anthropic'], 'anthropic'))).toEqual([
+      'anthropic',
+      'openai',
+    ]);
+  });
+
+  it('never offers a provider with no key beside one that has', () => {
+    expect(groups(botProviderOptions(['openai'], 'anthropic'))).toEqual(['openai']);
+  });
+
+  it("keeps the bot's own provider when none has a key, so its model still shows", () => {
+    expect(groups(botProviderOptions([], 'anthropic'))).toEqual(['anthropic']);
+  });
+});
+
+describe('keyedProviderFor', () => {
+  it('moves a bot with no key to the first provider, in catalog order, that has one', () => {
+    expect(keyedProviderFor(['openai', 'glm'], 'anthropic')).toBe('glm');
+  });
+
+  it('leaves a bot whose provider has a key, or when no provider has one', () => {
+    expect(keyedProviderFor(['anthropic', 'openai'], 'anthropic')).toBeUndefined();
+    expect(keyedProviderFor([], 'anthropic')).toBeUndefined();
+  });
+});
+
+describe('firstBot', () => {
+  it('is the bot the sidebar draws first: the first group by position, then Ungrouped', () => {
+    const groups = [group('later', 1), group('first', 0)];
+    const bots = [bot('loose', null, 0), bot('b', 'first', 1), bot('a', 'first', 0)];
+    expect(firstBot(bots, groups)?.id).toBe('a');
+    expect(firstBot([bot('loose', null, 0)], groups)?.id).toBe('loose');
+  });
+
+  it('is undefined for a workspace with no bots, which keeps the greeting', () => {
+    expect(firstBot([], [group('g', 0)])).toBeUndefined();
   });
 });

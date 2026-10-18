@@ -5,6 +5,7 @@ import {
   type BotTurnRequest,
 } from './bot-engine';
 import { ClaudeBotEngine } from './claude/claude-bot-engine';
+import { ChatgptBotEngine } from './openai/chatgpt-bot-engine';
 import { OpenAiBotEngine } from './openai/openai-bot-engine';
 import { failed, guardTurn } from './turn';
 
@@ -25,20 +26,26 @@ class ProviderBotEngine extends BotEngine {
   }
 }
 
-/** The engine for every provider: `anthropic` and `glm` on Claude, `openai` on OpenAI. */
+/** The engine for every provider: `anthropic` and `glm` on Claude, `openai` and `chatgpt` on OpenAI. */
 export function createBotEngine(): BotEngine {
   const claude = new ClaudeBotEngine();
-  return new ProviderBotEngine({ anthropic: claude, glm: claude, openai: new OpenAiBotEngine() });
+  return new ProviderBotEngine({
+    anthropic: claude,
+    glm: claude,
+    openai: new OpenAiBotEngine(),
+    chatgpt: new ChatgptBotEngine(),
+  });
 }
 
 /**
  * What a provider's engine lets a bot do on its own, beside the tools the
  * request brings, in words for the prompt. The Claude engine keeps web
  * search (run on the provider's side) and a to-do list (`BUILT_IN_TOOLS`);
- * the OpenAI engine runs the request's tools and nothing else.
+ * the OpenAI engine (`openai`, and `chatgpt` on it) runs the request's tools
+ * and nothing else.
  */
 export function engineCapabilities(provider: BotProvider): readonly string[] {
-  return provider === 'openai'
+  return provider === 'openai' || provider === 'chatgpt'
     ? []
     : ['Search the web (web search).', 'Keep a short to-do list of your own steps for this turn.'];
 }

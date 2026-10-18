@@ -19,6 +19,7 @@ there.
 | 0.6 | [MCP, CLI and agent](0.6-mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |
 | 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md) | Improve the terminal, and a chat display beside it |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
+| — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
 
 ## What this list does not place yet
 
@@ -65,3 +66,22 @@ where these land is the first open question below.
 - 2026-10-05: the 2026-10-05 evening frames (`PullRequests.dc.html`) are
   the spec for the Pull requests area's first version, over the notes;
   the API plan is `0.2-pull-requests-api-plan.md`.
+- 2026-10-14: voice added, version not yet set: dictation into the
+  composers and the terminal, and a spoken session setup that fills the
+  new-session form (never starts it on its own).
+- 2026-10-14: voice has one mic, the composer's, which always dictates.
+  Setting up a session from what was said is the sessions module's
+  `POST /v1/sessions/proposals`, which takes any text, so the voice
+  endpoint stays audio in and text out.
+- 2026-10-16: voice transcribes on the workspace's ChatGPT sign-in
+  (Settings → Model providers), through ChatGPT's dictation route, with
+  an OpenAI-compatible key as the fallback. The route is undocumented;
+  if it only answers clients posing as the Codex app, the fallback
+  takes over.
+- 2026-10-17: voice slice 1 built: dictation into New session's composer.
+  The console records WAV itself, the route asks `sessions:write`, and the
+  recorder stays in the sessions feature until a second surface needs it
+  (`voice.md`, "Slice 1 as built").
+- 2026-10-17: voice's providers are one `SpeechProvider` interface and an
+  ordered list; the console reads `GET /v1/voice/status` instead of
+  deciding availability itself (`voice.md`).

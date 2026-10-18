@@ -54,6 +54,12 @@ export const botsKeys = {
   groupList: () => [...botsKeys.groupLists()] as const,
   providers: () => [...botsKeys.all, 'provider'] as const,
   providerList: () => [...botsKeys.providers(), 'list'] as const,
+  // Apart from `providers()`: a sign-in that lands refreshes the list, and must
+  // not mint itself a new code doing so.
+  chatgptLogins: () => [...botsKeys.all, 'chatgpt-login'] as const,
+  chatgptLogin: () => [...botsKeys.chatgptLogins(), 'current'] as const,
+  chatgptLoginStatus: (flowId: string | undefined) =>
+    [...botsKeys.chatgptLogins(), 'status', flowId] as const,
 };
 
 /** The bots read: the key, and a fetch that fills each bot's detail. */
@@ -232,7 +238,7 @@ function settleFacts(
   );
 }
 
-/** A blank bot ("New Bot"), ungrouped. Open its chat with the answer. */
+/** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 export function useCreateBot(options?: UseMutationOptions<BotEntity, Error, void>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

@@ -19,3 +19,4 @@ export * from './session.schema.js';
 export * from './session-share.schema.js';
 export * from './task.schema.js';
 export * from './user.schema.js';
+export * from './voice.schema.js';

@@ -418,6 +418,52 @@ describe('ClaudeBotEngine', () => {
     expect((done as { error: string }).error).not.toContain(KEY);
   });
 
+  it('marks a refusal for rate as a rate limit, with the wait Claude Code was given', async () => {
+    scripted(() => [
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        attempt: 1,
+        max_retries: 1,
+        retry_delay_ms: 45_000,
+        error_status: 429,
+        error: 'rate_limit',
+      } as unknown as SDKMessage,
+      assistant([{ type: 'text', text: 'API Error: 429 rate limit reached' }], {
+        error: 'rate_limit',
+      }),
+      success({ is_error: true, result: 'API Error', api_error_status: 429 }),
+    ]);
+    const before = Date.now();
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1) as {
+      reason: string;
+      error: string;
+      rateLimit?: { resetAt: Date | null };
+    };
+
+    expect(done.reason).toBe('failed');
+    expect(done.error).toContain('429 rate limit reached');
+    expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 45_000);
+  });
+
+  it('takes the reset of a rejected limit, and says nothing of one on any other failure', async () => {
+    scripted(() => [
+      {
+        type: 'rate_limit_event',
+        rate_limit_info: { status: 'rejected', resetsAt: 1_900_000_000 },
+      } as unknown as SDKMessage,
+      success({ is_error: true, result: 'API Error' }),
+    ]);
+    const limited = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+    expect(limited).toMatchObject({ rateLimit: { resetAt: new Date(1_900_000_000_000) } });
+
+    scripted(() => [success({ is_error: true, result: 'API Error: 500' })]);
+    const other = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+    expect(other).toMatchObject({ type: 'done', reason: 'failed' });
+    expect(other).not.toHaveProperty('rateLimit');
+  });
+
   it('turns a crashed subprocess into a failed end that carries its stderr', async () => {
     scripted((options) => ({
       [Symbol.asyncIterator]: () => ({

@@ -59,13 +59,10 @@ export const BOT_MEMORY_FACTS_MAX = 200;
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
 
-/** What a bot created without a name is called, numbered when the workspace has one. */
-export const BOT_DEFAULT_NAME = 'New Bot';
-
 /**
  * A new bot's `SOUL.md`, the design's template with `{name}` replaced by the
- * bot's name. Its `INSTRUCTIONS.md` starts empty: the bot's first answer
- * proposes one (slice 3).
+ * bot's name. Its `INSTRUCTIONS.md` starts empty: in its first chat the bot
+ * asks for its job and writes them itself.
  */
 export const BOT_SOUL_TEMPLATE =
   '# Soul\n\nYou are {name}. You speak like a calm colleague: short sentences, numbers over adjectives, no exclamation marks.\n\nYou never pretend a step finished when it did not.\n';
@@ -76,10 +73,11 @@ export function botSoulFor(name: string): string {
 
 /**
  * Who answers a bot (`product/versions/mvp/25-bots.md` §2): the provider picks
- * the engine, Anthropic and GLM the Claude Agent SDK, OpenAI the OpenAI Agents
- * SDK. Each runs on the workspace's own key for it.
+ * the engine, Anthropic and GLM the Claude Agent SDK, OpenAI and ChatGPT the
+ * OpenAI Agents SDK. Each runs on the workspace's own key for it; ChatGPT's is
+ * a sign-in to a ChatGPT subscription rather than an API key.
  */
-export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai'] as const;
+export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai', 'chatgpt'] as const;
 export type BotProvider = (typeof BOT_PROVIDERS)[number];
 
 /** One model a bot may run on, as the composer's model chip lists it. */
@@ -90,9 +88,16 @@ export interface BotModel {
   readonly effort?: CodingAgentEffort;
 }
 
+/**
+ * How a workspace gives a provider its credential: an API key typed once, or a
+ * sign-in to the provider's own account (ChatGPT's device code).
+ */
+export type BotProviderAuth = 'api_key' | 'sign_in';
+
 export interface BotProviderDefinition {
   readonly id: BotProvider;
   readonly label: string;
+  readonly auth: BotProviderAuth;
   readonly models: readonly BotModel[];
 }
 
@@ -111,11 +116,13 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
   Object.freeze({
     anthropic: Object.freeze({
       id: 'anthropic',
+      auth: 'api_key',
       label: 'Anthropic',
       models: CODING_AGENTS['claude-code'].models,
     }),
     glm: Object.freeze({
       id: 'glm',
+      auth: 'api_key',
       label: 'GLM',
       models: Object.freeze([
         Object.freeze({
@@ -128,7 +135,14 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
     }),
     openai: Object.freeze({
       id: 'openai',
+      auth: 'api_key',
       label: 'OpenAI',
+      models: CODING_AGENTS.codex.models,
+    }),
+    chatgpt: Object.freeze({
+      id: 'chatgpt',
+      auth: 'sign_in',
+      label: 'ChatGPT',
       models: CODING_AGENTS.codex.models,
     }),
   });
@@ -171,6 +185,19 @@ export const putModelProviderCredentialSchema = z.object({
 });
 export type PutModelProviderCredentialDto = z.infer<typeof putModelProviderCredentialSchema>;
 
+/** A ChatGPT sign-in in progress, as the API hands it out: opaque, sealed, a few KB at most. */
+export const CHATGPT_LOGIN_FLOW_MAX = 4096;
+
+/** `POST /model-providers/chatgpt/login/poll`: the sign-in the console is waiting on. */
+export const pollChatgptLoginSchema = z.object({
+  flowId: z.string().min(1).max(CHATGPT_LOGIN_FLOW_MAX),
+});
+export type PollChatgptLoginDto = z.infer<typeof pollChatgptLoginSchema>;
+
+/** Where a ChatGPT sign-in stands: still waiting for the person, or stored. */
+export const CHATGPT_LOGIN_STATUSES = ['pending', 'connected'] as const;
+export type ChatgptLoginStatus = (typeof CHATGPT_LOGIN_STATUSES)[number];
+
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
@@ -182,8 +209,8 @@ const memoryFactContentSchema = z.string().trim().min(1).max(BOT_MEMORY_FACT_MAX
 const positionSchema = z.number().int().min(0).max(10_000);
 
 /**
- * `POST /bots`. Everything is optional: a blank bot is "New Bot" (numbered
- * when the workspace has one), on the next avatar colour, ungrouped, with no
+ * `POST /bots`. Everything is optional: a blank bot takes the next first
+ * name the workspace does not have ("Juno", "Milo"…), on the next avatar colour, ungrouped, with no
  * home host until one is chosen.
  */
 export const createBotSchema = z.object({
@@ -274,6 +301,14 @@ export type BotMemoryFactDto = z.infer<typeof botMemoryFactSchema>;
 export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled', 'failed'] as const;
 export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
 
+/**
+ * Which of a bot's waiting turns runs first (`25-bots.md` §4.6,
+ * `BotQueueLanes`): yours, then what other bots sent it, then work nobody
+ * waits on. Within a lane, the oldest first.
+ */
+export const BOT_TURN_LANES = ['owner', 'bots', 'background'] as const;
+export type BotTurnLane = (typeof BOT_TURN_LANES)[number];
+
 /** A turn that has not ended: the chat shows it as working, and Stop applies to it. */
 export const BOT_ACTIVE_TURN_STATUSES = [
   'queued',
@@ -294,12 +329,13 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 /**
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
- * and the card's line. The words stay in the message for the bot.
+ * and the card's line; or a message from another bot, or its answer
+ * (§4.6). The words stay in the message for the bot.
  */
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
 
-export interface BotMessageEvent {
+export interface BotApprovalEvent {
   kind: 'approval';
   outcome: BotEventOutcome;
   /** The approved or denied call's tool. */
@@ -307,6 +343,43 @@ export interface BotMessageEvent {
   /** The card's line: what the call does, in words. */
   summary: string;
 }
+
+/**
+ * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`
+ * §4.6): its turn ended with an answer, failed, or was stopped.
+ */
+export const BOT_REPLY_OUTCOMES = ['answered', 'failed', 'cancelled'] as const;
+export type BotReplyOutcome = (typeof BOT_REPLY_OUTCOMES)[number];
+
+/**
+ * A message another bot sent this one through `message_bot` or `ask_bot`
+ * (`25-bots.md` §4.6). The sender is the bot whose turn made the call, as
+ * Oppenheimer recorded it, never a name the message claims; its name is the
+ * one it had when it sent. The words are the message's content.
+ */
+export interface BotPeerMessageEvent {
+  kind: 'bot_message';
+  /** Null once the sending bot is deleted. */
+  fromBotId: string | null;
+  fromBotName: string;
+  /** Sent with `ask_bot`: this bot's answer goes back to the sender. */
+  expectsReply: boolean;
+}
+
+/** The answer to an `ask_bot` call, delivered to the bot that asked. */
+export interface BotPeerReplyEvent {
+  kind: 'bot_reply';
+  /** The bot that answered; null once it is deleted. */
+  fromBotId: string | null;
+  fromBotName: string;
+  outcome: BotReplyOutcome;
+}
+
+export type BotMessageEvent = BotApprovalEvent | BotPeerMessageEvent | BotPeerReplyEvent;
+
+/** The kinds of event, for a reader that checks one before trusting its fields. */
+export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'bot_message', 'bot_reply'] as const;
+export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
 export const BOT_MESSAGE_MAX = 16_000;

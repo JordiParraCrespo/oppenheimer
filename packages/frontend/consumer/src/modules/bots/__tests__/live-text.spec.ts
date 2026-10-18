@@ -25,7 +25,7 @@ function conversation(
   turns: BotTurnEntity[],
   messages: BotMessageEntity[] = [],
 ): BotConversationEntity {
-  return new BotConversationEntity(messages, turns);
+  return new BotConversationEntity(messages, turns, messages.length);
 }
 
 /** Feeds deltas, with `|` standing for a reconnect between them. */

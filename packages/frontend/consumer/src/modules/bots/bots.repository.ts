@@ -5,17 +5,22 @@ import {
   type BotDocumentRevisionResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
+  type BotMessageEventResponseDto,
   type BotMessageResponseDto,
   type BotResponseDto,
   type BotTurnResponseDto,
+  type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
-import type {
-  BotApprovalDecision,
-  BotDocumentName,
-  BotProvider,
+import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_REPLY_OUTCOMES,
+  type BotApprovalDecision,
+  type BotDocumentName,
+  type BotMessageEvent,
+  type BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -25,6 +30,8 @@ import {
   BotEntity,
   BotGroupEntity,
   BotMemoryFactEntity,
+  ChatgptLoginEntity,
+  type ChatgptLoginState,
   ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotInput,
@@ -37,6 +44,7 @@ import {
   BotTurnEntity,
 } from './bot-conversation.entity';
 import { BotsErrors } from './bots.errors';
+import { readNdjson } from './ndjson';
 import { BotStream } from './stream/bot-stream';
 
 function toBot(dto: BotResponseDto): BotEntity {
@@ -67,6 +75,16 @@ function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntit
     dto.keyHint,
     dto.updatedAt ? new Date(dto.updatedAt) : null,
     dto.isDefault,
+  );
+}
+
+function toChatgptLogin(dto: ChatgptLoginResponseDto): ChatgptLoginEntity {
+  return new ChatgptLoginEntity(
+    dto.flowId,
+    dto.userCode,
+    dto.verificationUrl,
+    dto.intervalSeconds,
+    new Date(dto.expiresAt),
   );
 }
 
@@ -116,8 +134,36 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     dto.content,
     steps,
     new Date(dto.createdAt),
-    dto.event ? { ...dto.event } : null,
+    dto.event ? toEvent(dto.event) : null,
   );
+}
+
+/**
+ * The wire's one-shape event as the union the chat draws from: an approval,
+ * a message from another bot, or the answer to an ask. A kind or outcome
+ * this client does not know reads as no event, and the chat falls back to
+ * the message's first line.
+ */
+function toEvent(dto: BotMessageEventResponseDto): BotMessageEvent | null {
+  const { kind, outcome } = dto;
+  if (kind === 'approval') {
+    const known = BOT_EVENT_OUTCOMES.find((candidate) => candidate === outcome);
+    return known
+      ? { kind, outcome: known, tool: dto.tool ?? '', summary: dto.summary ?? '' }
+      : null;
+  }
+  if (kind === 'bot_message') {
+    return {
+      kind,
+      fromBotId: dto.fromBotId,
+      fromBotName: dto.fromBotName ?? '',
+      expectsReply: dto.expectsReply === true,
+    };
+  }
+  const known = BOT_REPLY_OUTCOMES.find((candidate) => candidate === outcome);
+  return known
+    ? { kind, fromBotId: dto.fromBotId, fromBotName: dto.fromBotName ?? '', outcome: known }
+    : null;
 }
 
 function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
@@ -148,8 +194,21 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
   );
 }
 
+/** The export's lines as messages; a line that cannot be read fails the export. */
+async function* readMessages(body: ReadableStream<Uint8Array>): AsyncIterable<BotMessageEntity> {
+  try {
+    for await (const line of readNdjson(body)) yield toMessage(line as BotMessageResponseDto);
+  } catch (error) {
+    throw new AppError(BotsErrors.EXPORT_CONVERSATION_FAILED, { cause: error });
+  }
+}
+
 function toConversation(dto: BotConversationResponseDto): BotConversationEntity {
-  return new BotConversationEntity(dto.messages.map(toMessage), dto.turns.map(toTurn));
+  return new BotConversationEntity(
+    dto.messages.map(toMessage),
+    dto.turns.map(toTurn),
+    dto.messageCount,
+  );
 }
 
 /**
@@ -173,6 +232,29 @@ export class BotsRepository {
       BotsErrors.FETCH_CONVERSATION_FAILED,
     );
     return toConversation(data);
+  }
+
+  /**
+   * The whole chat, oldest first, for an export: the chat's own read holds
+   * only the newest. The API sends one message per line, and each is handed
+   * on as it arrives, so the conversation is never held here as a whole.
+   */
+  @MapApiError(BotsErrors.EXPORT_CONVERSATION_FAILED)
+  async exportConversation(id: string): Promise<AsyncIterable<BotMessageEntity>> {
+    const body = await unwrapBody(
+      heyApiSdk.exportBotConversation({ path: { id }, parseAs: 'stream' }),
+      BotsErrors.EXPORT_CONVERSATION_FAILED,
+    );
+    return readMessages(body as unknown as ReadableStream<Uint8Array>);
+  }
+
+  /** Clear history: the chat is erased; soul, instructions and memory stay. */
+  @MapApiError(BotsErrors.CLEAR_CONVERSATION_FAILED)
+  async clearConversation(id: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.clearBotConversation({ path: { id } }),
+      BotsErrors.CLEAR_CONVERSATION_FAILED,
+    );
   }
 
   /**
@@ -248,7 +330,7 @@ export class BotsRepository {
   }
 
   /**
-   * A blank bot: "New Bot" (numbered when the workspace has one), ungrouped, on
+   * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
    * the workspace's default provider.
    */
   @MapApiError(BotsErrors.SAVE_FAILED)
@@ -422,5 +504,25 @@ export class BotsRepository {
       heyApiSdk.deleteModelProviderCredential({ path: { provider } }),
       BotsErrors.DELETE_PROVIDER_KEY_FAILED,
     );
+  }
+
+  /** Asks ChatGPT for a device code for the workspace's sign-in. Nothing is stored yet. */
+  @MapApiError(BotsErrors.START_CHATGPT_LOGIN_FAILED)
+  async startChatgptLogin(): Promise<ChatgptLoginEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.startChatgptLogin(),
+      BotsErrors.START_CHATGPT_LOGIN_FAILED,
+    );
+    return toChatgptLogin(data);
+  }
+
+  /** One poll of a sign-in: `connected` once the person approved it and the API stored it. */
+  @MapApiError(BotsErrors.POLL_CHATGPT_LOGIN_FAILED)
+  async pollChatgptLogin(flowId: string): Promise<Exclude<ChatgptLoginState, 'expired'>> {
+    const data = await unwrapBody(
+      heyApiSdk.pollChatgptLogin({ body: { flowId } }),
+      BotsErrors.POLL_CHATGPT_LOGIN_FAILED,
+    );
+    return data.status;
   }
 }

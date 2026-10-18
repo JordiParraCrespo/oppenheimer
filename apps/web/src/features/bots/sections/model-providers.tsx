@@ -10,15 +10,19 @@ import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/sche
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModelProviderActions } from '../components/model-provider-actions';
+import { ChatgptLoginDialog } from '../dialogs/chatgpt-login';
 import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
 
 /**
  * The providers, one row each: what it serves, whether the workspace has a
  * key (its last four characters), and Add key or Replace and Remove. The one
  * new bots start on says Default; another with a key offers Make default. The
- * key is typed in a dialog and never comes back. Read under Suspense, in the
- * screen's `QueryState`. A server with no sealing key can store none, so the
- * three are drawn disabled, the screen's warning as their reason.
+ * key is typed in a dialog and never comes back. ChatGPT takes no key: its row
+ * signs in to a ChatGPT subscription (Connect ChatGPT, Sign in again,
+ * Disconnect), and says which account by its last characters. Read under
+ * Suspense, in the screen's `QueryState`. A server with no sealing key can
+ * store none, so the key and sign-in buttons are drawn disabled, the screen's
+ * warning as their reason.
  */
 export function ModelProviders() {
   const { t } = useTranslation();
@@ -47,7 +51,8 @@ export function ModelProviders() {
       />
       <SettingsGroup>
         {providers.map((row) => {
-          const label = BOT_PROVIDER_CATALOG[row.provider].label;
+          const { label, auth } = BOT_PROVIDER_CATALOG[row.provider];
+          const signIn = auth === 'sign_in';
           return (
             <SettingsListRow
               key={row.provider}
@@ -56,12 +61,22 @@ export function ModelProviders() {
               meta={t(`settings.modelProviders.providers.${row.provider}`)}
               kind={
                 row.configured && row.keyHint
-                  ? t('settings.modelProviders.keyEnding', { hint: row.keyHint })
-                  : t('settings.modelProviders.noKey')
+                  ? t(
+                      signIn
+                        ? 'settings.modelProviders.signedIn'
+                        : 'settings.modelProviders.keyEnding',
+                      { hint: row.keyHint },
+                    )
+                  : t(
+                      signIn
+                        ? 'settings.modelProviders.notConnected'
+                        : 'settings.modelProviders.noKey',
+                    )
               }
               actions={
                 <ModelProviderActions
                   label={label}
+                  signIn={signIn}
                   configured={row.configured}
                   isDefault={row.isDefault}
                   unavailableReason={unavailableReason}
@@ -79,7 +94,9 @@ export function ModelProviders() {
           );
         })}
       </SettingsGroup>
-      {editing ? (
+      {editing === 'chatgpt' ? (
+        <ChatgptLoginDialog onClose={() => setEditing(null)} />
+      ) : editing ? (
         <ModelProviderKeyDialog provider={editing} onClose={() => setEditing(null)} />
       ) : null}
     </>

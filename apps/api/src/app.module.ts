@@ -55,6 +55,7 @@ import {
   sessionsConfig,
   storageConfig,
   throttlingConfig,
+  voiceConfig,
 } from './config';
 import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
@@ -83,6 +84,7 @@ import { CredentialThrottlerGuard } from './throttling/guards/credential-throttl
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
+import { VoiceModule } from './voice/voice.module';
 import { WorkspaceEventsModule } from './workspace-events/workspace-events.module';
 
 @Module({
@@ -107,6 +109,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         calendarConfig,
         retentionConfig,
         throttlingConfig,
+        voiceConfig,
       ],
     }),
     LoggingModule.forRootAsync({
@@ -261,6 +264,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     PullRequestsModule,
     BotsModule,
     BotsChatModule,
+    VoiceModule,
     RelayModule,
     HealthModule,
     QueueModule,

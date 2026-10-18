@@ -17,8 +17,9 @@ import { signInAs } from '../../support/web';
  * shows its terminal. The session is listed under For review and never under
  * Sessions. The stub's #14 is `fix/wallet-empty-state` on `xrp-mobile`,
  * which the fleet's git server also carries; the `claude` shim prints the
- * argv it was started with, then hands the pane to a shell, so a line sent
- * from the composer under the terminal runs there. Needs the console on `WEB_URL`.
+ * argv it was started with, then hands the pane to a shell. The pane has no
+ * input row of its own: the agent's prompt in the grid is the only one. Needs
+ * the console on `WEB_URL`.
  */
 test.describe.configure({ timeout: 240_000 });
 test.use({ baseURL: WEB_URL });
@@ -82,13 +83,5 @@ test('a pull request’s Chat tab starts a review session on its head branch', a
     `git merge-base --is-ancestor origin/${STUB_BRANCH} HEAD && echo HEAD-OF-$((1+1))\r`,
   );
   await terminal.waitFor('HEAD-OF-2', 30_000);
-
-  // The composer under the terminal sends a line to the agent, as typed at
-  // its prompt: here the shim's shell runs it.
-  const composer = page.getByRole('textbox', { name: 'Ask the review agent, or run a command' });
-  await composer.fill('echo COMPOSED-$((2+3))');
-  await composer.press('Enter');
-  await expect(composer).toHaveValue('');
-  await terminal.waitFor('COMPOSED-5', 30_000);
   await terminal.close();
 });

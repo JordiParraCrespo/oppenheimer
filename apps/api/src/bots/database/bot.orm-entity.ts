@@ -20,6 +20,13 @@ import {
 @Index('IDX_bot_group_position', ['organizationId', 'groupId', 'position'])
 @Index('IDX_bot_created_by', ['createdByUserId'], { where: '"createdByUserId" IS NOT NULL' })
 @Index('IDX_bot_home_host', ['homeHostId'], { where: '"homeHostId" IS NOT NULL' })
+@Index('IDX_bot_created_by_bot', ['organizationId', 'createdByBotId'], {
+  where: '"createdByBotId" IS NOT NULL',
+})
+@Index('UQ_bot_organization_idempotency', ['organizationId', 'idempotencyKey'], {
+  unique: true,
+  where: '"idempotencyKey" IS NOT NULL',
+})
 @Check('CHK_bot_name', `char_length(btrim("name")) > 0`)
 @Check(
   'CHK_bot_avatar_color',
@@ -27,7 +34,7 @@ import {
 )
 @Check('CHK_bot_position', `"position" >= 0`)
 @Check('CHK_bot_permission', `"permission" IN ('auto', 'full')`)
-@Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
+@Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`)
 export class BotOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -37,6 +44,14 @@ export class BotOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
+
+  /** The bot that made it through `create_bot` (`1791002400000-AddBotCreatedByBot`). */
+  @Column({ type: 'uuid', nullable: true })
+  createdByBotId!: string | null;
+
+  /** The creating tool call's key, so a retried call finds the bot instead of making another. */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  idempotencyKey!: string | null;
 
   @Column({ type: 'varchar', length: 80 })
   name!: string;

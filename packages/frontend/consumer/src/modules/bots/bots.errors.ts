@@ -32,8 +32,18 @@ export const BotsErrors = {
   STOP_FAILED: { code: 'BOTS_CLIENT_021', message: 'Failed to stop the turn' },
   FETCH_APPROVALS_FAILED: { code: 'BOTS_CLIENT_022', message: 'Failed to load the approvals' },
   DECIDE_APPROVAL_FAILED: { code: 'BOTS_CLIENT_023', message: 'Failed to answer the request' },
-  SET_DEFAULT_PROVIDER_FAILED: {
+  START_CHATGPT_LOGIN_FAILED: {
     code: 'BOTS_CLIENT_024',
+    message: 'Failed to start signing in to ChatGPT',
+  },
+  POLL_CHATGPT_LOGIN_FAILED: {
+    code: 'BOTS_CLIENT_025',
+    message: 'Failed to check the ChatGPT sign-in',
+  },
+  EXPORT_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_026', message: 'Failed to export the chat' },
+  CLEAR_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_027', message: 'Failed to clear the chat' },
+  SET_DEFAULT_PROVIDER_FAILED: {
+    code: 'BOTS_CLIENT_028',
     message: 'Failed to change the default provider',
   },
 } as const satisfies Record<string, ErrorDefinition>;

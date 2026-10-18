@@ -17,7 +17,7 @@ import {
   usePullRequestComments,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess, useTheme } from '@oppenheimer/frontend-web';
+import { notifySuccess, useTheme, type VoiceInput } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DraftComment } from '../components/draft-comment';
@@ -40,6 +40,7 @@ export function ChangesFile({
   address,
   file,
   layout,
+  voice,
   pending,
   onAddPending,
   onDiscardPending,
@@ -47,6 +48,8 @@ export function ChangesFile({
   address: PullRequestAddress;
   file: PullRequestFile;
   layout: DiffLayout;
+  /** The screen's dictation, shared by every file. */
+  voice: VoiceInput;
   /** The review's pending comments on this file. */
   pending: readonly PendingNote[];
   onAddPending: (comment: LineCommentInput) => void;
@@ -102,6 +105,7 @@ export function ChangesFile({
           renderAnnotation={({ metadata }) =>
             metadata.kind === 'draft' && draft ? (
               <DraftComment
+                voice={voice}
                 adding={addSingle.isPending}
                 onCancel={() => setDraft(null)}
                 onAddToReview={(body) => {

@@ -6,8 +6,9 @@ import { ModelProviders } from '../sections/model-providers';
  * Settings → Model providers. What breaks this: a server with no sealing key
  * (`bot_providers` off) still offering Add, Replace and Remove, whose saves
  * can only answer BOTS_011; a failed Remove said only in a toast that
- * fades, rather than inline until dismissed; or Make default offered on a
- * provider with no key, which the API refuses with BOTS_017.
+ * fades, rather than inline until dismissed; Make default offered on a
+ * provider with no key, which the API refuses with BOTS_023; or ChatGPT's
+ * row offering a key (which the API refuses, BOTS_017) instead of its sign-in.
  */
 
 vi.mock('react-i18next', () => ({
@@ -39,6 +40,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
       },
       { provider: 'glm', configured: false, keyHint: null, updatedAt: null, isDefault: false },
       { provider: 'openai', configured: true, keyHint: '12ab', updatedAt: null, isDefault: false },
+      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
     ],
     error: null,
   }),
@@ -72,7 +74,14 @@ vi.mock('@oppenheimer/frontend-web', () => ({
     ) : null,
 }));
 
-vi.mock('../dialogs/model-provider-key', () => ({ ModelProviderKeyDialog: () => null }));
+vi.mock('../dialogs/model-provider-key', () => ({
+  ModelProviderKeyDialog: ({ provider }: { provider: string }) => (
+    <div data-testid="key-dialog">{provider}</div>
+  ),
+}));
+vi.mock('../dialogs/chatgpt-login', () => ({
+  ChatgptLoginDialog: () => <div data-testid="chatgpt-dialog" />,
+}));
 
 const editing = () =>
   [
@@ -123,5 +132,13 @@ describe('ModelProviders', () => {
     expect(screen.getByRole('alert').textContent).toContain('BOTS_011');
     fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
     expect(state.reset).toHaveBeenCalledOnce();
+  });
+
+  it('signs ChatGPT in from its own button, and never opens a key dialog for it', () => {
+    render(<ModelProviders />);
+    expect(screen.getByText('settings.modelProviders.notConnected')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'settings.modelProviders.connect' }));
+    expect(screen.getByTestId('chatgpt-dialog')).toBeTruthy();
+    expect(screen.queryByTestId('key-dialog')).toBeNull();
   });
 });

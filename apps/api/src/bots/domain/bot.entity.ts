@@ -18,12 +18,17 @@ import {
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { Placement } from './bot.types';
+import { BOT_DEFAULT_PERMISSION } from './bot-creation.policy';
 import { resolveBotEngine } from './bot-launch.policy';
 
 export interface BotProps {
   organizationId: string;
   /** Who made it; null once that account is gone. The bot is the workspace's, not theirs. */
   createdByUserId: string | null;
+  /** The bot that made it through `create_bot`; null when made in the console, or once that bot is deleted. */
+  createdByBotId?: string | null;
+  /** What makes its creation happen once: the tool call's key; null for the console's. */
+  idempotencyKey?: string | null;
   name: string;
   description: string;
   avatarColor: BotAvatarColor;
@@ -55,6 +60,15 @@ export interface CreateBotProps {
   groupId: string | null;
   homeHostId: string | null;
   provider: BotProvider;
+  /** A model id the provider offers; null or absent is the provider's default. */
+  model?: string | null;
+  /** Kept only when the model offers it. */
+  effort?: SessionEffort | null;
+  /** Approve for me unless named. */
+  permission?: BotPermission;
+  /** The bot that is creating it, and the key that makes that creation happen once. */
+  createdByBotId?: string | null;
+  idempotencyKey?: string | null;
 }
 
 export interface BotEdit {
@@ -102,23 +116,31 @@ export class BotEntity extends AggregateRoot<BotProps> {
     return new BotEntity(create);
   }
 
-  /** A blank bot: its provider's default model, approve-for-me, learning on. Placed last in its group. */
+  /**
+   * A blank bot: its provider's default model unless one is named,
+   * approve-for-me unless a level is named, learning on. Placed last in its
+   * group. A model the provider does not offer is refused.
+   */
   static createNew(props: CreateBotProps): BotEntity {
+    const engine = resolveBotEngine(
+      { provider: props.provider, model: null, effort: null },
+      { model: props.model ?? null, effort: props.effort ?? null },
+    );
     const bot = new BotEntity({
       id: randomUUID(),
       props: {
         organizationId: props.organizationId,
         createdByUserId: props.createdByUserId,
+        createdByBotId: props.createdByBotId ?? null,
+        idempotencyKey: props.idempotencyKey ?? null,
         name: props.name.trim(),
         description: props.description.trim(),
         avatarColor: props.avatarColor,
         groupId: props.groupId,
         position: 0,
         homeHostId: props.homeHostId,
-        provider: props.provider,
-        model: null,
-        effort: null,
-        permission: 'auto',
+        ...engine,
+        permission: props.permission ?? BOT_DEFAULT_PERMISSION,
         learnAutomatically: true,
       },
     });
@@ -132,6 +154,12 @@ export class BotEntity extends AggregateRoot<BotProps> {
   }
   get createdByUserId(): string | null {
     return this.props.createdByUserId;
+  }
+  get createdByBotId(): string | null {
+    return this.props.createdByBotId ?? null;
+  }
+  get idempotencyKey(): string | null {
+    return this.props.idempotencyKey ?? null;
   }
   get name(): string {
     return this.props.name;

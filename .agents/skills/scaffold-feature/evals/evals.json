@@ -23,7 +23,8 @@
         "Colours use the semantic tokens (text-fg, text-fg-muted, bg-surface-*, border-border…); no shadcn aliases, stock Tailwind colours or dark: overrides; lifecycle shown with Badge active/ended (not secondary/destructive)",
         "No useEffect outside hooks/, no manual useMemo/useCallback/memo outside hooks/, one component per file, no feature importing another",
         "A spec in the web end-to-end suite covers at least create and revoke (or the summary says why it was not written or run)",
-        "The final message reports which checks ran (structure, arch, biome, typecheck, tests) and their results, and names any it could not run"
+        "The final message reports which checks ran (structure, arch, biome, typecheck, tests) and their results, and names any it could not run",
+        "The token list's QueryState.Pending is a placeholder in the list's shape (a *Skeleton in components/ drawing the rows in the row's own frame at the row's height, a bar per line, labels that are static written for real), not a lone Skeleton block of a guessed height; pnpm check:structure passes it"
       ]
     },
     {
@@ -44,7 +45,8 @@
         "Loading, empty and failed states are all rendered (failed as an Alert through useErrorMessage, instead of the list)",
         "Timestamps use useLocale() and the kit's formatters; a relative age that must move uses useNow in the leaf that draws it",
         "Strings are translated in en and es and the index assembled",
-        "The final message reports the checks it ran and their results"
+        "The final message reports the checks it ran and their results",
+        "The timeline's QueryState.Pending draws the timeline's own container with entries at an entry's height (a *Skeleton component), the page header that needs no data drawn for real; no slab, and no count or date shown as 0 or — before the read answers"
       ]
     },
     {
@@ -65,7 +67,8 @@
         "Colours use the semantic tokens; no text-muted-foreground, stock Tailwind colours or hard-coded hex",
         "Every visible string goes through t() with keys in both en and es area files",
         "The list of entities is either given structuralSharing: shareEntities in useProfileSessions or the summary notes that it lacks it",
-        "The final message says plainly which checks ran and which could not, without claiming a check it did not run"
+        "The final message says plainly which checks ran and which could not, without claiming a check it did not run",
+        "The devices list's loading state draws the settings card's rows at row height inside the same SettingsGroup the devices render in, not a single h-16 block"
       ]
     },
     {
@@ -103,7 +106,7 @@
         "Dates use useLocale() and a formatter from the kit instead of toLocaleDateString() without a locale",
         "Every hard-coded string ('Loading…', 'Filter', 'No devices', 'Unknown device', 'Last seen', 'This device', 'Sign out') goes through t(), with keys present in en and es, and the missing profile.devices.title key is added or replaced",
         "text-muted-foreground and text-gray-500 are replaced by semantic tokens (text-fg-muted…), and Badge uses a lifecycle/neutral variant instead of secondary",
-        "The raw <h1> is replaced by the page heading the context uses (SettingsTitle in Settings, the PageHeader parts in the console), and loading/empty/failed use Skeleton/EmptyState/Alert",
+        "The raw <h1> is replaced by the page heading the context uses (SettingsTitle in Settings, the PageHeader parts in the console), and loading/empty/failed use a placeholder in the list's shape (rows in the row's frame, not one block)/EmptyState/Alert",
         "The page is moved into Settings (a section of Settings → Profile, or a Settings child route with a SettingsSidebar item) rather than left as /devices inside the console chrome, and the route change follows the tanstack-routing skill",
         "The final message lists each planted violation with what was changed (or why it was left) and which checks it ran"
       ]

@@ -14,7 +14,7 @@ export class BotResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty({ example: 'New Bot' })
+  @ApiProperty({ example: 'Juno' })
   name!: string;
 
   @ApiProperty({ example: 'Keeps the release notes honest.' })
@@ -63,6 +63,15 @@ export class BotResponseDto {
 
   @ApiProperty({ enum: BOT_PERMISSIONS, description: 'How far a turn may go without asking.' })
   permission!: BotPermission;
+
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted.',
+  })
+  createdByBotId!: string | null;
 
   @ApiProperty({ description: 'Whether what it decides to remember is saved without asking.' })
   learnAutomatically!: boolean;

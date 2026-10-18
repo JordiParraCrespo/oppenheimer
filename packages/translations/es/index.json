@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Gestionar el acceso a repositorios",
       "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+    },
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Detener la grabación",
+      "cancel": "Cancelar la grabación",
+      "waiting": "Esperando al micrófono…",
+      "transcribing": "Transcribiendo…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+      "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+      "failed": "No se ha podido transcribir la grabación."
     }
   },
   "validation": {
@@ -162,6 +172,7 @@
       "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+      "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
@@ -212,6 +223,7 @@
       "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+      "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -244,7 +256,13 @@
       "BOTS_014": "Ese turno no existe.",
       "BOTS_015": "Esa aprobación no existe.",
       "BOTS_016": "Esa solicitud ya tenía respuesta.",
-      "BOTS_017": "Añade una clave para ese proveedor antes de hacerlo predeterminado.",
+      "BOTS_017": "ChatGPT se conecta iniciando sesión, no con una clave.",
+      "BOTS_018": "Ese inicio de sesión de ChatGPT ha caducado. Vuelve a empezar.",
+      "BOTS_019": "El inicio de sesión de ChatGPT está ocupado. Inténtalo de nuevo en un momento.",
+      "BOTS_020": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
+      "BOTS_021": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento.",
+      "BOTS_022": "Detén primero el turno en curso.",
+      "BOTS_023": "Añade una clave para ese proveedor antes de hacerlo predeterminado.",
       "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
       "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
       "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
@@ -281,7 +299,14 @@
       "SESSIONS_028": "Esa carpeta no existe en el equipo.",
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
+      "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
+      "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
+      "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
+      "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
+      "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -445,7 +470,7 @@
       "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
       "confirm": "Eliminar proyecto",
       "deleting": "Eliminando…",
@@ -709,13 +734,12 @@
       "share": "Compartir…"
     },
     "deleteSession": {
-      "title": "¿Eliminar “{{name}}”?",
-      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "confirm": "Eliminar sesión",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la sesión.",
       "discard": "Descartar también el trabajo sin enviar",
-      "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
     },
     "filters": {
@@ -885,7 +909,7 @@
       "noMatch": "Ningún bot coincide con «{{query}}».",
       "ungrouped": "Sin grupo",
       "emptyTitle": "Aún no hay bots",
-      "emptyBody": "Los bots que crees aparecen aquí. Crea uno, dile qué trabajo tiene que hacer y ajústalo en su configuración.",
+      "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
       "emptyGroup": "Aún no hay bots en este grupo.",
       "noMessages": "Aún no hay mensajes",
       "newGroup": "Nuevo grupo",
@@ -905,11 +929,9 @@
     },
     "landing": {
       "titleEmpty": "Crea tu primer bot.",
-      "title": "Elige un bot o crea uno nuevo.",
-      "note": "Un bot nuevo empieza en blanco. Dile qué trabajo tiene que hacer y ajústalo en su configuración."
+      "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {
-      "toggleSidebar": "Mostrar u ocultar la barra lateral",
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
@@ -1033,7 +1055,12 @@
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
-        "failed": "Aprobaste y falló: {{summary}}"
+        "failed": "Aprobaste y falló: {{summary}}",
+        "peerMessage": "De <bot>{{name}}</bot>",
+        "peerAsk": "<bot>{{name}}</bot> preguntó",
+        "peerAnswered": "<bot>{{name}}</bot> respondió",
+        "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+        "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
       }
     },
     "settings": {
@@ -1045,7 +1072,7 @@
         "profile": "Perfil",
         "instructions": "Instrucciones",
         "memory": "Memoria",
-        "runsOn": "Dónde se ejecuta"
+        "homeHost": "Máquina principal"
       },
       "profile": {
         "title": "Perfil",
@@ -1072,6 +1099,18 @@
         "created": "Creado",
         "history": "Historial del chat",
         "noMessages": "Aún no hay mensajes.",
+        "messages_one": "{{count}} mensaje · el último el {{date}}",
+        "messages_other": "{{count}} mensajes · el último el {{date}}",
+        "messages_many": "{{count}} mensajes · el último el {{date}}",
+        "exporting": "Exportando…",
+        "exportFailed": "No se ha podido exportar el chat.",
+        "exportedAt": "Exportado el {{date}}",
+        "you": "Tú",
+        "oppenheimer": "Oppenheimer",
+        "clearTitle": "¿Borrar el historial del chat?",
+        "clearBody": "Se borran todos los mensajes de este chat, con cualquier solicitud que aún espere tu respuesta. El bot conserva su alma, sus instrucciones y su memoria.",
+        "clearing": "Borrando…",
+        "clearFailed": "No se ha podido borrar el historial del chat.",
         "export": "Exportar",
         "clear": "Borrar historial",
         "discard": "Descartar",
@@ -1138,21 +1177,27 @@
         "forgetFailed": "No se ha podido olvidar el dato.",
         "loadFailed": "No se ha podido cargar lo que recuerda el bot."
       },
-      "runsOn": {
-        "title": "Dónde se ejecuta",
-        "subtitle": "La máquina en la que trabaja el bot.",
-        "homeHost": "Máquina principal",
+      "homeHost": {
+        "title": "Máquina principal",
+        "subtitle": "Tu bot siempre se ejecuta en Oppenheimer. Cuando inicia una sesión de código y no has indicado una máquina, la sesión se ejecuta aquí.",
+        "machines": "Máquinas",
+        "none": "Sin máquina principal",
+        "noneHint": "El bot pregunta qué máquina usar cada vez que inicia una sesión.",
         "online": "En línea",
         "offline": "Desconectada",
         "noHosts": "Aún no hay máquinas",
-        "noHostsBody": "Un bot se ejecuta en una máquina tuya. Añade una y elígela aquí.",
+        "noHostsBody": "Un bot inicia sus sesiones de código en una máquina tuya. Añade una y elígela aquí.",
         "addHost": "Añadir una máquina",
+        "discard": "Cancelar",
+        "save": "Guardar",
+        "saving": "Guardando…",
+        "saved": "Guardado",
         "failed": "No se ha podido cambiar la máquina principal.",
         "hostsFailed": "No se han podido cargar tus máquinas."
       }
     },
     "delete": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
       "confirm": "Eliminar bot",
       "pending": "Eliminando…",
@@ -1458,7 +1503,7 @@
     "deleteDialog": {
       "title": "¿Eliminar «{{name}}»?",
       "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-      "confirm": "Eliminar",
+      "confirm": "Eliminar automatización",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la automatización."
     },
@@ -1703,7 +1748,7 @@
       "merged": "PR fusionadas",
       "from": "desde {{value}}",
       "series": "Series",
-      "both": "Creadas y fusionadas",
+      "both": "Ambas",
       "perDay": "Pull requests creadas y fusionadas por día",
       "hover": "Pasa por encima de un día",
       "reviewedByYou": "Revisadas por ti",
@@ -1740,7 +1785,6 @@
       "bar": "revisión · {{repository}} #{{number}}",
       "close": "Mostrar el pull request",
       "loadFailed": "No se pudo cargar la sesión de revisión.",
-      "composer": "Pregunta al agente de revisión o ejecuta un comando",
       "listFailed": "No se pudieron cargar tus sesiones de revisión."
     }
   },
@@ -1828,10 +1872,11 @@
       "target": "Fecha",
       "add": "Añadir hito",
       "delete": "Eliminar hito",
-      "deleteTitle": "¿Eliminar este hito?",
-      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+      "deleteTitle": "¿Eliminar «{{name}}»?",
+      "deleteDescription": "Sus tareas siguen en el tablero sin hito.",
       "saveFailed": "No se ha podido guardar el hito.",
-      "deleteFailed": "No se ha podido eliminar el hito."
+      "deleteFailed": "No se ha podido eliminar el hito.",
+      "deleting": "Eliminando…"
     },
     "dialog": {
       "newTitle": "Nueva tarea",
@@ -1853,12 +1898,13 @@
       "add": "Añadir tarea",
       "save": "Guardar",
       "delete": "Eliminar tarea",
-      "deleteTitle": "¿Eliminar esta tarea?",
-      "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Sus sesiones siguen como están.",
       "saveFailed": "No se ha podido guardar la tarea.",
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
-      "gone": "Esta tarea ya no existe."
+      "gone": "Esta tarea ya no existe.",
+      "deleting": "Eliminando…"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -1936,12 +1982,13 @@
       "add": "Añadir evento",
       "save": "Guardar",
       "delete": "Eliminar evento",
-      "deleteTitle": "¿Eliminar este evento?",
-      "deleteDescription": "Se elimina «{{title}}».",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Se quita del calendario.",
       "saveFailed": "No se ha podido guardar el evento.",
       "deleteFailed": "No se ha podido eliminar el evento.",
       "loadFailed": "No se ha podido cargar el evento.",
-      "gone": "Este evento no está en el mes que se muestra o ya no existe."
+      "gone": "Este evento no está en el mes que se muestra o ya no existe.",
+      "deleting": "Eliminando…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1956,17 +2003,18 @@
       "updated": "Actualizado hace {{age}}",
       "needsReconnect": "Hay que volver a conectarla",
       "readFailed": "No se ha podido leer ahora",
-      "remove": "Quitar",
+      "remove": "Quitar cuenta",
       "removeLabel": "Quitar {{email}}",
-      "removeTitle": "¿Quitar esta cuenta de Google?",
-      "removeDescription": "{{email}} deja el calendario, y sus eventos con ella. Puedes volver a conectarla cuando quieras.",
+      "removeTitle": "¿Quitar «{{email}}»?",
+      "removeDescription": "Sus eventos dejan el calendario. Puedes volver a conectarla cuando quieras.",
       "removeFailed": "No se ha podido quitar la cuenta de Google.",
       "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
       "loadFailed": "No se han podido comprobar tus cuentas de Google.",
       "connecting": "Conectando Google Calendar…",
       "connectFailed": "No se ha podido conectar Google Calendar.",
       "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-      "back": "Volver al calendario"
+      "back": "Volver al calendario",
+      "removing": "Quitando…"
     },
     "googleEvent": {
       "untitled": "(Sin título)",
@@ -2038,19 +2086,26 @@
         "runner": "runner {{version}}"
       },
       "actions": "Acciones de {{name}}",
+      "updateRunner": "Actualizar runner",
+      "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+      "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+      "updating": "Actualizando…",
+      "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
       "rename": "Renombrar",
       "renameLabel": "Nombre del equipo",
       "save": "Guardar",
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
       "removing": "Eliminando…",
-      "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "removeTitle": "¿Eliminar «{{name}}»?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en él. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en él. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
       "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
       "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+      "wipe": "Borrar también todo lo de esta máquina: cerrar cada sesión y eliminar su worktree, incluido el trabajo sin confirmar. No se sube nada.",
+      "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
@@ -2176,7 +2231,8 @@
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
-        "openai": "Modelos GPT, a través de la API de OpenAI."
+        "openai": "Modelos GPT, a través de la API de OpenAI.",
+        "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API."
       },
       "dialog": {
         "title": "Clave de {{provider}}",
@@ -2185,6 +2241,26 @@
         "save": "Guardar clave",
         "saving": "Guardando…",
         "failed": "No se pudo guardar la clave."
+      },
+      "signedIn": "Sesión iniciada · {{hint}}",
+      "notConnected": "Sin conectar",
+      "connect": "Conectar ChatGPT",
+      "reconnect": "Volver a iniciar sesión",
+      "disconnect": "Desconectar",
+      "disconnectLabel": "Desconectar {{provider}}",
+      "chatgpt": {
+        "title": "Conectar ChatGPT",
+        "description": "Inicia sesión en ChatGPT y los bots de ChatGPT funcionarán con tu suscripción, no con la facturación de la API.",
+        "step": "Abre la página de inicio de sesión de OpenAI e introduce este código:",
+        "open": "Abrir la página de inicio de sesión",
+        "codeTitle": "Código de un solo uso",
+        "waiting": "Esperando a que apruebes el inicio de sesión…",
+        "expires": "El código funciona durante 15 minutos.",
+        "expired": "Este código ha caducado. Pide uno nuevo para volver a intentarlo.",
+        "newCode": "Pedir un código nuevo",
+        "connected": "Sesión iniciada. Los bots de ChatGPT ya funcionan con esta suscripción.",
+        "done": "Hecho",
+        "failed": "No se pudo iniciar sesión en ChatGPT."
       }
     }
   },
@@ -2201,7 +2277,7 @@
     "users": "Usuarios",
     "roles": "Roles",
     "featureFlags": "Indicadores de funcionalidad",
-    "toggleSidebar": "Mostrar u ocultar el menú",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
     "commandTitle": "Paleta de comandos",
@@ -2475,6 +2551,7 @@
     "projectDeleted": "Se ha eliminado «{{name}}».",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
+    "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",
     "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
     "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",

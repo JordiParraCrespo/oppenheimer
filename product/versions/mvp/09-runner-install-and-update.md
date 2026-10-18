@@ -203,11 +203,17 @@ putting the user's credentials on it.
   would keep working after the uninstall with no control plane and no
   console. `--force` ends the sessions and keeps their checkouts; a
   session it cannot end stops the uninstall before the identity is
-  erased, so the host stays paired and a second run can finish. It says
-  when the control plane could not be reached — the host is then still
-  listed and its key still trusted until it is unpaired there
-  (`DELETE /v1/hosts/{id}`; the console has no unpair control yet) — and
-  it **never touches the workspaces directory**, which is the user's
+  erased, so the host stays paired and a second run can finish. When the
+  control plane does not unpair the host (unreachable, timed out, refused
+  the key, failed), the identity is still erased but the command **exits
+  7 with `PAIR_009`**, not 0: it prints the underlying failure (request,
+  status, the control plane's sentence, never the bearer) and how a
+  signed-in person finishes it — Remove under Settings → Hosts, or
+  `DELETE /api/v1/hosts/{id}` with an API token holding `hosts:write` —
+  because the host is still listed and its key still trusted until then.
+  An earlier version of this note said the console had no unpair control
+  and printed `DELETE /v1/hosts/{id}` with exit 0 (issue #394). It
+  **never touches the workspaces directory**, which is the user's
   code. Binaries and logs under `~/.oppenheimer` are left for the user to
   delete, and it prints both paths.
 - **Where sessions live** is chosen at install (`--workspaces`) and saved
@@ -312,7 +318,16 @@ putting the user's credentials on it.
 - **Manual control.** `runner update [--check] [--version x.y.z]
   [--pin|--unpin]` from the host, and an Update now button in the
   console that sends `host.update` over the link. Both go through the
-  same verification; neither is a way to run something unsigned. A
+  same verification; neither is a way to run something unsigned.
+  The console's is **Update runner** in a host card's menu on Settings →
+  Hosts (`POST /v1/hosts/{id}/update`), behind a confirm that says the
+  runner restarts and sessions keep running, off while the host is offline
+  (`HOSTS_008`). It sends no `version`, so the runner takes the newest
+  release on its channel now, skipping the safe window, and is left
+  unpinned; a pinned host refuses (`UPD_004`) and stays on its pin. The
+  answer is "sent", not "done": the row's runner version moves when the
+  runner reconnects, and does not when it was already current or the
+  update failed. A
   downgrade is allowed to a retained version at or above
   `min_supported`, with a warning.
 - **A managed install defers.** If the running binary is not under

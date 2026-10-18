@@ -230,7 +230,7 @@
     "merged": "PRs merged",
     "from": "from {{value}}",
     "series": "Series",
-    "both": "Created and merged",
+    "both": "Both",
     "perDay": "Pull requests created and merged per day",
     "hover": "Hover a day",
     "reviewedByYou": "Reviewed by you",
@@ -267,7 +267,6 @@
     "bar": "review · {{repository}} #{{number}}",
     "close": "Show the pull request",
     "loadFailed": "Could not load the review session.",
-    "composer": "Ask the review agent, or run a command",
     "listFailed": "Could not load your review sessions."
   }
 }

@@ -33,13 +33,17 @@ describe('defaultBotProvider', () => {
     ).toBe('glm');
   });
 
-  it('is the key stored first when none is marked, not the first in catalog order', () => {
+  it('is Anthropic when none is marked and Anthropic has a key, whichever was stored first', () => {
     expect(
       defaultBotProvider([
-        key('anthropic', '2026-10-02T00:00:00Z'),
         key('openai', '2026-10-01T00:00:00Z'),
+        key('anthropic', '2026-10-02T00:00:00Z'),
       ]),
-    ).toBe('openai');
+    ).toBe('anthropic');
+  });
+
+  it('is a provider with a key when none is marked and Anthropic has none', () => {
+    expect(defaultBotProvider([key('openai', '2026-10-01T00:00:00Z')])).toBe('openai');
   });
 
   it('is Anthropic for a workspace with no key', () => {

@@ -21,7 +21,7 @@ for the detail and sources.
 | 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
 | research/ | [Research](research/README.md) | Reads of other products, measurements and proposals that were not adopted; they decide nothing. Notes 12 (Grok Bot), 13 (herdr), 14 (session boot time) and 16 (developer-tools landscape) live there, and its index maps the old numbers |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP, one document each; its README is the list and holds the order |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -471,6 +471,9 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
+- On 2026-10-16 the owner dropped the review session's input row, which
+  doubled the agent's own prompt; the Chat tab is now the plain session
+  pane (`next-steps/0.2-pull-requests.md`).
 - `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
   on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
 - Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
@@ -480,3 +483,70 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 ran bots on three providers, each on a workspace's API key. On
+  2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
+  through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
+  (25, §2 and "Decided").
+- Note 25's system prompt ended with the moment the turn ran in: the
+  sender's time, the home host and the hosts. On 2026-10-15 that moved to
+  a `<turn_context>` block opening each turn's message, so the system
+  prompt is the same bytes every turn and the provider's prompt cache
+  hits (25, "Decided").
+- Note 25 sent a turn the bot's last 40 messages and dropped everything
+  older without a word. On 2026-10-15 history became a token budget
+  (24,000 tokens) opened by a stored summary of the older messages, which
+  a `bot-summaries` job writes with the bot's own model once they pass the
+  budget with headroom (25 §2, "Decided"). The chat still shows every
+  message.
+- Note 25 named a bot's last settings page Runs on (Works on from slice
+  3), and its picks, the colour and sidebar group on Profile included,
+  saved on the click. On 2026-10-16 the owner, testing it, read Runs on as
+  where the bot runs: the page is **Home host** now, says the bot always
+  runs in Oppenheimer and the home host is only where its sessions start
+  when no machine is named, offers No home host, and every bot settings
+  page saves a draft with Save (25 §1, "Decided").
+- Note 25 named a blank bot "New Bot" and had it ask for its job in one
+  line. On 2026-10-16 a blank bot takes the next of twenty first names
+  ("Juno", "Milo"…), and its first chat walks it through learning one
+  job, writing its own INSTRUCTIONS.md and description, and offering a
+  first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
+- `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
+  milestone bar on to ten days past its last milestone, which read as the
+  bar overshooting the dates. On 2026-10-15 the owner had it end on the last
+  milestone's day, as a timeline bar does in Notion; the three-week lead-in
+  before the first milestone or today stays (23 §1).
+- `next-steps/voice.md` planned slice 3 as the task dialog, the terminal
+  paste, a hotkey and a dictionary, and said the recorder's `AudioWorklet`
+  would come when it moved to the kit. On 2026-10-17 the owner asked for
+  dictation in every prose input as one shared piece: the fields shipped
+  first (the kit's `dictation` concern), the rest stays for later, and the
+  recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- `next-steps/voice.md` said the polish is skipped when the raw transcript
+  is clean and short, and that the ChatGPT route's names reach it only
+  through the polish. On 2026-10-18 (#393) every clip is polished, with a
+  light-touch brief modelled on Wispr Flow, and the names also go to an
+  OpenAI-compatible speech server as its `prompt` ("Dictation quality,
+  first pass").
+- `next-steps/voice.md` shipped `voice_dictation` as a release flag,
+  default off. On 2026-10-18 it became an `ops` flag defaulting to `true`,
+  the feature's kill switch.
+- Note 09 had `runner uninstall` exit 0 when the control plane could not
+  be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
+  control. On 2026-10-18, after an owner's uninstall hid a failed
+  revocation (issue #394), it exits 7 (`PAIR_009`), prints the underlying
+  failure, and points at Settings → Hosts → Remove or
+  `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
+  origins and the commands that move it (09 §4).
+- `versions/mvp/14-hosts-settings.md` had removing a host only stop its
+  sessions, every checkout kept. On 2026-10-18 the owner, testing on a
+  host, asked for a way to stop everything and start again: the remove
+  dialog has an "Also delete everything on this machine" box, and an
+  online host then closes every session, worktrees removed and nothing
+  pushed (14, "Remove can also clean the machine up").
+- Note 25 had `ask_bot` give another bot a task and wait for its answer.
+  On 2026-10-18 it was built so the answer comes back as a new turn of the
+  asker instead: one turn per bot runs at a time and a turn has four
+  minutes, so an ask that waited could time out or leave two bots waiting
+  on each other. The sender is recorded rather than claimed, messages
+  holding a credential are refused, and the chain is decided under a lock,
+  from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").

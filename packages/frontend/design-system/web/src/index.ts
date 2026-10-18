@@ -76,11 +76,14 @@ export {
 } from './components/chat-cards';
 export type { ChatComposerLabels } from './components/chat-composer';
 export { ChatComposer } from './components/chat-composer';
+export type { DictationSlot } from './components/chat-composer-extras';
 export {
   ComposerContextMeter,
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from './components/chat-composer-extras';
 export type { ComposerTask } from './components/chat-composer-stack';
@@ -354,11 +357,12 @@ export { PullRequestHeader } from './components/pull-request-header';
 export {
   MergeButton,
   PullRequestRow,
+  PullRequestRowSkeleton,
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';
 export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
-export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
+export { RAIL_BAR_CLEARANCE, Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
 export type {

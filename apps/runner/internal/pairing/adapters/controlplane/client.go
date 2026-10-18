@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
@@ -113,38 +114,46 @@ func (c *Client) Register(ctx context.Context, baseURL string, req app.RegisterR
 // Revoke tells the control plane this host is gone. The boot JWT is the
 // bearer, and the host names itself by that token's subject, which is why the
 // route is `self` and carries no id. A 404 is the outcome the caller asked
-// for: something else already removed the host.
+// for: something else already removed the host. Every other answer names the
+// request and the status, so a person can tell a network that is down from a
+// control plane that refused the key — never the bearer itself.
 func (c *Client) Revoke(ctx context.Context, baseURL, assertion string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL+revokePath, nil)
+	endpoint := baseURL + revokePath
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
 	if err != nil {
-		return err
+		return domain.ErrControlPlaneURL.WithDetail("%v", err).WithCause(err)
 	}
 	req.Header.Set("Authorization", "Bearer "+assertion)
+	req.Header.Set("Accept", "application/problem+json, application/json")
 	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.ErrUnreachable.WithDetail("%s: %v", baseURL, err).WithCause(err)
+		return domain.ErrUnreachable.WithDetail("DELETE %s: %v", redact(endpoint), err).WithCause(err)
 	}
 	defer resp.Body.Close() //nolint:errcheck // read-only body
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponse))
-	if resp.StatusCode/100 != 2 && resp.StatusCode != http.StatusNotFound {
-		return statusProblem(resp.StatusCode, nil)
+	payload, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponse))
+	status := resp.StatusCode
+	if status/100 == 2 || status == http.StatusNotFound {
+		return nil
 	}
-	return nil
+	answer := fmt.Sprintf("DELETE %s answered %d", redact(endpoint), status)
+	detail := problemDetail(payload)
+	switch {
+	case status == http.StatusUnauthorized, status == http.StatusForbidden:
+		return domain.ErrRevokeRefused.WithDetail("%s: %s", answer,
+			orDefault(detail, "the control plane no longer accepts this host's key"))
+	case status == http.StatusTooManyRequests, status/100 == 5:
+		return domain.ErrUnreachable.WithDetail("%s: %s", answer, orDefault(detail, "no detail"))
+	default:
+		return domain.ErrRevokeRefused.WithDetail("%s: %s", answer, orDefault(detail, "no detail"))
+	}
 }
 
 // statusProblem maps the other side's answer onto this context's catalog,
 // keeping its `detail` when it sent a problem document: the control plane
 // knows why a token was refused, and the user needs that sentence.
 func statusProblem(status int, payload []byte) error {
-	detail := ""
-	var doc problem.Details
-	if json.Unmarshal(payload, &doc) == nil && doc.Title != "" {
-		detail = doc.Title
-		if doc.Detail != "" {
-			detail = doc.Detail
-		}
-	}
+	detail := problemDetail(payload)
 	switch {
 	case status == http.StatusUnauthorized, status == http.StatusForbidden, status == http.StatusGone:
 		if detail == "" {
@@ -163,6 +172,25 @@ func statusProblem(status int, payload []byte) error {
 	default:
 		return domain.ErrTokenRejected.WithDetail("the control plane answered %d: %s", status, orDefault(detail, "no detail"))
 	}
+}
+
+// problemDetail is the sentence of an RFC 7807 answer: its detail, else its
+// title, else nothing.
+func problemDetail(payload []byte) string {
+	var doc problem.Details
+	if json.Unmarshal(payload, &doc) != nil || doc.Title == "" {
+		return ""
+	}
+	return orDefault(doc.Detail, doc.Title)
+}
+
+// redact drops any user:password from a URL before it is printed.
+func redact(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	return u.Redacted()
 }
 
 func orDefault(value, fallback string) string {

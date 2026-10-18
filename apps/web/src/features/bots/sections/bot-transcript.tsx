@@ -10,7 +10,13 @@ import { botModelOf } from '@oppenheimer/shared/schemas/bot';
 import { Fragment } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { BotTurn } from '@/features/bots/components/bot-turn';
-import { chatTurns, markersBefore, retryContent } from '@/features/bots/lib/chat-turns';
+import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
+import {
+  chatTurns,
+  markersBefore,
+  newestSentId,
+  retryContent,
+} from '@/features/bots/lib/chat-turns';
 import { BotHello } from './bot-hello';
 
 /**
@@ -20,6 +26,7 @@ import { BotHello } from './bot-hello';
  * hello. It keeps the bot's stream open while it is on screen, so text
  * arrives as the bot writes it and each stored message the moment it lands.
  * Once the newest turn has ended, Retry sends your last message again.
+ * What you send glides to the top of the pane, the answer beneath it.
  */
 export function BotTranscript({ botId, name }: { botId: string; name: string }) {
   const { t } = useTranslation();
@@ -30,6 +37,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const blocks = chatTurns(conversation);
   const again = retryContent(blocks);
   const newest = blocks.at(-1)?.turnId;
+  useSentGlide(newestSentId(blocks));
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
   return (

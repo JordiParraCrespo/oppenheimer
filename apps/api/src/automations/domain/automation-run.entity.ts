@@ -9,6 +9,7 @@ import type {
   AutomationRunOutcome,
   AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
+import type { RunDispatchRef } from './automation.types';
 import { AutomationRunChangedDomainEvent } from './events/automation-run-changed.domain-event';
 
 /**
@@ -168,14 +169,18 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
   }
 
   /**
-   * The session exists. `revisionId` is the revision it was launched with —
-   * the current one at dispatch, which is what actually ran.
+   * What the run launched exists. `revisionId` is the revision it was launched
+   * with — the current one at dispatch, which is what actually ran.
    */
-  dispatched(sessionId: string, revisionId: string, at: Date): void {
+  dispatched(ref: RunDispatchRef, revisionId: string, at: Date): void {
     this.assertPending();
     this.props.revisionId = revisionId;
     this.props.outcome = 'dispatched';
-    this.props.sessionId = sessionId;
+    switch (ref.kind) {
+      case 'session':
+        this.props.sessionId = ref.sessionId;
+        break;
+    }
     this.props.dispatchedAt = at;
     this.setUpdatedAt(new Date());
     this.changed('the run started its session');

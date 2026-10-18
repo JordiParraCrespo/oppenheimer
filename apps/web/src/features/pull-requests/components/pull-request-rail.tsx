@@ -2,22 +2,8 @@ import { CircleAlert, CircleCheck, CircleDashed } from '@oppenheimer/design-syst
 import type { PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { RailSection } from './rail-section';
 import { ReviewerRow } from './reviewer-row';
-
-function railSection(label: string, children?: ReactNode, aside?: ReactNode) {
-  return (
-    <section
-      key={label}
-      className="flex flex-col gap-3 border-b border-border-subtle py-4 first:pt-0 last:border-b-0"
-    >
-      <div className="flex items-center justify-between gap-3 text-sm text-fg-muted">
-        <h2 className="m-0 text-sm font-normal text-fg-muted">{label}</h2>
-        {aside}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 /**
  * Beside a description, what decides whether it can go in: whether it merges
@@ -57,16 +43,14 @@ export function PullRequestRail({
   const { total, passed } = pull.checkCounts;
   return (
     <aside className="flex flex-col lg:w-72 lg:shrink-0">
-      {railSection(
-        t('pullRequests.detail.rail.mergeStatus'),
+      <RailSection label={t('pullRequests.detail.rail.mergeStatus')}>
         <p className="m-0 flex items-center gap-2.5 text-operate text-fg">
           {merge.icon}
           {merge.text}
-        </p>,
-      )}
-      {railSection(t('pullRequests.detail.rail.comments'), comments)}
-      {railSection(
-        t('pullRequests.detail.rail.reviews'),
+        </p>
+      </RailSection>
+      <RailSection label={t('pullRequests.detail.rail.comments')}>{comments}</RailSection>
+      <RailSection label={t('pullRequests.detail.rail.reviews')}>
         <div className="flex flex-col gap-3">
           {pull.unread.includes('reviews') ? (
             <p className="m-0 text-sm text-fg-muted">{t('pullRequests.detail.reviewsUnread')}</p>
@@ -77,19 +61,20 @@ export function PullRequestRail({
           ) : (
             <p className="m-0 text-sm text-fg-muted">{t('pullRequests.detail.noReviewers')}</p>
           )}
-        </div>,
-      )}
-      {railSection(
-        t('pullRequests.detail.checks'),
-        null,
-        <span className="text-sm">
-          {total
-            ? t('pullRequests.detail.rail.checksSummary', { passed, total })
-            : pull.checks === 'unavailable'
-              ? t('pullRequests.checks.unavailable')
-              : t('pullRequests.detail.rail.noChecks')}
-        </span>,
-      )}
+        </div>
+      </RailSection>
+      <RailSection
+        label={t('pullRequests.detail.checks')}
+        aside={
+          <span className="text-sm">
+            {total
+              ? t('pullRequests.detail.rail.checksSummary', { passed, total })
+              : pull.checks === 'unavailable'
+                ? t('pullRequests.checks.unavailable')
+                : t('pullRequests.detail.rail.noChecks')}
+          </span>
+        }
+      />
     </aside>
   );
 }

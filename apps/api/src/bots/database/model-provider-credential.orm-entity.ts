@@ -23,7 +23,10 @@ import {
   unique: true,
   where: '"markedDefault"',
 })
-@Check('CHK_model_provider_credential_provider', `"provider" IN ('anthropic', 'glm', 'openai')`)
+@Check(
+  'CHK_model_provider_credential_provider',
+  `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`,
+)
 export class ModelProviderCredentialOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -40,7 +43,7 @@ export class ModelProviderCredentialOrmEntity {
   @Column({ type: 'varchar', length: 4 })
   keyHint!: string;
 
-  /** The provider new bots start on (`1791002300000-AddModelProviderDefault`); one per workspace at most. */
+  /** The provider new bots start on (`1791002700000-AddModelProviderDefault`); one per workspace at most. */
   @Column({ type: 'boolean', default: false })
   markedDefault!: boolean;
 

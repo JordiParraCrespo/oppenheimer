@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { type CreateSessionDto, createSessionSchema } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import type { ProjectEntity } from '../projects/domain/project.entity';
@@ -19,6 +18,15 @@ export interface StartSessionInput {
   agent?: CodingAgentId;
   name?: string;
 }
+
+/**
+ * The level every session a bot starts runs at. Nobody sits at a bot's
+ * terminal, so the API's own default (`ask`) would leave the agent waiting on
+ * its first approval forever; `auto` lets it work while still checking each
+ * action, and the runner marks its folder trusted for the same reason. An
+ * agent with no approvals records no level whatever is sent.
+ */
+export const BOT_SESSION_PERMISSION = 'auto' as const;
 
 export function planSession(
   input: StartSessionInput,
@@ -45,6 +53,7 @@ export function planSession(
     projectId: project?.id,
     name: input.name,
     prompt: input.task,
+    launch: { permission: BOT_SESSION_PERMISSION },
     ...(input.folder
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
@@ -126,19 +135,4 @@ function pickRepository(
     githubRepoId: Number(chosen.githubRepoId),
     baseBranch: chosen.baseBranch,
   };
-}
-
-/**
- * The same call in the same turn starts one session, however often the model
- * repeats it; an approved call starts one per approval, however often its job
- * is retried.
- */
-export function idempotencyKeyOf(
-  turnId: string,
-  body: CreateSessionDto,
-  approvalId?: string,
-): string {
-  if (approvalId) return `bot:approval:${approvalId}`;
-  const digest = createHash('sha256').update(JSON.stringify(body)).digest('hex').slice(0, 32);
-  return `bot:${turnId}:${digest}`;
 }

@@ -48,7 +48,7 @@ export class SetDefaultModelProviderHttpController {
   @ApiProblemResponse({
     status: 409,
     description: 'That model provider has no key',
-    code: 'BOTS_017',
+    code: 'BOTS_023',
   })
   async setDefault(
     @CurrentAccessScope() scope: AccessScope,

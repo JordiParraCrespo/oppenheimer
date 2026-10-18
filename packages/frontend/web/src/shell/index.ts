@@ -4,6 +4,7 @@ export {
   type DialogSlot,
   type DialogSlotActions,
 } from './components/dialog-slot';
+export { PageBar, SidebarToggle } from './components/page-bar';
 export { PageFrame } from './components/page-frame';
 export { PaneBar } from './components/pane-bar';
 export { SettingsSidebar } from './components/settings-sidebar';

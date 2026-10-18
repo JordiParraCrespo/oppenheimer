@@ -254,13 +254,12 @@
     "share": "Compartir…"
   },
   "deleteSession": {
-    "title": "¿Eliminar “{{name}}”?",
-    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+    "title": "¿Eliminar «{{name}}»?",
+    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
     "confirm": "Eliminar sesión",
     "deleting": "Eliminando…",
     "failed": "No se pudo eliminar la sesión.",
     "discard": "Descartar también el trabajo sin enviar",
-    "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
     "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
   },
   "filters": {

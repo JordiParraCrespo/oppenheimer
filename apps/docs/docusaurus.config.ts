@@ -4,7 +4,7 @@ import type { Config } from '@docusaurus/types';
 const config: Config = {
   title: 'Oppenheimer',
   tagline: 'Full-stack monorepo boilerplate',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
   url: 'https://oppenheimer.dev',
   baseUrl: '/',
   organizationName: 'oppenheimer',

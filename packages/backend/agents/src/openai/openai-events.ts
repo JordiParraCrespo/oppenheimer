@@ -1,5 +1,5 @@
 import type { BotEngineEvent } from '../bot-engine';
-import { describeError, failed } from '../turn';
+import { describeError, failed, resetFromHeaders } from '../turn';
 
 /**
  * The part of the OpenAI Agents SDK's `RunStreamEvent` this package reads,
@@ -133,8 +133,30 @@ export class OpenAiEventTranslator {
     } else if (error instanceof Error && error.name === 'MaxTurnsExceededError') {
       events.push({ type: 'done', reason: 'max_steps' });
     } else {
-      events.push(failed(describeError(error)));
+      const rateLimit = rateLimitOf(error);
+      events.push(
+        rateLimit ? failed(describeError(error), rateLimit) : failed(describeError(error)),
+      );
     }
     return events;
   }
+}
+
+/**
+ * A refusal for rate or quota: the OpenAI client's error for a `429`, with
+ * when the provider may be called again from its `Retry-After` headers.
+ */
+function rateLimitOf(error: unknown): { resetAt: Date | null } | null {
+  const refused = error as { status?: unknown; headers?: unknown } | null;
+  if (!refused || typeof refused !== 'object' || refused.status !== 429) return null;
+  const headers = refused.headers;
+  const read = (name: string): string | null => {
+    if (headers instanceof Headers) return headers.get(name);
+    if (headers && typeof headers === 'object') {
+      const value = (headers as Record<string, unknown>)[name];
+      return typeof value === 'string' ? value : null;
+    }
+    return null;
+  };
+  return { resetAt: resetFromHeaders(read) };
 }

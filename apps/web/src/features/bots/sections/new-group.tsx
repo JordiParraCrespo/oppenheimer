@@ -18,7 +18,7 @@ export function NewGroup() {
   const create = useCreateBotGroup({ onSettled: () => setAdding(false) });
 
   return (
-    <div className="mt-2.5 flex flex-col">
+    <div className="mt-2.5 flex flex-col px-3">
       {adding ? (
         <GroupNameInput
           defaultValue={t('bots.sidebar.newGroup')}
@@ -27,7 +27,7 @@ export function NewGroup() {
           onCancel={() => setAdding(false)}
         />
       ) : (
-        <div className="px-1.5">
+        <div>
           <Button
             variant="ghost"
             size="sm"
@@ -45,7 +45,7 @@ export function NewGroup() {
         error={create.error}
         fallback={t('bots.sidebar.groupFailed')}
         onDismiss={() => create.reset()}
-        className="mx-1.5 mt-1"
+        className="mt-1"
       />
     </div>
   );

@@ -29,11 +29,18 @@ function resultText(content: unknown): string {
  *   chat's activity line counts what a subagent did with our tools.
  * - A synthetic assistant message carrying an `error` (a refused key, an
  *   unknown model) is the failure's reason, never the bot's text.
+ * - A failure the provider refused for rate or quota (the SDK's
+ *   `rate_limit` error, a `429` status, a rejected rate-limit event) ends
+ *   with `rateLimit`, and with when it may be called again when the SDK
+ *   said: the reset of a rejected limit, else the wait Claude Code was
+ *   given for its own retry of the refused call.
  */
 export class ClaudeEventTranslator {
   private readonly toolNames = new Map<string, string>();
   private result: SDKResultMessage | undefined;
   private lastError: string | undefined;
+  private rateLimited = false;
+  private resetAt: Date | null = null;
 
   translate(message: SDKMessage): BotEngineEvent[] {
     switch (message.type) {
@@ -53,6 +60,19 @@ export class ClaudeEventTranslator {
       case 'result':
         this.result = message;
         return [];
+      case 'system':
+        this.fromSystem(
+          message as {
+            subtype?: string;
+            error?: unknown;
+            error_status?: unknown;
+            retry_delay_ms?: unknown;
+          },
+        );
+        return [];
+      case 'rate_limit_event':
+        this.fromRateLimit(message.rate_limit_info);
+        return [];
       default:
         return [];
     }
@@ -62,8 +82,11 @@ export class ClaudeEventTranslator {
   finish(diagnostics?: string): BotEngineEvent[] {
     const result = this.result;
     if (!result) {
-      return [failed(this.lastError ?? diagnostics ?? 'Claude Code stopped without a result.')];
+      return [
+        this.failed(this.lastError ?? diagnostics ?? 'Claude Code stopped without a result.'),
+      ];
     }
+    if (result.subtype === 'success' && result.api_error_status === 429) this.rateLimited = true;
     const { usage } = result;
     const events: BotEngineEvent[] = [
       {
@@ -78,15 +101,46 @@ export class ClaudeEventTranslator {
     if (result.subtype === 'success') {
       events.push(
         result.is_error
-          ? failed(this.lastError ?? (result.result || diagnostics || 'The model call failed.'))
+          ? this.failed(
+              this.lastError ?? (result.result || diagnostics || 'The model call failed.'),
+            )
           : { type: 'done', reason: 'completed' },
       );
     } else if (result.subtype === 'error_max_turns') {
       events.push({ type: 'done', reason: 'max_steps' });
     } else {
-      events.push(failed(result.errors.join('; ') || this.lastError || result.subtype));
+      events.push(this.failed(result.errors.join('; ') || this.lastError || result.subtype));
     }
     return events;
+  }
+
+  /** A failed end, marked as a rate limit when the provider refused for one. */
+  private failed(error: string): BotEngineEvent {
+    return this.rateLimited ? failed(error, { resetAt: this.resetAt }) : failed(error);
+  }
+
+  /** Claude Code retrying a refused call: a rate limit's says how long it was told to wait. */
+  private fromSystem(message: {
+    subtype?: string;
+    error?: unknown;
+    error_status?: unknown;
+    retry_delay_ms?: unknown;
+  }): void {
+    if (message.subtype !== 'api_retry') return;
+    if (message.error !== 'rate_limit' && message.error_status !== 429) return;
+    this.rateLimited = true;
+    if (typeof message.retry_delay_ms === 'number' && message.retry_delay_ms > 0) {
+      this.resetAt = new Date(Date.now() + message.retry_delay_ms);
+    }
+  }
+
+  /** A limit the provider says is exhausted, with when it resets (epoch seconds). */
+  private fromRateLimit(info: { status?: string; resetsAt?: number } | undefined): void {
+    if (info?.status !== 'rejected') return;
+    this.rateLimited = true;
+    if (typeof info.resetsAt === 'number' && info.resetsAt > 0) {
+      this.resetAt = new Date(info.resetsAt < 1e12 ? info.resetsAt * 1_000 : info.resetsAt);
+    }
   }
 
   private fromStreamEvent(
@@ -116,6 +170,7 @@ export class ClaudeEventTranslator {
         .map((block) => String(block.text))
         .join('\n');
       this.lastError = text || String(error);
+      if (error === 'rate_limit') this.rateLimited = true;
       return [];
     }
     const events: BotEngineEvent[] = [];

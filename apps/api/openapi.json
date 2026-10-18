@@ -5827,6 +5827,132 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/wipe": {
+      "post": {
+        "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
+        "operationId": "wipeHost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired, its runner told to clean up"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host and clean its machine up",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/{id}/update": {
+      "post": {
+        "description": "Asks the host's runner to install the newest signed release on its channel now. Accepted is not done: the runner verifies the release itself, restarts on it, and reports the new version when it reconnects. A runner already current, or pinned, stays as it is.",
+        "operationId": "updateHostRunner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The update was sent to the runner"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HOSTS_008 — The host is not connected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a host's runner",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -8081,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
@@ -8239,7 +8375,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14926,7 +15062,7 @@
         "tags": ["Bots"]
       },
       "post": {
-        "description": "A blank bot: \"New Bot\" unless named, numbered when the workspace has the name, last in its group, with a soul that says its name and empty instructions.",
+        "description": "A blank bot: the next free first name (\"Juno\", \"Milo\"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.",
         "operationId": "createBot",
         "parameters": [],
         "requestBody": {
@@ -16275,6 +16411,16 @@
               }
             }
           },
+          "422": {
+            "description": "BOTS_017 — ChatGPT connects by signing in, not with a key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "BOTS_011 — Model providers are not configured on this server",
             "content": {
@@ -16410,7 +16556,7 @@
             }
           },
           "409": {
-            "description": "BOTS_017 — That model provider has no key",
+            "description": "BOTS_023 — That model provider has no key",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16429,9 +16575,259 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/model-providers/chatgpt/login": {
+      "post": {
+        "description": "ChatGPT's device code flow, as the Codex CLI runs it: the person types `userCode` on `verificationUrl` and the console polls with `flowId` until the sign-in is stored. Bots on the `chatgpt` provider then run on that ChatGPT subscription.",
+        "operationId": "startChatgptLogin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatgptLoginResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "BOTS_019 — ChatGPT's sign-in is busy",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "BOTS_020 — ChatGPT's sign-in could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start signing the workspace in to ChatGPT",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/model-providers/chatgpt/login/poll": {
+      "post": {
+        "description": "Asks ChatGPT whether the person approved the code. `connected` means the sign-in is stored as the workspace's ChatGPT credential; `pending` means poll again after the interval.",
+        "operationId": "pollChatgptLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PollChatgptLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatgptLoginStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "BOTS_018 — The ChatGPT sign-in expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "BOTS_019 — ChatGPT's sign-in is busy",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "BOTS_020 — ChatGPT's sign-in could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check on a ChatGPT sign-in",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/conversation/export": {
+      "get": {
+        "description": "Every message of the conversation, oldest first, as newline-delimited JSON (`application/x-ndjson`): one message per line, each shaped as in `GET /bots/:id/conversation`, which holds only the newest. Lines are written as the chat is read, a page at a time, so a reader can handle each as it arrives.",
+        "operationId": "exportBotConversation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One `BotMessageResponseDto` per line, oldest first"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export a bot's whole chat",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/bots/{id}/conversation": {
       "get": {
-        "description": "Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running.",
+        "description": "Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. The whole chat is `GET /bots/:id/conversation/export`.",
         "operationId": "findBotConversation",
         "parameters": [
           {
@@ -16491,6 +16887,72 @@
           }
         ],
         "summary": "A bot's chat",
+        "tags": ["Bots"]
+      },
+      "delete": {
+        "description": "Erases the conversation: every message, turn and Needs input card (a pending one ends with it) and the summary of older messages. The bot keeps its soul, instructions and memory. Refused while one of its turns is queued or running; stop it first.",
+        "operationId": "clearBotConversation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_022 — A turn is queued or running",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Clear a bot's chat history",
         "tags": ["Bots"]
       }
     },
@@ -16888,6 +17350,183 @@
         ],
         "summary": "Answer a bot's Needs input card",
         "tags": ["Bots"]
+      }
+    },
+    "/api/v1/voice/transcriptions": {
+      "post": {
+        "description": "A recording (16-bit PCM WAV, at most 4194304 bytes) in, the text it says out, tidied into writing. Heard by the workspace's ChatGPT sign-in when it has one, otherwise by the deployment's own speech-to-text server. Nothing is kept.",
+        "operationId": "transcribeVoice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "vocabulary": {
+                    "type": "string",
+                    "description": "Names to spell as written, one per line."
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "ISO 639-1, when known."
+                  }
+                },
+                "required": ["audio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceTranscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VOICE_002 — No audio attached\n\nVOICE_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"voice_dictation\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VOICE_005 — Nobody to transcribe",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "VOICE_003 — Recording too long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "VOICE_004 — Not 16-bit PCM WAV",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached\n\nVOICE_007 — Provider rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "VOICE_006 — Provider failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transcribe a dictation",
+        "tags": ["Voice"]
+      }
+    },
+    "/api/v1/voice/status": {
+      "get": {
+        "description": "The speech providers available to the workspace, in the order a dictation tries them. Empty: nobody can hear a recording, and the console shows no mic.",
+        "operationId": "findVoiceStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Whether the workspace can dictate",
+        "tags": ["Voice"]
       }
     },
     "/api/v1/health": {
@@ -24941,7 +25580,7 @@
           },
           "name": {
             "type": "string",
-            "example": "New Bot"
+            "example": "Juno"
           },
           "description": {
             "type": "string",
@@ -24970,7 +25609,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"],
+            "enum": ["anthropic", "glm", "openai", "chatgpt"],
             "description": "Who answers it, and so which engine runs."
           },
           "model": {
@@ -24988,6 +25627,12 @@
             "type": "string",
             "enum": ["auto", "full"],
             "description": "How far a turn may go without asking."
+          },
+          "createdByBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted."
           },
           "learnAutomatically": {
             "type": "boolean",
@@ -25024,6 +25669,7 @@
           "model",
           "effort",
           "permission",
+          "createdByBotId",
           "learnAutomatically",
           "createdAt",
           "updatedAt",
@@ -25059,7 +25705,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           }
         }
       },
@@ -25098,7 +25744,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           },
           "model": {
             "type": "string",
@@ -25130,7 +25776,7 @@
           },
           "content": {
             "type": "string",
-            "example": "# Soul\n\nYou are New Bot."
+            "example": "# Soul\n\nYou are Juno."
           },
           "revision": {
             "type": "number",
@@ -25334,7 +25980,7 @@
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           },
           "configured": {
             "type": "boolean",
@@ -25368,6 +26014,54 @@
         },
         "required": ["apiKey"]
       },
+      "ChatgptLoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "flowId": {
+            "type": "string",
+            "description": "The sign-in, sealed: opaque to the console, handed back on every poll."
+          },
+          "userCode": {
+            "type": "string",
+            "description": "The code the person types on `verificationUrl`."
+          },
+          "verificationUrl": {
+            "type": "string",
+            "description": "OpenAI's page where the code is typed."
+          },
+          "intervalSeconds": {
+            "type": "number",
+            "description": "How long to wait between polls, in seconds."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the code stops working."
+          }
+        },
+        "required": ["flowId", "userCode", "verificationUrl", "intervalSeconds", "expiresAt"]
+      },
+      "PollChatgptLoginRequest": {
+        "type": "object",
+        "properties": {
+          "flowId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        },
+        "required": ["flowId"]
+      },
+      "ChatgptLoginStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "connected"]
+          }
+        },
+        "required": ["status"]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -25398,22 +26092,50 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["approval"]
+            "enum": ["approval", "bot_message", "bot_reply"]
           },
           "outcome": {
             "type": "string",
-            "enum": ["approved", "denied", "failed"]
+            "enum": ["approved", "denied", "failed", "answered", "cancelled"],
+            "nullable": true,
+            "description": "An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message."
           },
           "tool": {
             "type": "string",
-            "description": "The tool the decided call was for."
+            "nullable": true,
+            "description": "An approval: the tool the decided call was for."
           },
           "summary": {
             "type": "string",
-            "description": "The card's line: what the call does, in words."
+            "nullable": true,
+            "description": "An approval: the card's line, what the call does in words."
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "nullable": true,
+            "description": "A message or an answer: the sending bot's name when it sent it."
+          },
+          "expectsReply": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "A message: sent with ask_bot, so this bot answers it."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary"]
+        "required": [
+          "kind",
+          "outcome",
+          "tool",
+          "summary",
+          "fromBotId",
+          "fromBotName",
+          "expectsReply"
+        ]
       },
       "BotMessageResponseDto": {
         "type": "object",
@@ -25470,7 +26192,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt"]
           },
           "model": {
             "type": "string",
@@ -25536,9 +26258,13 @@
             "items": {
               "$ref": "#/components/schemas/BotTurnResponseDto"
             }
+          },
+          "messageCount": {
+            "type": "number",
+            "description": "How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines."
           }
         },
-        "required": ["messages", "turns"]
+        "required": ["messages", "turns", "messageCount"]
       },
       "SendBotMessageRequest": {
         "type": "object",
@@ -25637,6 +26363,47 @@
           }
         },
         "required": ["decision"]
+      },
+      "VoiceTranscriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The transcript as writing: fillers and false starts gone, names spelled as the vocabulary has them."
+          },
+          "raw": {
+            "type": "string",
+            "description": "What the speech model heard, word for word. Equals `text` when no polish ran."
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["chatgpt", "speech_key"],
+            "description": "Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server."
+          },
+          "polished": {
+            "type": "boolean",
+            "description": "Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough."
+          }
+        },
+        "required": ["text", "raw", "provider", "polished"]
+      },
+      "VoiceStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "description": "At least one provider can hear a recording."
+          },
+          "providers": {
+            "type": "array",
+            "description": "The providers available, in the order a dictation tries them.",
+            "items": {
+              "type": "string",
+              "enum": ["chatgpt", "speech_key"]
+            }
+          }
+        },
+        "required": ["available", "providers"]
       },
       "LivenessResponseDto": {
         "type": "object",

@@ -11,11 +11,12 @@ import type { Placement } from '../domain/bot.types';
 import type { BotDocumentEntity } from '../domain/bot-document.entity';
 import { placeInOrder } from '../domain/bot-order.policy';
 import { BotOrmEntity } from './bot.orm-entity';
-import type { BotRepositoryPort, BotWriteOutcome } from './bot.repository.port';
+import type { BotCreatorCheck, BotRepositoryPort, BotWriteOutcome } from './bot.repository.port';
 import { BotDocumentOrmEntity } from './bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from './bot-document-revision.orm-entity';
 
 const FOREIGN_KEY_VIOLATION = '23503';
+const UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements BotRepositoryPort {
@@ -54,6 +55,14 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findOneByIdempotencyKey(scope: AccessScope, key: string): Promise<Option<BotEntity>> {
+    // UQ_bot_organization_idempotency.
+    const record = await this.scopedQuery(scope)
+      .andWhere('bot.idempotencyKey = :key', { key })
+      .getOne();
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async namesIn(scope: AccessScope): Promise<string[]> {
     const rows = await this.scopedQuery(scope).select('bot.name', 'name').getRawMany<{
       name: string;
@@ -61,7 +70,11 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return rows.map((row) => row.name);
   }
 
-  async insert(bot: BotEntity, documents: readonly BotDocumentEntity[]): Promise<BotWriteOutcome> {
+  async insert(
+    bot: BotEntity,
+    documents: readonly BotDocumentEntity[],
+    creator?: BotCreatorCheck,
+  ): Promise<BotWriteOutcome> {
     return this.writing(async (manager) => {
       await manager.getRepository(BotOrmEntity).insert(this.mapper.toPersistence(bot));
       for (const document of documents) {
@@ -77,6 +90,20 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
       }
       if (bot.placement !== null) {
         bot.placed(await placeBot(manager, bot.organizationId, bot.groupId, bot.id, bot.placement));
+      }
+      if (creator) {
+        // The creator still holds the level the caller checked, and holds it
+        // until this commits: `FOR SHARE` reads the level last committed and
+        // makes an edit of its row wait for this transaction (UQ_bot_organization_id).
+        // Taken last, after the group's rows, so it never waits holding a lock
+        // a placement into the creator's own group needs first.
+        const rows: { permission: string }[] = await manager.query(
+          `SELECT permission FROM bot WHERE "organizationId" = $1 AND id = $2 FOR SHARE`,
+          [bot.organizationId, creator.botId],
+        );
+        if (rows[0]?.permission !== creator.permission) {
+          throw new CreatorChanged();
+        }
       }
       for (const document of documents) document.written();
       return 'saved';
@@ -111,7 +138,12 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
   }
 
-  /** One transaction; a group deleted under the write answers `group-missing`, not a 500. */
+  /**
+   * One transaction; a group deleted under the write answers `group-missing`,
+   * a creation whose idempotency key another write already used `taken`, and
+   * one whose creator was deleted or changed level `creator-changed` (the
+   * whole transaction rolled back), not a 500.
+   */
   private async writing(
     work: (manager: EntityManager) => Promise<BotWriteOutcome>,
   ): Promise<BotWriteOutcome> {
@@ -119,10 +151,16 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
       return await this.dataSource.transaction(work);
     } catch (error) {
       if (violated(error, FOREIGN_KEY_VIOLATION, 'FK_bot_group')) return 'group-missing';
+      if (violated(error, UNIQUE_VIOLATION, 'UQ_bot_organization_idempotency')) return 'taken';
+      if (error instanceof CreatorChanged) return 'creator-changed';
+      if (violated(error, FOREIGN_KEY_VIOLATION, 'FK_bot_created_by_bot')) return 'creator-changed';
       throw error;
     }
   }
 }
+
+/** Rolls a creation back when its creator no longer holds the level it was checked at. */
+class CreatorChanged extends Error {}
 
 /**
  * Put `botId` at `at` among its group's bots and renumber the group 0…n-1,

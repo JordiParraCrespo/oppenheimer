@@ -1,7 +1,8 @@
 # @oppenheimer/backend-agents — Agent Instructions
 
 The engines a bot's turn runs on: one `BotEngine` port over the Claude Agent
-SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`). Designed in
+SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`, and `chatgpt`,
+the same engine pointed at ChatGPT's Codex backend on a subscription sign-in). Designed in
 `product/versions/mvp/25-bots.md` §2.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) and
@@ -11,7 +12,7 @@ SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`). Designed in
 
 ```
 src/
-├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine
+├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine (run, complete)
 ├── bot-engine.factory.ts  # createBotEngine: routes by provider
 ├── fake-bot-engine.ts     # FakeBotEngine, for the API's tests
 ├── turn.ts                # guardTurn (the stream contract), runTool, key scrubbing

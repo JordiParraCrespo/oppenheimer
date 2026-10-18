@@ -100,4 +100,24 @@ export class ModelProviderCredentialRepository
     });
     return (result.affected ?? 0) > 0;
   }
+
+  async replaceSecretIfUnchanged(
+    credential: ModelProviderCredentialEntity,
+    sealedKey: Buffer,
+    keyHint: string,
+  ): Promise<boolean> {
+    const result = await this.repository.update(
+      { id: credential.id, sealedKey: credential.sealedKey },
+      { sealedKey, keyHint },
+    );
+    return result.affected === 1;
+  }
+
+  async deleteIfUnchanged(credential: ModelProviderCredentialEntity): Promise<boolean> {
+    const result = await this.repository.delete({
+      id: credential.id,
+      sealedKey: credential.sealedKey,
+    });
+    return result.affected === 1;
+  }
 }

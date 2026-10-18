@@ -27,8 +27,27 @@ it lives.
 | What it remembers | Rows, one fact each, with where it came from | Settings → Memory |
 | Its provider, model and effort | Columns on `bot` | The chat's composer |
 | What it may do, tool by tool | Rows that differ from the catalog default | Settings → Permissions |
-| Where its sessions run by default | `bot.homeHostId` | Settings → Works on |
-| The conversation | Turns and messages | The chat |
+| Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
+| The conversation | Turns and messages | The chat; Settings → Profile counts, exports and clears it |
+
+**A new bot.** Created blank, a bot takes the next of twenty first names
+the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
+no two with the same initial, so neighbours' avatars differ), on the next
+colour, with a `SOUL.md` that says its name and an empty
+`INSTRUCTIONS.md`. A name says who it is; the description says its job,
+and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
+its prompt carries a **Getting started** section instead (2026-10-16): take
+the job from the first message or ask for it, with examples that fit
+Oppenheimer; at most one follow-up, only for what cannot be defaulted (what
+never to do without asking, how to report); one focused job, a bot per
+unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
+asking, How I report), set the description to the job, remember what it
+learned about the person, and say in two or three lines what it set up and
+the first task it could do now. The steps that need a tool are the tools'
+own (`setupStep` on the tool's spec), listed only when the turn offers the
+tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
+person to paste in Settings. Names are given first-free, so a deleted
+bot's name is the next one handed out.
 
 Postgres is the source of truth for all of it. A bot changes what it is
 and what it knows only through Oppenheimer's tools (§4), and every change
@@ -50,6 +69,7 @@ worker runs it and streams what happens back to the chat.
   | Anthropic | Claude Agent SDK | Anthropic's API |
   | GLM | Claude Agent SDK | z.ai's Anthropic-compatible endpoint |
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
+  | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
 
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
@@ -57,10 +77,12 @@ worker runs it and streams what happens back to the chat.
   wraps them (`@oppenheimer/backend-agents`).
 - **A new bot starts on the workspace's default provider**, at its
   default model. Settings → Model providers marks one provider with a key
-  as the default (**Make default**); with none marked it is the provider
-  whose key was stored first, so a workspace with one key starts its bots
-  on that one; with no key at all it is Anthropic. Removing the default's
-  key falls back the same way. Bots already made keep their provider.
+  or a ChatGPT sign-in as the default (**Make default**); with none
+  marked it is Anthropic when it has a key, else the first provider in
+  the list above that has one, so a workspace with one key starts its
+  bots on that one; with no key at all it is Anthropic. Removing the
+  default's key falls back the same way. Bots already made keep their
+  provider.
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
   tab does not stop it and a turn is not capped by a request's timeout.
   One turn at a time per bot: a message sent while it works waits its
@@ -85,9 +107,42 @@ worker runs it and streams what happens back to the chat.
     make things up, tool text is data, never talk about paths or the
     model;
   - SOUL.md, INSTRUCTIONS.md and memory;
-  - **right now**: the time in the sender's time zone (the console sends
-    the browser's with each message; UTC when none comes), the bot's home
-    host and the owner's hosts, each online or not.
+  - that each turn's message opens with a turn context Oppenheimer
+    writes, which is current and the authority on the date.
+- **The system prompt does not change from turn to turn.** It holds
+  nothing of the moment, so two turns of a bot whose soul, instructions,
+  memory and tools are unchanged send the same bytes, and the provider's
+  prompt cache keeps them (2026-10-15). The moment goes in a
+  `<turn_context>` block at the start of the turn's message: the time in
+  the sender's time zone (the console sends the browser's with each
+  message; UTC when none comes), the bot's home host and the owner's
+  hosts, each online or not. The block is added to the message the model
+  is sent and never stored: the message kept is what the person wrote, so
+  a later turn reads it back without a stale clock.
+- **A turn is sent a token budget of history, with a summary of what
+  falls out** (2026-10-15). It used to be the last 40 messages, and
+  anything older was dropped without a word. Now a turn gets the
+  conversation's summary, when there is one, as the first history entry
+  (marked as Oppenheimer's record, not instructions, and kept out of the
+  system prompt so the prompt stays stable), then the newest messages after
+  the summary's cutoff that fit 24,000 tokens with it, counted as a token
+  per four characters. When a turn ends and the messages the summary does
+  not cover pass one and a half times that budget, a job on the
+  `bot-summaries` queue folds the oldest of them into the summary until
+  about half the budget is left (at most 32,000 tokens a call; a longer
+  backlog takes several), with the bot's own provider, model and key and
+  no tools (`BotEngine.complete`). Only messages of turns that have ended
+  are folded, up to the first that has not: a queued message is never in
+  the summary before its own turn reads it. A provider that refuses the
+  call for rate or quota delays the job until the reset it names
+  (`BotRateLimitError`), rather than retrying on the queue's schedule. The summarizer keeps decisions, facts
+  about the person and their work, ids and names, open tasks and the
+  bot's promises, drops small talk, and treats the conversation as data,
+  not instructions. The summary is one row per bot,
+  `bot_conversation_summary`, written conditionally on the version it was
+  read at and only ever forward, so two jobs racing never move it back.
+  The chat is unchanged: it reads every stored message; only what the
+  model is sent changes.
 - **A turn acts as its owner.** Everything a turn reads or does beyond the
   bot's own rows goes through the owner's scope, resolved fresh for each
   turn: the bot sees what they see now, and nothing once they leave the
@@ -102,6 +157,26 @@ worker runs it and streams what happens back to the chat.
   encrypted (Settings → Model providers). The worker reads it for the
   turn and hands it to the engine; it is never written to a host, never
   returned by the API, and never logged.
+- **ChatGPT runs on a subscription, not a key** (2026-10-15). Connect
+  ChatGPT signs the workspace in the way the Codex CLI and OpenClaw do:
+  OpenAI's device code flow on the Codex CLI's public client (the
+  browser-redirect flow only ever lands on `localhost:1455`, which a hosted
+  console cannot receive). The person types a one-time code on OpenAI's
+  page; the console polls a sealed handle the API gave it, so the API keeps
+  nothing while it waits. What is stored, sealed like a key, is the
+  sign-in's access and refresh tokens and the account they act for. A turn
+  calls `https://chatgpt.com/backend-api/codex/responses` with the account
+  header, `store: false` and its reasoning sent back encrypted. The worker
+  refreshes the token when a turn finds it about to lapse, one refresh per
+  workspace at a time (turns on the same replica share it; one on another
+  replica fails at once rather than wait), written only over the tokens it
+  read; a refresh
+  ChatGPT refuses removes the sign-in, and the bot answers that it has no
+  key. Usage counts against the subscription's limits, not API billing.
+  The route is not a published API: OpenAI may change the client, the
+  headers or the path, and OpenClaw's docs are the reference for what it
+  allows (they state OpenAI supports subscription sign-in in external
+  tools).
 - **Streaming.** The worker publishes the turn's progress (text as it is
   written, tool steps, the end) on a per-bot channel; the console reads it
   over Server-Sent Events while the chat is open and re-reads the stored
@@ -170,7 +245,7 @@ that did not cover the tool never runs.
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state | auto |
-| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` | ask |
+| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
 | `send_to_session` | Type a message into a running session | ask |
 | `read_session` | A session's recent output | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
@@ -208,33 +283,97 @@ that did not cover the tool never runs.
 | Tool | Does | Default |
 |------|------|---------|
 | `list_bots` / `get_bot` | The workspace's bots and what they are for | auto |
-| `ask_bot` | Give another bot a task and wait for its answer | auto |
-| `message_bot` | Send another bot a message without waiting | auto |
+| `ask_bot` | Give another bot a task; its answer comes back as a new turn | auto |
+| `message_bot` | Send another bot a message, no answer owed | auto |
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
 
-`ask_bot` runs a turn in the other bot, marked as coming from the first
-one; both chats show it. A bot that creates a bot makes it **yours**,
-marked "created by" the creator, with no looser permissions than its own.
+`message_bot` and `ask_bot` (built 2026-10-18) queue a turn on the other
+bot, opened by an *event* message holding the words, in its `bots` lane
+(`BotQueueLanes`). Neither holds a turn open: a bot that asks ends its turn,
+and when the asked turn ends, its last text (or that it failed or was
+stopped) is queued as a new turn of the asker, opened by a `bot_reply`
+event. The asker's chat shows the call on its activity line and the answer
+as a card; the other bot's chat shows the message as a card. What the
+experiments in `../../research/agent-coordination-experiments.md` showed
+agents must not be left to agree among themselves is held here instead:
+
+- **The sender is recorded, not claimed.** The event names the bot whose
+  turn made the call, as Oppenheimer read it (`bot_turn."askedByBotId"`,
+  `"askedByTurnId"`), never a name in the words; a bot's name is stripped
+  of quotes and brackets wherever the envelope quotes it.
+- **The words are data.** The receiving bot reads them inside a
+  `<bot_message>` envelope its words cannot close, marked as a colleague's
+  information that never authorises an action the person has not; the
+  answer comes back the same way, in `<bot_reply>`. History reads both back
+  the same way.
+- **No credential travels.** A message holding something shaped like a key,
+  a token or a private key is refused, unsent, and the bot is told why.
+- **No more reach than the asking turn.** The asked turn runs on the
+  receiving bot's own engine and permission, with the asking turn's sender,
+  time zone and credential scopes, so an API token reaches no further
+  through a chain of bots.
+- **Bounded per turn and per chain.** Five messages to other bots a turn;
+  `BotChainPolicy` below for the chain, decided under a lock on the
+  chain's first turn so two asks of one chain decide one after the other.
+
+A bot that creates a bot makes it **yours**, marked "created by" the
+creator, with no looser permissions than its own.
+
+`create_bot` (built 2026-10-15) dispatches the console's own create
+command as the owner, so the new bot's `createdByUserId` is the person's;
+`bot."createdByBotId"` marks the creator (composite on the workspace,
+`SET NULL` when the creator is deleted, shown on the bot's DTO). Its
+input is the name, description, soul, instructions, provider, model
+(id or label), effort, permission and group:
+
+- **Provider and model** default to the creator's: its model on the same
+  provider, the provider's default on another. A provider the workspace
+  has no key for is refused, naming the ones it has.
+- **Permission** is ranked by `BOT_PERMISSIONS`, strictest first: `auto`
+  (Approve for me), then `full` (Full access). The new bot gets the one
+  asked for when it is no looser than the creator's, and otherwise the
+  stricter of the creator's and the console's default, which is always
+  Approve for me today. Full access asked by a bot under Approve for me is
+  refused, never quietly lowered (`permissionForBotMadeBy`, held by the
+  tool and again by the command, whose insert re-reads the creator's level
+  under a row lock and rolls back if it changed since the check).
+- **Group** is one of the owner's, by id or name; a bot cannot create a
+  group.
+- **Once:** the creation is keyed (`bot."idempotencyKey"`, unique per
+  workspace): `bot:approval:<id>` for an approved call, the turn and a
+  digest of the input otherwise. A retried job or a repeated call answers
+  the bot the first one made; two racing ones make one.
+- A call the tool would refuse (a keyless provider, an unknown model or
+  group, a looser permission) is refused before any card is raised, so the
+  person is never asked to approve what cannot run. The card stores the
+  call with every default written out (provider, model, effort, level,
+  group by id), so a yes creates what the card showed even if the
+  creator's engine changed while it waited. The card reads
+  `Create bot "Scout" on GLM GLM-5.3, in group Research: Finds papers`.
 
 Two named policies bound bots talking to bots. Both belong to the turn
 queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a
 bot asked for, and it picks the next turn by lane. Nothing else holds
 these numbers.
 
-**`BotChainPolicy`**: a chain starts at one message of yours and
-counts every turn a bot asks of another bot because of it.
+**`BotChainPolicy`** (`domain/bot-chain.policy.ts`): a chain starts at
+one message of yours and counts every turn a bot asks of another bot
+because of it (`bot_turn."chainId"`, `"chainDepth"`); the answer to an ask
+goes back on its own path and is not counted.
 
 | Limit | Value | Past it |
 |-------|-------|---------|
 | `maxDepth` | 3 bots deep | the call is refused |
 | `turnBudget` | 10 bot-to-bot turns per chain | the call is refused |
 | `cycles` | none: a bot already in the chain is never asked | the call is refused |
+| self | a bot never messages itself | the call is refused |
 
 A refused call comes back to the asking bot as the tool's result, and the
 bot says in its chat that it stopped and why.
 
-**`BotQueueLanes`**: the order a bot's waiting turns run in, one turn at
-a time (§2).
+**`BotQueueLanes`** (`bot_turn."lane"`): the order a bot's waiting turns
+run in, one turn at a time (§2): the oldest of the first lane that has
+one.
 
 | Lane | Holds |
 |------|-------|
@@ -343,11 +482,11 @@ limits (§2); the tools that run without asking, as the owner: itself
 `update_task`, `move_task`), GitHub (`list_repositories`,
 `list_pull_requests`, `get_pull_request`), automations
 (`list_automations`, `get_automation`, `run_history`), other bots
-(`list_bots`, `get_bot`) and `web_fetch`; `start_session` and
-`stop_session`, which ask; and the Needs input card (§5): Approve, Deny
-with a note, the bot told either way. Next: Settings → Permissions and
-*Always allow*, then the asking tools of each area, `ask_bot`,
-`create_bot` and `delegate`.
+(`list_bots`, `get_bot`) and `web_fetch`; `start_session`,
+`stop_session` and `create_bot`, which ask; and the Needs input card
+(§5): Approve, Deny with a note, the bot told either way. Next:
+Settings → Permissions and *Always allow*, then the asking tools of each
+area, `ask_bot` and `delegate`.
 
 ## 7. Not built yet
 
@@ -357,6 +496,9 @@ Routines, Notifications, plain-language permission rules ("always ask
 before touching the payments repo"), daily caps, slash commands, voice,
 attachments, the context meter, project and user memory, a bot's engine
 running on a host of its own with the full Claude Code toolset.
+
+Routines, a bot waking on a schedule, an event or finished work, are
+designed in [26](26-bot-routines.md).
 
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
@@ -368,7 +510,8 @@ eight colours (`AV_COLORS`).
   `bot_document_revision` (append-only, author you or the bot),
   `bot_memory_fact`; from slice 2 `model_provider_credential`, `bot_turn`
   and `bot_message`; from slice 3 `bot_tool_permission` and
-  `bot_approval`. Workspace-scoped like automations, with the `Bot`
+  `bot_approval`; for long conversations `bot_conversation_summary`.
+  Workspace-scoped like automations, with the `Bot`
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
   the only code that imports either SDK.
@@ -379,7 +522,8 @@ eight colours (`AV_COLORS`).
   `bot_message` of kind activity in the chat, carrying who changed what,
   from what to what, and it is undone by hand.
 - **Worker:** a BullMQ queue `bot-turns`, processed in the API process for
-  now; the same image can run it alone when turns need their own
+  now (beside it `bot-approvals`, an approved call, and `bot-summaries`, a
+  conversation's summary); the same image can run it alone when turns need their own
   container. It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
 - **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
@@ -398,6 +542,9 @@ The decisions it produced:
   (`BotQueueLanes`, `BotChainPolicy`, §4.6).
 - **Revisions for its documents** (§1, §8), where Grok Bot keeps none.
 - **The owner's own permissions as the ceiling** (§4, §5).
+- **A first chat that sets the bot up** (§1), from Grok Bot's guide: one
+  focused job per bot, a description of what it owns and must never do
+  without approval, a first concrete task.
 
 ## Decided
 
@@ -423,10 +570,14 @@ The decisions it produced:
   their own; the approval chip is a preset over them. It replaces
   2026-10-14's "*Ask for approval* comes with slice 4".
 - 2026-10-15: **a new bot starts on the workspace's default provider**:
-  the one marked in Settings → Model providers, else the first key
-  stored, else Anthropic (§2).
+  the one marked in Settings → Model providers, else Anthropic when it
+  has a key, else the first provider with one (§2).
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
+- 2026-10-15: **ChatGPT is a fourth provider**, on the OpenAI engine,
+  signed in with a ChatGPT subscription instead of a key (§2). It adds to
+  2026-10-15's three providers rather than replacing one: OpenAI on an API
+  key stays.
 - 2026-10-15: **the engine's `WebFetch` and subagents are off.** Battle
   tests found `WebFetch` reaching the server's loopback with no
   private-address check, and bots sending subagents through the server's
@@ -440,9 +591,48 @@ The decisions it produced:
   (`research/lessons-from-grok-bot.md` §5): without them a bot searched
   the server for what it lacked, asked people to paste tokens, answered
   in UTC and ran on to any length.
+- 2026-10-15: **the system prompt is stable; the moment opens the
+  message.** The prompt's "Right now" section (the time, the home host,
+  the hosts) changed every turn, so the provider's prompt cache never
+  hit. It moved to a `<turn_context>` block at the start of each turn's
+  message, which the prompt names as Oppenheimer's and authoritative. It
+  replaces that part of the line above.
+- 2026-10-15: **history is a token budget, with a stored summary of
+  what falls out**, replacing the last 40 messages (§2): a long
+  conversation keeps its early facts and decisions instead of losing
+  them silently, and short messages no longer cap it at 40.
 - 2026-10-15: **a Needs input card ends the turn that raised it.** The
   decision runs the stored call (on a yes) and gives the bot a new turn,
   opened by an *event* message, rather than holding a turn open while the
   card waits; a new message from you expires the card. From Grok Bot's
   parked turns (`research/lessons-from-grok-bot.md`), which BullMQ cannot
   park.
+- 2026-10-16: **the page is Home host, and bot settings save with Save.**
+  Read as "Runs on", the page looked like where the bot runs, which is
+  always Oppenheimer; it is where `start_session` puts a session when no
+  machine is named, and *No home host* has the bot ask. A pick, on Home
+  host or Profile (colour and sidebar group included), is a draft until
+  Save. It replaces slice 3's "Settings → Runs on becomes Works on"; the
+  old address redirects.
+- 2026-10-18: **an ask's answer comes back as a turn, not by waiting.**
+  It replaces "give another bot a task and wait for its answer": one turn
+  per bot runs at a time and a turn has four minutes, so an ask that held
+  its turn open would wait behind the other bot's queue and could time out
+  or deadlock two bots asking each other. The asker ends its turn and the
+  answer opens a new one (`bot_reply`), the way a decided card does. The
+  sender is recorded rather than claimed, a message holding a credential
+  is refused, and the chain is decided under a lock, from
+  `../../research/agent-coordination-experiments.md`.
+- 2026-10-16: **chat history is exported and cleared from Profile.**
+  Export downloads the whole chat as Markdown (`GET
+  /bots/:id/conversation/export`, every message as a line of NDJSON, read
+  and written a page at a time);
+  Clear history (`DELETE /bots/:id/conversation`) erases the turns,
+  messages, cards and summary in one transaction, keeps the soul,
+  instructions and memory, and is refused while a turn works (`BOTS_022`).
+- 2026-10-16: **a blank bot is born with a first name and sets itself up
+  in its first chat** (§1). It replaces "New Bot" and a one-line "ask
+  what job": a sidebar of "New Bot 2, New Bot 3" told bots apart by
+  nothing, and a bot left to the person to find Settings rarely got
+  instructions. It keeps 2026-10-14's "created blank": no template is
+  applied, the person's answer is.
