@@ -47,18 +47,39 @@ var exitByCode = map[string]int{
 	pairdomain.ErrStillPaired.Code: ExitIncomplete,
 }
 
+// exitForCode finds an outcome in exitByCode anywhere in err's tree, so an
+// uninstall whose service removal also failed still exits as incomplete
+// rather than as the first problem joined before it.
+func exitForCode(err error) (int, bool) {
+	var prob *problem.Error
+	if errors.As(err, &prob) {
+		if code, ok := exitByCode[prob.Code]; ok {
+			return code, true
+		}
+	}
+	var joined interface{ Unwrap() []error }
+	if errors.As(err, &joined) {
+		for _, e := range joined.Unwrap() {
+			if code, ok := exitForCode(e); ok {
+				return code, true
+			}
+		}
+	}
+	return 0, false
+}
+
 // ExitCode maps an error onto the contract. A problem document carries the
 // status that decides it; anything else is a plain failure.
 func ExitCode(err error) int {
 	if err == nil {
 		return ExitOK
 	}
+	if code, ok := exitForCode(err); ok {
+		return code
+	}
 	var prob *problem.Error
 	if !errors.As(err, &prob) {
 		return ExitFailure
-	}
-	if code, ok := exitByCode[prob.Code]; ok {
-		return code
 	}
 	switch prob.Status {
 	case http.StatusUnauthorized:
