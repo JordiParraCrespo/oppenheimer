@@ -17,8 +17,7 @@
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
  * that the same way. The script builders beside the install entries
- * (`claudeRelease`, `vendorInstaller`, `npmUserInstall`) are private: they
- * only spell data.
+ * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
  */
 
 import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
@@ -307,26 +306,12 @@ function claudeRelease(platform: ReleasePlatform): string {
 }
 
 /**
- * A vendor's installer script: fetched whole to a temporary file, then run.
- * `curl … | bash` would run whatever arrived when the download is cut short,
- * and report success; this fails instead. Nothing checks what the script is,
- * so it is left only where the vendor publishes no checksum to check a
- * release binary against (OpenCode, whose replacement is the owner's call).
- */
-function vendorInstaller(url: string): string {
-  return [
-    'set -eu',
-    'tmp="$(mktemp)"',
-    'trap \'rm -f "$tmp"\' EXIT',
-    `curl -fsSL ${url} -o "$tmp"`,
-    'bash "$tmp" </dev/null',
-  ].join('\n');
-}
-
-/**
  * A package from the npm registry, installed under `~/.local` so the global
- * prefix is the person's own and `npm` needs no root. Node is a prerequisite
- * the script names rather than installs.
+ * prefix is the person's own and `npm` needs no root. npm checks the tarball
+ * against the registry's integrity hash before it unpacks it, and a package
+ * with platform binaries (`opencode-ai`) gets them the same way, as its
+ * optional dependencies. Node is a prerequisite the script names rather than
+ * installs.
  */
 function npmUserInstall(pkg: string): string {
   return [
@@ -761,21 +746,28 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // it detects nothing and asks nothing. So the runner tells it, from where
     // the executable really lives; an OpenCode none of these match is one
     // whose replacement is not ours to do, and it is left alone, as
-    // OpenCode's own launch-time autoupdate leaves it.
+    // OpenCode's own launch-time autoupdate leaves it. `curl` is not one of
+    // them: that method runs `opencode.ai/install`, which checks nothing, so
+    // an OpenCode in `~/.opencode/bin` keeps its own autoupdate and no more.
+    // The runner's install below resolves to
+    // `~/.local/lib/node_modules/opencode-ai/`, the `npm` row, whose
+    // `npm install -g` the runner points at that `~/.local` prefix.
     update: Object.freeze(['upgrade', '--method', '<method>']),
     updateMethods: Object.freeze([
-      Object.freeze({ method: 'curl', pathContains: '/.opencode/bin/' }),
       Object.freeze({ method: 'brew', pathContains: '/Cellar/' }),
       Object.freeze({ method: 'bun', pathContains: '/.bun/' }),
       Object.freeze({ method: 'pnpm', pathContains: '/pnpm/' }),
       Object.freeze({ method: 'npm', pathContains: '/node_modules/' }),
     ]),
-    // OpenCode's own installer, which puts the binary in `~/.opencode/bin` —
-    // the path the `curl` method above recognises.
+    // `opencode-ai` from npm rather than `opencode.ai/install`: the script
+    // checks nothing, and the GitHub releases publish no checksum for the CLI
+    // archives, while npm checks the package and the platform binary it
+    // pulls in (`opencode-<platform>`) against the registry's integrity hash,
+    // as it does Codex's and Grok's.
     install: Object.freeze({
-      macos: vendorInstaller('https://opencode.ai/install'),
-      linux: vendorInstaller('https://opencode.ai/install'),
-      bin: '~/.opencode/bin',
+      macos: npmUserInstall('opencode-ai'),
+      linux: npmUserInstall('opencode-ai'),
+      bin: '~/.local/bin',
     }),
   }),
   grok: Object.freeze({

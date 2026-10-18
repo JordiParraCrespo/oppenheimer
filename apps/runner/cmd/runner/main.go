@@ -257,7 +257,7 @@ func update(ctx context.Context, args []string) (int, error) {
 }
 
 // agents dispatches the agent-CLI subcommands: `update`, the round `run`
-// does hourly, now, on this host; and `install <name>`, the vendor's own
+// does hourly, now, on this host; and `install <name>`, the catalog's
 // installer, user-level.
 func agents(ctx context.Context, args []string) (int, error) {
 	switch {
@@ -448,7 +448,7 @@ func usage(w *os.File) {
   runner agents update            bring every installed agent CLI to its latest release
                                   (run does it on its own unless RUNNER_AGENT_UPDATES=off)
   runner agents install <name>    install an agent CLI (claude, codex, opencode, grok) as you,
-                                  with its vendor's own installer; no sudo
+                                  from a checksum-verified release or npm; no sudo
   runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
                                   manager's command is printed, the runner never uses sudo)

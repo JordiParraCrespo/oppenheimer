@@ -16,8 +16,8 @@ var _ app.Installer = Installer{}
 type Installer struct{}
 
 // Install implements app.Installer. The script runs under `sh -c` in a
-// process group of its own, so a vendor installer that spawns curl, npm or
-// brew takes them down with it on timeout, and with nothing on stdin, so one
+// process group of its own, so an install that spawns curl, npm or brew
+// takes them down with it on timeout, and with nothing on stdin, so one
 // that would ask reads end-of-file and gives up instead of hanging. The
 // script is catalog data compiled into this binary; nothing in it comes from
 // the caller.

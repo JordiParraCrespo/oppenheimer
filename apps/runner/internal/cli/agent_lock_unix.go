@@ -62,8 +62,8 @@ type lockedUpdater struct {
 
 var _ hostapp.Updater = lockedUpdater{}
 
-func (u lockedUpdater) Update(ctx context.Context, tool, path string, args []string) error {
-	return withAgentLock(ctx, u.paths, tool, func() error { return u.next.Update(ctx, tool, path, args) })
+func (u lockedUpdater) Update(ctx context.Context, tool, path string, args, env []string) error {
+	return withAgentLock(ctx, u.paths, tool, func() error { return u.next.Update(ctx, tool, path, args, env) })
 }
 
 // withAgentLock runs fn holding tool's exclusive lock: whatever changes an

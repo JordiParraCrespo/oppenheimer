@@ -101,9 +101,10 @@ failure every `curl | sh` has unless it is written this way.
      lacks are listed, and the answer defaults to the missing ones of
      Claude Code and gh, so Enter leaves a host that can run a Claude Code
      session and open a pull request. Unlike git and tmux these need no
-     sudo — each is its vendor's installer into the user's home, run by the
-     runner (02 §10) — which is why they are offered by default rather
-     than behind a typed yes. With no terminal only `--agents` installs
+     sudo — each is a release checked against its vendor's checksum, or
+     an npm package, into the user's home, run by the runner (02 §10) —
+     which is why they are offered by default rather than behind a typed
+     yes. With no terminal only `--agents` installs
      anything, and the agent prompt Add host hands out asks the person
      which ones and passes them.
 5. **Fetch the signed release manifest** for the host's channel and, where

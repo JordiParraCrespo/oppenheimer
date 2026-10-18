@@ -145,7 +145,7 @@ func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
 		if !ok {
 			continue
 		}
-		err := s.updater.Update(ctx, name, before.Path, args)
+		err := s.updater.Update(ctx, name, before.Path, args, domain.UpdateEnv(before.Resolved))
 		if ctx.Err() != nil {
 			// Shutting down: an updater cut short is not a failure to report.
 			return nil

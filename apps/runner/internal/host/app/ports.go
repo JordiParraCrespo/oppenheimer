@@ -35,12 +35,12 @@ type Prober interface {
 }
 
 // Updater runs an agent CLI's own updater: the executable at path with args,
-// bounded by domain.AgentUpdateTimeout, with no terminal and nothing on
-// stdin. tool is the probed name ("claude"), which is what anything that
+// and env on top of the runner's own environment, bounded by
+// domain.AgentUpdateTimeout, with no terminal and nothing on stdin. tool is the probed name ("claude"), which is what anything that
 // must not start the CLI mid-update waits on. A failure's message is the
 // reason, fit to show a person.
 type Updater interface {
-	Update(ctx context.Context, tool, path string, args []string) error
+	Update(ctx context.Context, tool, path string, args, env []string) error
 }
 
 // Installer runs a catalog install script for tool: `sh -c script`, as the

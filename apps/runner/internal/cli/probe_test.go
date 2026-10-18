@@ -29,8 +29,10 @@ func TestEveryAgentTheRunnerCanStartIsProbed(t *testing.T) {
 // every session even when the service's PATH never had that directory, and a
 // copy the person installed earlier on PATH still wins.
 func TestWithInstallBinsAppendsTheCatalogDirectoriesOnce(t *testing.T) {
-	got := cli.WithInstallBins("/usr/bin:/home/j/.local/bin", "/home/j")
-	if got != "/usr/bin:/home/j/.local/bin:/home/j/.opencode/bin" {
+	if got := cli.WithInstallBins("/usr/bin", "/home/j"); got != "/usr/bin:/home/j/.local/bin" {
 		t.Fatalf("PATH = %q", got)
+	}
+	if got := cli.WithInstallBins("/home/j/.local/bin:/usr/bin", "/home/j"); got != "/home/j/.local/bin:/usr/bin" {
+		t.Fatalf("PATH with the directory already on it = %q", got)
 	}
 }

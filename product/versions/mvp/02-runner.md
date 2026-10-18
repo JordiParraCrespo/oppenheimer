@@ -593,10 +593,18 @@ the next session starts the new one. An agent that is not installed is
 left alone, and so is one whose updater cannot run without asking.
 OpenCode's asks whenever it cannot tell how it was installed; it takes the
 method as a flag, so the catalog spells its updater with `<method>` and lists
-how to tell the method from where the executable really lives (`curl` for
-`~/.opencode/bin`, `brew`, `bun`, `pnpm`, `npm`). An OpenCode none of them
-matches is left alone. *(Changed 2026-10-12: until then OpenCode had no
-`update` and was never kept current.)* A failure is logged and retried;
+how to tell the method from where the executable really lives (`brew`, `bun`,
+`pnpm`, `npm`). An OpenCode none of them matches is left alone. *(Changed
+2026-10-12: until then OpenCode had no `update` and was never kept current.)*
+That includes one from `opencode.ai/install`, told apart by its
+`~/.opencode/bin`: its method, `curl`, reruns that script, which checks
+nothing, so it keeps OpenCode's own launch-time autoupdate and no more.
+*(Changed 2026-10-18: until then `curl` was a method and the runner ran the
+script hourly.)* An npm-installed CLI updates itself with `npm install -g`,
+which writes under npm's configured prefix rather than the one the running
+copy lives under, so the runner points npm at the prefix the executable
+resolves under (`npm_config_prefix`, from `<prefix>/lib/node_modules/`);
+for one it installed that is `~/.local`. A failure is logged and retried;
 `runner agents
 update` runs the round by hand (09 open question 4 says what to do when it
 fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
@@ -625,13 +633,15 @@ binary's own `claude install <version>`, which links `~/.local/bin/claude`;
 over HTTPS: it catches a download cut short, corrupted, or swapped on a
 mirror or CDN, not a compromised vendor. *(Changed 2026-10-17: until then
 Claude Code and OpenCode ran their vendors' install scripts, fetched to a
-file first, which nothing checked.)* OpenCode still runs
-`opencode.ai/install`, fetched to a file before it runs (never `curl | sh`),
-because its GitHub releases publish no checksum for the CLI archives to
-verify against; how to replace it is open. Codex and Grok use their npm
-packages under a `~/.local` prefix, because that is a destination the
-catalog can name, and npm checks each package against the registry's
-integrity hash. Each entry names the directory it installs into, and the runner
+file first, which nothing checked.)* Codex, OpenCode and Grok use their npm
+packages (`@openai/codex`, `opencode-ai`, `@xai-official/grok`) under a
+`~/.local` prefix, because that is a destination the catalog can name, and
+npm checks each package against the registry's integrity hash; OpenCode's
+platform binary comes the same way, as the package's optional dependency
+(`opencode-<platform>`). No agent install runs a script it downloaded.
+*(Changed 2026-10-18: until then OpenCode ran `opencode.ai/install`, because
+its GitHub releases publish no checksum for the CLI archives; open question
+11.)* Each entry names the directory it installs into, and the runner
 appends every such directory to its own `PATH` at start, so a tool it
 installed is found by the next probe and by the sessions' tmux server
 without the person editing a shell profile the service never reads. An
@@ -750,14 +760,16 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
    a session whose terminal says "command not found". The host facts already
    carry every tool and version the console needs to show what each host can
    run.
-11. **Installing OpenCode without its script.** Claude Code and `gh` install
-   from a release binary checked against the vendor's checksum (§10).
-   OpenCode cannot yet: `opencode.ai/install` checks nothing, and its GitHub
+11. ~~**Installing OpenCode without its script.**~~ Decided 2026-10-18
+   (§10): the npm package `opencode-ai`, under `~/.local` as Codex and Grok
+   are, so every agent installs through something that checks what it
+   downloaded. `opencode.ai/install` checks nothing, and OpenCode's GitHub
    releases (`anomalyco/opencode`) publish no checksum for the CLI archives
-   (`latest.json` and `latest.yml` cover the desktop app only). Two ways out:
-   the npm packages `opencode-ai` already resolves to (`opencode-<platform>`,
-   checked against the registry's integrity hash, as Codex and Grok are),
-   which moves its executable and its `upgrade --method` to npm's; or the
-   SHA-256 GitHub's release API reports per asset, which is GitHub's digest
-   rather than the vendor's and costs an API call under the unauthenticated
-   rate limit. Until it is decided, OpenCode runs its vendor's script.
+   (`latest.json` and `latest.yml` cover the desktop app only); the package
+   and the platform binary it resolves to (`opencode-<platform>`) are
+   checked against the registry's integrity hash. Its executable moves to
+   `~/.local/bin` and its `upgrade --method` to `npm`, with npm pointed at
+   `~/.local`. Not taken: the SHA-256 GitHub's release API reports per
+   asset, which is GitHub's digest rather than the vendor's and costs an API
+   call under the unauthenticated rate limit. An OpenCode already in
+   `~/.opencode/bin` is left to its own autoupdate.

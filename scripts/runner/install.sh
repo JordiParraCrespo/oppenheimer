@@ -276,8 +276,8 @@ known_agents() {
 # choose_agents — which CLIs the runner installs after pairing. --agents
 # decides when given. Otherwise a terminal is asked, with the defaults this
 # machine lacks as the answer Enter gives; with no terminal, none. Each install
-# is the vendor's own installer into the user's home, so unlike git and tmux
-# it needs no sudo and is safe to offer by default.
+# is a verified release or an npm package into the user's home, so unlike git
+# and tmux it needs no sudo and is safe to offer by default.
 choose_agents() {
 	if [ -z "$AGENTS" ] && has_tty; then
 		missing="$(missing_of $KNOWN_AGENTS)"

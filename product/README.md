@@ -569,3 +569,13 @@ earlier note:
   on each other. The sender is recorded rather than claimed, messages
   holding a credential are refused, and the chain is decided under a lock,
   from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").
+- `versions/mvp/02-runner.md` §10 (2026-10-17) kept OpenCode on
+  `opencode.ai/install`, which checks nothing, and its hourly update on
+  `upgrade --method curl`, which reruns that script. On 2026-10-18 the
+  owner, answering the review's "verify downloaded vendor installers",
+  moved it to its npm package `opencode-ai` under `~/.local`, checked
+  against the registry's integrity hash as Codex and Grok are, so no agent
+  install runs a script it downloaded. Its update is `--method npm`, with
+  npm pointed at the prefix the executable lives under; an OpenCode in
+  `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
+  "Decided").

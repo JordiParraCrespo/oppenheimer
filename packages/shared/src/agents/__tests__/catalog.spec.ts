@@ -372,9 +372,14 @@ describe('agent updates', () => {
     expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
     expect(CODING_AGENTS.codex.update).toEqual(['update']);
     // `opencode upgrade` asks "Install anyways?" unless told the method, which
-    // the runner reads off where the binary lives.
+    // the runner reads off where the binary lives. Never `curl`: that method
+    // reruns `opencode.ai/install`, which checks nothing.
     expect(CODING_AGENTS.opencode.update).toEqual(['upgrade', '--method', '<method>']);
-    expect(CODING_AGENTS.opencode.updateMethods?.map((m) => m.method)).toContain('curl');
+    const methods = CODING_AGENTS.opencode.updateMethods ?? [];
+    expect(methods.map((m) => m.method)).not.toContain('curl');
+    // The runner's own install, which is npm's global layout under ~/.local.
+    const installed = '/home/j/.local/lib/node_modules/opencode-ai/bin/opencode.exe';
+    expect(methods.find((m) => installed.includes(m.pathContains))?.method).toBe('npm');
     expect(CODING_AGENTS.grok.update).toEqual(['update']);
     expect(CODING_AGENTS.shell.update).toBeUndefined();
   });
@@ -393,6 +398,20 @@ describe('agent installs', () => {
       expect(install?.bin.startsWith('~/'), id).toBe(true);
       expect(`${install?.macos}\n${install?.linux}`, id).not.toMatch(/\bsudo\b/);
     }
+  });
+
+  it('installs every agent from a download something checks: a verified release or an npm package', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const install = CODING_AGENTS[id].install;
+      for (const script of install ? [install.macos, install.linux] : []) {
+        const verified = /^verify "\$tmp\/[^"]+" /m.test(script);
+        const fromNpm = /^npm install --global --prefix "\$HOME\/\.local" \S+$/m.test(script);
+        expect(verified || fromNpm, id).toBe(true);
+        // A fetched script run as it arrived, whole or not.
+        expect(script, id).not.toMatch(/\b(ba)?sh "\$tmp"/);
+      }
+    }
+    expect(CODING_AGENTS.opencode.install?.bin).toBe('~/.local/bin');
   });
 
   it('never pipes a download straight into a shell', () => {

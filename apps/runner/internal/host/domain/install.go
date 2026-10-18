@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// ToolInstallTimeout bounds one install: a vendor installer downloading a
-// release, or npm resolving a package, on a slow link. One that hangs past it
+// ToolInstallTimeout bounds one install: a release downloaded and verified,
+// or npm resolving a package, on a slow link. One that hangs past it
 // is killed with its process group and reported as failed.
 const ToolInstallTimeout = 10 * time.Minute
 
@@ -194,6 +194,25 @@ func ResolveUpdateArgs(tool, resolved string) (args []string, ok bool) {
 		}
 	}
 	return args, true
+}
+
+// npmGlobalModules is where npm keeps a global package under its prefix on
+// macOS and Linux: `<prefix>/lib/node_modules/<package>`.
+const npmGlobalModules = "/lib/node_modules/"
+
+// UpdateEnv is what the updater of the CLI at resolved runs with on top of
+// the runner's own environment. A CLI npm installed globally updates itself
+// with `npm install -g`, which writes under npm's configured prefix, not
+// necessarily the one the running copy lives under: for one the runner put
+// under `~/.local` that is a root-owned directory the install cannot write,
+// or a second copy PATH never reaches. So npm is pointed at the prefix the
+// executable really lives under. Nil for any other install.
+func UpdateEnv(resolved string) []string {
+	prefix, _, ok := strings.Cut(resolved, npmGlobalModules)
+	if !ok || prefix == "" {
+		return nil
+	}
+	return []string{"npm_config_prefix=" + prefix}
 }
 
 // InstallOutcome is what one install came to.

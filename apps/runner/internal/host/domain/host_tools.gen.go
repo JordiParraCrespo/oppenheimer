@@ -22,9 +22,9 @@ var toolInstalls = map[string]toolInstall{
 	},
 	"opencode": {
 		kind:  "agent",
-		macos: "set -eu\ntmp=\"$(mktemp)\"\ntrap 'rm -f \"$tmp\"' EXIT\ncurl -fsSL https://opencode.ai/install -o \"$tmp\"\nbash \"$tmp\" </dev/null",
-		linux: "set -eu\ntmp=\"$(mktemp)\"\ntrap 'rm -f \"$tmp\"' EXIT\ncurl -fsSL https://opencode.ai/install -o \"$tmp\"\nbash \"$tmp\" </dev/null",
-		bin:   ".opencode/bin",
+		macos: "set -eu\ncommand -v npm >/dev/null 2>&1 || { echo \"npm is not on PATH; install Node.js 22 first\" >&2; exit 1; }\nnpm install --global --prefix \"$HOME/.local\" opencode-ai",
+		linux: "set -eu\ncommand -v npm >/dev/null 2>&1 || { echo \"npm is not on PATH; install Node.js 22 first\" >&2; exit 1; }\nnpm install --global --prefix \"$HOME/.local\" opencode-ai",
+		bin:   ".local/bin",
 	},
 	"grok": {
 		kind:  "agent",
@@ -51,7 +51,6 @@ var installAliases = map[string]string{
 // really lives. The first entry whose fragment the resolved path contains wins.
 var updateMethods = map[string][]installMethod{
 	"opencode": {
-		{method: "curl", pathContains: "/.opencode/bin/"},
 		{method: "brew", pathContains: "/Cellar/"},
 		{method: "bun", pathContains: "/.bun/"},
 		{method: "pnpm", pathContains: "/pnpm/"},

@@ -21,9 +21,34 @@ func code(err error) string {
 	return ""
 }
 
-// OpenCode installed by its own script joins the hourly round, told the
-// method so its updater does not stop to ask.
+// OpenCode installed from npm under ~/.local, as the runner installs it,
+// joins the hourly round told the method, so its updater does not stop to
+// ask, and with npm pointed at ~/.local, so the update replaces that copy.
 func TestUpdateAgentsTellsOpenCodeHowItWasInstalled(t *testing.T) {
+	p := fake.New()
+	p.Tools[domain.ToolOpenCode] = domain.Tool{
+		Path:     "/home/jordi/.local/bin/opencode",
+		Resolved: "/home/jordi/.local/lib/node_modules/opencode-ai/bin/opencode.exe",
+		Version:  "1.19.3",
+	}
+	u := &fake.Updater{}
+	svc := app.New(app.Options{Prober: p, Updater: u})
+
+	svc.UpdateAgents(context.Background())
+
+	want := []string{"/home/jordi/.local/bin/opencode upgrade --method npm"}
+	if !slices.Equal(u.Calls, want) {
+		t.Fatalf("calls = %v, want %v", u.Calls, want)
+	}
+	if env := u.Envs[0]; !slices.Equal(env, []string{"npm_config_prefix=/home/jordi/.local"}) {
+		t.Fatalf("env = %v", env)
+	}
+}
+
+// An OpenCode from `opencode.ai/install` is left out of the round: its
+// method reruns that script, which checks nothing, and OpenCode's own
+// autoupdate still keeps it current.
+func TestUpdateAgentsLeavesAScriptInstalledOpenCodeAlone(t *testing.T) {
 	p := fake.New()
 	p.Tools[domain.ToolOpenCode] = domain.Tool{
 		Path: "/home/jordi/.opencode/bin/opencode", Resolved: "/home/jordi/.opencode/bin/opencode", Version: "1.18.33",
@@ -31,11 +56,8 @@ func TestUpdateAgentsTellsOpenCodeHowItWasInstalled(t *testing.T) {
 	u := &fake.Updater{}
 	svc := app.New(app.Options{Prober: p, Updater: u})
 
-	svc.UpdateAgents(context.Background())
-
-	want := []string{"/home/jordi/.opencode/bin/opencode upgrade --method curl"}
-	if !slices.Equal(u.Calls, want) {
-		t.Fatalf("calls = %v, want %v", u.Calls, want)
+	if results := svc.UpdateAgents(context.Background()); len(results) != 0 || len(u.Calls) != 0 {
+		t.Fatalf("results = %v, calls = %v", results, u.Calls)
 	}
 }
 

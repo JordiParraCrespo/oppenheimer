@@ -11,15 +11,17 @@ import (
 
 // OpenCode's `upgrade` stops to ask unless told how it was installed, so the
 // runner tells it from where the binary lives, and leaves alone an install
-// it cannot name rather than run an updater nobody can answer.
+// it cannot name rather than run an updater nobody can answer. One from
+// `opencode.ai/install` is left alone too: its method runs that script,
+// which checks nothing.
 func TestOpenCodeUpdatesOnlyWithAKnownMethod(t *testing.T) {
 	cases := []struct {
 		resolved string
 		want     []string
 	}{
-		{"/home/jordi/.opencode/bin/opencode", []string{"upgrade", "--method", "curl"}},
+		{"/home/jordi/.opencode/bin/opencode", nil},
 		{"/opt/homebrew/Cellar/opencode/1.18.33/bin/opencode", []string{"upgrade", "--method", "brew"}},
-		{"/home/jordi/.local/lib/node_modules/opencode-ai/bin/opencode", []string{"upgrade", "--method", "npm"}},
+		{"/home/jordi/.local/lib/node_modules/opencode-ai/bin/opencode.exe", []string{"upgrade", "--method", "npm"}},
 		{"/home/jordi/.local/share/pnpm/global/5/node_modules/opencode-ai/bin/opencode", []string{"upgrade", "--method", "pnpm"}},
 		{"/home/jordi/.bun/install/global/node_modules/opencode-ai/bin/opencode", []string{"upgrade", "--method", "bun"}},
 		{"/usr/local/bin/opencode", nil},
@@ -34,6 +36,29 @@ func TestOpenCodeUpdatesOnlyWithAKnownMethod(t *testing.T) {
 	// An updater with no method in it is the catalog's argv, whatever the path.
 	if args, ok := domain.ResolveUpdateArgs(domain.ToolClaude, "/anywhere/claude"); !ok || !slices.Equal(args, []string{"update"}) {
 		t.Errorf("claude: %v (ok %v)", args, ok)
+	}
+}
+
+// An npm-installed CLI updates with `npm install -g`, which writes under
+// npm's configured prefix; without the one the executable lives under, the
+// update of a CLI the runner put in ~/.local fails on a root-owned prefix or
+// lands a copy PATH never reaches.
+func TestUpdateEnvPointsNpmAtThePrefixTheCLILivesUnder(t *testing.T) {
+	cases := []struct {
+		resolved string
+		want     []string
+	}{
+		{"/home/jordi/.local/lib/node_modules/opencode-ai/bin/opencode.exe", []string{"npm_config_prefix=/home/jordi/.local"}},
+		{"/opt/homebrew/lib/node_modules/@openai/codex/bin/codex.js", []string{"npm_config_prefix=/opt/homebrew"}},
+		{"/home/jordi/.bun/install/global/node_modules/opencode-ai/bin/opencode", nil},
+		{"/home/jordi/.local/share/claude/versions/2.1.280", nil},
+		{"/lib/node_modules/x", nil},
+		{"", nil},
+	}
+	for _, c := range cases {
+		if got := domain.UpdateEnv(c.resolved); !slices.Equal(got, c.want) {
+			t.Errorf("%q: %v, want %v", c.resolved, got, c.want)
+		}
 	}
 }
 
