@@ -414,6 +414,17 @@ both steps, a personal dictionary learned from edits (its own consent and
 table), streaming partials, and whether ChatGPT's route stays first in line
 once the eval has numbers for it.
 
+## On by default (2026-10-18)
+
+Slice 1 shipped `voice_dictation` as a release flag, default off, so each
+deployment had to turn it on through the flag admin API before anyone saw a
+mic. With dictation in every prose field, the owner asked for it on by
+default. It is now an `ops` flag defaulting to `true`, with no expiry: the
+feature's kill switch, the way `terminal_typeahead` is. Nothing else
+changes: the mic still shows only where a speech provider can hear the
+workspace (its ChatGPT sign-in or the deployment's `VOICE_STT_*`), and a
+deployment that saved the flag off stays off until someone turns it on.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake
