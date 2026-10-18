@@ -95,13 +95,15 @@ func writeAtomic(path string, data []byte, mode fs.FileMode) error {
 		return err
 	}
 	name := tmp.Name()
-	defer os.Remove(name)
+	// After the rename there is nothing at name, and before it the
+	// temporary file is only litter: either way the error says nothing.
+	defer func() { _ = os.Remove(name) }()
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Chmod(mode); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {
