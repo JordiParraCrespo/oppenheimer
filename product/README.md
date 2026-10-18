@@ -521,3 +521,10 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- Note 09 had `runner uninstall` exit 0 when the control plane could not
+  be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
+  control. On 2026-10-18, after an owner's uninstall hid a failed
+  revocation (issue #394), it exits 7 (`PAIR_009`), prints the underlying
+  failure, and points at Settings → Hosts → Remove or
+  `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
+  origins and the commands that move it (09 §4).
