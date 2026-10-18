@@ -43,7 +43,7 @@ function routine() {
 }
 
 function setup(
-  options: { model?: boolean; busy?: boolean; outcome?: 'staged' | 'existing' | 'missing' } = {},
+  options: { model?: boolean; outcome?: 'staged' | 'existing' | 'busy' | 'missing' } = {},
 ) {
   const automation = routine();
   const run = AutomationRunEntity.fire(
@@ -71,10 +71,7 @@ function setup(
     outcome: options.outcome ?? 'staged',
     turnId: options.outcome === 'existing' ? 'turn-first' : turn.id,
   }));
-  const turns = {
-    enqueueOnce,
-    hasActiveFrom: vi.fn(async () => options.busy ?? false),
-  } as unknown as BotTurnRepositoryPort;
+  const turns = { enqueueOnce } as unknown as BotTurnRepositoryPort;
   const publish = vi.fn(async () => undefined);
   const target = new BotRoutineTarget(access, turns, { publish } as unknown as BotStreamPort);
   const context: RunTargetContext = {
@@ -128,12 +125,14 @@ describe('BotRoutineTarget', () => {
     expect(enqueueOnce).not.toHaveBeenCalled();
   });
 
-  it('skips a run while the routine’s last turn still waits or runs', async () => {
-    const { target, context } = setup({ busy: true });
-    await expect(target.decide(context)).resolves.toMatchObject({
-      kind: 'skip',
-      reason: 'overlapping',
-    });
+  it('skips a run while the routine’s last turn still waits or runs, asked under the queue’s lock', async () => {
+    const { target, context, enqueueOnce, publish } = setup({ outcome: 'busy' });
+    const decision = await target.decide(context);
+    if (decision.kind !== 'launch') throw new Error('expected a launch');
+    const refused = await target.launch(context, decision.input).catch((error: unknown) => error);
+    expect(enqueueOnce.mock.calls[0][3]).toBe(`automation-run:${context.automation.id}:`);
+    expect(target.refusalOf(refused)).toEqual({ reason: 'overlapping', pause: null });
+    expect(publish).not.toHaveBeenCalled();
   });
 
   it('answers the turn a retried dispatch already queued, and announces nothing twice', async () => {

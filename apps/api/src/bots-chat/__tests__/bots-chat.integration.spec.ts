@@ -300,15 +300,36 @@ describe('bots chat (integration)', () => {
     };
     const first = routineTurn(props, firing);
     const again = routineTurn(props, firing);
-    expect(await turns.enqueueOnce(first.turn, first.opening, null)).toEqual({
+    const busy = routinePrefix(firing.automationId);
+    expect(await turns.enqueueOnce(first.turn, first.opening, null, busy)).toEqual({
       outcome: 'staged',
       turnId: first.turn.id,
     });
-    // The same run dispatched again (a retried job) finds the turn it queued.
-    expect(await turns.enqueueOnce(again.turn, again.opening, null)).toEqual({
+    // The same run dispatched again (a retried job) finds the turn it queued,
+    // rather than reading its own turn as the routine being busy.
+    expect(await turns.enqueueOnce(again.turn, again.opening, null, busy)).toEqual({
       outcome: 'existing',
       turnId: first.turn.id,
     });
+    // The routine's next run, while that turn is live, queues nothing.
+    const next = routineTurn(props, { ...firing, runId: '6a1c4f9e-0000-4000-8000-000000000003' });
+    expect(await turns.enqueueOnce(next.turn, next.opening, null, busy)).toEqual({
+      outcome: 'busy',
+      turnId: next.turn.id,
+    });
+    // Another routine of the bot is not held by it; it waits its turn in the queue.
+    const other = routineTurn(props, {
+      ...firing,
+      automationId: '6a1c4f9e-0000-4000-8000-000000000004',
+    });
+    expect(
+      await turns.enqueueOnce(
+        other.turn,
+        other.opening,
+        null,
+        routinePrefix('6a1c4f9e-0000-4000-8000-000000000004'),
+      ),
+    ).toEqual({ outcome: 'waiting', turnId: other.turn.id });
     expect(await stagedTurns()).toEqual([first.turn.id]);
 
     const stored = (await turns.findForRun(first.turn.id)).unwrap();
@@ -316,12 +337,6 @@ describe('bots chat (integration)', () => {
       origin: 'routine',
       sourceKey: routineSourceKey(firing.automationId, firing.runId),
     });
-    expect(
-      await turns.hasActiveFrom(bot.organizationId, bot.id, routinePrefix(firing.automationId)),
-    ).toBe(true);
-    expect(await turns.hasActiveFrom(bot.organizationId, bot.id, routinePrefix(firing.runId))).toBe(
-      false,
-    );
     const [opening] = await dataSource.query(
       `SELECT role, event FROM bot_message WHERE "turnId" = $1`,
       [first.turn.id],

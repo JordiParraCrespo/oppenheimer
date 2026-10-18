@@ -18,16 +18,17 @@ export interface BotTurnRepositoryPort {
   /**
    * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
    * (a routine's run): a key already queued answers that turn instead, so a
-   * run dispatched twice queues one turn.
+   * run dispatched twice queues one turn. With `busyPrefix`, a queued or
+   * running turn of the bot whose key begins with it, other than this one,
+   * answers `busy` and queues nothing. Both are read under the bot's lock, so
+   * two dispatches cannot both miss what the other queued.
    */
   enqueueOnce(
     turn: BotTurnEntity,
     message: BotMessageEntity,
     correlationId: string | null,
-  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'missing'; turnId: string }>;
-
-  /** Whether a turn of the bot whose source key begins with `prefix` is queued or running. */
-  hasActiveFrom(organizationId: string, botId: string, prefix: string): Promise<boolean>;
+    busyPrefix: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
 
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */

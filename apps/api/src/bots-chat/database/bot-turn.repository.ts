@@ -60,7 +60,8 @@ export class BotTurnRepository
     turn: BotTurnEntity,
     message: BotMessageEntity,
     correlationId: string | null,
-  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'missing'; turnId: string }> {
+    busyPrefix: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }> {
     if (!turn.sourceKey) throw new Error('A turn queued once carries its source key');
     return this.outbox.transaction(async (manager) => {
       if (!(await lockBot(manager, turn))) return { outcome: 'missing' as const, turnId: turn.id };
@@ -71,6 +72,17 @@ export class BotTurnRepository
         [turn.botId, turn.sourceKey],
       );
       if (existing) return { outcome: 'existing' as const, turnId: existing.id };
+      if (busyPrefix !== null) {
+        // IDX_bot_turn_active: a bot's queued and running turns are a handful.
+        const [active]: unknown[] = await manager.query(
+          `SELECT 1 FROM bot_turn
+            WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')
+              AND starts_with("sourceKey", $3)
+            LIMIT 1`,
+          [turn.organizationId, turn.botId, busyPrefix],
+        );
+        if (active) return { outcome: 'busy' as const, turnId: turn.id };
+      }
       const outcome = await enqueueLocked(
         manager,
         this.outbox,
@@ -82,18 +94,6 @@ export class BotTurnRepository
       );
       return { outcome, turnId: turn.id };
     });
-  }
-
-  async hasActiveFrom(organizationId: string, botId: string, prefix: string): Promise<boolean> {
-    // IDX_bot_turn_active: a bot's queued and running turns are a handful.
-    const rows: unknown[] = await this.repository.query(
-      `SELECT 1 FROM bot_turn
-        WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')
-          AND starts_with("sourceKey", $3)
-        LIMIT 1`,
-      [organizationId, botId, prefix],
-    );
-    return rows.length > 0;
   }
 
   async findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>> {

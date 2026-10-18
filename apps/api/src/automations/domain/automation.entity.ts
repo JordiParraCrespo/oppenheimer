@@ -80,6 +80,8 @@ export interface AutomationChanges {
   triggers?: AutomationTriggerProps[];
   overlap?: AutomationOverlapPolicy | null;
   maxRunsPerHour?: number | null;
+  /** The scopes of the credential that saved what runs; a routine's runs keep within them. */
+  credentialScopes?: readonly Scope[] | null;
 }
 
 const REVISION_FIELDS = [
@@ -267,6 +269,9 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (changes.projectId !== undefined) this.props.projectId = changes.projectId;
     if (changes.overlap !== undefined) this.props.overlap = changes.overlap;
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
+    if (changes.credentialScopes !== undefined) {
+      this.props.credentialScopes = changes.credentialScopes;
+    }
     if (changes.revision && this.revisionDiffers(changes.revision)) {
       this.props.revision = this.nextRevision(changes.revision, by, now);
       this.revised = true;

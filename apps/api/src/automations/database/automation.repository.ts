@@ -72,7 +72,7 @@ export class AutomationRepository
         `UPDATE "automation"
             SET "name" = $3, "projectId" = $4, "currentRevisionId" = $5, "pausedAt" = $6,
                 "pausedReason" = $7, "deletedAt" = $8, "overlap" = $9, "maxRunsPerHour" = $10,
-                "version" = "version" + 1, "updatedAt" = now()
+                "credentialScopes" = $11, "version" = "version" + 1, "updatedAt" = now()
           WHERE "id" = $1 AND "version" = $2
           RETURNING "id"`,
         [
@@ -86,6 +86,8 @@ export class AutomationRepository
           record.deletedAt,
           record.overlap,
           record.maxRunsPerHour,
+          // A raw jsonb parameter: the driver would send an array as a Postgres array.
+          record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes),
         ],
       );
       if (updated.length === 0) return 'conflict' as const;

@@ -382,7 +382,8 @@ export class AutomationRunRepository
       await manager.query(
         `UPDATE "automation_run"
             SET "outcome" = $2, "skipReason" = $3, "availableAt" = $4, "attempts" = $5,
-                "sessionId" = $6, "dispatchedAt" = $7, "revisionId" = $8, "updatedAt" = now()
+                "sessionId" = $6, "dispatchedAt" = $7, "revisionId" = $8, "botTurnId" = $9,
+                "updatedAt" = now()
           WHERE "id" = $1`,
         [
           record.id,
@@ -393,6 +394,7 @@ export class AutomationRunRepository
           record.sessionId,
           record.dispatchedAt,
           record.revisionId,
+          record.botTurnId,
         ],
       );
       // A deferral owes another look later; the delay rides the outbox row.

@@ -25,7 +25,10 @@ import { AutomationTriggerOrmEntity } from '../database/automation-trigger.orm-e
 import { AutomationTriggerSubjectOrmEntity } from '../database/automation-trigger-subject.orm-entity';
 import { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
+import { AutomationRunEntity } from '../domain/automation-run.entity';
 import { triggerFromInput } from '../domain/trigger-config.policy';
+import { FindAutomationRunQuery } from '../queries/find-automation-run/find-automation-run.query';
+import { FindAutomationRunQueryHandler } from '../queries/find-automation-run/find-automation-run.query-handler';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -546,6 +549,95 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await automations.insert(routine);
       await dataSource.query(`DELETE FROM bot WHERE id = $1`, [botId]);
       expect((await automations.findOneByIdForSystem(routine.id)).isNone()).toBe(true);
+    });
+
+    it('takes the scopes of the credential behind an edit, and keeps them through a pause', async () => {
+      const botId = await insertBot();
+      const routine = AutomationEntity.createRoutine({
+        organizationId,
+        ownerUserId: userId,
+        botId,
+        name: 'Weekly review',
+        prompt: 'Review the week.',
+        triggers: [hourly(9)],
+        active: true,
+        credentialScopes: null,
+        now: new Date(),
+      });
+      await automations.insert(routine);
+
+      const edited = (await automations.findOneById(scope(), routine.id)).unwrap();
+      edited.change(
+        {
+          revision: { prompt: 'Review the week, briefly.' },
+          credentialScopes: ['automations:read'],
+        },
+        userId,
+        new Date(),
+      );
+      expect(await automations.save(edited, edited.version)).toBe('saved');
+      const paused = (await automations.findOneById(scope(), routine.id)).unwrap();
+      expect(paused.credentialScopes).toEqual(['automations:read']);
+      paused.pause('user', new Date());
+      expect(await automations.save(paused, paused.version)).toBe('saved');
+      expect(
+        (await automations.findOneById(scope(), routine.id)).unwrap().credentialScopes,
+      ).toEqual(['automations:read']);
+    });
+
+    it("records the bot turn its run became, reads the run's status from it, and keeps it off the run page", async () => {
+      const botId = await insertBot();
+      const routine = AutomationEntity.createRoutine({
+        organizationId,
+        ownerUserId: userId,
+        botId,
+        name: 'Stand-up',
+        prompt: 'Post the stand-up.',
+        triggers: [hourly(11)],
+        active: true,
+        credentialScopes: null,
+        now: new Date(),
+      });
+      await automations.insert(routine);
+      const now = new Date();
+      const run = AutomationRunEntity.fire(
+        {
+          organizationId,
+          automationId: routine.id,
+          revisionId: routine.revision.id,
+          triggerId: routine.triggers[0].id,
+          cause: 'manual',
+          causeKey: `manual:${randomUUID()}`,
+          causeSummary: { label: 'Run now', text: '', eventType: 'manual' },
+          inboundEventId: null,
+          scheduledFor: now,
+          requestedByUserId: userId,
+        },
+        now,
+      );
+      await runs.insertFiring(run, 'correlation');
+      const [turn]: { id: string }[] = await dataSource.query(
+        `INSERT INTO bot_turn ("organizationId", "botId", status, origin, provider, model)
+         VALUES ($1, $2, 'running', 'routine', 'glm', 'glm-5.3') RETURNING id`,
+        [organizationId, botId],
+      );
+      run.dispatched({ kind: 'bot_turn', turnId: turn.id }, routine.revision.id, now);
+      await runs.save(run, 'correlation');
+
+      const [stored] = await dataSource.query(
+        `SELECT "botTurnId", "sessionId" FROM automation_run WHERE id = $1`,
+        [run.id],
+      );
+      expect(stored).toEqual({ botTurnId: turn.id, sessionId: null });
+      expect((await runs.findOne(scope(), run.id)).unwrap()).toMatchObject({
+        status: 'running',
+        projectId: null,
+      });
+      await expect(
+        new FindAutomationRunQueryHandler(runs).execute(
+          new FindAutomationRunQuery({ scope: scope(), runId: run.id }),
+        ),
+      ).rejects.toMatchObject({ code: 'AUTOMATIONS_008' });
     });
   });
 

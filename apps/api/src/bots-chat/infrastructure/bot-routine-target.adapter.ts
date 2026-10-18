@@ -30,6 +30,13 @@ const REFUSALS: Readonly<Record<string, RunRefusal>> = {
   [BotErrors.PROVIDER_KEY_MISSING.code]: { reason: 'not_launchable', pause: null },
 };
 
+/** The routine's last turn still waits or runs; never reaches a response, only `refusalOf`. */
+class RoutineBusyError extends Error {
+  constructor(automationId: string) {
+    super(`Routine ${automationId} still has a turn queued or running`);
+  }
+}
+
 /**
  * A bot routine's run (`26-bot-routines.md` §4): one more queued turn of the
  * bot, on its provider, model and effort as they are now, as the routine's
@@ -48,25 +55,12 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
   ) {}
 
   async decide(context: RunTargetContext): Promise<RunTargetDecision<RoutineLaunch>> {
-    const { automation, run, event, limits, now } = context;
+    const { automation, run, event, now } = context;
     const botId = automation.botId;
     if (!botId) throw new Error(`Automation ${automation.id} runs on a bot but names none`);
 
     const model = await this.access.ownModel(automation.organizationId, botId, now);
     if (!model) return { kind: 'skip', reason: 'not_launchable', pause: null };
-
-    // A routine whose last turn still waits or runs: note 16's overlap guard,
-    // read from the bot's queue instead of a host.
-    if (
-      limits.overlap === 'skip' &&
-      (await this.turns.hasActiveFrom(
-        automation.organizationId,
-        botId,
-        routinePrefix(automation.id),
-      ))
-    ) {
-      return { kind: 'skip', reason: 'overlapping', pause: null };
-    }
 
     const instructions = composeRunPrompt(automation.revision.prompt, event);
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
@@ -92,10 +86,15 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     };
   }
 
-  async launch(_context: RunTargetContext, input: RoutineLaunch): Promise<RunDispatchRef> {
+  async launch(context: RunTargetContext, input: RoutineLaunch): Promise<RunDispatchRef> {
     const { turn, opening } = input;
-    const { outcome, turnId } = await this.turns.enqueueOnce(turn, opening, null);
+    // A routine whose last turn still waits or runs: note 16's overlap guard,
+    // read from the bot's queue, under the same lock that queues this one.
+    const busyPrefix =
+      context.limits.overlap === 'skip' ? routinePrefix(context.automation.id) : null;
+    const { outcome, turnId } = await this.turns.enqueueOnce(turn, opening, null, busyPrefix);
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
+    if (outcome === 'busy') throw new RoutineBusyError(context.automation.id);
     if (outcome !== 'existing') {
       await this.stream.publish(turn.botId, { type: 'turn', turnId, status: 'queued' });
     }
@@ -103,6 +102,7 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
   }
 
   refusalOf(error: unknown): RunRefusal | null {
+    if (error instanceof RoutineBusyError) return { reason: 'overlapping', pause: null };
     return error instanceof AppError ? (REFUSALS[error.code] ?? null) : null;
   }
 }

@@ -18,7 +18,11 @@ export class FindAutomationRunQueryHandler
 
   async execute(query: FindAutomationRunQuery): Promise<RunReadModel> {
     const found = await this.runs.findOne(query.scope, query.runId);
-    if (found.isNone()) throw new AppError(AutomationErrors.RUN_NOT_FOUND);
+    // A bot routine's run has no project and no session; the run page is a
+    // session automation's, and a routine's runs are drawn by the bot's chat.
+    if (found.isNone() || found.unwrap().projectId === null) {
+      throw new AppError(AutomationErrors.RUN_NOT_FOUND);
+    }
     return found.unwrap();
   }
 }

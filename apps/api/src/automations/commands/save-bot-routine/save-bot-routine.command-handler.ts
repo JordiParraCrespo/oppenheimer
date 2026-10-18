@@ -12,7 +12,10 @@ import { SaveBotRoutineCommand } from './save-bot-routine.command';
 /**
  * Creates or changes a bot's routine. A change to the prompt is the next
  * revision, the triggers are replaced whole, and `enabled` pauses or resumes
- * it; a routine of another bot, or a session automation, is not found.
+ * it; a routine of another bot, or a session automation, is not found. A
+ * change to what it runs or when takes the scopes of the credential that made
+ * it, so a routine never runs wider than whoever last edited it; a pause or
+ * a resume leaves them as they were.
  */
 @CommandHandler(SaveBotRoutineCommand)
 export class SaveBotRoutineCommandHandler
@@ -58,11 +61,14 @@ export class SaveBotRoutineCommandHandler
       throw new AppError(AutomationErrors.NOT_FOUND);
     }
     const version = routine.version;
+    const edits =
+      changes.name !== undefined || changes.prompt !== undefined || triggers !== undefined;
     routine.change(
       {
         name: changes.name,
         revision: changes.prompt === undefined ? undefined : { prompt: changes.prompt },
         triggers,
+        credentialScopes: edits ? command.credentialScopes : undefined,
       },
       scope.userId,
       now,
