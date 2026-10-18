@@ -10,6 +10,25 @@ export interface BoardFilter {
   milestoneId?: string;
 }
 
+/**
+ * Where a task added from the board is filed: a milestone brings its own project
+ * (the API refuses a project that disagrees with it), else the filtered project,
+ * else the workspace's Unassigned one.
+ */
+export function filingOf(
+  filter: BoardFilter,
+  milestones: readonly { id: string; projectId: string }[],
+  unassignedId: string | undefined,
+): { projectId: string | undefined; milestoneId: string | null } {
+  const milestone = filter.milestoneId
+    ? milestones.find((row) => row.id === filter.milestoneId)
+    : undefined;
+  return {
+    projectId: milestone?.projectId ?? (filter.projectId || unassignedId),
+    milestoneId: milestone?.id ?? null,
+  };
+}
+
 function passes(task: TaskEntity, filter: BoardFilter): boolean {
   return (
     (!filter.projectId || task.projectId === filter.projectId) &&

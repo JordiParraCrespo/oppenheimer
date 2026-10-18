@@ -28,7 +28,7 @@ import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
-import { COLUMNS, columnOf } from '../lib/board';
+import { COLUMNS, columnOf, filingOf } from '../lib/board';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -186,8 +186,7 @@ export function BoardColumns() {
                         create.mutate({
                           title,
                           status,
-                          projectId: filter.projectId || unassignedId,
-                          milestoneId: filter.milestoneId ?? null,
+                          ...filingOf(filter, read.milestones, unassignedId),
                         })
                       }
                     />
