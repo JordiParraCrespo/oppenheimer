@@ -6,6 +6,7 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { BotPermission } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
+import { NewBotProviderResolver } from '../../application/new-bot-provider.resolver';
 import { BOT_GROUP_REPOSITORY, BOT_REPOSITORY } from '../../bots.di-tokens';
 import type { BotCreatorCheck, BotRepositoryPort } from '../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
@@ -41,6 +42,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     private readonly groups: BotGroupRepositoryPort,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
+    private readonly providers: NewBotProviderResolver,
   ) {}
 
   async execute(command: CreateBotCommand): Promise<AggregateID> {
@@ -58,7 +60,6 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     }
     const homeHostId = input.homeHostId ?? null;
     if (homeHostId) await this.hosts.assertUsable(scope, homeHostId);
-
     const taken = await this.bots.namesIn(scope);
     const bot = BotEntity.createNew({
       organizationId: scope.organizationId,
@@ -68,7 +69,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       avatarColor: input.avatarColor ?? avatarColorFor(taken.length),
       groupId,
       homeHostId,
-      provider: input.provider ?? 'anthropic',
+      provider: await this.providers.providerFor(scope, input.provider, command.model),
       model: command.model,
       effort: command.effort,
       permission: command.permission,
