@@ -13,8 +13,9 @@ export interface BoardFilter {
 /**
  * Where a task added from the board is filed: a milestone brings its own project
  * (the API refuses a project that disagrees with it), else the filtered project,
- * else the workspace's Unassigned one. A filtered milestone the list no longer
- * has is still sent, so the API says it is gone rather than the task quietly
+ * else the workspace's Unassigned one. A filtered milestone the list does not
+ * have (deleted, or not refetched yet) is sent without a project, so the API
+ * files under its project or says it is gone, rather than the task quietly
  * landing elsewhere.
  */
 export function filingOf(
@@ -26,7 +27,7 @@ export function filingOf(
     ? milestones.find((row) => row.id === filter.milestoneId)
     : undefined;
   return {
-    projectId: milestone?.projectId ?? (filter.projectId || unassignedId),
+    projectId: filter.milestoneId ? milestone?.projectId : filter.projectId || unassignedId,
     milestoneId: filter.milestoneId ?? null,
   };
 }

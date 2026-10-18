@@ -154,10 +154,12 @@ describe('filingOf', () => {
     });
   });
 
-  it('keeps a filtered milestone the list no longer has, so the API reports it gone', () => {
-    // Dropping it would file the task under Unassigned without a word.
-    expect(filingOf({ milestoneId: 'm-gone' }, milestones, 'p-unassigned')).toEqual({
-      projectId: 'p-unassigned',
+  it('sends a filtered milestone the list does not have without a project, for the API to resolve', () => {
+    // Dropping it filed the task under Unassigned without a word; guessing a project made the API refuse a real milestone.
+    expect(
+      filingOf({ milestoneId: 'm-gone', projectId: 'p-3' }, milestones, 'p-unassigned'),
+    ).toEqual({
+      projectId: undefined,
       milestoneId: 'm-gone',
     });
   });
