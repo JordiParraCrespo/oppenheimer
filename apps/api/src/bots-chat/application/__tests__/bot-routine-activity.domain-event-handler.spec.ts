@@ -30,8 +30,12 @@ function setup(options: { stored?: boolean; routine?: BotRoutineRef | null } = {
   return { handler, insertOnce, publish, execute };
 }
 
+const RAISED = Date.parse('2026-10-18T09:00:00Z');
+const metadata = { timestamp: RAISED, correlationId: 'c-1' };
+
 const changed = {
   id: 'event-1',
+  metadata,
   aggregateId: 'automation-1',
   organizationId: 'org-1',
   botId: 'bot-1',
@@ -45,6 +49,8 @@ describe('BotRoutineActivityDomainEventHandler', () => {
     const { handler, insertOnce, publish } = setup();
     await handler.onChanged(changed);
     const [line] = insertOnce.mock.calls[0];
+    // At the time it happened, however late the outbox delivered it.
+    expect(line.createdAt).toEqual(new Date(RAISED));
     expect(line).toMatchObject({
       id: 'event-1',
       botId: 'bot-1',
@@ -69,6 +75,7 @@ describe('BotRoutineActivityDomainEventHandler', () => {
     const { handler, insertOnce, execute } = setup();
     await handler.onRun({
       id: 'event-2',
+      metadata,
       aggregateId: 'run-1',
       automationId: 'automation-1',
       outcome: 'skipped',
@@ -87,6 +94,7 @@ describe('BotRoutineActivityDomainEventHandler', () => {
     const quiet = setup();
     await quiet.handler.onRun({
       id: 'event-3',
+      metadata,
       aggregateId: 'run-1',
       automationId: 'automation-1',
       outcome: 'skipped',
@@ -97,6 +105,7 @@ describe('BotRoutineActivityDomainEventHandler', () => {
     const session = setup({ routine: null });
     await session.handler.onRun({
       id: 'event-4',
+      metadata,
       aggregateId: 'run-2',
       automationId: 'automation-2',
       outcome: 'expired',

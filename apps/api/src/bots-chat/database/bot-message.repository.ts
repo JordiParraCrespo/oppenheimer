@@ -37,14 +37,15 @@ export class BotMessageRepository
   }
 
   async insertOnce(message: BotMessageEntity): Promise<boolean> {
-    // A bot deleted since leaves the line nowhere to go: nothing is stored.
+    // At the time it happened, not now; a bot deleted since leaves the line
+    // nowhere to go, and nothing is stored.
     const stored: { id: string }[] = await this.dataSource.query(
-      `INSERT INTO bot_message (${MESSAGE_COLUMNS})
-       SELECT ${MESSAGE_VALUES}
+      `INSERT INTO bot_message (${MESSAGE_COLUMNS}, "createdAt")
+       SELECT ${MESSAGE_VALUES}, $10
         WHERE EXISTS (SELECT 1 FROM bot WHERE "organizationId" = $2 AND id = $3)
        ON CONFLICT (id) DO NOTHING
        RETURNING id`,
-      messageParameters(this.mapper.toPersistence(message)),
+      [...messageParameters(this.mapper.toPersistence(message)), message.createdAt],
     );
     return stored.length === 1;
   }

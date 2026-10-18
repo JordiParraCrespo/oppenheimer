@@ -20,7 +20,8 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
  * bot's tool, its Routines tab, a pause the dispatcher made) raised an event,
  * and each becomes one line, keyed by the event so a redelivery writes
  * nothing twice. A run that failed to start is told the same way. The line
- * belongs to no turn: it is placed in the chat by when it happened.
+ * belongs to no turn: it is placed in the chat by when it happened, the
+ * event's own time, however late the outbox delivers it.
  */
 @Injectable()
 export class BotRoutineActivityDomainEventHandler {
@@ -34,7 +35,14 @@ export class BotRoutineActivityDomainEventHandler {
   async onChanged(
     event: Pick<
       BotRoutineChangedDomainEvent,
-      'id' | 'aggregateId' | 'organizationId' | 'botId' | 'name' | 'activity' | 'pausedReason'
+      | 'id'
+      | 'aggregateId'
+      | 'metadata'
+      | 'organizationId'
+      | 'botId'
+      | 'name'
+      | 'activity'
+      | 'pausedReason'
     >,
   ): Promise<void> {
     await this.write({
@@ -46,6 +54,7 @@ export class BotRoutineActivityDomainEventHandler {
       name: event.name,
       activity: event.activity,
       reason: event.pausedReason,
+      at: new Date(event.metadata.timestamp),
     });
   }
 
@@ -53,7 +62,7 @@ export class BotRoutineActivityDomainEventHandler {
   async onRun(
     event: Pick<
       AutomationRunChangedDomainEvent,
-      'id' | 'aggregateId' | 'automationId' | 'outcome' | 'skipReason'
+      'id' | 'aggregateId' | 'metadata' | 'automationId' | 'outcome' | 'skipReason'
     >,
   ): Promise<void> {
     const reason = routineFailureOf(event.outcome, event.skipReason);
@@ -71,6 +80,7 @@ export class BotRoutineActivityDomainEventHandler {
       name: routine.name,
       activity: 'failed',
       reason,
+      at: new Date(event.metadata.timestamp),
     });
   }
 

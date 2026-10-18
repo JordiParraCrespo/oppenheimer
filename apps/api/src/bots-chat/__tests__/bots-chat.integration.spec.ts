@@ -728,6 +728,8 @@ describe('bots chat (integration)', () => {
       name: 'Morning PR digest',
       activity: 'paused',
       reason: 'bot_provider_missing',
+      // Delivered late: the line still says when it happened.
+      at: new Date(Date.now() - 3_600_000),
     });
     expect(await messages.insertOnce(line)).toBe(true);
     expect(await messages.insertOnce(line)).toBe(false);
@@ -743,6 +745,7 @@ describe('bots chat (integration)', () => {
       activity: 'paused',
       reason: 'bot_provider_missing',
     });
+    expect(conversation[0].createdAt).toEqual(line.createdAt);
     const history = await messages.findHistory(organizationId, bot.id, turn.id, null, 40);
     expect(history.map((item) => item.id)).toEqual([line.id]);
     const uncovered = await messages.findUncovered(organizationId, bot.id, null, 10);
@@ -762,6 +765,7 @@ describe('bots chat (integration)', () => {
       name: 'Gone',
       activity: 'deleted',
       reason: null,
+      at: new Date(),
     });
     expect(await messages.insertOnce(gone)).toBe(false);
     await expect(

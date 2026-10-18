@@ -107,6 +107,8 @@ export interface RoutineActivity {
   activity: Exclude<BotRoutineActivity, 'ran'>;
   /** A pause's reason, or a failed run's skip reason or `expired`; null otherwise. */
   reason: string | null;
+  /** When it happened: the event's own time, never when it was delivered. */
+  at: Date;
 }
 
 /**
@@ -158,11 +160,14 @@ export function routineActivityText(activity: RoutineActivity): string {
 
 /**
  * A routine's activity as a line of its bot's chat (`26-bot-routines.md` §4,
- * "In the chat"): an event outside any turn, at the moment it happened.
+ * "In the chat"): an event outside any turn, at the moment it happened,
+ * however late the outbox delivers it.
  */
 export function routineActivityLine(activity: RoutineActivity): BotMessageEntity {
   const line = BotMessageEntity.create({
     id: activity.id,
+    createdAt: activity.at,
+    updatedAt: activity.at,
     props: {
       organizationId: activity.organizationId,
       botId: activity.botId,

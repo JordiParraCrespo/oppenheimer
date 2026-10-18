@@ -22,6 +22,7 @@ function activity(overrides: Partial<RoutineActivity> = {}): RoutineActivity {
     name: 'Morning PR digest',
     activity: 'saved',
     reason: null,
+    at: new Date('2026-10-18T09:00:00Z'),
     ...overrides,
   };
 }
@@ -47,7 +48,7 @@ describe('routineFailureOf', () => {
 });
 
 describe('routineActivityLine', () => {
-  it('is an event outside any turn, keyed by what reported it, that the bot can read', () => {
+  it('is an event outside any turn, keyed and timed by what reported it, that the bot can read', () => {
     const line = routineActivityLine(
       activity({ activity: 'paused', reason: 'bot_provider_missing' }),
     );
@@ -64,6 +65,7 @@ describe('routineActivityLine', () => {
         reason: 'bot_provider_missing',
       },
     });
+    expect(line.createdAt).toEqual(new Date('2026-10-18T09:00:00Z'));
     expect(line.content).toContain('"Morning PR digest" was paused');
     expect(line.content).toContain('no key or sign-in');
   });

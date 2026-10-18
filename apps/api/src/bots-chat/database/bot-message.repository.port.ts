@@ -10,8 +10,8 @@ export interface BotMessageRepositoryPort {
   insert(message: BotMessageEntity): Promise<void>;
   /**
    * Stores a line keyed by what reported it (its id is the event's) once,
-   * however often it is delivered, and only while its bot exists; whether
-   * this call stored it.
+   * however often it is delivered, at its own `createdAt`, and only while its
+   * bot exists; whether this call stored it.
    */
   insertOnce(message: BotMessageEntity): Promise<boolean>;
   /** An activity line's steps, as they grow. */

@@ -71,7 +71,23 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
 
   /** A firing the dispatcher owes a look at. */
   static fire(props: NewRunProps, now: Date): AutomationRunEntity {
-    const run = new AutomationRunEntity({
+    const run = AutomationRunEntity.pending(props, now);
+    run.changed('the automation fired');
+    return run;
+  }
+
+  /**
+   * A firing a guard refused before it was ever queued. Recorded, never
+   * silent: its one event says skipped, never the pending it never was.
+   */
+  static skipped(props: NewRunProps, reason: AutomationSkipReason, now: Date): AutomationRunEntity {
+    const run = AutomationRunEntity.pending(props, now);
+    run.skip(reason);
+    return run;
+  }
+
+  private static pending(props: NewRunProps, now: Date): AutomationRunEntity {
+    return new AutomationRunEntity({
       id: randomUUID(),
       props: {
         ...props,
@@ -84,15 +100,6 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
         dispatchedAt: null,
       },
     });
-    run.changed('the automation fired');
-    return run;
-  }
-
-  /** A firing a guard refused before it was ever queued. Recorded, never silent. */
-  static skipped(props: NewRunProps, reason: AutomationSkipReason, now: Date): AutomationRunEntity {
-    const run = AutomationRunEntity.fire(props, now);
-    run.skip(reason);
-    return run;
   }
 
   get organizationId(): string {
@@ -197,7 +204,7 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
     );
   }
 
-  /** One per write, however many steps it took (`skipped` fires, then skips). */
+  /** One per write, however many steps it took; `skipped` never raises the pending it skips. */
   private changed(reason: string): void {
     if (this.domainEvents.some((event) => event instanceof AutomationRunChangedDomainEvent)) return;
     this.addEvent(
