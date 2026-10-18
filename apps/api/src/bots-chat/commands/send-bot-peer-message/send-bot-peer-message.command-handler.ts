@@ -8,7 +8,7 @@ import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { checkBotChain } from '../../domain/bot-chain.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
-import { secretIn, secretRefusal } from '../../domain/bot-peer-message.policy';
+import { PEER_REFUSALS, secretIn, secretRefusal } from '../../domain/bot-peer-message.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import {
@@ -49,7 +49,7 @@ export class SendBotPeerMessageCommandHandler
   async execute(command: SendBotPeerMessageCommand): Promise<SendBotPeerMessageResult> {
     const { owner, organizationId, fromTurnId, fromBotId, toBotId, content } = command;
     const asking = await this.askingTurn(organizationId, fromBotId, fromTurnId);
-    if (!asking) return refused('This turn is no longer running, so it can send nothing.');
+    if (!asking) return refused(PEER_REFUSALS.notRunning);
     const secret = secretIn(content);
     if (secret) return refused(secretRefusal(secret));
 
@@ -58,14 +58,9 @@ export class SendBotPeerMessageCommandHandler
       this.lookup.bot(owner, toBotId),
     ]);
     if ((await this.credentials.findOne(owner, target.provider)).isNone()) {
-      const label = BOT_PROVIDER_CATALOG[target.provider].label;
-      return refused(
-        `${target.name} runs on ${label}, and the workspace has no ${label} key, so it could not answer. Tell the person; they can add the key in Settings → Model providers.`,
-      );
+      return refused(PEER_REFUSALS.noKey(target.name, BOT_PROVIDER_CATALOG[target.provider].label));
     }
-    if (!asking.requestedByUserId) {
-      return refused('The person this request came from no longer has an account.');
-    }
+    if (!asking.requestedByUserId) return refused(PEER_REFUSALS.noAccount);
 
     const turn = BotTurnEntity.queueFromBot(asking, {
       botId: target.id,
@@ -96,12 +91,8 @@ export class SendBotPeerMessageCommandHandler
       (state) => checkBotChain(asking, target.id, state),
     );
     if (queued.outcome === 'refused') return refused(queued.refusal);
-    if (queued.outcome === 'chain_gone') {
-      return refused(
-        'The request this belongs to was cleared from the chat it started in, so no more bots are messaged for it.',
-      );
-    }
-    if (queued.outcome === 'missing') return refused(`${target.name} was deleted.`);
+    if (queued.outcome === 'chain_gone') return refused(PEER_REFUSALS.chainGone);
+    if (queued.outcome === 'missing') return refused(PEER_REFUSALS.deleted(target.name));
     await this.stream.publish(target.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     return { sent: true, turnId: turn.id, botName: target.name };
   }

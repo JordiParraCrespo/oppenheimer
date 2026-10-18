@@ -43,6 +43,17 @@ export function secretIn(text: string): string | null {
   return SECRET_SHAPES.find((shape) => shape.pattern.test(text))?.name ?? null;
 }
 
+/** What the sending bot is told when nothing was sent, by reason, in words it can act on. */
+export const PEER_REFUSALS = {
+  notRunning: 'This turn is no longer running, so it can send nothing.',
+  noAccount: 'The person this request came from no longer has an account.',
+  chainGone:
+    'The request this belongs to was cleared from the chat it started in, so no more bots are messaged for it.',
+  deleted: (name: string) => `${name} was deleted.`,
+  noKey: (name: string, provider: string) =>
+    `${name} runs on ${provider}, and the workspace has no ${provider} key, so it could not answer. Tell the person; they can add the key in Settings → Model providers.`,
+} as const;
+
 /** The tool's answer when a message holds a credential: nothing was sent, and why. */
 export function secretRefusal(kind: string): string {
   return `Not sent: the message contains what looks like ${kind}. Credentials never travel between bots. Remove it and send again; if the other bot needs access, the person connects it in Settings.`;
