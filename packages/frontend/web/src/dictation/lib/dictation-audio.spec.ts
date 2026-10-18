@@ -83,7 +83,20 @@ describe('trimSilence', () => {
     expect(trimSilence(hum, RATE)).toHaveLength(hum.length);
   });
 
-  it('keeps a quiet speaker: speech is told from silence relative to the loudest frame', () => {
+  it('keeps the voice when a click far louder than it ends the clip', () => {
+    // A second of quiet, two of a soft voice, a 60 ms bump at full scale, a second of quiet.
+    const clip = joined(tone(1, 0.001), tone(2, 0.02), tone(0.06, 1), tone(1, 0.001));
+
+    // The voice and the bump stay, with the padding either side.
+    expect(trimSilence(clip, RATE).length / RATE).toBeCloseTo(0.3 + 2.06 + 0.3, 1);
+  });
+
+  it('cuts nothing from a clip that is speech from end to end', () => {
+    const speech = joined(tone(1, 0.3), tone(0.2, 0.05), tone(1, 0.3));
+    expect(trimSilence(speech, RATE)).toHaveLength(speech.length);
+  });
+
+  it('keeps a quiet speaker: speech is told from the room, not from a fixed level', () => {
     const clip = joined(tone(1, 0.0005), tone(1, 0.02), tone(1, 0.0005));
     expect(trimSilence(clip, RATE).length / RATE).toBeCloseTo(1.6, 1);
   });

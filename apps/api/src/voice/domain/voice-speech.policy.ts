@@ -41,41 +41,44 @@ export function speechPrompt(vocabulary: readonly string[]): string {
 }
 
 /**
- * What Whisper-class models write when they hear silence or noise: the
- * subtitle credits and video sign-offs they were trained on. None is
- * something a person dictates into a prompt, so each is dropped wherever it
- * closes a transcript. "Thank you" and "gracias" are not here: a person
- * does say those to a bot.
+ * What Whisper-class models write over silence or noise: the subtitle
+ * credits and video sign-offs they were trained on. "Thank you" and
+ * "gracias" are not here: a person does say those to a bot.
+ *
+ * Credits close a transcript the model invented a tail for ("Arregla el
+ * login. Subtítulos realizados por…"), and nobody dictates one, so they are
+ * cut from the end wherever they appear. A sign-off is something a person
+ * may dictate ("change the footer to please subscribe"), so it is dropped
+ * only when it is all the model heard.
  */
-const SILENCE_HALLUCINATIONS = [
+const CREDITS = [
   'subt[ií]tulos? (?:realizados? )?por la comunidad de amara\\.org',
   "subt[ií]tols? (?:realitzats? )?per la comunitat d'amara\\.org",
   'subtitles? by the amara\\.org community',
+  '[♪♫]+',
+];
+const SIGN_OFFS = [
   '(?:thanks|thank you)(?: so much)? for watching',
   '(?:please|like and) subscribe(?: to (?:my|the|our) channel)?',
   'gracias por ver (?:el|este) v[ií]deo',
   '¡?suscr[ií]bete al canal',
-  '[♪♫]+',
 ];
 
-/**
- * Any one of {@link SILENCE_HALLUCINATIONS} closing the text: at its start or
- * after a space or a mark, with only punctuation after it.
- */
-const HALLUCINATED_ENDING = new RegExp(
-  `(?:^|(?<=[\\s.,!?¡¿]))(?:${SILENCE_HALLUCINATIONS.join('|')})[\\s.,!?]*$`,
-  'i',
-);
+/** A credit closing the text: at its start or after a space or a mark, with only punctuation after it. */
+const CREDITS_ENDING = new RegExp(`(?:^|(?<=[\\s.,!?¡¿]))(?:${CREDITS.join('|')})[\\s.,!?]*$`, 'i');
+
+/** A transcript that is one sign-off and nothing else. */
+const ONLY_A_SIGN_OFF = new RegExp(`^(?:${SIGN_OFFS.join('|')})[\\s.,!?]*$`, 'i');
 
 /**
- * The transcript without what the model made up from silence: each known
- * hallucination is dropped from the end, as often as they stack, and a
- * transcript that was only that is empty.
+ * The transcript without what the model made up from silence: credits cut
+ * from the end, as often as they stack, and a transcript that was only
+ * credits or a sign-off is empty.
  */
 export function withoutSilenceHallucinations(raw: string): string {
   let text = raw.trim();
-  for (let match = HALLUCINATED_ENDING.exec(text); match; match = HALLUCINATED_ENDING.exec(text)) {
+  for (let match = CREDITS_ENDING.exec(text); match; match = CREDITS_ENDING.exec(text)) {
     text = text.slice(0, match.index).trim();
   }
-  return text;
+  return ONLY_A_SIGN_OFF.test(text) ? '' : text;
 }

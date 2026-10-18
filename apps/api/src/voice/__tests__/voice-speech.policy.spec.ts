@@ -29,19 +29,26 @@ describe('voice speech policy', () => {
     expect(withoutSilenceHallucinations("Subtítols realitzats per la comunitat d'Amara.org")).toBe(
       '',
     );
-    expect(withoutSilenceHallucinations('Fix the login page. Thanks for watching!')).toBe(
-      'Fix the login page.',
+    expect(
+      withoutSilenceHallucinations(
+        'Revisa el PR. Subtítulos realizados por la comunidad de Amara.org ♪',
+      ),
+    ).toBe('Revisa el PR.');
+  });
+
+  it('drops a sign-off only when it is all that was heard', () => {
+    expect(withoutSilenceHallucinations('Thanks for watching!')).toBe('');
+    expect(withoutSilenceHallucinations('¡Suscríbete al canal!')).toBe('');
+    expect(withoutSilenceHallucinations('Change the footer text to please subscribe')).toBe(
+      'Change the footer text to please subscribe',
     );
-    expect(withoutSilenceHallucinations('Revisa el PR. ¡Suscríbete al canal! ♪')).toBe(
-      'Revisa el PR.',
+    expect(withoutSilenceHallucinations('End the video with thanks for watching.')).toBe(
+      'End the video with thanks for watching.',
     );
   });
 
-  it('keeps what a person does say to a bot, and a sentence that only mentions subscribing', () => {
+  it('keeps what a person does say to a bot', () => {
     expect(withoutSilenceHallucinations('Thank you.')).toBe('Thank you.');
     expect(withoutSilenceHallucinations('Gracias')).toBe('Gracias');
-    expect(withoutSilenceHallucinations('add a button to subscribe')).toBe(
-      'add a button to subscribe',
-    );
   });
 });

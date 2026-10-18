@@ -96,15 +96,26 @@ const PAD_SECONDS = 0.3;
 const SILENCE_FLOOR = 0.003;
 
 /**
- * How far under the loudest frame a frame may be and still count as speech:
- * a tenth of its RMS, 20 dB down, which is where a room's hum sits under a
- * speaking voice whatever the microphone's gain.
+ * Speech is louder than the room by at least this much: four times the
+ * quietest tenth of the clip's frames (12 dB), whatever the microphone's
+ * gain.
  */
-const SPEECH_RELATIVE_TO_LOUDEST = 0.1;
+const SPEECH_OVER_ROOM = 4;
+
+/**
+ * Speech may sit this far under the clip's loud frames and still count: a
+ * tenth (20 dB). "Loud" is the 90th percentile, not the loudest frame, so a
+ * cough or a bump on the mic is not the measure.
+ */
+const SPEECH_UNDER_LOUD = 0.1;
 
 /**
  * The samples from just before the first frame that sounds like speech to
- * just after the last one, {@link PAD_SECONDS} either side. The pause while
+ * just after the last one, {@link PAD_SECONDS} either side. A frame is
+ * speech when it clears {@link SPEECH_OVER_ROOM} or {@link SPEECH_UNDER_LOUD},
+ * whichever is lower, so a doubt keeps audio: one loud transient cannot lift
+ * the bar over the voice, and a clip that is all speech has no quiet tenth
+ * to lift it either. The pause while
  * the person reaches for the mic and the one before they press stop are
  * what speech models fill with "Thanks for watching!", and they are upload
  * and wait for nothing. A clip with no frame above {@link SILENCE_FLOOR} is
@@ -115,10 +126,14 @@ export function trimSilence(samples: Float32Array, rate: number): Float32Array {
   const frames = Math.ceil(samples.length / frame);
   const levelAt = (f: number) => rms(samples.subarray(f * frame, (f + 1) * frame));
 
-  let loudest = 0;
-  for (let f = 0; f < frames; f++) loudest = Math.max(loudest, levelAt(f));
-  const threshold = Math.max(SILENCE_FLOOR, loudest * SPEECH_RELATIVE_TO_LOUDEST);
-  if (loudest < threshold) return samples;
+  const levels = Array.from({ length: frames }, (_, f) => levelAt(f)).sort((a, b) => a - b);
+  const room = levels[Math.floor(frames * 0.1)] ?? 0;
+  const loud = levels[Math.floor(frames * 0.9)] ?? 0;
+  const threshold = Math.max(
+    SILENCE_FLOOR,
+    Math.min(room * SPEECH_OVER_ROOM, loud * SPEECH_UNDER_LOUD),
+  );
+  if ((levels[frames - 1] ?? 0) < threshold) return samples;
 
   let first = 0;
   while (levelAt(first) < threshold) first++;
