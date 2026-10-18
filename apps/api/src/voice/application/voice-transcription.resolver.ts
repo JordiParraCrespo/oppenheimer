@@ -44,14 +44,15 @@ export class VoiceTranscriptionResolver {
         if (isRateLimit(error)) throw error;
         tried = true;
         first ??= error;
+        // The detail says which answer it was ("answered 403 (as text/html)"):
+        // the code alone says only that the provider refused, not why.
+        const { code, detail } = error instanceof AppError ? error : {};
         this.logger.warn({
           message: 'A speech provider could not transcribe; trying the next',
           organizationId,
           provider: provider.id,
-          code: error instanceof AppError ? error.code : undefined,
-          // Which answer it was ("answered 403 (as text/html)"): the code alone
-          // says only that the provider refused, not why.
-          detail: error instanceof AppError ? error.detail : undefined,
+          code,
+          detail,
         });
       }
     }

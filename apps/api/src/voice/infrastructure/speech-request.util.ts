@@ -112,7 +112,8 @@ export async function exchangeSpeech(
   const text = transcriptOf(await response.text());
   if (text === null) {
     throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-      detail: `${who} answered something that is not a transcript.`,
+      // A challenge page can come back as a 200, so this says as what, too.
+      detail: `${who} answered ${response.status} with something that is not a transcript (${answerKind(response)}).`,
     });
   }
   return text;

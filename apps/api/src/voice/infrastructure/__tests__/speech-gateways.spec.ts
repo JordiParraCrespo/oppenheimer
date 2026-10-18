@@ -59,29 +59,46 @@ describe('ChatgptSpeechGateway', () => {
     }
   });
 
-  it('says in the refusal which status came back and as what, and not what the body said', async () => {
-    for (const [answer, detail] of [
-      [
-        new Response('<html>Just a moment…</html>', {
-          status: 403,
-          headers: { 'content-type': 'text/html; charset=UTF-8' },
-        }),
-        "ChatGPT's dictation route answered 403 (as text/html).",
-      ],
-      [
-        // Bytes, not a string: a string body is given `text/plain` by `Response` itself.
-        new Response(new TextEncoder().encode('{"detail":"echoed access-placeholder"}'), {
-          status: 401,
-        }),
-        "ChatGPT's dictation route answered 401 (no content type).",
-      ],
-    ] as const) {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(answer));
-      await expect(new ChatgptSpeechGateway().transcribe(CLIP, ACCESS)).rejects.toMatchObject({
-        code: 'VOICE_006',
-        detail,
-      });
-    }
+  /** The detail of the VOICE_006 the gateway answers `answer` with. */
+  async function refusalDetail(answer: Response): Promise<string> {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(answer));
+    const refusal = await new ChatgptSpeechGateway().transcribe(CLIP, ACCESS).catch((e) => e);
+    expect(refusal).toMatchObject({ code: 'VOICE_006' });
+    return refusal.detail;
+  }
+
+  it('says which status a refusal came back with and as what', async () => {
+    const detail = await refusalDetail(
+      new Response('<html>Just a moment…</html>', {
+        status: 403,
+        headers: { 'content-type': 'text/html; charset=UTF-8' },
+      }),
+    );
+    expect(detail).toContain('403');
+    expect(detail).toContain('text/html');
+  });
+
+  it('says the same of a challenge page served as a 200', async () => {
+    const detail = await refusalDetail(
+      new Response('<html>Just a moment…</html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      }),
+    );
+    expect(detail).toContain('200');
+    expect(detail).toContain('text/html');
+  });
+
+  it('says when a refusal had no content type, and never repeats its body', async () => {
+    // Bytes, not a string: a string body is given `text/plain` by `Response` itself.
+    const detail = await refusalDetail(
+      new Response(new TextEncoder().encode('{"detail":"echoed access-placeholder"}'), {
+        status: 401,
+      }),
+    );
+    expect(detail).toContain('401');
+    expect(detail).toContain('no content type');
+    expect(detail).not.toContain('access-placeholder');
   });
 
   it('answers a rate limit with VOICE_007 and stops calling for that account', async () => {
