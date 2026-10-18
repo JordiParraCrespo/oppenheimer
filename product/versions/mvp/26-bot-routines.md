@@ -128,6 +128,39 @@ function in bots-chat's domain, `routineOpening`, beside `decisionTurn`.
 `message`) says why a turn exists, so the chat and the runs list can tell
 them apart without reading messages.
 
+### The bot's routine tool
+
+As in Grok Bot, a bot has **one** routine tool, `update_routine`, over
+**its own** routines only (`automation."botId"` is the bot), and chat is
+where routines are made and changed:
+
+| Action | Input | Asks |
+|---|---|---|
+| `create` | `name`, `prompt`, `triggers` (one, or several that any one fires), `enabled` | yes: "Allow {bot} to save a routine?" with the name, the *when* and the prompt |
+| `update` | `routineId` and what changes | yes, the same card |
+| `resume` | `routineId` | yes: a routine that runs again is a cost the owner agrees to |
+| `delete` | `routineId` | yes |
+| `pause` | `routineId` | no: stopping never costs anything |
+| `run_now` | `routineId` | no: it is the owner's Run now, one run |
+| `list` | — | no: name, *when*, enabled, last and next run |
+
+Every write answers the bot's whole list again, so it never acts on a
+stale picture. It replaces 25 §4.5's `create_automation` family for a
+bot's own routines; a bot still reads the workspace's other automations
+with `list_automations`.
+
+### In the chat
+
+- **A change is an event line.** Creating, updating, pausing, resuming or
+  deleting a routine writes one event line, "Created routine *Morning PR
+  digest*", with **Open routine**. Several in one turn fold into one
+  group, "Routines in this change", as Grok Bot draws it.
+- **A run opens a turn** with "Routine · *Morning PR digest*" (§4, the
+  opening message).
+- **A failure is a notice**, "Routine *Morning PR digest* failed", with
+  the reason in words: a run skipped, refused or expired writes it, as
+  does a turn of the routine that ended `failed`.
+
 ## 5. When a session ends
 
 "When a session linked to a task ends" is a trigger of automations, as
@@ -143,8 +176,8 @@ watch table and no second consumer of the event.
 
 **A heartbeat is a routine** on a schedule whose prompt is "check in":
 read your instructions, the plan, your open sessions, and act or stay
-quiet. The bot creates one with `create_automation` (it asks, 25 §4.5)
-and the Routines tab offers it. `INSTRUCTIONS.md` already holds the bot's
+quiet. The bot creates one with `update_routine` (it asks, §4) when asked in
+chat. `INSTRUCTIONS.md` already holds the bot's
 job, so there is no separate heartbeat file.
 
 - **Quiet turns.** A routine turn with nothing to say calls
@@ -159,22 +192,56 @@ job, so there is no separate heartbeat file.
   workspace's routines do not all fire at 09:00:00. The console says
   "Every day around 09:00". A pure function in `trigger-config.policy.ts`,
   with a table test across DST changes.
-- **Cost** is held by what automations already has: the shared run
-  budget (per automation and per workspace per hour), the overlap guard,
-  and pausing from the Routines tab. There is no unread counter; if
-  routines nobody reads turn out to cost too much, the fix is a pure guard
-  on the automation, not a bot-level counter.
+- **The spend guard**, as Grok Bot does it. Routines that keep running
+  while nobody reads what they say are money for nothing. *Unread* is the
+  bot's routine turns that ended with something to say (quiet turns do
+  not count) since the owner last opened the bot's chat
+  (`bot."ownerReadAt"`). One pure policy, `routineSpendGuard`, run by
+  `BotRoutineTarget.decide`, answers `allow`, `nudge` or `pause`:
+
+  | When | What happens |
+  |---|---|
+  | 3 unread and the chat unopened for 24 h | **Nudge**, once: a Needs input card, "You've been away for a bit. Keep my routines running?", with *Keep them running*, *Pause them all*, *Keep running, don't ask again*. The run goes ahead |
+  | 10 unread, or the chat unopened for 72 h with any unread | **Pause**: every routine of the bot pauses with `pausedReason = 'unattended'`, the notice "Routines paused while you were away", and a card with *Resume routines* and *Keep them paused* |
+
+  *Don't ask again* turns the guard off for that bot
+  (`bot."routineSpendGuard" = false`). The numbers are `AutomationPolicy`
+  settings at note 16's three levels. Grok Bot's own thresholds are not
+  in its client, so these are ours. The shared run budget and the overlap
+  guard still hold too.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through
-  `create_automation`, which asks, and Approve is the consent. A routine
+  `update_routine`, which asks, and Approve is the consent. A routine
   from a template starts paused, and the bot asks once whether to turn
   them on.
 - A routine fired by people outside the workspace (an issue opened by
   anyone) keeps the bot's *ask* tools asking: an unattended turn cannot
   approve its own card.
 
-## 7. Slices
+## 7. The Routines tab
+
+Bot settings gain **Routines**, read-only as in Grok Bot: chat is where a
+routine changes.
+
+- **A row** is the name, the *when* in words ("Weekdays around 09:00",
+  "When a PR opens in atlas") or "Paused", and a switch ("Pause *name*,
+  *when*"). Its menu: Pause or Resume, **Run now** ("Running…" while its
+  run is live), **Edit**, **Delete**.
+- **Edit** puts "Edit your routine: *name*" in the chat's composer, so the
+  bot changes it through `update_routine` and its card.
+- **Delete** confirms: "This deletes the routine and stops its future
+  runs. This can't be undone."
+- **Opening a row** shows its instruction (the prompt, as Markdown), *when
+  to run* (one line per trigger, with its mark), and its last runs.
+- **Empty**: "Routines are tasks this bot runs on a schedule or when
+  something happens. Ask it in chat to set one up."
+
+The switch, Run now and Delete are the owner acting, through the
+automations endpoints, with no card; they still write their event line.
+`/automations` lists bot routines too, with the bot that runs them.
+
+## 8. Slices
 
 Each is a stacked pull request, green on `pnpm ci:local`.
 
@@ -183,11 +250,14 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   a `RunDispatchRef`; no behaviour change.
 - **B. Bot routines in the API.** The automation columns of §3,
   `bot_turn."origin"` and `"sourceKey"`, `BotRoutineTarget`, the routine
-  opening message, the bot's automation tools scoped to its own routines.
-- **C. The Routines tab.** Schedule and GitHub kinds, in bot settings;
-  `/automations` lists bot routines too, with who runs them.
-- **D. Heartbeat comfort.** `nothing_to_report` and `spread`.
-- **E. When a session ends.** The `session` trigger source of §5.
+  opening message, `update_routine`, and the routine event lines and
+  failure notice in the chat.
+- **C. The Routines tab** of §7, and bot routines on `/automations`.
+- **D. Heartbeat comfort.** `nothing_to_report`, `spread`, and the spend
+  guard with its two cards.
+- **E. More triggers.** "When a session ends" (§5), then a webhook with a
+  key per routine (`POST /automations/webhook/{id}`, `Authorization:
+  Bearer`), as Grok Bot offers.
 
 ## Decided
 
@@ -197,7 +267,7 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   overlap guard's; there is no coalescing and no priority for messages.
 - 2026-10-16: **"when a session ends" is a trigger source of
   automations**, not a `bot_watch` table with its own event handler.
-- 2026-10-16: **no spend guard yet.** The shared run budget, the overlap
+- 2026-10-16 (replaced 2026-10-18): **no spend guard yet.** The shared run budget, the overlap
   guard and pausing hold the cost; a guard, if one is needed, is a pure
   policy on the automation.
 - 2026-10-16: **the open questions, decided.** A routine keeps the scopes
@@ -206,6 +276,17 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   the quiet-turn tool is `nothing_to_report`, for bots only.
 - 2026-10-16: **a bot routine has no project**: `projectId` is required
   only of session automations.
+- 2026-10-18: **routines mimic Grok Bot's behaviour** (research §6 and
+  its second read): one `update_routine` tool for a bot's own routines,
+  writes that cost asking first; a read-only Routines tab where Edit hands
+  the change to chat; event lines for each change and a notice for each
+  failure; webhook triggers later. It replaces 25 §4.5's
+  `create_automation` family for a bot's own routines.
+- 2026-10-18: **the spend guard is back**, as Grok Bot has it: a nudge,
+  then a pause of every routine of the bot, measured on unread routine
+  results and the time since the owner opened the chat, with *don't ask
+  again*. It replaces 2026-10-16's "no spend guard yet", and stays a pure
+  policy as that review asked.
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.
