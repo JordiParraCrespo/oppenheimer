@@ -21,12 +21,16 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
-const event = (outcome: 'approved' | 'denied' | 'failed', content = 'Ana approved: x') =>
+const event = (
+  outcome: 'approved' | 'denied' | 'failed',
+  content = 'Ana approved: x',
+  sessionId: string | null = null,
+) =>
   ({
     id: 'e1',
     role: 'event',
     content,
-    event: { kind: 'approval', outcome, tool: 'start_session', summary: 'Start it' },
+    event: { kind: 'approval', outcome, tool: 'start_session', summary: 'Start it', sessionId },
   }) as unknown as BotMessageEntity;
 
 describe('BotEventLine', () => {
@@ -38,6 +42,18 @@ describe('BotEventLine', () => {
   it('draws a failed call apart from one that ran', () => {
     render(<BotEventLine message={event('failed')} />);
     expect(screen.getByText('bots.chat.event.failed|Start it')).toBeTruthy();
+  });
+
+  it('links the session an approved call started, in a new tab', () => {
+    render(<BotEventLine message={event('approved', 'Ana approved: x', 's-1')} />);
+    const link = screen.getByRole('link', { name: /bots\.chat\.openSession/ });
+    expect(link.getAttribute('href')).toBe('/sessions/s-1');
+    expect(link.getAttribute('target')).toBe('_blank');
+  });
+
+  it('offers no link when the call started no session', () => {
+    render(<BotEventLine message={event('approved')} />);
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
   it('draws another bot’s ask as a card naming the recorded sender, with what it asked', () => {

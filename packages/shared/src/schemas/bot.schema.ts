@@ -359,6 +359,8 @@ export interface BotApprovalEvent {
   tool: string;
   /** The card's line: what the call does, in words. */
   summary: string;
+  /** The session the approved call started, for the chat to link to; null when it started none. */
+  sessionId: string | null;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import type { Query } from '@anthropic-ai/claude-agent-sdk';
 import { BotEngine, type BotEngineEvent, type BotTurnRequest } from '../bot-engine';
-import { describeError, guardTurn } from '../turn';
+import { describeError, guardTurn, ToolCallData } from '../turn';
 import { ClaudeEventTranslator } from './claude-events';
 import { claudeOptions, scratchDirs } from './claude-options';
 import { createToolServer } from './claude-tool-server';
@@ -43,8 +43,9 @@ export class ClaudeBotEngine extends BotEngine {
     const onStderr = (data: string) => {
       stderr = (stderr + data).slice(-STDERR_TAIL);
     };
-    const translator = new ClaudeEventTranslator();
-    const toolServer = createToolServer(request.tools, { signal, apiKey: request.apiKey });
+    const made = new ToolCallData();
+    const translator = new ClaudeEventTranslator(made);
+    const toolServer = createToolServer(request.tools, { signal, apiKey: request.apiKey }, made);
     try {
       // Loaded on the first turn, so importing the package starts nothing.
       const { query } = await import('@anthropic-ai/claude-agent-sdk');

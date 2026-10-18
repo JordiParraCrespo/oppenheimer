@@ -149,7 +149,13 @@ function toEvent(dto: BotMessageEventResponseDto): BotMessageEvent | null {
   if (kind === 'approval') {
     const known = BOT_EVENT_OUTCOMES.find((candidate) => candidate === outcome);
     return known
-      ? { kind, outcome: known, tool: dto.tool ?? '', summary: dto.summary ?? '' }
+      ? {
+          kind,
+          outcome: known,
+          tool: dto.tool ?? '',
+          summary: dto.summary ?? '',
+          sessionId: dto.sessionId,
+        }
       : null;
   }
   if (kind === 'bot_message') {

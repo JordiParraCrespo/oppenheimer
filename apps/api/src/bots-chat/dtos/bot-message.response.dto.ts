@@ -31,6 +31,14 @@ export class BotToolStepResponseDto {
 
   @ApiProperty()
   isError!: boolean;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The session the call started (`start_session`); null for any other call.',
+  })
+  sessionId!: string | null;
 }
 
 /**
@@ -88,6 +96,15 @@ export class BotMessageEventResponseDto {
     description: 'A message: sent with ask_bot, so this bot answers it.',
   })
   expectsReply!: boolean | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description:
+      'An approval: the session the approved call started; null when it started none, and on any other kind.',
+  })
+  sessionId!: string | null;
 }
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */

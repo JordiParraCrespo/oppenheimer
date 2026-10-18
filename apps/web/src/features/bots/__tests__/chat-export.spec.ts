@@ -76,14 +76,23 @@ describe('chatExportHeader and chatExportChunk', () => {
             input: { query: 'bun vs node' },
             output: '',
             isError: false,
+            sessionId: null,
           },
-          { callId: 'b', name: 'TodoWrite', input: {}, output: '', isError: false },
+          {
+            callId: 'b',
+            name: 'TodoWrite',
+            input: {},
+            output: '',
+            isError: false,
+            sessionId: null,
+          },
           {
             callId: 'c',
             name: 'read_document',
             input: { name: 'soul' },
             output: 'no',
             isError: true,
+            sessionId: null,
           },
         ],
       }),
@@ -105,7 +114,13 @@ describe('chatExportHeader and chatExportChunk', () => {
   it('write an event as Oppenheimer’s line, from its fields rather than its words to the bot', () => {
     const chunk = chatExportChunk(
       message('event', 'The owner approved start_session.', 4, {
-        event: { kind: 'approval', outcome: 'denied', tool: 'start_session', summary: 'Start it' },
+        event: {
+          kind: 'approval',
+          outcome: 'denied',
+          tool: 'start_session',
+          summary: 'Start it',
+          sessionId: null,
+        },
       }),
       words,
     );

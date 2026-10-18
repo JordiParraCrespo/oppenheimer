@@ -1,4 +1,9 @@
-import { BotEngine, type BotEngineEvent, type BotTurnRequest } from './bot-engine';
+import {
+  BotEngine,
+  type BotEngineEvent,
+  type BotToolData,
+  type BotTurnRequest,
+} from './bot-engine';
 import { guardTurn, runTool, toAsync } from './turn';
 
 type ToolStarted = Extract<BotEngineEvent, { type: 'tool.started' }>;
@@ -8,7 +13,9 @@ type ToolStarted = Extract<BotEngineEvent, { type: 'tool.started' }>;
  * tool of that name, as a model's call would; with it, the fake reports
  * `result` instead and runs nothing.
  */
-export type FakeToolCall = ToolStarted & { result?: { output: string; isError?: boolean } };
+export type FakeToolCall = ToolStarted & {
+  result?: { output: string; isError?: boolean; data?: BotToolData };
+};
 
 /**
  * What a script yields: the engine's events, with tool calls as
@@ -52,13 +59,14 @@ export class FakeBotEngine extends BotEngine {
       }
       const { result, ...started } = event;
       yield started;
-      const { output, isError } = result ?? (await this.callTool(request, started));
+      const { output, isError, data } = result ?? (await this.callTool(request, started));
       yield {
         type: 'tool.finished',
         callId: started.callId,
         name: started.name,
         output,
         isError: isError === true,
+        ...(data ? { data } : {}),
       };
     }
     yield { type: 'done', reason: 'completed' };
@@ -67,13 +75,13 @@ export class FakeBotEngine extends BotEngine {
   private async callTool(
     request: BotTurnRequest,
     call: ToolStarted,
-  ): Promise<{ output: string; isError: boolean }> {
+  ): Promise<{ output: string; isError: boolean; data?: BotToolData }> {
     const tool = request.tools.find(({ name }) => name === call.name);
     if (!tool) return { output: `Unknown tool: ${call.name}`, isError: true };
-    const { content, isError } = await runTool(tool, call.input, {
+    const { content, ...rest } = await runTool(tool, call.input, {
       signal: request.signal,
       apiKey: request.apiKey,
     });
-    return { output: content, isError };
+    return { output: content, ...rest };
   }
 }

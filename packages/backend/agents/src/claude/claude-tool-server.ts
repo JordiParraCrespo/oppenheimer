@@ -1,7 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { BotEngineTool } from '../bot-engine';
-import { runTool } from '../turn';
+import { runTool, type ToolCallData } from '../turn';
+
+/** Where Claude Code names, in a call's `_meta`, the tool use the call answers. */
+const TOOL_USE_ID_META = 'claudecode/toolUseId';
 
 /** The MCP server name; Claude Code calls our tools `mcp__oppenheimer__<name>`. */
 export const TOOL_SERVER_NAME = 'oppenheimer';
@@ -20,11 +23,14 @@ export function botToolName(name: string): string {
 /**
  * Our tools as an in-process MCP server. The low-level handlers serve the
  * tools' JSON Schemas as they are, rather than through zod shapes the SDK
- * would turn back into JSON Schema.
+ * would turn back into JSON Schema. What a call made goes into `made`
+ * under the tool use Claude Code names in the call's `_meta`, for the
+ * translator to put on that call's `tool.finished`.
  */
 export function createToolServer(
   tools: BotEngineTool[],
   turn: { signal: AbortSignal; apiKey: string },
+  made: ToolCallData,
 ): McpServer {
   const mcp = new McpServer(
     { name: TOOL_SERVER_NAME, version: '1.0.0' },
@@ -54,6 +60,7 @@ export function createToolServer(
       signal: AbortSignal.any([turn.signal, extra.signal]),
       apiKey: turn.apiKey,
     });
+    made.record(request.params._meta?.[TOOL_USE_ID_META], result.data);
     return { content: [{ type: 'text' as const, text: result.content }], isError: result.isError };
   });
 

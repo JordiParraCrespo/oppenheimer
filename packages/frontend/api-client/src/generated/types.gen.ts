@@ -3164,6 +3164,10 @@ export type BotToolStepResponseDto = {
      */
     output: string | null;
     isError: boolean;
+    /**
+     * The session the call started (`start_session`); null for any other call.
+     */
+    sessionId: string | null;
 };
 
 export type BotMessageEventResponseDto = {
@@ -3192,6 +3196,10 @@ export type BotMessageEventResponseDto = {
      * A message: sent with ask_bot, so this bot answers it.
      */
     expectsReply: boolean | null;
+    /**
+     * An approval: the session the approved call started; null when it started none, and on any other kind.
+     */
+    sessionId: string | null;
 };
 
 export type BotMessageResponseDto = {

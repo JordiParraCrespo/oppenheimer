@@ -54,7 +54,7 @@ export class TurnTranscript {
       case 'tool.started':
         return this.started(event.callId, event.name, event.input);
       case 'tool.finished':
-        return this.finished(event.callId, event.output, event.isError);
+        return this.finished(event);
       case 'usage':
         this.outcome.inputTokens += event.inputTokens;
         this.outcome.outputTokens += event.outputTokens;
@@ -99,7 +99,14 @@ export class TurnTranscript {
   }
 
   private started(callId: string, name: string, input: unknown): TranscriptWrite[] {
-    const step: BotToolStep = { callId, name, input, output: null, isError: false };
+    const step: BotToolStep = {
+      callId,
+      name,
+      input,
+      output: null,
+      isError: false,
+      sessionId: null,
+    };
     if (this.activity) {
       this.activity.steps.push(step);
       return [{ kind: 'steps', message: this.activity }];
@@ -108,12 +115,15 @@ export class TurnTranscript {
     return [{ kind: 'insert', message: this.activity }];
   }
 
-  private finished(callId: string, output: string, isError: boolean): TranscriptWrite[] {
+  /** A call's end: its words, cut, and the session it started, from what the tool said it made. */
+  private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
+    const { callId, output, isError, data } = event;
     const step = this.activity?.steps.find((candidate) => candidate.callId === callId);
     if (!this.activity || !step) return [];
     step.output =
       output.length > BOT_TOOL_OUTPUT_MAX ? `${output.slice(0, BOT_TOOL_OUTPUT_MAX)}…` : output;
     step.isError = isError;
+    step.sessionId = isError ? null : (data?.sessionId ?? null);
     return [{ kind: 'steps', message: this.activity }];
   }
 

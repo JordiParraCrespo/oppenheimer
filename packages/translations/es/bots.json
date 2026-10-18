@@ -151,6 +151,7 @@
       "cancel": "Cancelar",
       "failed": "No se pudo responder a la solicitud."
     },
+    "openSession": "Abrir sesión",
     "event": {
       "approved": "Aprobaste: {{summary}}",
       "denied": "Denegaste: {{summary}}",

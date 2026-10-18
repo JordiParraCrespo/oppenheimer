@@ -30,6 +30,7 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -66,6 +67,7 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.createdAt = entity.createdAt.toISOString();
@@ -95,6 +97,7 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
   dto.fromBotId = event.kind === 'approval' ? null : event.fromBotId;
   dto.fromBotName = event.kind === 'approval' ? null : event.fromBotName;
   dto.expectsReply = event.kind === 'bot_message' ? event.expectsReply : null;
+  dto.sessionId = event.kind === 'approval' ? event.sessionId : null;
   return dto;
 }
 
@@ -106,6 +109,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     input: raw.input ?? null,
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
+    sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
   };
 }
 
@@ -120,6 +124,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       outcome,
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
+      sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
     };
   }
   if (raw.kind === 'bot_message') {
