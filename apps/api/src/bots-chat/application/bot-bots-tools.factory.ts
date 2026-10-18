@@ -20,10 +20,6 @@ import { FindBotGroupsQuery } from '../../bots/queries/find-bot-groups/find-bot-
 import { FindBotsQuery } from '../../bots/queries/find-bots/find-bots.query';
 import { FindModelProviderCredentialsQuery } from '../../bots/queries/find-model-provider-credentials/find-model-provider-credentials.query';
 import {
-  SendBotPeerMessageCommand,
-  type SendBotPeerMessageResult,
-} from '../commands/send-bot-peer-message/send-bot-peer-message.command';
-import {
   type BotCreationPlan,
   botCreatedAnswer,
   botCreationSummary,
@@ -32,6 +28,10 @@ import {
   explicitCreateBotInput,
   planBotCreation,
 } from '../bot-peer-tool.mapper';
+import {
+  SendBotPeerMessageCommand,
+  type SendBotPeerMessageResult,
+} from '../commands/send-bot-peer-message/send-bot-peer-message.command';
 import { BOT_PEER_MESSAGES_PER_TURN } from '../domain/bot-peer-message.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';

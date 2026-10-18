@@ -135,7 +135,8 @@ function firstSentence(text: string): string {
 export function botTurnPrompt(opening: HistoryMessage | null): string {
   if (!opening) return '';
   if (opening.role !== 'event') return opening.content;
-  if (opening.event?.kind === 'bot_message') return peerMessagePrompt(opening.event, opening.content);
+  if (opening.event?.kind === 'bot_message')
+    return peerMessagePrompt(opening.event, opening.content);
   if (opening.event?.kind === 'bot_reply') return peerReplyPrompt(opening.event, opening.content);
   return `${eventNote(opening.content)}
 

@@ -443,7 +443,10 @@ describe('BotPeerToolsFactory: message_bot and ask_bot', () => {
   it('sends as the turn and bot running the tool, in the owner’s scope, asking for an answer only through ask_bot', async () => {
     const { commandBus, call } = peerSetup({ sent: true, turnId: 'turn-9', botName: 'Grace' });
     const asked = await call('ask_bot', { bot_id: PEER_ID, message: '  Which task is PR 412?  ' });
-    const told = await call('message_bot', { bot_id: PEER_ID, message: 'Heads-up: PR 412 merged.' });
+    const told = await call('message_bot', {
+      bot_id: PEER_ID,
+      message: 'Heads-up: PR 412 merged.',
+    });
     const [ask, tell] = commandBus.execute.mock.calls.map(
       ([command]) => command as SendBotPeerMessageCommand,
     );

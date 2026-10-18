@@ -994,9 +994,9 @@ describe('bots chat (integration)', () => {
     const asking = await runningTurn(ada);
     const busy = await runningTurn(grace);
     const fromAda = fromBot(asking, grace, ada, false);
-    expect(
-      (await turns.enqueueFromBot(fromAda.turn, fromAda.message, null, allow)).outcome,
-    ).toBe('waiting');
+    expect((await turns.enqueueFromBot(fromAda.turn, fromAda.message, null, allow)).outcome).toBe(
+      'waiting',
+    );
     const yours = sent(grace, 'Mine first');
     expect(await turns.enqueue(yours.turn, yours.message, null)).toBe('waiting');
 
@@ -1138,7 +1138,12 @@ describe('bots chat (integration)', () => {
         content: 'PR 412 is task 7.',
         steps: [],
         position: 0,
-        event: { kind: 'bot_reply', fromBotId: grace.id, fromBotName: 'Grace', outcome: 'answered' },
+        event: {
+          kind: 'bot_reply',
+          fromBotId: grace.id,
+          fromBotName: 'Grace',
+          outcome: 'answered',
+        },
       });
       return turns.enqueueAnswer(turn, message, null);
     };

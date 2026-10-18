@@ -46,8 +46,8 @@ import { DeliverBotAnswerCommandHandler } from './commands/deliver-bot-answer/de
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
 import { SendBotMessageCommandHandler } from './commands/send-bot-message/send-bot-message.command-handler';
-import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-message/send-bot-peer-message.command-handler';
 import { SendBotMessageHttpController } from './commands/send-bot-message/send-bot-message.http.controller';
+import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-message/send-bot-peer-message.command-handler';
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';

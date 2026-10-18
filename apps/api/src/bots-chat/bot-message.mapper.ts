@@ -10,10 +10,7 @@ import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
-import {
-  BotMessageEventResponseDto,
-  BotMessageResponseDto,
-} from './dtos/bot-message.response.dto';
+import { BotMessageEventResponseDto, BotMessageResponseDto } from './dtos/bot-message.response.dto';
 
 @Injectable()
 export class BotMessageMapper
