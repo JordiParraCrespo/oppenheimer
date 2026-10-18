@@ -21,8 +21,9 @@ const KEY_BUCKET = 'key';
 /**
  * Transcription on the deployment's own speech-to-text server
  * (`VOICE_STT_BASE_URL`, `VOICE_STT_MODEL`, `VOICE_STT_API_KEY`): the
- * OpenAI-compatible `POST {base}/audio/transcriptions` with `file`, `model`
- * and `language`, answering `{ "text": "…" }`.
+ * OpenAI-compatible `POST {base}/audio/transcriptions` with `file`, `model`,
+ * `language` and `prompt` (the names to expect, which OpenAI's models, Groq
+ * and Whisper servers all take), answering `{ "text": "…" }`.
  */
 @Injectable()
 export class OpenAiCompatibleSpeechGateway implements KeyedSpeechPort {
@@ -49,7 +50,7 @@ export class OpenAiCompatibleSpeechGateway implements KeyedSpeechPort {
       url: `${baseUrl.replace(/\/+$/, '')}/audio/transcriptions`,
       headers,
       bucket: KEY_BUCKET,
-      form: speechForm(clip, { model, language: clip.language }),
+      form: speechForm(clip, { model, language: clip.language, prompt: clip.prompt }),
       who: 'The speech-to-text server',
     });
   }

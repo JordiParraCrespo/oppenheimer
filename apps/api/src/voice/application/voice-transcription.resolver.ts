@@ -2,11 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { VoiceProvider } from '@oppenheimer/shared';
 import { VoiceErrors } from '../domain/voice.errors';
+import { withoutSilenceHallucinations } from '../domain/voice-speech.policy';
 import type { VoiceClip } from '../infrastructure/speech-to-text.port';
 import type { PolishModel } from './speech-provider.port';
 import { SpeechProviderRegistry } from './speech-provider.registry';
 
-/** What was heard, by whom, and the model credential the polish may run on. */
+/**
+ * What was heard, by whom, and the model credential the polish may run on.
+ * `raw` is without the subtitle credits a speech model makes up from silence,
+ * so a clip of nothing is empty rather than "Thanks for watching!".
+ */
 export interface HeardClip {
   raw: string;
   provider: VoiceProvider;
@@ -38,7 +43,7 @@ export class VoiceTranscriptionResolver {
         if (!(await provider.availableFor(organizationId))) continue;
         tried = true;
         const grant = await provider.grantFor(organizationId, now);
-        const raw = await provider.transcribe(clip, grant);
+        const raw = withoutSilenceHallucinations(await provider.transcribe(clip, grant));
         return { raw, provider: provider.id, polishOn: grant.polishOn };
       } catch (error) {
         if (isRateLimit(error)) throw error;

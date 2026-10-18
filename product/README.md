@@ -521,6 +521,12 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- `next-steps/voice.md` said the polish is skipped when the raw transcript
+  is clean and short, and that the ChatGPT route's names reach it only
+  through the polish. On 2026-10-18 (#393) every clip is polished, with a
+  light-touch brief modelled on Wispr Flow, and the names also go to an
+  OpenAI-compatible speech server as its `prompt` ("Dictation quality,
+  first pass").
 - Note 09 had `runner uninstall` exit 0 when the control plane could not
   be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
   control. On 2026-10-18, after an owner's uninstall hid a failed
