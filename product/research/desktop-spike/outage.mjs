@@ -6,8 +6,8 @@ import { _electron as electron } from 'playwright-core';
 const here = new URL('.', import.meta.url).pathname;
 const [sessionId, label, disrupt] = process.argv.slice(2);
 const app = await electron.launch({
-  executablePath: here + 'node_modules/electron/dist/electron',
-  args: [here + 'src/main.cjs', '--no-sandbox'],
+  executablePath: `${here}node_modules/electron/dist/electron`,
+  args: [`${here}src/main.cjs`, '--no-sandbox'],
   env: { ...process.env },
 });
 const page = await app.firstWindow();
