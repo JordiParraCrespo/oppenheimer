@@ -12,6 +12,7 @@ import type {
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
+import { DesktopSessionStream, desktopBridge } from './stream/desktop-stream';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
@@ -116,10 +117,14 @@ export class SessionsService {
    * the relay offers one (22); it is asked at each offer.
    */
   openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
-    return new AttachSessionStream({
-      apiBaseUrl: this.apiBaseUrl,
-      issueTicket: () => this.issueAttachTicket(id, window),
-      direct: options.direct,
-    });
+    const remote = () =>
+      new AttachSessionStream({
+        apiBaseUrl: this.apiBaseUrl,
+        issueTicket: () => this.issueAttachTicket(id, window),
+        direct: options.direct,
+      });
+    // Inside the desktop app, a session on this machine skips the network (27).
+    const bridge = desktopBridge();
+    return bridge ? new DesktopSessionStream(bridge, id, window, remote) : remote();
   }
 }

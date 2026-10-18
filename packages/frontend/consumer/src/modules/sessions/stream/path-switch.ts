@@ -3,9 +3,10 @@ import { DirectPath, directPathSupported, type PeerFactory } from './direct-path
 
 /**
  * Which way the terminal's bytes travel: through the relay, or on a direct
- * channel to the host (`product/versions/mvp/22-direct-terminal-path.md`).
+ * channel to the host (`product/versions/mvp/22-direct-terminal-path.md`), or,
+ * in the desktop app, through the runner's socket on this machine (27).
  */
-export type StreamPath = 'relay' | 'direct';
+export type StreamPath = 'relay' | 'direct' | 'local';
 
 type DirectServerMessage = Extract<
   AttachServerMessage,
@@ -44,7 +45,7 @@ export class PathSwitch {
   private direct: DirectPath | null = null;
   /** Keystroke bytes sent on this socket. */
   private relaySent = 0;
-  private path: StreamPath = 'relay';
+  private path: 'relay' | 'direct' = 'relay';
   private failures = 0;
 
   constructor(private readonly options: PathSwitchOptions) {}
@@ -141,7 +142,7 @@ export class PathSwitch {
     this.setPath('relay');
   }
 
-  private setPath(next: StreamPath): void {
+  private setPath(next: 'relay' | 'direct'): void {
     if (this.path === next) return;
     this.path = next;
     for (const listener of this.listeners) listener(next);

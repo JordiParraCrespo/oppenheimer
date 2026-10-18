@@ -1,0 +1,167 @@
+import type { SessionStream, StreamEnd, StreamPath, StreamStatus } from './session-stream';
+
+/**
+ * The desktop app's bridge (`apps/desktop/src/preload.cjs`), present only when
+ * the console runs inside it. It reaches the runner on this machine through
+ * the runner's local socket, so a session whose host is this machine is
+ * attached with no control plane and no network in between
+ * (`product/versions/mvp/27-desktop-app.md`).
+ */
+export interface DesktopBridge {
+  /** Whether the runner on this machine holds the session. */
+  hasSession(sessionId: string): Promise<boolean>;
+  attach(sessionId: string, window: number, cols: number, rows: number): Promise<number>;
+  write(handle: number, data: string): void;
+  resize(handle: number, cols: number, rows: number): void;
+  close(handle: number): void;
+  onData(handle: number, listener: (chunk: Uint8Array) => void): () => void;
+  onClose(handle: number, listener: () => void): () => void;
+}
+
+export function desktopBridge(): DesktopBridge | undefined {
+  return (globalThis as { oppenheimerDesktop?: DesktopBridge }).oppenheimerDesktop;
+}
+
+type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
+
+/**
+ * Local first, the relay otherwise: asks the bridge whether this machine's
+ * runner holds the session, attaches through its socket if so, and hands the
+ * whole stream to `remote()` (the attach socket, with its direct path) if not
+ * or if the local attach fails. Listeners registered before the choice are
+ * replayed onto whichever stream wins.
+ */
+export class DesktopSessionStream implements SessionStream {
+  private readonly dataListeners = new Set<DataListener>();
+  private readonly statusListeners = new Set<(s: StreamStatus) => void>();
+  private readonly endListeners = new Set<(r: StreamEnd) => void>();
+  private readonly pathListeners = new Set<(p: StreamPath) => void>();
+  private remoteStream: SessionStream | null = null;
+  private handle: number | null = null;
+  private disposed = false;
+  private viewport = { cols: 80, rows: 24 };
+  private path: StreamPath | null = null;
+  private unsubscribe: (() => void)[] = [];
+
+  constructor(
+    private readonly bridge: DesktopBridge,
+    private readonly sessionId: string,
+    private readonly window: number,
+    private readonly remote: () => SessionStream,
+  ) {
+    void this.choose();
+  }
+
+  private async choose(): Promise<void> {
+    let local = false;
+    try {
+      local = await this.bridge.hasSession(this.sessionId);
+    } catch {
+      local = false;
+    }
+    if (this.disposed) return;
+    if (!local) return this.goRemote();
+    try {
+      const handle = await this.bridge.attach(
+        this.sessionId,
+        this.window,
+        this.viewport.cols,
+        this.viewport.rows,
+      );
+      if (this.disposed) return this.bridge.close(handle);
+      this.handle = handle;
+      this.unsubscribe.push(
+        this.bridge.onData(handle, (chunk) => {
+          for (const listener of this.dataListeners) listener(chunk, () => {});
+        }),
+        this.bridge.onClose(handle, () => {
+          // The runner went (a restart, an update) or the window closed: fall
+          // back to the relay, which knows which of the two it was.
+          if (this.disposed || this.handle !== handle) return;
+          this.handle = null;
+          this.goRemote();
+        }),
+      );
+      this.setPath('local');
+      for (const listener of this.statusListeners) listener('live');
+    } catch {
+      this.goRemote();
+    }
+  }
+
+  private goRemote(): void {
+    if (this.disposed || this.remoteStream) return;
+    const stream = this.remote();
+    this.remoteStream = stream;
+    for (const l of this.dataListeners) this.unsubscribe.push(stream.onData(l));
+    for (const l of this.statusListeners) this.unsubscribe.push(stream.onStatus(l));
+    for (const l of this.endListeners) this.unsubscribe.push(stream.onEnd(l));
+    if (stream.onPath) {
+      this.unsubscribe.push(stream.onPath((p) => this.setPath(p)));
+    } else {
+      this.setPath('relay');
+    }
+    stream.resize(this.viewport.cols, this.viewport.rows);
+  }
+
+  private setPath(path: StreamPath): void {
+    this.path = path;
+    for (const listener of this.pathListeners) listener(path);
+  }
+
+  onData(listener: DataListener): () => void {
+    this.dataListeners.add(listener);
+    const off = this.remoteStream?.onData(listener);
+    return () => {
+      this.dataListeners.delete(listener);
+      off?.();
+    };
+  }
+
+  onStatus(listener: (status: StreamStatus) => void): () => void {
+    this.statusListeners.add(listener);
+    listener(this.handle !== null ? 'live' : 'connecting');
+    const off = this.remoteStream?.onStatus(listener);
+    return () => {
+      this.statusListeners.delete(listener);
+      off?.();
+    };
+  }
+
+  onEnd(listener: (reason: StreamEnd) => void): () => void {
+    this.endListeners.add(listener);
+    const off = this.remoteStream?.onEnd(listener);
+    return () => {
+      this.endListeners.delete(listener);
+      off?.();
+    };
+  }
+
+  onPath(listener: (path: StreamPath) => void): () => void {
+    this.pathListeners.add(listener);
+    if (this.path) listener(this.path);
+    return () => this.pathListeners.delete(listener);
+  }
+
+  send(data: string): void {
+    if (this.handle !== null) this.bridge.write(this.handle, data);
+    else this.remoteStream?.send(data);
+  }
+
+  resize(cols: number, rows: number): void {
+    this.viewport = { cols, rows };
+    if (this.handle !== null) this.bridge.resize(this.handle, cols, rows);
+    else this.remoteStream?.resize(cols, rows);
+  }
+
+  reconnectNow(): void {
+    this.remoteStream?.reconnectNow();
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    for (const off of this.unsubscribe) off();
+    if (this.handle !== null) this.bridge.close(this.handle);
+    this.remoteStream?.dispose();
+  }
+}
