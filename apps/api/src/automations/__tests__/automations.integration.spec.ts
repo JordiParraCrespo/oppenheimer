@@ -519,11 +519,14 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       expect(read.target).not.toHaveProperty('projectId');
       expect(read.revision).toMatchObject({ kind: 'bot', prompt: 'List the open pull requests.' });
       expect(read.target).toMatchObject({ credentialScopes: ['automations:read'] });
-      // The console's list is session automations'; the bot's list is its routines.
-      const listed = await automations.findAll(scope(), {});
-      expect(listed.map((automation) => automation.id)).not.toContain(routine.id);
-      const routines = await automations.findAll(scope(), { botId });
-      expect(routines.map((automation) => automation.id)).toEqual([routine.id]);
+      // The console's list is session automations'; the bot's list is its
+      // routines, and the workspace's routines are every bot's and nothing else.
+      const ids = (rows: { id: string }[]) => rows.map((automation) => automation.id);
+      expect(ids(await automations.findSessions(scope(), {}))).not.toContain(routine.id);
+      expect(ids(await automations.findRoutinesOfBot(scope(), botId))).toEqual([routine.id]);
+      const everyRoutine = await automations.findRoutines(scope());
+      expect(ids(everyRoutine)).toContain(routine.id);
+      expect(everyRoutine.every((automation) => automation.runTarget === 'bot')).toBe(true);
     });
 
     it('refuses a routine without its bot, and a session automation without its project', async () => {

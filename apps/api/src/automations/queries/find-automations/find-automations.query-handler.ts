@@ -24,7 +24,9 @@ export class FindAutomationsQueryHandler
   ) {}
 
   async execute(query: FindAutomationsQuery): Promise<AutomationListing> {
-    const automations = await this.automations.findAll(query.scope, { projectId: query.projectId });
+    const automations = await this.automations.findSessions(query.scope, {
+      projectId: query.projectId,
+    });
     const since = new Date(Date.now() - RUN_HISTORY_DAYS * 86_400_000);
     const digests = await this.runs.digests(
       query.scope,

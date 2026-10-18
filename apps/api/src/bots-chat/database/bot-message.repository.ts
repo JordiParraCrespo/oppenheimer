@@ -37,25 +37,14 @@ export class BotMessageRepository
   }
 
   async insertOnce(message: BotMessageEntity): Promise<boolean> {
-    const record = this.mapper.toPersistence(message);
     // A bot deleted since leaves the line nowhere to go: nothing is stored.
     const stored: { id: string }[] = await this.dataSource.query(
-      `INSERT INTO bot_message (id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event")
-       SELECT $1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb
+      `INSERT INTO bot_message (${MESSAGE_COLUMNS})
+       SELECT ${MESSAGE_VALUES}
         WHERE EXISTS (SELECT 1 FROM bot WHERE "organizationId" = $2 AND id = $3)
        ON CONFLICT (id) DO NOTHING
        RETURNING id`,
-      [
-        record.id,
-        record.organizationId,
-        record.botId,
-        record.turnId,
-        record.role,
-        record.content,
-        JSON.stringify(record.steps),
-        record.position,
-        record.event ? JSON.stringify(record.event) : null,
-      ],
+      messageParameters(this.mapper.toPersistence(message)),
     );
     return stored.length === 1;
   }
@@ -207,6 +196,24 @@ function after(
   );
 }
 
+/** What a message is written as, by every writer of `bot_message`, in this order. */
+const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event"`;
+const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb';
+
+function messageParameters(record: BotMessageOrmEntity): unknown[] {
+  return [
+    record.id,
+    record.organizationId,
+    record.botId,
+    record.turnId,
+    record.role,
+    record.content,
+    JSON.stringify(record.steps),
+    record.position,
+    record.event ? JSON.stringify(record.event) : null,
+  ];
+}
+
 /**
  * A message, and when it is yours or the bot's text, the bot's last message
  * for the sidebar; in the caller's transaction.
@@ -216,21 +223,9 @@ export async function insertMessageWithin(
   mapper: BotMessageMapper,
   message: BotMessageEntity,
 ): Promise<void> {
-  const record = mapper.toPersistence(message);
   await manager.query(
-    `INSERT INTO bot_message (id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event")
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb)`,
-    [
-      record.id,
-      record.organizationId,
-      record.botId,
-      record.turnId,
-      record.role,
-      record.content,
-      JSON.stringify(record.steps),
-      record.position,
-      record.event ? JSON.stringify(record.event) : null,
-    ],
+    `INSERT INTO bot_message (${MESSAGE_COLUMNS}) VALUES (${MESSAGE_VALUES})`,
+    messageParameters(mapper.toPersistence(message)),
   );
   // The sidebar's line is a conversation's words: an activity line or an event is neither.
   if (message.role === 'activity' || message.role === 'event') return;

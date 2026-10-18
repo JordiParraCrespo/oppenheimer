@@ -6,7 +6,6 @@ import {
   resolveAutomationLimits,
 } from '../domain/automation-limits.policy';
 import { AutomationRunEntity } from '../domain/automation-run.entity';
-import { BotRoutineChangedDomainEvent } from '../domain/events/bot-routine-changed.domain-event';
 import {
   capacityGuard,
   diskGuard,
@@ -18,6 +17,7 @@ import {
   rateGuard,
   staleGuard,
 } from '../domain/fire-guard.policy';
+import { routineActivityEvents } from '../domain/routine-activity.policy';
 import { fillHistory, historyWindow } from '../domain/run-history.policy';
 import {
   composeRunPrompt,
@@ -279,11 +279,12 @@ describe('a bot routine', () => {
   // twice in one save, or a session automation writing into a bot's chat.
   it('tells its bot what became of it, once per change, and only what changed', () => {
     const activities = (entity: AutomationEntity) =>
-      entity.domainEvents.flatMap((event) =>
-        event instanceof BotRoutineChangedDomainEvent
-          ? [[event.activity, event.botId, event.name, event.pausedReason]]
-          : [],
-      );
+      routineActivityEvents(entity).map((event) => [
+        event.activity,
+        event.botId,
+        event.name,
+        event.pausedReason,
+      ]);
     const entity = routine();
     expect(activities(entity)).toEqual([['saved', 'bot-1', 'Morning PR digest', null]]);
 

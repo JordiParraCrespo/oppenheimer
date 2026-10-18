@@ -20,33 +20,29 @@ export interface ChatTurnBlock {
   answer: BotMessageEntity[];
 }
 
-/** The conversation as turns, in the order they were sent. */
+/**
+ * The conversation as blocks, in the order they happened: each turn's
+ * messages under it, your message apart from the bot's work, and each line
+ * outside any turn as a block of its own, keyed by its id. An event opens
+ * its block either way.
+ */
 export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] {
   const blocks = new Map<string, ChatTurnBlock>();
-  const blockOf = (turnId: string) => {
-    let block = blocks.get(turnId);
+  const blockOf = (key: string, turnId: string | null) => {
+    let block = blocks.get(key);
     if (!block) {
-      block = { key: turnId, turnId, turn: conversation.turn(turnId), asked: [], answer: [] };
-      blocks.set(turnId, block);
+      const turn = turnId === null ? undefined : conversation.turn(turnId);
+      block = { key, turnId, turn, asked: [], answer: [] };
+      blocks.set(key, block);
     }
     return block;
   };
   for (const message of conversation.messages) {
-    if (message.turnId === null) {
-      blocks.set(message.id, {
-        key: message.id,
-        turnId: null,
-        turn: undefined,
-        asked: [message],
-        answer: [],
-      });
-      continue;
-    }
-    const block = blockOf(message.turnId);
+    const block = blockOf(message.turnId ?? message.id, message.turnId);
     const opens = message.role === 'user' || message.role === 'event';
     (opens ? block.asked : block.answer).push(message);
   }
-  for (const turn of conversation.turns) blockOf(turn.id);
+  for (const turn of conversation.turns) blockOf(turn.id, turn.id);
   return [...blocks.values()];
 }
 
