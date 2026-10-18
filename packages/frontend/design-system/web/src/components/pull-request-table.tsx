@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import { Button } from './button';
 import { DiffStat } from './diff-stat';
 import { IconButton } from './icon-button';
+import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
@@ -32,6 +33,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
  *   the head and `RunsListFoot` under the rows, as on Runs.
  * - The lane (Deep, Medium, Quick: how much reading a change needs) is a
  *   `Badge`, `strong` for Deep and `soft` for the others.
+ * - `PullRequestRowSkeleton`: a row's place before the queue answers, on the
+ *   same grid, so the rows land where it stood.
  * - `MergeButton`: Merge, which asks once in place (Cancel, Confirm merge)
  *   before it acts.
  */
@@ -216,6 +219,49 @@ function PullRequestRow({
   );
 }
 
+/** Title widths a run of placeholder rows cycles through, so they read as text, not a grid. */
+const SKELETON_TITLES = ['w-3/5', 'w-2/5', 'w-1/2', 'w-[70%]'];
+
+/**
+ * A row's place while the queue has not answered: the same grid and the same
+ * three widths as `PullRequestRow`, a bar where each value goes at the height
+ * of its line, so the rows that replace it land where it stood. `index` picks
+ * the title's width.
+ */
+function PullRequestRowSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div
+      aria-hidden
+      data-slot="pull-request-row-skeleton"
+      className={cn('grid min-h-15.5 items-center gap-4 px-3 py-2.5', COLUMNS, className)}
+      {...props}
+    >
+      <Skeleton shape="pill" className="h-5.5 w-12" />
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="flex h-5 items-center">
+          <Skeleton shape="sm" className={cn('h-3.5', SKELETON_TITLES[index % SKELETON_TITLES.length])} />
+        </span>
+        <span className="flex h-4 items-center">
+          <Skeleton shape="sm" className="h-2.5 w-44" />
+        </span>
+        <span className="flex h-4 items-center gap-3 @[1080px]/prq:hidden">
+          <Skeleton shape="sm" className="h-2.5 w-14" />
+          <Skeleton shape="sm" className="h-2.5 w-18" />
+          <Skeleton shape="sm" className="h-2.5 w-9" />
+        </span>
+      </div>
+      <Skeleton shape="sm" className={cn(WIDE, 'h-2.5 w-10 justify-self-end')} />
+      <Skeleton shape="sm" className={cn(WIDE, 'h-2.5 w-14')} />
+      <Skeleton shape="sm" className={cn(WIDE, 'h-2.5 w-18')} />
+      <Skeleton shape="sm" className="h-2.5 w-10 justify-self-end" />
+      <span className="col-span-2 col-start-2 flex items-center gap-0.5 @[720px]/prq:col-span-1 @[720px]/prq:col-start-auto @[720px]/prq:justify-end">
+        <Skeleton shape="pill" className="h-7 w-22" />
+        <Skeleton shape="pill" className="h-7 w-21" />
+      </span>
+    </div>
+  );
+}
+
 /**
  * Merge, asked once in place: the first press turns the button into Cancel
  * and Confirm merge, which rise in where it was; the second acts. Off, with
@@ -291,4 +337,4 @@ function MergeButton({
   );
 }
 
-export { MergeButton, PullRequestRow, PullRequestTable, PullRequestTableHead };
+export { MergeButton, PullRequestRow, PullRequestRowSkeleton, PullRequestTable, PullRequestTableHead };
