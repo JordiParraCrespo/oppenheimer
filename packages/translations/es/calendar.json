@@ -33,12 +33,13 @@
     "add": "Añadir evento",
     "save": "Guardar",
     "delete": "Eliminar evento",
-    "deleteTitle": "¿Eliminar este evento?",
-    "deleteDescription": "Se elimina «{{title}}».",
+    "deleteTitle": "¿Eliminar «{{title}}»?",
+    "deleteDescription": "Se quita del calendario.",
     "saveFailed": "No se ha podido guardar el evento.",
     "deleteFailed": "No se ha podido eliminar el evento.",
     "loadFailed": "No se ha podido cargar el evento.",
-    "gone": "Este evento no está en el mes que se muestra o ya no existe."
+    "gone": "Este evento no está en el mes que se muestra o ya no existe.",
+    "deleting": "Eliminando…"
   },
   "google": {
     "title": "Google Calendar",
@@ -53,17 +54,18 @@
     "updated": "Actualizado hace {{age}}",
     "needsReconnect": "Hay que volver a conectarla",
     "readFailed": "No se ha podido leer ahora",
-    "remove": "Quitar",
+    "remove": "Quitar cuenta",
     "removeLabel": "Quitar {{email}}",
-    "removeTitle": "¿Quitar esta cuenta de Google?",
-    "removeDescription": "{{email}} deja el calendario, y sus eventos con ella. Puedes volver a conectarla cuando quieras.",
+    "removeTitle": "¿Quitar «{{email}}»?",
+    "removeDescription": "Sus eventos dejan el calendario. Puedes volver a conectarla cuando quieras.",
     "removeFailed": "No se ha podido quitar la cuenta de Google.",
     "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
     "loadFailed": "No se han podido comprobar tus cuentas de Google.",
     "connecting": "Conectando Google Calendar…",
     "connectFailed": "No se ha podido conectar Google Calendar.",
     "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-    "back": "Volver al calendario"
+    "back": "Volver al calendario",
+    "removing": "Quitando…"
   },
   "googleEvent": {
     "untitled": "(Sin título)",

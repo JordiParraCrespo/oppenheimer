@@ -14,6 +14,7 @@ import { WorkSessionOrmEntity } from '../database/work-session.orm-entity';
 import { WorkSessionRepository } from '../database/work-session.repository';
 import { WorkSessionEventOrmEntity } from '../database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import { mintSessionSlug } from '../domain/session-slug.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 import { WorkSessionMapper } from '../work-session.mapper';
@@ -68,7 +69,9 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       projectId,
       createdByUserId: userId,
       hostId,
-      slug: overrides.slug ?? `bold-otter-${randomUUID().slice(0, 6)}`,
+      // Minted the way a real session's is: six hex digits of a UUID collide
+      // inside the 250-session walk often enough to fail a run.
+      slug: overrides.slug ?? mintSessionSlug(),
       agent: 'claude-code',
       idempotencyKey: overrides.idempotencyKey ?? null,
       folder: overrides.folder,
@@ -868,7 +871,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           projectId,
           createdByUserId: other,
           hostId,
-          slug: `quiet-heron-${randomUUID().slice(0, 6)}`,
+          slug: mintSessionSlug(),
           agent: 'shell',
           folder: '/home/ana',
         }),

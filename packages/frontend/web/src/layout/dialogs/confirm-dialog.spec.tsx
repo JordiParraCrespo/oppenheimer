@@ -56,14 +56,14 @@ describe('ConfirmDialog', () => {
     );
     render(
       <ConfirmDialog {...base} error={error} onConfirm={vi.fn()} onClose={vi.fn()}>
-        <label>
-          <input type="checkbox" /> Discard unpushed work
-        </label>
+        <ConfirmDialog.Option checked={false} onCheckedChange={vi.fn()}>
+          Discard unpushed work
+        </ConfirmDialog.Option>
       </ConfirmDialog>,
     );
 
     expect(screen.getByRole('alert').textContent).toContain('Could not delete the session');
-    expect(screen.getByLabelText('Discard unpushed work')).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'Discard unpushed work' })).toBeTruthy();
   });
 
   it('submits the form it names instead of calling onConfirm', () => {
@@ -78,5 +78,19 @@ describe('ConfirmDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete session' }));
     expect(onSubmit).toHaveBeenCalledOnce();
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('ticks an option from its sentence as well as its box', () => {
+    const onCheckedChange = vi.fn();
+    render(
+      <ConfirmDialog {...base} onConfirm={vi.fn()} onClose={vi.fn()}>
+        <ConfirmDialog.Option checked={false} onCheckedChange={onCheckedChange}>
+          Discard unpushed work
+        </ConfirmDialog.Option>
+      </ConfirmDialog>,
+    );
+
+    fireEvent.click(screen.getByText('Discard unpushed work'));
+    expect(onCheckedChange).toHaveBeenCalledWith(true);
   });
 });

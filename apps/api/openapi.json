@@ -8207,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
@@ -8365,7 +8375,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -26051,22 +26061,50 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["approval"]
+            "enum": ["approval", "bot_message", "bot_reply"]
           },
           "outcome": {
             "type": "string",
-            "enum": ["approved", "denied", "failed"]
+            "enum": ["approved", "denied", "failed", "answered", "cancelled"],
+            "nullable": true,
+            "description": "An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message."
           },
           "tool": {
             "type": "string",
-            "description": "The tool the decided call was for."
+            "nullable": true,
+            "description": "An approval: the tool the decided call was for."
           },
           "summary": {
             "type": "string",
-            "description": "The card's line: what the call does, in words."
+            "nullable": true,
+            "description": "An approval: the card's line, what the call does in words."
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "nullable": true,
+            "description": "A message or an answer: the sending bot's name when it sent it."
+          },
+          "expectsReply": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "A message: sent with ask_bot, so this bot answers it."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary"]
+        "required": [
+          "kind",
+          "outcome",
+          "tool",
+          "summary",
+          "fromBotId",
+          "fromBotName",
+          "expectsReply"
+        ]
       },
       "BotMessageResponseDto": {
         "type": "object",

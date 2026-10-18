@@ -154,7 +154,12 @@
     "event": {
       "approved": "Aprobaste: {{summary}}",
       "denied": "Denegaste: {{summary}}",
-      "failed": "Aprobaste y falló: {{summary}}"
+      "failed": "Aprobaste y falló: {{summary}}",
+      "peerMessage": "De <bot>{{name}}</bot>",
+      "peerAsk": "<bot>{{name}}</bot> preguntó",
+      "peerAnswered": "<bot>{{name}}</bot> respondió",
+      "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
     }
   },
   "settings": {
@@ -291,7 +296,7 @@
     }
   },
   "delete": {
-    "title": "¿Eliminar {{name}}?",
+    "title": "¿Eliminar «{{name}}»?",
     "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
     "confirm": "Eliminar bot",
     "pending": "Eliminando…",

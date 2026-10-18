@@ -95,6 +95,7 @@
     "PROJECTS_006": "When a project holds repositories, at least one of them must be offered by default, none twice, each with a base branch.",
     "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
     "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
+    "PROJECTS_009": "Unassigned is the name of the project for unfiled sessions. Choose another name.",
     "PULLS_001": "Choose a workspace before working with pull requests.",
     "PULLS_002": "This pull request comes from a fork, which a session cannot check out yet.",
     "SESSIONS_001": "We could not find that session.",

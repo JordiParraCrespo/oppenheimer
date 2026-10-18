@@ -60,7 +60,7 @@ function command(overrides: Partial<ConstructorParameters<typeof TranscribeVoice
 }
 
 describe('TranscribeVoiceCommandHandler', () => {
-  it('answers the polish, built from the vocabulary as terms and the sign-in it was heard on', async () => {
+  it('hears the clip with the vocabulary as names to expect, and polishes with it and the sign-in it was heard on', async () => {
     const { handler, transcription, polish } = setup('Fix the login.');
 
     await expect(handler.execute(command())).resolves.toEqual({
@@ -71,7 +71,11 @@ describe('TranscribeVoiceCommandHandler', () => {
     });
     expect(transcription.hear).toHaveBeenCalledWith(
       'org-placeholder',
-      { data: expect.any(Buffer), language: 'en' },
+      {
+        data: expect.any(Buffer),
+        language: 'en',
+        prompt: 'oppenheimer, apps/web, Claude Code, Codex, ChatGPT, GitHub, tmux',
+      },
       expect.any(Date),
     );
     expect(polish.polish).toHaveBeenCalledWith(

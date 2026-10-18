@@ -259,7 +259,7 @@
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
-    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote. Deleting stops if the session has work that is not pushed.",
     "confirm": "Delete session",
     "deleting": "Deleting…",
     "failed": "The session could not be deleted.",

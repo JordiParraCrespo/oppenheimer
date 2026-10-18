@@ -521,6 +521,15 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- `next-steps/voice.md` said the polish is skipped when the raw transcript
+  is clean and short, and that the ChatGPT route's names reach it only
+  through the polish. On 2026-10-18 (#393) every clip is polished, with a
+  light-touch brief modelled on Wispr Flow, and the names also go to an
+  OpenAI-compatible speech server as its `prompt` ("Dictation quality,
+  first pass").
+- `next-steps/voice.md` shipped `voice_dictation` as a release flag,
+  default off. On 2026-10-18 it became an `ops` flag defaulting to `true`,
+  the feature's kill switch.
 - Note 09 had `runner uninstall` exit 0 when the control plane could not
   be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
   control. On 2026-10-18, after an owner's uninstall hid a failed
@@ -541,3 +550,10 @@ earlier note:
   owed close again, a restart request supersedes it, and the console draws
   such a row as deleting or refused instead of bringing it back as it was
   (03, "A close is owed until the host answers it"; 01, "Hello").
+- Note 25 had `ask_bot` give another bot a task and wait for its answer.
+  On 2026-10-18 it was built so the answer comes back as a new turn of the
+  asker instead: one turn per bot runs at a time and a turn has four
+  minutes, so an ask that waited could time out or leave two bots waiting
+  on each other. The sender is recorded rather than claimed, messages
+  holding a credential are refused, and the chain is decided under a lock,
+  from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").

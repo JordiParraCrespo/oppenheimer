@@ -26,6 +26,8 @@ export interface BotMessageRepositoryPort {
   ): Promise<BotMessageEntity[]>;
   /** The message that opened a turn: what you sent it, or the event Oppenheimer told it. */
   findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null>;
+  /** A turn's own text, in the order the bot wrote it: what an ask's answer is drawn from. */
+  findTurnTexts(organizationId: string, turnId: string): Promise<string[]>;
   /**
    * What a turn reads back: the bot's newest `limit` messages before
    * `turnId`'s and after the message `afterMessageId` (the summary's cutoff;

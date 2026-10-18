@@ -120,8 +120,9 @@ export function SessionPane({
        `border-radius: 0`): rounded, it reads as a widget tucked into a card
        rather than the console surface `terminal.css` asks for. It is the
        terminal's colour, as the artboard's is, so frame and pane read as one
-       surface in dark mode. */
-    <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
+       surface in dark mode. `data-pane-ground` asks the shell's page bar
+       above it for the same colour. */
+    <div data-pane-ground="terminal" className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
         {terminal(session)}
       </div>

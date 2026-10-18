@@ -1,7 +1,7 @@
 import { TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
-import { afterTaskIdFor, boardCounts, columnOf } from '../lib/board';
+import { afterTaskIdFor, boardCounts, columnOf, filingOf } from '../lib/board';
 import { boardSearchSchema } from '../lib/board-search';
 import { cardView, dueDayLabel } from '../lib/card-view';
 
@@ -128,6 +128,39 @@ describe('boardSearchSchema', () => {
       milestone: undefined,
       task: 'new',
       start: undefined,
+    });
+  });
+});
+
+describe('filingOf', () => {
+  const milestones = [{ id: 'm-1', projectId: 'p-2' }];
+
+  it("files a task added under a milestone in the milestone's project, not Unassigned", () => {
+    // With only a milestone filtered, sending Unassigned made the API refuse the task (TASK milestone/project mismatch).
+    expect(filingOf({ milestoneId: 'm-1' }, milestones, 'p-unassigned')).toEqual({
+      projectId: 'p-2',
+      milestoneId: 'm-1',
+    });
+  });
+
+  it('files in the filtered project, else Unassigned, when no milestone is filtered', () => {
+    expect(filingOf({ projectId: 'p-3' }, milestones, 'p-unassigned')).toEqual({
+      projectId: 'p-3',
+      milestoneId: null,
+    });
+    expect(filingOf({}, milestones, 'p-unassigned')).toEqual({
+      projectId: 'p-unassigned',
+      milestoneId: null,
+    });
+  });
+
+  it('sends a filtered milestone the list does not have without a project, for the API to resolve', () => {
+    // Dropping it filed the task under Unassigned without a word; guessing a project made the API refuse a real milestone.
+    expect(
+      filingOf({ milestoneId: 'm-gone', projectId: 'p-3' }, milestones, 'p-unassigned'),
+    ).toEqual({
+      projectId: undefined,
+      milestoneId: 'm-gone',
     });
   });
 });

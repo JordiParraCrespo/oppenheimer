@@ -1167,6 +1167,16 @@
   background-size: 22px 22px;
 }
 
+/* The part of a wrapping row that keeps the line: a title, a label. Its
+   neighbours (the actions, a control) wrap under it once it would have less
+   than 12rem, so a narrow screen moves them rather than cutting the text.
+   One threshold for every such row: PageHeaderRow, SettingsTitle,
+   SettingsRow. */
+@utility wrap-lead {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
 /* No scrollbar at all, for a list that scrolls but draws its own edges — the
    console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
 @utility no-scrollbar {

@@ -258,8 +258,8 @@
     "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué."
   },
   "deleteSession": {
-    "title": "¿Eliminar “{{name}}”?",
-    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+    "title": "¿Eliminar «{{name}}»?",
+    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
     "confirm": "Eliminar sesión",
     "deleting": "Eliminando…",
     "failed": "No se pudo eliminar la sesión.",
