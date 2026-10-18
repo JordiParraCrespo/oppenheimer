@@ -514,7 +514,9 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await automations.insert(routine);
 
       const read = (await automations.findOneById(scope(), routine.id)).unwrap();
-      expect(read).toMatchObject({ runTarget: 'bot', botId, projectId: null });
+      expect(read).toMatchObject({ runTarget: 'bot' });
+      expect(read.target).toMatchObject({ kind: 'bot', botId });
+      expect(read.target).not.toHaveProperty('projectId');
       expect(read.revision).toMatchObject({ kind: 'bot', prompt: 'List the open pull requests.' });
       expect(read.target).toMatchObject({ credentialScopes: ['automations:read'] });
       // The console's list is session automations'; the bot's list is its routines.
