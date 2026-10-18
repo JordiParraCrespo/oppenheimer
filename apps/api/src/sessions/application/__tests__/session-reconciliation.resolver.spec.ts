@@ -27,6 +27,18 @@ function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity
   return entity;
 }
 
+/** A session someone deleted: the close is on its log, folded as owed. */
+function deleting(state: 'starting' | 'open', acceptUnpushedWork: boolean): WorkSessionEntity {
+  const entity = session(state);
+  entity.recordEvent({
+    seq: 3,
+    kind: 'session.close_requested',
+    payload: { acceptUnpushedWork },
+    occurredAt: new Date(),
+  });
+  return entity;
+}
+
 function harness(rows: HostSessionRow[]) {
   const sessions = {
     findUnresolvedForHostForMachine: vi.fn().mockResolvedValue(rows),
@@ -34,6 +46,7 @@ function harness(rows: HostSessionRow[]) {
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
     create: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
+    close: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
   } as unknown as SessionDispatchPort;
   const launches = new SessionLaunchSpecFactory({
     slugOf: vi.fn().mockResolvedValue('jordi'),
@@ -52,7 +65,7 @@ describe('SessionReconciliationResolver', () => {
     const owed = session('starting');
     const h = harness([{ session: owed, prompt: 'fix it' }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
-    expect(outcome).toEqual({ redispatched: [owed.id], stopped: [] });
+    expect(outcome).toEqual({ redispatched: [owed.id], stopped: [], reclosed: [] });
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
       workspaceId: 'org',
@@ -90,7 +103,7 @@ describe('SessionReconciliationResolver', () => {
     const lost = session('open');
     const h = harness([{ session: lost }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
-    expect(outcome).toEqual({ redispatched: [], stopped: [lost.id] });
+    expect(outcome).toEqual({ redispatched: [], stopped: [lost.id], reclosed: [] });
     expect(h.sessions.appendEvents).toHaveBeenCalledWith(lost, [
       expect.objectContaining({
         kind: 'session.stopped',
@@ -106,8 +119,66 @@ describe('SessionReconciliationResolver', () => {
     stopped.recordEvent({ seq: 3, kind: 'session.stopped', payload: {}, occurredAt: new Date() });
     const h = harness([{ session: held }, { session: stopped }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
-    expect(outcome).toEqual({ redispatched: [], stopped: [] });
+    expect(outcome).toEqual({ redispatched: [], stopped: [], reclosed: [] });
     expect(h.dispatch.create).not.toHaveBeenCalled();
     expect(h.sessions.appendEvents).not.toHaveBeenCalled();
+  });
+
+  it('sends a close still owed again with its acceptUnpushedWork, held or not, and records the lost pane stopped', async () => {
+    // The close went out while the link was down, or on a link that dropped:
+    // without this it is never sent again and the session sits stopped for good.
+    const lost = deleting('open', true);
+    const held = deleting('open', false);
+    const h = harness([{ session: lost }, { session: held }]);
+
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
+
+    expect(outcome).toEqual({ redispatched: [], stopped: [lost.id], reclosed: [lost.id, held.id] });
+    expect(h.dispatch.close).toHaveBeenCalledWith(lost, { acceptUnpushedWork: true });
+    expect(h.dispatch.close).toHaveBeenCalledWith(held, { acceptUnpushedWork: false });
+    expect(h.dispatch.create).not.toHaveBeenCalled();
+  });
+
+  it('closes a session deleted before its host built it, instead of building it', async () => {
+    const owed = deleting('starting', false);
+    const h = harness([{ session: owed, prompt: 'fix it' }]);
+
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
+
+    expect(outcome).toEqual({ redispatched: [], stopped: [], reclosed: [owed.id] });
+    expect(h.dispatch.create).not.toHaveBeenCalled();
+    expect(h.dispatch.close).toHaveBeenCalledWith(owed, { acceptUnpushedWork: false });
+  });
+
+  it('sends nothing for a close the host refused or a restart superseded', async () => {
+    const refused = deleting('open', false);
+    refused.recordEvent({
+      seq: 4,
+      kind: 'command.failed',
+      payload: { command: 'session.close', code: 'GIT_003' },
+      occurredAt: new Date(),
+    });
+    const restarted = deleting('open', false);
+    restarted.recordEvent({
+      seq: 4,
+      kind: 'session.restart_requested',
+      payload: {},
+      occurredAt: new Date(),
+    });
+    const h = harness([{ session: refused }, { session: restarted }]);
+
+    await h.resolver.reconcile(HOST, 'run-1', [refused.id, restarted.id]);
+
+    expect(h.dispatch.close).not.toHaveBeenCalled();
+  });
+
+  it('counts a close that found no link as not sent again', async () => {
+    const owed = deleting('open', false);
+    const h = harness([{ session: owed }]);
+    vi.mocked(h.dispatch.close).mockResolvedValue({ delivered: false, hints: ['host_offline'] });
+
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', [owed.id]);
+
+    expect(outcome.reclosed).toEqual([]);
   });
 });

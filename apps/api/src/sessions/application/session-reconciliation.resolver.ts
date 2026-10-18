@@ -1,5 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
+import type {
+  HostSessionRow,
+  WorkSessionRepositoryPort,
+} from '../database/work-session.repository.port';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
@@ -11,15 +14,21 @@ import type {
 } from './session-reconciliation.port';
 
 /**
- * Reconciles a host's hello against the rows, in two cases only. A `starting` session
+ * Reconciles a host's hello against the rows, in three cases. A `starting` session
  * the host does not hold is a launch that never arrived (created while it was offline,
  * or lost with the link) and is dispatched again; the runner is idempotent by session
  * id. An `open` session the host does not hold is one tmux lost (a reboot, a kill) and
  * is recorded stopped, so the console offers Restart, not a live dot for a gone pane.
+ * A session with a **close still owed** (the fold's `closeRequest`) is sent the close
+ * again, with the `acceptUnpushedWork` it was asked with, whether or not the host holds
+ * it: a close lost with the link is otherwise never sent, and the runner answers
+ * `session.closed` even for a session it no longer knows. An owed close replaces an
+ * owed launch: a session is never built only to be closed.
  * What the host holds that the rows do not know is logged and left alone: ending
  * someone's work is not a side effect of a hello.
  *
  * The stopped entry is keyed by the runner's `runId`, so a replayed hello writes it once.
+ * A close sent twice is harmless for the same reason the runner makes it so.
  */
 @Injectable()
 export class SessionReconciliationResolver implements SessionReconciliationPort {
@@ -40,33 +49,26 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
   ): Promise<HostReconciliationOutcome> {
     const held = new Set(heldSessionIds);
     const rows = await this.sessions.findUnresolvedForHostForMachine(hostId);
-    const outcome: HostReconciliationOutcome = { redispatched: [], stopped: [] };
+    const outcome: HostReconciliationOutcome = { redispatched: [], stopped: [], reclosed: [] };
 
-    for (const { session, prompt, images } of rows) {
-      if (held.has(session.id)) continue;
-      if (session.state === 'starting') {
-        // The first task's images ride again with it: the log recorded the ids
-        // they were parked under, and the runner pulls what is still waiting.
-        const { delivered } = await this.dispatch.create(
-          session,
-          await this.launches.build(session, { prompt, images }),
-        );
-        if (delivered) outcome.redispatched.push(session.id);
-        continue;
+    for (const row of rows) {
+      const { session } = row;
+      if (!held.has(session.id)) {
+        if (session.state === 'starting') {
+          if (!session.closeRequest && (await this.launchAgain(row))) {
+            outcome.redispatched.push(session.id);
+          }
+        } else if (session.stoppedAt === null && (await this.recordStopped(session, runId))) {
+          outcome.stopped.push(session.id);
+        }
       }
-      if (session.stoppedAt !== null) continue;
-      const appended = await this.sessions.appendEvents(session, [
-        {
-          idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-            `hello-${runId}`,
-            SESSION_EVENT_KINDS.STOPPED,
-          ),
-          source: 'api',
-          kind: SESSION_EVENT_KINDS.STOPPED,
-          payload: { source: 'reconciliation', runId },
-        },
-      ]);
-      if (appended.accepted.length > 0) outcome.stopped.push(session.id);
+      const close = session.closeRequest;
+      if (close) {
+        const { delivered } = await this.dispatch.close(session, {
+          acceptUnpushedWork: close.acceptUnpushedWork,
+        });
+        if (delivered) outcome.reclosed.push(session.id);
+      }
     }
 
     const known = new Set(rows.map((row) => row.session.id));
@@ -79,5 +81,32 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
       });
     }
     return outcome;
+  }
+
+  /**
+   * The first task's images ride again with it: the log recorded the ids they were
+   * parked under, and the runner pulls what is still waiting.
+   */
+  private async launchAgain({ session, prompt, images }: HostSessionRow): Promise<boolean> {
+    const { delivered } = await this.dispatch.create(
+      session,
+      await this.launches.build(session, { prompt, images }),
+    );
+    return delivered;
+  }
+
+  private async recordStopped(session: WorkSessionEntity, runId: string): Promise<boolean> {
+    const appended = await this.sessions.appendEvents(session, [
+      {
+        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+          `hello-${runId}`,
+          SESSION_EVENT_KINDS.STOPPED,
+        ),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.STOPPED,
+        payload: { source: 'reconciliation', runId },
+      },
+    ]);
+    return appended.accepted.length > 0;
   }
 }

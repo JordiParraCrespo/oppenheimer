@@ -88,6 +88,15 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     new Date(data.createdAt),
     data.place,
     data.folderPath ?? null,
+    data.closeRequest
+      ? {
+          requestedAt: new Date(data.closeRequest.requestedAt),
+          acceptUnpushedWork: data.closeRequest.acceptUnpushedWork,
+        }
+      : null,
+    data.closeRefusal
+      ? { code: data.closeRefusal.code, detail: data.closeRefusal.detail ?? null }
+      : null,
   );
 }
 

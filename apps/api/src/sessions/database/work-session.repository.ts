@@ -573,6 +573,8 @@ export class WorkSessionRepository
                 "reportHash" = $12, "ackedReportHash" = $13,
                 "launchModel" = $14, "launchPermission" = $15, "launchEffort" = $16,
                 "projectId" = $17,
+                "closeRequestedAt" = $18, "closeAcceptsUnpushedWork" = $19,
+                "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -593,6 +595,10 @@ export class WorkSessionRepository
           record.launchPermission,
           record.launchEffort,
           record.projectId,
+          record.closeRequestedAt,
+          record.closeAcceptsUnpushedWork,
+          record.closeRefusalCode,
+          record.closeRefusalDetail,
         ],
       );
       await this.writeTurns(manager, session);

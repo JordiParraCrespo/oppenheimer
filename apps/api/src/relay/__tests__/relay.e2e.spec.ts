@@ -175,7 +175,7 @@ async function boot(): Promise<World> {
     connectedFrom: vi.fn().mockResolvedValue(undefined),
   };
   const reconciliation: SessionReconciliationPort = {
-    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
+    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [], reclosed: [] }),
   };
   const lookup: SessionLookupPort = {
     findAttachTarget: async (id) =>

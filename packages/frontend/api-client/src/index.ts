@@ -190,6 +190,8 @@ export type {
   SendBotMessageRequest,
   SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,
+  SessionCloseRefusalResponseDto,
+  SessionCloseRequestResponseDto,
   SessionEventPageResponseDto,
   SessionEventResponseDto,
   SessionLaunchResponseDto,

@@ -528,3 +528,10 @@ earlier note:
   failure, and points at Settings → Hosts → Remove or
   `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
   origins and the commands that move it (09 §4).
+- Note 03's hello reconciliation sent again only a launch the host never
+  carried out, so a close lost with a dropped link was never re-sent and a
+  deleted session came back in the console. On 2026-10-18 the fold keeps a
+  close owed (and the host's refusal of it) as columns, the hello sends an
+  owed close again, a restart request supersedes it, and the console draws
+  such a row as deleting or refused instead of bringing it back as it was
+  (03, "A close is owed until the host answers it"; 01, "Hello").

@@ -38,6 +38,18 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Entity('work_session')
 @Check('CHK_work_session_place', `place IN ('worktree', 'folder')`)
 @Check('CHK_work_session_folder_path', `(place = 'folder') = ("folderPath" IS NOT NULL)`)
+@Check(
+  'CHK_work_session_close_accepts',
+  `"closeRequestedAt" IS NOT NULL OR NOT "closeAcceptsUnpushedWork"`,
+)
+@Check(
+  'CHK_work_session_close_owed_or_refused',
+  `num_nonnulls("closeRequestedAt", "closeRefusalCode") <= 1`,
+)
+@Check(
+  'CHK_work_session_close_refusal',
+  `"closeRefusalDetail" IS NULL OR "closeRefusalCode" IS NOT NULL`,
+)
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
 @Index('IDX_work_session_host_state', ['hostId', 'state'])
 @Index('IDX_work_session_created_by', ['createdByUserId'])
@@ -174,6 +186,25 @@ export class WorkSessionOrmEntity {
 
   @Column({ type: 'varchar', nullable: true })
   ackedReportHash!: string | null;
+
+  /**
+   * Since when a close is owed to the host: a `session.close_requested` with no
+   * `session.closed`, refusal or restart request after it. The hello
+   * reconciliation sends it again and the console draws the row as deleting.
+   */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  closeRequestedAt!: Date | null;
+
+  /** What the owed close sends with it. False whenever no close is owed. */
+  @Column({ type: 'boolean', default: false })
+  closeAcceptsUnpushedWork!: boolean;
+
+  /** The host's refusal of the last close (`GIT_003`), until a new request or a restart. */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  closeRefusalCode!: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  closeRefusalDetail!: string | null;
 
   /**
    * Who asked for the session: `person`, `automation` (whose run points back
