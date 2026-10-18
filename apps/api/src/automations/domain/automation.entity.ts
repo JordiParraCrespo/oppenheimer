@@ -18,6 +18,7 @@ import type {
   AutomationTriggerProps,
   SessionRevisionProps,
 } from './automation.types';
+import { BotRoutineChangedDomainEvent } from './events/bot-routine-changed.domain-event';
 import { nextFireOf } from './trigger-config.policy';
 
 export interface AutomationProps {
@@ -188,6 +189,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     entity.revised = true;
     entity.schedule(props.now);
     entity.validate();
+    entity.noteRoutine('saved');
     return entity;
   }
 
@@ -250,6 +252,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
   /** Edit what every automation has. Triggers are replaced whole, because the editor holds them all. */
   change(changes: AutomationChanges, now: Date): void {
     this.assertLive();
+    const renamed = changes.name !== undefined && changes.name.trim() !== this.props.name;
     if (changes.name !== undefined) this.props.name = changes.name.trim();
     if (changes.overlap !== undefined) this.props.overlap = changes.overlap;
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
@@ -257,6 +260,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       this.props.triggers = changes.triggers;
       this.schedule(now);
     }
+    if (renamed || changes.triggers !== undefined) this.noteRoutine('changed');
     this.touch();
   }
 
@@ -301,6 +305,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
           }
         : target.revision;
     this.revised = this.revised || revision !== target.revision;
+    if (revision !== target.revision) this.noteRoutine('changed');
     this.props.target = {
       ...target,
       credentialScopes:
@@ -316,6 +321,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     this.props.pausedAt = this.props.pausedAt ?? now;
     this.props.pausedReason = reason;
     this.schedule(now);
+    this.noteRoutine('paused');
     this.touch();
   }
 
@@ -325,6 +331,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     this.props.pausedAt = null;
     this.props.pausedReason = null;
     this.schedule(now);
+    this.noteRoutine('resumed');
     this.touch();
   }
 
@@ -333,6 +340,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (this.isDeleted) return;
     this.props.deletedAt = now;
     this.schedule(now);
+    this.noteRoutine('deleted');
     this.touch();
   }
 
@@ -354,6 +362,31 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       trigger.source === 'schedule'
         ? { ...trigger, nextFireAt: firing ? nextFireOf(trigger, now) : null }
         : trigger,
+    );
+  }
+
+  /**
+   * A routine's change, for its bot's chat: once per kind per save, so a save
+   * that renames and re-prompts says "changed" once. Session automations say
+   * nothing here.
+   */
+  private noteRoutine(activity: BotRoutineChangedDomainEvent['activity']): void {
+    const { target } = this.props;
+    if (target.kind !== 'bot') return;
+    const said = this.domainEvents.some(
+      (event) => event instanceof BotRoutineChangedDomainEvent && event.activity === activity,
+    );
+    if (said) return;
+    this.addEvent(
+      new BotRoutineChangedDomainEvent({
+        aggregateId: this.id,
+        reason: `the routine was ${activity}`,
+        organizationId: this.props.organizationId,
+        botId: target.botId,
+        name: this.props.name,
+        activity,
+        pausedReason: activity === 'paused' ? this.props.pausedReason : null,
+      }),
     );
   }
 

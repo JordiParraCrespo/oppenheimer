@@ -10499,6 +10499,55 @@
         "tags": ["Automations"]
       }
     },
+    "/api/v1/automations/routines": {
+      "get": {
+        "description": "Every bot’s routines, oldest first, each with its bot, its triggers, whether it is on or running now, its next run and its latest run. Session automations are `GET /automations`; one bot’s routines are `GET /bots/{id}/routines`.",
+        "operationId": "findRoutines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BotRoutineResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s bot routines",
+        "tags": ["Automations"]
+      }
+    },
     "/api/v1/automations/trigger-preview": {
       "post": {
         "description": "“Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.",
@@ -22778,7 +22827,14 @@
           },
           "pausedReason": {
             "type": "string",
-            "enum": ["user", "project_archived", "host_unpaired", "owner_lost_access", null],
+            "enum": [
+              "user",
+              "project_archived",
+              "host_unpaired",
+              "owner_lost_access",
+              "bot_provider_missing",
+              null
+            ],
             "nullable": true
           },
           "nextRunAt": {
@@ -22842,6 +22898,85 @@
           "version",
           "runCount",
           "lastRuns",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BotRoutineResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The bot that runs it."
+          },
+          "name": {
+            "type": "string",
+            "example": "Morning PR digest"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "What the bot is told each time it runs."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "running"],
+            "description": "`running` while a run is queued or its turn runs, else `active` or `paused`."
+          },
+          "pausedReason": {
+            "type": "string",
+            "enum": [
+              "user",
+              "project_archived",
+              "host_unpaired",
+              "owner_lost_access",
+              "bot_provider_missing",
+              null
+            ],
+            "nullable": true
+          },
+          "nextRunAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "The earliest next slot of its schedules. Null when paused or event-only."
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationTriggerResponseDto"
+            }
+          },
+          "lastRun": {
+            "nullable": true,
+            "description": "Its latest run over the listed window; null when it has none.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "name",
+          "prompt",
+          "status",
+          "triggers",
           "createdAt",
           "updatedAt"
         ]
@@ -23805,64 +23940,6 @@
             "nullable": true
           }
         }
-      },
-      "BotRoutineResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string",
-            "example": "Morning PR digest"
-          },
-          "prompt": {
-            "type": "string",
-            "description": "What the bot is told each time it runs."
-          },
-          "status": {
-            "type": "string",
-            "enum": ["active", "paused", "running"],
-            "description": "`running` while a run is queued or its turn runs, else `active` or `paused`."
-          },
-          "pausedReason": {
-            "type": "string",
-            "enum": ["user", "project_archived", "host_unpaired", "owner_lost_access", null],
-            "nullable": true
-          },
-          "nextRunAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "The earliest next slot of its schedules. Null when paused or event-only."
-          },
-          "triggers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AutomationTriggerResponseDto"
-            }
-          },
-          "lastRun": {
-            "nullable": true,
-            "description": "Its latest run over the listed window; null when it has none.",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
-              }
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": ["id", "name", "prompt", "status", "triggers", "createdAt", "updatedAt"]
       },
       "UpdateBotRoutineRequest": {
         "type": "object",
@@ -26317,7 +26394,7 @@
           "reason": {
             "type": "string",
             "nullable": true,
-            "description": "Why, in words, for a pause or a failure."
+            "description": "Why, as a code, for a pause or a failure: the pause reason for `paused`, the skip reason or `expired` for `failed`."
           }
         },
         "required": ["kind", "activity", "automationId", "runId", "name", "reason"]
@@ -26356,7 +26433,9 @@
           },
           "turnId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true,
+            "description": "The turn it belongs to; null for an event outside any turn (a routine changed on its tab, paused or failed)."
           },
           "role": {
             "type": "string",

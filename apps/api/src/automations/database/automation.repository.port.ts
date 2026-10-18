@@ -41,12 +41,12 @@ export interface AutomationRepositoryPort {
 
   /**
    * Live automations the caller can reach, oldest first (the sidebar's
-   * order): the session automations the console lists, or, given a bot,
-   * that bot's routines.
+   * order): the session automations the console lists; given a bot, that
+   * bot's routines; given `routines`, every bot's.
    */
   findAll(
     scope: AccessScope,
-    filters: { projectId?: string; botId?: string },
+    filters: { projectId?: string; botId?: string; routines?: boolean },
   ): Promise<AutomationEntity[]>;
 
   /** `None` for a missing, deleted or out-of-scope automation. */

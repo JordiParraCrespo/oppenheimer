@@ -6,6 +6,7 @@ import {
   resolveAutomationLimits,
 } from '../domain/automation-limits.policy';
 import { AutomationRunEntity } from '../domain/automation-run.entity';
+import { BotRoutineChangedDomainEvent } from '../domain/events/bot-routine-changed.domain-event';
 import {
   capacityGuard,
   diskGuard,
@@ -272,6 +273,43 @@ describe('a bot routine', () => {
     expect(entity.target).toMatchObject({ credentialScopes: ['automations:read'] });
     entity.reviseRoutine({ prompt: 'List them, oldest first.' }, 'user-2', now);
     expect(entity.revision.number).toBe(2);
+  });
+
+  // What breaks this: a pause-only save saying "changed", a change written
+  // twice in one save, or a session automation writing into a bot's chat.
+  it('tells its bot what became of it, once per change, and only what changed', () => {
+    const activities = (entity: AutomationEntity) =>
+      entity.domainEvents.flatMap((event) =>
+        event instanceof BotRoutineChangedDomainEvent
+          ? [[event.activity, event.botId, event.name, event.pausedReason]]
+          : [],
+      );
+    const entity = routine();
+    expect(activities(entity)).toEqual([['saved', 'bot-1', 'Morning PR digest', null]]);
+
+    entity.clearEvents();
+    entity.change({ name: 'Morning PR digest' }, now);
+    entity.reviseRoutine({ prompt: 'List the open pull requests.' }, 'user-2', now);
+    entity.pause('bot_provider_missing', now);
+    expect(activities(entity)).toEqual([
+      ['paused', 'bot-1', 'Morning PR digest', 'bot_provider_missing'],
+    ]);
+
+    entity.clearEvents();
+    entity.change({ name: 'Evening digest', triggers: [daily(18)] }, now);
+    entity.reviseRoutine({ prompt: 'List them.' }, 'user-2', now);
+    entity.resume(now);
+    entity.delete(now);
+    expect(activities(entity).map(([activity]) => activity)).toEqual([
+      'changed',
+      'resumed',
+      'deleted',
+    ]);
+
+    const session = automation();
+    session.pause('user', now);
+    session.delete(now);
+    expect(activities(session)).toEqual([]);
   });
 
   it('refuses a session edit on a routine, and a routine edit on a session automation', () => {

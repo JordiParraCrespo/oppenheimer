@@ -8,6 +8,13 @@ import type { StoredExternalEvent } from '../../inbound-events/domain/external-e
 import type { AutomationEntity } from './automation.entity';
 import type { RunCauseSummary } from './automation-run.entity';
 
+/** A bot routine as its bot's chat names it. */
+export interface BotRoutineRef {
+  organizationId: string;
+  botId: string;
+  name: string;
+}
+
 /**
  * A run as the lists read it: the firing joined to its automation, its
  * revision, and — once dispatched — its session and that session's first

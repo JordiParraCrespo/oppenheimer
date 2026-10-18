@@ -206,6 +206,8 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
         reason,
         organizationId: this.props.organizationId,
         automationId: this.props.automationId,
+        outcome: this.props.outcome,
+        skipReason: this.props.skipReason,
       }),
     );
   }

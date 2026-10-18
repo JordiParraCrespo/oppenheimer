@@ -36,6 +36,30 @@ export class BotMessageRepository
     );
   }
 
+  async insertOnce(message: BotMessageEntity): Promise<boolean> {
+    const record = this.mapper.toPersistence(message);
+    // A bot deleted since leaves the line nowhere to go: nothing is stored.
+    const stored: { id: string }[] = await this.dataSource.query(
+      `INSERT INTO bot_message (id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event")
+       SELECT $1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb
+        WHERE EXISTS (SELECT 1 FROM bot WHERE "organizationId" = $2 AND id = $3)
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
+      [
+        record.id,
+        record.organizationId,
+        record.botId,
+        record.turnId,
+        record.role,
+        record.content,
+        JSON.stringify(record.steps),
+        record.position,
+        record.event ? JSON.stringify(record.event) : null,
+      ],
+    );
+    return stored.length === 1;
+  }
+
   async saveSteps(message: BotMessageEntity): Promise<void> {
     await this.repository
       .createQueryBuilder()
@@ -120,7 +144,7 @@ export class BotMessageRepository
         organizationId,
         botId,
       })
-      .andWhere('message.turnId <> :turnId', { turnId })
+      .andWhere('(message.turnId IS NULL OR message.turnId <> :turnId)', { turnId })
       .andWhere(`message.role <> 'activity'`)
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
@@ -140,10 +164,11 @@ export class BotMessageRepository
     limit: number,
   ): Promise<SummarizableMessage[]> {
     // IDX_bot_message_bot, read forwards from the cutoff; each message's turn
-    // by its primary key, for whether it has ended.
+    // by its primary key, for whether it has ended. A line outside any turn
+    // has nothing to wait for.
     const query = this.repository
       .createQueryBuilder('message')
-      .innerJoin(
+      .leftJoin(
         BotTurnOrmEntity,
         'turn',
         'turn.organizationId = message.organizationId AND turn.id = message.turnId',

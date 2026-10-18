@@ -71,7 +71,8 @@ export class BotRoutineEventResponseDto {
   @ApiProperty({
     nullable: true,
     type: String,
-    description: 'Why, in words, for a pause or a failure.',
+    description:
+      'Why, as a code, for a pause or a failure: the pause reason for `paused`, the skip reason or `expired` for `failed`.',
   })
   reason!: string | null;
 }
@@ -84,8 +85,14 @@ export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty({ format: 'uuid' })
-  turnId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The turn it belongs to; null for an event outside any turn (a routine changed on its tab, paused or failed).',
+  })
+  turnId!: string | null;
 
   @ApiProperty({ enum: BOT_MESSAGE_ROLES })
   role!: BotMessageRole;

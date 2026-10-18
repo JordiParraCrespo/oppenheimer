@@ -52,7 +52,7 @@ export class AutomationRepository
   }
 
   async insert(entity: AutomationEntity): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+    await this.outbox.transaction(async (manager) => {
       // The revision's foreign key to the automation is checked now and the
       // automation's to its current revision at commit (deferred), so the pair
       // goes in automation first.
@@ -62,11 +62,13 @@ export class AutomationRepository
         this.mapper.revisionToRecord(entity) as QueryDeepPartialEntity<AutomationRevisionOrmEntity>,
       );
       await this.writeTriggers(manager, entity);
+      await this.outbox.stageEvents(manager, entity.domainEvents);
     });
+    entity.clearEvents();
   }
 
   async save(entity: AutomationEntity, expectedVersion: number): Promise<'saved' | 'conflict'> {
-    return this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       const record = this.mapper.toRecord(entity);
       const [updated]: [{ id: string }[], number] = await manager.query(
         `UPDATE "automation"
@@ -100,8 +102,12 @@ export class AutomationRepository
         );
       }
       await this.writeTriggers(manager, entity);
+      await this.outbox.stageEvents(manager, entity.domainEvents);
       return 'saved' as const;
     });
+    // A lost race staged nothing: the change it describes never happened.
+    if (outcome === 'saved') entity.clearEvents();
+    return outcome;
   }
 
   async saveForSystem(entity: AutomationEntity): Promise<void> {
@@ -110,7 +116,7 @@ export class AutomationRepository
 
   async findAll(
     scope: AccessScope,
-    filters: { projectId?: string; botId?: string },
+    filters: { projectId?: string; botId?: string; routines?: boolean },
   ): Promise<AutomationEntity[]> {
     const query = this.scopedQuery(scope)
       .andWhere('automation.deletedAt IS NULL')
@@ -118,6 +124,8 @@ export class AutomationRepository
     if (filters.botId) {
       // IDX_automation_bot.
       query.andWhere('automation.botId = :botId', { botId: filters.botId });
+    } else if (filters.routines) {
+      query.andWhere(`automation.runTarget = 'bot'`);
     } else {
       query.andWhere(`automation.runTarget = 'session'`);
     }

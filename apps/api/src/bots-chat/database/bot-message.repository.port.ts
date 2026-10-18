@@ -8,6 +8,12 @@ export interface BotMessageRepositoryPort {
    * becomes the bot's last message, for the sidebar.
    */
   insert(message: BotMessageEntity): Promise<void>;
+  /**
+   * Stores a line keyed by what reported it (its id is the event's) once,
+   * however often it is delivered, and only while its bot exists; whether
+   * this call stored it.
+   */
+  insertOnce(message: BotMessageEntity): Promise<boolean>;
   /** An activity line's steps, as they grow. */
   saveSteps(message: BotMessageEntity): Promise<void>;
   /** The bot's newest `limit` messages, oldest first. */

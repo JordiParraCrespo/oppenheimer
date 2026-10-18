@@ -18,6 +18,9 @@ export class BotRoutineResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
+  @ApiProperty({ format: 'uuid', description: 'The bot that runs it.' })
+  botId!: string;
+
   @ApiProperty({ example: 'Morning PR digest' })
   name!: string;
 

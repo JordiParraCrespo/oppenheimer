@@ -359,7 +359,7 @@ export type BotMessageEvent =
       runId: string | null;
       /** The routine's name at the time. */
       name: string;
-      /** Why, in words, for `paused` and `failed`. */
+      /** Why, as a code, for `paused` (its paused reason) and `failed` (a skip reason, or `expired`). */
       reason: string | null;
     };
 
@@ -454,7 +454,8 @@ export const BOT_APPROVALS_PAGE_MAX = 50;
 export const botStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
   z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
-  z.object({ type: z.literal('message'), turnId: z.string(), messageId: z.string() }),
+  /** `turnId` is null for a line outside any turn, such as a routine's activity. */
+  z.object({ type: z.literal('message'), turnId: z.string().nullable(), messageId: z.string() }),
   z.object({
     type: z.literal('approval'),
     approvalId: z.string(),
