@@ -1,8 +1,7 @@
-import { Checkbox, Field, FieldLabel } from '@oppenheimer/design-system-web';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRemoveHost } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -19,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose: () => void }) {
   const { t } = useTranslation();
   const [wipe, setWipe] = useState(false);
-  const boxId = useId();
   const remove = useRemoveHost({
     onSuccess: () => {
       notifySuccess('hostRemoved', { name: host.name });
@@ -32,9 +30,7 @@ export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose:
     <ConfirmDialog
       title={t('hosts.settings.removeTitle', { name: host.name })}
       description={
-        count > 0
-          ? t('hosts.settings.removeRunning', { count, name: host.name })
-          : t('hosts.settings.removeIdle', { name: host.name })
+        count > 0 ? t('hosts.settings.removeRunning', { count }) : t('hosts.settings.removeIdle')
       }
       confirmLabel={t('hosts.settings.remove')}
       pendingLabel={t('hosts.settings.removing')}
@@ -44,21 +40,15 @@ export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose:
       onClose={onClose}
       onConfirm={() => remove.mutate({ id: host.id, wipe: host.online && wipe })}
     >
-      {/* The label sits beside the box, not around it: wrapping a checked box
-          gives FieldLabel the selected-card background. */}
-      <Field orientation="horizontal" className="items-start">
-        <Checkbox
-          id={boxId}
-          checked={host.online && wipe}
-          onCheckedChange={(checked) => setWipe(checked === true)}
-          disabled={!host.online || remove.isPending}
-        />
-        <FieldLabel htmlFor={boxId}>
-          {host.online
-            ? t('hosts.settings.wipe')
-            : t('hosts.settings.wipeOffline', { name: host.name })}
-        </FieldLabel>
-      </Field>
+      <ConfirmDialog.Option
+        checked={host.online && wipe}
+        onCheckedChange={setWipe}
+        disabled={!host.online || remove.isPending}
+      >
+        {host.online
+          ? t('hosts.settings.wipe')
+          : t('hosts.settings.wipeOffline', { name: host.name })}
+      </ConfirmDialog.Option>
     </ConfirmDialog>
   );
 }

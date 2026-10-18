@@ -466,7 +466,7 @@
       "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
-      "title": "Delete {{name}}?",
+      "title": "Delete “{{name}}”?",
       "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
       "confirm": "Delete project",
       "deleting": "Deleting…",
@@ -1185,7 +1185,7 @@
       }
     },
     "delete": {
-      "title": "Delete {{name}}?",
+      "title": "Delete “{{name}}”?",
       "description": "The bot, its instructions, its memory and its conversation are removed for good.",
       "confirm": "Delete bot",
       "pending": "Deleting…",
@@ -1489,7 +1489,7 @@
     "deleteDialog": {
       "title": "Delete “{{name}}”?",
       "description": "Its triggers stop now. Past runs are kept.",
-      "confirm": "Delete",
+      "confirm": "Delete automation",
       "deleting": "Deleting…",
       "failed": "The automation could not be deleted."
     },
@@ -1858,10 +1858,11 @@
       "target": "Target",
       "add": "Add milestone",
       "delete": "Delete milestone",
-      "deleteTitle": "Delete this milestone?",
-      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteDescription": "Its tasks stay on the board without a milestone.",
       "saveFailed": "Couldn’t save the milestone.",
-      "deleteFailed": "Couldn’t delete the milestone."
+      "deleteFailed": "Couldn’t delete the milestone.",
+      "deleting": "Deleting…"
     },
     "dialog": {
       "newTitle": "New task",
@@ -1883,12 +1884,13 @@
       "add": "Add task",
       "save": "Save",
       "delete": "Delete task",
-      "deleteTitle": "Delete this task?",
-      "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteDescription": "Its sessions stay as they are.",
       "saveFailed": "Couldn’t save the task.",
       "deleteFailed": "Couldn’t delete the task.",
       "loadFailed": "Couldn’t load the board.",
-      "gone": "This task no longer exists."
+      "gone": "This task no longer exists.",
+      "deleting": "Deleting…"
     },
     "link": {
       "search": "Search sessions",
@@ -1966,12 +1968,13 @@
       "add": "Add event",
       "save": "Save",
       "delete": "Delete event",
-      "deleteTitle": "Delete this event?",
-      "deleteDescription": "“{{title}}” is deleted.",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteDescription": "It is removed from the calendar.",
       "saveFailed": "Couldn’t save the event.",
       "deleteFailed": "Couldn’t delete the event.",
       "loadFailed": "Couldn’t load the event.",
-      "gone": "This event is not in the month shown, or no longer exists."
+      "gone": "This event is not in the month shown, or no longer exists.",
+      "deleting": "Deleting…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1986,17 +1989,18 @@
       "updated": "Updated {{age}} ago",
       "needsReconnect": "Needs reconnecting",
       "readFailed": "Couldn’t read it just now",
-      "remove": "Remove",
+      "remove": "Remove account",
       "removeLabel": "Remove {{email}}",
-      "removeTitle": "Remove this Google account?",
-      "removeDescription": "{{email}} leaves the calendar, and its events with it. You can connect it again at any time.",
+      "removeTitle": "Remove “{{email}}”?",
+      "removeDescription": "Its events leave the calendar. You can connect it again at any time.",
       "removeFailed": "Couldn’t remove the Google account.",
       "startFailed": "Couldn’t reach Google. Try again.",
       "loadFailed": "Couldn’t check your Google accounts.",
       "connecting": "Connecting Google Calendar…",
       "connectFailed": "Couldn’t connect Google Calendar.",
       "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-      "back": "Back to the calendar"
+      "back": "Back to the calendar",
+      "removing": "Removing…"
     },
     "googleEvent": {
       "untitled": "(No title)",
@@ -2069,7 +2073,7 @@
       "actions": "{{name}} actions",
       "rename": "Rename",
       "updateRunner": "Update runner",
-      "updateTitle": "Update the runner on {{name}}?",
+      "updateTitle": "Update the runner on “{{name}}”?",
       "updateDescription": "The runner installs the newest release on its channel and restarts. Sessions on {{name}} keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
       "updating": "Updating…",
       "updateFailed": "Could not update the runner on {{name}}.",
@@ -2078,10 +2082,10 @@
       "cancel": "Cancel",
       "remove": "Remove host",
       "removing": "Removing…",
-      "removeTitle": "Remove {{name}}?",
-      "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
-      "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "removeTitle": "Remove “{{name}}”?",
+      "removeRunning_one": "{{count}} session is running on it. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_other": "{{count}} sessions are running on it. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeIdle": "No sessions are running on it. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
       "removeFailed": "Could not remove this host. Try again.",
       "wipe": "Also delete everything on this machine: close every session and remove its worktree, uncommitted work included. Nothing is pushed.",

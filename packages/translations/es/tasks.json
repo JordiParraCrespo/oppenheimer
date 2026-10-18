@@ -82,10 +82,11 @@
     "target": "Fecha",
     "add": "Añadir hito",
     "delete": "Eliminar hito",
-    "deleteTitle": "¿Eliminar este hito?",
-    "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+    "deleteTitle": "¿Eliminar «{{name}}»?",
+    "deleteDescription": "Sus tareas siguen en el tablero sin hito.",
     "saveFailed": "No se ha podido guardar el hito.",
-    "deleteFailed": "No se ha podido eliminar el hito."
+    "deleteFailed": "No se ha podido eliminar el hito.",
+    "deleting": "Eliminando…"
   },
   "dialog": {
     "newTitle": "Nueva tarea",
@@ -107,12 +108,13 @@
     "add": "Añadir tarea",
     "save": "Guardar",
     "delete": "Eliminar tarea",
-    "deleteTitle": "¿Eliminar esta tarea?",
-    "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+    "deleteTitle": "¿Eliminar «{{title}}»?",
+    "deleteDescription": "Sus sesiones siguen como están.",
     "saveFailed": "No se ha podido guardar la tarea.",
     "deleteFailed": "No se ha podido eliminar la tarea.",
     "loadFailed": "No se ha podido cargar el tablero.",
-    "gone": "Esta tarea ya no existe."
+    "gone": "Esta tarea ya no existe.",
+    "deleting": "Eliminando…"
   },
   "link": {
     "search": "Buscar sesiones",

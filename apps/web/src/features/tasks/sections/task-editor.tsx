@@ -90,9 +90,10 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
       />
       {deleting && task ? (
         <ConfirmDialog
-          title={t('tasks.dialog.deleteTitle')}
-          description={t('tasks.dialog.deleteDescription', { title: task.title })}
+          title={t('tasks.dialog.deleteTitle', { title: task.title })}
+          description={t('tasks.dialog.deleteDescription')}
           confirmLabel={t('tasks.dialog.delete')}
+          pendingLabel={t('tasks.dialog.deleting')}
           pending={remove.isPending}
           error={remove.error}
           errorFallback={t('tasks.dialog.deleteFailed')}

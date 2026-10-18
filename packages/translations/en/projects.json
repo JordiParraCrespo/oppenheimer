@@ -36,7 +36,7 @@
     "loadFailed": "Could not load this project."
   },
   "deleteDialog": {
-    "title": "Delete {{name}}?",
+    "title": "Delete “{{name}}”?",
     "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
     "confirm": "Delete project",
     "deleting": "Deleting…",

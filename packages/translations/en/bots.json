@@ -287,7 +287,7 @@
     }
   },
   "delete": {
-    "title": "Delete {{name}}?",
+    "title": "Delete “{{name}}”?",
     "description": "The bot, its instructions, its memory and its conversation are removed for good.",
     "confirm": "Delete bot",
     "pending": "Deleting…",

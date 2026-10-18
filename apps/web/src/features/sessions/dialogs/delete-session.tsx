@@ -1,4 +1,3 @@
-import { Checkbox, FieldLabel } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog } from '@oppenheimer/frontend-web';
@@ -52,14 +51,13 @@ export function DeleteSessionDialog({
       }
     >
       {session.isFolder ? null : (
-        <FieldLabel className="items-center">
-          <Checkbox
-            checked={discard}
-            onCheckedChange={(checked) => setDiscard(checked === true)}
-            disabled={close.isPending}
-          />
+        <ConfirmDialog.Option
+          checked={discard}
+          onCheckedChange={setDiscard}
+          disabled={close.isPending}
+        >
           {t('sessions.deleteSession.discard')}
-        </FieldLabel>
+        </ConfirmDialog.Option>
       )}
     </ConfirmDialog>
   );

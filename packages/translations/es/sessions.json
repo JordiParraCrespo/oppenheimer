@@ -254,7 +254,7 @@
     "share": "Compartir…"
   },
   "deleteSession": {
-    "title": "¿Eliminar “{{name}}”?",
+    "title": "¿Eliminar «{{name}}»?",
     "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
     "confirm": "Eliminar sesión",
     "deleting": "Eliminando…",
