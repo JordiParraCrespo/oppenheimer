@@ -39,6 +39,17 @@ export function transcriptOf(body: string): string | null {
   }
 }
 
+/**
+ * What kind of answer a refusal was, from its content type alone: a JSON
+ * error is the provider refusing, an HTML page is something in front of it
+ * (a challenge, a login wall). The body itself is never repeated: it is the
+ * provider's, and may echo what was sent.
+ */
+function answerKind(response: Response): string {
+  const type = response.headers.get('content-type')?.split(';')[0].trim();
+  return type ? `as ${type}` : 'no content type';
+}
+
 /** A 429, or a body naming a rate limit or a spent quota, pauses the bucket. */
 export const readSpeechRefusal: RefusalReader = (errorBody) => {
   const lower = errorBody.toLowerCase();
@@ -95,7 +106,7 @@ export async function exchangeSpeech(
   const { response, errorBody } = exchanged;
   if (errorBody !== null) {
     throw new AppError(VoiceErrors.PROVIDER_UNAVAILABLE, {
-      detail: `${who} answered ${response.status}.`,
+      detail: `${who} answered ${response.status} (${answerKind(response)}).`,
     });
   }
   const text = transcriptOf(await response.text());

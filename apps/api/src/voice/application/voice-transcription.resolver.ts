@@ -49,6 +49,9 @@ export class VoiceTranscriptionResolver {
           organizationId,
           provider: provider.id,
           code: error instanceof AppError ? error.code : undefined,
+          // Which answer it was ("answered 403 (as text/html)"): the code alone
+          // says only that the provider refused, not why.
+          detail: error instanceof AppError ? error.detail : undefined,
         });
       }
     }

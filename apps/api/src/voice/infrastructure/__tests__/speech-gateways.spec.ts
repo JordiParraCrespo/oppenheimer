@@ -59,6 +59,31 @@ describe('ChatgptSpeechGateway', () => {
     }
   });
 
+  it('says in the refusal which status came back and as what, and not what the body said', async () => {
+    for (const [answer, detail] of [
+      [
+        new Response('<html>Just a moment…</html>', {
+          status: 403,
+          headers: { 'content-type': 'text/html; charset=UTF-8' },
+        }),
+        "ChatGPT's dictation route answered 403 (as text/html).",
+      ],
+      [
+        // Bytes, not a string: a string body is given `text/plain` by `Response` itself.
+        new Response(new TextEncoder().encode('{"detail":"echoed access-placeholder"}'), {
+          status: 401,
+        }),
+        "ChatGPT's dictation route answered 401 (no content type).",
+      ],
+    ] as const) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(answer));
+      await expect(new ChatgptSpeechGateway().transcribe(CLIP, ACCESS)).rejects.toMatchObject({
+        code: 'VOICE_006',
+        detail,
+      });
+    }
+  });
+
   it('answers a rate limit with VOICE_007 and stops calling for that account', async () => {
     const fetch = vi.fn().mockResolvedValue(json(429, { error: { code: 'rate_limit_exceeded' } }));
     vi.stubGlobal('fetch', fetch);
