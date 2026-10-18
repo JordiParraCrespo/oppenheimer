@@ -4,8 +4,10 @@ import { BOT_TURN_ERROR_MAX, BotTurnEntity } from '../domain/bot-turn.entity';
 /**
  * How a turn ends: a failure keeps its words cut to what `bot_turn.error`
  * holds, so storing the end can never fail on its length and leave the turn
- * running; any other ending keeps no error. The column's own limit is the
- * integration suite's.
+ * running; any other ending keeps no error. And how a turn another bot asked
+ * for is made: in the `bots` lane, one bot deeper in the asker's chain, with
+ * no more reach than the asker's turn, and its answer only for an ask that
+ * ended. The column's own limit is the integration suite's.
  */
 function running(): BotTurnEntity {
   const turn = BotTurnEntity.queue({
@@ -45,5 +47,110 @@ describe('BotTurnEntity.end', () => {
     const turn = running();
     turn.end('cancelled', new Date(), { error: 'ignored' });
     expect(turn.error).toBeNull();
+  });
+});
+
+describe('BotTurnEntity, between bots', () => {
+  const engine = { provider: 'anthropic' as const, model: 'claude-sonnet-5-5', effort: null };
+
+  it('queues a message from a bot in the bots lane, one bot deeper in the chain your message started', () => {
+    const yours = running();
+    const target = randomUUID();
+    const asked = BotTurnEntity.queueFromBot(yours, {
+      botId: target,
+      ...engine,
+      replyRequested: true,
+    });
+    expect(asked).toMatchObject({
+      botId: target,
+      lane: 'bots',
+      chainId: yours.id,
+      chainRoot: yours.id,
+      chainDepth: 1,
+      askedByBotId: yours.botId,
+      askedByTurnId: yours.id,
+      replyRequested: true,
+      requestedByUserId: yours.requestedByUserId,
+      status: 'queued',
+    });
+    asked.start(new Date());
+    const further = BotTurnEntity.queueFromBot(asked, {
+      botId: randomUUID(),
+      ...engine,
+      replyRequested: false,
+    });
+    expect(further).toMatchObject({ chainId: yours.id, chainDepth: 2, askedByTurnId: asked.id });
+  });
+
+  it('gives the asked turn no more reach than the asking one: its zone and credential scopes', () => {
+    const asking = BotTurnEntity.queue({
+      organizationId: randomUUID(),
+      botId: randomUUID(),
+      requestedByUserId: randomUUID(),
+      ...engine,
+      timeZone: 'Europe/Madrid',
+      credentialScopes: ['bots:read'],
+    });
+    const asked = BotTurnEntity.queueFromBot(asking, {
+      botId: randomUUID(),
+      ...engine,
+      replyRequested: false,
+    });
+    expect(asked.timeZone).toBe('Europe/Madrid');
+    expect(asked.credentialScopes).toEqual(['bots:read']);
+  });
+
+  it('answers an ask that ended on the asker, at its depth, marked as answering it', () => {
+    const yours = running();
+    const asked = BotTurnEntity.queueFromBot(yours, {
+      botId: randomUUID(),
+      ...engine,
+      replyRequested: true,
+    });
+    asked.start(new Date());
+    asked.end('completed', new Date());
+    const answer = BotTurnEntity.queueAnswer(asked, { botId: yours.botId, ...engine });
+    expect(answer).toMatchObject({
+      botId: yours.botId,
+      lane: 'bots',
+      chainId: yours.id,
+      chainDepth: 0,
+      askedByBotId: asked.botId,
+      answersTurnId: asked.id,
+      replyRequested: false,
+    });
+  });
+
+  it('refuses to answer an ask still running, or a message that asked for no answer', () => {
+    const yours = running();
+    const asked = BotTurnEntity.queueFromBot(yours, {
+      botId: randomUUID(),
+      ...engine,
+      replyRequested: true,
+    });
+    asked.start(new Date());
+    expect(() => BotTurnEntity.queueAnswer(asked, { botId: yours.botId, ...engine })).toThrow(
+      'Only an ended ask is answered',
+    );
+    const told = BotTurnEntity.queueFromBot(yours, {
+      botId: randomUUID(),
+      ...engine,
+      replyRequested: false,
+    });
+    told.start(new Date());
+    told.end('completed', new Date());
+    expect(() => BotTurnEntity.queueAnswer(told, { botId: yours.botId, ...engine })).toThrow(
+      'Only an ended ask is answered',
+    );
+  });
+
+  it('queues nothing more for a turn whose sender no longer has an account', () => {
+    const orphan = BotTurnEntity.create({
+      id: randomUUID(),
+      props: { ...running().getProps(), requestedByUserId: null },
+    });
+    expect(() =>
+      BotTurnEntity.queueFromBot(orphan, { botId: randomUUID(), ...engine, replyRequested: false }),
+    ).toThrow('no longer has an account');
   });
 });
