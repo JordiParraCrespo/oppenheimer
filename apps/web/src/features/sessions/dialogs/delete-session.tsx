@@ -38,7 +38,7 @@ export function DeleteSessionDialog({
       description={
         session.isFolder
           ? t('sessions.deleteSession.descriptionFolder')
-          : `${t('sessions.deleteSession.description')} ${t('sessions.deleteSession.keeps')}`
+          : t('sessions.deleteSession.description')
       }
       confirmLabel={t('sessions.deleteSession.confirm')}
       pendingLabel={t('sessions.deleteSession.deleting')}
