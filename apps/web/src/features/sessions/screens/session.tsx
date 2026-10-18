@@ -4,7 +4,6 @@ import { QueryState, RouteError, RouteNotFound } from '@oppenheimer/frontend-web
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionBar } from '../components/session-bar';
 import { SessionSkeleton } from '../components/session-skeleton';
 import { SessionPane } from '../sections/session-pane';
 import { SessionTerminal } from '../sections/session-terminal';
@@ -51,24 +50,20 @@ export function SessionScreen({
   return (
     <QueryState>
       <QueryState.Pending>
-        <SessionBar />
         <SessionSkeleton />
       </QueryState.Pending>
       <QueryState.Error>
-        {(error, retry) => (
-          <>
-            <SessionBar />
-            {isSessionNotFound(error) ? (
-              <RouteNotFound>
-                <Button variant="secondary" render={<Link to="/sessions/new" />}>
-                  {t('nav.newSession')}
-                </Button>
-              </RouteNotFound>
-            ) : (
-              <RouteError error={error} onRetry={retry} />
-            )}
-          </>
-        )}
+        {(error, retry) =>
+          isSessionNotFound(error) ? (
+            <RouteNotFound>
+              <Button variant="secondary" render={<Link to="/sessions/new" />}>
+                {t('nav.newSession')}
+              </Button>
+            </RouteNotFound>
+          ) : (
+            <RouteError error={error} onRetry={retry} />
+          )
+        }
       </QueryState.Error>
       <QueryState.Data>
         <SessionPane

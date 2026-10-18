@@ -19,7 +19,7 @@ export const Route = createFileRoute(
   '/_authenticated/automations_/$automationId/sessions/$sessionId',
 )({
   component: RunSessionRoute,
-  staticData: { pane: 'full', bar: 'own' },
+  staticData: { pane: 'full' },
 });
 
 function RunSessionRoute() {

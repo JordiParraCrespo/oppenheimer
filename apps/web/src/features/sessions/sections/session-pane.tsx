@@ -8,7 +8,6 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionBar } from '../components/session-bar';
 import { SessionClosed } from '../components/session-closed';
 import { SessionProvisioning } from './session-provisioning';
 
@@ -58,14 +57,7 @@ export function SessionPane({
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);
 
-  // The bar sits on the pane's grey over every branch but the terminal, which
-  // it continues instead.
-  const alert = (
-    <>
-      <SessionBar />
-      <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
-    </>
-  );
+  const alert = <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />;
 
   // The **lifecycle** decides which pane this is, never the derived group: the
   // group is organised by what needs you, so an `idle` session has a live PTY
@@ -128,14 +120,11 @@ export function SessionPane({
        `border-radius: 0`): rounded, it reads as a widget tucked into a card
        rather than the console surface `terminal.css` asks for. It is the
        terminal's colour, as the artboard's is, so frame and pane read as one
-       surface in dark mode; the bar above it takes the same colour. */
-    <>
-      <SessionBar ground="terminal" />
-      <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
-        <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-          {terminal(session)}
-        </div>
+       surface in dark mode. */
+    <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
+      <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
+        {terminal(session)}
       </div>
-    </>
+    </div>
   );
 }

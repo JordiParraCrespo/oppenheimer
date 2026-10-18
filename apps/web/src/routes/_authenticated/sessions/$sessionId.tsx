@@ -5,12 +5,11 @@ import { SessionTaskLink } from '@/features/tasks/sections/session-task-link';
 /**
  * One session. The screen owns the pane — a terminal sizes itself from the box
  * it is given, so the shell gives it the whole one and keeps no scroll of its
- * own; `staticData.pane` is read by `AppShell`. The screen draws its own bar
- * (`bar: 'own'`), so the toggle sits on the terminal's colour, not the pane's.
+ * own; `staticData.pane` is read by `AppShell`.
  */
 export const Route = createFileRoute('/_authenticated/sessions/$sessionId')({
   component: SessionRoute,
-  staticData: { pane: 'full', bar: 'own' },
+  staticData: { pane: 'full' },
 });
 
 function SessionRoute() {
