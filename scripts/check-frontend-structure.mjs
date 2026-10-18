@@ -591,37 +591,39 @@ for (const file of queryStateFiles) {
 }
 
 // A placeholder has the shape of what replaces it; `skeleton-shape.mjs`
-// fails a `QueryState.Pending` that is only a slab. The files below held one
-// when the check landed: each is debt to pay off by drawing the real
-// container, and the list only shrinks — a file that no longer holds a slab
-// fails until it comes off it, so a new one cannot hide behind the list.
-const SLAB_DEBT = new Set([
+// fails a `QueryState.Pending` that is only a slab. The files below held
+// slabs when the check landed, each with how many: debt to pay off by drawing
+// the real container. A file is held to its count, not let off: one more slab
+// fails, and one fewer fails until its count here comes down, so the list
+// only shrinks and a new slab cannot hide behind it.
+const SLAB_DEBT = new Map([
   // oppenheimer:begin web
-  'apps/web/src/features/bots/screens/bot-home-host.tsx',
-  'apps/web/src/features/bots/screens/bot-instructions.tsx',
-  'apps/web/src/features/bots/screens/bot-memory.tsx',
-  'apps/web/src/features/bots/screens/model-providers-settings.tsx',
-  'apps/web/src/features/bots/sections/bot-documents.tsx',
-  'apps/web/src/features/bots/sections/bot-profile.tsx',
-  'apps/web/src/features/calendar/dialogs/event.tsx',
-  'apps/web/src/features/calendar/sections/google-accounts-card.tsx',
-  'apps/web/src/features/hosts/sections/host-list.tsx',
-  'apps/web/src/features/profile/sections/devices.tsx',
-  'apps/web/src/features/tasks/dialogs/start-session.tsx',
-  'apps/web/src/features/tasks/dialogs/task.tsx',
-  'apps/web/src/features/tasks/screens/milestones.tsx',
+  ['apps/web/src/features/bots/screens/bot-home-host.tsx', 1],
+  ['apps/web/src/features/bots/screens/bot-instructions.tsx', 1],
+  ['apps/web/src/features/bots/screens/bot-memory.tsx', 1],
+  ['apps/web/src/features/bots/screens/model-providers-settings.tsx', 1],
+  ['apps/web/src/features/bots/sections/bot-documents.tsx', 1],
+  ['apps/web/src/features/bots/sections/bot-profile.tsx', 1],
+  ['apps/web/src/features/calendar/dialogs/event.tsx', 1],
+  ['apps/web/src/features/calendar/sections/google-accounts-card.tsx', 1],
+  ['apps/web/src/features/hosts/sections/host-list.tsx', 1],
+  ['apps/web/src/features/profile/sections/devices.tsx', 1],
+  ['apps/web/src/features/tasks/dialogs/start-session.tsx', 1],
+  ['apps/web/src/features/tasks/dialogs/task.tsx', 1],
+  ['apps/web/src/features/tasks/screens/milestones.tsx', 1],
   // oppenheimer:end web
 ]);
 for (const file of queryStateFiles) {
   const name = relative(root, file);
   const slabs = skeletonSlabProblems(readFileSync(file, 'utf8'));
-  if (SLAB_DEBT.has(name)) {
-    if (slabs.length === 0)
-      fail(
-        `${name}: holds no slab any more — take it off SLAB_DEBT in scripts/check-frontend-structure.mjs`,
-      );
+  const owed = SLAB_DEBT.get(name) ?? 0;
+  if (slabs.length < owed) {
+    fail(
+      `${name}: holds ${slabs.length} slab${slabs.length === 1 ? '' : 's'}, SLAB_DEBT says ${owed} — lower its count in scripts/check-frontend-structure.mjs (remove it at zero)`,
+    );
     continue;
   }
+  if (slabs.length === owed) continue;
   for (const { line, message } of slabs) fail(`${name}:${line}: ${message}`);
 }
 

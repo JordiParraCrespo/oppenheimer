@@ -358,9 +358,10 @@ is the reference.
 `Skeleton`s with a slab among them: a block 64px tall or more, or one that
 fills its frame (`scripts/skeleton-shape.mjs`). A pane that really is one block
 until it answers says so inside the slot,
-`{/* A block stands in here: <why> */}`. The files that held a slab when the
-check landed are `SLAB_DEBT` in `scripts/check-frontend-structure.mjs`: debt,
-and the list only shrinks. Whether a named placeholder has the right shape is
+`{/* A block stands in here: <why> */}`. The files that held slabs when the
+check landed are `SLAB_DEBT` in `scripts/check-frontend-structure.mjs`, each
+with its count: debt, held to that count (one more slab fails), and the list
+only shrinks. Whether a named placeholder has the right shape is
 `/frontend-audit`'s `U7`. Before a pull request, photograph each placeholder
 held beside its loaded page (`/local-stack`, "Show a visual change").
 
