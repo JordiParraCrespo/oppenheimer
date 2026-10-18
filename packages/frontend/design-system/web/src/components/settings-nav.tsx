@@ -3,7 +3,7 @@
 import { useRender } from '@base-ui/react/use-render';
 import { mergeProps } from '@base-ui/react/merge-props';
 import { ChevronLeftIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -17,16 +17,17 @@ import { cn } from '../lib/utils';
  *
  * It has two layouts, and the width picks one with no script or re-render:
  * the `STRIP` under 768px, where there is no room for a column beside the
- * page (the same rows in one line that scrolls sideways, the group labels
- * dropped, the hairline under it), and the `RAIL` from 768px. Each part
+ * page (the same rows side by side, wrapping onto a second line rather than
+ * cutting a row off at the edge, the group labels dropped, the hairline under
+ * it), and the `RAIL` from 768px. Each part
  * below names its two layouts the same way. The parent puts the nav above
  * the page or beside it (`SettingsShell`).
  */
 const NAV = {
   surface:
     'shrink-0 border-sidebar-border bg-sidebar/72 text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]',
-  strip: 'no-scrollbar flex w-full items-center gap-1 overflow-x-auto border-b px-3 py-2',
-  rail: 'md:w-[264px] md:flex-col md:items-stretch md:overflow-visible md:border-r md:border-b-0 md:pt-[18px] md:pb-0',
+  strip: 'flex w-full flex-wrap items-center gap-1 border-b px-3 py-2',
+  rail: 'md:w-[264px] md:flex-col md:flex-nowrap md:items-stretch md:border-r md:border-b-0 md:pt-[18px] md:pb-0',
 };
 
 function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
@@ -34,7 +35,7 @@ function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
 }
 
 const GROUP = {
-  strip: 'flex shrink-0 items-center gap-0.5',
+  strip: 'flex flex-wrap items-center gap-0.5',
   rail: 'md:mt-1 md:flex-col md:items-stretch md:[&+&]:mt-3.5',
 };
 
@@ -65,16 +66,8 @@ function SettingsNavItem({
     count?: React.ReactNode;
     active?: boolean;
   }) {
-  const ref = React.useRef<HTMLButtonElement>(null);
-  // The phone's strip scrolls sideways and shows no scrollbar, so the page
-  // you are on is brought into view when it opens; on the rail it already is,
-  // and nothing moves.
-  React.useEffect(() => {
-    if (active) ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [active]);
   return useRender({
     defaultTagName: 'button',
-    ref,
     props: mergeProps<'button'>(
       {
         type: 'button',

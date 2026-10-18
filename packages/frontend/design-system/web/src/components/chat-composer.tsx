@@ -109,8 +109,7 @@ function ChatComposer({
             {dictation.recorder}
           </div>
         ) : (
-          <ComposerFoot data-slot="chat-composer-foot" className="gap-1 px-3 pb-3" leading={tools}>
-            {engine}
+          <ComposerFoot data-slot="chat-composer-foot" className="gap-1 px-3 pb-3" leading={tools} engine={engine}>
             {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
             <ComposerSendButton
               busy={busy}

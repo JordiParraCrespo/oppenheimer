@@ -219,8 +219,8 @@ function Composer({
               {tools}
             </>
           }
+          engine={engine}
         >
-          {engine}
           {dictation?.mic}
           <ComposerSendButton
             busy={busy}

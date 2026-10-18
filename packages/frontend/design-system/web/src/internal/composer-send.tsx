@@ -132,21 +132,31 @@ function ComposerFrame({
 
 /**
  * The foot row both composers share: what acts on the message (`leading`:
- * attach, the tools) on the left, then the engine, the mic and send held
- * together on the right. On a box too narrow for one line the row wraps and
- * the right-hand group takes the next line whole, still on the right, so the
- * box never outgrows the screen. Each composer sets its own gap and padding.
+ * attach, the tools) on the left; the `engine` (model, effort); then the mic
+ * and send (`children`) in the corner. On a box 448px wide or more it is one
+ * line. On a narrower box (a phone) send keeps its corner on the first line
+ * beside the tools, and the engine takes the line under them, so nothing is
+ * stranded alone and the box never outgrows the screen. The box's own width
+ * decides, not the screen's. Each composer sets its own gap and padding.
  */
 function ComposerFoot({
   leading,
+  engine,
   className,
   children,
   ...props
-}: React.ComponentProps<'div'> & { leading?: React.ReactNode }) {
+}: React.ComponentProps<'div'> & { leading?: React.ReactNode; engine?: React.ReactNode }) {
   return (
-    <div className={cn('flex flex-wrap items-center', className)} {...props}>
-      {leading}
-      <span className="ml-auto flex flex-wrap items-center justify-end gap-[inherit]">{children}</span>
+    <div className="@container/composer-foot">
+      <div className={cn('flex flex-wrap items-center', className)} {...props}>
+        {leading}
+        {engine ? (
+          <span className="order-last flex basis-full flex-wrap items-center gap-[inherit] @md/composer-foot:order-none @md/composer-foot:ml-auto @md/composer-foot:basis-auto">
+            {engine}
+          </span>
+        ) : null}
+        <span className="ml-auto flex items-center gap-[inherit] @md/composer-foot:ml-0">{children}</span>
+      </div>
     </div>
   );
 }
