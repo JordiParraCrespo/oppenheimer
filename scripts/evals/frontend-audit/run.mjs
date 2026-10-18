@@ -155,6 +155,18 @@ function applyCase(dir, testCase) {
   git(dir, 'commit', '-q', '-m', testCase.commit);
 }
 
+// A case changes `apps/web`, so the screenshot guard's Stop hook would hold
+// the auditor's last turn for pictures, and the answer would end on that
+// instead of the JSON block. Nothing here is photographed: record it so.
+function excuseScreenshots(dir) {
+  const result = run(
+    'pnpm',
+    ['screens', '--not-visual', 'an audit eval case: nothing is photographed'],
+    dir,
+  );
+  if (!result.ok) throw new Error(`pnpm screens --not-visual failed:\n${result.out.slice(-2000)}`);
+}
+
 // ---- validate: the fixtures test the prompt, not the scripts ----------------
 
 function mechanicalFailures(dir, files) {
@@ -385,6 +397,7 @@ function main() {
       for (let trial = 1; trial <= args.trials; trial += 1) {
         resetWorktree(dir, base);
         applyCase(dir, testCase);
+        excuseScreenshots(dir);
         const casePrompt = prompt.replace('{base}', base);
         log(`\n▶ ${testCase.id}${args.trials > 1 ? ` #${trial}` : ''}: ${args.model} auditing…`);
         const agent = runAgent(dir, casePrompt, args);

@@ -596,6 +596,7 @@ for (const file of queryStateFiles) {
 // container, and the list only shrinks — a file that no longer holds a slab
 // fails until it comes off it, so a new one cannot hide behind the list.
 const SLAB_DEBT = new Set([
+  // oppenheimer:begin web
   'apps/web/src/features/bots/screens/bot-home-host.tsx',
   'apps/web/src/features/bots/screens/bot-instructions.tsx',
   'apps/web/src/features/bots/screens/bot-memory.tsx',
@@ -609,6 +610,7 @@ const SLAB_DEBT = new Set([
   'apps/web/src/features/tasks/dialogs/start-session.tsx',
   'apps/web/src/features/tasks/dialogs/task.tsx',
   'apps/web/src/features/tasks/screens/milestones.tsx',
+  // oppenheimer:end web
 ]);
 for (const file of queryStateFiles) {
   const name = relative(root, file);
