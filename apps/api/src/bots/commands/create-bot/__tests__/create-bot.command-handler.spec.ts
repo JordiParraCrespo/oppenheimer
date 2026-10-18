@@ -79,6 +79,12 @@ describe('CreateBotCommandHandler', () => {
     expect(written().bot.provider).toBe('openai');
   });
 
+  it('starts it on ChatGPT rather than GLM when the workspace has both', async () => {
+    const { handler, written } = setup([], ['glm', 'chatgpt']);
+    await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
+    expect(written().bot.provider).toBe('chatgpt');
+  });
+
   it('keeps Anthropic when it has a key, when no provider has one, or when a model is named', async () => {
     for (const [keyed, model] of [
       [['glm', 'anthropic'], undefined],
