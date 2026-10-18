@@ -10,6 +10,7 @@ import {
 import { ArrowRight } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
+import { FigurePlaceholder } from '../components/figure-placeholder';
 import { useOpenPullRequest } from '../hooks/use-open-pull-request';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReviewNextShortcut } from '../hooks/use-review-next-shortcut';
@@ -20,7 +21,8 @@ import { formatWait } from '../lib/view';
  * The queue's display header: what can merge, what conflicts and the oldest
  * wait in the scope on screen, and its one action, Review next (`N`), which
  * opens the first pull request the filters leave: the deepest lane, the
- * longest wait.
+ * longest wait. Until the queue answers, each figure is a placeholder rather
+ * than a zero.
  */
 export function QueueHeader() {
   const { t } = useTranslation();
@@ -47,17 +49,29 @@ export function QueueHeader() {
         }
       />
       <PageHeaderMeta indent={false}>
-        <PageHeaderStat value={rows.filter((row) => row.canMerge).length}>
+        <PageHeaderStat
+          value={queue ? rows.filter((row) => row.canMerge).length : <FigurePlaceholder />}
+        >
           {t('pullRequests.queue.ready')}
         </PageHeaderStat>
         <PageHeaderSep />
-        <PageHeaderStat value={rows.filter((row) => row.hasConflicts).length}>
+        <PageHeaderStat
+          value={queue ? rows.filter((row) => row.hasConflicts).length : <FigurePlaceholder />}
+        >
           {t('pullRequests.queue.conflicts')}
         </PageHeaderStat>
         <PageHeaderSep />
         <span>
           {t('pullRequests.queue.oldest')}{' '}
-          <span className="figures text-fg">{rows.length ? formatWait(oldest) : '—'}</span>
+          <span className="figures text-fg">
+            {!queue ? (
+              <FigurePlaceholder className="w-8" />
+            ) : rows.length ? (
+              formatWait(oldest)
+            ) : (
+              '—'
+            )}
+          </span>
         </span>
       </PageHeaderMeta>
     </PageHeader>
