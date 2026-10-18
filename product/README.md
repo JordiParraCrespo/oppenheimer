@@ -515,6 +515,25 @@ earlier note:
   bar overshooting the dates. On 2026-10-15 the owner had it end on the last
   milestone's day, as a timeline bar does in Notion; the three-week lead-in
   before the first milestone or today stays (23 §1).
+- `versions/mvp/02-runner.md` §10 said an agent CLI that is not installed is
+  left alone and that OpenCode is never updated, because its updater asks.
+  On 2026-10-12 the runner learned to install agent CLIs and `gh` when the
+  person asks (`runner agents install`, `runner tools install gh`), user-level
+  and without sudo, from install entries in the catalog; and OpenCode joins
+  the hourly updates, told its install method so it does not ask. `git` and
+  `tmux` stay with the package manager. The host installer now asks which
+  agent CLIs to install, defaulting to Claude Code and gh, so the Add host
+  command leaves a host ready to run a session (`versions/mvp/09` §2).
+  Developing Oppenheimer itself on a new machine is one command,
+  `scripts/dev/bootstrap.sh`, with `mise.toml` pinning the toolchain.
+- `versions/mvp/02-runner.md` §10 (2026-10-12) installed Claude Code and
+  OpenCode by running their vendors' install scripts, fetched to a file
+  first but checked by nothing. On 2026-10-17 Claude Code installs from its
+  latest release binary instead, verified against the SHA-256 in that
+  release's manifest before the binary runs its own `claude install`, and
+  `gh` shares the same check; no Claude Code script runs. OpenCode keeps
+  its script for now, because its releases publish no checksum for the CLI
+  (02 open question 11).
 - `next-steps/voice.md` planned slice 3 as the task dialog, the terminal
   paste, a hotkey and a dictionary, and said the recorder's `AudioWorklet`
   would come when it moved to the kit. On 2026-10-17 the owner asked for
@@ -543,6 +562,13 @@ earlier note:
   dialog has an "Also delete everything on this machine" box, and an
   online host then closes every session, worktrees removed and nothing
   pushed (14, "Remove can also clean the machine up").
+- Note 03's hello reconciliation sent again only a launch the host never
+  carried out, so a close lost with a dropped link was never re-sent and a
+  deleted session came back in the console. On 2026-10-18 the fold keeps a
+  close owed (and the host's refusal of it) as columns, the hello sends an
+  owed close again, a restart request supersedes it, and the console draws
+  such a row as deleting or refused instead of bringing it back as it was
+  (03, "A close is owed until the host answers it"; 01, "Hello").
 - `versions/mvp/25-bots.md`: a bot with no provider named, or on one with
   no key, fell back to the first keyed provider in catalog order, so a
   workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the
@@ -555,3 +581,13 @@ earlier note:
   on each other. The sender is recorded rather than claimed, messages
   holding a credential are refused, and the chain is decided under a lock,
   from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").
+- `versions/mvp/02-runner.md` §10 (2026-10-17) kept OpenCode on
+  `opencode.ai/install`, which checks nothing, and its hourly update on
+  `upgrade --method curl`, which reruns that script. On 2026-10-18 the
+  owner, answering the review's "verify downloaded vendor installers",
+  moved it to its npm package `opencode-ai` under `~/.local`, checked
+  against the registry's integrity hash as Codex and Grok are, so no agent
+  install runs a script it downloaded. Its update is `--method npm`, with
+  npm pointed at the prefix the executable lives under; an OpenCode in
+  `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
+  "Decided").

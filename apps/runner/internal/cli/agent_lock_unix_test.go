@@ -15,7 +15,7 @@ type slowUpdater struct {
 	overlap atomic.Bool
 }
 
-func (s *slowUpdater) Update(context.Context, string, string, []string) error {
+func (s *slowUpdater) Update(context.Context, string, string, []string, []string) error {
 	if s.running.Add(1) > 1 {
 		s.overlap.Store(true)
 	}
@@ -27,7 +27,7 @@ func (s *slowUpdater) Update(context.Context, string, string, []string) error {
 // blockingUpdater holds its agent's lock until the test lets it finish.
 type blockingUpdater struct{ held, finish chan struct{} }
 
-func (b blockingUpdater) Update(context.Context, string, string, []string) error {
+func (b blockingUpdater) Update(context.Context, string, string, []string, []string) error {
 	close(b.held)
 	<-b.finish
 	return nil
@@ -44,7 +44,7 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	done := make(chan struct{}, 2)
 	for range 2 {
 		go func() {
-			_ = lockedUpdater{paths: paths, next: inner}.Update(context.Background(), "claude", "/bin/claude", []string{"update"})
+			_ = lockedUpdater{paths: paths, next: inner}.Update(context.Background(), "claude", "/bin/claude", []string{"update"}, nil)
 			done <- struct{}{}
 		}()
 	}
@@ -77,7 +77,7 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 	updated := make(chan error, 1)
 	go func() {
 		updated <- lockedUpdater{paths: paths, next: blockingUpdater{held: held, finish: finish}}.
-			Update(context.Background(), "claude", "/bin/claude", []string{"update"})
+			Update(context.Background(), "claude", "/bin/claude", []string{"update"}, nil)
 	}()
 	<-held
 	codex := make(chan struct{})

@@ -8,6 +8,8 @@ export interface HostReconciliationOutcome {
   redispatched: string[];
   /** Sessions the rows call open that the host no longer holds: recorded stopped. */
   stopped: string[];
+  /** Sessions with a close still owed: sent the close again. */
+  reclosed: string[];
 }
 
 export interface SessionReconciliationPort {

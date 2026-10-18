@@ -214,7 +214,6 @@
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
       "FLAG_007": "Las condiciones de ese segmento no son válidas.",
       "SESSIONS_012": "El archivo pesa más de 5 MB. Guarda una copia más pequeña y vuelve a intentarlo.",
-      "SESSIONS_CLIENT_019": "El host está desconectado, así que la sesión no se ha eliminado. Inténtalo de nuevo cuando vuelva.",
       "SESSIONS_013": "Una sesión recibe imágenes (PNG, JPEG, GIF, WebP), PDF y archivos de texto. Se rechazan ejecutables, archivos comprimidos, scripts, SVG y HTML.",
       "SESSIONS_014": "Esta sesión está detenida. Reiníciala para darle un archivo a su prompt.",
       "SESSIONS_015": "No se adjuntó ningún archivo. Vuelve a pegarlo o arrastrarlo.",
@@ -262,6 +261,7 @@
       "BOTS_020": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
       "BOTS_021": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento.",
       "BOTS_022": "Detén primero el turno en curso.",
+      "BOTS_023": "Añade una clave para ese proveedor antes de hacerlo predeterminado.",
       "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
       "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
       "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
@@ -730,7 +730,11 @@
       "delete": "Eliminar",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
       "loadFailed": "No se han podido cargar tus sesiones.",
-      "share": "Compartir…"
+      "share": "Compartir…",
+      "deleting": "Eliminando…",
+      "deletingHint": "Esperando a que su host la elimine. Si el host está desconectado, se eliminará cuando vuelva.",
+      "notDeleted": "No eliminada",
+      "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -739,7 +743,10 @@
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la sesión.",
       "discard": "Descartar también el trabajo sin enviar",
-      "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
+      "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
+      "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+      "refused": "Su host no la eliminó",
+      "refusedUnknown": "El host se negó a eliminar la sesión."
     },
     "filters": {
       "label": "Filtrar sesiones",
@@ -2214,7 +2221,7 @@
     },
     "modelProviders": {
       "title": "Proveedores de modelos",
-      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar.",
+      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
       "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
       "loadFailed": "No se pudieron cargar los proveedores de modelos.",
       "keyEnding": "Clave que termina en {{hint}}",
@@ -2224,6 +2231,10 @@
       "remove": "Quitar",
       "removeLabel": "Quitar la clave de {{provider}}",
       "removeFailed": "No se pudo quitar la clave.",
+      "default": "Predeterminado",
+      "makeDefault": "Hacer predeterminado",
+      "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
+      "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",

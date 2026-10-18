@@ -1,6 +1,6 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -14,8 +14,13 @@ import { useTranslation } from 'react-i18next';
  *
  * The close refuses unpushed work unless the caller accepts losing it; this
  * dialog's box is where that is accepted, not a hidden flag. A failure stays
- * next to the button, never a toast — a host that is offline among them,
- * since the close never reached it and the row comes back.
+ * next to the button, never a toast. A host that is offline is not a failure:
+ * the API keeps the close owed and sends it when the host is back, and the
+ * row reads "Deleting…" until then.
+ *
+ * A session whose host refused the last delete opens with the refusal on top,
+ * in the host's words: usually work that is not pushed, which the box accepts
+ * losing. The box is never ticked for the reader.
  *
  * A folder session has no worktree and nothing of ours to push: its close
  * ends the terminal and leaves the folder as it is, so it says only that and
@@ -28,9 +33,16 @@ export function DeleteSessionDialog({
   session: SessionEntity;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [discard, setDiscard] = useState(false);
   const close = useCloseSession({ onSuccess: onClose });
+  const refusal = session.closeRefusal;
+  const refusalKey = refusal ? `errors.byCode.${refusal.code}` : null;
+  const refusalReason = refusalKey
+    ? i18n.exists(refusalKey)
+      ? (i18n.t(refusalKey as never) as string)
+      : t('sessions.deleteSession.refusedUnknown')
+    : null;
 
   return (
     <ConfirmDialog
@@ -50,6 +62,12 @@ export function DeleteSessionDialog({
         close.mutate({ id: session.id, acceptUnpushedWork: session.isFolder ? false : discard })
       }
     >
+      {refusal ? (
+        <ErrorAlert
+          title={t('sessions.deleteSession.refused')}
+          message={[refusalReason, refusal.detail].filter(Boolean).join(' ')}
+        />
+      ) : null}
       {session.isFolder ? null : (
         <ConfirmDialog.Option
           checked={discard}

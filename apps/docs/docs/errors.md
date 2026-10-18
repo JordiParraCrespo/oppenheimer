@@ -649,6 +649,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
 | `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
 | `BOTS_022` <a id="bots_022" />       | The bot has a turn queued or running         | 409  |
+| `BOTS_023` <a id="bots_023" />       | That model provider has no key               | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -700,6 +701,9 @@ the refreshed token.
 `BOTS_022` is `DELETE /bots/:id/conversation` while one of the bot's turns is
 queued or running: the turn would go on writing into a conversation that is
 gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
+`BOTS_023` is making a provider the one new bots start on
+(`PUT /model-providers/:provider/default`) when the workspace has no key for
+it. Store the key first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -840,6 +844,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
+| `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
@@ -898,6 +904,13 @@ tightened by the runner itself.
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
 open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
+
+`HOST_010` is `runner agents install` or `runner tools install` asked for
+something it does not install: a name in neither catalog, a platform with no
+installer, or `git`/`tmux`, which need root. For those two the detail is the
+exact package-manager command to run. `HOST_011` is an install that ran and
+failed, or finished without the tool appearing on `PATH`; the detail is the
+installer's last line.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

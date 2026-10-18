@@ -40,6 +40,9 @@ the way this host proves who it is, and they go when the link lands.
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner agents update` | runs every installed agent CLI's unattended updater now, the round `run` does on its own unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
+| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
+| `runner tools [ls]` | every probed tool with its version and path, and for a missing one the line that installs it |
+| `runner tools install gh` | GitHub's CLI into `~/.local/bin` (Homebrew on macOS). For `git` and `tmux` it prints the package manager's command and runs nothing |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
 | `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |
 
