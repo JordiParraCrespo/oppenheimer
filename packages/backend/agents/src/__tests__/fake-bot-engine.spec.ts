@@ -73,6 +73,30 @@ describe('FakeBotEngine', () => {
     ]);
   });
 
+  it('hands back what the tool said its call made, beside the output', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: '',
+      inputSchema: {},
+      run: async () => ({
+        content: 'Started it.',
+        data: { sessionId: 's-1', ignored: 7 } as never,
+      }),
+    };
+    const engine = new FakeBotEngine(() => [
+      { type: 'tool.started', callId: 'c1', name: 'start_session', input: {} },
+    ]);
+
+    expect(await collect(engine.run(request({ tools: [start] })))).toContainEqual({
+      type: 'tool.finished',
+      callId: 'c1',
+      name: 'start_session',
+      output: 'Started it.',
+      isError: false,
+      data: { sessionId: 's-1' },
+    });
+  });
+
   it('reports a scripted result instead of running the tool', async () => {
     let ran = false;
     const watched: BotEngineTool = {
