@@ -1,0 +1,40 @@
+# Prometheus for local development, scraping the API that `pnpm dev` runs on
+# this machine and loading the alert rules the dev server will use
+# (deploy/dev/monitoring/). Its own project, so it starts and stops apart from
+# Postgres and Redis: `pnpm monitoring:up`, then http://localhost:9090.
+#
+# The API exports metrics only while METRICS_TOKEN is set, so set it in the
+# root .env (`openssl rand -hex 32`) and restart the API first. Compose reads
+# it from that .env (`--env-file .env` in the scripts) and hands it to
+# Prometheus as a secret file, its Basic-auth password.
+name: oppenheimer-monitoring
+
+secrets:
+  metrics_token:
+    environment: METRICS_TOKEN
+
+services:
+  prometheus:
+    # quay.io, Prometheus' own registry, rather than Docker Hub, which answers
+    # anonymous pulls from a shared address with 429.
+    image: quay.io/prometheus/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      # POST /-/reload re-reads the config and the rules after an edit.
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:9090:9090"
+    # The API listens on the host, not in this project's network.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    secrets: [metrics_token]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../deploy/dev/monitoring/prometheus:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+
+volumes:
+  prometheus_data:
