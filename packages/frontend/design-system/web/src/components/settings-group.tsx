@@ -49,7 +49,7 @@ function SettingsRow({
       className={cn('flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-border-subtle px-5 py-4 first:border-t-0', className)}
       {...props}
     >
-      <div className="flex min-w-0 flex-[1_1_12rem] flex-col gap-0.5">
+      <div className="wrap-lead flex flex-col gap-0.5">
         <span className="text-operate font-medium text-fg">{label}</span>
         {hint ? <span className="text-[13px] text-fg-muted">{hint}</span> : null}
       </div>

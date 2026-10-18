@@ -15,29 +15,34 @@ import { cn } from '../lib/utils';
  * the version-1 glass rail at 264px: the sidebar surface at 72% over the
  * page, blurred (`design/version1/ds-base.js`, `.op-sidebar`).
  *
- * Under 768px there is no room for a column beside the page, so the nav is a
- * strip across the top that scrolls sideways: the same rows in one line, the
- * group labels dropped, the hairline under it instead of beside it.
+ * It has two layouts, and the width picks one with no script or re-render:
+ * the `STRIP` under 768px, where there is no room for a column beside the
+ * page (the same rows in one line that scrolls sideways, the group labels
+ * dropped, the hairline under it), and the `RAIL` from 768px. Each part
+ * below names its two layouts the same way. The parent puts the nav above
+ * the page or beside it (`SettingsShell`).
  */
+const NAV = {
+  surface:
+    'shrink-0 border-sidebar-border bg-sidebar/72 text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]',
+  strip: 'no-scrollbar flex w-full items-center gap-1 overflow-x-auto border-b px-3 py-2',
+  rail: 'md:w-[264px] md:flex-col md:items-stretch md:overflow-visible md:border-r md:border-b-0 md:pt-[18px] md:pb-0',
+};
+
 function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
-  return (
-    <nav
-      data-slot="settings-nav"
-      className={cn(
-        'no-scrollbar flex w-full shrink-0 items-center gap-1 overflow-x-auto border-b border-sidebar-border bg-sidebar/72 px-3 py-2 text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]',
-        'md:w-[264px] md:flex-col md:items-stretch md:overflow-visible md:border-r md:border-b-0 md:pt-[18px] md:pb-0',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <nav data-slot="settings-nav" className={cn(NAV.surface, NAV.strip, NAV.rail, className)} {...props} />;
 }
+
+const GROUP = {
+  strip: 'flex shrink-0 items-center gap-0.5',
+  rail: 'md:mt-1 md:flex-col md:items-stretch md:[&+&]:mt-3.5',
+};
 
 function SettingsNavGroup({ label, className, children, ...props }: React.ComponentProps<'div'> & { label: React.ReactNode }) {
   return (
     <div
       data-slot="settings-nav-group"
-      className={cn('flex shrink-0 items-center gap-0.5 md:mt-1 md:flex-col md:items-stretch md:[&+&]:mt-3.5', className)}
+      className={cn(GROUP.strip, GROUP.rail, className)}
       {...props}
     >
       <span className="eyebrow hidden px-2.5 py-1.5 leading-(--leading-body) md:block">{label}</span>

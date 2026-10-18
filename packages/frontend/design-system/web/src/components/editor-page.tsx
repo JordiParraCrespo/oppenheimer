@@ -104,7 +104,7 @@ function EditorPageTop({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="editor-page-top"
-      className={cn('mb-1 flex flex-wrap items-center gap-3 *:shrink-0 [&>:last-child:not(:first-child)]:ml-auto', className)}
+      className={cn('mb-1 flex flex-wrap items-center gap-3 [&>:first-child]:shrink-0 [&>:last-child:not(:first-child)]:ml-auto', className)}
       {...props}
     />
   );

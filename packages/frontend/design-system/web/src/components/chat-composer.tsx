@@ -3,7 +3,7 @@
 import { ArrowUpIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
+import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 
@@ -109,10 +109,7 @@ function ChatComposer({
             {dictation.recorder}
           </div>
         ) : (
-          // Wraps on a narrow box, the engine and send together on the right.
-          <div data-slot="chat-composer-foot" className="flex flex-wrap items-center gap-1 px-3 pb-3">
-            {tools}
-            <span className="ml-auto flex flex-wrap items-center justify-end">
+          <ComposerFoot data-slot="chat-composer-foot" className="gap-1 px-3 pb-3" leading={tools}>
             {engine}
             {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
             <ComposerSendButton
@@ -133,8 +130,7 @@ function ChatComposer({
                 <ArrowUpIcon className="size-4" strokeWidth={2.2} />
               )}
             </ComposerSendButton>
-            </span>
-          </div>
+          </ComposerFoot>
         )}
       </div>
     </ComposerFrame>

@@ -44,16 +44,25 @@ function SettingsMain({ className, ...props }: React.ComponentProps<'main'>) {
 
 /**
  * The measured content column: the console's 760px and gutter (32px, 16px on
- * a phone), sections 40px apart. It opens 72px down, where a console page's
- * title sits under its 48px bar; on a phone, under the nav's strip, and under
- * a bar of its own (a bot's settings, which passes `md:pt-6`), 24px down, as a
- * console page does.
+ * a phone), sections 40px apart. Where it opens is `offset`, what sits above it:
+ *
+ * - `shell` (Settings): 72px down, where a console page's title sits under
+ *   its 48px bar; on a phone, 24px under the nav's strip.
+ * - `bar` (a bot's settings, under its own bar): 24px down at every width,
+ *   as a console page opens under its bar.
  */
-function SettingsContent({ className, ...props }: React.ComponentProps<'div'>) {
+const SETTINGS_OFFSET = { shell: 'pt-6 md:pt-18', bar: 'pt-6' } as const;
+
+function SettingsContent({
+  offset = 'shell',
+  className,
+  ...props
+}: React.ComponentProps<'div'> & { offset?: keyof typeof SETTINGS_OFFSET }) {
   return (
     <div
       data-slot="settings-content"
-      className={cn('mx-auto flex w-full max-w-190 flex-col gap-10 px-4 pt-6 pb-18 sm:px-8 md:pt-18', className)}
+      data-offset={offset}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-10 px-4 pb-18 sm:px-8', SETTINGS_OFFSET[offset], className)}
       {...props}
     />
   );
@@ -77,7 +86,7 @@ function SettingsTitle({
 }) {
   return (
     <div data-slot="settings-title" className={cn('flex flex-wrap items-end gap-x-4 gap-y-3', className)} {...props}>
-      <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-1.5">
+      <div className="wrap-lead flex flex-col gap-1.5">
         <h1 className="m-0 font-display text-h2 leading-(--leading-body) font-semibold tracking-[-0.02em] text-fg">
           {title}
         </h1>

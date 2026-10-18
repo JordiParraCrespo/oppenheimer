@@ -130,4 +130,25 @@ function ComposerFrame({
   );
 }
 
-export { ComposerFrame, ComposerSendButton, useComposerSend };
+/**
+ * The foot row both composers share: what acts on the message (`leading`:
+ * attach, the tools) on the left, then the engine, the mic and send held
+ * together on the right. On a box too narrow for one line the row wraps and
+ * the right-hand group takes the next line whole, still on the right, so the
+ * box never outgrows the screen. Each composer sets its own gap and padding.
+ */
+function ComposerFoot({
+  leading,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & { leading?: React.ReactNode }) {
+  return (
+    <div className={cn('flex flex-wrap items-center', className)} {...props}>
+      {leading}
+      <span className="ml-auto flex flex-wrap items-center justify-end gap-[inherit]">{children}</span>
+    </div>
+  );
+}
+
+export { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend };

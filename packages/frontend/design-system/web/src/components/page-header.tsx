@@ -83,7 +83,8 @@ function PageHeaderRow({
     typeof title === 'string' ? (
       <h1
         className={cn(
-          'm-0 min-w-48 max-w-full flex-1 truncate font-semibold text-fg',
+          'm-0 truncate font-semibold text-fg',
+          meta ? 'min-w-0' : 'wrap-lead',
           size === 'display'
             ? 'text-[34px] leading-[1.1] tracking-[-0.022em]'
             : size === 'lg'
@@ -120,7 +121,7 @@ function PageHeaderRow({
         </span>
       ) : null}
       {meta ? (
-        <div className="flex min-w-60 flex-1 flex-col gap-2">
+        <div className="wrap-lead flex flex-col gap-2">
           {heading}
           {meta}
         </div>

@@ -38,15 +38,18 @@ function RunsListFilters({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 // Under 640px the routine column goes: the run and its time are what a row
-// is read for.
+// is read for. The grid and the routine cell say so together, for the head
+// and every row.
 const GRID =
   'grid grid-cols-[minmax(0,1fr)_124px] items-center gap-4 px-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,220px)_124px]';
+const ROUTINE_CELL = 'hidden sm:flex';
 
 function RunsListHead({
   columns = ['Run', 'Routine', 'Time'],
   className,
   ...props
 }: React.ComponentProps<'div'> & { columns?: [React.ReactNode, React.ReactNode, React.ReactNode] }) {
+  const [run, routine, time] = columns;
   return (
     <div
       role="row"
@@ -54,11 +57,11 @@ function RunsListHead({
       className={cn(GRID, 'h-9 text-[12.5px] text-fg-subtle', className)}
       {...props}
     >
-      {columns.map((column, i) => (
-        <span key={`${i}-${String(column)}`} role="columnheader" className={i === 1 ? 'hidden sm:block' : undefined}>
-          {column}
-        </span>
-      ))}
+      <span role="columnheader">{run}</span>
+      <span role="columnheader" className={ROUTINE_CELL}>
+        {routine}
+      </span>
+      <span role="columnheader">{time}</span>
     </div>
   );
 }
@@ -107,7 +110,7 @@ function RunRow({
         </span>
         <span className="truncate">{title}</span>
       </span>
-      <span role="cell" className="hidden min-w-0 items-center gap-[7px] text-[13px] text-fg-muted sm:flex">
+      <span role="cell" className={cn(ROUTINE_CELL, 'min-w-0 items-center gap-[7px] text-[13px] text-fg-muted')}>
         <ZapIcon className="size-3.5 shrink-0" aria-hidden />
         <span className="truncate">{routine}</span>
       </span>

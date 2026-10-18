@@ -3,7 +3,7 @@
 import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
+import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import { cn } from '../lib/utils';
 import type { DictationSlot } from './chat-composer-extras';
 import { IconButton } from './icon-button';
@@ -200,23 +200,26 @@ function Composer({
             {dictation.recorder}
           </div>
         ) : (
-        // The row wraps on a narrow box: the engine and send keep together
-        // and take the next line on the right, so the box never outgrows
-        // the screen.
-        <div data-slot="composer-foot" className="flex flex-wrap items-center gap-1.5 px-2.5 pb-2.5">
-          {onAttach ? (
-            <IconButton
-              aria-label={label.attach}
-              size="sm"
-              shape="square"
-              onClick={onAttach}
-              className="size-[30px]"
-            >
-              <PaperclipIcon className="size-[15px]" />
-            </IconButton>
-          ) : null}
-          {tools}
-          <span className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+        <ComposerFoot
+          data-slot="composer-foot"
+          className="gap-1.5 px-2.5 pb-2.5"
+          leading={
+            <>
+              {onAttach ? (
+                <IconButton
+                  aria-label={label.attach}
+                  size="sm"
+                  shape="square"
+                  onClick={onAttach}
+                  className="size-[30px]"
+                >
+                  <PaperclipIcon className="size-[15px]" />
+                </IconButton>
+              ) : null}
+              {tools}
+            </>
+          }
+        >
           {engine}
           {dictation?.mic}
           <ComposerSendButton
@@ -234,8 +237,7 @@ function Composer({
               <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
             )}
           </ComposerSendButton>
-          </span>
-        </div>
+        </ComposerFoot>
         )}
       </div>
     </ComposerFrame>
