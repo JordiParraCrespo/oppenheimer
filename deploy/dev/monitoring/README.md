@@ -29,30 +29,20 @@ server:
    docker/docker-compose.monitoring.yml down -v` also drops the 7 days of
    data it keeps.
 
-Its config is `docker/monitoring/prometheus.yml`: the same scrape as below,
-with the target `host.docker.internal:3001` and the token handed in as a
-compose secret.
+Its config is `docker/monitoring/prometheus.yml`, the one definition of the
+API's scrape job: target `host.docker.internal:3001`, the token handed in as
+a compose secret. With `METRICS_TOKEN` empty the container refuses to start
+and says why.
 
 ## Scraping the dev server
 
 No container publishes a port, so the scraper joins the compose `edge`
 network (or the tailnet) and reaches the API at `api:3001`, not through the
-public origin:
-
-```yaml
-scrape_configs:
-  - job_name: oppenheimer-api
-    metrics_path: /api/v1/metrics
-    basic_auth:
-      username: prometheus
-      password_file: /etc/prometheus/oppenheimer-metrics-token
-    static_configs:
-      - targets: ["api:3001"]
-rule_files:
-  - /etc/prometheus/rules/api.rules.yaml
-```
-
-and `config/api.env` on the server sets `METRICS_TOKEN` (`openssl rand -hex 32`).
+public origin. The scrape job is the `oppenheimer-api` job in
+`docker/monitoring/prometheus.yml` with two changes: the target is
+`api:3001`, and `password_file` is wherever that Prometheus keeps the token
+(say `/etc/prometheus/oppenheimer-metrics-token`). `rule_files` points at
+this directory's `prometheus/*.rules.yaml`, and `config/api.env` on the server sets `METRICS_TOKEN` (`openssl rand -hex 32`).
 
 ## Keeping them honest
 

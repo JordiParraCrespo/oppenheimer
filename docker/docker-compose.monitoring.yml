@@ -19,6 +19,19 @@ services:
     # anonymous pulls from a shared address with 429.
     image: quay.io/prometheus/prometheus:v3.5.0
     restart: unless-stopped
+    # An empty METRICS_TOKEN (the .env.example default) gives no secret file
+    # rather than an error, and Prometheus would start with every scrape of
+    # the API failing; refuse to start instead.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -s /run/secrets/metrics_token ]; then
+          echo "METRICS_TOKEN is empty: set it in the root .env (openssl rand -hex 32), restart the API, then pnpm monitoring:up" >&2
+          exit 1
+        fi
+        exec /bin/prometheus "$$@"
+      - prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
