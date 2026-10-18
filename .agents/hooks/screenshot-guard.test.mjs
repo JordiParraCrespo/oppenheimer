@@ -56,9 +56,10 @@ describe('the hook', () => {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), body);
   };
-  const stop = (input = {}) => {
+  const stop = (input = {}, env = {}) => {
     const result = spawnSync('node', [HOOK], {
       cwd: root,
+      env: { ...process.env, OPPENHEIMER_SCREENSHOT_GUARD: '', ...env },
       input: JSON.stringify({ cwd: root, ...input }),
       encoding: 'utf8',
     });
@@ -93,6 +94,10 @@ describe('the hook', () => {
 
   it('lets the second stop through', () => {
     assert.equal(stop({ stop_hook_active: true }), null);
+  });
+
+  it('lets a run that turns the guard off stop (the audit eval)', () => {
+    assert.equal(stop({}, { OPPENHEIMER_SCREENSHOT_GUARD: 'off' }), null);
   });
 
   it('holds a committed one too', () => {
