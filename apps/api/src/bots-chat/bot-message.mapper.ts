@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { BOT_EVENT_OUTCOMES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_REPLY_OUTCOMES,
+  type BotMessageEvent,
+  type BotMessageRole,
+} from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
-import { BotMessageResponseDto } from './dtos/bot-message.response.dto';
+import {
+  BotMessageEventResponseDto,
+  BotMessageResponseDto,
+} from './dtos/bot-message.response.dto';
 
 @Injectable()
 export class BotMessageMapper
@@ -62,7 +70,7 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
     }));
-    dto.event = entity.event ? { ...entity.event } : null;
+    dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
@@ -80,6 +88,19 @@ export class BotMessageMapper
   }
 }
 
+/** An event for the wire: one shape, the fields its kind does not have left null. */
+function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
+  const dto = new BotMessageEventResponseDto();
+  dto.kind = event.kind;
+  dto.outcome = event.kind === 'bot_message' ? null : event.outcome;
+  dto.tool = event.kind === 'approval' ? event.tool : null;
+  dto.summary = event.kind === 'approval' ? event.summary : null;
+  dto.fromBotId = event.kind === 'approval' ? null : event.fromBotId;
+  dto.fromBotName = event.kind === 'approval' ? null : event.fromBotName;
+  dto.expectsReply = event.kind === 'bot_message' ? event.expectsReply : null;
+  return dto;
+}
+
 /** A stored step, narrowed once: what the column holds is what the mapper wrote. */
 function toStep(raw: Record<string, unknown>): BotToolStep {
   return {
@@ -93,13 +114,34 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
-  if (raw?.kind !== 'approval') return null;
-  const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
-  if (!outcome) return null;
-  return {
-    kind: 'approval',
-    outcome,
-    tool: String(raw.tool ?? ''),
-    summary: String(raw.summary ?? ''),
-  };
+  if (!raw) return null;
+  if (raw.kind === 'approval') {
+    const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'approval',
+      outcome,
+      tool: String(raw.tool ?? ''),
+      summary: String(raw.summary ?? ''),
+    };
+  }
+  if (raw.kind === 'bot_message') {
+    return {
+      kind: 'bot_message',
+      fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
+      fromBotName: String(raw.fromBotName ?? ''),
+      expectsReply: raw.expectsReply === true,
+    };
+  }
+  if (raw.kind === 'bot_reply') {
+    const outcome = BOT_REPLY_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'bot_reply',
+      fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
+      fromBotName: String(raw.fromBotName ?? ''),
+      outcome,
+    };
+  }
+  return null;
 }

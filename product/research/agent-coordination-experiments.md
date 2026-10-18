@@ -175,6 +175,18 @@ Sensitivity, every assumed rate scaled at once by a random factor in
 - Plan quality, which is the manager's real value, is not modelled, so
   the hub is judged on allocation alone.
 
+## What was built from it
+
+`message_bot` and `ask_bot` (`versions/mvp/25-bots.md` §4.6, 2026-10-18)
+take two of the six controls as they are, the sender recorded by the
+server and the secret scanner on messages, and add what the incident's
+failures called for beside them: a chain bounded in depth and turns,
+decided under a lock, and messages delivered as queued turns in a lane of
+their own rather than as interruptions. Approvals already existed (Needs
+input cards, §5) and apply to a turn another bot started like any other.
+Leases (bots claiming Plan tasks), evidence links and lane-based approvals
+are not built yet, and spawning is not a tool bots have.
+
 ## The next experiments: real agents
 
 The simulation ranks designs. Measuring them needs real agents, and the

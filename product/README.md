@@ -521,3 +521,10 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- Note 25 had `ask_bot` give another bot a task and wait for its answer.
+  On 2026-10-18 it was built so the answer comes back as a new turn of the
+  asker instead: one turn per bot runs at a time and a turn has four
+  minutes, so an ask that waited could time out or leave two bots waiting
+  on each other. The sender is recorded rather than claimed, messages
+  holding a credential are refused, and the chain is decided under a lock,
+  from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").

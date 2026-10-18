@@ -42,9 +42,11 @@ import { ClearBotConversationCommandHandler } from './commands/clear-bot-convers
 import { ClearBotConversationHttpController } from './commands/clear-bot-conversation/clear-bot-conversation.http.controller';
 import { DecideBotApprovalCommandHandler } from './commands/decide-bot-approval/decide-bot-approval.command-handler';
 import { DecideBotApprovalHttpController } from './commands/decide-bot-approval/decide-bot-approval.http.controller';
+import { DeliverBotAnswerCommandHandler } from './commands/deliver-bot-answer/deliver-bot-answer.command-handler';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
 import { SendBotMessageCommandHandler } from './commands/send-bot-message/send-bot-message.command-handler';
+import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-message/send-bot-peer-message.command-handler';
 import { SendBotMessageHttpController } from './commands/send-bot-message/send-bot-message.http.controller';
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
@@ -86,6 +88,8 @@ const httpControllers = [
 
 const commandHandlers: Provider[] = [
   SendBotMessageCommandHandler,
+  SendBotPeerMessageCommandHandler,
+  DeliverBotAnswerCommandHandler,
   CancelBotTurnCommandHandler,
   ClearBotConversationCommandHandler,
   RunBotTurnCommandHandler,

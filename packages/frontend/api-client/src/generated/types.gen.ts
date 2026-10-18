@@ -3133,16 +3133,31 @@ export type BotToolStepResponseDto = {
 };
 
 export type BotMessageEventResponseDto = {
-    kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    kind: 'approval' | 'bot_message' | 'bot_reply';
     /**
-     * The tool the decided call was for.
+     * An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.
      */
-    tool: string;
+    outcome: 'approved' | 'denied' | 'failed' | 'answered' | 'cancelled';
     /**
-     * The card's line: what the call does, in words.
+     * An approval: the tool the decided call was for.
      */
-    summary: string;
+    tool: string | null;
+    /**
+     * An approval: the card's line, what the call does in words.
+     */
+    summary: string | null;
+    /**
+     * A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * A message or an answer: the sending bot's name when it sent it.
+     */
+    fromBotName: string | null;
+    /**
+     * A message: sent with ask_bot, so this bot answers it.
+     */
+    expectsReply: boolean | null;
 };
 
 export type BotMessageResponseDto = {

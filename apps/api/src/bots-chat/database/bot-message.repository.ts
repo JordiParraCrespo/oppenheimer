@@ -106,6 +106,16 @@ export class BotMessageRepository
     return record ? this.mapper.toDomain(record) : null;
   }
 
+  async findTurnTexts(organizationId: string, turnId: string): Promise<string[]> {
+    // IDX_bot_message_turn.
+    const records = await this.repository.find({
+      where: { organizationId, turnId, role: 'assistant' },
+      order: { position: 'ASC' },
+      select: { id: true, content: true, position: true },
+    });
+    return records.map((record) => record.content);
+  }
+
   async findHistory(
     organizationId: string,
     botId: string,

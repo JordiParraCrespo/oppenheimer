@@ -8,6 +8,10 @@ import { FindBotQuery } from '../../../bots/queries/find-bot/find-bot.query';
 import { FindBotGroupsQuery } from '../../../bots/queries/find-bot-groups/find-bot-groups.query';
 import { FindBotsQuery } from '../../../bots/queries/find-bots/find-bots.query';
 import { FindModelProviderCredentialsQuery } from '../../../bots/queries/find-model-provider-credentials/find-model-provider-credentials.query';
+import {
+  SendBotPeerMessageCommand,
+  type SendBotPeerMessageResult,
+} from '../../commands/send-bot-peer-message/send-bot-peer-message.command';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotPeerToolsFactory } from '../bot-bots-tools.factory';
@@ -20,7 +24,10 @@ import type { BotToolContext } from '../bot-tool.factory';
  * `create_bot`, which asks under Approve for me and otherwise dispatches the
  * console's own create command as the owner, marked as the creator's, on the
  * creator's engine unless told otherwise, never looser than the creator, and
- * once per call. The write itself is the command's and the integration spec's.
+ * once per call; and `message_bot` and `ask_bot`, which dispatch the peer
+ * message command as the turn running them, say what was sent or why not,
+ * and send at most five a turn. The write itself is the command's and the
+ * integration spec's.
  */
 const owner = emptyScope('owner-1', 'org-1');
 const SELF_ID = '11111111-1111-4111-8111-111111111111';
@@ -414,5 +421,76 @@ describe('create_bot', () => {
     expect(keys[0]).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
     expect(keys[1]).toBe(keys[0]);
     expect(keys[2]).not.toBe(keys[0]);
+  });
+});
+
+describe('BotPeerToolsFactory: message_bot and ask_bot', () => {
+  function peerSetup(result: SendBotPeerMessageResult) {
+    const commandBus = { execute: vi.fn(async () => result) };
+    const factory = new BotPeerToolsFactory(
+      { execute: vi.fn() } as unknown as QueryBus,
+      commandBus as unknown as CommandBus,
+    );
+    const own: BotToolContext = { ...context, budget: new BotTurnBudget() };
+    const call = (name: string, input: unknown) => {
+      const found = factory.definitions().find((definition) => definition.name === name);
+      if (!found) throw new Error(`no tool ${name}`);
+      return found.bind(own).run(input, { signal: new AbortController().signal });
+    };
+    return { commandBus, call };
+  }
+
+  it('sends as the turn and bot running the tool, in the owner’s scope, asking for an answer only through ask_bot', async () => {
+    const { commandBus, call } = peerSetup({ sent: true, turnId: 'turn-9', botName: 'Grace' });
+    const asked = await call('ask_bot', { bot_id: PEER_ID, message: '  Which task is PR 412?  ' });
+    const told = await call('message_bot', { bot_id: PEER_ID, message: 'Heads-up: PR 412 merged.' });
+    const [ask, tell] = commandBus.execute.mock.calls.map(
+      ([command]) => command as SendBotPeerMessageCommand,
+    );
+    expect(ask).toBeInstanceOf(SendBotPeerMessageCommand);
+    expect(ask).toMatchObject({
+      owner,
+      organizationId: 'org-1',
+      fromBotId: SELF_ID,
+      fromTurnId: 'turn-1',
+      toBotId: PEER_ID,
+      content: 'Which task is PR 412?',
+      expectsReply: true,
+    });
+    expect(tell.expectsReply).toBe(false);
+    expect(asked).toMatchObject({ isError: false });
+    expect(asked.content).toContain('Its answer will arrive in this chat as a new message');
+    expect(told.content).toContain('it will not reply to you');
+  });
+
+  it('answers the refusal as the tool’s error, so the bot reads why nothing was sent', async () => {
+    const { call } = peerSetup({ sent: false, refusal: 'That bot is already working on this.' });
+    const result = await call('ask_bot', { bot_id: PEER_ID, message: 'again' });
+    expect(result).toEqual({ content: 'That bot is already working on this.', isError: true });
+  });
+
+  it('sends at most five messages to other bots a turn, either tool counting, and refuses the sixth unsent', async () => {
+    const { commandBus, call } = peerSetup({ sent: true, turnId: 'turn-9', botName: 'Grace' });
+    for (let i = 0; i < 5; i++) {
+      const tool = i % 2 ? 'ask_bot' : 'message_bot';
+      expect(await call(tool, { bot_id: PEER_ID, message: `m${i}` })).toMatchObject({
+        isError: false,
+      });
+    }
+    const sixth = await call('message_bot', { bot_id: PEER_ID, message: 'm5' });
+    expect(sixth).toMatchObject({ isError: true });
+    expect(sixth.content).toContain('5 messages to other bots this turn');
+    expect(commandBus.execute).toHaveBeenCalledTimes(5);
+  });
+
+  it('refuses a message that is empty or not to a bot id, before anything is sent', async () => {
+    const { commandBus, call } = peerSetup({ sent: true, turnId: 'turn-9', botName: 'Grace' });
+    expect(await call('message_bot', { bot_id: PEER_ID, message: '   ' })).toMatchObject({
+      isError: true,
+    });
+    expect(await call('ask_bot', { bot_id: 'Grace', message: 'hi' })).toMatchObject({
+      isError: true,
+    });
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 });

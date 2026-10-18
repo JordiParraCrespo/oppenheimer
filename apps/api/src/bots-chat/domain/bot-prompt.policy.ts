@@ -1,4 +1,5 @@
 import { eventNote, type HistoryMessage } from './bot-history.policy';
+import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';
 
 /** One of our tools the turn offers, as the model will see it. */
@@ -128,11 +129,14 @@ function firstSentence(text: string): string {
 
 /**
  * What a turn is asked: your message as you wrote it, or, for a turn an event
- * opened, the event with what to do about it.
+ * opened, the event with what to do about it: an approval's outcome, a
+ * message from another bot, or the answer to an ask.
  */
 export function botTurnPrompt(opening: HistoryMessage | null): string {
   if (!opening) return '';
   if (opening.role !== 'event') return opening.content;
+  if (opening.event?.kind === 'bot_message') return peerMessagePrompt(opening.event, opening.content);
+  if (opening.event?.kind === 'bot_reply') return peerReplyPrompt(opening.event, opening.content);
   return `${eventNote(opening.content)}
 
 This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.`;
