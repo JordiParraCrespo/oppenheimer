@@ -1,6 +1,9 @@
 import { DiffFileTree, type DiffLayout } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
-import { useSuspensePullRequestFiles } from '@oppenheimer/frontend-consumer/react';
+import {
+  useSuspensePullRequestFiles,
+  useVoiceDictation,
+} from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +17,8 @@ const NO_PENDING: readonly PendingNote[] = [];
  * Changes: every file's diff, unified or split as the bar says, edge to edge
  * under it, and the tree beside it, which stays put while the diff scrolls. A
  * comment added to the review stays pending here, with the screen, until the
- * review is submitted.
+ * review is submitted. Dictation is one for the screen's files, handed to
+ * each file's draft.
  *
  * Read under Suspense: the screen's `QueryState` draws the placeholder and a
  * first failure. A refetch that fails keeps the diff and says so above it.
@@ -36,6 +40,8 @@ export function PullRequestChanges({
   const { data: rows, error } = useSuspensePullRequestFiles(address);
   const [selected, setSelected] = useState<string | undefined>(undefined);
   const pendingOn = pendingByPath(pending);
+  // One for every file's draft: the paths are the names a comment says.
+  const voice = useVoiceDictation(() => rows.map((file) => file.path));
 
   return (
     <>
@@ -55,6 +61,7 @@ export function PullRequestChanges({
                 address={address}
                 file={file}
                 layout={layout}
+                voice={voice}
                 pending={pendingOn.get(file.path) ?? NO_PENDING}
                 onAddPending={onAddPending}
                 onDiscardPending={onDiscardPending}

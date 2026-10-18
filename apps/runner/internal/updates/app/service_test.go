@@ -385,6 +385,16 @@ func TestApplyRefusesAPinnedHostAndForceOverridesIt(t *testing.T) {
 		t.Fatalf("err = %v, want UPD_004", err)
 	}
 
+	// The console's versionless Update runner: the safe window is skipped,
+	// the pin is not, and nothing is installed.
+	_, err = pinned.Apply(context.Background(), app.ApplyOptions{Force: true, KeepPin: true})
+	if !errors.As(err, &prob) || prob.Code != "UPD_004" {
+		t.Fatalf("err = %v, want UPD_004 with the pin kept", err)
+	}
+	if got, _ := h.store.Current(); got == "1.1.0" {
+		t.Fatal("a kept pin still installed the channel's release")
+	}
+
 	if _, err := pinned.Apply(context.Background(), app.ApplyOptions{Force: true}); err != nil {
 		t.Fatalf("forced apply on a pinned host: %v", err)
 	}

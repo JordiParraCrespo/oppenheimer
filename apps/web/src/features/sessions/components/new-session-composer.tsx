@@ -1,5 +1,11 @@
 import { Composer, FieldError } from '@oppenheimer/design-system-web';
 import {
+  dictateInto,
+  dictationSlots,
+  useDictation,
+  type VoiceInput,
+} from '@oppenheimer/frontend-web';
+import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_ACCEPT,
   SESSION_FILE_MAX_BYTES,
@@ -32,6 +38,12 @@ interface HeldFile {
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
  * the New session draft's store.
+ *
+ * `voice` is dictation (`product/next-steps/voice.md`, the kit's
+ * `useDictation`): while anyone can hear the workspace the mic is on, the
+ * recording takes the composer's foot, and what is heard is added to the end
+ * of the draft, to be read before it is sent. A refused microphone or a
+ * failed transcription is said under the field, like a refused file.
  */
 export function NewSessionComposer({
   onSubmit,
@@ -41,6 +53,7 @@ export function NewSessionComposer({
   scope,
   tools,
   engine,
+  voice,
 }: {
   onSubmit: (text: string, files: File[]) => void;
   busy?: boolean;
@@ -50,12 +63,17 @@ export function NewSessionComposer({
   scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
+  voice: VoiceInput;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<HeldFile[]>([]);
   const [refusal, setRefusal] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const dictation = useDictation({
+    voice,
+    onText: dictateInto(setDraft),
+  });
 
   function hold(incoming: File[]) {
     const accepted: HeldFile[] = [];
@@ -124,6 +142,7 @@ export function NewSessionComposer({
         }}
         onAttach={() => picker.current?.click()}
         onPaste={onPaste}
+        dictation={dictationSlots(dictation)}
         scope={scope}
         tools={tools}
         engine={engine}

@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Gestionar el acceso a repositorios",
       "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+    },
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Detener la grabación",
+      "cancel": "Cancelar la grabación",
+      "waiting": "Esperando al micrófono…",
+      "transcribing": "Transcribiendo…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+      "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+      "failed": "No se ha podido transcribir la grabación."
     }
   },
   "validation": {
@@ -212,6 +222,7 @@
       "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+      "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -286,7 +297,14 @@
       "SESSIONS_028": "Esa carpeta no existe en el equipo.",
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
+      "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
+      "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
+      "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
+      "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
+      "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -2058,6 +2076,11 @@
         "runner": "runner {{version}}"
       },
       "actions": "Acciones de {{name}}",
+      "updateRunner": "Actualizar runner",
+      "updateTitle": "¿Actualizar el runner de {{name}}?",
+      "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Las sesiones de {{name}} siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+      "updating": "Actualizando…",
+      "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
       "rename": "Renombrar",
       "renameLabel": "Nombre del equipo",
       "save": "Guardar",
@@ -2512,6 +2535,7 @@
     "projectDeleted": "Se ha eliminado «{{name}}».",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
+    "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",
     "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
     "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",

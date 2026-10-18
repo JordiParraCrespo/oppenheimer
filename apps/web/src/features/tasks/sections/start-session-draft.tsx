@@ -1,6 +1,10 @@
 import { Callout, DialogDescription, FieldDescription } from '@oppenheimer/design-system-web';
 import { shortName } from '@oppenheimer/frontend-consumer';
-import { useStartTaskSession, useSuspenseStartSession } from '@oppenheimer/frontend-consumer/react';
+import {
+  useStartTaskSession,
+  useSuspenseStartSession,
+  useVoiceDictation,
+} from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
@@ -29,6 +33,7 @@ export function StartSessionDraft() {
   const task = tasks.find((row) => row.id === start);
   const project = projects.find((row) => row.id === task?.projectId);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const voice = useVoiceDictation(() => (project ? [project.name] : []));
   const launch = useStartTaskSession({
     onSuccess: (started) => {
       notifySuccess(
@@ -52,6 +57,7 @@ export function StartSessionDraft() {
       <ErrorAlert error={error} fallback={t('tasks.start.loadFailed')} />
       <StartSessionForm
         values={startDefaults(found.task, found.project, found.hosts)}
+        voice={voice}
         repositories={found.project.repositories.map((row) => ({
           value: row.id,
           label: shortName(row.fullName),

@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowUpIcon, ChevronDownIcon, MicIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import { cn } from '../lib/utils';
+import type { DictationSlot } from './chat-composer-extras';
 import { IconButton } from './icon-button';
 
 type ComposerAttachment = { id: string; name: string };
@@ -18,8 +19,6 @@ type ComposerLabels = {
   send: string;
   stop: string;
   attach: string;
-  dictate: string;
-  stopRecording: string;
   /** The remove button on one attachment chip. */
   removeAttachment: (name: string) => string;
 };
@@ -28,8 +27,6 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
   send: 'Send',
   stop: 'Stop',
   attach: 'Attach a file',
-  dictate: 'Dictate',
-  stopRecording: 'Stop recording',
   removeAttachment: (name) => `Remove ${name}`,
 };
 
@@ -42,7 +39,9 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * The foot row reads scope of action, then engine: attach and `tools` (the
  * permission level) on the left; a spacer; `engine` (agent, model, effort) on
  * the right; then mic and the round primary send. Both slots take
- * `ComposerToolButton`s. Attachments list under the textarea as removable
+ * `ComposerToolButton`s. `dictation` (`DictationSlot`) puts the mic before
+ * send; while dictating its recorder takes the foot row's place, and its
+ * notice sits under the box. Attachments list under the textarea as removable
  * chips; they are never silently dropped.
  *
  * `sendBlockedReason` keeps the box usable but the send off, and says why
@@ -77,8 +76,7 @@ function Composer({
   attachments,
   onRemoveAttachment,
   onAttach,
-  onRecord,
-  recording = false,
+  dictation,
   tools,
   engine,
   scope,
@@ -107,9 +105,8 @@ function Composer({
   onRemoveAttachment?: (id: string) => void;
   /** Present: shows the attach button. */
   onAttach?: () => void;
-  /** Present: shows the mic button. */
-  onRecord?: () => void;
-  recording?: boolean;
+  /** Dictation: the mic before send, the recorder in the foot row's place, the notice under the box. */
+  dictation?: DictationSlot;
   /** Controls after attach: what the run may touch (the permission level). */
   tools?: React.ReactNode;
   /** Controls before the mic: who drives it and how hard it thinks (agent, model, effort). */
@@ -134,7 +131,7 @@ function Composer({
     onStop,
   });
 
-  return (
+  const box = (
     <ComposerFrame
       above={above}
       band={
@@ -196,6 +193,13 @@ function Composer({
             ))}
           </div>
         ) : null}
+        {dictation?.recorder ? (
+          // The bar is 16px taller than the foot row it replaces; it takes
+          // that from the field's bottom padding, so the box keeps its height.
+          <div data-slot="composer-recorder" className="-mt-4 px-2.5 pb-2.5">
+            {dictation.recorder}
+          </div>
+        ) : (
         <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
           {onAttach ? (
             <IconButton
@@ -211,21 +215,7 @@ function Composer({
           {tools}
           <span className="flex-1" />
           {engine}
-          {onRecord ? (
-            <IconButton
-              aria-label={recording ? label.stopRecording : label.dictate}
-              aria-pressed={recording}
-              size="sm"
-              shape="square"
-              onClick={onRecord}
-              className={cn(
-                'size-[30px]',
-                recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
-              )}
-            >
-              <MicIcon className="size-[15px]" />
-            </IconButton>
-          ) : null}
+          {dictation?.mic}
           <ComposerSendButton
             busy={busy}
             blocked={blocked}
@@ -242,8 +232,16 @@ function Composer({
             )}
           </ComposerSendButton>
         </div>
+        )}
       </div>
     </ComposerFrame>
+  );
+  if (!dictation?.notice) return box;
+  return (
+    <div data-slot="composer-dictation" className="flex flex-col gap-2">
+      {box}
+      <div className="mx-4.5">{dictation.notice}</div>
+    </div>
   );
 }
 

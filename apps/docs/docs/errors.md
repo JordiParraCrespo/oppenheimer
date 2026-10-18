@@ -197,6 +197,7 @@ would confirm the id.
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
+| `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -222,6 +223,10 @@ on screen in the same write, so it never runs into the cap.
 settings and the control plane's own signing key there is nothing to hand a
 machine that wants to pair, so the host routes say so and the rest of the API is
 unaffected.
+
+`HOSTS_008` answers Update runner (`POST /v1/hosts/{id}/update`) for a host
+with no live link: the request goes down the link, so there is nothing to send
+it on. A runner that is offline checks for updates itself when it comes back.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
@@ -691,6 +696,28 @@ queued or running: the turn would go on writing into a conversation that is
 gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
+
+## Voice
+
+Dictation: a recording in, the text it says out, heard by the workspace's
+ChatGPT sign-in or the deployment's own speech-to-text server
+(`VOICE_STT_*`). See `product/next-steps/voice.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `VOICE_001` <a id="voice_001" />     | Dictation needs an active workspace                          | 400  |
+| `VOICE_002` <a id="voice_002" />     | No audio was sent                                            | 400  |
+| `VOICE_003` <a id="voice_003" />     | The recording is too long                                    | 413  |
+| `VOICE_004` <a id="voice_004" />     | The recording is not 16-bit PCM WAV                          | 415  |
+| `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
+| `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
+| `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
+
+`VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
+(Settings → Model providers), or give the deployment a speech-to-text server.
+A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
+falls back to the deployment's server when there is one; a rate limit
+(`VOICE_007`, with `Retry-After`) does not.
 
 ## Tasks
 

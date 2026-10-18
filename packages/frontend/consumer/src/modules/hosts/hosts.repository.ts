@@ -120,6 +120,16 @@ export class HostsRepository {
     };
   }
 
+  /**
+   * Ask a connected host's runner for the newest release on its channel. Done
+   * is not this answer: the row's runner version changes when the updated
+   * runner reconnects. `HOSTS_008` when the host is not connected.
+   */
+  @MapApiError(HostsErrors.UPDATE_FAILED)
+  async updateRunner(id: string): Promise<void> {
+    await unwrap(heyApiSdk.updateHostRunner({ path: { id } }), HostsErrors.UPDATE_FAILED);
+  }
+
   @MapApiError(HostsErrors.REMOVE_FAILED)
   async remove(id: string): Promise<void> {
     await unwrap(heyApiSdk.unpairHost({ path: { id } }), HostsErrors.REMOVE_FAILED);

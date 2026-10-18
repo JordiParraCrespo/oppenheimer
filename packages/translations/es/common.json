@@ -45,5 +45,15 @@
   "repositoryAccess": {
     "manage": "Gestionar el acceso a repositorios",
     "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+  },
+  "dictation": {
+    "dictate": "Dictar",
+    "stop": "Detener la grabación",
+    "cancel": "Cancelar la grabación",
+    "waiting": "Esperando al micrófono…",
+    "transcribing": "Transcribiendo…",
+    "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+    "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+    "failed": "No se ha podido transcribir la grabación."
   }
 }

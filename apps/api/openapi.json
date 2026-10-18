@@ -5827,6 +5827,74 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/update": {
+      "post": {
+        "description": "Asks the host's runner to install the newest signed release on its channel now. Accepted is not done: the runner verifies the release itself, restarts on it, and reports the new version when it reconnects. A runner already current, or pinned, stays as it is.",
+        "operationId": "updateHostRunner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The update was sent to the runner"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HOSTS_008 — The host is not connected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a host's runner",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -17138,6 +17206,183 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/voice/transcriptions": {
+      "post": {
+        "description": "A recording (16-bit PCM WAV, at most 4194304 bytes) in, the text it says out, tidied into writing. Heard by the workspace's ChatGPT sign-in when it has one, otherwise by the deployment's own speech-to-text server. Nothing is kept.",
+        "operationId": "transcribeVoice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "vocabulary": {
+                    "type": "string",
+                    "description": "Names to spell as written, one per line."
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "ISO 639-1, when known."
+                  }
+                },
+                "required": ["audio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceTranscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VOICE_002 — No audio attached\n\nVOICE_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"voice_dictation\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VOICE_005 — Nobody to transcribe",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "VOICE_003 — Recording too long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "VOICE_004 — Not 16-bit PCM WAV",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached\n\nVOICE_007 — Provider rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "VOICE_006 — Provider failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transcribe a dictation",
+        "tags": ["Voice"]
+      }
+    },
+    "/api/v1/voice/status": {
+      "get": {
+        "description": "The speech providers available to the workspace, in the order a dictation tries them. Empty: nobody can hear a recording, and the console shows no mic.",
+        "operationId": "findVoiceStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Whether the workspace can dictate",
+        "tags": ["Voice"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -25940,6 +26185,47 @@
           }
         },
         "required": ["decision"]
+      },
+      "VoiceTranscriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The transcript as writing: fillers and false starts gone, names spelled as the vocabulary has them."
+          },
+          "raw": {
+            "type": "string",
+            "description": "What the speech model heard, word for word. Equals `text` when no polish ran."
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["chatgpt", "speech_key"],
+            "description": "Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server."
+          },
+          "polished": {
+            "type": "boolean",
+            "description": "Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough."
+          }
+        },
+        "required": ["text", "raw", "provider", "polished"]
+      },
+      "VoiceStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "description": "At least one provider can hear a recording."
+          },
+          "providers": {
+            "type": "array",
+            "description": "The providers available, in the order a dictation tries them.",
+            "items": {
+              "type": "string",
+              "enum": ["chatgpt", "speech_key"]
+            }
+          }
+        },
+        "required": ["available", "providers"]
       },
       "LivenessResponseDto": {
         "type": "object",

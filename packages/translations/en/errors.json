@@ -145,6 +145,7 @@
     "SESSIONS_019": "An attached file expired before the session started. Send again to upload it anew.",
     "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
     "HOSTS_007": "No file is waiting for that command.",
+    "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
     "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
     "AUTOMATIONS_002": "Choose a workspace before working with automations.",
     "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
@@ -219,7 +220,14 @@
     "SESSIONS_028": "That folder doesn’t exist on the host.",
     "SESSIONS_029": "That path is a file, not a folder.",
     "SESSIONS_030": "That folder can’t be read on the host.",
-    "SESSIONS_031": "The host didn’t answer in time. Try again."
+    "SESSIONS_031": "The host didn’t answer in time. Try again.",
+    "VOICE_001": "Dictation needs a workspace. Open one and try again.",
+    "VOICE_002": "Nothing was recorded. Try dictating again.",
+    "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
+    "VOICE_004": "That recording couldn’t be read. Try dictating again.",
+    "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
+    "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
+    "VOICE_007": "Too many dictations for now. Try again in a moment."
   },
   "notFound": {
     "title": "That page does not exist",

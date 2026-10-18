@@ -113,7 +113,8 @@ multi-line, so a grep for `export` misses most of them.
 | A boundary, a failed turn, a run notice, a floating pointer in the chat | `TranscriptDivider`, `ChatErrorBanner`, `ChatNotice`, `FloatingChip` (`round` for a bot chat's way back to the latest turn) | `Alert`, `ErrorAlert`, `Callout`, a `Separator` with a label |
 | Panels on top of the chat composer, or one notice there | `ComposerStack` + `ComposerStackRow`, `ComposerTaskList`; `ComposerNotice` | a `Card` above the `Composer` |
 | A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel`; in a bot's chat, `ComposerApproval` in `ChatComposer`'s `above` | a `Dialog`, a `RadioGroup`, an `ApprovalPanel` stacked over the composer |
-| Dictation, the context meter, the `/` and `@` menus | `VoiceRecorderBar`, `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
+| A field someone writes prose into (a prompt, notes, a comment, a document) | dictation: a host that frames its own field (`Composer`, `ChatComposer`, `DiffCommentDraft`, `ReviewDecision`) takes `dictation={dictationSlots(useDictation(…))}`, a plain `Textarea` sits in the kit's `DictationField`; the text goes in through `dictateInto` / `dictateIntoField`, the `voice` is the product package's `useVoiceDictation()`, one per screen | a recorder of the feature's own, a mic `IconButton`, `getUserMedia` in a feature, an append written by hand |
+| The context meter, the `/` and `@` menus | `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
 | The chat's header, open threads, find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` (`align="center"` over `TemplateTiles` + `TemplateTile` for a new bot) | `SessionPaneHeader`, a tab strip of your own |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat

@@ -3,6 +3,7 @@ import {
   useCreateCalendarEvent,
   useDeleteCalendarEvent,
   useUpdateCalendarEvent,
+  useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ConfirmDialog } from '@oppenheimer/frontend-web';
@@ -26,6 +27,7 @@ export function EventEditor({ event }: { event: CalendarEventEntity | null }) {
   const navigate = calendar.useNavigate();
   const { today } = useMonth();
   const [deleting, setDeleting] = useState(false);
+  const voice = useVoiceDictation();
   const close = () =>
     navigate({ search: (previous) => ({ ...previous, event: undefined, day: undefined }) });
   const create = useCreateCalendarEvent({ onSuccess: close });
@@ -57,6 +59,7 @@ export function EventEditor({ event }: { event: CalendarEventEntity | null }) {
       <EventForm
         values={values}
         today={today}
+        voice={voice}
         pending={create.isPending || update.isPending}
         error={failure ? resolveError(failure, t('calendar.event.saveFailed')) : null}
         submitLabel={t(event ? 'calendar.event.save' : 'calendar.event.add')}
