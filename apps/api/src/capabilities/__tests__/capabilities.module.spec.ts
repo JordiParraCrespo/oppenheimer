@@ -19,7 +19,17 @@ describe('resolveCapabilities', () => {
       ip_geolocation: false,
       google_calendar: false,
       bot_providers: false,
+      voice_transcription: false,
     });
+  });
+
+  it('reports voice transcription only with a speech server and a model', () => {
+    const server = { 'voice.sttBaseUrl': 'https://speech.example/v1' };
+    expect(resolveCapabilities(configWith(server)).voice_transcription).toBe(false);
+    expect(
+      resolveCapabilities(configWith({ ...server, 'voice.sttModel': 'whisper-1' }))
+        .voice_transcription,
+    ).toBe(true);
   });
 
   it('reports bot providers only with a 32-byte sealing key', () => {

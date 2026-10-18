@@ -205,6 +205,8 @@ need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
   limit: the budget written down first, then every call through one
   `UpstreamLimiter.exchange` (`@oppenheimer/backend-core`), with buckets named
   for what the provider counts and a `429` code of its own
+- `provider-integrations.md` — a third-party service is a capability behind
+  one interface, each vendor a provider in one ordered list
 - `rbac-roles.md` — database-backed roles & permissions, `@CheckPolicies`/`PoliciesGuard`, resource scoping, role-management endpoints
 - `scopes-and-credentials.md` — the scope catalog, `@RequireScopes`/`ScopesGuard`, API tokens, OAuth for MCP clients
 
@@ -368,6 +370,7 @@ pnpm check:unused       # Unused files, exports and dependencies in the frontend
 pnpm check:singletons   # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
 # oppenheimer:end web
 pnpm docker:dev         # Start Postgres + Redis
+pnpm monitoring:up      # Grafana on :3030, Prometheus on :9090, over the local API (needs METRICS_TOKEN)
 pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
@@ -395,6 +398,8 @@ pnpm changeset          # Create a changeset for versioning
   scope they are unreachable by API tokens and OAuth clients. Afterwards run
   `pnpm generate:api-client`
 - Keep the pluggable service pattern: abstract class → concrete implementations → factory in module
+- Integrating a third-party service (an LLM, speech, email, SMS, a calendar,
+  any vendor API) is the `/integrate-provider` skill
 - New translations go in `packages/translations/{locale}/index.json`
 - Where frontend code goes — kernel, product package, platform kit, or a
   feature's kind directory — is `.agents/rules/frontend-architecture.md`;
@@ -425,6 +430,11 @@ pnpm changeset          # Create a changeset for versioning
   arguments, the skill ports every export sync since the last port
   (`last-port.json` in the skill) end to end, captures and pull request
   included
+- A read's loading placeholder has the shape of what replaces it: the
+  data's own container, static labels written, a bar per line, never a `0`
+  for a value not given (`.agents/rules/frontend-ui.md`). `pnpm
+  check:structure` fails a `QueryState.Pending` that is only a slab, and
+  `/frontend-audit` reports the rest as `U7`
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up

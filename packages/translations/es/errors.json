@@ -95,6 +95,7 @@
     "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
     "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
     "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+    "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
     "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
     "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
     "SESSIONS_001": "No hemos encontrado esa sesión.",
@@ -145,6 +146,7 @@
     "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
     "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
     "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+    "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
     "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
     "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
     "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -219,7 +221,14 @@
     "SESSIONS_028": "Esa carpeta no existe en el equipo.",
     "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
     "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-    "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+    "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+    "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+    "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
+    "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
+    "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
+    "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
+    "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
+    "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
   },
   "notFound": {
     "title": "Esta página no existe",

@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Gestionar el acceso a repositorios",
       "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+    },
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Detener la grabación",
+      "cancel": "Cancelar la grabación",
+      "waiting": "Esperando al micrófono…",
+      "transcribing": "Transcribiendo…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+      "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+      "failed": "No se ha podido transcribir la grabación."
     }
   },
   "validation": {
@@ -162,6 +172,7 @@
       "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+      "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
@@ -212,6 +223,7 @@
       "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+      "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -286,7 +298,14 @@
       "SESSIONS_028": "Esa carpeta no existe en el equipo.",
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
+      "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
+      "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
+      "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
+      "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
+      "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -450,7 +469,7 @@
       "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
       "confirm": "Eliminar proyecto",
       "deleting": "Eliminando…",
@@ -714,13 +733,12 @@
       "share": "Compartir…"
     },
     "deleteSession": {
-      "title": "¿Eliminar “{{name}}”?",
-      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "confirm": "Eliminar sesión",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la sesión.",
       "discard": "Descartar también el trabajo sin enviar",
-      "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
     },
     "filters": {
@@ -913,7 +931,6 @@
       "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {
-      "toggleSidebar": "Mostrar u ocultar la barra lateral",
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
@@ -1037,7 +1054,12 @@
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
-        "failed": "Aprobaste y falló: {{summary}}"
+        "failed": "Aprobaste y falló: {{summary}}",
+        "peerMessage": "De <bot>{{name}}</bot>",
+        "peerAsk": "<bot>{{name}}</bot> preguntó",
+        "peerAnswered": "<bot>{{name}}</bot> respondió",
+        "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+        "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
       }
     },
     "settings": {
@@ -1174,7 +1196,7 @@
       }
     },
     "delete": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
       "confirm": "Eliminar bot",
       "pending": "Eliminando…",
@@ -1480,7 +1502,7 @@
     "deleteDialog": {
       "title": "¿Eliminar «{{name}}»?",
       "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-      "confirm": "Eliminar",
+      "confirm": "Eliminar automatización",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la automatización."
     },
@@ -1725,7 +1747,7 @@
       "merged": "PR fusionadas",
       "from": "desde {{value}}",
       "series": "Series",
-      "both": "Creadas y fusionadas",
+      "both": "Ambas",
       "perDay": "Pull requests creadas y fusionadas por día",
       "hover": "Pasa por encima de un día",
       "reviewedByYou": "Revisadas por ti",
@@ -1849,10 +1871,11 @@
       "target": "Fecha",
       "add": "Añadir hito",
       "delete": "Eliminar hito",
-      "deleteTitle": "¿Eliminar este hito?",
-      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+      "deleteTitle": "¿Eliminar «{{name}}»?",
+      "deleteDescription": "Sus tareas siguen en el tablero sin hito.",
       "saveFailed": "No se ha podido guardar el hito.",
-      "deleteFailed": "No se ha podido eliminar el hito."
+      "deleteFailed": "No se ha podido eliminar el hito.",
+      "deleting": "Eliminando…"
     },
     "dialog": {
       "newTitle": "Nueva tarea",
@@ -1874,12 +1897,13 @@
       "add": "Añadir tarea",
       "save": "Guardar",
       "delete": "Eliminar tarea",
-      "deleteTitle": "¿Eliminar esta tarea?",
-      "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Sus sesiones siguen como están.",
       "saveFailed": "No se ha podido guardar la tarea.",
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
-      "gone": "Esta tarea ya no existe."
+      "gone": "Esta tarea ya no existe.",
+      "deleting": "Eliminando…"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -1957,12 +1981,13 @@
       "add": "Añadir evento",
       "save": "Guardar",
       "delete": "Eliminar evento",
-      "deleteTitle": "¿Eliminar este evento?",
-      "deleteDescription": "Se elimina «{{title}}».",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Se quita del calendario.",
       "saveFailed": "No se ha podido guardar el evento.",
       "deleteFailed": "No se ha podido eliminar el evento.",
       "loadFailed": "No se ha podido cargar el evento.",
-      "gone": "Este evento no está en el mes que se muestra o ya no existe."
+      "gone": "Este evento no está en el mes que se muestra o ya no existe.",
+      "deleting": "Eliminando…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1977,17 +2002,18 @@
       "updated": "Actualizado hace {{age}}",
       "needsReconnect": "Hay que volver a conectarla",
       "readFailed": "No se ha podido leer ahora",
-      "remove": "Quitar",
+      "remove": "Quitar cuenta",
       "removeLabel": "Quitar {{email}}",
-      "removeTitle": "¿Quitar esta cuenta de Google?",
-      "removeDescription": "{{email}} deja el calendario, y sus eventos con ella. Puedes volver a conectarla cuando quieras.",
+      "removeTitle": "¿Quitar «{{email}}»?",
+      "removeDescription": "Sus eventos dejan el calendario. Puedes volver a conectarla cuando quieras.",
       "removeFailed": "No se ha podido quitar la cuenta de Google.",
       "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
       "loadFailed": "No se han podido comprobar tus cuentas de Google.",
       "connecting": "Conectando Google Calendar…",
       "connectFailed": "No se ha podido conectar Google Calendar.",
       "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-      "back": "Volver al calendario"
+      "back": "Volver al calendario",
+      "removing": "Quitando…"
     },
     "googleEvent": {
       "untitled": "(Sin título)",
@@ -2059,19 +2085,26 @@
         "runner": "runner {{version}}"
       },
       "actions": "Acciones de {{name}}",
+      "updateRunner": "Actualizar runner",
+      "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+      "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+      "updating": "Actualizando…",
+      "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
       "rename": "Renombrar",
       "renameLabel": "Nombre del equipo",
       "save": "Guardar",
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
       "removing": "Eliminando…",
-      "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "removeTitle": "¿Eliminar «{{name}}»?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en él. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en él. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
       "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
       "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+      "wipe": "Borrar también todo lo de esta máquina: cerrar cada sesión y eliminar su worktree, incluido el trabajo sin confirmar. No se sube nada.",
+      "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
@@ -2239,7 +2272,7 @@
     "users": "Usuarios",
     "roles": "Roles",
     "featureFlags": "Indicadores de funcionalidad",
-    "toggleSidebar": "Mostrar u ocultar el menú",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
     "commandTitle": "Paleta de comandos",
@@ -2513,6 +2546,7 @@
     "projectDeleted": "Se ha eliminado «{{name}}».",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
+    "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",
     "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
     "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",

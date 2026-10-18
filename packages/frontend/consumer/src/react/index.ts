@@ -101,6 +101,7 @@ export {
   useRenameHost,
   useSuspenseHostPresence,
   useSuspenseHosts,
+  useUpdateHostRunner,
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,
@@ -221,4 +222,8 @@ export {
   useUpdateMilestone,
   useUpdateTask,
 } from './tasks.queries';
+export {
+  useVoiceDictation,
+  type VoiceDictation,
+} from './voice.queries';
 export { useWorkspaceEvents } from './workspace-events';

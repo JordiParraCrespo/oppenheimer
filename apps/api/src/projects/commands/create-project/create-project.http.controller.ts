@@ -48,6 +48,11 @@ export class CreateProjectHttpController {
     code: 'PROJECTS_006',
   })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The name is the Unassigned project’s, in some locale',
+    code: 'PROJECTS_009',
+  })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @Body() body: CreateProjectRequest,

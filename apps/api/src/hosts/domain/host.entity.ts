@@ -199,7 +199,7 @@ export class HostEntity extends AggregateRoot<HostProps> {
    * already did: the console unpairs a machine it no longer trusts, and the
    * machine itself says so when the runner is uninstalled.
    */
-  unpair(at: Date = new Date()): void {
+  unpair(at: Date = new Date(), { wipe = false }: { wipe?: boolean } = {}): void {
     if (this.props.unpairedAt) return;
     this.props.unpairedAt = at;
     this.setUpdatedAt(at);
@@ -208,6 +208,7 @@ export class HostEntity extends AggregateRoot<HostProps> {
       new HostUnpairedDomainEvent({
         aggregateId: this.id,
         ownerUserId: this.ownerUserId,
+        wipe,
         reason: 'The machine is no longer a host; a link it holds must close',
       }),
     );

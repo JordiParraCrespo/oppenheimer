@@ -144,6 +144,29 @@
       "why": "One component drawn two ways by four booleans: `compact` turns it into a chip and switches off what the others turn on. The chip is its own component and the trailing facts are children."
     },
     {
+      "id": "skeleton-slab-component",
+      "commit": "feat(web): hosts inventory in a settings card",
+      "expect": [
+        {
+          "rule": "U7",
+          "file": "apps/web/src/features/hosts/components/host-inventory-skeleton.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/screens/host-inventory.tsx"]
+        }
+      ],
+      "why": "The placeholder is one 256px block in a file of its own, while the inventory lands as a SettingsGroup of rows: the card, its borders and its row height are guessed, and the page jumps by the difference. check:structure's slab tripwire reads only what sits in the Pending slot, a named component, so only judgment catches it."
+    },
+    {
+      "id": "skeleton-zero-count",
+      "commit": "fix(web): the hosts count slot is never empty",
+      "expect": [
+        {
+          "rule": "U7",
+          "file": "apps/web/src/features/hosts/sections/host-count.tsx"
+        }
+      ],
+      "why": "`count ?? 0` draws a zero beside Hosts before the list answers, which reads as \"you have none\". A count the data has not given is a bar or nothing, never 0. Every check passes."
+    },
+    {
       "id": "clean-leaf-ticker",
       "commit": "feat(web): host list shows when each host last answered",
       "expect": [],
@@ -167,6 +190,12 @@
       "commit": "feat(web): hosts strip of chips over the host list",
       "expect": [],
       "why": "Decoy for U6: the same feature as boolean-mode-props, composed. The chip is its own component, the row's trailing facts are its children, and the one function child hands down the host it draws, which is data the caller does not have."
+    },
+    {
+      "id": "clean-shaped-skeleton",
+      "commit": "feat(web): hosts inventory in a settings card",
+      "expect": [],
+      "why": "Decoy for U7: the same inventory as skeleton-slab-component, its placeholder drawn in the same SettingsGroup with rows at a row's height and a bar per line."
     }
   ]
 }

@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
-import type { ProjectEntity } from '../../domain/project.entity';
+import { isReservedProjectName, type ProjectEntity } from '../../domain/project.entity';
 import { ProjectErrors } from '../../domain/projects.errors';
 import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { UpdateProjectCommand } from './update-project.command';
@@ -11,7 +11,8 @@ import { UpdateProjectCommand } from './update-project.command';
 /**
  * Changes a project's name, its repositories as a whole set and its defaults. Never the
  * slug, the project's stable handle, and never the Unassigned project's name
- * (`PROJECTS_008`). A session's checkout rows are its own, so an edit never reaches
+ * (`PROJECTS_008`), nor another project's name to the Unassigned project's
+ * (`PROJECTS_009`). A session's checkout rows are its own, so an edit never reaches
  * one. Returns the aggregate the scoped write read back, sparing the controller a
  * second scoped read.
  */
@@ -32,10 +33,19 @@ export class UpdateProjectCommandHandler
     }
 
     const project = found.unwrap();
-    if (project.isUnassigned && changes.name !== undefined && changes.name !== project.name) {
-      throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
-        detail: 'The Unassigned project keeps its name',
-      });
+    // A rename is refused for the Unassigned project itself, and onto its name
+    // for any other; the aggregate holds both, these give each its own code.
+    if (changes.name !== undefined && changes.name !== project.name) {
+      if (project.isUnassigned) {
+        throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
+          detail: 'The Unassigned project keeps its name',
+        });
+      }
+      if (isReservedProjectName(changes.name)) {
+        throw new AppError(ProjectErrors.NAME_RESERVED, {
+          detail: `“${changes.name}” would list as a second Unassigned project`,
+        });
+      }
     }
 
     await this.settings.assertUsableHost(scope, changes.defaultHostId);

@@ -3133,16 +3133,31 @@ export type BotToolStepResponseDto = {
 };
 
 export type BotMessageEventResponseDto = {
-    kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    kind: 'approval' | 'bot_message' | 'bot_reply';
     /**
-     * The tool the decided call was for.
+     * An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.
      */
-    tool: string;
+    outcome: 'approved' | 'denied' | 'failed' | 'answered' | 'cancelled';
     /**
-     * The card's line: what the call does, in words.
+     * An approval: the tool the decided call was for.
      */
-    summary: string;
+    tool: string | null;
+    /**
+     * An approval: the card's line, what the call does in words.
+     */
+    summary: string | null;
+    /**
+     * A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * A message or an answer: the sending bot's name when it sent it.
+     */
+    fromBotName: string | null;
+    /**
+     * A message: sent with ask_bot, so this bot answers it.
+     */
+    expectsReply: boolean | null;
 };
 
 export type BotMessageResponseDto = {
@@ -3241,6 +3256,36 @@ export type BotApprovalResponseDto = {
 export type DecideBotApprovalRequest = {
     decision: 'approve' | 'deny';
     note?: string;
+};
+
+export type VoiceTranscriptionResponseDto = {
+    /**
+     * The transcript as writing: fillers and false starts gone, names spelled as the vocabulary has them.
+     */
+    text: string;
+    /**
+     * What the speech model heard, word for word. Equals `text` when no polish ran.
+     */
+    raw: string;
+    /**
+     * Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server.
+     */
+    provider: 'chatgpt' | 'speech_key';
+    /**
+     * Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough.
+     */
+    polished: boolean;
+};
+
+export type VoiceStatusResponseDto = {
+    /**
+     * At least one provider can hear a recording.
+     */
+    available: boolean;
+    /**
+     * The providers available, in the order a dictation tries them.
+     */
+    providers: Array<'chatgpt' | 'speech_key'>;
 };
 
 export type LivenessResponseDto = {
@@ -6242,6 +6287,78 @@ export type FindHostTimelineResponses = {
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
 
+export type WipeHostData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/wipe';
+};
+
+export type WipeHostErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type WipeHostError = WipeHostErrors[keyof WipeHostErrors];
+
+export type WipeHostResponses = {
+    /**
+     * Host unpaired, its runner told to clean up
+     */
+    204: void;
+};
+
+export type WipeHostResponse = WipeHostResponses[keyof WipeHostResponses];
+
+export type UpdateHostRunnerData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/update';
+};
+
+export type UpdateHostRunnerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * HOSTS_008 — The host is not connected
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateHostRunnerError = UpdateHostRunnerErrors[keyof UpdateHostRunnerErrors];
+
+export type UpdateHostRunnerResponses = {
+    /**
+     * The update was sent to the runner
+     */
+    202: unknown;
+};
+
 export type ListUsersData = {
     body?: never;
     path?: never;
@@ -7291,6 +7408,10 @@ export type CreateProjectErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * PROJECTS_009 — The name is the Unassigned project’s, in some locale
+     */
+    409: ProblemDetailsDto;
+    /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
@@ -7405,6 +7526,8 @@ export type UpdateProjectErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * PROJECTS_009 — The name is the Unassigned project’s, in some locale
+     *
      * PROJECTS_008 — The Unassigned project cannot be renamed or archived
      */
     409: ProblemDetailsDto;
@@ -11549,6 +11672,96 @@ export type DecideBotApprovalResponses = {
 };
 
 export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
+
+export type TranscribeVoiceData = {
+    body: {
+        audio: Blob | File;
+        /**
+         * Names to spell as written, one per line.
+         */
+        vocabulary?: string;
+        /**
+         * ISO 639-1, when known.
+         */
+        language?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/transcriptions';
+};
+
+export type TranscribeVoiceErrors = {
+    /**
+     * VOICE_002 — No audio attached
+     *
+     * VOICE_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "voice_dictation" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * VOICE_005 — Nobody to transcribe
+     */
+    409: ProblemDetailsDto;
+    /**
+     * VOICE_003 — Recording too long
+     */
+    413: ProblemDetailsDto;
+    /**
+     * VOICE_004 — Not 16-bit PCM WAV
+     */
+    415: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     *
+     * VOICE_007 — Provider rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * VOICE_006 — Provider failed
+     */
+    502: ProblemDetailsDto;
+};
+
+export type TranscribeVoiceError = TranscribeVoiceErrors[keyof TranscribeVoiceErrors];
+
+export type TranscribeVoiceResponses = {
+    200: VoiceTranscriptionResponseDto;
+};
+
+export type TranscribeVoiceResponse = TranscribeVoiceResponses[keyof TranscribeVoiceResponses];
+
+export type FindVoiceStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/status';
+};
+
+export type FindVoiceStatusErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindVoiceStatusError = FindVoiceStatusErrors[keyof FindVoiceStatusErrors];
+
+export type FindVoiceStatusResponses = {
+    200: VoiceStatusResponseDto;
+};
+
+export type FindVoiceStatusResponse = FindVoiceStatusResponses[keyof FindVoiceStatusResponses];
 
 export type CheckData = {
     body?: never;

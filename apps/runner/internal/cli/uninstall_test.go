@@ -11,6 +11,9 @@ import (
 	"testing"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/cli"
+	hostfake "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/fake"
+	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/memory"
 	pairapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
@@ -19,6 +22,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 // identityStore is the pairing store in memory, counting how often the
@@ -138,8 +142,23 @@ func TestUninstallKeepsThePairingWhenASessionCannotBeEnded(t *testing.T) {
 	}
 }
 
+// signer signs anything, so the control plane is asked.
+type signer struct{}
+
+func (signer) Sign(ed25519.PrivateKey, pairdomain.BootClaims) (string, error) {
+	return "the.boot.jwt", nil
+}
+
+// reachable gives the app a control plane that answers what cp is set to.
+func reachable(app *cli.App, store *identityStore) *memory.ControlPlane {
+	cp := memory.New()
+	app.Pairing = pairapp.New(pairapp.Options{Store: store, ControlPlane: cp, Signer: signer{}})
+	return cp
+}
+
 func TestUninstallEndsSessionsThenErasesTheIdentity(t *testing.T) {
 	app, store := hostApp(t, fake.NewTerminals(), fake.NewWorktrees())
+	reachable(app, store)
 	openSession(t, app)
 
 	var out bytes.Buffer
@@ -149,9 +168,78 @@ func TestUninstallEndsSessionsThenErasesTheIdentity(t *testing.T) {
 	if store.cleared != 1 {
 		t.Fatalf("identity cleared %d times, want 1", store.cleared)
 	}
-	// Unreachable control plane: say how to finish without inventing a console verb.
-	if !strings.Contains(out.String(), "DELETE /v1/hosts/host-1") {
-		t.Fatalf("output does not name the way to unpair:\n%s", out.String())
+	if !strings.Contains(out.String(), "host revoked at the control plane") {
+		t.Fatalf("output does not say the host was revoked:\n%s", out.String())
+	}
+}
+
+func TestUninstallThatCouldNotUnpairTheHostDoesNotExitZero(t *testing.T) {
+	cases := []struct {
+		name   string
+		cause  error
+		reason string
+	}{
+		{"timeout", pairdomain.ErrUnreachable.WithDetail(
+			"DELETE https://cp.example.test/api/v1/hosts/self: context deadline exceeded"), "context deadline exceeded"},
+		{"refused key", pairdomain.ErrRevokeRefused.WithDetail(
+			"DELETE https://cp.example.test/api/v1/hosts/self answered 401: no longer accepted"), "answered 401"},
+		{"server failure", pairdomain.ErrUnreachable.WithDetail(
+			"DELETE https://cp.example.test/api/v1/hosts/self answered 500: no detail"), "answered 500"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			app, store := hostApp(t, fake.NewTerminals(), fake.NewWorktrees())
+			reachable(app, store).RevokeErr = tc.cause
+			if err := os.MkdirAll(app.Paths.Workspaces, 0o700); err != nil {
+				t.Fatal(err)
+			}
+
+			var out bytes.Buffer
+			err := app.Uninstall(context.Background(), &out, cli.UninstallOptions{})
+
+			// Done here, not there: a script must not read this as a clean uninstall.
+			if code := cli.ExitCode(err); code != cli.ExitIncomplete {
+				t.Fatalf("exit code = %d (err %v), want %d", code, err, cli.ExitIncomplete)
+			}
+			if !strings.Contains(err.Error(), tc.reason) || !strings.Contains(out.String(), tc.reason) {
+				t.Fatalf("the underlying failure %q is not reported:\nerr: %v\n%s", tc.reason, err, out.String())
+			}
+			if store.cleared != 1 {
+				t.Fatalf("identity cleared %d times, want 1", store.cleared)
+			}
+			// The key is gone, so a signed-in person finishes it: the console's
+			// Remove, or the user-authenticated route — not the host's own /self.
+			for _, want := range []string{
+				"https://cp.example.test/settings/hosts",
+				"DELETE -H \"Authorization: Bearer $TOKEN\" https://cp.example.test/api/v1/hosts/host-1",
+			} {
+				if !strings.Contains(out.String(), want) {
+					t.Fatalf("output does not name %q:\n%s", want, out.String())
+				}
+			}
+			if _, err := os.Stat(app.Paths.Workspaces); err != nil {
+				t.Fatalf("the workspaces directory must survive an uninstall: %v", err)
+			}
+		})
+	}
+}
+
+func TestRegisterOnAPairedHostNamesBothOriginsAndCommandsThatExist(t *testing.T) {
+	app, _ := hostApp(t, fake.NewTerminals(), fake.NewWorktrees())
+	app.Host = hostapp.New(hostapp.Options{Prober: hostfake.New(), WorkspaceRoot: app.Paths.Workspaces})
+
+	err := app.Register(context.Background(), &bytes.Buffer{}, cli.RegisterOptions{
+		Token: "opr_reg_0123456789abcdef0123", URL: "https://dev.example.test", AllowContainer: true,
+	})
+
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "PAIR_002" {
+		t.Fatalf("err = %v, want PAIR_002", err)
+	}
+	for _, want := range []string{"https://cp.example.test", "https://dev.example.test", " uninstall`", "register --url https://dev.example.test --force"} {
+		if !strings.Contains(prob.Detail, want) {
+			t.Fatalf("detail does not name %q: %s", want, prob.Detail)
+		}
 	}
 }
 

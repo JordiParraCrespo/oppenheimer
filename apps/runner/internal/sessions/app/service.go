@@ -33,7 +33,10 @@ type Options struct {
 	// Gate holds a launch while its agent is being updated; nil launches
 	// at once.
 	Gate LaunchGate
-	Now  func() time.Time
+	// Trust marks a folder as one the agent may work in; nil leaves the
+	// agent to ask.
+	Trust Trust
+	Now   func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -68,6 +71,7 @@ type Service struct {
 	layout     domain.Layout
 	env        func(domain.Session) map[string]string
 	gate       LaunchGate
+	trust      Trust
 	now        func() time.Time
 }
 
@@ -90,7 +94,7 @@ func New(opts Options) (*Service, error) {
 		revs: map[string]uint64{}, busy: map[string]int{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
+		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -407,6 +411,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// same work twice.
 	launch := session.Launch
 	launch.Resume = true
+	s.trustFolder(session.Agent, launch, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
 	release()
@@ -600,6 +605,31 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 	return ended, errors.Join(errs...)
 }
 
+// WipeAll is EndAll, then a forced Close of every session not closed yet:
+// nothing is pushed, uncommitted work is not a reason to keep a worktree, and
+// each worktree and session folder goes. A folder session's folder is the
+// person's and stays, as in any Close. It is what an owner who removes a host
+// and asks for it to be cleaned up wants (14); nothing else deletes work like
+// this. It answers the sessions it closed.
+func (s *Service) WipeAll(ctx context.Context) ([]string, error) {
+	if _, err := s.EndAll(ctx); err != nil {
+		return nil, err
+	}
+	var closed []string
+	var errs []error
+	for _, session := range s.List() {
+		if session.State == domain.StateClosed {
+			continue
+		}
+		if _, err := s.Close(ctx, session.ID, CloseInput{Force: true}); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		closed = append(closed, session.ID)
+	}
+	return closed, errors.Join(errs...)
+}
+
 // hold marks a command as working on a session until the returned release
 // runs. Observations are dropped while one is, and taking the hold moves the
 // revision on, so a refresh that read the session before the command started
@@ -756,4 +786,15 @@ func (s *Service) holdLaunch(ctx context.Context, agent domain.Agent) (release f
 		return func() {}
 	}
 	return s.gate.Hold(ctx, command)
+}
+
+// trustFolder marks the folder a launch starts in as trusted when the launch
+// is one nobody is expected to watch, so the agent starts working instead of
+// waiting on a question in an empty terminal. A failure only leaves the
+// question on the screen; the adapter logs it.
+func (s *Service) trustFolder(agent domain.Agent, launch domain.Launch, dir string) {
+	if s.trust == nil || !launch.TrustsFolder() {
+		return
+	}
+	_ = s.trust.Trust(agent, dir)
 }

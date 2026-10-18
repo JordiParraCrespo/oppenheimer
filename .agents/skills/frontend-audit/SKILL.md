@@ -152,6 +152,23 @@ come up empty, so run it on every file in scope that returns JSX:
    A section that draws a read's loading and failure without `QueryState`,
    or reads through `useQuery` where a `useSuspense…` hook would draw it, is
    `U1`.
+5. **A placeholder has the shape of what replaces it (`U7`).** For every
+   new or changed `QueryState.Pending`, and every `*Skeleton` component it
+   renders, put the placeholder beside the `Data` child it stands for and
+   compare them part by part. `U7` when the placeholder: is drawn outside the
+   container the data renders in (a bare block where the data sits in a
+   `Card`, a `Panel`, a table, a settings group); draws as bars what is
+   static in the loaded view (column heads, section titles, a page title that
+   reads only the URL); leaves out a region the loaded view has (a rail, a
+   tree, a header), so it pops in; stands a row or line at a height the real
+   one does not have; or shows a value the data has not given (`?? 0`, `—`,
+   "none" in a count, a total or a wait while the read is pending). Name the
+   container to draw in and the parts to write for real. `pnpm
+   check:structure` already fails a slot that is only a slab (`M-structure`);
+   `U7` is what that tripwire cannot see, such as a `*Skeleton` component that
+   is a slab in a file of its own. Not `U7`: a list placeholder with a
+   different row count than today's data, a description's line count, and a
+   pane that says `A block stands in here: <why>` with a true why.
 
 ### Evidence bar
 
@@ -175,10 +192,10 @@ reported:
   kind directory or a route over the cap), `R2`, `R3`, `R4`, `R5`, `R8`,
   `R9`, `R10`, `R12`, `R13`, `U1`, `U2`, `U3`, or `R11` when the fix is a
   new `*-render.spec.tsx` modelled on an existing one. Everything else
-  (`P*`, `R1`, `R6`, `R7`, `R14`, `U4`, `U5`, `U6`, `M-arch`, `M-design`,
+  (`P*`, `R1`, `R6`, `R7`, `R14`, `U4`, `U5`, `U6`, `U7`, `M-arch`, `M-design`,
   `M-compiler`, `M-render`, `M-bundle`) moves code between packages, reshapes
   a component's props, splits a component, changes a budget or needs a new
-  e2e spec: a person decides those.
+  e2e spec or a placeholder redrawn and photographed: a person decides those.
 - The fix stays inside `apps/web`, `packages/frontend/*` and
   `packages/translations`, changes no URL, no public export of a package, no
   API call, and no render budget's number. A `U3` fix adds the key to every
@@ -248,6 +265,7 @@ tracking issue and the evals key on them.
 | `U4` | A form not built as React Hook Form over a shared Zod schema, or a form that fetches | forms.md, frontend-architecture.md "A feature holds kind directories" |
 | `U5` | A screen wired to the API with no spec in `e2e/tests/web/` | "Every product surface gets an end-to-end spec" |
 | `U6` | A component configured where it should compose: a `ReactNode` in an object prop, a `renderX` prop that hands down nothing, a boolean that switches what it draws, or a compound's parts wired by threaded props | frontend-ui.md "Compose, don't configure" |
+| `U7` | A loading placeholder without the shape of what replaces it: outside the data's container, static labels drawn as bars, a region of the loaded view missing, a row or line at the wrong height, or a value (`0`, `—`) the data has not given | frontend-ui.md "A placeholder has the shape of what replaces it" |
 | `M-*` | A mechanical check failed | Step 1 |
 
 A rule that seems wrong or unenforceable as written is not a finding against
@@ -329,3 +347,40 @@ the default branch. In this mode:
 5. Add a comment only when something changed: new findings, resolved ones, a
    check that changed state, or a fix pull request opened or updated. List
    them by fingerprint and link the pull request. No comment on a quiet day.
+6. Answer the open fix pull request, after steps 3 to 5, on every run:
+   see **Answering the fix pull request** below.
+
+### Answering the fix pull request
+
+When a `frontend-audit/fix-*` pull request is open (the one this run pushed
+to, or one an earlier run opened), read its review threads, its reviews and
+its conversation comments on the current head. Review bots post minutes
+after a push, so a run usually answers the comments the previous run's push
+drew. Skip a comment that echoes the routine's own reply.
+
+First pass, the review threads whose last comment is not the routine's (a
+person's changes-requested review is answered the same way):
+
+| The comment asks for | Do | The thread |
+| --- | --- | --- |
+| A fix Step 3's constraints allow: a file the pull request already changes, a local change, a failure path you can trace from a real caller | Make it on the pull request's branch, run the Step 3 checks, commit by path, run `pnpm ci:local` (it refuses a dirty worktree), push, reply naming the commit | Resolve |
+| Anything else: deliberate, a guard the types need, outside Step 3's scope | Reply once with why it stays. When the reason is a change a person has to make, add it to the issue: a finding, or a line under **Rules to revisit** | Resolve |
+| A security finding | Reply as above | Leave open for a person |
+| A question | Answer it from the diff | Resolve |
+
+Second pass, the conversation comments not yet answered by the routine:
+handle each the same way, but reply with a conversation comment quoting it;
+there is no thread to resolve.
+
+Then:
+
+- Bring the default branch in (a merge commit) when the pull request has a
+  merge conflict.
+- When `ci:local` fails in code the pull request does not touch, re-run it
+  once; a second failure is real, and the reply says what is failing.
+- Rewrite the pull request body's single **Review status** section (one
+  line per thread or comment answered on the current head, and what
+  happened to it) and its `ci:local` report. Do not append a section per
+  round.
+- Leave a changes-requested review for its author to dismiss. The routine
+  never approves or merges its own pull request.

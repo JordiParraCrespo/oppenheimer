@@ -82,7 +82,7 @@ export function BotGroup({
           rename.reset();
           remove.reset();
         }}
-        className="mx-1.5 my-1"
+        className="my-1"
       />
       {open && bots.length ? (
         <BotList>

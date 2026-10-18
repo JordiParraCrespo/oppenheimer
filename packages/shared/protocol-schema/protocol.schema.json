@@ -843,7 +843,6 @@
       "required": [
         "type",
         "commandId",
-        "version",
         "channel"
       ]
     },
@@ -1475,6 +1474,9 @@
       "REPLACED": 4409,
       "UNPAIRED": 4410,
       "PROTOCOL_MISMATCH": 4426
+    },
+    "closeReasons": {
+      "WIPE": "host-unpaired-wipe"
     },
     "refusalHeader": "X-Oppenheimer-Refusal",
     "refusals": {

@@ -42,7 +42,7 @@ func TestUnpairingCancelsACreateInFlightBeforeItsTmuxStarts(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		close(git.release)
 	}()
-	h.unpaired(context.Background())
+	h.unpaired(context.Background(), false)
 
 	if names, _ := terminals.List(context.Background()); len(names) != 0 {
 		t.Fatalf("a tmux session outlived the unpairing: %v", names)
@@ -108,9 +108,59 @@ func TestAnUnpairedHostKeepsTryingToStopASessionItCouldNot(t *testing.T) {
 		app: &App{Sessions: svc}, logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		attachments: map[uint32]*attachment{}, decided: map[string]bool{}, life: ctx, lanes: newLanes(),
 	}
-	h.unpaired(ctx)
+	h.unpaired(ctx, false)
 
 	if names, _ := terminals.List(ctx); len(names) != 0 {
 		t.Fatalf("a tmux session outlived the unpairing: %v", names)
+	}
+}
+
+// An owner who removes a host and asks for it to be cleaned up gets every
+// session closed, its worktree removed even when it holds uncommitted work,
+// and nothing pushed. A plain removal keeps the worktree.
+func TestAnUnpairedHostAskedToWipeRemovesEveryWorktree(t *testing.T) {
+	for _, wipe := range []bool{false, true} {
+		worktrees := fake.NewWorktrees()
+		terminals := fake.NewTerminals()
+		svc, err := sessionsapp.New(sessionsapp.Options{
+			Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
+			Places: fake.NewPlaces(), Layout: sessionsdomain.Layout{Root: t.TempDir()},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		session, err := svc.Create(ctx, sessionsapp.CreateInput{
+			ID: sessionUnderTest, Repo: "acme-labs/xrp-mobile", Remote: "https://github.com/acme-labs/xrp-mobile.git",
+			BaseBranch: "main", Branch: "oppenheimer/bright-lark", Name: "bright-lark", Agent: sessionsdomain.AgentClaude,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		worktrees.DirtyPaths[session.Worktree] = true
+
+		h := &linkHandler{
+			app: &App{Sessions: svc}, logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+			attachments: map[uint32]*attachment{}, decided: map[string]bool{}, life: ctx, lanes: newLanes(),
+		}
+		h.unpaired(ctx, wipe)
+
+		got, err := svc.Get(sessionUnderTest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := sessionsdomain.StateStopped
+		if wipe {
+			want = sessionsdomain.StateClosed
+		}
+		if got.State != want {
+			t.Errorf("wipe=%v: the session is %s, want %s", wipe, got.State, want)
+		}
+		if worktrees.Exists(session.Worktree) == wipe {
+			t.Errorf("wipe=%v: worktree still on disk = %v", wipe, !wipe)
+		}
+		if pushed := worktrees.Pushed; len(pushed) != 0 {
+			t.Errorf("wipe=%v: pushed %v", wipe, pushed)
+		}
 	}
 }

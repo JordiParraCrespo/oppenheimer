@@ -3,6 +3,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
@@ -553,9 +554,14 @@ describe('bots (integration)', () => {
     }
 
     const handler = () =>
-      new CreateBotCommandHandler(bots, groups, {
-        assertUsable: async () => ({ probedTools: null }),
-      });
+      new CreateBotCommandHandler(
+        bots,
+        groups,
+        {
+          assertUsable: async () => ({ probedTools: null }),
+        },
+        new NewBotProviderResolver({ findAll: async () => [] }),
+      );
 
     it('marks it as its creator’s, and keeps it, unmarked, when the creator is deleted', async () => {
       const ada = await create('Ada');
@@ -609,9 +615,14 @@ describe('bots (integration)', () => {
         await dataSource.query(`UPDATE bot SET permission = 'auto' WHERE id = $1`, [ada.id]);
         return bots.namesIn(caller);
       };
-      const racing = new CreateBotCommandHandler(lowering, groups, {
-        assertUsable: async () => ({ probedTools: null }),
-      });
+      const racing = new CreateBotCommandHandler(
+        lowering,
+        groups,
+        {
+          assertUsable: async () => ({ probedTools: null }),
+        },
+        new NewBotProviderResolver({ findAll: async () => [] }),
+      );
       await expect(
         racing.execute(
           new CreateBotCommand({

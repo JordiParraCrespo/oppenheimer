@@ -25,6 +25,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/systemd"
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	svcdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/agenttrust"
 	filestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
@@ -156,6 +157,9 @@ func New(version string) (*App, error) {
 		Env:        func(session sessionsdomain.Session) map[string]string { return sessionEnv(paths, session) },
 		// A session never starts an agent CLI its updater is replacing.
 		Gate: agentGate{paths: paths},
+		// A session nobody is asked to approve starts in a folder already
+		// trusted, rather than on a question in an empty terminal.
+		Trust: agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)}),
 	})
 	if err != nil {
 		return nil, err
@@ -374,3 +378,17 @@ func accountName() string {
 // RequiredTools re-exports the host context's list, so the CLI does not reach
 // into another context's domain for a constant.
 var RequiredTools = hostdomain.RequiredTools
+
+// claudeConfigPath is where Claude Code keeps its global state: in
+// `$CLAUDE_CONFIG_DIR` when that is set, the account's home otherwise. The
+// agent runs in a tmux server started by this process, so it sees the same
+// variable.
+func claudeConfigPath(paths Paths) string {
+	if dir := os.Getenv("CLAUDE_CONFIG_DIR"); dir != "" {
+		return filepath.Join(dir, ".claude.json")
+	}
+	if paths.UserHome == "" {
+		return ""
+	}
+	return filepath.Join(paths.UserHome, ".claude.json")
+}

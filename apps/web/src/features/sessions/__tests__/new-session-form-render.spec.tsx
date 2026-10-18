@@ -130,10 +130,12 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     error: null,
     submittedAt: 0,
   }),
+  useVoiceDictation: () => ({ available: false, transcribe: vi.fn() }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
   useDeploymentCapabilities: () => ({ data: null, isPending: false }),
+  useFeatureFlag: () => false,
   useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
   lastFailure: () => ({ error: null, index: -1, dismiss: vi.fn() }),
 }));

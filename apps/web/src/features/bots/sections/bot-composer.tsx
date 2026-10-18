@@ -5,15 +5,16 @@ import {
   useCancelBotTurn,
   useModelProviders,
   useSendBotMessage,
+  useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
-import { setBotDraft } from '@/features/bots/lib/bot-drafts';
+import { botDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
@@ -23,7 +24,9 @@ import { setBotDraft } from '@/features/bots/lib/bot-drafts';
  * made, so a keystroke renders the field and none of them. The draft is
  * kept per bot (`bot-drafts`), so it survives leaving the chat, and a
  * suggestion in the hello can fill it; the field takes focus on open and
- * after a fill. Enter sends, Shift+Enter starts a new line.
+ * after a fill. Enter sends, Shift+Enter starts a new line. The mic dictates
+ * into the draft (`useDictation`), added to its end, to be read before it is
+ * sent.
  */
 export function BotComposer({
   botId,
@@ -51,6 +54,10 @@ export function BotComposer({
   const providerLabel = BOT_PROVIDER_CATALOG[provider].label;
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const failure = send.error ?? cancel.error;
+  const dictation = useDictation({
+    voice: useVoiceDictation(() => [name]),
+    onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
+  });
 
   return (
     <>
@@ -87,7 +94,11 @@ export function BotComposer({
             </ComposerNotice>
           ) : undefined
         }
-        labels={{ send: t('bots.chat.send'), stop: t('bots.chat.stop') }}
+        dictation={dictationSlots(dictation)}
+        labels={{
+          send: t('bots.chat.send'),
+          stop: t('bots.chat.stop'),
+        }}
       />
     </>
   );

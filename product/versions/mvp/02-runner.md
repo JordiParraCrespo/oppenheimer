@@ -354,6 +354,19 @@ Then, in order:
    tab does not inherit it. First launch and Restart build the line the
    same way.
 
+   **A launch nobody approves starts in a trusted folder.** Claude Code
+   asks "do you trust the files in this folder?" the first time it opens
+   one, before any permission mode applies, and a session's folder is
+   always new to it. For a launch at Approve for me or Full access (a
+   bot's session, a review, a plan's task) nobody is expected at the
+   terminal to answer, so before First launch and Restart the runner
+   sets `projects[<folder>].hasTrustDialogAccepted` in Claude Code's own
+   `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json` when set), leaving
+   every other key as the CLI wrote it and swapping the file in with a
+   rename. Ask leaves the question on the screen for the person who is
+   there. It is best-effort: a launch whose folder could not be marked
+   still starts (decided 2026-10-18).
+
    **The first task is the last argument, not something typed at a
    running process.** Every CLI here takes it on its command line and
    says so in its own help — `claude [options] [command] [prompt]`

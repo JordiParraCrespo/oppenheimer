@@ -213,8 +213,8 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 
 ### Flag, privacy, cost
 
-- A `voice-dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
-  (a temporary release flag with an expiry), read with `useFeatureFlag`
+- A `voice_dictation` flag in `packages/shared/src/feature-flags/catalog.ts`
+  (an `ops` kill switch, on by default), read with `useFeatureFlag`
   and `@RequireFlag`.
 - **Privacy.** Three things leave the control plane, and the promise
   covers all three: the audio and the vocabulary hint go to the
@@ -257,6 +257,163 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
 | 2 | Set up from the prompt | `POST /v1/sessions/proposals` in the sessions module, the intent extraction with closed lists, the form prefilled with guesses highlighted | Most fields come out right on a set of spoken setups (the eval below) |
 | 3 | Dictate everywhere | Task dialog, task composer, terminal paste, the hold-to-talk hotkey, a personal dictionary (words and replacements) | Talking to a running agent works the way the composer does |
 | 4 | Later | Streaming partials; mobile/PWA (0.5) where voice beats a phone keyboard; Slack voice notes (0.4); a runner-side `whisper.cpp` so audio never leaves your host | — |
+
+## Slice 1 as built (2026-10-17)
+
+Dictation into New session's composer, end to end. Where the build differs
+from the plan above, the build is the decision; the plan stays as written.
+
+- **The recording is WAV, not `MediaRecorder`.** The browser records with
+  Web Audio and encodes 16 kHz mono 16-bit PCM itself
+  (`apps/web/src/features/sessions/lib/wav.ts`), because ChatGPT's
+  dictation route has refused Ogg/Opus and every OpenAI-compatible server
+  takes WAV. The API takes WAV only, judged by its bytes (`VOICE_004`).
+- **No new scope.** `POST /v1/voice/transcriptions` asks what creating a
+  session asks (`create Session`, `sessions:write`): dictation writes a
+  session's first task. A `voice:*` scope comes with the first surface that
+  is not a session.
+- **The recorder lives in the sessions feature**, not the platform kit:
+  the kit takes a piece when a second feature needs it, and only New
+  session has a mic so far. `useDictation`, the meter and the WAV encoder
+  move to the kit with slice 3. The design system's `Composer` gained a
+  `recorder` slot, where `VoiceRecorderBar` takes the foot row's place
+  without changing the box's height.
+- **The mic shows only when someone can hear it**: `voice_dictation` on
+  (an `ops` flag, default on with no expiry: the feature's kill switch,
+  which a deployment turns off through the flag admin API,
+  `/v1/feature-flags/admin/voice_dictation`, and a saved "off" stays off)
+  and either the
+  workspace's ChatGPT sign-in or the deployment's `voice_transcription`
+  capability (`VOICE_STT_*`).
+- **The recorder is a `ScriptProcessorNode`, knowingly.** It is
+  deprecated, and Chrome only calls it when it reaches the context's
+  destination (it outputs silence there). It is in every browser today and
+  needs no separate module; an `AudioWorklet` needs its processor served as
+  a file of its own, which the CSP admits but slice 1 did not need. Slice 3
+  moves the recorder to the kit, and the worklet comes with that move.
+- **The vocabulary comes from the console**: the project, repository and
+  host names New session has loaded, cut to the API's limits by the same
+  `vocabularyTerms` the API reads them with.
+- **The text is appended to the draft**, not inserted at the caret, and
+  never sent on its own.
+
+Verified on the local stack: `e2e/tests/api/voice.spec.ts` (a WAV through
+the API to the stub speech server and its tidy) and
+`e2e/tests/web/dictation.spec.ts` (Chromium's fake microphone, the
+recorder, the tidied text in the composer). ChatGPT's own route is covered
+by the gateway spec against a `fetch` double only: no run here can sign in
+to ChatGPT, so whether the route answers a server that names itself is
+still slice 0's question, and the first real dictation on a signed-in
+workspace answers it.
+
+## Speech providers behind one interface (2026-10-17)
+
+The first build hard-coded "ChatGPT sign-in, then the deployment's key" in
+`VoiceTranscriptionResolver`, and the console decided whether to show the
+mic from a capability and the providers list. Both now ask one list:
+
+- **`SpeechProvider`** (`apps/api/src/voice/application/speech-provider.port.ts`):
+  an `id`, a cheap `availableFor(organizationId)`, a `grantFor` that hands
+  over the provider's credential and the model the polish may run on, and
+  `transcribe`.
+- **`SpeechProviderRegistry`**, built in `voice.module.ts`, is the ordered
+  list. The resolver hears a clip on the first available provider, tries the
+  next when it fails for any reason but a rate limit, and answers the first
+  failure when all fail; `VOICE_005` when none is available.
+- **`GET /v1/voice/status`** answers which providers can hear the
+  workspace, and the console shows the mic when one can. The
+  `voice_transcription` capability stays in the startup log and leaves the
+  client list.
+- **The polish runs on the provider's model credential** when it brings
+  one (any bot provider, through the bot engine), on `LLM_*` otherwise.
+
+Adding a provider is a class implementing `SpeechProvider` (with a gateway
+of its own behind an `UpstreamLimiter`), its id in `VOICE_PROVIDERS`, and its
+place in the registry's list.
+
+## Dictate everywhere as built (2026-10-17)
+
+The owner asked for dictation in every input someone writes prose into, as
+one shared piece rather than a copy per screen. This is the first half of
+slice 3: the fields; the terminal paste, the hold-to-talk hotkey and the
+personal dictionary stay for later.
+
+- **One piece, in three layers.**
+  - The design system draws it: `DictationButton` (the mic, red while it
+    records), `VoiceRecorderBar`, and one slot every host takes,
+    `DictationSlot` (`mic`, `recorder`, `notice`): `DictationFrame` puts the
+    mic in a plain field's corner and the rest under it, and `Composer`,
+    `ChatComposer`, `DiffCommentDraft` and `ReviewDecision` place the same
+    three in their own layout. No host knows more about dictation than that.
+  - The platform kit records and wires it (`@oppenheimer/frontend-web`,
+    concern `dictation`): `useDictation({ voice, onText })` is one field's
+    recorder, trip to the API and last problem; `dictationSlots` fills the
+    slot from it; `DictationField` is the two around a `Textarea`; and
+    `dictateInto` (a state or store setter) and `dictateIntoField` (a form
+    field, marked dirty) add what was heard to the end of the field, so no
+    screen writes the append itself.
+  - The product package answers whether anyone can hear the workspace and
+    how: `useVoiceDictation(vocabulary?)` (the flag, `GET /voice/status`, the
+    transcription). One value serves every field on a screen.
+- **Where it is.** New session; a bot's chat, its SOUL.md and
+  INSTRUCTIONS.md, and the note on a Deny; the automation prompt; a task's
+  notes and the Start session prompt; a calendar event's notes; a comment on
+  a pull request's line and the review's comment. Names, titles, memory
+  facts and the bot description stay without a mic: they are a few words.
+- **A field adds to what it holds.** What is heard goes on the end of the
+  draft, a space between, to be read before it is sent or saved. A form field
+  takes it through `setValue` (`dictateIntoField`), so it stays the form's.
+- **The recorder keeps `ScriptProcessorNode`.** The slice-1 note said the
+  `AudioWorklet` would come with this move; it did not, because the worklet
+  needs its processor served as a module of its own and nothing in this
+  slice needed it. It stays deprecated-but-working, said in the code.
+
+## Dictation quality, first pass (2026-10-18)
+
+Issue #393: dictation should be as good as Wispr Flow. The owner dictates
+their prompts with a tool that already does it well, and what it writes is
+the target: the speaker's own words and language, stutters and false starts
+gone ("what, what I am doing" becomes "what I am doing"), punctuation and
+capitals added, nothing reworded or summarised. This pass closes the gaps
+that need no new table or screen:
+
+- **The names reach the speech model.** The vocabulary the console sends
+  goes to an OpenAI-compatible server as `prompt` (`speechPrompt` in
+  `apps/api/src/voice/domain/voice-speech.policy.ts`): the screen's names,
+  then Oppenheimer, Claude Code, Codex, ChatGPT, GitHub and tmux, cut at a
+  whole name within 600 characters, the part Whisper reads. A list, not a
+  sentence, because a sentence in one language pulls the model towards
+  transcribing in it. ChatGPT's route gets no `prompt`: no known client sends
+  one, and the names still reach that path through the polish.
+- **Language is detected, not given.** The console sends no `language`, so
+  the model hears Spanish, Catalan, English and a mix of them as said. A
+  per-person preference waits for the eval to show it helps.
+- **Every clip is polished.** The skip for eight words or fewer is gone: a
+  short command comes back as typed ("Fix the login page."). The brief is
+  rewritten for a light touch: keep the words, tone and language (never
+  translate, mixed stays mixed); drop fillers in all three languages,
+  stutters, false starts and self-corrections; spoken punctuation and
+  layout ("new line", "punto y aparte") are commands; a spoken enumeration
+  is a list; code in backticks; a sound-alike of a vocabulary name is that
+  name.
+- **What a speech model makes up from silence is dropped.** Whisper-class
+  models write subtitle credits over silence ("Subtítulos realizados por la
+  comunidad de Amara.org", "Thanks for watching!"); those are cut from the
+  end of a transcript, and a transcript that was only that is empty. "Thank
+  you" and "gracias" stay: people say them to bots.
+- **The console trims the silence** before the first word and after the
+  last (300 ms kept either side), which is where those hallucinations come
+  from, and is upload and wait for nothing. A clip with no speech in it is
+  sent whole.
+- **The eval exists**: `scripts/evals/voice/` sends real clips through the
+  API and scores word error rate, raw and polished, against Wispr Flow's
+  text for the same clip, plus names spelled right and latency. The clips
+  are the owner's to record; they stay git-ignored.
+
+Left for later, in #393's order: the field's current text as context for
+both steps, a personal dictionary learned from edits (its own consent and
+table), streaming partials, and whether ChatGPT's route stays first in line
+once the eval has numbers for it.
 
 ## How we know it works
 

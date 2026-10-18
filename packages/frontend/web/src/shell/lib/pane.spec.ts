@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type ContentPane, resolveContentPane } from './pane';
+import { type ContentPane, resolveContentPane, screenOwnsBar } from './pane';
 
 /**
  * Which pane the shell draws is decided by the route, and the rule is the one
@@ -38,5 +38,12 @@ describe('resolveContentPane', () => {
 
   it('survives an empty match chain', () => {
     expect(resolveContentPane([])).toBe('narrow');
+  });
+});
+
+describe('screenOwnsBar', () => {
+  it('leaves the bar to the shell unless a route in the chain claims it', () => {
+    expect(screenOwnsBar([{ staticData: {} }, { staticData: {} }])).toBe(false);
+    expect(screenOwnsBar([{ staticData: {} }, { staticData: { bar: 'own' as const } }])).toBe(true);
   });
 });
