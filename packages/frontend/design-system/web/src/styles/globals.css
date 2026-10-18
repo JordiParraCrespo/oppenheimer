@@ -982,11 +982,13 @@
     background: var(--selected-surface);
   }
 
-  /* Every scroller gets the same quiet bar: a pill thumb in hairline ink on
-     no track, no arrow buttons, lit to the strong hairline under the pointer.
+  /* Every scroller gets the same quiet bar: a pill thumb in subtle ink on no
+     track, no arrow buttons, lit to muted ink under the pointer. Subtle ink is
+     the faintest that keeps the 3:1 a control needs on both themes' surfaces.
      Chromium and Safari draw it from the pseudo-elements. Chromium ignores
      those once `scrollbar-color` or `scrollbar-width` is set, so the
-     standard properties are only for browsers without them (Firefox). */
+     standard properties are only for browsers without a thumb pseudo-element
+     (Firefox, some of whose versions parse `::-webkit-scrollbar` alone). */
   ::-webkit-scrollbar {
     width: 12px;
     height: 12px;
@@ -996,17 +998,15 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background-color: var(--border);
+    background-color: var(--fg-subtle);
     border: 3px solid transparent;
     background-clip: padding-box;
     border-radius: var(--radius-pill);
     min-height: 32px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--border-strong);
-  }
+  ::-webkit-scrollbar-thumb:hover,
   ::-webkit-scrollbar-thumb:active {
-    background-color: var(--fg-subtle);
+    background-color: var(--fg-muted);
   }
   ::-webkit-scrollbar-button {
     display: none;
@@ -1014,10 +1014,10 @@
     height: 0;
   }
 
-  @supports not selector(::-webkit-scrollbar) {
+  @supports not selector(::-webkit-scrollbar-thumb) {
     * {
       scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
+      scrollbar-color: var(--fg-subtle) transparent;
     }
   }
 }
