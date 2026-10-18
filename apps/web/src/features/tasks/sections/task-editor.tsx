@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { TaskForm } from '../forms/task-form';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
+import { filingOf } from '../lib/board';
 import { newTaskValues, type TaskFormOutput, taskValues } from '../lib/task-form';
 import { TaskSessionsRow } from './task-sessions-row';
 
@@ -60,9 +61,10 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
     ...(unassigned ? [{ id: unassigned.id, name: t('tasks.sidebar.unassigned') }] : []),
     ...projects.filter((row) => !row.isUnassigned),
   ];
+  const filing = filingOf(filter, milestones, unassigned?.id);
   const values = task
     ? taskValues(task)
-    : newTaskValues(filter.projectId || unassigned?.id || '', filter.milestoneId ?? null);
+    : newTaskValues(filing.projectId ?? '', filing.milestoneId);
   const pending = create.isPending || update.isPending;
   const failure = create.error ?? update.error;
   const submit = (next: TaskFormOutput) => {
