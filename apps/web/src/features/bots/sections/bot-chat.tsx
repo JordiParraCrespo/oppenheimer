@@ -68,8 +68,8 @@ export function BotChat({ botId }: { botId: string }) {
           </QueryState.Data>
         </QueryState>
       </BotChatScroller>
-      <div className="px-5 pb-4">
-        <div className="mx-auto flex w-full max-w-184 flex-col gap-2">
+      <div className="px-4 pb-4 sm:px-8">
+        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <BotApprovalCard botId={bot.id} name={bot.name} />
           <ErrorAlert
             error={update.error}

@@ -39,12 +39,17 @@ function SettingsMain({ className, ...props }: React.ComponentProps<'main'>) {
   );
 }
 
-/** The measured content column: 760px, centred, the export's padding, sections 40px apart. */
+/**
+ * The measured content column: the console's 760px and gutter (32px, 16px on
+ * a phone), sections 40px apart. It opens 72px down, where a console page's
+ * title sits under its 48px bar; under a bar of its own (a bot's settings) the
+ * caller opens it 24px down, as a console page does.
+ */
 function SettingsContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="settings-content"
-      className={cn('mx-auto flex w-full max-w-190 flex-col gap-10 px-10 pt-16 pb-24', className)}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-10 px-4 pt-18 pb-18 sm:px-8', className)}
       {...props}
     />
   );

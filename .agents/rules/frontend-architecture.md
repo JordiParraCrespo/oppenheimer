@@ -286,11 +286,14 @@ name the jobs and split *those*.
   `staticData.pane`, on the layout route of its subtree where it has one
   (`plan.tsx`, `automations.tsx`, `pulls.tsx` render nothing but their
   `Outlet`), and the shell draws the frame at it: the scroll, the measure, the
-  gutter. The measures are the widths the export repeats: `status` (420px)
-  and `composer` (720px), centred in the pane; `narrow` (760px, the default),
-  `wide` (920px), `board` (1240px); and `fluid`, no measure. A route whose
-  views are search params declares the pane as a function of its search (a
-  pull request's `?view=`). The screen renders content only; the frame opens
+  gutter. There are four widths and one gutter (32px, 16px on a phone):
+  `status` (420px) and `composer` (760px), centred in the pane; `narrow`
+  (760px, the default), `wide` (1040px, tables and the session terminal),
+  `board` (1240px); and `fluid`, no measure. A page that opens at the top
+  opens 24px under the page bar. A bot's chat and Settings take the 760px
+  and the gutter too; a screen never invents a width or a padding of its
+  own. A route whose views are search params declares the pane as a
+  function of its search (a pull request's `?view=`). The screen renders content only; the frame opens
   a new page at the top without remounting it.
 - **A bar that stays put is the shell's slot, not a frame.** A screen hands
   it to `PaneBar`, which puts it above the page; the page under it is still
