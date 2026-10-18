@@ -553,7 +553,13 @@ describe('bots chat (integration)', () => {
       turnId: next.id,
       role: 'event',
       content: 'Ana approved: Start Claude Code\nIt ran: Started session s-1.',
-      event: { kind: 'approval', outcome: 'approved', tool: 'start_session', summary: 'Start it' },
+      event: {
+        kind: 'approval',
+        outcome: 'approved',
+        tool: 'start_session',
+        summary: 'Start it',
+        sessionId: null,
+      },
       steps: [],
       position: 0,
     });
@@ -609,7 +615,13 @@ describe('bots chat (integration)', () => {
         turnId: turn.id,
         role: 'event',
         content: 'Ana approved: x',
-        event: { kind: 'approval', outcome: 'approved', tool: 'start_session', summary: 'x' },
+        event: {
+          kind: 'approval',
+          outcome: 'approved',
+          tool: 'start_session',
+          summary: 'x',
+          sessionId: null,
+        },
         steps: [],
         position: message.position,
       });

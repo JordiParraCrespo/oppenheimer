@@ -25933,9 +25933,15 @@
           },
           "isError": {
             "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the call started (`start_session`); null for any other call."
           }
         },
-        "required": ["callId", "name", "input", "output", "isError"]
+        "required": ["callId", "name", "input", "output", "isError", "sessionId"]
       },
       "BotMessageEventResponseDto": {
         "type": "object",
@@ -25960,7 +25966,7 @@
             "type": "string",
             "format": "uuid",
             "nullable": true,
-            "description": "The session an approved `start_session` started; null for any other event."
+            "description": "The session the approved call started; null when it started none."
           }
         },
         "required": ["kind", "outcome", "tool", "summary", "sessionId"]

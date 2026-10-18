@@ -177,7 +177,16 @@ describe('BotsRepository', () => {
             turnId: 't1',
             role: 'activity',
             content: '',
-            steps: [{ callId: 'c1', name: 'read', input: {}, output: null, isError: false }],
+            steps: [
+              {
+                callId: 'c1',
+                name: 'read',
+                input: {},
+                output: null,
+                isError: false,
+                sessionId: null,
+              },
+            ],
             createdAt: '2026-10-15T09:00:01.000Z',
           },
         ],

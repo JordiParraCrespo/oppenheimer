@@ -329,21 +329,8 @@ export interface BotMessageEvent {
   tool: string;
   /** The card's line: what the call does, in words. */
   summary: string;
-  /** The session an approved `start_session` started, for the chat to link to; absent or null otherwise. */
-  sessionId?: string | null;
-}
-
-const STARTED_SESSION =
-  /^Started session ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i;
-
-/**
- * The session a `start_session` call started, read from what the tool
- * answered ("Started session <id> on host …"); null for any other answer.
- * The API reads it off an approved call's result, the console off a call
- * that ran without asking, so both link to the same session.
- */
-export function startedSessionId(answer: string): string | null {
-  return STARTED_SESSION.exec(answer.trimStart())?.[1] ?? null;
+  /** The session the approved call started, for the chat to link to; null when it started none. */
+  sessionId: string | null;
 }
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */

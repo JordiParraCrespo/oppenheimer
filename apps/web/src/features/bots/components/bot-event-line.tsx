@@ -10,7 +10,7 @@ import { OpenSessionButton } from '@/features/bots/components/open-session-butto
  * on build-02…" with a check, a denial in red with a cross, an approved call
  * that failed in red. Read from the event's own fields, never its words,
  * which are the bot's. Never a bubble from you: you did not write it. An
- * approved call that started a session carries Open session under it.
+ * approved call that started a session carries Open session on the line.
  */
 export function BotEventLine({ message }: { message: BotMessageEntity }) {
   const { t } = useTranslation();
@@ -20,18 +20,15 @@ export function BotEventLine({ message }: { message: BotMessageEntity }) {
   }
   const icon =
     event.outcome === 'approved' ? <Check /> : event.outcome === 'failed' ? <CircleAlert /> : <X />;
-  const line = (
-    <TranscriptDivider icon={icon} tone={event.outcome === 'approved' ? 'default' : 'danger'}>
+  return (
+    <TranscriptDivider
+      icon={icon}
+      tone={event.outcome === 'approved' ? 'default' : 'danger'}
+      action={event.sessionId ? <OpenSessionButton sessionId={event.sessionId} /> : undefined}
+    >
       <span className="max-w-xl truncate" title={event.summary}>
         {t(`bots.chat.event.${event.outcome}`, { summary: event.summary })}
       </span>
     </TranscriptDivider>
-  );
-  if (!event.sessionId) return line;
-  return (
-    <div className="flex flex-col items-center">
-      {line}
-      <OpenSessionButton sessionId={event.sessionId} />
-    </div>
   );
 }

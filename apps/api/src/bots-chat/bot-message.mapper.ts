@@ -25,6 +25,7 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -61,10 +62,9 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
     }));
-    dto.event = entity.event
-      ? { ...entity.event, sessionId: entity.event.sessionId ?? null }
-      : null;
+    dto.event = entity.event ? { ...entity.event } : null;
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
@@ -90,6 +90,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     input: raw.input ?? null,
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
+    sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
   };
 }
 

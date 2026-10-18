@@ -1,9 +1,4 @@
-import {
-  type BotMessageEvent,
-  expandScopes,
-  type Scope,
-  startedSessionId,
-} from '@oppenheimer/shared';
+import { type BotMessageEvent, expandScopes, type Scope } from '@oppenheimer/shared';
 import type { BotApprovalEntity } from './bot-approval.entity';
 import { BotMessageEntity } from './bot-message.entity';
 import { BotTurnEntity } from './bot-turn.entity';
@@ -48,17 +43,18 @@ export function approvalEvent(approval: BotApprovalEntity, by: string): string {
 
 /**
  * What the chat draws for a decided approval, without reading the event's
- * words: with the session an approved `start_session` started, so the line
- * links to it.
+ * words: with the session the approved call started, so the line links to it.
  */
 export function approvalEventOf(approval: BotApprovalEntity): BotMessageEvent {
   const outcome =
     approval.status === 'denied' ? 'denied' : approval.status === 'failed' ? 'failed' : 'approved';
-  const sessionId =
-    outcome === 'approved' && approval.tool === 'start_session'
-      ? startedSessionId(approval.result ?? '')
-      : null;
-  return { kind: 'approval', outcome, tool: approval.tool, summary: approval.summary, sessionId };
+  return {
+    kind: 'approval',
+    outcome,
+    tool: approval.tool,
+    summary: approval.summary,
+    sessionId: approval.sessionId,
+  };
 }
 
 /**

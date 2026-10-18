@@ -17,7 +17,6 @@ import { searchResults } from '@/features/bots/lib/search-results';
 import {
   planItems,
   readableOutput,
-  startedSession,
   type ToolAction,
   toolAction,
 } from '@/features/bots/lib/tool-activity';
@@ -119,8 +118,8 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
  * returned, drawn by its kind's entry in `STEP_VIEWS`. A call still running
- * is not drawn here: the turn's live line says what it is doing. A session it
- * started without asking gets Open session under the trace.
+ * is not drawn here: the turn's live line says what it is doing. A call that
+ * started a session carries Open session on its own line.
  */
 export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   const { t } = useTranslation();
@@ -131,8 +130,7 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
-  const sessions = done.flatMap((step) => startedSession(step) ?? []);
-  const trace = (
+  return (
     <Trace>
       {done.map((step) => {
         const action = toolAction(step);
@@ -145,22 +143,12 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
             title={view.title(t, action)}
             meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
             tone={step.isError ? 'danger' : 'default'}
+            action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
           >
             {body}
           </TraceStep>
         );
       })}
     </Trace>
-  );
-  if (sessions.length === 0) return trace;
-  return (
-    <div className="flex flex-col gap-1">
-      {trace}
-      <div className="flex flex-wrap gap-1">
-        {sessions.map((sessionId) => (
-          <OpenSessionButton key={sessionId} sessionId={sessionId} />
-        ))}
-      </div>
-    </div>
   );
 }

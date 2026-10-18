@@ -27,6 +27,14 @@ export class BotToolStepResponseDto {
 
   @ApiProperty()
   isError!: boolean;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The session the call started (`start_session`); null for any other call.',
+  })
+  sessionId!: string | null;
 }
 
 /** What an event says happened: an approval decided, how, and the card's line. */
@@ -47,7 +55,7 @@ export class BotMessageEventResponseDto {
     type: String,
     format: 'uuid',
     nullable: true,
-    description: 'The session an approved `start_session` started; null for any other event.',
+    description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
 }

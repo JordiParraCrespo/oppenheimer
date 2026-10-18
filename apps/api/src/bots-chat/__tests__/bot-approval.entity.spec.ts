@@ -115,20 +115,22 @@ describe('approvalEvent', () => {
 describe('approvalEventOf', () => {
   const SESSION = '0b6c3f0e-5a7d-4c1e-9f2a-1d2e3f4a5b6c';
 
-  it('carries the session an approved start_session started, for the chat to link to', () => {
+  it('carries the session the approved call said it started, whatever its words', () => {
     const approval = pending();
     approval.approve('user-1', NOW);
-    approval.recordResult(
-      `Started session ${SESSION} on host h-1. The agent works on its own.`,
-      false,
-    );
+    approval.recordResult('Done: the agent is on it.', false, SESSION);
     expect(approvalEventOf(approval)).toMatchObject({ outcome: 'approved', sessionId: SESSION });
   });
 
-  it('carries no session for a failed or denied call', () => {
+  it('carries no session for a call that started none, a failed call or a denied one', () => {
+    const quiet = pending();
+    quiet.approve('user-1', NOW);
+    quiet.recordResult(`Started session ${SESSION} on host h-1.`, false);
+    expect(approvalEventOf(quiet)).toMatchObject({ outcome: 'approved', sessionId: null });
+
     const failed = pending();
     failed.approve('user-1', NOW);
-    failed.recordResult(`Started session ${SESSION} on host h-1.`, true);
+    failed.recordResult('SESSIONS_010: Host offline.', true, SESSION);
     expect(approvalEventOf(failed)).toMatchObject({ outcome: 'failed', sessionId: null });
 
     const denied = pending();

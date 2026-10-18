@@ -11,13 +11,19 @@ import {
 } from 'typeorm';
 import { BOT_APPROVAL_RESULT_MAX, BOT_APPROVAL_SUMMARY_MAX } from '../domain/bot-approval.entity';
 
-/** One call of an asking tool waiting for the bot's owner (`1791002200000-AddBotApprovals`). */
+/**
+ * One call of an asking tool waiting for the bot's owner
+ * (`1791002200000-AddBotApprovals`, `1791002700000-AddBotApprovalSession`).
+ */
 @Entity('bot_approval')
 @Index('IDX_bot_approval_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('UQ_bot_approval_pending', ['botId'], { unique: true, where: `"status" = 'pending'` })
 @Index('IDX_bot_approval_turn', ['organizationId', 'turnId'])
 @Index('IDX_bot_approval_decided_by', ['decidedByUserId'], {
   where: '"decidedByUserId" IS NOT NULL',
+})
+@Index('IDX_bot_approval_session', ['organizationId', 'sessionId'], {
+  where: '"sessionId" IS NOT NULL',
 })
 @Check(
   'CHK_bot_approval_status',
@@ -54,6 +60,10 @@ export class BotApprovalOrmEntity {
 
   @Column({ type: 'varchar', length: BOT_APPROVAL_RESULT_MAX, nullable: true })
   result!: string | null;
+
+  /** The session the call started when it ran on the yes; null when it started none. */
+  @Column({ type: 'uuid', nullable: true })
+  sessionId!: string | null;
 
   @Column({ type: 'varchar', length: BOT_APPROVAL_NOTE_MAX, nullable: true })
   note!: string | null;

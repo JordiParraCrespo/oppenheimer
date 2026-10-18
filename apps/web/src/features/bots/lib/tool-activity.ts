@@ -1,5 +1,4 @@
 import type { BotMessageEntity, BotToolStep } from '@oppenheimer/frontend-consumer';
-import { startedSessionId } from '@oppenheimer/shared/schemas/bot';
 
 /**
  * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
@@ -73,16 +72,6 @@ export function toolAction(step: Pick<BotToolStep, 'name' | 'input'>): ToolActio
   }
   if (PLAN_TOOLS.has(key)) return { kind: 'plan' };
   return { kind: 'tool', label: humaniseToolName(step.name), target: toolTarget(step.input) };
-}
-
-/**
- * The session a `start_session` call that ran started, for the chat's Open
- * session; null for any other call, a failed one, or one still running.
- */
-export function startedSession(step: BotToolStep): string | null {
-  if (step.isError || step.output === null) return null;
-  if (step.name.replace(MCP_PREFIX, '').toLowerCase() !== 'start_session') return null;
-  return startedSessionId(step.output);
 }
 
 /** The call still running in a turn's work, if one is: the last with no output yet. */
