@@ -13,7 +13,7 @@ import { BOT_APPROVAL_RESULT_MAX, BOT_APPROVAL_SUMMARY_MAX } from '../domain/bot
 
 /**
  * One call of an asking tool waiting for the bot's owner
- * (`1791002200000-AddBotApprovals`, `1791002700000-AddBotApprovalSession`).
+ * (`1791002200000-AddBotApprovals`, `1791002900000-AddBotApprovalSession`).
  */
 @Entity('bot_approval')
 @Index('IDX_bot_approval_bot', ['organizationId', 'botId', 'createdAt', 'id'])

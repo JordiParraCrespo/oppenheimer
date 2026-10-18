@@ -17,8 +17,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - `IDX_bot_approval_session` (partial: most approvals start nothing)
  *   backs the foreign key, for a session's deletion. Nothing else reads by it.
  */
-export class AddBotApprovalSession1791002700000 implements MigrationInterface {
-  name = 'AddBotApprovalSession1791002700000';
+export class AddBotApprovalSession1791002900000 implements MigrationInterface {
+  name = 'AddBotApprovalSession1791002900000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE bot_approval ADD COLUMN "sessionId" uuid`);
