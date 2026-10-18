@@ -12,6 +12,10 @@ import { cn } from '../lib/utils';
  * own 15px, in muted ink, that opens to what the step returned.
  *
  * - `Trace`: the steps of one run of work, a list.
+ * - `TraceGroup`: several steps folded behind one line ("Used 3 tools",
+ *   a failure count in red as its meta); open, its `Trace` hangs from a
+ *   hairline under it. Closed by default, so a run of calls reads as one
+ *   line between the words.
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated), a
  *   mono meta ("14 results", "2 failed"), and, when it has children, the
  *   chevron that opens them. `tone="danger"` sets the line in red (a
@@ -99,6 +103,33 @@ function TraceStep({
         {line}
       </FoldTrigger>
       <FoldPanel className="pl-6.5">{children}</FoldPanel>
+    </Fold>
+  );
+}
+
+function TraceGroup({
+  title,
+  meta,
+  defaultOpen = false,
+  className,
+  children,
+}: {
+  /** "Used 3 tools". */
+  title: React.ReactNode;
+  /** "1 failed", in red. */
+  meta?: React.ReactNode;
+  defaultOpen?: boolean;
+  className?: string;
+  /** The `Trace` it folds. */
+  children: React.ReactNode;
+}) {
+  return (
+    <Fold data-slot="trace-group" defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
+      <FoldTrigger className={cn(TRACE_LINE, 'transition-colors duration-instant [&>svg:last-child]:size-3.75')}>
+        <span className="min-w-0 truncate">{title}</span>
+        {meta ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{meta}</span> : null}
+      </FoldTrigger>
+      <FoldPanel className="ml-1.75 border-l border-border-subtle pl-3">{children}</FoldPanel>
     </Fold>
   );
 }
@@ -201,5 +232,5 @@ function TraceLive({
   );
 }
 
-export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep };
+export { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep };
 export type { TraceOutputLabels };

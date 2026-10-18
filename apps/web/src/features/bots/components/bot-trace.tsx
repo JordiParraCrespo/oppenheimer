@@ -2,6 +2,7 @@ import {
   ChatSource,
   ChatSources,
   Trace,
+  TraceGroup,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
@@ -116,8 +117,10 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
 /**
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
- * returned, drawn by its kind's entry in `STEP_VIEWS`. A call still running
- * is not drawn here: the turn's live line says what it is doing.
+ * returned, drawn by its kind's entry in `STEP_VIEWS`. Two calls or more
+ * fold behind one "Used N tools" line, closed, so the reply reads without
+ * them. A call still running is not drawn here: the turn's live line says
+ * what it is doing.
  */
 export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   const { t } = useTranslation();
@@ -128,7 +131,7 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
-  return (
+  const trace = (
     <Trace>
       {done.map((step) => {
         const action = toolAction(step);
@@ -147,5 +150,15 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
         );
       })}
     </Trace>
+  );
+  if (done.length === 1) return trace;
+  const failed = done.filter((step) => step.isError).length;
+  return (
+    <TraceGroup
+      title={t('bots.chat.activity.usedTools', { count: done.length })}
+      meta={failed > 0 ? t('bots.chat.activity.failedCount', { count: failed }) : undefined}
+    >
+      {trace}
+    </TraceGroup>
   );
 }
