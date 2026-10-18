@@ -24,18 +24,24 @@ import { useSortableControl } from './drag';
  * shell's `DragProvider` and render each as a `SortableRailItem` (a
  * `RailItem` that is also a sortable item; a press still navigates, a drag
  * starts after 5px). Where the order is kept is the app's.
+ *
+ * Under 768px a column that never leaves takes too much of the width, so the
+ * rail is a tab bar fixed along the bottom of the screen instead: the same
+ * buttons in a row, spread across it, above the home indicator, with the
+ * hairline on top. The mark and the tips (there is no hover on a phone) are
+ * dropped. The page under it keeps clear of it with `RAIL_BAR_CLEARANCE`.
  */
+const RAIL = {
+  surface: 'z-20 flex shrink-0 items-center gap-1.5 border-border-subtle bg-sidebar',
+  bar: 'fixed inset-x-0 bottom-0 h-[calc(var(--spacing)*14+env(safe-area-inset-bottom))] justify-around border-t px-2 pb-[env(safe-area-inset-bottom)]',
+  column: 'md:relative md:inset-auto md:h-auto md:w-14 md:flex-col md:justify-start md:border-t-0 md:border-r md:px-0 md:py-3.5',
+};
+
+/** What a page beside the rail reserves at its foot, so the phone's bar never covers it. */
+const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*14+env(safe-area-inset-bottom))] md:pb-0';
+
 function Rail({ className, ...props }: React.ComponentProps<'nav'>) {
-  return (
-    <nav
-      data-slot="rail"
-      className={cn(
-        'relative z-20 flex w-14 shrink-0 flex-col items-center gap-1.5 border-r border-border-subtle bg-sidebar py-3.5',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <nav data-slot="rail" className={cn(RAIL.surface, RAIL.bar, RAIL.column, className)} {...props} />;
 }
 
 /** The 32px round mark at the top: the product's initial in display weight. */
@@ -44,7 +50,7 @@ function RailMark({ className, children, ...props }: React.ComponentProps<'div'>
     <div
       data-slot="rail-mark"
       className={cn(
-        'mb-2.5 flex size-8 items-center justify-center rounded-pill bg-fg font-display text-[16px] font-semibold tracking-[-0.02em] text-sidebar',
+        'mb-2.5 hidden size-8 items-center justify-center rounded-pill md:flex bg-fg font-display text-[16px] font-semibold tracking-[-0.02em] text-sidebar',
         className,
       )}
       {...props}
@@ -124,7 +130,7 @@ function RailTip({
     <span
       aria-hidden
       data-slot="rail-tip"
-      className="pointer-events-none absolute top-1/2 left-[calc(100%+var(--space-5))] flex -translate-x-1 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.25 text-sm text-fg opacity-0 shadow-popover transition-[opacity,translate] duration-fast [transition-timing-function:var(--ease-standard),var(--ease-out)] group-hover/rail-item:translate-x-0 group-hover/rail-item:opacity-100 group-focus-visible/rail-item:translate-x-0 group-focus-visible/rail-item:opacity-100"
+      className="pointer-events-none absolute top-1/2 left-[calc(100%+var(--space-5))] hidden -translate-x-1 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.25 text-sm text-fg opacity-0 shadow-popover transition-[opacity,translate] duration-fast [transition-timing-function:var(--ease-standard),var(--ease-out)] group-hover/rail-item:translate-x-0 group-hover/rail-item:opacity-100 group-focus-visible/rail-item:translate-x-0 group-focus-visible/rail-item:opacity-100 md:flex"
     >
       {children}
       {count !== undefined ? (
@@ -166,4 +172,4 @@ function SortableRailItem({
   );
 }
 
-export { Rail, RailItem, RailMark, SortableRailItem };
+export { RAIL_BAR_CLEARANCE, Rail, RailItem, RailMark, SortableRailItem };
