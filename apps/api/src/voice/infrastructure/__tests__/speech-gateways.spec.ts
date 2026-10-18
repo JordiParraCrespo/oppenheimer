@@ -59,6 +59,48 @@ describe('ChatgptSpeechGateway', () => {
     }
   });
 
+  /** The detail of the VOICE_006 the gateway answers `answer` with. */
+  async function refusalDetail(answer: Response): Promise<string> {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(answer));
+    const refusal = await new ChatgptSpeechGateway().transcribe(CLIP, ACCESS).catch((e) => e);
+    expect(refusal).toMatchObject({ code: 'VOICE_006' });
+    return refusal.detail;
+  }
+
+  it('says which status a refusal came back with and as what', async () => {
+    const detail = await refusalDetail(
+      new Response('<html>Just a moment…</html>', {
+        status: 403,
+        headers: { 'content-type': 'text/html; charset=UTF-8' },
+      }),
+    );
+    expect(detail).toContain('403');
+    expect(detail).toContain('text/html');
+  });
+
+  it('says the same of a challenge page served as a 200', async () => {
+    const detail = await refusalDetail(
+      new Response('<html>Just a moment…</html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      }),
+    );
+    expect(detail).toContain('200');
+    expect(detail).toContain('text/html');
+  });
+
+  it('says when a refusal had no content type, and never repeats its body', async () => {
+    // Bytes, not a string: a string body is given `text/plain` by `Response` itself.
+    const detail = await refusalDetail(
+      new Response(new TextEncoder().encode('{"detail":"echoed access-placeholder"}'), {
+        status: 401,
+      }),
+    );
+    expect(detail).toContain('401');
+    expect(detail).toContain('no content type');
+    expect(detail).not.toContain('access-placeholder');
+  });
+
   it('answers a rate limit with VOICE_007 and stops calling for that account', async () => {
     const fetch = vi.fn().mockResolvedValue(json(429, { error: { code: 'rate_limit_exceeded' } }));
     vi.stubGlobal('fetch', fetch);
