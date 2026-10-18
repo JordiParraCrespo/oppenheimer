@@ -1177,33 +1177,16 @@
   }
 }
 
-/* A quiet 8px scrollbar for panes that scroll inside a card. */
+/* The baseline scrollbar at 8px, for panes that scroll inside a card. The
+   pill, its colours and the hidden buttons are the baseline's; this only
+   narrows the bar and the thumb's inset. */
 @utility scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
-
   &::-webkit-scrollbar {
     height: 8px;
     width: 8px;
   }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
   &::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-    border-radius: var(--radius-pill);
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  &::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
+    border-width: 2px;
   }
 }
 
