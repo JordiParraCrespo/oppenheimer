@@ -44,6 +44,7 @@ export class LocalFirstSessionStream implements SessionStream {
   private viewport = { cols: 80, rows: 24 };
   private path: StreamPath | null = null;
   private unsubscribe: (() => void)[] = [];
+  private remoteStatus: StreamStatus = 'connecting';
 
   constructor(
     private readonly bridge: LocalTerminals,
@@ -102,15 +103,31 @@ export class LocalFirstSessionStream implements SessionStream {
     if (this.disposed || this.remoteStream) return;
     const stream = this.remote();
     this.remoteStream = stream;
-    for (const l of this.dataListeners) this.unsubscribe.push(stream.onData(l));
-    for (const l of this.statusListeners) this.unsubscribe.push(stream.onStatus(l));
-    for (const l of this.endListeners) this.unsubscribe.push(stream.onEnd(l));
+    // One subscription per kind, fanned out to the sets, so the sets stay the
+    // only record of who listens and unsubscribing works whenever it happens.
+    this.unsubscribe.push(
+      stream.onData((chunk, consumed) => {
+        for (const l of this.dataListeners) l(chunk, consumed);
+      }),
+      stream.onStatus((status) => {
+        this.remoteStatus = status;
+        for (const l of this.statusListeners) l(status);
+      }),
+      stream.onEnd((reason) => {
+        for (const l of this.endListeners) l(reason);
+      }),
+    );
     if (stream.onPath) {
       this.unsubscribe.push(stream.onPath((p) => this.setPath(p)));
     } else {
       this.setPath('relay');
     }
     stream.resize(this.viewport.cols, this.viewport.rows);
+  }
+
+  private status(): StreamStatus {
+    if (this.handle !== null) return 'live';
+    return this.remoteStream ? this.remoteStatus : 'connecting';
   }
 
   private setPath(path: StreamPath): void {
@@ -120,30 +137,18 @@ export class LocalFirstSessionStream implements SessionStream {
 
   onData(listener: DataListener): () => void {
     this.dataListeners.add(listener);
-    const off = this.remoteStream?.onData(listener);
-    return () => {
-      this.dataListeners.delete(listener);
-      off?.();
-    };
+    return () => this.dataListeners.delete(listener);
   }
 
   onStatus(listener: (status: StreamStatus) => void): () => void {
     this.statusListeners.add(listener);
-    listener(this.handle !== null ? 'live' : 'connecting');
-    const off = this.remoteStream?.onStatus(listener);
-    return () => {
-      this.statusListeners.delete(listener);
-      off?.();
-    };
+    listener(this.status());
+    return () => this.statusListeners.delete(listener);
   }
 
   onEnd(listener: (reason: StreamEnd) => void): () => void {
     this.endListeners.add(listener);
-    const off = this.remoteStream?.onEnd(listener);
-    return () => {
-      this.endListeners.delete(listener);
-      off?.();
-    };
+    return () => this.endListeners.delete(listener);
   }
 
   onPath(listener: (path: StreamPath) => void): () => void {

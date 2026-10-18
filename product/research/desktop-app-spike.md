@@ -49,6 +49,27 @@ session state).
 | Control plane killed while typing locally | the terminal keeps working |
 | Local runner killed mid-session | screen kept, "offline" shown, back when the runner is |
 | Cold start with the control plane down | "Connection problem": no session can be opened |
+| 21 MB of output (`seq 1 3000000`) in a local session | done in 4.8 s, main process +10 MB, typing fine after |
+| Reload the page three times, then leave and quit | one tmux client throughout, none after |
+
+### Start at home, continue abroad
+
+Under `e2e/netsim`, with the home runner on Barcelona fibre and a second
+device on hotel Wi-Fi in Tokyo, every packet through the simulator:
+
+| Leg | Device | Path | Echo p50 / p95 | Tickets |
+|---|---|---|---|---|
+| Start a Python REPL, set `x`, quit the app | desktop at home | `local` | 5 / 20 ms | 0 |
+| Open the same session, `print(x)` | another device in Tokyo, fresh sign-in | `direct` (WebRTC to home) | 297 / 328 ms | 2 |
+| Open it again at home, `print(x)` | desktop at home | `local` | 4 / 6 ms | 0 |
+
+`print(x)` gave the value set at home both times: one live process, three
+attachments, and the desktop's choice of path is made per attachment, so
+leaving and coming back needs nothing. The Tokyo device took two minutes
+to show the terminal because it loaded the Vite dev server's unbundled
+modules over simulated hotel Wi-Fi (43 MB); that measures the dev server,
+not the product. Typed characters there are drawn at once by predictive
+echo (22); the readout is the true round trip.
 
 The runner ran as root in that container with its root check patched out of
 a throwaway build (the sandbox allowed no second account); nothing of that

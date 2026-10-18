@@ -76,7 +76,8 @@ ipcMain.handle('local:attach', (event, id, window, cols, rows) => {
   watch(sender);
   const url = `ws+unix://${SOCKET}:/v1/sessions/${encodeURIComponent(id)}/attach?window=${window}&cols=${cols}&rows=${rows}`;
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(url, { perMessageDeflate: false });
+    // A dial that never opens or fails would leave the page waiting forever.
+    const ws = new WebSocket(url, { perMessageDeflate: false, handshakeTimeout: 5000 });
     ws.binaryType = 'nodebuffer';
     const a = { ws, owner: sender.id, inflight: 0, paused: false };
     let open = false;

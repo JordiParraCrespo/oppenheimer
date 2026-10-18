@@ -3,10 +3,9 @@ import { DirectPath, directPathSupported, type PeerFactory } from './direct-path
 
 /**
  * Which way the terminal's bytes travel: through the relay, or on a direct
- * channel to the host (`product/versions/mvp/22-direct-terminal-path.md`), or,
- * in the desktop app, through the runner's socket on this machine (27).
+ * channel to the host (`product/versions/mvp/22-direct-terminal-path.md`).
  */
-export type StreamPath = 'relay' | 'direct' | 'local';
+export type RelayPath = 'relay' | 'direct';
 
 type DirectServerMessage = Extract<
   AttachServerMessage,
@@ -41,16 +40,16 @@ export interface PathSwitchOptions {
  * the counts start again, but the failure count is the stream's.
  */
 export class PathSwitch {
-  private readonly listeners = new Set<(path: StreamPath) => void>();
+  private readonly listeners = new Set<(path: RelayPath) => void>();
   private direct: DirectPath | null = null;
   /** Keystroke bytes sent on this socket. */
   private relaySent = 0;
-  private path: 'relay' | 'direct' = 'relay';
+  private path: RelayPath = 'relay';
   private failures = 0;
 
   constructor(private readonly options: PathSwitchOptions) {}
 
-  onPath(listener: (path: StreamPath) => void): () => void {
+  onPath(listener: (path: RelayPath) => void): () => void {
     listener(this.path);
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -142,7 +141,7 @@ export class PathSwitch {
     this.setPath('relay');
   }
 
-  private setPath(next: 'relay' | 'direct'): void {
+  private setPath(next: RelayPath): void {
     if (this.path === next) return;
     this.path = next;
     for (const listener of this.listeners) listener(next);
