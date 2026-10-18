@@ -4,9 +4,10 @@
 # Postgres and Redis: `pnpm monitoring:up`, then http://localhost:9090.
 #
 # The API exports metrics only while METRICS_TOKEN is set, so set it in the
-# root .env (`openssl rand -hex 32`) and restart the API first. Compose reads
-# it from that .env (`--env-file .env` in the scripts) and hands it to
-# Prometheus as a secret file, its Basic-auth password.
+# root .env (`openssl rand -hex 32`) and restart the API first. The scripts
+# hand Compose the root .env and .env.local as the API reads them
+# (scripts/monitoring/compose.mjs); METRICS_TOKEN reaches Prometheus as a
+# secret file, its Basic-auth password, and PORT as the port it scrapes.
 name: oppenheimer-monitoring
 
 secrets:
@@ -21,7 +22,8 @@ services:
     restart: unless-stopped
     # An empty METRICS_TOKEN (the .env.example default) gives no secret file
     # rather than an error, and Prometheus would start with every scrape of
-    # the API failing; refuse to start instead.
+    # the API failing; refuse to start instead. The config names the API's
+    # port as 3001; it is rewritten to PORT when the API listens elsewhere.
     entrypoint:
       - /bin/sh
       - -c
@@ -30,14 +32,19 @@ services:
           echo "METRICS_TOKEN is empty: set it in the root .env (openssl rand -hex 32), restart the API, then pnpm monitoring:up" >&2
           exit 1
         fi
+        sed "s/host.docker.internal:3001/host.docker.internal:$$API_PORT/" \
+          /etc/prometheus/prometheus.yml > /prometheus/prometheus.yml
         exec /bin/prometheus "$$@"
       - prometheus
     command:
-      - --config.file=/etc/prometheus/prometheus.yml
+      - --config.file=/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=7d
-      # POST /-/reload re-reads the config and the rules after an edit.
+      # POST /-/reload re-reads the rules after an edit (a change to
+      # prometheus.yml needs a restart: the entrypoint renders it).
       - --web.enable-lifecycle
+    environment:
+      API_PORT: ${PORT:-3001}
     ports:
       - "127.0.0.1:9090:9090"
     # The API listens on the host, not in this project's network.

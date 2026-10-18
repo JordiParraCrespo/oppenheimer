@@ -20,18 +20,20 @@ Basic auth on `GET /api/v1/metrics`), is
 here, so the rules are evaluated against real series before they reach a
 server:
 
-1. Set `METRICS_TOKEN` in the root `.env` (`openssl rand -hex 32`) and
-   restart the API; without it `/api/v1/metrics` is a 404.
+1. Set `METRICS_TOKEN` in the root `.env` or `.env.local` (`openssl rand
+   -hex 32`) and restart the API; without it `/api/v1/metrics` is a 404.
 2. `pnpm monitoring:up`, then `http://localhost:9090`: Status → Targets shows
    `oppenheimer-api` up, Alerts shows the rules.
-3. After editing a rule, `curl -X POST localhost:9090/-/reload` re-reads it.
+3. After editing a rule, `curl -X POST localhost:9090/-/reload` re-reads it
+   (an edit to `prometheus.yml` needs `pnpm monitoring:down` and `up`).
    `pnpm monitoring:down` stops it; `docker compose -f
    docker/docker-compose.monitoring.yml down -v` also drops the 7 days of
    data it keeps.
 
 Its config is `docker/monitoring/prometheus.yml`, the one definition of the
-API's scrape job: target `host.docker.internal:3001`, the token handed in as
-a compose secret. With `METRICS_TOKEN` empty the container refuses to start
+API's scrape job: target `host.docker.internal:3001` (or the `PORT` the API
+listens on), the token handed in as a compose secret. The scripts read
+`.env` and `.env.local` the way the API does. With `METRICS_TOKEN` empty the container refuses to start
 and says why.
 
 ## Scraping the dev server
