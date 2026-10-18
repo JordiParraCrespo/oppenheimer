@@ -76,8 +76,16 @@ export class ModelProviderCredentialRepository
     if (!organizationId) return false;
     return this.repository.manager.transaction(async (manager) => {
       const rows = manager.getRepository(ModelProviderCredentialOrmEntity);
-      if (!(await rows.exists({ where: { organizationId, provider } }))) return false;
-      // UQ_model_provider_credential_default is checked row by row: the old mark goes first.
+      // Two switches at once would both clear, then collide on
+      // UQ_model_provider_credential_default: the workspace's rows are locked
+      // first, so the second waits and runs on what the first left.
+      const locked = await rows
+        .createQueryBuilder('credential')
+        .setLock('pessimistic_write')
+        .where('credential.organizationId = :organizationId', { organizationId })
+        .getMany();
+      if (!locked.some((row) => row.provider === provider)) return false;
+      // The index is checked row by row: the old mark goes first.
       await rows.update({ organizationId, markedDefault: true }, { markedDefault: false });
       await rows.update({ organizationId, provider }, { markedDefault: true });
       return true;

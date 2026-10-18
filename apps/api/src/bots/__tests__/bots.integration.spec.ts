@@ -499,6 +499,27 @@ describe('bots (integration)', () => {
     expect(after.map((row) => row.provider)).toEqual(['openai']);
   });
 
+  it('lets a switch of default wait out one in flight instead of colliding on the index', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    // A first switch to GLM, held open between its set and its commit.
+    const runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    await runner.query(
+      `UPDATE model_provider_credential SET "markedDefault" = true WHERE "organizationId" = $1 AND provider = 'glm'`,
+      [organizationId],
+    );
+    const second = credentials.setDefault(scope(), 'openai');
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await runner.commitTransaction();
+    await runner.release();
+
+    await expect(second).resolves.toBe(true);
+    const marked = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(marked.map((row) => row.provider)).toEqual(['openai']);
+  });
+
   it('refuses a second default in a workspace', async () => {
     await credentials.put(credential('glm-key-1111'));
     await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
