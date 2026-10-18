@@ -5,6 +5,7 @@ import {
   BOT_PROVIDERS,
   type BotProvider,
   botModelOf,
+  preferredKeyedProvider,
 } from '@oppenheimer/shared/schemas/bot';
 
 /**
@@ -51,7 +52,7 @@ export function botProviderOptions(
 
 /**
  * Where a bot whose provider has no key moves: the first provider, in
- * catalog order, that has one. Undefined when its own has a key, or when
+ * `BOT_PROVIDER_PREFERENCE`, that has one. Undefined when its own has a key, or when
  * none does and there is nowhere to go.
  */
 export function keyedProviderFor(
@@ -59,7 +60,7 @@ export function keyedProviderFor(
   current: BotProvider,
 ): BotProvider | undefined {
   if (configured.includes(current)) return undefined;
-  return BOT_PROVIDERS.find((provider) => configured.includes(provider));
+  return preferredKeyedProvider(configured);
 }
 
 /** The provider a pick in the model button belongs to; undefined for a mark no provider is drawn with. */

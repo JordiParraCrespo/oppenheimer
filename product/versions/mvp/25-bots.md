@@ -71,6 +71,11 @@ worker runs it and streams what happens back to the chat.
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
   | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
 
+  A bot made with no provider named, or left on one with no key, goes to
+  the first provider the workspace has a key or sign-in for, in the order
+  Anthropic, ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`, 2026-10-18;
+  it was the catalog order before, which put GLM ahead of ChatGPT).
+
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that

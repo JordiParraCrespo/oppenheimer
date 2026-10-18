@@ -543,6 +543,11 @@ earlier note:
   dialog has an "Also delete everything on this machine" box, and an
   online host then closes every session, worktrees removed and nothing
   pushed (14, "Remove can also clean the machine up").
+- `versions/mvp/25-bots.md`: a bot with no provider named, or on one with
+  no key, fell back to the first keyed provider in catalog order, so a
+  workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the
+  owner asked for ChatGPT instead: the fallback order is Anthropic,
+  ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`).
 - Note 25 had `ask_bot` give another bot a task and wait for its answer.
   On 2026-10-18 it was built so the answer comes back as a new turn of the
   asker instead: one turn per bot runs at a time and a turn has four
