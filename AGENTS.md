@@ -370,7 +370,7 @@ pnpm check:unused       # Unused files, exports and dependencies in the frontend
 pnpm check:singletons   # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
 # oppenheimer:end web
 pnpm docker:dev         # Start Postgres + Redis
-pnpm monitoring:up      # Prometheus on :9090, scraping the local API (needs METRICS_TOKEN)
+pnpm monitoring:up      # Grafana on :3030, Prometheus on :9090, over the local API (needs METRICS_TOKEN)
 pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)

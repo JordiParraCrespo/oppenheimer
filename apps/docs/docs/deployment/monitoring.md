@@ -94,7 +94,8 @@ Every series also carries `app="api"`.
 (`prometheus/api.rules.yaml`) and a Grafana dashboard (`grafana/api.json`),
 kept in the repository as the source of truth and loaded by whoever runs the
 monitoring stack; its README has the scrape config and how to run Prometheus
-with those rules against a local API (`pnpm monitoring:up`). The rules cover the API
+with those rules, and Grafana with the dashboard, against a local API
+(`pnpm monitoring:up`). The rules cover the API
 being absent or restarting, the 5xx ratio overall and by route, p95 latency,
 clients aborting, event-loop lag and heap, an outbox row left undelivered for
 five minutes, failed outbox rows and queue jobs, and the backlog sampler

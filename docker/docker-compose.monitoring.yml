@@ -1,7 +1,9 @@
 # Prometheus for local development, scraping the API that `pnpm dev` runs on
 # this machine and loading the alert rules the dev server will use
-# (deploy/dev/monitoring/). Its own project, so it starts and stops apart from
-# Postgres and Redis: `pnpm monitoring:up`, then http://localhost:9090.
+# (deploy/dev/monitoring/), and Grafana with the API dashboard provisioned.
+# Its own project, so it starts and stops apart from Postgres and Redis:
+# `pnpm monitoring:up`, then http://localhost:3030 (Grafana) and
+# http://localhost:9090 (Prometheus).
 #
 # The API exports metrics only while METRICS_TOKEN is set, so set it in the
 # root .env (`openssl rand -hex 32`) and restart the API first. The scripts
@@ -56,5 +58,31 @@ services:
       - ../deploy/dev/monitoring/prometheus:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
 
+  # The API dashboard (deploy/dev/monitoring/grafana/) over the Prometheus
+  # above, at http://localhost:3030. Anonymous and an Admin, with no login
+  # form: it is published on loopback only and holds nothing but local data.
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    depends_on: [prometheus]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/api.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      # Grafana otherwise downloads its optional apps at every start.
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    ports:
+      - "127.0.0.1:3030:3000"
+    volumes:
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../deploy/dev/monitoring/grafana:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+
 volumes:
   prometheus_data:
+  grafana_data:
