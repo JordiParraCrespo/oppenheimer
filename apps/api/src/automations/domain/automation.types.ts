@@ -10,10 +10,10 @@ import type {
 
 /**
  * What a run of an automation becomes once its guards let it through
- * (`26-bot-routines.md` §3). Every automation starts a session today; a bot
- * routine is the next kind, each carried out by its own `AutomationRunTarget`.
+ * (`26-bot-routines.md` §3): a session on a host, or a turn of a bot (a
+ * routine), each carried out by its own `AutomationRunTarget`.
  */
-export const AUTOMATION_RUN_TARGET_KINDS = ['session'] as const;
+export const AUTOMATION_RUN_TARGET_KINDS = ['session', 'bot'] as const;
 export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[number];
 
 /**
@@ -22,7 +22,9 @@ export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[numbe
  * stores it in (`26-bot-routines.md` §3); the dispatcher passes it through
  * without reading it, so nothing that dispatches changes.
  */
-export type RunDispatchRef = { kind: 'session'; sessionId: string };
+export type RunDispatchRef =
+  | { kind: 'session'; sessionId: string }
+  | { kind: 'bot_turn'; turnId: string };
 
 /** One repository an automation works in, as the revision snapshots it. */
 export interface AutomationRepository {
@@ -33,20 +35,35 @@ export interface AutomationRepository {
   fullName: string;
 }
 
-/** What a run executes. Immutable once saved: a change is the next revision. */
-export interface AutomationRevisionProps {
+/** What every revision holds. Immutable once saved: a change is the next revision. */
+interface RevisionCommon {
   id: string;
   number: number;
+  prompt: string;
+  createdByUserId: string | null;
+  createdAt: Date;
+}
+
+/**
+ * What a bot routine's run executes: its prompt. The bot's provider, model
+ * and effort are read at the run, as an approval's turn reads them.
+ */
+export interface BotRevisionProps extends RevisionCommon {
+  kind: 'bot';
+}
+
+/** What a session automation's run executes: the prompt and where and how it runs. */
+export interface SessionRevisionProps extends RevisionCommon {
+  kind: 'session';
   hostId: string;
   agent: string;
   model: string | null;
   permission: AutomationPermission;
   effort: string | null;
-  prompt: string;
   repositories: AutomationRepository[];
-  createdByUserId: string | null;
-  createdAt: Date;
 }
+
+export type AutomationRevisionProps = SessionRevisionProps | BotRevisionProps;
 
 /** A schedule trigger's config: the rule without its zone, which is a column. */
 export type ScheduleTriggerConfig = Omit<ScheduleRule, 'timezone'>;

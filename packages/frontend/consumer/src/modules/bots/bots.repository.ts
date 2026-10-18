@@ -5,6 +5,7 @@ import {
   type BotDocumentRevisionResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
+  type BotMessageEventResponseDto,
   type BotMessageResponseDto,
   type BotResponseDto,
   type BotTurnResponseDto,
@@ -16,6 +17,7 @@ import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend
 import type {
   BotApprovalDecision,
   BotDocumentName,
+  BotMessageEvent,
   BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
@@ -129,8 +131,20 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     dto.content,
     steps,
     new Date(dto.createdAt),
-    dto.event ? { ...dto.event } : null,
+    dto.event ? toEvent(dto.event) : null,
   );
+}
+
+/** The response's flat event as the kind it is; a kind missing its fields reads as none. */
+function toEvent(dto: BotMessageEventResponseDto): BotMessageEvent | null {
+  if (dto.kind === 'routine') {
+    return dto.automationId && dto.runId
+      ? { kind: 'routine', automationId: dto.automationId, runId: dto.runId, name: dto.name ?? '' }
+      : null;
+  }
+  return dto.outcome
+    ? { kind: 'approval', outcome: dto.outcome, tool: dto.tool ?? '', summary: dto.summary ?? '' }
+    : null;
 }
 
 function toTurn(dto: BotTurnResponseDto): BotTurnEntity {

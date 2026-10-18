@@ -96,7 +96,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
           FindAutomationQuery,
           AutomationDetail
         >(new FindAutomationQuery({ scope: context.owner, automationId: input.automation_id }));
-        const revision = automation.revision;
+        const revision = automation.sessionRevision;
         const lines = [
           `Automation ${automation.id} "${automation.name}"`,
           `- state: ${describeState(automation)}`,
@@ -202,7 +202,11 @@ function describeState(automation: AutomationEntity): string {
   return `paused (${automation.pausedReason ?? 'user'})`;
 }
 
-function describeTrigger(trigger: AutomationTriggerProps, context: BotToolCallContext): string {
+/** One trigger in words: a schedule with its zone and next slot, or the GitHub event it listens for. */
+export function describeTrigger(
+  trigger: AutomationTriggerProps,
+  context: Pick<BotToolCallContext, 'timeZone'>,
+): string {
   if (trigger.source === 'schedule') {
     const { config } = trigger;
     const at = `${String(config.hour).padStart(2, '0')}:${String(config.minute).padStart(2, '0')}`;

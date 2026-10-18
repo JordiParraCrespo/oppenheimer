@@ -18,7 +18,8 @@ export interface RunReadModel {
   automationId: string;
   automationName: string;
   automationDeleted: boolean;
-  projectId: string;
+  /** Null for a bot routine's run, which belongs to no project. */
+  projectId: string | null;
   status: AutomationRunStatus;
   outcome: AutomationRunOutcome;
   skipReason: AutomationSkipReason | null;

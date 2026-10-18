@@ -80,6 +80,7 @@ export class AutomationRunMapper {
         availableAt: new Date(record.availableAt),
         attempts: record.attempts,
         sessionId: record.sessionId,
+        botTurnId: record.botTurnId,
         requestedByUserId: record.requestedByUserId,
         dispatchedAt: date(record.dispatchedAt),
       },
@@ -111,6 +112,7 @@ export class AutomationRunMapper {
       availableAt: run.availableAt,
       attempts: run.attempts,
       sessionId: run.sessionId,
+      botTurnId: run.botTurnId,
       requestedByUserId: run.requestedByUserId,
       dispatchedAt: run.dispatchedAt,
     };
@@ -126,7 +128,7 @@ export class AutomationRunMapper {
     checkout: RunCheckout,
     prompt: string,
   ): CreateSessionDto {
-    const revision = automation.revision;
+    const revision = automation.sessionRevision;
     if (!isCodingAgentId(revision.agent)) {
       // A refusal the dispatcher records as a skip, not a fault to retry.
       throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
@@ -139,7 +141,7 @@ export class AutomationRunMapper {
     return {
       hostId: revision.hostId,
       agent: revision.agent,
-      projectId: automation.projectId,
+      projectId: automation.sessionProjectId,
       checkouts: [
         {
           installationId: checkout.repository.installationId,
@@ -204,7 +206,7 @@ export class AutomationRunMapper {
       automationId: String(row.automationId),
       automationName: String(row.automationName ?? ''),
       automationDeleted: row.automationDeletedAt !== null && row.automationDeletedAt !== undefined,
-      projectId: String(row.projectId),
+      projectId: optionalText(row.projectId) ?? null,
       status: known<AutomationRunStatus>(AUTOMATION_RUN_STATUSES, row.status, 'status'),
       outcome: known<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, row.outcome, 'outcome'),
       skipReason: row.skipReason
@@ -268,6 +270,8 @@ export class AutomationRunMapper {
     dto.automationId = run.automationId;
     dto.automationName = run.automationName;
     dto.automationDeleted = run.automationDeleted;
+    // The console's run lists hold session automations' runs, which always have one.
+    if (run.projectId === null) throw new Error(`Run ${run.id} is a bot routine's`);
     dto.projectId = run.projectId;
     dto.status = run.status;
     dto.outcome = run.outcome;

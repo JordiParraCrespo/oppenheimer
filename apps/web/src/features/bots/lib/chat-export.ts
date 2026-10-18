@@ -42,8 +42,10 @@ function author(message: BotMessageEntity, botName: string, t: TFunction): strin
 
 function body(message: BotMessageEntity, t: TFunction): string {
   if (message.role === 'activity') return message.steps.map((step) => stepLine(step, t)).join('\n');
-  if (message.role === 'event' && message.event) {
-    return t(`bots.chat.event.${message.event.outcome}`, { summary: message.event.summary });
+  const event = message.role === 'event' ? message.event : null;
+  if (event?.kind === 'routine') return t('bots.chat.event.routine', { name: event.name });
+  if (event) {
+    return t(`bots.chat.event.${event.outcome}`, { summary: event.summary });
   }
   return message.content.trim();
 }

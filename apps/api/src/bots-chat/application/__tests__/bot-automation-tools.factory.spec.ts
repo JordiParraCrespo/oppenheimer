@@ -50,6 +50,9 @@ const automation = {
   pausedReason: null,
   overlap: 'skip',
   maxRunsPerHour: null,
+  get sessionRevision() {
+    return this.revision;
+  },
   revision: {
     number: 3,
     hostId: 'host-1',

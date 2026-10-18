@@ -43,6 +43,7 @@ import { ResumeAutomationCommandHandler } from './commands/resume-automation/res
 import { ResumeAutomationHttpController } from './commands/resume-automation/resume-automation.http.controller';
 import { RunAutomationCommandHandler } from './commands/run-automation/run-automation.command-handler';
 import { RunAutomationHttpController } from './commands/run-automation/run-automation.http.controller';
+import { SaveBotRoutineCommandHandler } from './commands/save-bot-routine/save-bot-routine.command-handler';
 import { UpdateAutomationCommandHandler } from './commands/update-automation/update-automation.command-handler';
 import { UpdateAutomationHttpController } from './commands/update-automation/update-automation.http.controller';
 import { UpdateAutomationSettingsCommandHandler } from './commands/update-automation-settings/update-automation-settings.command-handler';
@@ -70,6 +71,7 @@ import { FindAutomationSettingsHttpController } from './queries/find-automation-
 import { FindAutomationSettingsQueryHandler } from './queries/find-automation-settings/find-automation-settings.query-handler';
 import { FindAutomationsHttpController } from './queries/find-automations/find-automations.http.controller';
 import { FindAutomationsQueryHandler } from './queries/find-automations/find-automations.query-handler';
+import { FindBotRoutinesQueryHandler } from './queries/find-bot-routines/find-bot-routines.query-handler';
 import { FindRunHistoryHttpController } from './queries/find-run-history/find-run-history.http.controller';
 import { FindRunHistoryQueryHandler } from './queries/find-run-history/find-run-history.query-handler';
 import { PreviewTriggerHttpController } from './queries/preview-trigger/preview-trigger.http.controller';
@@ -108,6 +110,7 @@ const commandHandlers: Provider[] = [
   FireDueSchedulesCommandHandler,
   EnforceRunLimitsCommandHandler,
   DispatchAutomationRunCommandHandler,
+  SaveBotRoutineCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -118,6 +121,7 @@ const queryHandlers: Provider[] = [
   FindAutomationRunQueryHandler,
   PreviewTriggerQueryHandler,
   FindAutomationSettingsQueryHandler,
+  FindBotRoutinesQueryHandler,
 ];
 
 /**

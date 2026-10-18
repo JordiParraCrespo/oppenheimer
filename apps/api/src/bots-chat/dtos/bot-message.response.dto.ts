@@ -1,7 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
+  BOT_EVENT_KINDS,
   BOT_EVENT_OUTCOMES,
   BOT_MESSAGE_ROLES,
+  type BotEventKind,
   type BotEventOutcome,
   type BotMessageRole,
 } from '@oppenheimer/shared';
@@ -29,19 +32,54 @@ export class BotToolStepResponseDto {
   isError!: boolean;
 }
 
-/** What an event says happened: an approval decided, how, and the card's line. */
+/**
+ * What an event says happened: an approval decided (how, and the card's
+ * line), or a routine that fired (which, and its run). The fields of the
+ * other kind are null.
+ */
 export class BotMessageEventResponseDto {
-  @ApiProperty({ enum: ['approval'] })
-  kind!: 'approval';
+  @ApiProperty({ enum: BOT_EVENT_KINDS })
+  kind!: BotEventKind;
 
-  @ApiProperty({ enum: BOT_EVENT_OUTCOMES })
-  outcome!: BotEventOutcome;
+  @ApiProperty(nullableEnum(BOT_EVENT_OUTCOMES))
+  outcome!: BotEventOutcome | null;
 
-  @ApiProperty({ description: 'The tool the decided call was for.' })
-  tool!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'An approval: the tool the decided call was for.',
+  })
+  tool!: string | null;
 
-  @ApiProperty({ description: "The card's line: what the call does, in words." })
-  summary!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: "An approval: the card's line, what the call does in words.",
+  })
+  summary!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'A routine: the automation that fired.',
+  })
+  automationId!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'A routine: the run this turn is.',
+  })
+  runId!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'A routine: its name when it fired.',
+  })
+  name!: string | null;
 }
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */

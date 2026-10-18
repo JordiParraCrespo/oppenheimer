@@ -25942,22 +25942,42 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["approval"]
+            "enum": ["approval", "routine"]
           },
           "outcome": {
             "type": "string",
-            "enum": ["approved", "denied", "failed"]
+            "enum": ["approved", "denied", "failed", null],
+            "nullable": true
           },
           "tool": {
             "type": "string",
-            "description": "The tool the decided call was for."
+            "nullable": true,
+            "description": "An approval: the tool the decided call was for."
           },
           "summary": {
             "type": "string",
-            "description": "The card's line: what the call does, in words."
+            "nullable": true,
+            "description": "An approval: the card's line, what the call does in words."
+          },
+          "automationId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A routine: the automation that fired."
+          },
+          "runId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A routine: the run this turn is."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "A routine: its name when it fired."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary"]
+        "required": ["kind", "outcome", "tool", "summary", "automationId", "runId", "name"]
       },
       "BotMessageResponseDto": {
         "type": "object",

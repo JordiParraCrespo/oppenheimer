@@ -106,10 +106,19 @@ export class AutomationRepository
     await this.save(entity, entity.version);
   }
 
-  async findAll(scope: AccessScope, filters: { projectId?: string }): Promise<AutomationEntity[]> {
+  async findAll(
+    scope: AccessScope,
+    filters: { projectId?: string; botId?: string },
+  ): Promise<AutomationEntity[]> {
     const query = this.scopedQuery(scope)
       .andWhere('automation.deletedAt IS NULL')
       .orderBy('automation.createdAt', 'ASC');
+    if (filters.botId) {
+      // IDX_automation_bot.
+      query.andWhere('automation.botId = :botId', { botId: filters.botId });
+    } else {
+      query.andWhere(`automation.runTarget = 'session'`);
+    }
     if (filters.projectId) {
       query.andWhere('automation.projectId = :projectId', { projectId: filters.projectId });
     }

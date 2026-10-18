@@ -155,7 +155,8 @@
     "event": {
       "approved": "Aprobaste: {{summary}}",
       "denied": "Denegaste: {{summary}}",
-      "failed": "Aprobaste y falló: {{summary}}"
+      "failed": "Aprobaste y falló: {{summary}}",
+      "routine": "Rutina · {{name}}"
     }
   },
   "settings": {

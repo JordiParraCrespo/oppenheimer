@@ -3133,16 +3133,28 @@ export type BotToolStepResponseDto = {
 };
 
 export type BotMessageEventResponseDto = {
-    kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    kind: 'approval' | 'routine';
+    outcome: 'approved' | 'denied' | 'failed' | null;
     /**
-     * The tool the decided call was for.
+     * An approval: the tool the decided call was for.
      */
-    tool: string;
+    tool: string | null;
     /**
-     * The card's line: what the call does, in words.
+     * An approval: the card's line, what the call does in words.
      */
-    summary: string;
+    summary: string | null;
+    /**
+     * A routine: the automation that fired.
+     */
+    automationId: string | null;
+    /**
+     * A routine: the run this turn is.
+     */
+    runId: string | null;
+    /**
+     * A routine: its name when it fired.
+     */
+    name: string | null;
 };
 
 export type BotMessageResponseDto = {

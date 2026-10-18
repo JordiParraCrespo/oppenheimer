@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SCOPES, type Scope } from '@oppenheimer/shared';
 import {
   AUTOMATION_OVERLAP_POLICIES,
   AUTOMATION_PAUSED_REASONS,
@@ -20,6 +21,7 @@ import type {
   AutomationRevisionProps,
   AutomationTriggerProps,
   ScheduleTriggerConfig,
+  SessionRevisionProps,
 } from './domain/automation.types';
 import type { WorkspaceLimits } from './domain/automation-limits.policy';
 import type { AutomationRunDigest } from './domain/automation-read.types';
@@ -82,6 +84,13 @@ export class AutomationMapper {
       props: {
         organizationId: record.organizationId,
         projectId: record.projectId,
+        runTarget: record.runTarget === 'bot' ? 'bot' : 'session',
+        botId: record.botId,
+        credentialScopes: Array.isArray(record.credentialScopes)
+          ? record.credentialScopes.filter((scope): scope is Scope =>
+              (SCOPES as readonly string[]).includes(scope),
+            )
+          : null,
         ownerUserId: record.ownerUserId,
         name: record.name,
         revision: this.revisionToDomain(revision),
@@ -110,7 +119,18 @@ export class AutomationMapper {
           };
         })
       : [];
+    if (record.hostId === null || record.agent === null) {
+      return {
+        kind: 'bot',
+        id: record.id,
+        number: record.number,
+        prompt: record.prompt,
+        createdByUserId: record.createdByUserId,
+        createdAt: new Date(record.createdAt),
+      };
+    }
     return {
+      kind: 'session',
       id: record.id,
       number: record.number,
       hostId: record.hostId,
@@ -169,6 +189,9 @@ export class AutomationMapper {
       id: entity.id,
       organizationId: entity.organizationId,
       projectId: entity.projectId,
+      runTarget: entity.runTarget,
+      botId: entity.botId,
+      credentialScopes: entity.credentialScopes ? [...entity.credentialScopes] : null,
       ownerUserId: entity.ownerUserId,
       name: entity.name,
       currentRevisionId: entity.revision.id,
@@ -183,19 +206,33 @@ export class AutomationMapper {
 
   revisionToRecord(entity: AutomationEntity): Omit<AutomationRevisionOrmEntity, 'createdAt'> {
     const revision = entity.revision;
-    return {
+    const common = {
       id: revision.id,
       organizationId: entity.organizationId,
       automationId: entity.id,
       number: revision.number,
+      prompt: revision.prompt,
+      createdByUserId: revision.createdByUserId,
+    };
+    if (revision.kind === 'bot') {
+      return {
+        ...common,
+        hostId: null,
+        agent: null,
+        model: null,
+        permission: 'auto',
+        effort: null,
+        repositories: [],
+      };
+    }
+    return {
+      ...common,
       hostId: revision.hostId,
       agent: revision.agent,
       model: revision.model,
       permission: revision.permission,
       effort: revision.effort,
-      prompt: revision.prompt,
       repositories: revision.repositories,
-      createdByUserId: revision.createdByUserId,
     };
   }
 
@@ -233,7 +270,7 @@ export class AutomationMapper {
     const dto = new AutomationResponseDto();
     dto.id = entity.id;
     dto.organizationId = entity.organizationId;
-    dto.projectId = entity.projectId;
+    dto.projectId = entity.sessionProjectId;
     dto.ownerUserId = entity.ownerUserId;
     dto.ownedByMe = entity.ownerUserId === viewerId;
     dto.name = entity.name;
@@ -241,7 +278,7 @@ export class AutomationMapper {
     dto.pausedAt = entity.pausedAt;
     dto.pausedReason = entity.pausedReason;
     dto.nextRunAt = entity.isPaused ? null : entity.nextRunAt();
-    dto.revision = this.revisionToResponse(entity.revision);
+    dto.revision = this.revisionToResponse(entity.sessionRevision);
     dto.triggers = entity.triggers.map((trigger) => this.triggerToResponse(trigger));
     dto.overlap = entity.overlap;
     dto.maxRunsPerHour = entity.maxRunsPerHour;
@@ -253,7 +290,7 @@ export class AutomationMapper {
     return dto;
   }
 
-  private revisionToResponse(revision: AutomationRevisionProps): AutomationRevisionResponseDto {
+  private revisionToResponse(revision: SessionRevisionProps): AutomationRevisionResponseDto {
     const dto = new AutomationRevisionResponseDto();
     dto.id = revision.id;
     dto.number = revision.number;

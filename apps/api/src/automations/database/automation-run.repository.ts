@@ -54,13 +54,15 @@ const LIVE_WHERE = `(ws."stoppedAt" IS NULL AND (turn."state" IN ${LIVE_TURN}
 /**
  * A run's status, derived once, here (§Q4): the firing's own outcome until it
  * is dispatched, then the session's first turn — and, for a session whose turn
- * has not been folded yet, the session's lifecycle.
+ * has not been folded yet, the session's lifecycle. A bot routine's run is its
+ * bot turn's status, which names the same five states.
  */
 const STATUS_SQL = `
   CASE
     WHEN run."outcome" = 'pending' THEN 'queued'
     WHEN run."outcome" = 'skipped' THEN 'skipped'
     WHEN run."outcome" = 'expired' THEN 'expired'
+    WHEN run."botTurnId" IS NOT NULL THEN bt."status"
     WHEN turn."state" IS NULL THEN
       CASE ws."state" WHEN 'failed' THEN 'failed' WHEN 'resolved' THEN 'completed' ELSE 'running' END
     WHEN turn."state" = 'queued' THEN 'queued'
@@ -93,7 +95,8 @@ const READ_MODEL_SQL = `
   JOIN "automation" a ON a."id" = run."automationId"
   JOIN "automation_revision" rev ON rev."id" = run."revisionId"
   LEFT JOIN "work_session" ws ON ws."id" = run."sessionId"
-  LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1`;
+  LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1
+  LEFT JOIN "bot_turn" bt ON bt."id" = run."botTurnId"`;
 
 /** Insert a firing and, when it is pending, stage its dispatch — inside the caller's transaction. */
 export async function insertRunWithin(
@@ -512,7 +515,11 @@ export class AutomationRunRepository
    * the counts read. The tenant clause and the window sit on the run itself,
    * so the scan starts at the window, not at the workspace's first run.
    */
-  private scopedRuns(scope: AccessScope, filters: Omit<RunFilters, 'statuses'>) {
+  private scopedRuns(
+    scope: AccessScope,
+    filters: Omit<RunFilters, 'statuses'>,
+    of: 'sessions' | 'any' = 'sessions',
+  ) {
     const values: unknown[] = [filters.since];
     const where = [`run."createdAt" >= $1`];
     const tenant = runTenantPredicate(scope, values.length + 1);
@@ -528,6 +535,9 @@ export class AutomationRunRepository
       values.push(filters.projectId);
       where.push(`a."projectId" = $${values.length}`);
     }
+    // The console's run lists are session automations'; a routine's runs are
+    // read through its bot, by id (`digests`).
+    if (of === 'sessions') where.push(`a."runTarget" = 'session'`);
     return { cte: `WITH runs AS (${READ_MODEL_SQL} WHERE ${where.join(' AND ')})`, values };
   }
 
@@ -613,7 +623,7 @@ export class AutomationRunRepository
   ): Promise<Map<string, AutomationRunDigest>> {
     const digests = new Map<string, AutomationRunDigest>();
     if (automationIds.length === 0) return digests;
-    const { cte, values } = this.scopedRuns(scope, { since });
+    const { cte, values } = this.scopedRuns(scope, { since }, 'any');
     const rows: Record<string, unknown>[] = await this.dataSource.query(
       `${cte}
        SELECT * FROM (

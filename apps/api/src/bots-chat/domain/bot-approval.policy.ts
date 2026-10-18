@@ -74,7 +74,7 @@ export function decisionTurn(
   approval: BotApprovalEntity,
   by: string,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
-  const turn = BotTurnEntity.queue(props);
+  const turn = BotTurnEntity.queue({ ...props, origin: 'approval' });
   const opening = BotMessageEntity.createNew({
     organizationId: props.organizationId,
     botId: props.botId,

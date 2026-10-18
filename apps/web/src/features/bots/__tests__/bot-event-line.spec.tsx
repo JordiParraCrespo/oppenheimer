@@ -4,14 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEventLine } from '../components/bot-event-line';
 
 /**
- * A decided approval's trace line. What breaks this: the line read from the
- * event's words (which are the bot's, in English, and may change), so a
- * denial draws as an approval or a translated line never appears.
+ * A decided approval's trace line, and a routine's. What breaks this: the
+ * line read from the event's words (which are the bot's, in English, and may
+ * change), so a denial draws as an approval, a routine as an approval, or a
+ * translated line never appears.
  */
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, values?: { summary?: string }) => `${key}|${values?.summary ?? ''}`,
+    t: (key: string, values?: { summary?: string; name?: string }) =>
+      `${key}|${values?.summary ?? values?.name ?? ''}`,
   }),
 }));
 
@@ -34,5 +36,16 @@ describe('BotEventLine', () => {
   it('draws a failed call apart from one that ran', () => {
     render(<BotEventLine message={event('failed')} />);
     expect(screen.getByText('bots.chat.event.failed|Start it')).toBeTruthy();
+  });
+
+  it('names the routine that woke the bot, not the words it was told', () => {
+    const message = {
+      id: 'e2',
+      role: 'event',
+      content: 'Your routine "Morning PR digest" is running now…',
+      event: { kind: 'routine', automationId: 'a-1', runId: 'r-1', name: 'Morning PR digest' },
+    } as unknown as BotMessageEntity;
+    render(<BotEventLine message={message} />);
+    expect(screen.getByText('bots.chat.event.routine|Morning PR digest')).toBeTruthy();
   });
 });

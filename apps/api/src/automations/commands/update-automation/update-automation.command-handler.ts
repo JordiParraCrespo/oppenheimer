@@ -30,6 +30,8 @@ export class UpdateAutomationCommandHandler
       await this.automations.findOneById(scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
+    // The editor's routes are a session automation's; a bot routine changes through its bot.
+    if (automation.runTarget !== 'session') throw new AppError(AutomationErrors.NOT_FOUND);
     if (automation.version !== input.version) throw new AppError(AutomationErrors.VERSION_CONFLICT);
     const now = new Date();
 

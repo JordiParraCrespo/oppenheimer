@@ -117,7 +117,7 @@ describe('the automation aggregate', () => {
       'user-2',
       now,
     );
-    expect(entity.revision.effort).toBe('ultra');
+    expect(entity.sessionRevision.effort).toBe('ultra');
     // Luna has no `ultra`, and the edit names only the model.
     entity.change({ revision: { model: 'gpt-5.6-luna' } }, 'user-2', now);
     expect(entity.revision).toMatchObject({ model: 'gpt-5.6-luna', effort: null });
@@ -126,7 +126,7 @@ describe('the automation aggregate', () => {
       'user-2',
       now,
     );
-    expect(entity.revision.effort).toBeNull();
+    expect(entity.sessionRevision.effort).toBeNull();
   });
 
   it('refuses a GitHub trigger on a repository the automation does not work in', () => {
@@ -225,6 +225,56 @@ describe('the guards', () => {
         () => ({ kind: 'expire' }),
       ),
     ).toEqual({ kind: 'skip', reason: 'paused' });
+  });
+});
+
+describe('a bot routine', () => {
+  const routine = () =>
+    AutomationEntity.createRoutine({
+      organizationId: 'org-1',
+      ownerUserId: 'user-1',
+      botId: 'bot-1',
+      name: ' Morning PR digest ',
+      prompt: 'List the open pull requests.',
+      triggers: [daily()],
+      active: true,
+      credentialScopes: null,
+      now,
+    });
+
+  it('runs on its bot, with no project and no host: its revision is its prompt', () => {
+    const entity = routine();
+    expect(entity).toMatchObject({
+      runTarget: 'bot',
+      botId: 'bot-1',
+      projectId: null,
+      name: 'Morning PR digest',
+    });
+    expect(entity.revision).toMatchObject({
+      kind: 'bot',
+      number: 1,
+      prompt: 'List the open pull requests.',
+    });
+    expect(entity.nextRunAt()).not.toBeNull();
+    // The paths that read a session's revision never hold a routine.
+    expect(() => entity.sessionRevision).toThrow();
+  });
+
+  it('takes a new prompt as its next revision, and ignores where a session would run', () => {
+    const entity = routine();
+    entity.change(
+      { revision: { prompt: 'List them, oldest first.', hostId: 'host-9' } },
+      'user-2',
+      now,
+    );
+    expect(entity.revision).toMatchObject({
+      kind: 'bot',
+      number: 2,
+      prompt: 'List them, oldest first.',
+    });
+    expect(entity.revision).not.toHaveProperty('hostId');
+    entity.change({ revision: { prompt: 'List them, oldest first.' } }, 'user-2', now);
+    expect(entity.revision.number).toBe(2);
   });
 });
 

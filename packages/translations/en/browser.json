@@ -1050,7 +1050,8 @@
       "event": {
         "approved": "You approved: {{summary}}",
         "denied": "You denied: {{summary}}",
-        "failed": "You approved, and it failed: {{summary}}"
+        "failed": "You approved, and it failed: {{summary}}",
+        "routine": "Routine · {{name}}"
       }
     },
     "settings": {

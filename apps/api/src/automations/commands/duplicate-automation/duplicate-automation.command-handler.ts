@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireFound } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
@@ -29,10 +29,18 @@ export class DuplicateAutomationCommandHandler
       await this.automations.findOneById(scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
-    const { id: _id, number: _number, createdAt: _createdAt, ...revision } = original.revision;
+    // The editor's routes are a session automation's; a bot routine changes through its bot.
+    if (original.runTarget !== 'session') throw new AppError(AutomationErrors.NOT_FOUND);
+    const {
+      id: _id,
+      kind: _kind,
+      number: _number,
+      createdAt: _createdAt,
+      ...revision
+    } = original.sessionRevision;
     const copy = AutomationEntity.createNew({
       organizationId: original.organizationId,
-      projectId: original.projectId,
+      projectId: original.sessionProjectId,
       ownerUserId: scope.userId,
       name: `${original.name} copy`.slice(0, 200),
       revision: { ...revision, createdByUserId: scope.userId },

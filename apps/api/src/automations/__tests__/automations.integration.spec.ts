@@ -485,6 +485,70 @@ describe('automations: firing under the caps, and the runs list (integration)', 
     });
   });
 
+  describe('bot routines', () => {
+    async function insertBot(org = organizationId): Promise<string> {
+      const id = randomUUID();
+      await dataSource.query(
+        `INSERT INTO bot ("id", "organizationId", "name") VALUES ($1, $2, 'Ava')`,
+        [id, org],
+      );
+      return id;
+    }
+
+    it("stores a routine with no project and no host, and reads it back as its bot's", async () => {
+      const botId = await insertBot();
+      const routine = AutomationEntity.createRoutine({
+        organizationId,
+        ownerUserId: userId,
+        botId,
+        name: 'Morning PR digest',
+        prompt: 'List the open pull requests.',
+        triggers: [hourly(5)],
+        active: true,
+        credentialScopes: ['automations:read'],
+        now: new Date(),
+      });
+      await automations.insert(routine);
+
+      const read = (await automations.findOneById(scope(), routine.id)).unwrap();
+      expect(read).toMatchObject({ runTarget: 'bot', botId, projectId: null });
+      expect(read.revision).toMatchObject({ kind: 'bot', prompt: 'List the open pull requests.' });
+      expect(read.credentialScopes).toEqual(['automations:read']);
+      // The console's list is session automations'; the bot's list is its routines.
+      const listed = await automations.findAll(scope(), {});
+      expect(listed.map((automation) => automation.id)).not.toContain(routine.id);
+      const routines = await automations.findAll(scope(), { botId });
+      expect(routines.map((automation) => automation.id)).toEqual([routine.id]);
+    });
+
+    it('refuses a routine without its bot, and a session automation without its project', async () => {
+      await expect(
+        dataSource.query(`UPDATE automation SET "botId" = NULL WHERE "runTarget" = 'bot'`),
+      ).rejects.toThrow(/CHK_automation_bot_target/);
+      await expect(
+        dataSource.query(`UPDATE automation SET "projectId" = NULL WHERE "runTarget" = 'session'`),
+      ).rejects.toThrow(/CHK_automation_session_project/);
+    });
+
+    it('goes with its bot: deleting the bot deletes its routines', async () => {
+      const botId = await insertBot();
+      const routine = AutomationEntity.createRoutine({
+        organizationId,
+        ownerUserId: userId,
+        botId,
+        name: 'Nightly check-in',
+        prompt: 'Check in.',
+        triggers: [hourly(7)],
+        active: true,
+        credentialScopes: null,
+        now: new Date(),
+      });
+      await automations.insert(routine);
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [botId]);
+      expect((await automations.findOneByIdForSystem(routine.id)).isNone()).toBe(true);
+    });
+  });
+
   describe('project archive', () => {
     it("finds only the workspace's automations in that project", async () => {
       const automation = await createAutomation([hourly(0)]);

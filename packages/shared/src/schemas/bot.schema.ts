@@ -317,19 +317,37 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 /**
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
- * and the card's line. The words stay in the message for the bot.
+ * and the card's line; or a routine that fired (`26-bot-routines.md` §4).
+ * The words stay in the message for the bot.
  */
+export const BOT_EVENT_KINDS = ['approval', 'routine'] as const;
+export type BotEventKind = (typeof BOT_EVENT_KINDS)[number];
+
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
 
-export interface BotMessageEvent {
-  kind: 'approval';
-  outcome: BotEventOutcome;
-  /** The approved or denied call's tool. */
-  tool: string;
-  /** The card's line: what the call does, in words. */
-  summary: string;
-}
+export type BotMessageEvent =
+  | {
+      kind: 'approval';
+      outcome: BotEventOutcome;
+      /** The approved or denied call's tool. */
+      tool: string;
+      /** The card's line: what the call does, in words. */
+      summary: string;
+    }
+  | {
+      kind: 'routine';
+      /** The routine (an automation whose run target is the bot) that fired. */
+      automationId: string;
+      /** The run this turn is. */
+      runId: string;
+      /** The routine's name when it fired. */
+      name: string;
+    };
+
+/** Why a bot turn exists: a message of yours, an approval's decision, or a routine's run. */
+export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine'] as const;
+export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
 export const BOT_MESSAGE_MAX = 16_000;

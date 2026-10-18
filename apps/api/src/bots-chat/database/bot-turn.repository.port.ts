@@ -15,6 +15,20 @@ export interface BotTurnRepositoryPort {
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing'>;
 
+  /**
+   * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
+   * (a routine's run): a key already queued answers that turn instead, so a
+   * run dispatched twice queues one turn.
+   */
+  enqueueOnce(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'missing'; turnId: string }>;
+
+  /** Whether a turn of the bot whose source key begins with `prefix` is queued or running. */
+  hasActiveFrom(organizationId: string, botId: string, prefix: string): Promise<boolean>;
+
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;

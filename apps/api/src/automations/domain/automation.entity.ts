@@ -5,6 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import type { Scope } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import type {
   AutomationOverlapPolicy,
@@ -14,12 +15,20 @@ import type {
   AutomationRevisionProps,
   AutomationRunTargetKind,
   AutomationTriggerProps,
+  SessionRevisionProps,
 } from './automation.types';
 import { nextFireOf } from './trigger-config.policy';
 
 export interface AutomationProps {
   organizationId: string;
-  projectId: string;
+  /** Null only for a bot routine, which belongs to no project. */
+  projectId: string | null;
+  /** What its runs start; fixed for the automation's life. */
+  runTarget: AutomationRunTargetKind;
+  /** The bot a routine wakes; set exactly when `runTarget` is `bot`. */
+  botId: string | null;
+  /** The scopes of the credential that saved it; null for a browser session. */
+  credentialScopes: readonly Scope[] | null;
   /** Whose runs these are: every run acts as this person (§Q5). */
   ownerUserId: string;
   name: string;
@@ -35,8 +44,8 @@ export interface AutomationProps {
   version: number;
 }
 
-/** What a run executes, as a caller states it: the next revision's fields. */
-export type RevisionInput = Omit<AutomationRevisionProps, 'id' | 'number' | 'createdAt'>;
+/** What a session automation's run executes, as a caller states it: the next revision's fields. */
+export type RevisionInput = Omit<SessionRevisionProps, 'id' | 'number' | 'createdAt' | 'kind'>;
 
 export interface CreateAutomationProps {
   organizationId: string;
@@ -48,6 +57,19 @@ export interface CreateAutomationProps {
   active: boolean;
   overlap?: AutomationOverlapPolicy | null;
   maxRunsPerHour?: number | null;
+  now: Date;
+}
+
+/** A bot routine as its bot saves it (`26-bot-routines.md` §4): a prompt and when. */
+export interface CreateRoutineProps {
+  organizationId: string;
+  ownerUserId: string;
+  botId: string;
+  name: string;
+  prompt: string;
+  triggers: AutomationTriggerProps[];
+  active: boolean;
+  credentialScopes: readonly Scope[] | null;
   now: Date;
 }
 
@@ -97,10 +119,14 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       props: {
         organizationId: props.organizationId,
         projectId: props.projectId,
+        runTarget: 'session',
+        botId: null,
+        credentialScopes: null,
         ownerUserId: props.ownerUserId,
         name: props.name.trim(),
         revision: {
           ...props.revision,
+          kind: 'session',
           effort: effortLevelFor(props.revision.agent, props.revision.model, props.revision.effort),
           id: randomUUID(),
           number: 1,
@@ -121,11 +147,52 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     return entity;
   }
 
+  /** A routine its bot saved (`26-bot-routines.md` §3): no project, no host. */
+  static createRoutine(props: CreateRoutineProps): AutomationEntity {
+    const entity = new AutomationEntity({
+      id: randomUUID(),
+      props: {
+        organizationId: props.organizationId,
+        projectId: null,
+        runTarget: 'bot',
+        botId: props.botId,
+        credentialScopes: props.credentialScopes,
+        ownerUserId: props.ownerUserId,
+        name: props.name.trim(),
+        revision: {
+          kind: 'bot',
+          prompt: props.prompt,
+          id: randomUUID(),
+          number: 1,
+          createdByUserId: props.ownerUserId,
+          createdAt: props.now,
+        },
+        triggers: props.triggers,
+        pausedAt: props.active ? null : props.now,
+        pausedReason: props.active ? null : 'user',
+        deletedAt: null,
+        overlap: null,
+        maxRunsPerHour: null,
+        version: 1,
+      },
+    });
+    entity.revised = true;
+    entity.schedule(props.now);
+    entity.validate();
+    return entity;
+  }
+
   get organizationId(): string {
     return this.props.organizationId;
   }
-  get projectId(): string {
+  get projectId(): string | null {
     return this.props.projectId;
+  }
+  get botId(): string | null {
+    return this.props.botId;
+  }
+  get credentialScopes(): readonly Scope[] | null {
+    return this.props.credentialScopes;
   }
   get ownerUserId(): string {
     return this.props.ownerUserId;
@@ -136,9 +203,27 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
   get revision(): AutomationRevisionProps {
     return this.props.revision;
   }
-  /** What its runs start; a session until bot routines add a column for it (`26-bot-routines.md` §3). */
   get runTarget(): AutomationRunTargetKind {
-    return 'session';
+    return this.props.runTarget;
+  }
+  /**
+   * The revision of a session automation. The paths that read it (the editor,
+   * the console's listings, the session target) only ever hold one, so a bot
+   * routine here is a bug, not a refusal.
+   */
+  get sessionRevision(): SessionRevisionProps {
+    const revision = this.props.revision;
+    if (revision.kind !== 'session') {
+      throw new ArgumentInvalidException(`Automation ${this.id} is a bot routine, not a session's`);
+    }
+    return revision;
+  }
+  /** The project of a session automation, which always has one. */
+  get sessionProjectId(): string {
+    if (this.props.projectId === null) {
+      throw new ArgumentInvalidException(`Automation ${this.id} belongs to no project`);
+    }
+    return this.props.projectId;
   }
   get triggers(): readonly AutomationTriggerProps[] {
     return this.props.triggers;
@@ -183,18 +268,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (changes.overlap !== undefined) this.props.overlap = changes.overlap;
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
     if (changes.revision && this.revisionDiffers(changes.revision)) {
-      const current = this.props.revision;
-      // The effort is judged on the whole next revision, since an edit can
-      // change the agent or the model without touching it (`effortLevelFor`).
-      const next = { ...current, ...changes.revision };
-      this.props.revision = {
-        ...next,
-        effort: effortLevelFor(next.agent, next.model, next.effort),
-        id: randomUUID(),
-        number: current.number + 1,
-        createdByUserId: by,
-        createdAt: now,
-      };
+      this.props.revision = this.nextRevision(changes.revision, by, now);
       this.revised = true;
     }
     if (changes.triggers !== undefined) {
@@ -251,8 +325,33 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     );
   }
 
+  private nextRevision(
+    changes: Partial<RevisionInput>,
+    by: string,
+    now: Date,
+  ): AutomationRevisionProps {
+    const current = this.props.revision;
+    const numbered = {
+      id: randomUUID(),
+      number: current.number + 1,
+      createdByUserId: by,
+      createdAt: now,
+    };
+    if (current.kind === 'bot') {
+      // A routine's revision is its prompt; where and how it runs is its bot's.
+      return { kind: 'bot', prompt: changes.prompt ?? current.prompt, ...numbered };
+    }
+    // The effort is judged on the whole next revision, since an edit can
+    // change the agent or the model without touching it (`effortLevelFor`).
+    const next = { ...current, ...changes };
+    return { ...next, effort: effortLevelFor(next.agent, next.model, next.effort), ...numbered };
+  }
+
   private revisionDiffers(next: Partial<RevisionInput>): boolean {
     const current = this.props.revision;
+    if (current.kind === 'bot') {
+      return next.prompt !== undefined && next.prompt !== current.prompt;
+    }
     for (const field of REVISION_FIELDS) {
       if (next[field] !== undefined && next[field] !== current[field]) return true;
     }
@@ -287,14 +386,25 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (!this.props.revision.prompt?.trim()) {
       throw new ArgumentNotProvidedException('An automation needs instructions');
     }
-    if (this.props.revision.repositories.length === 0) {
-      throw new ArgumentInvalidException('An automation works in at least one repository');
-    }
     if (!this.isDeleted && this.props.triggers.length === 0) {
       throw new ArgumentInvalidException('Any trigger starts a run, and there is none');
     }
+    const revision = this.props.revision;
+    if ((this.props.runTarget === 'bot') !== (revision.kind === 'bot')) {
+      throw new ArgumentInvalidException('A revision is of the kind its automation runs');
+    }
+    if (revision.kind === 'bot') {
+      if (!this.props.botId) throw new ArgumentNotProvidedException('A routine belongs to a bot');
+      return;
+    }
+    if (!this.props.projectId) {
+      throw new ArgumentNotProvidedException('A session automation belongs to a project');
+    }
+    if (revision.repositories.length === 0) {
+      throw new ArgumentInvalidException('An automation works in at least one repository');
+    }
     const repositories = new Set(
-      this.props.revision.repositories.map((repository) => repository.githubRepoId),
+      revision.repositories.map((repository) => repository.githubRepoId),
     );
     for (const trigger of this.props.triggers) {
       if (trigger.source === 'schedule') continue;
