@@ -340,7 +340,7 @@ export class WorkSessionRepository
       "the link reconciles a host's hello against what this host should hold; the host proved who it is with a signature and there is no person on the frame",
     )
       .where('session.hostId = :hostId', { hostId })
-      .andWhere('session.state IN (:...states)', { states: ['starting', 'open'] })
+      .andWhere('session.state IN (:...states)', { states: ['starting', 'open', 'failed'] })
       .orderBy('session.createdAt', 'ASC')
       .getMany();
     if (records.length === 0) return [];
@@ -586,6 +586,8 @@ export class WorkSessionRepository
                 "reportHash" = $12, "ackedReportHash" = $13,
                 "launchModel" = $14, "launchPermission" = $15, "launchEffort" = $16,
                 "projectId" = $17,
+                "closeRequestedAt" = $18, "closeAcceptsUnpushedWork" = $19,
+                "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -606,6 +608,10 @@ export class WorkSessionRepository
           record.launchPermission,
           record.launchEffort,
           record.projectId,
+          record.closeRequestedAt,
+          record.closeAcceptsUnpushedWork,
+          record.closeRefusalCode,
+          record.closeRefusalDetail,
         ],
       );
       await this.writeTurns(manager, session);

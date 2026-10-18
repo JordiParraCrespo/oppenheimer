@@ -57,10 +57,15 @@ export const sessionsKeys = {
  *
  * A close is answered by the host, not by the request, so the row stays `open`
  * for a beat after Delete. The list leaves a watched row out from the click
- * (the reader asked for it gone, and the host refuses rarely) and polls on
- * `LIVE_POLL.sessionStarting` until the host resolves it. An id leaves when its
- * row resolves, or after {@link CLOSE_WATCH_MS}: then the list is read again,
- * so a close the host refused brings its row back rather than hiding it for good.
+ * (the reader asked for it gone, and an online host answers in seconds) and
+ * polls on `LIVE_POLL.sessionStarting` until the host resolves it.
+ *
+ * The watch ends early when there is nothing to wait for: the API answers that
+ * the host is offline, or a read shows the host refused the close. It ends
+ * anyway after {@link CLOSE_WATCH_MS}. A row that comes back is never back as
+ * it was: the API folds the close it still owes its host (`closeRequest`,
+ * drawn as "Deleting…" and sent again when the host reconnects) and the host's
+ * refusal (`closeRefusal`), so the reader sees why it is still there.
  */
 const closeWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();
 
@@ -183,7 +188,10 @@ export function useSessionListQuery() {
       const unresolved = sessions.filter((session) => !session.isResolved);
       const closing = closesOf(queryClient);
       for (const id of closing.keys()) {
-        if (!unresolved.some((session) => session.id === id)) unwatchClose(queryClient, id);
+        const row = unresolved.find((session) => session.id === id);
+        // Resolved, or refused by its host: either way the host has answered,
+        // and a refused row comes back saying so.
+        if (!row || row.closeRefusal) unwatchClose(queryClient, id);
       }
       return unresolved.filter((session) => !closing.has(session.id));
     },
@@ -476,9 +484,11 @@ export function useRestartSession(options?: UseMutationOptions<SessionEntity, Er
  * is done with it. The watch ({@link closesOf}) is the one owner of that — the
  * list leaves a watched row out of every read until its host resolves it.
  *
- * Ending the watch is what brings a row back: the close is refused (by the
- * API, or because its host was offline and never got it), or the watch runs
- * out with the row still open because the host refused (unpushed work).
+ * Ending the watch is what brings a row back: the API refuses the close, the
+ * API answers that the host is offline (the row is back at once, deleting until
+ * the host reconnects and is sent the close again), the host refuses it
+ * (unpushed work: the row is back with the refusal, to delete again accepting
+ * the loss), or the watch runs out with the row still deleting.
  */
 export function useCloseSession(
   options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
@@ -487,11 +497,21 @@ export function useCloseSession(
   const queryClient = useQueryClient();
 
   return useMutation({
-    ...options,
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      // Nobody will answer within the watch: show the row deleting now.
+      if (session.isHostOffline) {
+        unwatchClose(queryClient, session.id);
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      }
+    }),
     mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
       app.sessions.close(id, acceptUnpushedWork),
-    onMutate: ({ id }) => {
+    onMutate: async ({ id }) => {
       watchClose(queryClient, id);
+      // A read already in flight answers from before the close was recorded,
+      // and could end the watch on the last refusal this close replaces.
+      await queryClient.cancelQueries({ queryKey: sessionsKeys.lists() });
       queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
         rows?.filter((row) => row.id !== id),
       );

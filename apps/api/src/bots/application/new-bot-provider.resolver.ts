@@ -6,15 +6,16 @@ import type { ModelProviderCredentialRepositoryPort } from '../database/model-pr
 import { providerForNewBot } from '../domain/bot-creation.policy';
 
 /**
- * The provider a new bot starts on: the one named, else one the workspace
- * has a key for (`providerForNewBot`). A model named without a provider
- * keeps Anthropic, the provider the default has always been for it.
+ * The provider a new bot starts on: the one named, else the workspace's
+ * default (`defaultBotProvider`: the provider it marked, else one it has a
+ * key for). A model named without a provider keeps Anthropic, the provider
+ * the default has always been for it.
  */
 @Injectable()
 export class NewBotProviderResolver {
   constructor(
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
-    private readonly credentials: Pick<ModelProviderCredentialRepositoryPort, 'findAll'>,
+    private readonly credentials: Pick<ModelProviderCredentialRepositoryPort, 'defaultProvider'>,
   ) {}
 
   async providerFor(
@@ -24,7 +25,6 @@ export class NewBotProviderResolver {
   ): Promise<BotProvider> {
     if (named) return named;
     if (model) return providerForNewBot([]);
-    const keyed = await this.credentials.findAll(scope);
-    return providerForNewBot(keyed.map((credential) => credential.provider));
+    return this.credentials.defaultProvider(scope);
   }
 }

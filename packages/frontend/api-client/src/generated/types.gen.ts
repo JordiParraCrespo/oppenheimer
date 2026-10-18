@@ -1444,6 +1444,28 @@ export type SessionCheckoutResponseDto = {
     branch: string;
 };
 
+export type SessionCloseRequestResponseDto = {
+    /**
+     * When the close was asked for.
+     */
+    requestedAt: string;
+    /**
+     * Whether the close may remove a worktree with unpushed work.
+     */
+    acceptUnpushedWork: boolean;
+};
+
+export type SessionCloseRefusalResponseDto = {
+    /**
+     * The runner’s catalog code, e.g. `GIT_003` for a branch that could not be pushed.
+     */
+    code: string;
+    /**
+     * Git’s or the runner’s own words, verbatim.
+     */
+    detail?: string | null;
+};
+
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
@@ -1496,6 +1518,14 @@ export type SessionResponseDto = {
      * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
      */
     hints: Array<string>;
+    /**
+     * A close owed to the host and not yet answered. Null when none is.
+     */
+    closeRequest?: SessionCloseRequestResponseDto | null;
+    /**
+     * Why the host refused the last close. Null when it did not, or it was asked again.
+     */
+    closeRefusal?: SessionCloseRefusalResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -3076,6 +3106,10 @@ export type ModelProviderCredentialResponseDto = {
      */
     keyHint: string | null;
     updatedAt: string | null;
+    /**
+     * Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is.
+     */
+    isDefault: boolean;
 };
 
 export type PutModelProviderCredentialRequest = {
@@ -11304,6 +11338,46 @@ export type PutModelProviderCredentialResponses = {
 };
 
 export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
+
+export type SetDefaultModelProviderData = {
+    body?: never;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}/default';
+};
+
+export type SetDefaultModelProviderErrors = {
+    /**
+     * BOTS_002 — Bots belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_023 — That model provider has no key
+     */
+    409: ProblemDetailsDto;
+};
+
+export type SetDefaultModelProviderError = SetDefaultModelProviderErrors[keyof SetDefaultModelProviderErrors];
+
+export type SetDefaultModelProviderResponses = {
+    204: void;
+};
+
+export type SetDefaultModelProviderResponse = SetDefaultModelProviderResponses[keyof SetDefaultModelProviderResponses];
 
 export type StartChatgptLoginData = {
     body?: never;

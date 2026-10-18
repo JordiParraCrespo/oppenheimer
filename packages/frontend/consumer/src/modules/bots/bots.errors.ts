@@ -42,4 +42,8 @@ export const BotsErrors = {
   },
   EXPORT_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_026', message: 'Failed to export the chat' },
   CLEAR_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_027', message: 'Failed to clear the chat' },
+  SET_DEFAULT_PROVIDER_FAILED: {
+    code: 'BOTS_CLIENT_028',
+    message: 'Failed to change the default provider',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

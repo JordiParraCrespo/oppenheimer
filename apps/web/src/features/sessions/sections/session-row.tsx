@@ -19,7 +19,9 @@ import { projectsForMove } from '../lib/session-groups';
  * because it is organised by what needs you, not what a process is doing
  * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
  * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
- * that is the **lifecycle**, and {@link dotFor} combines the two.
+ * that is the **lifecycle**, and {@link dotFor} combines the two. A delete its
+ * host has not carried out pulses the same way, and one its host refused is
+ * red: both say so in the row's status word, since the row is not what it was.
  */
 const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
   working: 'running',
@@ -31,7 +33,8 @@ const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'com
 };
 
 function dotFor(session: SessionEntity) {
-  return session.isProvisioning ? 'pending' : DOT[session.state];
+  if (session.closeRefusal) return 'failed';
+  return session.isProvisioning || session.isClosing ? 'pending' : DOT[session.state];
 }
 
 /**
@@ -99,6 +102,17 @@ export function SessionRow({
   });
   const age = compactAge(session.createdAt, now);
   const glyph = sessionGlyph(session);
+  // A deleted row back in the list is never back as it was (`useCloseSession`).
+  const status = session.closeRefusal
+    ? t('sessions.sidebar.notDeleted')
+    : session.isClosing
+      ? t('sessions.sidebar.deleting')
+      : undefined;
+  const statusHint = session.closeRefusal
+    ? t('sessions.sidebar.notDeletedHint')
+    : session.isClosing
+      ? t('sessions.sidebar.deletingHint')
+      : undefined;
 
   function commitRename() {
     const name = draft?.trim();
@@ -123,6 +137,8 @@ export function SessionRow({
       disabled={dragDisabled}
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
+      status={status}
+      title={statusHint}
       state={dotFor(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'terminal' ? <SquareTerminal /> : glyph === 'folder' ? <Folder /> : undefined}
