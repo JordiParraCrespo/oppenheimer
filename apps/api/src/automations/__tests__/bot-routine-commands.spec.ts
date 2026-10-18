@@ -1,13 +1,13 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { Some } from 'oxide.ts';
-import type { AutomationRepositoryPort } from '../database/automation.repository.port';
-import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
-import { AutomationEntity } from '../domain/automation.entity';
-import { triggerFromInput } from '../domain/trigger-config.policy';
 import { DeleteAutomationCommand } from '../commands/delete-automation/delete-automation.command';
 import { DeleteAutomationCommandHandler } from '../commands/delete-automation/delete-automation.command-handler';
 import { RunAutomationCommand } from '../commands/run-automation/run-automation.command';
 import { RunAutomationCommandHandler } from '../commands/run-automation/run-automation.command-handler';
+import type { AutomationRepositoryPort } from '../database/automation.repository.port';
+import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
+import { AutomationEntity } from '../domain/automation.entity';
+import { triggerFromInput } from '../domain/trigger-config.policy';
 
 /**
  * Run now and Delete from a bot's Routines tab (`26-bot-routines.md` §7) name
