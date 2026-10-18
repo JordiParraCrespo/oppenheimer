@@ -766,7 +766,7 @@ func (s *Service) holdLaunch(ctx context.Context, agent domain.Agent) (release f
 // trustFolder marks the folder a launch starts in as trusted when the launch
 // is one nobody is expected to watch, so the agent starts working instead of
 // waiting on a question in an empty terminal. A failure only leaves the
-// question on the screen.
+// question on the screen; the adapter logs it.
 func (s *Service) trustFolder(agent domain.Agent, launch domain.Launch, dir string) {
 	if s.trust == nil || !launch.TrustsFolder() {
 		return

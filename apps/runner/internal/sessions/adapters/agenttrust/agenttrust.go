@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -20,26 +21,49 @@ type Store struct {
 	// claudeConfig is Claude Code's global state, `~/.claude.json`, or
 	// `$CLAUDE_CONFIG_DIR/.claude.json` when that is set.
 	claudeConfig string
+	logger       *slog.Logger
 	mu           sync.Mutex
 }
 
 // Options names the files the store edits.
 type Options struct {
 	ClaudeConfig string
+	// Logger reports a mark that failed, which the session service drops
+	// (app.Trust is best-effort); nil is the process's default logger.
+	Logger *slog.Logger
 }
 
 // New builds the store.
-func New(opts Options) *Store { return &Store{claudeConfig: opts.ClaudeConfig} }
+func New(opts Options) *Store {
+	logger := opts.Logger
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Store{claudeConfig: opts.ClaudeConfig, logger: logger}
+}
 
 // Trust records dir as accepted. Claude Code keeps the answer per folder, as
 // `projects[<dir>].hasTrustDialogAccepted`; every other key in the file, and
 // in that folder's entry, is Claude Code's and is written back untouched. The
 // write is a temporary file renamed over the old one, so a CLI starting at the
 // same moment reads the old file or the new one, never half of either.
+//
+// The file is written back as Claude Code writes it, two-space JSON; Go
+// orders its keys, which Claude Code neither reads nor keeps, since it
+// rewrites the whole file itself on every save.
 func (s *Store) Trust(agent domain.Agent, dir string) error {
 	if agent != domain.AgentClaude || s.claudeConfig == "" {
 		return nil
 	}
+	if err := s.trustClaude(dir); err != nil {
+		s.logger.Warn("could not mark the session folder trusted; Claude Code will ask",
+			slog.String("dir", dir), slog.Any("error", err))
+		return err
+	}
+	return nil
+}
+
+func (s *Store) trustClaude(dir string) error {
 	if real, err := filepath.EvalSymlinks(dir); err == nil {
 		dir = real
 	}
@@ -72,7 +96,8 @@ func (s *Store) Trust(agent domain.Agent, dir string) error {
 	if project == nil {
 		project = map[string]json.RawMessage{}
 	}
-	if string(project["hasTrustDialogAccepted"]) == "true" {
+	var accepted bool
+	if json.Unmarshal(project["hasTrustDialogAccepted"], &accepted) == nil && accepted {
 		return nil
 	}
 	project["hasTrustDialogAccepted"] = json.RawMessage("true")

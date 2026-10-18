@@ -81,3 +81,23 @@ func TestTrustLeavesOtherAgentsAlone(t *testing.T) {
 		t.Fatalf("wrote Claude's file for Codex: %v", err)
 	}
 }
+
+// A folder already trusted is left as it is: the file is Claude Code's, and
+// rewriting it on every launch only widens the window a concurrent save can
+// race.
+func TestTrustLeavesAFolderAlreadyTrustedUntouched(t *testing.T) {
+	config := filepath.Join(t.TempDir(), ".claude.json")
+	work := t.TempDir()
+	before := `{"projects":{"` + work + `":{"hasTrustDialogAccepted": true}}, "zeta": 1, "alpha": 2}`
+	if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
+		t.Fatal(err)
+	}
+
+	if after, _ := os.ReadFile(config); string(after) != before {
+		t.Fatalf("rewrote a trusted folder's file:\n%s", after)
+	}
+}

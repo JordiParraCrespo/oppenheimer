@@ -528,10 +528,3 @@ earlier note:
   failure, and points at Settings → Hosts → Remove or
   `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
   origins and the commands that move it (09 §4).
-- Note 25 said nothing about the level a bot's session launches at, so
-  `start_session` sent none and the API's default (`ask`) started Claude
-  Code at `--permission-mode manual` in a terminal nobody watches, where
-  it also stopped on Claude Code's "do you trust this folder?" question.
-  On 2026-10-18 the owner made every session a bot starts run at `auto`,
-  and had the runner mark the folder trusted for any launch at `auto` or
-  `full` before starting Claude Code (25 §4.2, 02-runner §5).
