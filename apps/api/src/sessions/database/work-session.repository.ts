@@ -340,7 +340,7 @@ export class WorkSessionRepository
       "the link reconciles a host's hello against what this host should hold; the host proved who it is with a signature and there is no person on the frame",
     )
       .where('session.hostId = :hostId', { hostId })
-      .andWhere('session.state IN (:...states)', { states: ['starting', 'open'] })
+      .andWhere('session.state IN (:...states)', { states: ['starting', 'open', 'failed'] })
       .orderBy('session.createdAt', 'ASC')
       .getMany();
     if (records.length === 0) return [];

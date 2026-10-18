@@ -23,7 +23,8 @@ import type {
  * again, with the `acceptUnpushedWork` it was asked with, whether or not the host holds
  * it: a close lost with the link is otherwise never sent, and the runner answers
  * `session.closed` even for a session it no longer knows. An owed close replaces an
- * owed launch: a session is never built only to be closed.
+ * owed launch: a session is never built only to be closed. A `failed` session is read
+ * for that alone: a person may delete one, and nothing else here concerns it.
  * What the host holds that the rows do not know is logged and left alone: ending
  * someone's work is not a side effect of a hello.
  *
@@ -58,7 +59,11 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
           if (!session.closeRequest && (await this.launchAgain(row))) {
             outcome.redispatched.push(session.id);
           }
-        } else if (session.stoppedAt === null && (await this.recordStopped(session, runId))) {
+        } else if (
+          session.state === 'open' &&
+          session.stoppedAt === null &&
+          (await this.recordStopped(session, runId))
+        ) {
           outcome.stopped.push(session.id);
         }
       }

@@ -424,9 +424,10 @@ recorded `session.stopped` with `source: api`, keyed by the runner's
 `runId` so a replayed hello writes it once; a session with a close still owed
 is sent `session.close` again with the `acceptUnpushedWork` it was asked with,
 whether or not the runner holds it (the runner answers `session.closed` even for
-a session it has no record of), and a `starting` one with a close owed is closed,
-never built first; anything the runner holds that the rows do not know is logged
-and left alone.
+a session it has no record of) — a `failed` one included, since a person may
+delete it — and a `starting` one with a close owed is closed, never built
+first; anything the runner holds that the rows do not know is logged and left
+alone.
 
 **The attach socket.** The ticket in the subprotocol is redeemed with a
 `GETDEL` (single use), and what it authorised is re-checked at redemption:

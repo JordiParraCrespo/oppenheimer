@@ -150,6 +150,26 @@ describe('SessionReconciliationResolver', () => {
     expect(h.dispatch.close).toHaveBeenCalledWith(owed, { acceptUnpushedWork: false });
   });
 
+  it('sends a failed session its owed close, and records nothing else about it', async () => {
+    // A person may delete a failed session; its close is lost with the link
+    // like any other, so the hello reads failed rows too.
+    const failed = session('open');
+    failed.recordEvent({ seq: 3, kind: 'session.failed', payload: {}, occurredAt: new Date() });
+    failed.recordEvent({
+      seq: 4,
+      kind: 'session.close_requested',
+      payload: { acceptUnpushedWork: false },
+      occurredAt: new Date(),
+    });
+    const h = harness([{ session: failed }]);
+
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
+
+    expect(outcome).toEqual({ redispatched: [], stopped: [], reclosed: [failed.id] });
+    expect(h.sessions.appendEvents).not.toHaveBeenCalled();
+    expect(h.dispatch.create).not.toHaveBeenCalled();
+  });
+
   it('sends nothing for a close the host refused or a restart superseded', async () => {
     const refused = deleting('open', false);
     refused.recordEvent({
