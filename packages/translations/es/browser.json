@@ -172,6 +172,7 @@
       "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+      "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",

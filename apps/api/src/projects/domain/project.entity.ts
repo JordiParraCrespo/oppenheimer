@@ -18,6 +18,15 @@ export const UNASSIGNED_PROJECT_NAME = 'Unassigned';
 /** The slug the Unassigned project takes when no project of the workspace holds it. */
 export const UNASSIGNED_PROJECT_SLUG = 'unassigned';
 
+/**
+ * Whether `name` would read as the Unassigned project's, whatever its case or
+ * spacing. Only the workspace's own Unassigned project carries it: a second one
+ * shows in the sidebar as a second Unassigned group nobody can tell apart.
+ */
+export function isReservedProjectName(name: string): boolean {
+  return name.trim().toLowerCase() === UNASSIGNED_PROJECT_NAME.toLowerCase();
+}
+
 export interface ProjectProps {
   /** Tenant the project belongs to. Immutable — a project never moves workspace. */
   organizationId: string;
@@ -90,6 +99,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   }
 
   static createNew(props: CreateProjectProps): ProjectEntity {
+    assertNameFree(props.name);
     assertHoldable(props.repositories);
     return new ProjectEntity({
       id: props.id ?? randomUUID(),
@@ -158,6 +168,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   configure(settings: ProjectSettings): void {
     if (settings.name !== undefined && settings.name !== this.props.name) {
       this.assertNotUnassigned('renamed');
+      assertNameFree(settings.name);
     }
     if (settings.repositories !== undefined) {
       assertHoldable(settings.repositories);
@@ -192,7 +203,10 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   /** Display only: the slug stays as it is. */
   rename(name: string): void {
-    if (name !== this.props.name) this.assertNotUnassigned('renamed');
+    if (name !== this.props.name) {
+      this.assertNotUnassigned('renamed');
+      assertNameFree(name);
+    }
     this.props.name = name;
     this.setUpdatedAt(new Date());
     this.validate();
@@ -228,6 +242,20 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (this.props.isUnassigned) {
       throw new ArgumentInvalidException(`The Unassigned project cannot be ${change}`);
     }
+  }
+}
+
+/**
+ * Refuse the Unassigned project's name for any other project. Checked when a
+ * name is given, not in `validate`, so a project named so before the rule
+ * still loads and can be renamed. The handlers ask first and answer with
+ * `PROJECTS_009`.
+ */
+function assertNameFree(name: string): void {
+  if (isReservedProjectName(name)) {
+    throw new ArgumentInvalidException(
+      `“${UNASSIGNED_PROJECT_NAME}” is the Unassigned project's name`,
+    );
   }
 }
 

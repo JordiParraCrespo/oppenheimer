@@ -135,6 +135,37 @@ describe('a project’s repositories and defaults', () => {
     expect(project.defaultAgent).toBe('codex');
   });
 
+  it('refuses the Unassigned project’s name, in any case, to any other project', () => {
+    for (const name of ['Unassigned', 'unassigned ', ' UNASSIGNED']) {
+      expect(() => ProjectEntity.createNew({ ...VALID, name })).toThrow(ArgumentInvalidException);
+      expect(() => ProjectEntity.createNew(VALID).rename(name)).toThrow(ArgumentInvalidException);
+      expect(() => ProjectEntity.createNew(VALID).configure({ name })).toThrow(
+        ArgumentInvalidException,
+      );
+    }
+  });
+
+  it('still loads a project named so before the rule, and lets it be renamed', () => {
+    const project = ProjectEntity.create({
+      id: 'project-lookalike',
+      props: {
+        organizationId: 'org-1',
+        name: 'Unassigned',
+        slug: 'unassigned-0986fac9',
+        archivedAt: null,
+        createdByUserId: null,
+        repositories: [],
+        defaultHostId: null,
+        defaultAgent: null,
+        isUnassigned: false,
+      },
+    });
+
+    expect(() => project.configure({ name: 'Unassigned', defaultAgent: 'codex' })).not.toThrow();
+    project.rename('Scratch');
+    expect(project.name).toBe('Scratch');
+  });
+
   describe('the Unassigned project', () => {
     const unassigned = () =>
       ProjectEntity.create({

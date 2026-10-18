@@ -427,6 +427,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
+| `PROJECTS_009` <a id="projects_009" /> | That name belongs to the Unassigned project | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -448,6 +449,10 @@ of its own id. It is reported rather than retried.
 `PROJECTS_008` protects the one project every workspace has for sessions that name
 none. Its repositories and defaults can be edited like any project's; its name and
 its place cannot.
+
+`PROJECTS_009` keeps that project's name its own: another project named
+"Unassigned", in any case, would list as a second Unassigned group. A project
+named so before the rule keeps loading and can be renamed to anything else.
 
 `PROJECTS_004` is no longer raised. It answered a session's first repository whose
 auto-created project was archived; projects are no longer created from repositories,
