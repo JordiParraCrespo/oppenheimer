@@ -41,6 +41,12 @@ const (
 	ExitIncomplete = 7
 )
 
+// exitByCode is the outcomes whose exit code is not their status's: a
+// partial result that a status alone would read as something else.
+var exitByCode = map[string]int{
+	pairdomain.ErrStillPaired.Code: ExitIncomplete,
+}
+
 // ExitCode maps an error onto the contract. A problem document carries the
 // status that decides it; anything else is a plain failure.
 func ExitCode(err error) int {
@@ -51,8 +57,8 @@ func ExitCode(err error) int {
 	if !errors.As(err, &prob) {
 		return ExitFailure
 	}
-	if prob.Code == pairdomain.ErrStillPaired.Code {
-		return ExitIncomplete
+	if code, ok := exitByCode[prob.Code]; ok {
+		return code
 	}
 	switch prob.Status {
 	case http.StatusUnauthorized:
@@ -171,12 +177,6 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 		}
 	}
 
-	if !opts.Force {
-		if identity, err := a.Pairing.Identity(); err == nil && !identity.Revoked() {
-			return alreadyPaired(identity, opts.URL, a.Paths.Workspaces)
-		}
-	}
-
 	encoded, err := json.Marshal(facts)
 	if err != nil {
 		return err
@@ -190,7 +190,7 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 		Token: opts.Token, ControlPlaneURL: opts.URL, Name: name, Facts: encoded, Force: opts.Force,
 	})
 	if err != nil {
-		return err
+		return a.explainAlreadyPaired(err, opts.URL)
 	}
 	if opts.Channel != "" {
 		if identity, err = a.Pairing.SetChannel(pairdomain.Channel(opts.Channel)); err != nil {
@@ -301,11 +301,20 @@ func publicKeyFingerprint(encoded string) string {
 	return pairdomain.KeyFingerprint(ed25519.PublicKey(raw))
 }
 
-// alreadyPaired is PAIR_002 with what a person needs to choose: where the host
-// is paired now, where this command wanted it, and the two commands this
-// binary accepts that get it there. The installer takes neither flag, so the
-// advice names the runner itself.
-func alreadyPaired(identity pairdomain.Identity, requested, workspaces string) error {
+// explainAlreadyPaired adds to the service's PAIR_002 what a person needs to
+// choose: where the host is paired now, where this command wanted it, and the
+// two commands this binary accepts that get it there. The installer takes
+// neither flag, so the advice names the runner itself. Any other error, or a
+// PAIR_002 whose identity cannot be read back, is returned as it came.
+func (a *App) explainAlreadyPaired(err error, requested string) error {
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != pairdomain.ErrAlreadyRegisted.Code {
+		return err
+	}
+	identity, loadErr := a.Pairing.Identity()
+	if loadErr != nil {
+		return err
+	}
 	current := strings.TrimRight(identity.ControlPlaneURL, "/")
 	requested = strings.TrimRight(strings.TrimSpace(requested), "/")
 	where := "with " + current + ", and this command asks to pair it with " + requested
@@ -317,8 +326,8 @@ func alreadyPaired(identity pairdomain.Identity, requested, workspaces string) e
 			"and leaves your code in %s, then run the install command from Add host again. "+
 			"Or replace the pairing in place with `%s register --url %s --force` (token in OPPENHEIMER_REGISTRATION_TOKEN); "+
 			"the old host then stays listed at %s until you remove it there under Settings → Hosts",
-		identity.Name, identity.HostID, where, binaryName(), current, workspaces,
-		binaryName(), requested, current)
+		identity.Name, identity.HostID, where, binaryName(), current, a.Paths.Workspaces,
+		binaryName(), requested, current).WithCause(err)
 }
 
 // sameOrigin compares two control-plane URLs the way a runner dials them.
