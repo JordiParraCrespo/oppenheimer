@@ -7408,6 +7408,10 @@ export type CreateProjectErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * PROJECTS_009 — The name is the Unassigned project’s, in some locale
+     */
+    409: ProblemDetailsDto;
+    /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
@@ -7522,6 +7526,8 @@ export type UpdateProjectErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * PROJECTS_009 — The name is the Unassigned project’s, in some locale
+     *
      * PROJECTS_008 — The Unassigned project cannot be renamed or archived
      */
     409: ProblemDetailsDto;

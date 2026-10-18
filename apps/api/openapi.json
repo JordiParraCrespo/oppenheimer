@@ -8207,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
@@ -8365,7 +8375,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
