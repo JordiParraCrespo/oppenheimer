@@ -2,6 +2,7 @@
 
 import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible';
 import { ChevronRightIcon } from 'lucide-react';
+import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -37,6 +38,36 @@ function FoldPanel(props: CollapsiblePrimitive.Panel.Props) {
 }
 
 /**
+ * A run of things folded behind one summary line, hanging from a hairline
+ * when open: the agent's `ToolCallGroup` and a bot's summarised `Trace`.
+ * The caller sets the line's type (`triggerClassName`) and the panel's
+ * padding (`panelClassName`); the fold, the chevron and the hairline are
+ * this one's, so the two never drift.
+ */
+function FoldGroup({
+  summary,
+  triggerClassName,
+  panelClassName,
+  children,
+  ...props
+}: Omit<CollapsiblePrimitive.Root.Props, 'children'> & {
+  /** What the trigger says, before its chevron. */
+  summary: React.ReactNode;
+  triggerClassName?: string;
+  panelClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Fold {...props}>
+      <FoldTrigger className={triggerClassName}>{summary}</FoldTrigger>
+      <FoldPanel className={cn('ml-1.75 flex flex-col border-l border-border-subtle', panelClassName)}>
+        {children}
+      </FoldPanel>
+    </Fold>
+  );
+}
+
+/**
  * The chevron alone, for a fold whose panel is not its own (`TurnHeader`
  * folds a turn's work elsewhere in the transcript): `open` turns it.
  * Inside a `FoldTrigger` it follows the trigger's state.
@@ -54,4 +85,4 @@ function FoldChevron({ open, className }: { open?: boolean; className?: string }
   );
 }
 
-export { Fold, FoldChevron, FoldPanel, FoldTrigger };
+export { Fold, FoldChevron, FoldGroup, FoldPanel, FoldTrigger };

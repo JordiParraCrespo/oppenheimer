@@ -134,7 +134,6 @@ export {
 export type { TraceOutputLabels } from './components/chat-trace';
 export {
   Trace,
-  TraceGroup,
   TraceLive,
   TraceNote,
   TraceOutput,

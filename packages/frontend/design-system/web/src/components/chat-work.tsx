@@ -3,7 +3,7 @@
 import { CpuIcon, LoaderIcon, SlidersHorizontalIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
+import { Fold, FoldGroup, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
 
 /**
@@ -43,27 +43,31 @@ function ToolCallGroup({
   children: React.ReactNode;
 }) {
   return (
-    <Fold
+    <FoldGroup
       data-slot="tool-call-group"
       defaultOpen={defaultOpen}
       className={cn('flex flex-col text-[13.5px] text-fg-muted', className)}
+      triggerClassName="inline-flex items-center gap-1.75 self-start py-0.5"
+      panelClassName="pt-1 pb-0.5 pl-1.75"
+      summary={
+        <>
+          <span aria-hidden className="flex w-4 justify-center [&_svg]:size-3.5">
+            {icon ?? <SlidersHorizontalIcon />}
+          </span>
+          <span>
+            {summary}
+            {failed ? (
+              <>
+                {', '}
+                <span className="text-danger">{failed}</span>
+              </>
+            ) : null}
+          </span>
+        </>
+      }
     >
-      <FoldTrigger className="inline-flex items-center gap-1.75 self-start py-0.5">
-        <span aria-hidden className="flex w-4 justify-center [&_svg]:size-3.5">
-          {icon ?? <SlidersHorizontalIcon />}
-        </span>
-        <span>
-          {summary}
-          {failed ? (
-            <>
-              {', '}
-              <span className="text-danger">{failed}</span>
-            </>
-          ) : null}
-        </span>
-      </FoldTrigger>
-      <FoldPanel className="ml-1.75 flex flex-col border-l border-border-subtle pt-1 pb-0.5 pl-1.75">{children}</FoldPanel>
-    </Fold>
+      {children}
+    </FoldGroup>
   );
 }
 

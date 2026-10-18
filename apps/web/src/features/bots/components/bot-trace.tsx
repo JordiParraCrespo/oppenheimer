@@ -2,7 +2,6 @@ import {
   ChatSource,
   ChatSources,
   Trace,
-  TraceGroup,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
@@ -131,34 +130,34 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
-  const trace = (
-    <Trace>
-      {done.map((step) => {
-        const action = toolAction(step);
-        const view = viewOf(action);
-        const { meta, body } = view.detail(step, t, labels);
-        return (
-          <TraceStep
-            key={step.callId}
-            icon={view.icon}
-            title={view.title(t, action)}
-            meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
-            tone={step.isError ? 'danger' : 'default'}
-          >
-            {body}
-          </TraceStep>
-        );
-      })}
-    </Trace>
-  );
-  if (done.length === 1) return trace;
-  const failed = done.filter((step) => step.isError).length;
+  let failed = 0;
+  const lines: ReactNode[] = [];
+  for (const step of done) {
+    if (step.isError) failed += 1;
+    const action = toolAction(step);
+    const view = viewOf(action);
+    const { meta, body } = view.detail(step, t, labels);
+    lines.push(
+      <TraceStep
+        key={step.callId}
+        icon={view.icon}
+        title={view.title(t, action)}
+        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
+        tone={step.isError ? 'danger' : 'default'}
+      >
+        {body}
+      </TraceStep>,
+    );
+  }
+  const folded = done.length > 1;
   return (
-    <TraceGroup
-      title={t('bots.chat.activity.usedTools', { count: done.length })}
-      meta={failed > 0 ? t('bots.chat.activity.failedCount', { count: failed }) : undefined}
+    <Trace
+      summary={folded ? t('bots.chat.activity.usedTools', { count: done.length }) : undefined}
+      meta={
+        folded && failed > 0 ? t('bots.chat.activity.failedCount', { count: failed }) : undefined
+      }
     >
-      {trace}
-    </TraceGroup>
+      {lines}
+    </Trace>
   );
 }

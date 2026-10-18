@@ -3,7 +3,7 @@
 import { LoaderIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
+import { Fold, FoldGroup, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
 
 /**
@@ -11,11 +11,10 @@ import { cn } from '../lib/utils';
  * agent's tool-call groups in `chat-work`: a line per step at the reply's
  * own 15px, in muted ink, that opens to what the step returned.
  *
- * - `Trace`: the steps of one run of work, a list.
- * - `TraceGroup`: several steps folded behind one line ("Used 3 tools",
- *   a failure count in red as its meta); open, its `Trace` hangs from a
- *   hairline under it. Closed by default, so a run of calls reads as one
- *   line between the words.
+ * - `Trace`: the steps of one run of work, a list. Given a `summary`
+ *   ("Used 3 tools", a failure count in red as its `meta`) it folds behind
+ *   that one line, closed by default, and opens to the steps hanging from
+ *   a hairline, so a run of calls reads as one line between the words.
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated), a
  *   mono meta ("14 results", "2 failed"), and, when it has children, the
  *   chevron that opens them. `tone="danger"` sets the line in red (a
@@ -29,12 +28,42 @@ import { cn } from '../lib/utils';
  *   is doing now breathing ("Searching abortSignal", "Writing"), the
  *   elapsed time in mono.
  */
-function Trace({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="trace" role="list" className={cn('flex flex-col', className)} {...props} />;
-}
-
 const TRACE_LINE =
   '-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-2.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted data-[tone=danger]:text-danger';
+
+function Trace({
+  summary,
+  meta,
+  defaultOpen = false,
+  className,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /** "Used 3 tools": present, the steps fold behind this line. */
+  summary?: React.ReactNode;
+  /** "1 failed", in red after the summary. */
+  meta?: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const list = <div data-slot="trace" role="list" className={cn('flex flex-col', !summary && className)} {...props} />;
+  if (!summary) return list;
+  return (
+    <FoldGroup
+      data-slot="trace-group"
+      defaultOpen={defaultOpen}
+      className={cn('flex flex-col', className)}
+      triggerClassName={cn(TRACE_LINE, 'transition-colors duration-instant [&>svg:last-child]:size-3.75')}
+      panelClassName="pl-3"
+      summary={
+        <>
+          <span className="min-w-0 truncate">{summary}</span>
+          {meta ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{meta}</span> : null}
+        </>
+      }
+    >
+      {list}
+    </FoldGroup>
+  );
+}
 
 function TraceStep({
   icon,
@@ -103,33 +132,6 @@ function TraceStep({
         {line}
       </FoldTrigger>
       <FoldPanel className="pl-6.5">{children}</FoldPanel>
-    </Fold>
-  );
-}
-
-function TraceGroup({
-  title,
-  meta,
-  defaultOpen = false,
-  className,
-  children,
-}: {
-  /** "Used 3 tools". */
-  title: React.ReactNode;
-  /** "1 failed", in red. */
-  meta?: React.ReactNode;
-  defaultOpen?: boolean;
-  className?: string;
-  /** The `Trace` it folds. */
-  children: React.ReactNode;
-}) {
-  return (
-    <Fold data-slot="trace-group" defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
-      <FoldTrigger className={cn(TRACE_LINE, 'transition-colors duration-instant [&>svg:last-child]:size-3.75')}>
-        <span className="min-w-0 truncate">{title}</span>
-        {meta ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{meta}</span> : null}
-      </FoldTrigger>
-      <FoldPanel className="ml-1.75 border-l border-border-subtle pl-3">{children}</FoldPanel>
     </Fold>
   );
 }
@@ -232,5 +234,5 @@ function TraceLive({
   );
 }
 
-export { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep };
+export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep };
 export type { TraceOutputLabels };
