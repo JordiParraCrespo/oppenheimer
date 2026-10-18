@@ -246,12 +246,14 @@ export function usePairingTokens(
   });
 }
 
-export function useRemoveHost(options?: UseMutationOptions<void, Error, string>) {
+export function useRemoveHost(
+  options?: UseMutationOptions<void, Error, { id: string; wipe?: boolean }>,
+) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => app.hosts.remove(id),
+    mutationFn: ({ id, wipe }) => app.hosts.remove(id, wipe),
     ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
     }),

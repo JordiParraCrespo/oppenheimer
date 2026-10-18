@@ -387,6 +387,19 @@ export class WorkSessionRepository
     return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
   }
 
+  async findUnresolvedOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]> {
+    const records = await this.unscopedQuery(
+      'a host removed with a clean-up closes every session on it, and there is no person on a domain event to scope by',
+    )
+      .where('session.hostId = :hostId', { hostId })
+      .andWhere('session.state <> :resolved', { resolved: 'resolved' })
+      .orderBy('session.createdAt', 'ASC')
+      .getMany();
+    if (records.length === 0) return [];
+    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+  }
+
   async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {
     if (hostIds.length === 0) return new Map();
     const rows: { hostId: string; count: string }[] = await this.running(

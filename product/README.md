@@ -528,6 +528,12 @@ earlier note:
   failure, and points at Settings → Hosts → Remove or
   `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
   origins and the commands that move it (09 §4).
+- `versions/mvp/14-hosts-settings.md` had removing a host only stop its
+  sessions, every checkout kept. On 2026-10-18 the owner, testing on a
+  host, asked for a way to stop everything and start again: the remove
+  dialog has an "Also delete everything on this machine" box, and an
+  online host then closes every session, worktrees removed and nothing
+  pushed (14, "Remove can also clean the machine up").
 - Note 03's hello reconciliation sent again only a launch the host never
   carried out, so a close lost with a dropped link was never re-sent and a
   deleted session came back in the console. On 2026-10-18 the fold keeps a

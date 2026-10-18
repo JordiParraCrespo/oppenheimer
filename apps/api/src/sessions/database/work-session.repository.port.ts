@@ -134,6 +134,12 @@ export interface WorkSessionRepositoryPort {
   findRunningOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]>;
 
   /**
+   * Every session on a host not yet resolved, running or stopped, unscoped for
+   * the same reason: a removal that cleans the machine up closes them all.
+   */
+  findUnresolvedOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]>;
+
+  /**
    * How many sessions are running on each of these hosts, by the same rule.
    * The hosts were read under the caller's scope before they got here, and the
    * answer is a count, never a row. A host with none is absent from the map.

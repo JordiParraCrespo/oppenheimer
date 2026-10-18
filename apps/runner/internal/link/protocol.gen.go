@@ -24,6 +24,12 @@ const (
 	CloseProtocolMismatch = 4426
 )
 
+// The reasons a close may carry on top of its code. CloseReasonWipe, on
+// CloseUnpaired, asks the runner to close every session too — see ErrWipe.
+const (
+	CloseReasonWipe = "host-unpaired-wipe"
+)
+
 // RefusalHeader and its values mark the control plane's own refusal at the
 // handshake. A bare 410 is not trusted — any proxy in front of the control
 // plane can answer one — and a host that took a stranger's as "unpaired"

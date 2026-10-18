@@ -2089,6 +2089,8 @@
       "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
       "removeFailed": "Could not remove this host. Try again.",
+      "wipe": "Also delete everything on this machine: close every session and remove its worktree, uncommitted work included. Nothing is pushed.",
+      "wipeOffline": "{{name}} is offline, so it can’t be cleaned up from here.",
       "openTerminal": "Open terminal",
       "openTerminalTitle": "Blank terminal in ~ on {{host}}"
     }
