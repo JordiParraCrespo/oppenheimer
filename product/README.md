@@ -521,6 +521,15 @@ earlier note:
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
+- `next-steps/voice.md` said the polish is skipped when the raw transcript
+  is clean and short, and that the ChatGPT route's names reach it only
+  through the polish. On 2026-10-18 (#393) every clip is polished, with a
+  light-touch brief modelled on Wispr Flow, and the names also go to an
+  OpenAI-compatible speech server as its `prompt` ("Dictation quality,
+  first pass").
+- `next-steps/voice.md` shipped `voice_dictation` as a release flag,
+  default off. On 2026-10-18 it became an `ops` flag defaulting to `true`,
+  the feature's kill switch.
 - Note 09 had `runner uninstall` exit 0 when the control plane could not
   be told, with a hint naming `DELETE /v1/hosts/{id}` and no console
   control. On 2026-10-18, after an owner's uninstall hid a failed
@@ -528,3 +537,21 @@ earlier note:
   failure, and points at Settings → Hosts → Remove or
   `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
   origins and the commands that move it (09 §4).
+- `versions/mvp/14-hosts-settings.md` had removing a host only stop its
+  sessions, every checkout kept. On 2026-10-18 the owner, testing on a
+  host, asked for a way to stop everything and start again: the remove
+  dialog has an "Also delete everything on this machine" box, and an
+  online host then closes every session, worktrees removed and nothing
+  pushed (14, "Remove can also clean the machine up").
+- `versions/mvp/25-bots.md`: a bot with no provider named, or on one with
+  no key, fell back to the first keyed provider in catalog order, so a
+  workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the
+  owner asked for ChatGPT instead: the fallback order is Anthropic,
+  ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`).
+- Note 25 had `ask_bot` give another bot a task and wait for its answer.
+  On 2026-10-18 it was built so the answer comes back as a new turn of the
+  asker instead: one turn per bot runs at a time and a turn has four
+  minutes, so an ask that waited could time out or leave two bots waiting
+  on each other. The sender is recorded rather than claimed, messages
+  holding a credential are refused, and the chain is decided under a lock,
+  from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").

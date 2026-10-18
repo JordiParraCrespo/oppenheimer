@@ -230,7 +230,7 @@
     "merged": "PR fusionadas",
     "from": "desde {{value}}",
     "series": "Series",
-    "both": "Creadas y fusionadas",
+    "both": "Ambas",
     "perDay": "Pull requests creadas y fusionadas por día",
     "hover": "Pasa por encima de un día",
     "reviewedByYou": "Revisadas por ti",

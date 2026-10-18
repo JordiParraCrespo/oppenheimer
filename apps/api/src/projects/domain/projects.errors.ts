@@ -66,4 +66,13 @@ export const ProjectErrors = {
     message: 'The Unassigned project cannot be renamed or archived',
     httpStatus: 409,
   },
+  /**
+   * A project named like the Unassigned project, in any case. It would list as
+   * a second Unassigned group, indistinguishable from the real one.
+   */
+  NAME_RESERVED: {
+    code: 'PROJECTS_009',
+    message: 'That name belongs to the Unassigned project',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

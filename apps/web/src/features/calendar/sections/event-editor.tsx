@@ -71,9 +71,10 @@ export function EventEditor({ event }: { event: CalendarEventEntity | null }) {
       />
       {deleting && event ? (
         <ConfirmDialog
-          title={t('calendar.event.deleteTitle')}
-          description={t('calendar.event.deleteDescription', { title: event.title })}
+          title={t('calendar.event.deleteTitle', { title: event.title })}
+          description={t('calendar.event.deleteDescription')}
           confirmLabel={t('calendar.event.delete')}
+          pendingLabel={t('calendar.event.deleting')}
           pending={remove.isPending}
           error={remove.error}
           errorFallback={t('calendar.event.deleteFailed')}

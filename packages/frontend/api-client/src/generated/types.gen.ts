@@ -3137,18 +3137,33 @@ export type BotToolStepResponseDto = {
 };
 
 export type BotMessageEventResponseDto = {
-    kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    kind: 'approval' | 'bot_message' | 'bot_reply';
     /**
-     * The tool the decided call was for.
+     * An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.
      */
-    tool: string;
+    outcome: 'approved' | 'denied' | 'failed' | 'answered' | 'cancelled';
     /**
-     * The card's line: what the call does, in words.
+     * An approval: the tool the decided call was for.
      */
-    summary: string;
+    tool: string | null;
     /**
-     * The session the approved call started; null when it started none.
+     * An approval: the card's line, what the call does in words.
+     */
+    summary: string | null;
+    /**
+     * A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * A message or an answer: the sending bot's name when it sent it.
+     */
+    fromBotName: string | null;
+    /**
+     * A message: sent with ask_bot, so this bot answers it.
+     */
+    expectsReply: boolean | null;
+    /**
+     * An approval: the session the approved call started; null when it started none, and on any other kind.
      */
     sessionId: string | null;
 };
@@ -6280,6 +6295,41 @@ export type FindHostTimelineResponses = {
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
 
+export type WipeHostData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/wipe';
+};
+
+export type WipeHostErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type WipeHostError = WipeHostErrors[keyof WipeHostErrors];
+
+export type WipeHostResponses = {
+    /**
+     * Host unpaired, its runner told to clean up
+     */
+    204: void;
+};
+
+export type WipeHostResponse = WipeHostResponses[keyof WipeHostResponses];
+
 export type UpdateHostRunnerData = {
     body?: never;
     path: {
@@ -7366,6 +7416,10 @@ export type CreateProjectErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * PROJECTS_009 — The name is the Unassigned project’s, in some locale
+     */
+    409: ProblemDetailsDto;
+    /**
      * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
@@ -7480,6 +7534,8 @@ export type UpdateProjectErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * PROJECTS_009 — The name is the Unassigned project’s, in some locale
+     *
      * PROJECTS_008 — The Unassigned project cannot be renamed or archived
      */
     409: ProblemDetailsDto;

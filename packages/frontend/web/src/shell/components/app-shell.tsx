@@ -1,5 +1,7 @@
 import {
+  cn,
   DropOutline,
+  RAIL_BAR_CLEARANCE,
   SidebarInset,
   SidebarProvider,
   useFileDrag,
@@ -55,7 +57,14 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
       <SidebarProvider className="h-svh min-h-0">
         {config.rail}
         <AppSidebar />
-        <SidebarInset className="flex min-h-0 min-w-0 flex-col">
+        {/* On a phone the rail is a bar along the bottom (`Rail`), so the
+            column keeps clear of it. */}
+        <SidebarInset
+          className={cn(
+            'flex min-h-0 min-w-0 flex-col',
+            config.rail ? RAIL_BAR_CLEARANCE : undefined,
+          )}
+        >
           {chrome ? <TopBar onSearch={() => setCommandOpen(true)} /> : null}
           {/* The pane: the console's one painter of the ground, and a flex
               column that never scrolls itself. Its bar slot holds the bar
@@ -65,11 +74,16 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
               terminal — fills the height with `flex-1` instead of guessing at
               a viewport calculation; and a drop's outline is drawn on its
               edge. */}
-          <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
+          <main className="group/pane relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
             {ownBar ? null : (
               // On the pane's own grey, not a surface: the bar reads as the
-              // page's top edge rather than a strip above it.
-              <header data-slot="page-bar" className="flex h-12 shrink-0 items-center pl-3.5">
+              // page's top edge rather than a strip above it. Over a live
+              // terminal (`data-pane-ground="terminal"`) it takes the
+              // terminal's colour instead, so bar and terminal are one surface.
+              <header
+                data-slot="page-bar"
+                className="flex h-12 shrink-0 items-center pl-3.5 group-has-[[data-pane-ground=terminal]]/pane:bg-term-bg"
+              >
                 <SidebarToggle />
               </header>
             )}

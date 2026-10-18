@@ -1,9 +1,12 @@
-import type { BotMessageRole } from '@oppenheimer/shared';
+import type { BotMessageEvent, BotMessageRole } from '@oppenheimer/shared';
+import { peerMessageNote, peerReplyNote } from './bot-peer-message.policy';
 
 /** A message as the next turn reads it back. */
 export interface HistoryMessage {
   role: BotMessageRole;
   content: string;
+  /** What an event says happened; null or absent on every other role. */
+  event?: BotMessageEvent | null;
 }
 
 /** One entry of the history a turn is sent, oldest first. */
@@ -39,9 +42,9 @@ export function estimateTokens(text: string): number {
  * came before, when there is one, first; then the newest of the messages
  * after the summary's cutoff that fit `BOT_HISTORY_TOKEN_BUDGET` with it,
  * oldest first. Your messages, the bot's text and the events Oppenheimer told
- * it (an approval decided) are read back; an event, and the summary, as a
- * note on your side marked as Oppenheimer's so neither is taken for your
- * words. Activity lines are the bot's own working and are not read back.
+ * it (an approval decided, a message or an answer from another bot) are read
+ * back; an event, and the summary, on your side and marked as Oppenheimer's
+ * or the other bot's, so neither is taken for your words. Activity lines are the bot's own working and are not read back.
  * Messages are taken newest first and stop at the first that does not fit,
  * so what is sent is always an unbroken run up to this turn.
  */
@@ -69,8 +72,18 @@ export function botHistory(
 
 /** One stored message as the history entry a turn is sent. */
 export function historyEntry(message: HistoryMessage): HistoryEntry {
-  if (message.role === 'event') return { role: 'user', text: eventNote(message.content) };
+  if (message.role === 'event') return { role: 'user', text: eventText(message) };
   return { role: message.role === 'user' ? 'user' : 'assistant', text: message.content };
+}
+
+/**
+ * An event as the bot reads it back: a message or an answer from another bot
+ * inside its envelope, anything else as Oppenheimer's note.
+ */
+function eventText(message: HistoryMessage): string {
+  if (message.event?.kind === 'bot_message') return peerMessageNote(message.event, message.content);
+  if (message.event?.kind === 'bot_reply') return peerReplyNote(message.event, message.content);
+  return eventNote(message.content);
 }
 
 /** An event Oppenheimer told the bot, as it reads it: on your side, never as your words. */

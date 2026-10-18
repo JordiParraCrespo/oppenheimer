@@ -5,7 +5,7 @@ import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import { HostUnpairedStopsSessionsDomainEventHandler } from '../event-handlers/host-unpaired.domain-event-handler';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
-const EVENT = { id: 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b', aggregateId: HOST };
+const EVENT = { id: 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b', aggregateId: HOST, wipe: false };
 
 function repository(running: WorkSessionEntity[]) {
   const sessions: Pick<WorkSessionRepositoryPort, 'findRunningOnHostForSystem' | 'appendEvents'> = {
@@ -53,6 +53,15 @@ describe('HostUnpairedStopsSessionsDomainEventHandler', () => {
       vi.mocked(sessions.appendEvents).mock.calls[0][1][0].idempotencyKey;
     expect(key(first)).toBe(key(second));
     expect(key(first)).toContain(EVENT.id);
+  });
+
+  it('leaves a removal with a clean-up to the closing handler', async () => {
+    const sessions = repository([session('s1')]);
+    await new HostUnpairedStopsSessionsDomainEventHandler(
+      sessions as WorkSessionRepositoryPort,
+    ).handle({ ...EVENT, wipe: true });
+
+    expect(sessions.appendEvents).not.toHaveBeenCalled();
   });
 
   it('does nothing for a host with nothing running', async () => {

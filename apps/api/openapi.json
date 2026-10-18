@@ -5827,6 +5827,64 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/wipe": {
+      "post": {
+        "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
+        "operationId": "wipeHost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired, its runner told to clean up"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host and clean its machine up",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/hosts/{id}/update": {
       "post": {
         "description": "Asks the host's runner to install the newest signed release on its channel now. Accepted is not done: the runner verifies the release itself, restarts on it, and reports the new version when it reconnects. A runner already current, or pinned, stays as it is.",
@@ -8149,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
@@ -8307,7 +8375,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -25948,28 +26016,57 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["approval"]
+            "enum": ["approval", "bot_message", "bot_reply"]
           },
           "outcome": {
             "type": "string",
-            "enum": ["approved", "denied", "failed"]
+            "enum": ["approved", "denied", "failed", "answered", "cancelled"],
+            "nullable": true,
+            "description": "An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message."
           },
           "tool": {
             "type": "string",
-            "description": "The tool the decided call was for."
+            "nullable": true,
+            "description": "An approval: the tool the decided call was for."
           },
           "summary": {
             "type": "string",
-            "description": "The card's line: what the call does, in words."
+            "nullable": true,
+            "description": "An approval: the card's line, what the call does in words."
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "nullable": true,
+            "description": "A message or an answer: the sending bot's name when it sent it."
+          },
+          "expectsReply": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "A message: sent with ask_bot, so this bot answers it."
           },
           "sessionId": {
             "type": "string",
             "format": "uuid",
             "nullable": true,
-            "description": "The session the approved call started; null when it started none."
+            "description": "An approval: the session the approved call started; null when it started none, and on any other kind."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
+        "required": [
+          "kind",
+          "outcome",
+          "tool",
+          "summary",
+          "fromBotId",
+          "fromBotName",
+          "expectsReply",
+          "sessionId"
+        ]
       },
       "BotMessageResponseDto": {
         "type": "object",

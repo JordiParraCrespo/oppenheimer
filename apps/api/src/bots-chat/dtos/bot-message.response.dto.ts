@@ -1,9 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_MESSAGE_EVENT_KINDS,
   BOT_MESSAGE_ROLES,
+  BOT_REPLY_OUTCOMES,
   type BotEventOutcome,
+  type BotMessageEventKind,
   type BotMessageRole,
+  type BotReplyOutcome,
 } from '@oppenheimer/shared';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
@@ -37,25 +41,68 @@ export class BotToolStepResponseDto {
   sessionId!: string | null;
 }
 
-/** What an event says happened: an approval decided, how, and the card's line. */
+/**
+ * What an event says happened, one shape for every kind: an approval decided
+ * (`outcome`, `tool`, `summary`), a message from another bot (`fromBotId`,
+ * `fromBotName`, `expectsReply`), or the answer to an ask (`fromBotId`,
+ * `fromBotName`, `outcome`). A field the kind does not have is null.
+ */
 export class BotMessageEventResponseDto {
-  @ApiProperty({ enum: ['approval'] })
-  kind!: 'approval';
+  @ApiProperty({ enum: BOT_MESSAGE_EVENT_KINDS })
+  kind!: BotMessageEventKind;
 
-  @ApiProperty({ enum: BOT_EVENT_OUTCOMES })
-  outcome!: BotEventOutcome;
+  @ApiProperty({
+    enum: [...new Set([...BOT_EVENT_OUTCOMES, ...BOT_REPLY_OUTCOMES])],
+    nullable: true,
+    type: String,
+    description:
+      'An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.',
+  })
+  outcome!: BotEventOutcome | BotReplyOutcome | null;
 
-  @ApiProperty({ description: 'The tool the decided call was for.' })
-  tool!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'An approval: the tool the decided call was for.',
+  })
+  tool!: string | null;
 
-  @ApiProperty({ description: "The card's line: what the call does, in words." })
-  summary!: string;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: "An approval: the card's line, what the call does in words.",
+  })
+  summary!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description:
+      'A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.',
+  })
+  fromBotId!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: "A message or an answer: the sending bot's name when it sent it.",
+  })
+  fromBotName!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: Boolean,
+    description: 'A message: sent with ask_bot, so this bot answers it.',
+  })
+  expectsReply!: boolean | null;
 
   @ApiProperty({
     type: String,
     format: 'uuid',
     nullable: true,
-    description: 'The session the approved call started; null when it started none.',
+    description:
+      'An approval: the session the approved call started; null when it started none, and on any other kind.',
   })
   sessionId!: string | null;
 }

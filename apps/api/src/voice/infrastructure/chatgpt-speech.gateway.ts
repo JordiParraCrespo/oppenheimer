@@ -31,7 +31,9 @@ const LIMITS = { maxInFlight: 8, maxQueued: 20, maxWaitMs: 10_000 };
  * Transcription on a workspace's ChatGPT sign-in (`product/next-steps/voice.md`):
  * the clip as multipart `file` (and `language` when known), the access token
  * as bearer and the account it acts for as `ChatGPT-Account-ID`; the answer
- * is `{ "text": "…" }`. The route is undocumented: any other answer, a
+ * is `{ "text": "…" }`. No `prompt`: no known client sends one, and a field
+ * the route does not expect is a refusal waiting to happen, so the names
+ * reach this path through the polish alone. The route is undocumented: any other answer, a
  * Cloudflare challenge included, is `VOICE_006`, and a refusal for rate or
  * quota is `VOICE_007` through the limiter.
  */

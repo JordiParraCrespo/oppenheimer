@@ -19,6 +19,15 @@ export interface StartSessionInput {
   name?: string;
 }
 
+/**
+ * The level every session a bot starts runs at. Nobody sits at a bot's
+ * terminal, so the API's own default (`ask`) would leave the agent waiting on
+ * its first approval forever; `auto` lets it work while still checking each
+ * action, and the runner marks its folder trusted for the same reason. An
+ * agent with no approvals records no level whatever is sent.
+ */
+export const BOT_SESSION_PERMISSION = 'auto' as const;
+
 export function planSession(
   input: StartSessionInput,
   project: ProjectEntity | null,
@@ -44,6 +53,7 @@ export function planSession(
     projectId: project?.id,
     name: input.name,
     prompt: input.task,
+    launch: { permission: BOT_SESSION_PERMISSION },
     ...(input.folder
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),

@@ -3,7 +3,7 @@
 import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
+import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import { cn } from '../lib/utils';
 import type { DictationSlot } from './chat-composer-extras';
 import { IconButton } from './icon-button';
@@ -200,21 +200,27 @@ function Composer({
             {dictation.recorder}
           </div>
         ) : (
-        <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
-          {onAttach ? (
-            <IconButton
-              aria-label={label.attach}
-              size="sm"
-              shape="square"
-              onClick={onAttach}
-              className="size-[30px]"
-            >
-              <PaperclipIcon className="size-[15px]" />
-            </IconButton>
-          ) : null}
-          {tools}
-          <span className="flex-1" />
-          {engine}
+        <ComposerFoot
+          data-slot="composer-foot"
+          className="gap-1.5 px-2.5 pb-2.5"
+          leading={
+            <>
+              {onAttach ? (
+                <IconButton
+                  aria-label={label.attach}
+                  size="sm"
+                  shape="square"
+                  onClick={onAttach}
+                  className="size-[30px]"
+                >
+                  <PaperclipIcon className="size-[15px]" />
+                </IconButton>
+              ) : null}
+              {tools}
+            </>
+          }
+          engine={engine}
+        >
           {dictation?.mic}
           <ComposerSendButton
             busy={busy}
@@ -231,7 +237,7 @@ function Composer({
               <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
             )}
           </ComposerSendButton>
-        </div>
+        </ComposerFoot>
         )}
       </div>
     </ComposerFrame>

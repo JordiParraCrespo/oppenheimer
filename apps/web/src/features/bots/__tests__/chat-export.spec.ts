@@ -11,7 +11,8 @@ import {
 /**
  * The Markdown an export downloads, one piece per message as the export
  * streams in: who said what and when, the bot's tool calls one line each in
- * the chat's words, an event as Oppenheimer's line, and the file named after
+ * the chat's words, an event as Oppenheimer's line, another bot's message or
+ * answer under its name, and the file named after
  * the bot and the day. A `t` that echoes its key and values stands in for the
  * catalog, so the spec reads which words were asked for.
  */
@@ -127,6 +128,17 @@ describe('chatExportHeader and chatExportChunk', () => {
       '**bots.settings.profile.oppenheimer** · 10:04\n\nbots.chat.event.denied(Start it)',
     );
     expect(chunk).not.toContain('The owner approved');
+  });
+
+  it('write another bot’s message or answer under that bot’s name, with its words', () => {
+    const asked = message('event', 'Which task is PR 412?', 5, {
+      event: { kind: 'bot_message', fromBotId: 'b1', fromBotName: 'Ada', expectsReply: true },
+    });
+    const answered = message('event', 'Task 7.', 6, {
+      event: { kind: 'bot_reply', fromBotId: 'b2', fromBotName: 'Grace', outcome: 'answered' },
+    });
+    expect(chatExportChunk(asked, words)).toBe('\n**Ada** · 10:05\n\nWhich task is PR 412?\n');
+    expect(chatExportChunk(answered, words)).toBe('\n**Grace** · 10:06\n\nTask 7.\n');
   });
 
   it('leave out a message with nothing to say', () => {
