@@ -232,7 +232,14 @@ function runAgent(dir, prompt, { model, timeout }) {
   );
   const summary = { ok: result.ok, seconds: Math.round((Date.now() - started) / 1000) };
   try {
-    const json = JSON.parse(result.out.slice(result.out.indexOf('{')));
+    // The CLI's answer is the last line of its stdout; anything before it
+    // (a hook's notice, a warning) may hold a brace of its own.
+    const line = (result.stdout ?? result.out)
+      .trim()
+      .split('\n')
+      .reverse()
+      .find((l) => l.startsWith('{'));
+    const json = JSON.parse(line);
     return {
       ...summary,
       cost_usd: json.total_cost_usd,
