@@ -1,14 +1,16 @@
 /**
  * A recording as the WAV the API takes (`VOICE_SAMPLE_RATE`, 16-bit PCM,
- * mono): the microphone's float samples, averaged down to the target rate
- * and clipped to 16 bits, behind a 44-byte RIFF header.
+ * mono): the microphone's float samples, averaged down to the target rate,
+ * the silence before the first word and after the last cut off
+ * ({@link trimSilence}), and clipped to 16 bits, behind a 44-byte RIFF
+ * header.
  */
 export function encodeWav(
   chunks: readonly Float32Array[],
   inputRate: number,
   outputRate: number,
 ): Blob {
-  const samples = downsample(chunks, inputRate, outputRate);
+  const samples = trimSilence(downsample(chunks, inputRate, outputRate), outputRate);
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
   const text = (offset: number, value: string) => {
@@ -78,10 +80,56 @@ function upsample(input: Float32Array, step: number): Float32Array {
   return output;
 }
 
+/** The window speech is told from silence in: 20 ms, about one syllable's attack. */
+const FRAME_SECONDS = 0.02;
+
+/** How much quiet is kept either side of the speech, so a soft first or last consonant survives. */
+const PAD_SECONDS = 0.3;
+
+/**
+ * Below this RMS a frame is silence, however quiet the rest is: about
+ * -50 dBFS, under a laptop fan.
+ */
+const SILENCE_FLOOR = 0.003;
+
+/**
+ * The samples from just before the first frame that sounds like speech to
+ * just after the last one. A frame is speech when it is louder than a tenth
+ * of the loudest frame (20 dB down) and above {@link SILENCE_FLOOR}. The
+ * pause while the person reaches for the mic and the one before they press
+ * stop are what speech models fill with "Thanks for watching!", and they
+ * are upload and wait for nothing. A clip with no frame above the floor is
+ * sent whole: what to make of it is the API's call, not a guess here.
+ */
+export function trimSilence(samples: Float32Array, rate: number): Float32Array {
+  const frame = Math.max(1, Math.round(rate * FRAME_SECONDS));
+  const frames = Math.ceil(samples.length / frame);
+  const levels = new Float32Array(frames);
+  let loudest = 0;
+  for (let f = 0; f < frames; f++) {
+    levels[f] = rms(samples.subarray(f * frame, (f + 1) * frame));
+    loudest = Math.max(loudest, levels[f]);
+  }
+  const threshold = Math.max(SILENCE_FLOOR, loudest / 10);
+  const first = levels.findIndex((level) => level >= threshold);
+  if (first === -1) return samples;
+  let last = frames - 1;
+  while (levels[last] < threshold) last--;
+  const pad = Math.round(rate * PAD_SECONDS);
+  return samples.subarray(
+    Math.max(0, first * frame - pad),
+    Math.min(samples.length, (last + 1) * frame + pad),
+  );
+}
+
 /** A chunk's loudness for the waveform, 0–1: its RMS, lifted so speech fills the bar. */
 export function levelOf(chunk: Float32Array): number {
+  return Math.min(1, rms(chunk) * 4);
+}
+
+function rms(chunk: Float32Array): number {
   if (chunk.length === 0) return 0;
   let sum = 0;
   for (const sample of chunk) sum += sample * sample;
-  return Math.min(1, Math.sqrt(sum / chunk.length) * 4);
+  return Math.sqrt(sum / chunk.length);
 }
