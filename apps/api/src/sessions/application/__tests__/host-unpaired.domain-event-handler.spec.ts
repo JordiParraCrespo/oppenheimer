@@ -5,15 +5,11 @@ import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import { HostUnpairedStopsSessionsDomainEventHandler } from '../event-handlers/host-unpaired.domain-event-handler';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
-const EVENT = { id: 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b', aggregateId: HOST };
+const EVENT = { id: 'e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b', aggregateId: HOST, wipe: false };
 
-function repository(running: WorkSessionEntity[], unresolved: WorkSessionEntity[] = running) {
-  const sessions: Pick<
-    WorkSessionRepositoryPort,
-    'findRunningOnHostForSystem' | 'findUnresolvedOnHostForSystem' | 'appendEvents'
-  > = {
+function repository(running: WorkSessionEntity[]) {
+  const sessions: Pick<WorkSessionRepositoryPort, 'findRunningOnHostForSystem' | 'appendEvents'> = {
     findRunningOnHostForSystem: vi.fn().mockResolvedValue(running),
-    findUnresolvedOnHostForSystem: vi.fn().mockResolvedValue(unresolved),
     appendEvents: vi.fn().mockResolvedValue({ accepted: [], rejected: [], appended: [] }),
   };
   return sessions;
@@ -43,25 +39,6 @@ describe('HostUnpairedStopsSessionsDomainEventHandler', () => {
     ]);
   });
 
-  it('closes every unresolved session, stopped ones too, when the host was told to clean up', async () => {
-    const sessions = repository([session('s1')], [session('s1'), session('s2')]);
-    await new HostUnpairedStopsSessionsDomainEventHandler(
-      sessions as WorkSessionRepositoryPort,
-    ).handle({ ...EVENT, wipe: true });
-
-    expect(sessions.findUnresolvedOnHostForSystem).toHaveBeenCalledWith(HOST);
-    expect(sessions.appendEvents).toHaveBeenCalledTimes(2);
-    const [target, entries] = vi.mocked(sessions.appendEvents).mock.calls[1];
-    expect(target.id).toBe('s2');
-    expect(entries).toEqual([
-      expect.objectContaining({
-        kind: SESSION_EVENT_KINDS.CLOSED,
-        source: 'api',
-        payload: { requestedBy: 'host.unpaired.wipe' },
-      }),
-    ]);
-  });
-
   it('keys each entry by the domain event, so a redelivery appends nothing new', async () => {
     const first = repository([session('s1')]);
     const second = repository([session('s1')]);
@@ -76,6 +53,15 @@ describe('HostUnpairedStopsSessionsDomainEventHandler', () => {
       vi.mocked(sessions.appendEvents).mock.calls[0][1][0].idempotencyKey;
     expect(key(first)).toBe(key(second));
     expect(key(first)).toContain(EVENT.id);
+  });
+
+  it('leaves a removal with a clean-up to the closing handler', async () => {
+    const sessions = repository([session('s1')]);
+    await new HostUnpairedStopsSessionsDomainEventHandler(
+      sessions as WorkSessionRepositoryPort,
+    ).handle({ ...EVENT, wipe: true });
+
+    expect(sessions.appendEvents).not.toHaveBeenCalled();
   });
 
   it('does nothing for a host with nothing running', async () => {

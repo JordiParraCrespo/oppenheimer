@@ -12,7 +12,7 @@ function registry(link: RunnerLink | undefined): LinkRegistryPort {
 describe('HostUnpairedDomainEventHandler', () => {
   it('closes the unpaired host’s link with the terminal code', () => {
     const link = { hostId: HOST, close: vi.fn() } as unknown as RunnerLink;
-    new HostUnpairedDomainEventHandler(registry(link)).handle({ aggregateId: HOST });
+    new HostUnpairedDomainEventHandler(registry(link)).handle({ aggregateId: HOST, wipe: false });
 
     expect(link.close).toHaveBeenCalledWith(RUNNER_LINK_CLOSE_CODES.UNPAIRED, 'host unpaired');
   });
@@ -30,7 +30,10 @@ describe('HostUnpairedDomainEventHandler', () => {
   it('does nothing for a host with no link on this instance', () => {
     // A throw here would surface in whatever emitted the unpair.
     expect(() =>
-      new HostUnpairedDomainEventHandler(registry(undefined)).handle({ aggregateId: HOST }),
+      new HostUnpairedDomainEventHandler(registry(undefined)).handle({
+        aggregateId: HOST,
+        wipe: false,
+      }),
     ).not.toThrow();
   });
 });

@@ -23,7 +23,7 @@ export class HostUnpairedDomainEventHandler {
   ) {}
 
   @OnEvent(HostUnpairedDomainEvent.name)
-  handle(event: Pick<HostUnpairedDomainEvent, 'aggregateId'> & { wipe?: boolean }): void {
+  handle(event: Pick<HostUnpairedDomainEvent, 'aggregateId' | 'wipe'>): void {
     const link = this.links.find(event.aggregateId);
     if (!link) return;
     link.close(
@@ -33,7 +33,7 @@ export class HostUnpairedDomainEventHandler {
     this.logger.log({
       message: 'closed the link of an unpaired host',
       hostId: event.aggregateId,
-      wipe: event.wipe ?? false,
+      wipe: event.wipe,
     });
   }
 }
