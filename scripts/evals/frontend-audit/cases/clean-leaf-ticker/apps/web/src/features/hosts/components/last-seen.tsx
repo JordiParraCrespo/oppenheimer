@@ -1,6 +1,7 @@
+import { useNow } from '@oppenheimer/design-system-web';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { compactAge } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { useNow } from '../hooks/use-now';
 
 /**
  * How long ago a host last answered. It owns its own clock so the row around
@@ -9,7 +10,7 @@ import { useNow } from '../hooks/use-now';
  */
 export function LastSeen({ since }: { since: Date | null }) {
   const { t } = useTranslation();
-  const now = useNow(since !== null);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const age = since ? compactAge(since, now) : null;
   if (!since) return null;
 

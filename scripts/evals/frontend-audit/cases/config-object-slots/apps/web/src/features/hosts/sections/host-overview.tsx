@@ -1,4 +1,4 @@
-import { Button } from '@oppenheimer/design-system-web';
+import { Button, StatusDot } from '@oppenheimer/design-system-web';
 import { useSuspenseHosts } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -31,8 +31,8 @@ export function HostOverview() {
       >
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
           {rows.map((host) => (
-            <li key={host.id} className="text-sm text-fg">
-              {host.summary}
+            <li key={host.id}>
+              <StatusDot state={host.online ? 'running' : 'idle'}>{host.summary}</StatusDot>
             </li>
           ))}
         </ul>

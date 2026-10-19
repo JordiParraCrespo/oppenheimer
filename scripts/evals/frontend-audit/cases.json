@@ -26,7 +26,8 @@
           "alsoFile": ["apps/web/src/features/hosts/sections/host-sessions.tsx"]
         }
       ],
-      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it."
+      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it. `sessions ?? []` also reads a pending or failed list as empty, which is U1's; that reading is fair and counts for nothing either way.",
+      "tolerate": ["U1"]
     },
     {
       "id": "context-mixed-rates",
@@ -52,7 +53,8 @@
         }
       ],
       "mechanical": ["M-compiler"],
-      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library."
+      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library. The fixture is a second rename form by construction, so P3 (a helper written twice) is fair and counts for nothing either way.",
+      "tolerate": ["P3"]
     },
     {
       "id": "ref-mutated-in-render",
@@ -112,12 +114,12 @@
       "expect": [
         {
           "rule": "M-arch",
-          "accept": ["P3"],
+          "accept": ["P3", "P1"],
           "file": "apps/web/src/features/hosts/sections/host-sidebar.tsx"
         }
       ],
       "mechanical": ["M-arch"],
-      "why": "Imports another feature's component. pnpm arch fails; the audit has to run it and report it, not re-derive it."
+      "why": "Imports another feature's component. pnpm arch fails; the audit has to run it and report it, not re-derive it. P1 (placement) names the same import, so it counts as finding it."
     },
     {
       "id": "config-object-slots",
@@ -170,7 +172,7 @@
       "id": "clean-leaf-ticker",
       "commit": "feat(web): host list shows when each host last answered",
       "expect": [],
-      "why": "Decoy for R4/R6: the one-second tick lives in the leaf that shows it, and the effect names its system."
+      "why": "Decoy for R4/R6: the minute tick lives in the leaf that shows it, through the design system's shared useNow clock, so the row and the list around it never re-render for it."
     },
     {
       "id": "clean-debounced-search",
