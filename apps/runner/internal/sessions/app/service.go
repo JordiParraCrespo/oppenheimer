@@ -36,7 +36,10 @@ type Options struct {
 	// Trust marks a folder as one the agent may work in; nil leaves the
 	// agent to ask.
 	Trust Trust
-	Now   func() time.Time
+	// Transcripts reads a session's first message off the agent's own
+	// transcript, for a session launched with no task; nil reports none.
+	Transcripts Transcripts
+	Now         func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -59,20 +62,21 @@ type Service struct {
 	// command is in flight, so a Stop or a Close that landed in between is
 	// never overwritten by a live state read before it. Neither is
 	// persisted: they only order writes within this process.
-	revs       map[string]uint64
-	busy       map[string]int
-	terminals  Terminals
-	worktrees  Worktrees
-	classifier Classifier
-	store      Store
-	publisher  Publisher
-	files      Files
-	places     Places
-	layout     domain.Layout
-	env        func(domain.Session) map[string]string
-	gate       LaunchGate
-	trust      Trust
-	now        func() time.Time
+	revs        map[string]uint64
+	busy        map[string]int
+	terminals   Terminals
+	worktrees   Worktrees
+	classifier  Classifier
+	store       Store
+	publisher   Publisher
+	files       Files
+	places      Places
+	layout      domain.Layout
+	env         func(domain.Session) map[string]string
+	gate        LaunchGate
+	trust       Trust
+	transcripts Transcripts
+	now         func() time.Time
 }
 
 // New builds the service and loads the session map from disk.
@@ -94,7 +98,8 @@ func New(opts Options) (*Service, error) {
 		revs: map[string]uint64{}, busy: map[string]int{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust, now: now,
+		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
+		transcripts: opts.Transcripts, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -377,7 +382,56 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
 		s.observe(session, item.rev, state, loginURL)
 	}
+	s.reportFirstPrompts()
 	return s.List(), errors.Join(errs...)
+}
+
+// reportFirstPrompts is the poll loop's other job: for each session launched
+// with no task, the first message the person typed into the agent, read off
+// the agent's own transcript (never the PTY) and reported once as
+// `prompt.first`, which is what the control plane names the session from
+// (02-runner §7).
+//
+// The session is marked reported in the same write that claims it, before the
+// event is handed over, so two passes at once (the loop and a read of the
+// list) report it once between them, and a runner that restarts does not
+// report it again. The reporter keeps the event until the control plane acks
+// it, so a link that is down only delays it.
+func (s *Service) reportFirstPrompts() {
+	if s.transcripts == nil {
+		return
+	}
+	s.mu.Lock()
+	_, linked := s.publisher.(PromptPublisher)
+	var waiting []domain.Session
+	for _, session := range s.sessions {
+		if session.AwaitsFirstPrompt() {
+			waiting = append(waiting, session.Clone())
+		}
+	}
+	s.mu.Unlock()
+	if !linked {
+		return
+	}
+	for _, session := range waiting {
+		text := domain.FirstPromptText(s.transcripts.FirstPrompt(session.Agent, session.Launch.Conversation))
+		if text == "" {
+			continue
+		}
+		var publisher PromptPublisher
+		next, claimed, _ := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+			p, ok := s.publisher.(PromptPublisher)
+			if !known || !ok || !cur.AwaitsFirstPrompt() {
+				return cur, false
+			}
+			publisher = p
+			cur.PromptReported = true
+			return cur, true
+		})
+		if claimed {
+			publisher.FirstPrompt(next, text)
+		}
+	}
 }
 
 // Restart recreates window 0 where the session ran: its checkout, or its

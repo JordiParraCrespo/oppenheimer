@@ -550,6 +550,16 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 	}
 }
 
+// FirstPrompt is the session service's prompt publisher: the first message
+// of a session launched with no task, read off the agent's transcript, which
+// the control plane names the session from (02-runner §7).
+func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(session.ID, "prompt.first", map[string]any{"text": text})
+}
+
 func (h *linkHandler) fail(commandID string, err error) {
 	code, detail := "RUNNER_000", err.Error()
 	if pe := problem.From(err); pe != nil && pe.Code != "" {
