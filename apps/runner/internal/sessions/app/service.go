@@ -49,8 +49,11 @@ type Service struct {
 	// snapshot could otherwise write them in the opposite order and leave
 	// the older one on disk.
 	save sync.Mutex
-	// prompting runs one ReportFirstPrompts pass at a time.
+	// prompting runs one ReportFirstPrompts pass at a time. inFlight, under
+	// mu, holds the sessions whose first message the publisher took and the
+	// control plane has not acknowledged yet, so it is not offered twice.
 	prompting sync.Mutex
+	inFlight  map[string]bool
 	sessions  map[string]domain.Session
 	// creating holds each create still running, keyed by session id. Get
 	// answers from it, so the session is there — `creating`, with its
@@ -97,7 +100,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
@@ -393,11 +396,11 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 // `prompt.first`, which is what the control plane names the session from
 // (02-runner §7).
 //
-// The message is handed to the publisher first and the session marked
-// reported only once it was taken: a runner that dies in between reports it
-// again, which the control plane absorbs (a named session is not renamed),
-// where marking first could lose it. One pass at a time, so two never both
-// read a session as waiting and both report it.
+// The session is marked reported only when the control plane acknowledges the
+// message. Until then it is in flight, and not offered again by this process;
+// a runner that ends first (an update, a reboot) offers it again, which the
+// control plane absorbs (a named session is not renamed), where marking it
+// earlier could lose it. One pass at a time, so two never both offer it.
 func (s *Service) ReportFirstPrompts() {
 	if s.transcripts == nil {
 		return
@@ -407,25 +410,39 @@ func (s *Service) ReportFirstPrompts() {
 	s.mu.Lock()
 	publisher := s.publisher
 	var waiting []domain.Session
-	for _, session := range s.sessions {
-		if session.AwaitsFirstPrompt() {
+	for id, session := range s.sessions {
+		if session.AwaitsFirstPrompt() && !s.inFlight[id] {
 			waiting = append(waiting, session.Clone())
 		}
 	}
 	s.mu.Unlock()
 	for _, session := range waiting {
 		text := domain.FirstPromptText(s.transcripts.FirstPrompt(session.Agent, session.Launch.Conversation))
-		if text == "" || !publisher.FirstPrompt(session, text) {
+		if text == "" {
 			continue
 		}
-		s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
-			if !known || cur.PromptReported {
-				return cur, false
-			}
-			cur.PromptReported = true
-			return cur, true
-		})
+		s.mu.Lock()
+		s.inFlight[session.ID] = true
+		s.mu.Unlock()
+		if !publisher.FirstPrompt(session, text, func() { s.promptReported(session.ID) }) {
+			s.mu.Lock()
+			delete(s.inFlight, session.ID)
+			s.mu.Unlock()
+		}
 	}
+}
+
+// promptReported records that the control plane has a session's first
+// message, so no pass offers it again, in this process or the next.
+func (s *Service) promptReported(id string) {
+	s.commit(id, func(cur domain.Session, known bool) (domain.Session, bool) {
+		delete(s.inFlight, id)
+		if !known || cur.PromptReported {
+			return cur, false
+		}
+		cur.PromptReported = true
+		return cur, true
+	})
 }
 
 // Restart recreates window 0 where the session ran: its checkout, or its

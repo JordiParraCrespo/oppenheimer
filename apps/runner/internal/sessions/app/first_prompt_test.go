@@ -35,22 +35,42 @@ func (t *typedTranscripts) typeInto(text string) {
 	t.typed[conversation] = text
 }
 
-// promptRecorder is the link: it takes state changes and first prompts.
+// promptRecorder is the link: it takes state changes and first prompts, and
+// the control plane acks each prompt at once unless unacked holds the acks.
 type promptRecorder struct {
 	mu      sync.Mutex
 	prompts []string
 	// hold is how long taking a prompt takes, so passes at once overlap.
-	hold time.Duration
+	hold    time.Duration
+	unacked bool
+	acks    []func()
 }
 
 func (r *promptRecorder) SessionChanged(domain.Session) {}
 
-func (r *promptRecorder) FirstPrompt(_ domain.Session, text string) bool {
+func (r *promptRecorder) FirstPrompt(_ domain.Session, text string, reported func()) bool {
 	time.Sleep(r.hold)
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.prompts = append(r.prompts, text)
+	if r.unacked {
+		r.acks = append(r.acks, reported)
+		r.mu.Unlock()
+		return true
+	}
+	r.mu.Unlock()
+	reported()
 	return true
+}
+
+// ack is the control plane acknowledging every prompt held so far.
+func (r *promptRecorder) ack() {
+	r.mu.Lock()
+	acks := r.acks
+	r.acks = nil
+	r.mu.Unlock()
+	for _, reported := range acks {
+		reported()
+	}
 }
 
 func (r *promptRecorder) sent() []string {
@@ -145,6 +165,65 @@ func TestPassesAtOnceReportTheFirstMessageOnce(t *testing.T) {
 	passes.Wait()
 	if got := h.link.sent(); len(got) != 1 {
 		t.Fatalf("reported %q, want the first message once", got)
+	}
+}
+
+// A message the link took but the control plane never acknowledged — the
+// runner updated itself, the host rebooted — is offered again by the next
+// runner. Within one process it is offered once, and marked once acked.
+func TestAMessageLostBeforeItsAckIsReportedAgain(t *testing.T) {
+	store := state.New(t.TempDir())
+	h := newPromptHarness(t, store, &promptRecorder{unacked: true})
+	h.open(t, domain.Launch{Conversation: conversation})
+	h.transcripts.typeInto("Fix the repo picker")
+	h.poll(t)
+	h.poll(t)
+	if got := h.link.sent(); len(got) != 1 {
+		t.Fatalf("reported %q while the first was in flight, want it once", got)
+	}
+
+	restarted := newPromptHarness(t, store, &promptRecorder{unacked: true})
+	restarted.transcripts.typeInto("Fix the repo picker")
+	restarted.poll(t)
+	if got := restarted.link.sent(); len(got) != 1 {
+		t.Fatalf("after a restart before the ack, reported %q, want it again", got)
+	}
+	restarted.link.ack()
+
+	again := newPromptHarness(t, store, &promptRecorder{})
+	again.transcripts.typeInto("Fix the repo picker")
+	again.poll(t)
+	if got := again.link.sent(); len(got) != 0 {
+		t.Fatalf("after the ack, a restarted runner reported %q", got)
+	}
+}
+
+// An agent that exits between the first message and the next poll leaves a
+// stopped session whose transcript still has the message.
+func TestAStoppedSessionStillReportsItsFirstMessage(t *testing.T) {
+	terminals := fake.NewTerminals()
+	link := &promptRecorder{}
+	transcripts := &typedTranscripts{typed: map[string]string{}}
+	svc, err := app.New(app.Options{
+		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
+		Store: state.New(t.TempDir()), Publisher: link, Transcripts: transcripts,
+		Places: fake.NewPlaces(), Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := &promptHarness{svc: svc, transcripts: transcripts, link: link}
+	session := h.open(t, domain.Launch{Conversation: conversation})
+	h.transcripts.typeInto("Fix the repo picker")
+	if err := terminals.Kill(context.Background(), session.TmuxName()); err != nil {
+		t.Fatal(err)
+	}
+	h.poll(t)
+	if got, _ := svc.Get(session.ID); got.State != domain.StateStopped {
+		t.Fatalf("state = %q, want stopped", got.State)
+	}
+	if got := link.sent(); len(got) != 1 {
+		t.Fatalf("reported %q for the stopped session, want its first message", got)
 	}
 }
 
