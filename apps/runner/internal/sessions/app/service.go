@@ -48,8 +48,10 @@ type Service struct {
 	// save serialises writes to the store: two goroutines that both took a
 	// snapshot could otherwise write them in the opposite order and leave
 	// the older one on disk.
-	save     sync.Mutex
-	sessions map[string]domain.Session
+	save sync.Mutex
+	// prompting runs one ReportFirstPrompts pass at a time.
+	prompting sync.Mutex
+	sessions  map[string]domain.Session
 	// creating holds each create still running, keyed by session id. Get
 	// answers from it, so the session is there — `creating`, with its
 	// checkout — for the credential helper its own clone calls; and a second
@@ -382,27 +384,28 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
 		s.observe(session, item.rev, state, loginURL)
 	}
-	s.reportFirstPrompts()
 	return s.List(), errors.Join(errs...)
 }
 
-// reportFirstPrompts is the poll loop's other job: for each session launched
+// ReportFirstPrompts is the poll loop's other job: for each session launched
 // with no task, the first message the person typed into the agent, read off
 // the agent's own transcript (never the PTY) and reported once as
 // `prompt.first`, which is what the control plane names the session from
 // (02-runner §7).
 //
-// The session is marked reported in the same write that claims it, before the
-// event is handed over, so two passes at once (the loop and a read of the
-// list) report it once between them, and a runner that restarts does not
-// report it again. The reporter keeps the event until the control plane acks
-// it, so a link that is down only delays it.
-func (s *Service) reportFirstPrompts() {
+// The message is handed to the publisher first and the session marked
+// reported only once it was taken: a runner that dies in between reports it
+// again, which the control plane absorbs (a named session is not renamed),
+// where marking first could lose it. One pass at a time, so two never both
+// read a session as waiting and both report it.
+func (s *Service) ReportFirstPrompts() {
 	if s.transcripts == nil {
 		return
 	}
+	s.prompting.Lock()
+	defer s.prompting.Unlock()
 	s.mu.Lock()
-	_, linked := s.publisher.(PromptPublisher)
+	publisher := s.publisher
 	var waiting []domain.Session
 	for _, session := range s.sessions {
 		if session.AwaitsFirstPrompt() {
@@ -410,27 +413,18 @@ func (s *Service) reportFirstPrompts() {
 		}
 	}
 	s.mu.Unlock()
-	if !linked {
-		return
-	}
 	for _, session := range waiting {
 		text := domain.FirstPromptText(s.transcripts.FirstPrompt(session.Agent, session.Launch.Conversation))
-		if text == "" {
+		if text == "" || !publisher.FirstPrompt(session, text) {
 			continue
 		}
-		var publisher PromptPublisher
-		next, claimed, _ := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
-			p, ok := s.publisher.(PromptPublisher)
-			if !known || !ok || !cur.AwaitsFirstPrompt() {
+		s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+			if !known || cur.PromptReported {
 				return cur, false
 			}
-			publisher = p
 			cur.PromptReported = true
 			return cur, true
 		})
-		if claimed {
-			publisher.FirstPrompt(next, text)
-		}
 	}
 }
 

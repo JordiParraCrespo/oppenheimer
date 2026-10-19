@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/fake"
@@ -38,14 +39,18 @@ func (t *typedTranscripts) typeInto(text string) {
 type promptRecorder struct {
 	mu      sync.Mutex
 	prompts []string
+	// hold is how long taking a prompt takes, so passes at once overlap.
+	hold time.Duration
 }
 
 func (r *promptRecorder) SessionChanged(domain.Session) {}
 
-func (r *promptRecorder) FirstPrompt(_ domain.Session, text string) {
+func (r *promptRecorder) FirstPrompt(_ domain.Session, text string) bool {
+	time.Sleep(r.hold)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.prompts = append(r.prompts, text)
+	return true
 }
 
 func (r *promptRecorder) sent() []string {
@@ -86,11 +91,13 @@ func (h *promptHarness) open(t *testing.T, launch domain.Launch) domain.Session 
 	return session
 }
 
+// poll is one tick of the runner's session loop.
 func (h *promptHarness) poll(t *testing.T) {
 	t.Helper()
 	if _, err := h.svc.RefreshAll(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	h.svc.ReportFirstPrompts()
 }
 
 // A task typed into the terminal names the session: the first message is
@@ -118,6 +125,26 @@ func TestTheFirstMessageTypedIntoTheAgentIsReportedOnce(t *testing.T) {
 	restarted.poll(t)
 	if got := restarted.link.sent(); len(got) != 0 {
 		t.Fatalf("a restarted runner reported %q again", got)
+	}
+}
+
+// Two passes at once (a slow tick overlapping the next) see the same
+// waiting session; only one reports it.
+func TestPassesAtOnceReportTheFirstMessageOnce(t *testing.T) {
+	h := newPromptHarness(t, state.New(t.TempDir()), &promptRecorder{hold: 20 * time.Millisecond})
+	h.open(t, domain.Launch{Conversation: conversation})
+	h.transcripts.typeInto("Fix the repo picker")
+	var passes sync.WaitGroup
+	for range 8 {
+		passes.Add(1)
+		go func() {
+			defer passes.Done()
+			h.svc.ReportFirstPrompts()
+		}()
+	}
+	passes.Wait()
+	if got := h.link.sent(); len(got) != 1 {
+		t.Fatalf("reported %q, want the first message once", got)
 	}
 }
 

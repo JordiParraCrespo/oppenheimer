@@ -174,16 +174,11 @@ type Store interface {
 // plane.
 type Publisher interface {
 	SessionChanged(session domain.Session)
-}
-
-// PromptPublisher is a Publisher that can also carry a session's first
-// message, read off the agent's transcript, to the control plane as
-// `prompt.first` (02-runner §7). Only a publisher that implements it is given
-// one: until the link exists nothing is read, so nothing is marked reported
-// that was never sent.
-type PromptPublisher interface {
-	Publisher
-	FirstPrompt(session domain.Session, text string)
+	// FirstPrompt carries a session's first message, read off the agent's
+	// transcript, to the control plane as `prompt.first` (02-runner §7),
+	// and reports whether it took it. Only a taken message is marked
+	// reported, so one offered before the link exists is offered again.
+	FirstPrompt(session domain.Session, text string) bool
 }
 
 // Transcripts reads what an agent's own transcript says, on this host. The
@@ -203,6 +198,9 @@ type NopPublisher struct{}
 
 // SessionChanged implements Publisher.
 func (NopPublisher) SessionChanged(domain.Session) {}
+
+// FirstPrompt implements Publisher: nobody takes it.
+func (NopPublisher) FirstPrompt(domain.Session, string) bool { return false }
 
 // LaunchGate holds an agent's launch while something is replacing that
 // agent's executable, so a session never starts a CLI halfway through its

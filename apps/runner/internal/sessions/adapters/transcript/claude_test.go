@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -100,6 +101,28 @@ func TestALineStillBeingWrittenIsLeftForLater(t *testing.T) {
 	}
 	if got := firstPrompt(projects); got != "" {
 		t.Fatalf("first prompt = %q, want none until the line is whole", got)
+	}
+}
+
+// A conversation found in two folders (a Claude Code version that encodes the
+// working directory differently) is read from the one written last, whatever
+// order the folders are listed in.
+func TestAConversationInTwoFoldersIsReadFromTheNewest(t *testing.T) {
+	projects := write(t, `{"type":"user","message":{"role":"user","content":"the older folder"}}`)
+	older := filepath.Join(projects, "-w-sessions-bold-otter-3f9a7k-oppenheimer", conversation+".jsonl")
+	newer := filepath.Join(projects, "-z-renamed-folder", conversation+".jsonl")
+	if err := os.MkdirAll(filepath.Dir(newer), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(newer, []byte(promptLine+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(older, past, past); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := firstPrompt(projects), "Fix the repo picker so it lists archived repos"; got != want {
+		t.Fatalf("first prompt = %q, want the newest folder's %q", got, want)
 	}
 }
 

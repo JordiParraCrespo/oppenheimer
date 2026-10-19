@@ -550,14 +550,17 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 	}
 }
 
-// FirstPrompt is the session service's prompt publisher: the first message
+// FirstPrompt is the session service's publisher for the first message
 // of a session launched with no task, read off the agent's transcript, which
-// the control plane names the session from (02-runner §7).
-func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string) {
+// the control plane names the session from (02-runner §7). The reporter keeps
+// the event until the control plane acks it, so a link that is down only
+// delays it.
+func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string) bool {
 	if h.reporter == nil {
-		return
+		return false
 	}
 	h.reporter.Append(session.ID, "prompt.first", map[string]any{"text": text})
+	return true
 }
 
 func (h *linkHandler) fail(commandID string, err error) {

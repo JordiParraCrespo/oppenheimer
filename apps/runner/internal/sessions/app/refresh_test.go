@@ -87,6 +87,8 @@ func (r *syncRecorder) SessionChanged(s domain.Session) {
 	r.states = append(r.states, s.State)
 }
 
+func (r *syncRecorder) FirstPrompt(domain.Session, string) bool { return true }
+
 func (r *syncRecorder) seen() []domain.State {
 	r.mu.Lock()
 	defer r.mu.Unlock()
