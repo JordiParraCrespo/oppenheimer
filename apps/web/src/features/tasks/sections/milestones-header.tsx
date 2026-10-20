@@ -26,13 +26,15 @@ export function MilestonesHeader({
   const { t } = useTranslation();
   const today = useToday();
   const { projectId } = useScopeProject();
-  const { data: counts } = useTasks({ select: (rows) => boardCounts(rows, { projectId }, today) });
+  const { data: counts, isPending } = useTasks({
+    select: (rows) => boardCounts(rows, { projectId }, today),
+  });
 
   return (
     <PageHeader>
       <PageHeaderRow
         size="display"
-        meta={<PlanCounts counts={counts} />}
+        meta={<PlanCounts counts={counts} pending={isPending} />}
         title={t('tasks.milestones.title')}
         actions={
           <div className="flex items-center gap-1.5">

@@ -41,7 +41,7 @@ export function BotDocumentsSkeleton() {
           ))}
         </div>
       </div>
-      <BotRevisionsSkeleton />
+      <BotRevisionsSkeleton announce={false} />
     </div>
   );
 }

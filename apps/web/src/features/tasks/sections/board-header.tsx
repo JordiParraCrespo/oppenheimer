@@ -15,13 +15,15 @@ export function BoardHeader({ onNew }: { onNew: () => void }) {
   const { t } = useTranslation();
   const filter = useBoardFilter();
   const today = useToday();
-  const { data: counts } = useTasks({ select: (rows) => boardCounts(rows, filter, today) });
+  const { data: counts, isPending } = useTasks({
+    select: (rows) => boardCounts(rows, filter, today),
+  });
 
   return (
     <PageHeader>
       <PageHeaderRow
         size="display"
-        meta={<PlanCounts counts={counts} />}
+        meta={<PlanCounts counts={counts} pending={isPending} />}
         title={t('tasks.board.title')}
         actions={
           <Button onClick={onNew}>

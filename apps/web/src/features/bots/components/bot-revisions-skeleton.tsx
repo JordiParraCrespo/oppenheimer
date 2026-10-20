@@ -13,13 +13,14 @@ const ROWS = [
  * A document's revision history before it answers: the heading written, then
  * the card with three rows on the row's own frame, a bar for who wrote it in
  * the lead's pill, one for what it did and one for its meta line. The newest
- * says Current, as it will; the others hold a bar where Revert goes.
+ * says Current, as it will; the others hold a bar where Revert goes. Inside a
+ * placeholder that already announces itself, `announce={false}` keeps it to one.
  */
-export function BotRevisionsSkeleton() {
+export function BotRevisionsSkeleton({ announce = true }: { announce?: boolean }) {
   const { t } = useTranslation();
   return (
     <section aria-busy className="flex flex-col gap-2.5">
-      <LoadingStatus />
+      {announce ? <LoadingStatus /> : null}
       <h2 className="eyebrow m-0 px-1">{t('bots.settings.instructions.history')}</h2>
       <SettingsGroup aria-hidden>
         {ROWS.map(({ note, meta, current }) => (
