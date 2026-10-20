@@ -985,7 +985,16 @@
         "moreLines_one": "Ver {{count}} línea más",
         "moreLines_many": "Ver {{count}} líneas más",
         "moreLines_other": "Ver {{count}} líneas más",
-        "lessOutput": "Ver menos"
+        "lessOutput": "Ver menos",
+        "group_one": "Usó {{count}} herramienta",
+        "group_many": "Usó {{count}} herramientas",
+        "group_other": "Usó {{count}} herramientas",
+        "groupSearched_one": "Buscó en la web {{count}} vez",
+        "groupSearched_many": "Buscó en la web {{count}} veces",
+        "groupSearched_other": "Buscó en la web {{count}} veces",
+        "groupFailed_one": "{{count}} con error",
+        "groupFailed_many": "{{count}} con error",
+        "groupFailed_other": "{{count}} con error"
       },
       "suggest": {
         "task": {
