@@ -406,8 +406,12 @@ ${pendings
 }
 `;
 const SLAB = '<Skeleton className="h-60 w-full" />';
-// On SLAB_DEBT with one slab.
-const DEBTOR = 'src/features/bots/screens/bot-memory.tsx';
+// A file the fixture's own SLAB_DEBT holds to one slab: the repository's
+// list is empty, so the count is exercised on a list written for the case.
+const DEBTOR = 'src/features/things/sections/old-list.tsx';
+const DEBT = {
+  'scripts/skeleton-slab-debt.mjs': `export const SLAB_DEBT = new Map([['apps/web/${DEBTOR}', 1]]);\n`,
+};
 
 test('a slab placeholder is reported with its file and line', () => {
   const { report } = check({ 'src/features/things/sections/thing-list.tsx': slabbed(SLAB) });
@@ -418,17 +422,17 @@ test('a slab placeholder is reported with its file and line', () => {
 });
 
 test('a debt-listed file is held to its count: one more slab is reported, as many pass', () => {
-  assert.doesNotMatch(check({ [DEBTOR]: slabbed(SLAB) }).report, /bot-memory\.tsx.*slab/);
+  assert.doesNotMatch(check({ [DEBTOR]: slabbed(SLAB) }, DEBT).report, /old-list\.tsx.*slab/);
   assert.match(
-    check({ [DEBTOR]: slabbed(SLAB, SLAB) }).report,
-    /bot-memory\.tsx:\d+: QueryState\.Pending is a slab/,
+    check({ [DEBTOR]: slabbed(SLAB, SLAB) }, DEBT).report,
+    /old-list\.tsx:\d+: QueryState\.Pending is a slab/,
   );
 });
 
 test('a debt-listed file with fewer slabs than its count asks for the count to come down', () => {
   assert.match(
-    check({ [DEBTOR]: slabbed('<ThingListSkeleton />') }).report,
-    /bot-memory\.tsx: holds 0 slabs, SLAB_DEBT says 1 — lower its count/,
+    check({ [DEBTOR]: slabbed('<ThingListSkeleton />') }, DEBT).report,
+    /old-list\.tsx: holds 0 slabs, SLAB_DEBT says 1 — lower its count/,
   );
 });
 

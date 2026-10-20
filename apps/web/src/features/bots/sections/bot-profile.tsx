@@ -1,7 +1,8 @@
-import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
+import { SettingsGroup, SettingsRow } from '@oppenheimer/design-system-web';
 import { useSuspenseBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatMediumDate, QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { BotChatHistorySkeleton } from '@/features/bots/components/bot-chat-history-skeleton';
 import { BotChatHistory } from './bot-chat-history';
 import { BotProfileCard } from './bot-profile-card';
 
@@ -30,7 +31,7 @@ export function BotProfile({ botId }: { botId: string }) {
         <h2 className="eyebrow m-0 px-1">{t('bots.settings.profile.history')}</h2>
         <QueryState>
           <QueryState.Pending>
-            <Skeleton shape="lg" className="h-16 w-full" />
+            <BotChatHistorySkeleton />
           </QueryState.Pending>
           <QueryState.Error fallback={t('bots.settings.loadFailed')} />
           <QueryState.Data>

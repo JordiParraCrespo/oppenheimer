@@ -1,7 +1,8 @@
-import { type MilestoneTimelineControls, Skeleton } from '@oppenheimer/design-system-web';
+import type { MilestoneTimelineControls } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MilestonesTimelineSkeleton } from '../components/milestones-timeline-skeleton';
 import { MilestoneDialog } from '../dialogs/milestone';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { MilestonesHeader } from '../sections/milestones-header';
@@ -31,7 +32,7 @@ export function MilestonesScreen() {
       <PlanFilters />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton className="h-60 w-full" />
+          <MilestonesTimelineSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('tasks.milestones.loadFailed')} />
         <QueryState.Data>

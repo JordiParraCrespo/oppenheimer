@@ -1,7 +1,8 @@
-import { SidebarListHead, Skeleton } from '@oppenheimer/design-system-web';
+import { SidebarListHead } from '@oppenheimer/design-system-web';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { GoogleAccountsSkeleton } from '../components/google-accounts-skeleton';
 import { GoogleAccountRows } from './google-account-rows';
 
 /**
@@ -23,7 +24,7 @@ export function GoogleAccountsCard() {
       <div className="mx-3 flex flex-col gap-2">
         <QueryState>
           <QueryState.Pending>
-            <Skeleton className="h-16 w-full" />
+            <GoogleAccountsSkeleton />
           </QueryState.Pending>
           <QueryState.Error fallback={t('calendar.google.loadFailed')} />
           <QueryState.Data>

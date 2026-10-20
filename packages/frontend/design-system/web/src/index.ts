@@ -289,7 +289,7 @@ export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export { FileIcon } from './components/file-icon';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
-export { HostCard } from './components/host-card';
+export { HostCard, HostCardSkeleton } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
 export { HostLinkChrome } from './components/host-link';
 export type { IconButtonProps } from './components/icon-button';

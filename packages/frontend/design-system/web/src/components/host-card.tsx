@@ -2,8 +2,13 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { CommandRow, CommandRowList } from './command-row';
+import { Skeleton } from './skeleton';
 
 type HostCardStatus = 'running' | 'idle' | 'offline';
+
+// Two columns, the dot's and the rest, so the detail lines up with the name
+// because it sits in the same column, not by an offset.
+const FRAME = 'grid grid-cols-[7px_minmax(0,1fr)] gap-x-3.5 rounded-lg border border-border-subtle bg-card pr-4 pl-5';
 
 /** What an offline host is holding up, and how to bring it back. */
 type HostCardOffline = {
@@ -59,12 +64,7 @@ function HostCard({
     <div
       data-slot="host-card"
       data-status={status}
-      // Two columns, the dot's and the rest, so the detail lines up with
-      // the name because it sits in the same column, not by an offset.
-      className={cn(
-        'grid grid-cols-[7px_minmax(0,1fr)] gap-x-3.5 rounded-lg border border-border-subtle bg-card pr-4 pl-5',
-        className,
-      )}
+      className={cn(FRAME, className)}
       {...props}
     >
       <span
@@ -114,5 +114,43 @@ function HostCard({
   );
 }
 
-export { HostCard };
+const SKELETON_NAMES = ['w-32', 'w-24', 'w-28'] as const;
+const SKELETON_METAS = ['w-56', 'w-44', 'w-48'] as const;
+
+/**
+ * A card's place while the hosts have not answered: the card's frame and
+ * columns, a bar for the dot, the name and meta line, the state and last-seen,
+ * and the menu's control, each at its line's height, so the card that
+ * replaces it lands where it stood. `index` varies the widths.
+ */
+function HostCardSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div aria-hidden data-slot="host-card-skeleton" className={cn(FRAME, className)} {...props}>
+      <Skeleton shape="pill" className="size-[7px] self-center" />
+      <div className="flex items-center gap-3.5 py-4.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.75">
+          <span className="flex h-5 items-center">
+            <Skeleton shape="sm" className={cn('h-3', SKELETON_NAMES[index % SKELETON_NAMES.length])} />
+          </span>
+          <span className="flex h-4.5 items-center">
+            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', SKELETON_METAS[index % SKELETON_METAS.length])} />
+          </span>
+        </div>
+        <div className="flex min-w-30 shrink-0 flex-col items-end gap-0.75">
+          <span className="flex h-4.75 items-center">
+            <Skeleton shape="sm" className="h-2.5 w-16" />
+          </span>
+          <span className="flex h-4.25 items-center">
+            <Skeleton shape="sm" className="h-2 w-20" />
+          </span>
+        </div>
+        <span className="flex size-(--control-h-sm) shrink-0 items-center justify-center">
+          <Skeleton shape="sm" className="size-3.5" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export { HostCard, HostCardSkeleton };
 export type { HostCardOffline, HostCardStatus };

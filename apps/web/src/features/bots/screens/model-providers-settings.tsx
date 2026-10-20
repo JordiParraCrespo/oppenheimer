@@ -1,7 +1,8 @@
-import { Alert, AlertDescription, SettingsTitle, Skeleton } from '@oppenheimer/design-system-web';
+import { Alert, AlertDescription, SettingsTitle } from '@oppenheimer/design-system-web';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { ModelProvidersSkeleton } from '../components/model-providers-skeleton';
 import { ModelProviders } from '../sections/model-providers';
 
 /**
@@ -25,7 +26,7 @@ export function ModelProvidersSettingsScreen() {
       ) : null}
       <QueryState>
         <QueryState.Pending>
-          <Skeleton className="h-40 w-full" />
+          <ModelProvidersSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('settings.modelProviders.loadFailed')} />
         <QueryState.Data>
