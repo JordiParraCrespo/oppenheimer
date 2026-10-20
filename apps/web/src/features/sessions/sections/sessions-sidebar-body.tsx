@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
-import { useSessionPins } from '../hooks/use-session-pins';
+import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import {
   ALL,
@@ -40,9 +40,6 @@ import { ProjectGroup } from './project-group';
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
-
-/** The pinned group's key among the folded ones, beside the projects' ids. */
-const PINNED_KEY = 'pinned';
 
 /**
  * The console's sidebar below New session, in `SessionsSidebar`'s
@@ -96,9 +93,8 @@ export function SessionsSidebarBody() {
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
-  const { pins, setPinned } = useSessionPins();
-  const { pinned, rest } = splitPinned(visible, pins);
-  const onPinChange = (session: SessionEntity, next: boolean) => setPinned(session.id, next);
+  const pins = useSessionPins();
+  const { pinned, rest } = splitPinned(visible, pins.pins);
   const { groups, handlers } = useSidebarOrder({
     projects,
     sessions: rest,
@@ -139,78 +135,76 @@ export function SessionsSidebarBody() {
         className="mx-3 mb-2"
       />
 
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-        {/* No project at all: the way to one is the plus above and the chip
+      <SessionPinsContext value={pins}>
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
+          {/* No project at all: the way to one is the plus above and the chip
             on New session, and the row says so rather than arguing with the
             pane. */}
-        {groups.length === 0 ? (
-          <div className="px-3 pt-2">
-            <EmptyState compact>
-              <EmptyState.Header>
-                <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </div>
-        ) : (
-          <DragProvider
-            {...handlers}
-            labels={dragLabels}
-            overlay={(active) => <SidebarDragCopy item={active} />}
-          >
-            {pinned.length > 0 ? (
-              <PinnedGroup
-                sessions={pinned}
-                open={!closed.includes(PINNED_KEY)}
-                onOpenChange={(next) =>
-                  setClosed((current) =>
-                    next ? current.filter((id) => id !== PINNED_KEY) : [...current, PINNED_KEY],
-                  )
-                }
-                onPinChange={onPinChange}
-                onShare={(target) => dialogs.open({ kind: 'share-session', sessionId: target.id })}
-                onDelete={setDeleting}
-                onWrite={setFailure}
-              />
-            ) : null}
-            <SortableGroup
-              id={PROJECTS_GROUP}
-              items={groups.flatMap(({ project }) =>
-                project ? [sortableProjectId(project.id)] : [],
-              )}
-              accepts={['project']}
+          {groups.length === 0 ? (
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          ) : (
+            <DragProvider
+              {...handlers}
+              labels={dragLabels}
+              overlay={(active) => <SidebarDragCopy item={active} />}
             >
-              {groups.map(({ project, sessions: members }) => {
-                const key = project?.id ?? 'unfiled';
-                return (
-                  <ProjectGroup
-                    key={key}
-                    project={project}
-                    sessions={members}
-                    open={!closed.includes(key)}
-                    onOpenChange={(next) =>
-                      setClosed((current) =>
-                        next ? current.filter((id) => id !== key) : [...current, key],
-                      )
-                    }
-                    narrowed={narrowed}
-                    query={query}
-                    onNewSessionHere={(target) =>
-                      navigate({ to: '/sessions/new', search: { project: target.id } })
-                    }
-                    onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
-                    onPinChange={onPinChange}
-                    onShare={(target) =>
-                      dialogs.open({ kind: 'share-session', sessionId: target.id })
-                    }
-                    onDelete={setDeleting}
-                    onWrite={setFailure}
-                  />
-                );
-              })}
-            </SortableGroup>
-          </DragProvider>
-        )}
-      </div>
+              {pinned.length > 0 ? (
+                <PinnedGroup
+                  sessions={pinned}
+                  onShare={(target) =>
+                    dialogs.open({ kind: 'share-session', sessionId: target.id })
+                  }
+                  onDelete={setDeleting}
+                  onWrite={setFailure}
+                />
+              ) : null}
+              <SortableGroup
+                id={PROJECTS_GROUP}
+                items={groups.flatMap(({ project }) =>
+                  project ? [sortableProjectId(project.id)] : [],
+                )}
+                accepts={['project']}
+              >
+                {groups.map(({ project, sessions: members }) => {
+                  const key = project?.id ?? 'unfiled';
+                  return (
+                    <ProjectGroup
+                      key={key}
+                      project={project}
+                      sessions={members}
+                      open={!closed.includes(key)}
+                      onOpenChange={(next) =>
+                        setClosed((current) =>
+                          next ? current.filter((id) => id !== key) : [...current, key],
+                        )
+                      }
+                      narrowed={narrowed}
+                      query={query}
+                      onNewSessionHere={(target) =>
+                        navigate({ to: '/sessions/new', search: { project: target.id } })
+                      }
+                      onSettings={(target) =>
+                        dialogs.open({ kind: 'project', projectId: target.id })
+                      }
+                      onShare={(target) =>
+                        dialogs.open({ kind: 'share-session', sessionId: target.id })
+                      }
+                      onDelete={setDeleting}
+                      onWrite={setFailure}
+                    />
+                  );
+                })}
+              </SortableGroup>
+            </DragProvider>
+          )}
+        </div>
+      </SessionPinsContext>
 
       <Suspense fallback={null}>
         {deleting ? (
