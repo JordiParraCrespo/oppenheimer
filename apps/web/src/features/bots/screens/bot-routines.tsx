@@ -1,6 +1,7 @@
-import { SettingsTitle, Skeleton } from '@oppenheimer/design-system-web';
+import { SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { BotRoutinesSkeleton } from '@/features/bots/components/bot-routines-skeleton';
 import { BotRoutines } from '@/features/bots/sections/bot-routines';
 
 /**
@@ -20,7 +21,7 @@ export function BotRoutinesScreen({ botId }: { botId: string }) {
       />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-32 w-full" />
+          <BotRoutinesSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.settings.routines.loadFailed')} />
         <QueryState.Data>
