@@ -1,6 +1,6 @@
 // Package agenttrust tells an agent CLI that a session's folder is one it may
 // work in, so the CLI's "do you trust the files in this folder?" question is
-// already answered when nobody is at the terminal to answer it.
+// already answered when the session opens.
 package agenttrust
 
 import (
