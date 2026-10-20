@@ -309,7 +309,10 @@ grounds can still fetch, verify and install the version that fixes it
   than replaying a queue: an open session the hello leaves out is
   recorded **stopped**, so the console offers a restart rather than a
   terminal that will never attach, and one still starting is dispatched
-  again (the create is idempotent by session id).
+  again (the create is idempotent by session id). A session whose close
+  the host never answered is sent `session.close` again, held or not
+  (the close is idempotent too: an unknown session answers
+  `session.closed`).
 - **The session list is fitted to the frame cap**, in `hello` and
   `heartbeat` alike, giving up a little more at each step: every
   snapshot as built; then every session **compacted** to its id, agent,

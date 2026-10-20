@@ -35,13 +35,47 @@ const (
 	ExitForbidden   = 4
 	ExitNotFound    = 5
 	ExitUnreachable = 6
+	// ExitIncomplete is an uninstall that erased this host's identity but
+	// could not unpair it at the control plane (PAIR_009): done here, not
+	// there, and a person still has to remove the host from the console.
+	ExitIncomplete = 7
 )
+
+// exitByCode is the outcomes whose exit code is not their status's: a
+// partial result that a status alone would read as something else.
+var exitByCode = map[string]int{
+	pairdomain.ErrStillPaired.Code: ExitIncomplete,
+}
+
+// exitForCode finds an outcome in exitByCode anywhere in err's tree, so an
+// uninstall whose service removal also failed still exits as incomplete
+// rather than as the first problem joined before it.
+func exitForCode(err error) (int, bool) {
+	var prob *problem.Error
+	if errors.As(err, &prob) {
+		if code, ok := exitByCode[prob.Code]; ok {
+			return code, true
+		}
+	}
+	var joined interface{ Unwrap() []error }
+	if errors.As(err, &joined) {
+		for _, e := range joined.Unwrap() {
+			if code, ok := exitForCode(e); ok {
+				return code, true
+			}
+		}
+	}
+	return 0, false
+}
 
 // ExitCode maps an error onto the contract. A problem document carries the
 // status that decides it; anything else is a plain failure.
 func ExitCode(err error) int {
 	if err == nil {
 		return ExitOK
+	}
+	if code, ok := exitForCode(err); ok {
+		return code
 	}
 	var prob *problem.Error
 	if !errors.As(err, &prob) {
@@ -177,7 +211,7 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 		Token: opts.Token, ControlPlaneURL: opts.URL, Name: name, Facts: encoded, Force: opts.Force,
 	})
 	if err != nil {
-		return err
+		return a.explainAlreadyPaired(err, opts.URL)
 	}
 	if opts.Channel != "" {
 		if identity, err = a.Pairing.SetChannel(pairdomain.Channel(opts.Channel)); err != nil {
@@ -288,6 +322,35 @@ func publicKeyFingerprint(encoded string) string {
 	return pairdomain.KeyFingerprint(ed25519.PublicKey(raw))
 }
 
+// explainAlreadyPaired adds to the service's PAIR_002 what a person needs to
+// choose: where the host is paired now, where this command wanted it, and the
+// two commands this binary accepts that get it there. The installer takes
+// neither flag, so the advice names the runner itself. Any other error, or a
+// PAIR_002 whose identity cannot be read back, is returned as it came.
+func (a *App) explainAlreadyPaired(err error, requested string) error {
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != pairdomain.ErrAlreadyRegisted.Code {
+		return err
+	}
+	identity, loadErr := a.Pairing.Identity()
+	if loadErr != nil {
+		return err
+	}
+	current := strings.TrimRight(identity.ControlPlaneURL, "/")
+	requested = strings.TrimRight(strings.TrimSpace(requested), "/")
+	where := "with " + current + ", and this command asks to pair it with " + requested
+	if sameOrigin(current, requested) {
+		where = "with this control plane (" + current + ")"
+	}
+	return pairdomain.ErrAlreadyRegisted.WithDetail(
+		"this host is already paired as %s (%s) %s. To pair it again: run `%s uninstall`, which unpairs it at %s "+
+			"and leaves your code in %s, then run the install command from Add host again. "+
+			"Or replace the pairing in place with `%s register --url %s --force` (token in OPPENHEIMER_REGISTRATION_TOKEN); "+
+			"the old host then stays listed at %s until you remove it there under Settings → Hosts",
+		identity.Name, identity.HostID, where, binaryName(), current, a.Paths.Workspaces,
+		binaryName(), requested, current).WithCause(err)
+}
+
 // sameOrigin compares two control-plane URLs the way a runner dials them.
 func sameOrigin(a, b string) bool {
 	return strings.EqualFold(strings.TrimRight(strings.TrimSpace(a), "/"), strings.TrimRight(strings.TrimSpace(b), "/"))
@@ -373,26 +436,39 @@ func (a *App) Uninstall(ctx context.Context, out io.Writer, opts UninstallOption
 		}
 	}
 	if !opts.KeepIdentity {
-		hostID := "<id>"
-		if identity, err := a.Pairing.Identity(); err == nil && identity.HostID != "" {
-			hostID = identity.HostID
-		}
-		revoked, err := a.Pairing.Unregister(ctx)
+		result, err := a.Pairing.Unregister(ctx)
 		switch {
-		case err != nil && !isNotPaired(err):
-			errs = append(errs, err)
 		case isNotPaired(err):
 			p.println("this host was not paired; nothing to revoke")
-		case revoked:
+		case err != nil:
+			errs = append(errs, err)
+		case result.Revoked():
 			p.println("host revoked at the control plane and identity erased")
 		default:
-			p.printf("identity erased, but the control plane could not be reached: it still lists this host "+
-				"and trusts its key until the host is unpaired there (DELETE /v1/hosts/%s; the console has no unpair control yet)\n", hostID)
+			errs = append(errs, a.printStillPaired(p, result))
 		}
 	}
 	p.printf("left in place: %s (your worktrees and code)\n", a.Paths.Workspaces)
 	p.printf("left in place: %s (binaries and logs) — remove it by hand if you want it gone\n", a.Paths.Home)
 	return errors.Join(append(errs, p.err)...)
+}
+
+// printStillPaired tells a person the uninstall is half done, and how to
+// finish it. The key is gone, so this machine can no longer unpair itself:
+// what is left is a signed-in person removing the host at the control plane.
+// It returns the PAIR_009 the command exits with.
+func (a *App) printStillPaired(p *printer, result pairapp.Unregistration) error {
+	identity := result.Identity
+	origin := strings.TrimRight(identity.ControlPlaneURL, "/")
+	p.printf("identity erased, but %s (%s) is still paired at %s: %s\n",
+		identity.Name, identity.HostID, origin, problemLine(result.RevokeErr))
+	p.println("the control plane still lists this host and trusts its old key until it is removed there. To finish:")
+	p.printf("  in the console: open %s/settings/hosts and choose Remove on %s\n", origin, identity.Name)
+	p.printf("  or with an API token that has hosts:write: curl -X DELETE -H \"Authorization: Bearer $TOKEN\" %s/api/v1/hosts/%s\n",
+		origin, identity.HostID)
+	p.println("then pair this machine again with the install command from Add host")
+	return pairdomain.ErrStillPaired.WithDetail("host %s at %s: %s; remove it in the console under Settings → Hosts",
+		identity.HostID, origin, problemLine(result.RevokeErr)).WithCause(result.RevokeErr)
 }
 
 // Status prints what a person needs to answer "is this host working".
@@ -449,7 +525,7 @@ func (a *App) Status(ctx context.Context, out io.Writer) error {
 		if tool.Found() {
 			value = tool.Version
 		} else if !tool.Required {
-			value = "not found (sessions still open; the agent shows an install hint)"
+			value = "not found (sessions still open): " + installHintFor(facts.Platform, tool.Name)
 		}
 		p.printf("%s\t%s\n", tool.Name, value)
 	}
@@ -574,6 +650,23 @@ func (a *App) printPreflight(ctx context.Context, out io.Writer, facts hostdomai
 
 func updapplyOptions(opts UpdateOptions) updapp.ApplyOptions {
 	return updapp.ApplyOptions{Force: opts.Force}
+}
+
+// problemLine is a problem as one line — title, detail, code — the way the
+// command line prints an error, so a nested cause reads the same.
+func problemLine(err error) string {
+	var prob *problem.Error
+	if !errors.As(err, &prob) {
+		return err.Error()
+	}
+	text := prob.Title
+	if prob.Detail != "" {
+		text += ": " + prob.Detail
+	}
+	if prob.Code != "" {
+		text += " (" + prob.Code + ")"
+	}
+	return text
 }
 
 func isNotPaired(err error) bool {

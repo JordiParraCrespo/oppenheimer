@@ -41,7 +41,7 @@ export function AddHostScreen() {
     <>
       <EditorPageBack render={<Link {...back} />}>{t('hosts.add.back')}</EditorPageBack>
 
-      <PageHeader className="mb-7">
+      <PageHeader>
         <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
           <Link {...back}>{t('hosts.add.crumbHosts')}</Link>
           <span>/</span>

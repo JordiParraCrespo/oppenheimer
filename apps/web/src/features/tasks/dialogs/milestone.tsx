@@ -91,9 +91,10 @@ export function MilestoneDialog({
       </DialogContent>
       {deleting && milestone ? (
         <ConfirmDialog
-          title={t('tasks.milestone.deleteTitle')}
-          description={t('tasks.milestone.deleteDescription', { name: milestone.name })}
+          title={t('tasks.milestone.deleteTitle', { name: milestone.name })}
+          description={t('tasks.milestone.deleteDescription')}
           confirmLabel={t('tasks.milestone.delete')}
+          pendingLabel={t('tasks.milestone.deleting')}
           pending={remove.isPending}
           error={remove.error}
           errorFallback={t('tasks.milestone.deleteFailed')}

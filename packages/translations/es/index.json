@@ -172,6 +172,7 @@
       "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+      "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
@@ -213,7 +214,6 @@
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
       "FLAG_007": "Las condiciones de ese segmento no son válidas.",
       "SESSIONS_012": "El archivo pesa más de 5 MB. Guarda una copia más pequeña y vuelve a intentarlo.",
-      "SESSIONS_CLIENT_019": "El host está desconectado, así que la sesión no se ha eliminado. Inténtalo de nuevo cuando vuelva.",
       "SESSIONS_013": "Una sesión recibe imágenes (PNG, JPEG, GIF, WebP), PDF y archivos de texto. Se rechazan ejecutables, archivos comprimidos, scripts, SVG y HTML.",
       "SESSIONS_014": "Esta sesión está detenida. Reiníciala para darle un archivo a su prompt.",
       "SESSIONS_015": "No se adjuntó ningún archivo. Vuelve a pegarlo o arrastrarlo.",
@@ -261,6 +261,7 @@
       "BOTS_020": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
       "BOTS_021": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento.",
       "BOTS_022": "Detén primero el turno en curso.",
+      "BOTS_023": "Añade una clave para ese proveedor antes de hacerlo predeterminado.",
       "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
       "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
       "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
@@ -468,7 +469,7 @@
       "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
       "confirm": "Eliminar proyecto",
       "deleting": "Eliminando…",
@@ -729,17 +730,23 @@
       "delete": "Eliminar",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
       "loadFailed": "No se han podido cargar tus sesiones.",
-      "share": "Compartir…"
+      "share": "Compartir…",
+      "deleting": "Eliminando…",
+      "deletingHint": "Esperando a que su host la elimine. Si el host está desconectado, se eliminará cuando vuelva.",
+      "notDeleted": "No eliminada",
+      "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué."
     },
     "deleteSession": {
-      "title": "¿Eliminar “{{name}}”?",
-      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "confirm": "Eliminar sesión",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la sesión.",
       "discard": "Descartar también el trabajo sin enviar",
       "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
-      "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
+      "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+      "refused": "Su host no la eliminó",
+      "refusedUnknown": "El host se negó a eliminar la sesión."
     },
     "filters": {
       "label": "Filtrar sesiones",
@@ -931,7 +938,6 @@
       "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {
-      "toggleSidebar": "Mostrar u ocultar la barra lateral",
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
@@ -1052,11 +1058,17 @@
         "cancel": "Cancelar",
         "failed": "No se pudo responder a la solicitud."
       },
+      "openSession": "Abrir sesión",
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
-        "routine": "Rutina · {{name}}"
+        "routine": "Rutina · {{name}}",
+        "peerMessage": "De <bot>{{name}}</bot>",
+        "peerAsk": "<bot>{{name}}</bot> preguntó",
+        "peerAnswered": "<bot>{{name}}</bot> respondió",
+        "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+        "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
       }
     },
     "settings": {
@@ -1193,7 +1205,7 @@
       }
     },
     "delete": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
       "confirm": "Eliminar bot",
       "pending": "Eliminando…",
@@ -1499,7 +1511,7 @@
     "deleteDialog": {
       "title": "¿Eliminar «{{name}}»?",
       "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-      "confirm": "Eliminar",
+      "confirm": "Eliminar automatización",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la automatización."
     },
@@ -1744,7 +1756,7 @@
       "merged": "PR fusionadas",
       "from": "desde {{value}}",
       "series": "Series",
-      "both": "Creadas y fusionadas",
+      "both": "Ambas",
       "perDay": "Pull requests creadas y fusionadas por día",
       "hover": "Pasa por encima de un día",
       "reviewedByYou": "Revisadas por ti",
@@ -1868,10 +1880,11 @@
       "target": "Fecha",
       "add": "Añadir hito",
       "delete": "Eliminar hito",
-      "deleteTitle": "¿Eliminar este hito?",
-      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+      "deleteTitle": "¿Eliminar «{{name}}»?",
+      "deleteDescription": "Sus tareas siguen en el tablero sin hito.",
       "saveFailed": "No se ha podido guardar el hito.",
-      "deleteFailed": "No se ha podido eliminar el hito."
+      "deleteFailed": "No se ha podido eliminar el hito.",
+      "deleting": "Eliminando…"
     },
     "dialog": {
       "newTitle": "Nueva tarea",
@@ -1893,12 +1906,13 @@
       "add": "Añadir tarea",
       "save": "Guardar",
       "delete": "Eliminar tarea",
-      "deleteTitle": "¿Eliminar esta tarea?",
-      "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Sus sesiones siguen como están.",
       "saveFailed": "No se ha podido guardar la tarea.",
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
-      "gone": "Esta tarea ya no existe."
+      "gone": "Esta tarea ya no existe.",
+      "deleting": "Eliminando…"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -1976,12 +1990,13 @@
       "add": "Añadir evento",
       "save": "Guardar",
       "delete": "Eliminar evento",
-      "deleteTitle": "¿Eliminar este evento?",
-      "deleteDescription": "Se elimina «{{title}}».",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Se quita del calendario.",
       "saveFailed": "No se ha podido guardar el evento.",
       "deleteFailed": "No se ha podido eliminar el evento.",
       "loadFailed": "No se ha podido cargar el evento.",
-      "gone": "Este evento no está en el mes que se muestra o ya no existe."
+      "gone": "Este evento no está en el mes que se muestra o ya no existe.",
+      "deleting": "Eliminando…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1996,17 +2011,18 @@
       "updated": "Actualizado hace {{age}}",
       "needsReconnect": "Hay que volver a conectarla",
       "readFailed": "No se ha podido leer ahora",
-      "remove": "Quitar",
+      "remove": "Quitar cuenta",
       "removeLabel": "Quitar {{email}}",
-      "removeTitle": "¿Quitar esta cuenta de Google?",
-      "removeDescription": "{{email}} deja el calendario, y sus eventos con ella. Puedes volver a conectarla cuando quieras.",
+      "removeTitle": "¿Quitar «{{email}}»?",
+      "removeDescription": "Sus eventos dejan el calendario. Puedes volver a conectarla cuando quieras.",
       "removeFailed": "No se ha podido quitar la cuenta de Google.",
       "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
       "loadFailed": "No se han podido comprobar tus cuentas de Google.",
       "connecting": "Conectando Google Calendar…",
       "connectFailed": "No se ha podido conectar Google Calendar.",
       "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-      "back": "Volver al calendario"
+      "back": "Volver al calendario",
+      "removing": "Quitando…"
     },
     "googleEvent": {
       "untitled": "(Sin título)",
@@ -2016,6 +2032,7 @@
       "busy": "Ocupado",
       "free": "Libre",
       "readOnly": "Aquí es de solo lectura: cámbialo en Google Calendar.",
+      "join": "Unirse a la reunión",
       "open": "Abrir en Google Calendar"
     }
   },
@@ -2079,8 +2096,8 @@
       },
       "actions": "Acciones de {{name}}",
       "updateRunner": "Actualizar runner",
-      "updateTitle": "¿Actualizar el runner de {{name}}?",
-      "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Las sesiones de {{name}} siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+      "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+      "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
       "updating": "Actualizando…",
       "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
       "rename": "Renombrar",
@@ -2089,13 +2106,15 @@
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
       "removing": "Eliminando…",
-      "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "removeTitle": "¿Eliminar «{{name}}»?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en él. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en él. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
       "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
       "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+      "wipe": "Borrar también todo lo de esta máquina: cerrar cada sesión y eliminar su worktree, incluido el trabajo sin confirmar. No se sube nada.",
+      "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
@@ -2204,7 +2223,7 @@
     },
     "modelProviders": {
       "title": "Proveedores de modelos",
-      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar.",
+      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
       "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
       "loadFailed": "No se pudieron cargar los proveedores de modelos.",
       "keyEnding": "Clave que termina en {{hint}}",
@@ -2214,6 +2233,10 @@
       "remove": "Quitar",
       "removeLabel": "Quitar la clave de {{provider}}",
       "removeFailed": "No se pudo quitar la clave.",
+      "default": "Predeterminado",
+      "makeDefault": "Hacer predeterminado",
+      "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
+      "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
@@ -2263,7 +2286,7 @@
     "users": "Usuarios",
     "roles": "Roles",
     "featureFlags": "Indicadores de funcionalidad",
-    "toggleSidebar": "Mostrar u ocultar el menú",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
     "commandTitle": "Paleta de comandos",

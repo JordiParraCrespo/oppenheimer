@@ -10,9 +10,15 @@ import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
  */
 export class HostUnpairedDomainEvent extends DomainEvent {
   readonly ownerUserId: string;
+  /**
+   * The owner also asked for the machine to be cleaned up: every session closed,
+   * its worktrees removed, nothing pushed. Only a removal from the console asks.
+   */
+  readonly wipe: boolean;
 
   constructor(props: DomainEventProps<HostUnpairedDomainEvent>) {
     super(props);
     this.ownerUserId = props.ownerUserId;
+    this.wipe = props.wipe;
   }
 }

@@ -34,17 +34,22 @@ the way this host proves who it is, and they go when the link lands.
 | `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
 | `runner workspaces [--set DIR]` | the work folder (where stores and sessions' checkouts live) and why; `--set` moves it for new sessions, refused while any session's folder is still on disk under the old one |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
-| `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). Says when the control plane could not be told. Never touches the workspaces directory |
+| `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner agents update` | runs every installed agent CLI's unattended updater now, the round `run` does on its own unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
+| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
+| `runner tools [ls]` | every probed tool with its version and path, and for a missing one the line that installs it |
+| `runner tools install gh` | GitHub's CLI into `~/.local/bin` (Homebrew on macOS). For `git` and `tmux` it prints the package manager's command and runs nothing |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
 | `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |
 
 Exit codes are a public contract that scripts branch on: 0 ok, 1 failure,
-2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable.
+2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable, 7 incomplete
+(`uninstall` erased the identity but the control plane still lists the
+host: remove it under Settings → Hosts).
 
 ## On a host
 

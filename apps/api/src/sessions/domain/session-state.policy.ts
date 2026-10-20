@@ -56,15 +56,18 @@ export const SESSION_EVENT_KINDS = {
   /** The agent and the tmux session ended; every checkout stays on disk. */
   STOPPED: 'session.stopped',
   /**
-   * Somebody asked for a restart. It moves nothing: a request is not an outcome, and
-   * claiming `open` before a host has built anything is the second truth the log
+   * Somebody asked for a restart. It moves no lifecycle: a request is not an outcome,
+   * and claiming `open` before a host has built anything is the second truth the log
    * exists to prevent. Stop, by contrast, is a fact and close a request; their
-   * handlers say why.
+   * handlers say why. It does end a close still owed: restarting is keeping it.
    */
   RESTART_REQUESTED: 'session.restart_requested',
   /** Window 0 was recreated in the same worktrees after a stop or a host reboot. */
   RESTARTED: 'session.restarted',
-  /** Somebody asked to close. Payload `{ acceptUnpushedWork }`, as the close sent the runner. */
+  /**
+   * Somebody asked to close. Payload `{ acceptUnpushedWork }`, as the close sent the
+   * runner. Owed until `session.closed`, a refused close or a restart request.
+   */
   CLOSE_REQUESTED: 'session.close_requested',
   /** Branches pushed, worktrees removed. The row is kept for ever as a tombstone. */
   CLOSED: 'session.closed',
@@ -85,6 +88,12 @@ export const SESSION_EVENT_KINDS = {
   PROMPT_FIRST: 'prompt.first',
   /** What the screen manifest last observed the agent doing. Payload `{ state }`. */
   AGENT_OBSERVED: 'agent.observed',
+  /**
+   * The host refused a command no attachment was waiting on. Payload
+   * `{ command, code, detail? }`, written by the relay. The fold reads only a
+   * refused `session.close`, which ends the close the log was owed.
+   */
+  COMMAND_FAILED: 'command.failed',
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */
@@ -115,6 +124,28 @@ export interface SessionLogEntry {
   payload: unknown;
   occurredAt: Date;
 }
+
+/**
+ * A close the log asked for and the host has not answered: a `session.close_requested`
+ * with no `session.closed`, refusal or restart request after it. It is what the hello
+ * reconciliation sends again, with the same `acceptUnpushedWork`.
+ */
+export interface SessionCloseRequestFold {
+  requestedAt: Date;
+  acceptUnpushedWork: boolean;
+}
+
+/** The host's refusal of the last close, as its `command.failed` carried it. */
+export interface SessionCloseRefusalFold {
+  /** A runner catalog code (`GIT_003`), at most 32 characters like the wire's. */
+  code: string;
+  /** Git's or the runner's own words, at most 500 characters like the wire's. */
+  detail: string | null;
+}
+
+/** The wire's bounds on a refusal (`commandFailedSchema`), and the columns'. */
+const REFUSAL_CODE_MAX = 32;
+const REFUSAL_DETAIL_MAX = 500;
 
 /**
  * Who chose the name: a person, a model reading the first prompt, or the first
@@ -158,6 +189,13 @@ export interface SessionFold {
    * fold that has seen no move, where the row's own `projectId` stands.
    */
   projectId: string | null;
+  /**
+   * The close owed to the host, or null. Folded rather than read off the log, so the
+   * console's "Deleting…" and the hello reconciliation read a column, never a walk.
+   */
+  closeRequest: SessionCloseRequestFold | null;
+  /** Why the host refused the last close, until somebody asks again or restarts. */
+  closeRefusal: SessionCloseRefusalFold | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -175,6 +213,8 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   ackedReportHash: null,
   launch: { model: null, permission: 'ask', effort: null },
   projectId: null,
+  closeRequest: null,
+  closeRefusal: null,
 };
 
 /**
@@ -227,6 +267,12 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
   };
 }
 
+/** Only an explicit `true` accepts losing work: anything else is the safe reading. */
+function acceptsUnpushedWork(payload: unknown): boolean {
+  if (typeof payload !== 'object' || payload === null) return false;
+  return (payload as { acceptUnpushedWork?: unknown }).acceptUnpushedWork === true;
+}
+
 function observedStateOf(payload: unknown): AgentObservedState | null {
   const value = stringField(payload, 'state');
   return AGENT_OBSERVED_STATES.includes(value as AgentObservedState)
@@ -269,9 +315,41 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       // `stoppedAt` is the whole of what changed.
       next.stoppedAt = event.occurredAt;
       return next;
+    case SESSION_EVENT_KINDS.CLOSE_REQUESTED:
+      if (next.state === 'resolved') return next;
+      // A new request replaces whatever the last one ended in: a refusal is
+      // answered by asking again, typically accepting the unpushed work.
+      next.closeRequest = {
+        requestedAt: event.occurredAt,
+        acceptUnpushedWork: acceptsUnpushedWork(event.payload),
+      };
+      next.closeRefusal = null;
+      return next;
+    case SESSION_EVENT_KINDS.RESTART_REQUESTED:
+      // Restarting is keeping the session: the person changed their mind, so a
+      // close still owed is no longer wanted and a refusal no longer matters.
+      next.closeRequest = null;
+      next.closeRefusal = null;
+      return next;
+    case SESSION_EVENT_KINDS.COMMAND_FAILED: {
+      // Only a refused close, and only while one is owed: a late refusal of a
+      // close a restart superseded refuses nothing anybody still wants. The host
+      // answered, so the close is no longer owed — sending it again on every
+      // hello would be refused again, for ever.
+      if (stringField(event.payload, 'command') !== 'session.close') return next;
+      if (!next.closeRequest) return next;
+      next.closeRequest = null;
+      next.closeRefusal = {
+        code: (stringField(event.payload, 'code') ?? 'UNKNOWN').slice(0, REFUSAL_CODE_MAX),
+        detail: stringField(event.payload, 'detail')?.slice(0, REFUSAL_DETAIL_MAX) ?? null,
+      };
+      return next;
+    }
     case SESSION_EVENT_KINDS.CLOSED: {
       const closed = transition(next, 'resolved');
       closed.stoppedAt = closed.stoppedAt ?? event.occurredAt;
+      closed.closeRequest = null;
+      closed.closeRefusal = null;
       return closed;
     }
     case SESSION_EVENT_KINDS.NAMED: {

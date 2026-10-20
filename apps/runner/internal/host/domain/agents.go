@@ -23,8 +23,8 @@ const AgentUpdateTimeout = 5 * time.Minute
 // AgentUpdateArgs is the argv, appended to the agent's executable, that runs
 // that CLI's own updater unattended. ok is false for a tool that is not an
 // agent, or whose updater cannot run without asking: git and tmux belong to
-// the host's package manager, and OpenCode's `upgrade` has no spelling that
-// does not stop to ask when it cannot tell how it was installed.
+// the host's package manager. An updater with `<method>` in it (OpenCode's)
+// needs the install method; ResolveUpdateArgs fills it in.
 //
 // The table is the catalog's (`packages/shared/src/agents/catalog.ts`),
 // generated into agent_update.gen.go.

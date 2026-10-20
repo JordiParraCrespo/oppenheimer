@@ -222,6 +222,71 @@ describe('ClaudeBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  it('hands back what a call made on its own end, matched by the tool use Claude Code names, never to the model', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session',
+      inputSchema: { type: 'object', properties: {} },
+      run: async (input) => ({
+        content: 'Started it.',
+        data: { sessionId: (input as { id: string }).id },
+      }),
+    };
+    let modelRead: unknown;
+    scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      // Two calls of one tool, answered out of order.
+      const first = await client.callTool({
+        name: 'start_session',
+        arguments: { id: 's-2' },
+        _meta: { 'claudecode/toolUseId': 'toolu_2' },
+      });
+      const second = await client.callTool({
+        name: 'start_session',
+        arguments: { id: 's-1' },
+        _meta: { 'claudecode/toolUseId': 'toolu_1' },
+      });
+      modelRead = first;
+      await client.close();
+
+      yield assistant([
+        {
+          type: 'tool_use',
+          id: 'toolu_1',
+          name: 'mcp__oppenheimer__start_session',
+          input: { id: 's-1' },
+        },
+        {
+          type: 'tool_use',
+          id: 'toolu_2',
+          name: 'mcp__oppenheimer__start_session',
+          input: { id: 's-2' },
+        },
+      ]);
+      yield toolResults([
+        { type: 'tool_result', tool_use_id: 'toolu_1', content: second.content },
+        { type: 'tool_result', tool_use_id: 'toolu_2', content: first.content },
+      ]);
+      yield success();
+    });
+
+    const events = await collect(new ClaudeBotEngine().run(request({ tools: [start] })));
+
+    expect(events.filter((event) => event.type === 'tool.finished')).toEqual([
+      expect.objectContaining({ callId: 'toolu_1', data: { sessionId: 's-1' } }),
+      expect.objectContaining({ callId: 'toolu_2', data: { sessionId: 's-2' } }),
+    ]);
+    expect(modelRead).toEqual({
+      content: [{ type: 'text', text: 'Started it.' }],
+      isError: false,
+    });
+  });
+
   it('keeps built-in tool names and reports their results', async () => {
     scripted(() => [
       assistant([{ type: 'tool_use', id: 'toolu_w', name: 'WebSearch', input: { query: 'x' } }]),

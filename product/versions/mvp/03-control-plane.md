@@ -310,6 +310,18 @@ branches and will not remove a dirty worktree unless the caller accepted the
 loss — so the API records the request and `session.restarted` / `session.closed`
 come back from the host.
 
+**A close is owed until the host answers it** (changed 2026-10-18). The fold
+keeps the latest `session.close_requested` as the row's `closeRequestedAt` and
+`closeAcceptsUnpushedWork` until a `session.closed` resolves it, the host's
+`command.failed` for that close refuses it (kept as `closeRefusalCode` /
+`closeRefusalDetail`, and not sent again: it would be refused again), or a
+`session.restart_requested` supersedes it — restarting is keeping the session.
+They are columns because the console draws a deleting row from them and the
+hello reconciliation sends the close again from them, and neither walks a log.
+Before this a close sent while the link was down, or queued on a link that
+dropped, was never sent again, and the deleted session sat stopped with a
+Restart button for good.
+
 **The attach ticket is a Redis key**, not a table: `attach:<random>` →
 `{sessionId, organizationId, window, userId}`, claimed with `SET … NX`, 60
 seconds, single use. It travels in `Sec-WebSocket-Protocol` and never in the
@@ -409,8 +421,13 @@ with the snapshot: a `starting` session on this host the runner does not
 hold is dispatched again, with its prompt read back from the log (the
 runner is idempotent by session id); an `open` one it does not hold is
 recorded `session.stopped` with `source: api`, keyed by the runner's
-`runId` so a replayed hello writes it once; anything the runner holds that
-the rows do not know is logged and left alone.
+`runId` so a replayed hello writes it once; a session with a close still owed
+is sent `session.close` again with the `acceptUnpushedWork` it was asked with,
+whether or not the runner holds it (the runner answers `session.closed` even for
+a session it has no record of) — a `failed` one included, since a person may
+delete it — and a `starting` one with a close owed is closed, never built
+first; anything the runner holds that the rows do not know is logged and left
+alone.
 
 **The attach socket.** The ticket in the subprotocol is redeemed with a
 `GETDEL` (single use), and what it authorised is re-checked at redemption:

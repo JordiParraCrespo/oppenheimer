@@ -100,6 +100,35 @@ export class SessionLaunchResponseDto {
   effort!: SessionEffortDto | null;
 }
 
+/**
+ * A close the host has not answered yet. A close is a request the host carries out,
+ * so a deleted session stays unresolved until it does; while this is set the console
+ * draws the row as deleting, and the host's next hello is sent the close again.
+ */
+export class SessionCloseRequestResponseDto {
+  @ApiProperty({ description: 'When the close was asked for.' })
+  requestedAt!: Date;
+
+  @ApiProperty({ description: 'Whether the close may remove a worktree with unpushed work.' })
+  acceptUnpushedWork!: boolean;
+}
+
+/** The host's refusal of the last close, until it is asked again or the session restarts. */
+export class SessionCloseRefusalResponseDto {
+  @ApiProperty({
+    description: 'The runner’s catalog code, e.g. `GIT_003` for a branch that could not be pushed.',
+    example: 'GIT_003',
+  })
+  code!: string;
+
+  @ApiPropertyOptional({
+    description: 'Git’s or the runner’s own words, verbatim.',
+    nullable: true,
+    type: String,
+  })
+  detail!: string | null;
+}
+
 export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -200,6 +229,21 @@ export class SessionResponseDto {
     example: [],
   })
   hints!: string[];
+
+  @ApiPropertyOptional({
+    type: SessionCloseRequestResponseDto,
+    nullable: true,
+    description: 'A close owed to the host and not yet answered. Null when none is.',
+  })
+  closeRequest!: SessionCloseRequestResponseDto | null;
+
+  @ApiPropertyOptional({
+    type: SessionCloseRefusalResponseDto,
+    nullable: true,
+    description:
+      'Why the host refused the last close. Null when it did not, or it was asked again.',
+  })
+  closeRefusal!: SessionCloseRefusalResponseDto | null;
 
   @ApiProperty()
   createdAt!: Date;

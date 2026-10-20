@@ -15,6 +15,9 @@ import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
  * (`StopSessionCommandHandler`), so each session keeps its checkouts and log; the
  * relay closing the link ends the tmux sessions on a runner that is still up.
  *
+ * A removal that asked for the machine to be cleaned up is not a stop:
+ * `HostUnpairedClosesSessionsDomainEventHandler` closes its sessions instead.
+ *
  * Delivery is at least once, so the entry is keyed by the domain event's id. Nothing
  * is dispatched: the host was just told, terminally, that it is no longer one.
  */
@@ -28,7 +31,8 @@ export class HostUnpairedStopsSessionsDomainEventHandler {
   ) {}
 
   @OnEvent(HostUnpairedDomainEvent.name)
-  async handle(event: Pick<HostUnpairedDomainEvent, 'id' | 'aggregateId'>): Promise<void> {
+  async handle(event: Pick<HostUnpairedDomainEvent, 'id' | 'aggregateId' | 'wipe'>): Promise<void> {
+    if (event.wipe) return;
     const running = await this.sessions.findRunningOnHostForSystem(event.aggregateId);
     for (const session of running) {
       await this.sessions.appendEvents(session, [

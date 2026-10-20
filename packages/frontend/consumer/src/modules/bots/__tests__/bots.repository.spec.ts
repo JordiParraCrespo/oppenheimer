@@ -177,7 +177,16 @@ describe('BotsRepository', () => {
             turnId: 't1',
             role: 'activity',
             content: '',
-            steps: [{ callId: 'c1', name: 'read', input: {}, output: null, isError: false }],
+            steps: [
+              {
+                callId: 'c1',
+                name: 'read',
+                input: {},
+                output: null,
+                isError: false,
+                sessionId: null,
+              },
+            ],
             createdAt: '2026-10-15T09:00:01.000Z',
           },
         ],
@@ -189,6 +198,36 @@ describe('BotsRepository', () => {
     expect(conversation.messages[0]?.createdAt).toEqual(new Date('2026-10-15T09:00:01.000Z'));
     expect(conversation.turns[0]?.startedAt).toBeNull();
     expect(conversation.activeTurn?.id).toBe('t2');
+  });
+
+  it('keeps the session an approved call started on its event, for the chat to open', async () => {
+    sdk.findBotConversation.mockResolvedValue(
+      ok({
+        messages: [
+          {
+            id: 'm1',
+            turnId: 't1',
+            role: 'event',
+            content: 'Ana approved: Start it',
+            steps: [],
+            event: {
+              kind: 'approval',
+              outcome: 'approved',
+              tool: 'start_session',
+              summary: 'Start it',
+              fromBotId: null,
+              fromBotName: null,
+              expectsReply: null,
+              sessionId: 's-1',
+            },
+            createdAt: '2026-10-15T09:00:01.000Z',
+          },
+        ],
+        turns: [],
+      }),
+    );
+    const conversation = await repository.findConversation('bot-1');
+    expect(conversation.messages[0]?.event).toMatchObject({ kind: 'approval', sessionId: 's-1' });
   });
 
   describe('exportConversation', () => {

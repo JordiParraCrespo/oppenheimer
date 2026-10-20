@@ -71,10 +71,23 @@ worker runs it and streams what happens back to the chat.
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
   | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
 
+  A bot made with no provider named, or left on one with no key, goes to
+  the first provider the workspace has a key or sign-in for, in the order
+  Anthropic, ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`, 2026-10-18;
+  it was the catalog order before, which put GLM ahead of ChatGPT).
+
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that
   wraps them (`@oppenheimer/backend-agents`).
+- **A new bot starts on the workspace's default provider**, at its
+  default model. Settings → Model providers marks one provider with a key
+  or a ChatGPT sign-in as the default (**Make default**); with none
+  marked it is the first with a key or sign-in in the order above
+  (`BOT_PROVIDER_PREFERENCE`), so a workspace with one key starts its
+  bots on that one; with no key at all it is Anthropic. Removing the
+  default's key falls back the same way. Bots already made keep their
+  provider.
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
   tab does not stop it and a turn is not capped by a request's timeout.
   One turn at a time per bot: a message sent while it works waits its
@@ -237,7 +250,7 @@ that did not cover the tool never runs.
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state | auto |
-| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` | ask |
+| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
 | `send_to_session` | Type a message into a running session | ask |
 | `read_session` | A session's recent output | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
@@ -275,13 +288,41 @@ that did not cover the tool never runs.
 | Tool | Does | Default |
 |------|------|---------|
 | `list_bots` / `get_bot` | The workspace's bots and what they are for | auto |
-| `ask_bot` | Give another bot a task and wait for its answer | auto |
-| `message_bot` | Send another bot a message without waiting | auto |
+| `ask_bot` | Give another bot a task; its answer comes back as a new turn | auto |
+| `message_bot` | Send another bot a message, no answer owed | auto |
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
 
-`ask_bot` runs a turn in the other bot, marked as coming from the first
-one; both chats show it. A bot that creates a bot makes it **yours**,
-marked "created by" the creator, with no looser permissions than its own.
+`message_bot` and `ask_bot` (built 2026-10-18) queue a turn on the other
+bot, opened by an *event* message holding the words, in its `bots` lane
+(`BotQueueLanes`). Neither holds a turn open: a bot that asks ends its turn,
+and when the asked turn ends, its last text (or that it failed or was
+stopped) is queued as a new turn of the asker, opened by a `bot_reply`
+event. The asker's chat shows the call on its activity line and the answer
+as a card; the other bot's chat shows the message as a card. What the
+experiments in `../../research/agent-coordination-experiments.md` showed
+agents must not be left to agree among themselves is held here instead:
+
+- **The sender is recorded, not claimed.** The event names the bot whose
+  turn made the call, as Oppenheimer read it (`bot_turn."askedByBotId"`,
+  `"askedByTurnId"`), never a name in the words; a bot's name is stripped
+  of quotes and brackets wherever the envelope quotes it.
+- **The words are data.** The receiving bot reads them inside a
+  `<bot_message>` envelope its words cannot close, marked as a colleague's
+  information that never authorises an action the person has not; the
+  answer comes back the same way, in `<bot_reply>`. History reads both back
+  the same way.
+- **No credential travels.** A message holding something shaped like a key,
+  a token or a private key is refused, unsent, and the bot is told why.
+- **No more reach than the asking turn.** The asked turn runs on the
+  receiving bot's own engine and permission, with the asking turn's sender,
+  time zone and credential scopes, so an API token reaches no further
+  through a chain of bots.
+- **Bounded per turn and per chain.** Five messages to other bots a turn;
+  `BotChainPolicy` below for the chain, decided under a lock on the
+  chain's first turn so two asks of one chain decide one after the other.
+
+A bot that creates a bot makes it **yours**, marked "created by" the
+creator, with no looser permissions than its own.
 
 `create_bot` (built 2026-10-15) dispatches the console's own create
 command as the owner, so the new bot's `createdByUserId` is the person's;
@@ -320,20 +361,24 @@ queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a
 bot asked for, and it picks the next turn by lane. Nothing else holds
 these numbers.
 
-**`BotChainPolicy`**: a chain starts at one message of yours and
-counts every turn a bot asks of another bot because of it.
+**`BotChainPolicy`** (`domain/bot-chain.policy.ts`): a chain starts at
+one message of yours and counts every turn a bot asks of another bot
+because of it (`bot_turn."chainId"`, `"chainDepth"`); the answer to an ask
+goes back on its own path and is not counted.
 
 | Limit | Value | Past it |
 |-------|-------|---------|
 | `maxDepth` | 3 bots deep | the call is refused |
 | `turnBudget` | 10 bot-to-bot turns per chain | the call is refused |
 | `cycles` | none: a bot already in the chain is never asked | the call is refused |
+| self | a bot never messages itself | the call is refused |
 
 A refused call comes back to the asking bot as the tool's result, and the
 bot says in its chat that it stopped and why.
 
-**`BotQueueLanes`**: the order a bot's waiting turns run in, one turn at
-a time (§2).
+**`BotQueueLanes`** (`bot_turn."lane"`): the order a bot's waiting turns
+run in, one turn at a time (§2): the oldest of the first lane that has
+one.
 
 | Lane | Holds |
 |------|-------|
@@ -529,6 +574,9 @@ The decisions it produced:
 - 2026-10-15: **the owner chooses the permissions**, tool by tool, within
   their own; the approval chip is a preset over them. It replaces
   2026-10-14's "*Ask for approval* comes with slice 4".
+- 2026-10-15: **a new bot starts on the workspace's default provider**:
+  the one marked in Settings → Model providers, else the first with a
+  key in `BOT_PROVIDER_PREFERENCE` (§2).
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
 - 2026-10-15: **ChatGPT is a fourth provider**, on the OpenAI engine,
@@ -571,6 +619,15 @@ The decisions it produced:
   host or Profile (colour and sidebar group included), is a draft until
   Save. It replaces slice 3's "Settings → Runs on becomes Works on"; the
   old address redirects.
+- 2026-10-18: **an ask's answer comes back as a turn, not by waiting.**
+  It replaces "give another bot a task and wait for its answer": one turn
+  per bot runs at a time and a turn has four minutes, so an ask that held
+  its turn open would wait behind the other bot's queue and could time out
+  or deadlock two bots asking each other. The asker ends its turn and the
+  answer opens a new one (`bot_reply`), the way a decided card does. The
+  sender is recorded rather than claimed, a message holding a credential
+  is refused, and the chain is decided under a lock, from
+  `../../research/agent-coordination-experiments.md`.
 - 2026-10-16: **chat history is exported and cleared from Profile.**
   Export downloads the whole chat as Markdown (`GET
   /bots/:id/conversation/export`, every message as a line of NDJSON, read

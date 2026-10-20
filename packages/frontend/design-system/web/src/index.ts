@@ -357,11 +357,12 @@ export { PullRequestHeader } from './components/pull-request-header';
 export {
   MergeButton,
   PullRequestRow,
+  PullRequestRowSkeleton,
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';
 export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
-export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
+export { RAIL_BAR_CLEARANCE, Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
 export type {

@@ -15,4 +15,6 @@ var (
 	ErrControlPlaneURL = problem.New("PAIR_005", http.StatusBadRequest, "The control plane URL is not usable")
 	ErrUnreachable     = problem.New("PAIR_006", http.StatusBadGateway, "The control plane could not be reached")
 	ErrRateLimited     = problem.New("PAIR_007", http.StatusTooManyRequests, "The control plane is limiting registrations")
+	ErrRevokeRefused   = problem.New("PAIR_008", http.StatusUnauthorized, "The control plane refused to unpair this host")
+	ErrStillPaired     = problem.New("PAIR_009", http.StatusBadGateway, "This host was erased here but is still paired at the control plane")
 )

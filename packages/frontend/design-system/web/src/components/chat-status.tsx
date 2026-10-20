@@ -13,7 +13,9 @@ import { IconButton } from './icon-button';
  * - `TranscriptDivider`: where who answers, or where the thread came from,
  *   changes: a label centred between two hairlines ("Context handoff
  *   Sonnet → Codex", "Continued from chat"); `tone="danger"` for a handoff
- *   that failed.
+ *   that failed. `action` is a control after the label (Open session); with
+ *   one, the line is a row rather than a separator, so the control stays
+ *   reachable.
  * - `ChatErrorBanner`: a turn that failed, on the card with a hairline: the
  *   red alert, the title, the error clamped to three lines with Show
  *   details, then actions that name what they do (Copy error, Continue
@@ -30,18 +32,21 @@ import { IconButton } from './icon-button';
 function TranscriptDivider({
   icon,
   tone = 'default',
+  action,
   className,
   children,
 }: {
   icon?: React.ReactNode;
   tone?: 'default' | 'danger';
+  /** A small control after the label (a ghost `xs` Button). */
+  action?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
       data-slot="transcript-divider"
-      role="separator"
+      role={action ? undefined : 'separator'}
       className={cn(
         'flex items-center gap-4 py-2.5 text-[13px] before:h-px before:flex-1 before:bg-border-subtle after:h-px after:flex-1 after:bg-border-subtle',
         className,
@@ -56,6 +61,7 @@ function TranscriptDivider({
         {icon}
         {children}
       </span>
+      {action ? <span className="-mx-2 flex shrink-0">{action}</span> : null}
     </div>
   );
 }
