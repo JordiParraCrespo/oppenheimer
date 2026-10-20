@@ -14,6 +14,7 @@ import {
   type AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
 import type { StoredExternalEvent } from '../inbound-events/domain/external-event.types';
+import { sessionTargetOf } from './application/session-target.policy';
 import type { AutomationRunOrmEntity } from './database/automation-run.orm-entity';
 import type { AutomationEntity } from './domain/automation.entity';
 import type { RunReadModel } from './domain/automation-read.types';
@@ -80,6 +81,7 @@ export class AutomationRunMapper {
         availableAt: new Date(record.availableAt),
         attempts: record.attempts,
         sessionId: record.sessionId,
+        botTurnId: record.botTurnId,
         requestedByUserId: record.requestedByUserId,
         dispatchedAt: date(record.dispatchedAt),
       },
@@ -111,6 +113,7 @@ export class AutomationRunMapper {
       availableAt: run.availableAt,
       attempts: run.attempts,
       sessionId: run.sessionId,
+      botTurnId: run.botTurnId,
       requestedByUserId: run.requestedByUserId,
       dispatchedAt: run.dispatchedAt,
     };
@@ -126,7 +129,7 @@ export class AutomationRunMapper {
     checkout: RunCheckout,
     prompt: string,
   ): CreateSessionDto {
-    const revision = automation.revision;
+    const { projectId, revision } = sessionTargetOf(automation);
     if (!isCodingAgentId(revision.agent)) {
       // A refusal the dispatcher records as a skip, not a fault to retry.
       throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
@@ -139,7 +142,7 @@ export class AutomationRunMapper {
     return {
       hostId: revision.hostId,
       agent: revision.agent,
-      projectId: automation.projectId,
+      projectId,
       checkouts: [
         {
           installationId: checkout.repository.installationId,
@@ -204,7 +207,7 @@ export class AutomationRunMapper {
       automationId: String(row.automationId),
       automationName: String(row.automationName ?? ''),
       automationDeleted: row.automationDeletedAt !== null && row.automationDeletedAt !== undefined,
-      projectId: String(row.projectId),
+      projectId: optionalText(row.projectId) ?? null,
       status: known<AutomationRunStatus>(AUTOMATION_RUN_STATUSES, row.status, 'status'),
       outcome: known<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, row.outcome, 'outcome'),
       skipReason: row.skipReason
@@ -217,9 +220,9 @@ export class AutomationRunMapper {
       sessionNamed: row.sessionNameSource !== null && row.sessionNameSource !== undefined,
       branch: optionalText(row.branch) ?? null,
       revisionNumber: Number(row.revisionNumber ?? 1),
-      agent: String(row.agent ?? ''),
+      agent: optionalText(row.agent) ?? null,
       model: optionalText(row.model) ?? null,
-      hostId: String(row.hostId ?? ''),
+      hostId: optionalText(row.hostId) ?? null,
       createdAt: date(row.createdAt) ?? new Date(0),
       scheduledFor: date(row.scheduledFor),
       dispatchedAt: date(row.dispatchedAt),

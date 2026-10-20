@@ -67,6 +67,46 @@ export class BotTurnRepository
     );
   }
 
+  enqueueOnce(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    busyPrefix: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }> {
+    if (!turn.sourceKey) throw new Error('A turn queued once carries its source key');
+    return this.outbox.transaction(async (manager) => {
+      if (!(await lockBot(manager, turn))) return { outcome: 'missing' as const, turnId: turn.id };
+      // UQ_bot_turn_source; read under the bot's lock, so two dispatches of one
+      // run cannot both miss it.
+      const [existing]: { id: string }[] = await manager.query(
+        `SELECT id FROM bot_turn WHERE "botId" = $1 AND "sourceKey" = $2`,
+        [turn.botId, turn.sourceKey],
+      );
+      if (existing) return { outcome: 'existing' as const, turnId: existing.id };
+      if (busyPrefix !== null) {
+        // IDX_bot_turn_active: a bot's queued and running turns are a handful.
+        const [active]: unknown[] = await manager.query(
+          `SELECT 1 FROM bot_turn
+            WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')
+              AND starts_with("sourceKey", $3)
+            LIMIT 1`,
+          [turn.organizationId, turn.botId, busyPrefix],
+        );
+        if (active) return { outcome: 'busy' as const, turnId: turn.id };
+      }
+      const outcome = await enqueueLocked(
+        manager,
+        this.outbox,
+        this.mapper,
+        this.messages,
+        turn,
+        message,
+        correlationId,
+      );
+      return { outcome, turnId: turn.id };
+    });
+  }
+
   enqueueFromBot(
     turn: BotTurnEntity,
     message: BotMessageEntity,
@@ -249,6 +289,19 @@ export async function enqueueWithin(
   correlationId: string | null,
 ): Promise<'staged' | 'waiting' | 'missing'> {
   if (!(await lockBot(manager, turn))) return 'missing';
+  return enqueueLocked(manager, outbox, turns, messages, turn, message, correlationId);
+}
+
+/** `enqueueWithin` once the bot is locked. */
+async function enqueueLocked(
+  manager: EntityManager,
+  outbox: OutboxService,
+  turns: BotTurnMapper,
+  messages: BotMessageMapper,
+  turn: BotTurnEntity,
+  message: BotMessageEntity,
+  correlationId: string | null,
+): Promise<'staged' | 'waiting'> {
   // IDX_bot_turn_active.
   const [{ active }]: { active: number }[] = await manager.query(
     `SELECT count(*)::int AS active FROM bot_turn

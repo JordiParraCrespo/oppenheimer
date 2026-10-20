@@ -4,8 +4,6 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { CreateSessionDto } from '@oppenheimer/shared';
 import type { HostVitalsPort } from '../../hosts/application/host-vitals.port';
 import { HOST_VITALS } from '../../hosts/hosts.di-tokens';
-import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
-import { INBOUND_EVENT_LOOKUP } from '../../inbound-events/inbound-events.di-tokens';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type {
@@ -13,13 +11,13 @@ import type {
   RunTargetContext,
   RunTargetDecision,
 } from '../application/automation-run-target.port';
+import { sessionTargetOf } from '../application/session-target.policy';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AUTOMATION_RUN_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
 import type { RunDispatchRef } from '../domain/automation.types';
-import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import { capacityGuard, diskGuard, firstRefusal, overlapGuard } from '../domain/fire-guard.policy';
-import { composeRunPrompt, type RunEventView, runCheckout } from '../domain/run-launch.policy';
+import { composeRunPrompt, runCheckout } from '../domain/run-launch.policy';
 import { type RunRefusal, runRefusalOf } from '../domain/run-refusal.policy';
 
 /**
@@ -52,8 +50,6 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
   constructor(
     @Inject(AUTOMATION_RUN_REPOSITORY)
     private readonly runs: AutomationRunRepositoryPort,
-    @Inject(INBOUND_EVENT_LOOKUP)
-    private readonly events: InboundEventLookupPort,
     @Inject(HOST_VITALS)
     private readonly vitals: HostVitalsPort,
     private readonly mapper: AutomationRunMapper,
@@ -62,7 +58,7 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
 
   async decide(context: RunTargetContext): Promise<RunTargetDecision<CreateSessionDto>> {
     const { run, automation, limits, now } = context;
-    const hostId = automation.revision.hostId;
+    const { hostId } = sessionTargetOf(automation).revision;
     // A run live past the run limit is being stopped; it holds no place.
     const liveSince = new Date(now.getTime() - limits.maxRunSeconds * 1000);
     const [otherLive, liveOnHost, freeDisk] = await Promise.all([
@@ -124,22 +120,17 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
   }
 
   /** The session a run that passed every guard starts, or why it cannot. */
-  private async sessionOf(context: RunTargetContext): Promise<RunTargetDecision<CreateSessionDto>> {
-    const { run, automation } = context;
-    const event = await this.eventOf(run);
-    // A run started by an event that is gone (retention, a replay that never
-    // landed) does not know why it exists, nor where it should start.
-    if (run.cause === 'event' && !event) {
-      return { kind: 'skip', reason: 'not_launchable', pause: null };
-    }
-    const prompt = composeRunPrompt(automation.revision.prompt, event);
+  private sessionOf(context: RunTargetContext): RunTargetDecision<CreateSessionDto> {
+    const { automation, event } = context;
+    const { revision } = sessionTargetOf(automation);
+    const prompt = composeRunPrompt(revision.prompt, event);
     if (prompt === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
     try {
       return {
         kind: 'launch',
         input: this.mapper.toSessionInput(
           automation,
-          runCheckout(automation.revision.repositories, event),
+          runCheckout(revision.repositories, event),
           prompt,
         ),
       };
@@ -148,11 +139,5 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
       if (!refusal) throw error;
       return { kind: 'skip', reason: refusal.reason, pause: refusal.pause };
     }
-  }
-
-  private async eventOf(run: AutomationRunEntity): Promise<RunEventView | null> {
-    if (!run.inboundEventId) return null;
-    const found = await this.events.findOne(run.organizationId, run.inboundEventId);
-    return found.isSome() ? this.mapper.eventViewOf(found.unwrap()) : null;
   }
 }

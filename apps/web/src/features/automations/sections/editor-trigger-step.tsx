@@ -10,14 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
+import { eventLabel, viewerTimeZone } from '@oppenheimer/frontend-web';
 import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
 import { MAX_AUTOMATION_TRIGGERS } from '@oppenheimer/shared/schemas/automation';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScheduleTriggerCard } from '../components/schedule-trigger-card';
 import { githubCard, scheduleCard, type TriggerCard } from '../lib/automation-draft';
-import { viewerTimeZone } from '../lib/time';
-import { eventLabel } from '../lib/trigger-text';
 import { GithubTriggerCard } from './github-trigger-card';
 
 /**

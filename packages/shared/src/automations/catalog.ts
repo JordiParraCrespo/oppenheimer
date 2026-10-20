@@ -340,6 +340,7 @@ export const AUTOMATION_PAUSED_REASONS = [
   'project_archived',
   'host_unpaired',
   'owner_lost_access',
+  'bot_provider_missing',
 ] as const;
 export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
 

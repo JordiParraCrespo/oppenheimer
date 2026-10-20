@@ -199,5 +199,33 @@ spread schedule, and routines from templates starting paused. What it
 does differently: a routine's run is a queued turn of the bot, so the
 turn queue is the durable record and there is no wake ledger beside it;
 "when a session ends" is a trigger like any other rather than a watcher;
-no spend guard yet, the run budget holds the cost; and the owner's
-permissions are the ceiling, as in 25.
+and the owner's permissions are the ceiling, as in 25. (The first
+draft also had no spend guard; the second read below brings it back.)
+
+### Second read: routines in detail (2026-10-18)
+
+A closer read of the same client for how a routine is made, shown and
+guarded. The server owns the routine tool, the fire and the spend guard's
+thresholds, so those stay unknown.
+
+- **One tool, chat first.** The bot has a single `UpdateRoutine` tool
+  (create, update, pause, resume, delete); saving asks "Allow {bot} to save
+  a routine?". The routine spec is a name, a prompt, one trigger or a group
+  of two or more, and enabled.
+- **Triggers** are a cron (five fields, `@every N` with a phase, a
+  `CRON_TZ=` zone, one date for a one-shot, an optional window that makes
+  it read "around"), Slack (mention, keyword, message, reaction),
+  GitHub (fifteen PR, review, issue and CI events), Linear, Sentry,
+  PagerDuty, Microsoft Teams, email to the bot's own inbox, and a webhook
+  with a key per routine.
+- **The chat shows changes, not just runs:** "Created routine *X*", folded
+  into "Routines in this change" when there are several, and a "Routine *X*
+  failed" notice.
+- **The Routines pane is read-only.** A row has a switch, a menu with
+  Test, Edit and Delete, and a detail with the instruction, *when to run*
+  and, for a webhook, its URL and key. Edit drops "Edit your routine: *X*"
+  into the composer.
+- **The spend guard** is two cards, a nudge with *keep*, *pause* or *keep,
+  don't ask again*, then a pause with *resume* or *keep paused*.
+
+Note 26 takes all of it as behaviour, with thresholds of its own.

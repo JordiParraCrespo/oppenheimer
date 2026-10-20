@@ -157,16 +157,18 @@ export class GithubHttp {
   /**
    * Every page GitHub offers, up to `maxPages`. `Link` comes from upstream, so
    * the cap is what stops a malformed or self-referential header from looping.
+   * With `enough`, it also stops once what `pick` kept reaches that many.
    */
   async paginate<T>(
     url: string,
     options: GithubRequest,
     pick: (body: unknown) => T[],
     maxPages: number,
+    enough = Number.POSITIVE_INFINITY,
   ): Promise<T[]> {
     const items: T[] = [];
     let next: string | undefined = `${url}${url.includes('?') ? '&' : '?'}per_page=${PAGE_SIZE}`;
-    for (let page = 0; page < maxPages && next; page += 1) {
+    for (let page = 0; page < maxPages && next && items.length < enough; page += 1) {
       const { body, link } = await this.request<unknown>(next, options);
       items.push(...pick(body));
       next = nextPageUrl(link);

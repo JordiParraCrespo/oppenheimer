@@ -49,6 +49,7 @@ export interface PullRequestQueueView {
 export interface PullRequestDetailView extends PullRequestRowView {
   body: string;
   baseRef: string;
+  headSha: string;
   fromFork: boolean;
   state: 'open' | 'merged' | 'closed';
   changedFiles: number;
@@ -147,7 +148,7 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
     `- title (${UNTRUSTED_NOTE}): "${cut(pull.title, TITLE_MAX)}"`,
     `- state: ${pull.state}${pull.draft ? ', draft' : ''}`,
     `- author: ${pull.author}${pull.authorKind === 'session' ? ' (a session)' : ''}`,
-    `- branches: ${pull.headRef} into ${pull.baseRef}${pull.fromFork ? ' (from a fork)' : ''}`,
+    `- branches: ${pull.headRef} into ${pull.baseRef}${pull.fromFork ? ' (from a fork)' : ''}; head ${pull.headSha}`,
     `- size: ${pull.changedFiles} files, +${pull.additions} -${pull.deletions}; lane ${pull.lane}`,
     `- checks: ${checks.state} (${checks.passed} passed, ${checks.failed} failed, ${checks.pending} pending of ${checks.total})`,
     `- reviewers: ${reviewers}`,
@@ -234,6 +235,91 @@ export function describeActivity(
     default:
       return `${at} commented: ${cut(item.body ?? '', COMMENT_MAX)}`;
   }
+}
+
+/** An issue as `FindIssuesQuery` and `FindIssueQuery` answer it, the part a tool writes. */
+export interface IssueView {
+  number: number;
+  title: string;
+  htmlUrl: string;
+  state: 'open' | 'closed';
+  stateReason: string | null;
+  authorLogin: string;
+  body: string;
+  labels: string[];
+  assignees: string[];
+  comments: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IssueCommentView {
+  login: string;
+  body: string;
+  createdAt: string;
+}
+
+/** The most issues one `list_issues` call returns. */
+export const ISSUES_LIMIT_MAX = 50;
+export const ISSUE_COMMENTS_SHOWN = 10;
+
+export function describeIssueRow(issue: IssueView, context: BotToolCallContext): string {
+  const parts = [
+    issue.state === 'closed'
+      ? `closed${issue.stateReason ? ` (${issue.stateReason})` : ''}`
+      : 'open',
+    `by ${issue.authorLogin}`,
+    `updated ${formatToolTime(issue.updatedAt, context.timeZone)}`,
+    `${issue.comments} comments`,
+  ];
+  if (issue.labels.length) parts.push(`labels ${issue.labels.join(', ')}`);
+  if (issue.assignees.length) parts.push(`assigned to ${issue.assignees.join(', ')}`);
+  return `#${issue.number} "${cut(issue.title, TITLE_MAX)}" [${parts.join('; ')}]`;
+}
+
+export function describeIssue(
+  repository: { fullName: string; installationId: string; githubRepoId: number },
+  issue: IssueView,
+  context: BotToolCallContext,
+): string[] {
+  const body = issue.body.trim();
+  return [
+    `Issue #${issue.number} in ${repository.fullName} (installation ${repository.installationId}, repo ${repository.githubRepoId})`,
+    `- title (${UNTRUSTED_NOTE}): "${cut(issue.title, TITLE_MAX)}"`,
+    `- state: ${issue.state}${issue.stateReason ? ` (${issue.stateReason})` : ''}`,
+    `- author: ${issue.authorLogin}; opened ${formatToolTime(issue.createdAt, context.timeZone)}, updated ${formatToolTime(issue.updatedAt, context.timeZone)}`,
+    `- labels: ${issue.labels.join(', ') || 'none'}`,
+    `- assignees: ${issue.assignees.join(', ') || 'none'}`,
+    `- link: ${issue.htmlUrl}`,
+    body
+      ? `- description (${UNTRUSTED_NOTE}):\n${untrusted(cut(body, BODY_MAX))}`
+      : '- description: none',
+  ];
+}
+
+export function describeIssueComments(
+  comments: PromiseSettledResult<IssueCommentView[]>,
+  context: BotToolCallContext,
+): string[] {
+  if (comments.status === 'rejected') {
+    return [`Comments: could not be read. ${describeToolFailure(comments.reason)}`];
+  }
+  if (comments.value.length === 0) return ['Comments: none yet.'];
+  const latest = comments.value.slice(-ISSUE_COMMENTS_SHOWN);
+  const entries = latest.map(
+    (comment) =>
+      `[${formatToolTime(comment.createdAt, context.timeZone)}] ${comment.login}: ${cut(comment.body, COMMENT_MAX)}`,
+  );
+  const more =
+    comments.value.length > latest.length
+      ? [`(Latest ${latest.length} of ${comments.value.length} comments shown.)`]
+      : [];
+  return [`Comments (${UNTRUSTED_NOTE}):\n${untrusted(entries.join('\n'))}`, ...more];
+}
+
+/** A pull request or issue as a card names it: `acme/api#412 "Fix the thing"`. */
+export function describeTarget(repository: string, number: number, title: string | null): string {
+  return `${repository}#${number}${title ? ` "${cut(title, 80)}"` : ''}`;
 }
 
 /** GitHub's text, fenced so the model reads it as data. */

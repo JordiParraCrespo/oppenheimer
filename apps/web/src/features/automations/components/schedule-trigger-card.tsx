@@ -1,7 +1,15 @@
 import { TokenSentence, TriggerCard, useNow } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { useLocale } from '@oppenheimer/frontend-web';
+import {
+  calendarDate,
+  daysText,
+  useLocale,
+  viewerTimeZone,
+  WEEK_ORDER,
+  wallClock,
+  weekdayName,
+} from '@oppenheimer/frontend-web';
 import {
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
@@ -9,8 +17,7 @@ import {
 } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
 import { type ScheduleCard, withFrequency } from '../lib/automation-draft';
-import { localDate, pad2, viewerTimeZone, wallClock } from '../lib/time';
-import { calendarDate, daysText, WEEK_ORDER, weekdayName } from '../lib/trigger-text';
+import { localDate, pad2 } from '../lib/time';
 import { ChoiceToken } from './choice-token';
 import { GridToken } from './grid-token';
 import { MultiToken } from './multi-token';

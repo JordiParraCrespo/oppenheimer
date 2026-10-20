@@ -3,12 +3,16 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
+import { GithubAccessResolver } from './application/github-access.resolver';
 import { GithubUserGrantResolver } from './application/github-user-grant.resolver';
 import { InstallStateResolver } from './application/install-state.resolver';
+import { IssueAccessResolver } from './application/issue-access.resolver';
 import { PullRequestAccessResolver } from './application/pull-request-access.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
+import { AddIssueCommentCommandHandler } from './commands/add-issue-comment/add-issue-comment.command-handler';
 import { ConnectInstallationCommandHandler } from './commands/connect-installation/connect-installation.command-handler';
 import { ConnectInstallationHttpController } from './commands/connect-installation/connect-installation.http.controller';
+import { CreateIssueCommandHandler } from './commands/create-issue/create-issue.command-handler';
 import { DisconnectInstallationCommandHandler } from './commands/disconnect-installation/disconnect-installation.command-handler';
 import { DisconnectInstallationHttpController } from './commands/disconnect-installation/disconnect-installation.http.controller';
 import { HandleGithubWebhookCommandHandler } from './commands/handle-github-webhook/handle-github-webhook.command-handler';
@@ -22,8 +26,10 @@ import { GithubUserGrantRepository } from './database/github-user-grant.reposito
 import {
   GITHUB_APP,
   GITHUB_INSTALLATION_REPOSITORY,
+  GITHUB_ISSUES,
   GITHUB_PULLS,
   GITHUB_USER_GRANT_REPOSITORY,
+  ISSUE_ACCESS,
   PULL_REQUEST_ACCESS,
   REPOSITORY_ACCESS,
   USER_TOKEN_SEALER,
@@ -33,11 +39,15 @@ import { GithubInstallationMapper } from './github-installation.mapper';
 import { AesUserTokenSealerAdapter } from './infrastructure/aes-user-token-sealer.adapter';
 import { GithubEventSource } from './infrastructure/github-event-source.adapter';
 import { GithubHttp } from './infrastructure/github-http.adapter';
+import { GithubIssuesAdapter } from './infrastructure/github-issues.adapter';
 import { GithubPullsAdapter } from './infrastructure/github-pulls.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
 import { FindInstallationsQueryHandler } from './queries/find-installations/find-installations.query-handler';
+import { FindIssueQueryHandler } from './queries/find-issue/find-issue.query-handler';
+import { FindIssueCommentsQueryHandler } from './queries/find-issue-comments/find-issue-comments.query-handler';
+import { FindIssuesQueryHandler } from './queries/find-issues/find-issues.query-handler';
 import { ListInstallationRepositoriesHttpController } from './queries/list-installation-repositories/list-installation-repositories.http.controller';
 import { ListInstallationRepositoriesQueryHandler } from './queries/list-installation-repositories/list-installation-repositories.query-handler';
 import { ListRepositoryBranchesHttpController } from './queries/list-repository-branches/list-repository-branches.http.controller';
@@ -55,7 +65,9 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
+  AddIssueCommentCommandHandler,
   ConnectInstallationCommandHandler,
+  CreateIssueCommandHandler,
   DisconnectInstallationCommandHandler,
   HandleGithubWebhookCommandHandler,
   StartInstallationCommandHandler,
@@ -64,6 +76,9 @@ const commandHandlers: Provider[] = [
 const queryHandlers: Provider[] = [
   FindInstallationQueryHandler,
   FindInstallationsQueryHandler,
+  FindIssueQueryHandler,
+  FindIssueCommentsQueryHandler,
+  FindIssuesQueryHandler,
   ListInstallationRepositoriesQueryHandler,
   ListRepositoryBranchesQueryHandler,
 ];
@@ -78,6 +93,10 @@ const adapters: Provider[] = [
   { provide: USER_TOKEN_SEALER, useClass: AesUserTokenSealerAdapter },
   { provide: GITHUB_PULLS, useClass: GithubPullsAdapter },
   { provide: PULL_REQUEST_ACCESS, useClass: PullRequestAccessResolver },
+  { provide: GITHUB_ISSUES, useClass: GithubIssuesAdapter },
+  { provide: ISSUE_ACCESS, useClass: IssueAccessResolver },
+  // The installation tokens and the caller's own token, shared by both accesses.
+  GithubAccessResolver,
   // The one client both GitHub adapters send through: one in-flight cap, one pause per bucket.
   GithubHttp,
   InstallStateResolver,
@@ -111,11 +130,11 @@ const adapters: Provider[] = [
     ...adapters,
     ...InboundEventsModule.contributeSources([GithubEventSource]),
   ],
-  // `REPOSITORY_ACCESS` and `PULL_REQUEST_ACCESS`, and nothing else. The GitHub
+  // `REPOSITORY_ACCESS`, `PULL_REQUEST_ACCESS` and `ISSUE_ACCESS`, and nothing else. The GitHub
   // client and the unscoped installation lookup are this module's own: exporting
   // them is how `sessions/` and `relay/` would end up minting with GitHub's
   // numeric id, past the port that translates a checkout's uuid and checks the
   // installation is usable — and how a user token would leave this module.
-  exports: [REPOSITORY_ACCESS, PULL_REQUEST_ACCESS],
+  exports: [REPOSITORY_ACCESS, PULL_REQUEST_ACCESS, ISSUE_ACCESS],
 })
 export class GithubModule {}

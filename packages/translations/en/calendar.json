@@ -75,6 +75,7 @@
     "busy": "Busy",
     "free": "Free",
     "readOnly": "Read-only here: change it in Google Calendar.",
+    "join": "Join meeting",
     "open": "Open in Google Calendar"
   }
 }

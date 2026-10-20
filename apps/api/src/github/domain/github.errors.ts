@@ -132,4 +132,20 @@ export const GithubErrors = {
     message: "GitHub's rate limit was reached; try again shortly",
     httpStatus: 429,
   },
+  /** Also one in a repository the installation does not cover, or a number that is a pull request. */
+  ISSUE_NOT_FOUND: {
+    code: 'GITHUB_016',
+    message: 'Issue not found',
+    httpStatus: 404,
+  },
+  /**
+   * GitHub refused this repository's issues: the App was registered before it
+   * asked for Issues, an owner has not accepted the new permission on the
+   * installation yet, or the person cannot write to the repository.
+   */
+  ISSUES_FORBIDDEN: {
+    code: 'GITHUB_017',
+    message: "GitHub refused access to this repository's issues",
+    httpStatus: 403,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

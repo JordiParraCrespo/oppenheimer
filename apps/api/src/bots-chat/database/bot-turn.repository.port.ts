@@ -24,6 +24,21 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'missing'>;
 
   /**
+   * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
+   * (a routine's run): a key already queued answers that turn instead, so a
+   * run dispatched twice queues one turn. With `busyPrefix`, a queued or
+   * running turn of the bot whose key begins with it, other than this one,
+   * answers `busy` and queues nothing. Both are read under the bot's lock, so
+   * two dispatches cannot both miss what the other queued.
+   */
+  enqueueOnce(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    busyPrefix: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
+
+  /**
    * `enqueue` for a turn another bot's call queues: under a lock on its
    * chain's first turn, so two asks of one chain decide in turn, `decide`
    * reads what the chain holds and the turn is queued only when it allows.

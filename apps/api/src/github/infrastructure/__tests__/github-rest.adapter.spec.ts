@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
 import { type GithubFetch, GithubHttp } from '../github-http.adapter';
+import { GithubIssuesAdapter } from '../github-issues.adapter';
 import { GithubPullsAdapter } from '../github-pulls.adapter';
 import { GithubRestAdapter } from '../github-rest.adapter';
 
@@ -501,5 +502,103 @@ describe('turning on auto-merge', () => {
     await expect(
       enable({ body: { errors: [{ type: 'FORBIDDEN', message: 'Resource not accessible' }] } }),
     ).rejects.toMatchObject({ code: 'GITHUB_009' });
+  });
+});
+
+describe('issues', () => {
+  const credential = { token: 'ghs_held', bucket: 'installation:45678901' as const };
+  const ISSUE = {
+    number: 7,
+    title: 'The wallet forgets its tokens',
+    html_url: 'https://github.com/acme-labs/oppenheimer/issues/7',
+    state: 'open',
+    user: { login: 'ana' },
+    body: 'Steps…',
+    labels: [{ name: 'bug' }, 'p1'],
+    assignees: [{ login: 'jordi' }],
+    comments: 2,
+    created_at: '2026-10-01T00:00:00Z',
+    updated_at: '2026-10-02T00:00:00Z',
+    closed_at: null,
+  };
+  const adapterOver = (answers: Answer[]) => {
+    const http = fakeFetch(answers);
+    return { pulls: new GithubIssuesAdapter(new GithubHttp(configWith(), http.impl)), http };
+  };
+
+  it('lists issues with the filter in the query and leaves out the pull requests GitHub lists among them', async () => {
+    const { pulls, http } = adapterOver([
+      { body: [ISSUE, { ...ISSUE, number: 8, pull_request: { url: 'x' } }] },
+    ]);
+
+    const issues = await pulls.listIssues(
+      credential,
+      'acme-labs/oppenheimer',
+      { state: 'open', labels: ['bug', 'p1'], assignee: 'jordi', creator: null },
+      1,
+    );
+
+    expect(issues.map((issue) => issue.number)).toEqual([7]);
+    expect(issues[0]).toMatchObject({
+      labels: ['bug', 'p1'],
+      assignees: ['jordi'],
+      authorLogin: 'ana',
+    });
+    const url = new URL(http.calls[0]?.url ?? '');
+    expect(url.pathname).toBe('/repos/acme-labs/oppenheimer/issues');
+    expect(url.searchParams.get('labels')).toBe('bug,p1');
+    expect(url.searchParams.get('assignee')).toBe('jordi');
+    expect(url.searchParams.has('creator')).toBe(false);
+  });
+
+  it('reads on past a page of pull requests until it has the issues asked for, and no further', async () => {
+    const next = 'https://api.github.com/repos/acme-labs/oppenheimer/issues?page=2';
+    const { pulls, http } = adapterOver([
+      {
+        body: [1, 2, 3].map((number) => ({ ...ISSUE, number, pull_request: {} })),
+        link: `<${next}>; rel="next"`,
+      },
+      { body: [ISSUE, { ...ISSUE, number: 8 }], link: `<${next}3>; rel="next"` },
+    ]);
+
+    const issues = await pulls.listIssues(
+      credential,
+      'acme-labs/oppenheimer',
+      { state: 'open', labels: [], assignee: null, creator: null },
+      2,
+    );
+
+    expect(issues.map((issue) => issue.number)).toEqual([7, 8]);
+    expect(http.calls).toHaveLength(2);
+  });
+
+  it('answers a pull request’s number as GITHUB_016, as one that does not exist', async () => {
+    const { pulls } = adapterOver([
+      { body: { ...ISSUE, pull_request: { url: 'x' } } },
+      { status: 404, body: { message: 'Not Found' } },
+    ]);
+
+    await expect(pulls.readIssue(credential, 'acme-labs/oppenheimer', 7)).rejects.toMatchObject({
+      code: 'GITHUB_016',
+    });
+    await expect(pulls.readIssue(credential, 'acme-labs/oppenheimer', 9)).rejects.toMatchObject({
+      code: 'GITHUB_016',
+    });
+  });
+
+  it('answers GitHub refusing the issues (no Issues permission on the App) as GITHUB_017, not a suspended installation', async () => {
+    const { pulls, http } = adapterOver([
+      { status: 403, body: { message: 'Resource not accessible by integration' } },
+    ]);
+
+    await expect(
+      pulls.createIssue({ token: 'user-token', bucket: 'user:1' }, 'acme-labs/oppenheimer', {
+        title: 'A bug',
+        labels: [],
+        assignees: [],
+      }),
+    ).rejects.toMatchObject({ code: 'GITHUB_017' });
+    expect(http.calls[0]?.init.method).toBe('POST');
+    expect(JSON.parse(String(http.calls[0]?.init.body))).toEqual({ title: 'A bug' });
   });
 });

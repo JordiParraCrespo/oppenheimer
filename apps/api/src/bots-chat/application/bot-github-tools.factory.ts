@@ -44,7 +44,8 @@ import {
  * GitHub and pull requests (`25-bots.md` §4.4), the reads: which repositories
  * the workspace's installations cover, the pull request queue, and one pull
  * request with its files and conversation. Commenting, reviewing, merging
- * and review sessions ask the owner first. Everything a stranger can write on
+ * and review sessions are `BotPullRequestToolsFactory`, issues
+ * `BotIssueToolsFactory`. Everything a stranger can write on
  * GitHub (bodies, comments, commit messages) comes back inside
  * `<github_content>`, marked as data.
  */

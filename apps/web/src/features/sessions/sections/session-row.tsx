@@ -11,6 +11,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
+import { useSessionPin } from '../hooks/use-session-pins';
 import { sessionGlyph } from '../lib/session-glyph';
 import { projectsForMove } from '../lib/session-groups';
 
@@ -46,9 +47,10 @@ function dotFor(session: SessionEntity) {
  * and move writes), so one row's keystroke redraws no other row. What it cannot
  * own goes up as one call each: the delete and share dialogs, which must outlive the row,
  * and a failed write, which the sidebar shows because a menu closes on its pick
- * and the row has no room. It subscribes to one boolean for being the open
- * session, not the route, so a navigation re-renders only the two rows whose
- * highlight moved; `now` is its group's one-minute clock. The row drags, up
+ * and the row has no room. Its pin is the sidebar's (`SessionPinsContext`),
+ * which draws a pinned row under Pinned. It subscribes to one boolean for being
+ * the open session, not the route, so a navigation re-renders only the two rows
+ * whose highlight moved; `now` is its group's one-minute clock. The row drags, up
  * or down its project or into another; the sidebar keeps where it lands.
  */
 export function SessionRow({
@@ -73,6 +75,7 @@ export function SessionRow({
     select: (state) => state.location.pathname === `/sessions/${session.id}`,
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  const pin = useSessionPin(session.id);
   const [draft, setDraft] = useState<string | null>(null);
   // The projects are read, not subscribed to: the move pane is the one thing
   // that needs them, it is drawn only while the menu is up (and opening it
@@ -150,6 +153,8 @@ export function SessionRow({
         <SessionRowMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
+          pinned={pin.pinned}
+          onPinChange={pin.setPinned}
           onRename={() => setDraft(session.name)}
           onMove={(projectId) => move.mutate({ id: session.id, projectId })}
           onShare={() => onShare(session)}

@@ -46,6 +46,12 @@ import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
+import {
+  routineActivityLine,
+  routinePrefix,
+  routineSourceKey,
+  routineTurn,
+} from '../domain/bot-routine.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -278,6 +284,79 @@ describe('bots chat (integration)', () => {
     });
     stale.end('failed', new Date());
     expect(await turns.finish(stale, null)).toBe(false);
+  });
+
+  it("queues a routine's run once, however often it is dispatched, and finds it live by its routine", async () => {
+    await dataSource.query(`DELETE FROM outbox_message`);
+    const bot = await create('Routine Bot');
+    const firing = {
+      automationId: '6a1c4f9e-0000-4000-8000-000000000001',
+      runId: '6a1c4f9e-0000-4000-8000-000000000002',
+      name: 'Morning PR digest',
+      instructions: 'List the open pull requests.',
+    };
+    const props = {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    };
+    const first = routineTurn(props, firing);
+    const again = routineTurn(props, firing);
+    const busy = routinePrefix(firing.automationId);
+    expect(await turns.enqueueOnce(first.turn, first.opening, null, busy)).toEqual({
+      outcome: 'staged',
+      turnId: first.turn.id,
+    });
+    // The same run dispatched again (a retried job) finds the turn it queued,
+    // rather than reading its own turn as the routine being busy.
+    expect(await turns.enqueueOnce(again.turn, again.opening, null, busy)).toEqual({
+      outcome: 'existing',
+      turnId: first.turn.id,
+    });
+    // The routine's next run, while that turn is live, queues nothing.
+    const next = routineTurn(props, { ...firing, runId: '6a1c4f9e-0000-4000-8000-000000000003' });
+    expect(await turns.enqueueOnce(next.turn, next.opening, null, busy)).toEqual({
+      outcome: 'busy',
+      turnId: next.turn.id,
+    });
+    // Another routine of the bot is not held by it; it waits its turn in the queue.
+    const other = routineTurn(props, {
+      ...firing,
+      automationId: '6a1c4f9e-0000-4000-8000-000000000004',
+    });
+    expect(
+      await turns.enqueueOnce(
+        other.turn,
+        other.opening,
+        null,
+        routinePrefix('6a1c4f9e-0000-4000-8000-000000000004'),
+      ),
+    ).toEqual({ outcome: 'waiting', turnId: other.turn.id });
+    expect(await stagedTurns()).toEqual([first.turn.id]);
+
+    const stored = (await turns.findForRun(first.turn.id)).unwrap();
+    expect(stored).toMatchObject({
+      origin: 'routine',
+      sourceKey: routineSourceKey(firing.automationId, firing.runId),
+    });
+    const [opening] = await dataSource.query(
+      `SELECT role, event FROM bot_message WHERE "turnId" = $1`,
+      [first.turn.id],
+    );
+    expect(opening).toEqual({
+      role: 'event',
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: firing.automationId,
+        runId: firing.runId,
+        name: firing.name,
+        reason: null,
+      },
+    });
   });
 
   it('never strands a message sent while the running turn ends: it is staged by one or the other', async () => {
@@ -647,6 +726,68 @@ describe('bots chat (integration)', () => {
       ),
     ).rejects.toMatchObject({ driverError: { constraint: 'CHK_bot_message_event' } });
   });
+  // What breaks this: an outbox redelivery writing a routine's line twice, a
+  // bot deleted since failing the listener forever, a turn's history or the
+  // summarizer losing the lines that belong to no turn.
+  it('writes a routine’s line outside any turn once, reads it back in the chat and the history', async () => {
+    const bot = await create('Routines');
+    const line = routineActivityLine({
+      id: randomUUID(),
+      organizationId,
+      botId: bot.id,
+      automationId: randomUUID(),
+      runId: null,
+      name: 'Morning PR digest',
+      activity: 'paused',
+      reason: 'bot_provider_missing',
+      // Delivered late: the line still says when it happened.
+      at: new Date(Date.now() - 3_600_000),
+    });
+    expect(await messages.insertOnce(line)).toBe(true);
+    expect(await messages.insertOnce(line)).toBe(false);
+
+    const { turn, message } = sent(bot, 'Why did it stop?');
+    await turns.enqueue(turn, message, null);
+    const conversation = await messages.findConversation(scope(), bot.id, 10);
+    expect(conversation.map((item) => [item.turnId, item.role])).toEqual([
+      [null, 'event'],
+      [turn.id, 'user'],
+    ]);
+    expect(conversation[0].event).toMatchObject({
+      activity: 'paused',
+      reason: 'bot_provider_missing',
+    });
+    expect(conversation[0].createdAt).toEqual(line.createdAt);
+    const history = await messages.findHistory(organizationId, bot.id, turn.id, null, 40);
+    expect(history.map((item) => item.id)).toEqual([line.id]);
+    const uncovered = await messages.findUncovered(organizationId, bot.id, null, 10);
+    // The line has no turn to wait for; the queued message still waits on its own.
+    expect(uncovered.map((item) => [item.id, item.turnEnded])).toEqual([
+      [line.id, true],
+      [message.id, false],
+    ]);
+
+    // A bot deleted since: the line has nowhere to go, and nothing is stored.
+    const gone = routineActivityLine({
+      id: randomUUID(),
+      organizationId,
+      botId: randomUUID(),
+      automationId: randomUUID(),
+      runId: null,
+      name: 'Gone',
+      activity: 'deleted',
+      reason: null,
+      at: new Date(),
+    });
+    expect(await messages.insertOnce(gone)).toBe(false);
+    await expect(
+      dataSource.query(
+        `INSERT INTO bot_message ("organizationId", "botId", "role", "content", "position") VALUES ($1, $2, 'user', 'x', 0)`,
+        [organizationId, bot.id],
+      ),
+    ).rejects.toMatchObject({ driverError: { constraint: 'CHK_bot_message_turn' } });
+  });
+
   /** A bot with `count` messages, alternating yours and its, one turn each pair; oldest first. */
   async function talked(
     bot: BotEntity,

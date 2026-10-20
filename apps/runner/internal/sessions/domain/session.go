@@ -180,6 +180,10 @@ type Session struct {
 	// Dirty records that the worktree had uncommitted changes when it was
 	// closed, so the console can say so instead of silently dropping work.
 	Dirty bool `json:"dirty,omitempty"`
+	// PromptReported records that the first message was read off the
+	// agent's transcript and handed to the link as `prompt.first`, so a
+	// runner that restarts never reports it a second time.
+	PromptReported bool `json:"promptReported,omitempty"`
 }
 
 var (
