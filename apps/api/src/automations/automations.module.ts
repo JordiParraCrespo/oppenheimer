@@ -79,8 +79,11 @@ import { FindAutomationSettingsHttpController } from './queries/find-automation-
 import { FindAutomationSettingsQueryHandler } from './queries/find-automation-settings/find-automation-settings.query-handler';
 import { FindAutomationsHttpController } from './queries/find-automations/find-automations.http.controller';
 import { FindAutomationsQueryHandler } from './queries/find-automations/find-automations.query-handler';
+import { FindBotRoutineRefQueryHandler } from './queries/find-bot-routine-ref/find-bot-routine-ref.query-handler';
 import { FindBotRoutinesHttpController } from './queries/find-bot-routines/find-bot-routines.http.controller';
 import { FindBotRoutinesQueryHandler } from './queries/find-bot-routines/find-bot-routines.query-handler';
+import { FindRoutinesHttpController } from './queries/find-routines/find-routines.http.controller';
+import { FindRoutinesQueryHandler } from './queries/find-routines/find-routines.query-handler';
 import { FindRunHistoryHttpController } from './queries/find-run-history/find-run-history.http.controller';
 import { FindRunHistoryQueryHandler } from './queries/find-run-history/find-run-history.query-handler';
 import { PreviewTriggerHttpController } from './queries/preview-trigger/preview-trigger.http.controller';
@@ -88,6 +91,8 @@ import { PreviewTriggerQueryHandler } from './queries/preview-trigger/preview-tr
 
 const httpControllers = [
   FindAutomationsHttpController,
+  // Before `:id`, so `routines` is not read as an automation's id.
+  FindRoutinesHttpController,
   CreateAutomationHttpController,
   PreviewTriggerHttpController,
   FindAutomationHttpController,
@@ -135,6 +140,8 @@ const queryHandlers: Provider[] = [
   PreviewTriggerQueryHandler,
   FindAutomationSettingsQueryHandler,
   FindBotRoutinesQueryHandler,
+  FindBotRoutineRefQueryHandler,
+  FindRoutinesQueryHandler,
 ];
 
 /**

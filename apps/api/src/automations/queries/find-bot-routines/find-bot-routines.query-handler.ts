@@ -20,7 +20,7 @@ export class FindBotRoutinesQueryHandler
   ) {}
 
   async execute(query: FindBotRoutinesQuery): Promise<AutomationListing> {
-    const automations = await this.automations.findAll(query.scope, { botId: query.botId });
+    const automations = await this.automations.findRoutinesOfBot(query.scope, query.botId);
     const since = new Date(Date.now() - RUN_HISTORY_DAYS * 86_400_000);
     const digests = await this.runs.digests(
       query.scope,

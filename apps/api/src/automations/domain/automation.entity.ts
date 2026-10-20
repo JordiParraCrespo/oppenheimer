@@ -12,6 +12,7 @@ import type {
   AutomationPausedReason,
 } from '@oppenheimer/shared/automations';
 import type {
+  AutomationChange,
   AutomationRevisionProps,
   AutomationRunTargetKind,
   AutomationTarget,
@@ -112,6 +113,8 @@ const REVISION_FIELDS = [
 export class AutomationEntity extends AggregateRoot<AutomationProps> {
   /** Whether the last change created a revision the repository has to insert. */
   private revised = false;
+  /** What this instance changed since it was last saved, in the order it did. */
+  private readonly unsaved = new Set<AutomationChange>();
 
   static create(create: CreateEntityProps<AutomationProps>): AutomationEntity {
     return new AutomationEntity(create);
@@ -152,6 +155,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     entity.revised = true;
     entity.schedule(props.now);
     entity.validate();
+    entity.unsaved.add('created');
     return entity;
   }
 
@@ -188,6 +192,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     entity.revised = true;
     entity.schedule(props.now);
     entity.validate();
+    entity.unsaved.add('created');
     return entity;
   }
 
@@ -246,10 +251,21 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
   get hasNewRevision(): boolean {
     return this.revised;
   }
+  /** What changed since the last save: created, edited, paused, resumed or deleted. */
+  get changes(): ReadonlySet<AutomationChange> {
+    return this.unsaved;
+  }
+
+  /** Saved: its events are staged and its changes are no longer news. */
+  override clearEvents(): void {
+    super.clearEvents();
+    this.unsaved.clear();
+  }
 
   /** Edit what every automation has. Triggers are replaced whole, because the editor holds them all. */
   change(changes: AutomationChanges, now: Date): void {
     this.assertLive();
+    const renamed = changes.name !== undefined && changes.name.trim() !== this.props.name;
     if (changes.name !== undefined) this.props.name = changes.name.trim();
     if (changes.overlap !== undefined) this.props.overlap = changes.overlap;
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
@@ -257,6 +273,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       this.props.triggers = changes.triggers;
       this.schedule(now);
     }
+    if (renamed || changes.triggers !== undefined) this.unsaved.add('edited');
     this.touch();
   }
 
@@ -301,6 +318,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
           }
         : target.revision;
     this.revised = this.revised || revision !== target.revision;
+    if (revision !== target.revision) this.unsaved.add('edited');
     this.props.target = {
       ...target,
       credentialScopes:
@@ -316,6 +334,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     this.props.pausedAt = this.props.pausedAt ?? now;
     this.props.pausedReason = reason;
     this.schedule(now);
+    this.unsaved.add('paused');
     this.touch();
   }
 
@@ -325,6 +344,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     this.props.pausedAt = null;
     this.props.pausedReason = null;
     this.schedule(now);
+    this.unsaved.add('resumed');
     this.touch();
   }
 
@@ -333,6 +353,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (this.isDeleted) return;
     this.props.deletedAt = now;
     this.schedule(now);
+    this.unsaved.add('deleted');
     this.touch();
   }
 

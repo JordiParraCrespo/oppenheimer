@@ -45,6 +45,7 @@
   "GET /v1/automation-settings": ["automations:read"],
   "GET /v1/automations": ["automations:read"],
   "GET /v1/automations/:id": ["automations:read"],
+  "GET /v1/automations/routines": ["automations:read"],
   "GET /v1/bot-groups": ["bots:read"],
   "GET /v1/bots": ["bots:read"],
   "GET /v1/bots/:id": ["bots:read"],

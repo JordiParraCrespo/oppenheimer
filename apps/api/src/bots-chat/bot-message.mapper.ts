@@ -82,7 +82,10 @@ export class BotMessageMapper
     return dto;
   }
 
-  /** A stored message as the summary weighs it, with whether its turn (in `turnStatus`) has ended. */
+  /**
+   * A stored message as the summary weighs it, with whether its turn (in
+   * `turnStatus`) has ended; a line outside any turn has none to wait for.
+   */
   toSummarizable(record: BotMessageOrmEntity, turnStatus: unknown): SummarizableMessage {
     const message = this.toDomain(record);
     return {
@@ -90,7 +93,8 @@ export class BotMessageMapper
       role: message.role,
       content: message.content,
       createdAt: message.createdAt,
-      turnEnded: ENDED_TURN_STATUSES.some((status) => status === turnStatus),
+      turnEnded:
+        message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
     };
   }
 }

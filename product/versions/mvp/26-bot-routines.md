@@ -168,14 +168,27 @@ name, the run when there is one, and a `reason` in words for `paused` and
 `failed`. The chat draws them all as event lines; what differs is
 rendering, not kind:
 
-- `saved` to `deleted` read "Created routine *Morning PR digest*", with
-  **Open routine**. Several in one turn fold into one group, "Routines in
-  this change", as Grok Bot draws it.
+- `saved` to `deleted` read "Created routine *Morning PR digest*", a
+  divider with the activity's mark. They belong to no turn (below), so
+  each is its own line; folding several into "Routines in this change",
+  as Grok Bot draws a turn's changes, waits until a line knows its turn.
 - `ran` opens the routine's turn: "Routine · *Morning PR digest*" (§4,
   the opening message).
-- `failed` is drawn as a notice, "Routine *Morning PR digest* failed",
-  with the reason: a run skipped, refused or expired, or a turn of the
-  routine that ended `failed`.
+- `failed` is drawn as a notice, "Routine *Morning PR digest* did not
+  run" with the reason, and **Open routines**: a run that expired, or one
+  skipped by a run limit, a missed slot or an agent that cannot start. A
+  skip the owner asked for (paused, deleted, still busy, our own event)
+  is not a failure. A run that could not start because the bot's
+  provider has no credential is told by its `paused` line instead
+  (`bot_provider_missing`), which is drawn as the same notice with its
+  reason; a pause the owner made is a plain line. A turn of a routine
+  that ended `failed` says so in its own turn, as any turn does.
+- **Lines outside a turn.** A routine changed on the tab, paused by the
+  dispatcher or failed before its turn existed happened in no turn, so
+  `bot_message."turnId"` is null for it, and only for an event. The chat
+  places it by when it happened; the bot reads it in its history like
+  any event. Each line's id is the domain event's, so an outbox
+  redelivery writes it once.
 
 **One writer.** The tool and the tab both change a routine through the
 same automations commands (`SaveBotRoutine`, `RunAutomation`,
@@ -328,6 +341,16 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   `product/README.md`), and stays a pure policy as that review asked; the
   pause of the whole set is a bot-level step, not part of one run's
   decision.
+- 2026-10-18, building slice C's second half: **routine activity is a
+  line outside any turn**, keyed by its domain event (`bot_message."turnId"`
+  nullable for events only). The `failed` notice covers runs that expired
+  or were skipped by a limit, a missed slot or an unavailable agent; a
+  missing provider pauses (`bot_provider_missing`) and its `paused` line is
+  the notice; a failed routine turn is shown by the turn itself. The
+  "Routines in this change" group waits until a line knows its turn.
+  `/automations` lists bot routines in their own table under the
+  automations, each opening its bot's Routines tab
+  (`GET /automations/routines`).
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.

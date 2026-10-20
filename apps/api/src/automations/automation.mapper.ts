@@ -10,6 +10,7 @@ import {
   type ScheduleFrequency,
   type TriggerFilter,
 } from '@oppenheimer/shared/automations';
+import { botTargetOf } from './application/bot-target.policy';
 import { sessionTargetOf } from './application/session-target.policy';
 import { AutomationRunMapper } from './automation-run.mapper';
 import type { AutomationOrmEntity } from './database/automation.orm-entity';
@@ -321,6 +322,7 @@ export class AutomationMapper {
   ): BotRoutineResponseDto {
     const dto = new BotRoutineResponseDto();
     dto.id = entity.id;
+    dto.botId = botTargetOf(entity).botId;
     dto.name = entity.name;
     dto.prompt = entity.revision.prompt;
     dto.status = digest?.running ? 'running' : entity.isPaused ? 'paused' : 'active';

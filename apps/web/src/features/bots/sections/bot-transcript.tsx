@@ -1,4 +1,9 @@
-import { ChatMarker, ChatTranscript, TranscriptDivider } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  ChatMarker,
+  ChatTranscript,
+  TranscriptDivider,
+} from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import {
   useBotLiveText,
@@ -7,14 +12,17 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { dateFormatter, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { botModelOf } from '@oppenheimer/shared/schemas/bot';
+import { Link } from '@tanstack/react-router';
 import { Fragment } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotTurn } from '@/features/bots/components/bot-turn';
 import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
 import {
   chatTurns,
   markersBefore,
   newestSentId,
+  newestTurn,
   retryContent,
 } from '@/features/bots/lib/chat-turns';
 import { BotHello } from './bot-hello';
@@ -36,7 +44,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const retry = useSendBotMessage();
   const blocks = chatTurns(conversation);
   const again = retryContent(blocks);
-  const newest = blocks.at(-1)?.turnId;
+  const newest = newestTurn(blocks)?.turnId;
   useSentGlide(newestSentId(blocks));
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
@@ -50,7 +58,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
           {blocks.map((block, index) => {
             const markers = markersBefore(blocks, index);
             return (
-              <Fragment key={block.turnId}>
+              <Fragment key={block.key}>
                 {markers.day ? (
                   <TranscriptDivider>{day.format(markers.day)}</TranscriptDivider>
                 ) : null}
@@ -67,16 +75,34 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                     />
                   </ChatMarker>
                 ) : null}
-                <BotTurn
-                  block={block}
-                  live={live[block.turnId]}
-                  onRetry={
-                    again !== null && block.turnId === newest
-                      ? () => retry.mutate({ id: botId, content: again })
-                      : undefined
-                  }
-                  retrying={retry.isPending}
-                />
+                {block.turnId === null ? (
+                  block.asked.map((message) => (
+                    <BotEventLine
+                      key={message.id}
+                      message={message}
+                      action={
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          render={<Link to="/bots/$botId/settings/routines" params={{ botId }} />}
+                        >
+                          {t('bots.chat.event.openRoutines')}
+                        </Button>
+                      }
+                    />
+                  ))
+                ) : (
+                  <BotTurn
+                    block={block}
+                    live={live[block.turnId]}
+                    onRetry={
+                      again !== null && block.turnId === newest
+                        ? () => retry.mutate({ id: botId, content: again })
+                        : undefined
+                    }
+                    retrying={retry.isPending}
+                  />
+                )}
               </Fragment>
             );
           })}

@@ -16,6 +16,7 @@ import {
 @Check('CHK_bot_message_role', `"role" IN ('user', 'assistant', 'activity', 'event')`)
 @Check('CHK_bot_message_event', `("role" = 'event') = ("event" IS NOT NULL)`)
 @Check('CHK_bot_message_position', `"position" >= 0`)
+@Check('CHK_bot_message_turn', `"turnId" IS NOT NULL OR "role" = 'event'`)
 export class BotMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -26,8 +27,9 @@ export class BotMessageOrmEntity {
   @Column({ type: 'uuid' })
   botId!: string;
 
-  @Column({ type: 'uuid' })
-  turnId!: string;
+  /** Null only for an event outside any turn (`1791003100000-AddRoutineActivityLines`). */
+  @Column({ type: 'uuid', nullable: true })
+  turnId!: string | null;
 
   @Column({ type: 'varchar', length: 16 })
   role!: string;

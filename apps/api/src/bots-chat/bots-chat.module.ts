@@ -22,6 +22,7 @@ import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.polic
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
@@ -165,6 +166,7 @@ const queryHandlers: Provider[] = [
     BotWebToolsFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
+    BotRoutineActivityDomainEventHandler,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     BotApprovalsProcessor,

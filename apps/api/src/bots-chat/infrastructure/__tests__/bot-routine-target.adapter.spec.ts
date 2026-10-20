@@ -115,12 +115,12 @@ describe('BotRoutineTarget', () => {
     expect(publish).toHaveBeenCalledTimes(1);
   });
 
-  it('skips a run whose bot has no usable provider, and queues nothing', async () => {
+  it('skips and pauses a routine whose bot has no usable provider, and queues nothing', async () => {
     const { target, context, enqueueOnce } = setup({ model: false });
     await expect(target.decide(context)).resolves.toEqual({
       kind: 'skip',
       reason: 'not_launchable',
-      pause: null,
+      pause: 'bot_provider_missing',
     });
     expect(enqueueOnce).not.toHaveBeenCalled();
   });
@@ -146,11 +146,15 @@ describe('BotRoutineTarget', () => {
     expect(publish).not.toHaveBeenCalled();
   });
 
-  it('reads a bot gone at launch as a refusal the run skips, and anything else as a fault', async () => {
+  it('reads a bot gone at launch as a skip, a key gone as a pause, and anything else as a fault', async () => {
     const { target } = setup();
     expect(target.refusalOf(new AppError(BotErrors.NOT_FOUND))).toEqual({
       reason: 'not_launchable',
       pause: null,
+    });
+    expect(target.refusalOf(new AppError(BotErrors.PROVIDER_KEY_MISSING))).toEqual({
+      reason: 'not_launchable',
+      pause: 'bot_provider_missing',
     });
     expect(target.refusalOf(new Error('database down'))).toBeNull();
   });

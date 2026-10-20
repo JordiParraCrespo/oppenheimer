@@ -14,8 +14,8 @@ import { BotEventLine } from '../components/bot-event-line';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, values?: { summary?: string; name?: string }) =>
-      `${key}|${values?.summary ?? values?.name ?? ''}`,
+    t: (key: string, values?: { summary?: string; name?: string; reason?: string }) =>
+      [key, values?.summary ?? values?.name ?? '', values?.reason].filter(Boolean).join('|'),
   }),
   Trans: ({ i18nKey, values }: { i18nKey: string; values?: { name?: string } }) =>
     `${i18nKey}|${values?.name ?? ''}`,
@@ -62,6 +62,55 @@ describe('BotEventLine', () => {
     } as unknown as BotMessageEntity;
     render(<BotEventLine message={message} />);
     expect(screen.getByText('bots.chat.event.routine|Morning PR digest')).toBeTruthy();
+  });
+
+  const routine = (activity: string, reason: string | null) =>
+    ({
+      id: 'e3',
+      turnId: null,
+      role: 'event',
+      content: 'Your routine "Morning PR digest" was paused.',
+      event: {
+        kind: 'routine',
+        activity,
+        automationId: 'a-1',
+        runId: null,
+        name: 'Morning PR digest',
+        reason,
+      },
+    }) as unknown as BotMessageEntity;
+
+  // What breaks this: a pause the owner made drawn as an alarm, or a pause
+  // the owner must fix, or a run that never happened, drawn as a quiet line.
+  it('draws what the owner did as a line, and what needs them as a notice that says why', () => {
+    render(<BotEventLine message={routine('paused', 'user')} action={<a href="/x">open</a>} />);
+    expect(screen.getByText('bots.chat.event.routinePaused|Morning PR digest')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText('open')).toBeNull();
+    cleanup();
+
+    render(
+      <BotEventLine
+        message={routine('paused', 'bot_provider_missing')}
+        action={<a href="/x">open</a>}
+      />,
+    );
+    expect(screen.getByRole('status').getAttribute('data-tone')).toBe('warning');
+    expect(
+      screen.getByText(
+        'bots.chat.event.routinePausedBecause|Morning PR digest|bots.chat.routineReason.bot_provider_missing',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText('open')).toBeTruthy();
+    cleanup();
+
+    render(<BotEventLine message={routine('failed', 'something-new')} />);
+    expect(screen.getByRole('status').getAttribute('data-tone')).toBe('danger');
+    expect(
+      screen.getByText(
+        'bots.chat.event.routineFailed|Morning PR digest|bots.chat.routineReason.unknown',
+      ),
+    ).toBeTruthy();
   });
 
   it('links the session an approved call started, in a new tab', () => {

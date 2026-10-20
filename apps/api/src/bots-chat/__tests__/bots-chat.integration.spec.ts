@@ -46,7 +46,12 @@ import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
-import { routinePrefix, routineSourceKey, routineTurn } from '../domain/bot-routine.policy';
+import {
+  routineActivityLine,
+  routinePrefix,
+  routineSourceKey,
+  routineTurn,
+} from '../domain/bot-routine.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -721,6 +726,68 @@ describe('bots chat (integration)', () => {
       ),
     ).rejects.toMatchObject({ driverError: { constraint: 'CHK_bot_message_event' } });
   });
+  // What breaks this: an outbox redelivery writing a routine's line twice, a
+  // bot deleted since failing the listener forever, a turn's history or the
+  // summarizer losing the lines that belong to no turn.
+  it('writes a routine’s line outside any turn once, reads it back in the chat and the history', async () => {
+    const bot = await create('Routines');
+    const line = routineActivityLine({
+      id: randomUUID(),
+      organizationId,
+      botId: bot.id,
+      automationId: randomUUID(),
+      runId: null,
+      name: 'Morning PR digest',
+      activity: 'paused',
+      reason: 'bot_provider_missing',
+      // Delivered late: the line still says when it happened.
+      at: new Date(Date.now() - 3_600_000),
+    });
+    expect(await messages.insertOnce(line)).toBe(true);
+    expect(await messages.insertOnce(line)).toBe(false);
+
+    const { turn, message } = sent(bot, 'Why did it stop?');
+    await turns.enqueue(turn, message, null);
+    const conversation = await messages.findConversation(scope(), bot.id, 10);
+    expect(conversation.map((item) => [item.turnId, item.role])).toEqual([
+      [null, 'event'],
+      [turn.id, 'user'],
+    ]);
+    expect(conversation[0].event).toMatchObject({
+      activity: 'paused',
+      reason: 'bot_provider_missing',
+    });
+    expect(conversation[0].createdAt).toEqual(line.createdAt);
+    const history = await messages.findHistory(organizationId, bot.id, turn.id, null, 40);
+    expect(history.map((item) => item.id)).toEqual([line.id]);
+    const uncovered = await messages.findUncovered(organizationId, bot.id, null, 10);
+    // The line has no turn to wait for; the queued message still waits on its own.
+    expect(uncovered.map((item) => [item.id, item.turnEnded])).toEqual([
+      [line.id, true],
+      [message.id, false],
+    ]);
+
+    // A bot deleted since: the line has nowhere to go, and nothing is stored.
+    const gone = routineActivityLine({
+      id: randomUUID(),
+      organizationId,
+      botId: randomUUID(),
+      automationId: randomUUID(),
+      runId: null,
+      name: 'Gone',
+      activity: 'deleted',
+      reason: null,
+      at: new Date(),
+    });
+    expect(await messages.insertOnce(gone)).toBe(false);
+    await expect(
+      dataSource.query(
+        `INSERT INTO bot_message ("organizationId", "botId", "role", "content", "position") VALUES ($1, $2, 'user', 'x', 0)`,
+        [organizationId, bot.id],
+      ),
+    ).rejects.toMatchObject({ driverError: { constraint: 'CHK_bot_message_turn' } });
+  });
+
   /** A bot with `count` messages, alternating yours and its, one turn each pair; oldest first. */
   async function talked(
     bot: BotEntity,

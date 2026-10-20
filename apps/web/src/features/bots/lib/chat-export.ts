@@ -1,5 +1,6 @@
 import type { BotMessageEntity, BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
+import { routineEventText } from './routine-event';
 import { toolAction } from './tool-activity';
 
 /**
@@ -46,9 +47,7 @@ function author(message: BotMessageEntity, botName: string, t: TFunction): strin
 function body(message: BotMessageEntity, t: TFunction): string {
   if (message.role === 'activity') return message.steps.map((step) => stepLine(step, t)).join('\n');
   const { event } = message;
-  if (message.role === 'event' && event?.kind === 'routine') {
-    return t('bots.chat.event.routine', { name: event.name });
-  }
+  if (message.role === 'event' && event?.kind === 'routine') return routineEventText(event, t);
   if (message.role === 'event' && event?.kind === 'approval') {
     return t(`bots.chat.event.${event.outcome}`, { summary: event.summary });
   }

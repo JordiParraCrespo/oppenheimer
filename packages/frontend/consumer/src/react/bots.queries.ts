@@ -48,6 +48,9 @@ export const botsKeys = {
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
   routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
   routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
+  // Every bot's, for `/automations`: apart from any one bot's, so a write to
+  // one routine refreshes both by name.
+  allRoutines: () => [...botsKeys.all, 'routine', 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,

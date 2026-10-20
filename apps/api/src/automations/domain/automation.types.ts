@@ -120,5 +120,8 @@ export interface AutomationLimits {
 
 export type { AutomationPausedReason, RunCheckoutRule };
 
+/** What one save of an automation changed; a save may make several. */
+export type AutomationChange = 'created' | 'edited' | 'paused' | 'resumed' | 'deleted';
+
 export type SessionTarget = Extract<AutomationTarget, { kind: 'session' }>;
 export type BotTarget = Extract<AutomationTarget, { kind: 'bot' }>;

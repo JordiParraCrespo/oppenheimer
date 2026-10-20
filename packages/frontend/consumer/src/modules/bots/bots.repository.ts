@@ -120,6 +120,7 @@ function toRevision(dto: BotDocumentRevisionResponseDto): BotDocumentRevisionEnt
 function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
   return new BotRoutineEntity(
     dto.id,
+    dto.botId,
     dto.name,
     dto.prompt,
     dto.status,
@@ -476,6 +477,13 @@ export class BotsRepository {
       heyApiSdk.findBotRoutines({ path: { id } }),
       BotsErrors.FETCH_ROUTINES_FAILED,
     );
+    return data.map(toRoutine);
+  }
+
+  /** Every bot's routines in the workspace, oldest first, for `/automations`. */
+  @MapApiError(BotsErrors.FETCH_ROUTINES_FAILED)
+  async findAllRoutines(): Promise<BotRoutineEntity[]> {
+    const data = await unwrapBody(heyApiSdk.findRoutines(), BotsErrors.FETCH_ROUTINES_FAILED);
     return data.map(toRoutine);
   }
 

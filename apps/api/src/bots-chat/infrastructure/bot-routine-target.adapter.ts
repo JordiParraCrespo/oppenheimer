@@ -24,10 +24,16 @@ interface RoutineLaunch {
   opening: BotMessageEntity;
 }
 
-/** Refusals that mean the routine cannot run now: the bot is gone, or its provider has no credential. */
+/**
+ * Refusals that mean the routine cannot run now: the bot is gone, or its
+ * provider has no credential, which pauses it rather than fail every hour.
+ */
 const REFUSALS: Readonly<Record<string, RunRefusal>> = {
   [BotErrors.NOT_FOUND.code]: { reason: 'not_launchable', pause: null },
-  [BotErrors.PROVIDER_KEY_MISSING.code]: { reason: 'not_launchable', pause: null },
+  [BotErrors.PROVIDER_KEY_MISSING.code]: {
+    reason: 'not_launchable',
+    pause: 'bot_provider_missing',
+  },
 };
 
 /** The routine's last turn still waits or runs; never reaches a response, only `refusalOf`. */
@@ -61,8 +67,11 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     if (target.kind !== 'bot') throw new Error(`Automation ${automation.id} is not a routine`);
     const { botId } = target;
 
+    // A bot's routines go with it (`ON DELETE CASCADE`), so no model here is
+    // a provider with no credential: pause, until the owner adds one and
+    // resumes it, rather than fail every hour.
     const model = await this.access.ownModel(automation.organizationId, botId, now);
-    if (!model) return { kind: 'skip', reason: 'not_launchable', pause: null };
+    if (!model) return { kind: 'skip', reason: 'not_launchable', pause: 'bot_provider_missing' };
 
     const instructions = composeRunPrompt(automation.revision.prompt, event);
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };

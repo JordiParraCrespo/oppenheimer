@@ -26,7 +26,11 @@ export const BOT_TOOL_OUTPUT_MAX = 2_000;
 export interface BotMessageProps {
   organizationId: string;
   botId: string;
-  turnId: string;
+  /**
+   * The turn it belongs to; null only for an event that happened outside any
+   * turn, such as a routine changed on its tab (`26-bot-routines.md` §4).
+   */
+  turnId: string | null;
   role: BotMessageRole;
   /** The text: yours, or the bot's. Empty for an activity line. */
   content: string;
@@ -56,7 +60,7 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   get botId(): string {
     return this.props.botId;
   }
-  get turnId(): string {
+  get turnId(): string | null {
     return this.props.turnId;
   }
   get role(): BotMessageRole {
@@ -77,8 +81,11 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
 
   public validate(): void {
     const { props } = this;
-    if (!props.organizationId || !props.botId || !props.turnId) {
-      throw new ArgumentNotProvidedException('A message belongs to a turn of a bot');
+    if (!props.organizationId || !props.botId) {
+      throw new ArgumentNotProvidedException('A message belongs to a bot');
+    }
+    if (!props.turnId && props.role !== 'event') {
+      throw new ArgumentNotProvidedException('Only an event stands outside a turn');
     }
     if (!BOT_MESSAGE_ROLES.includes(props.role)) {
       throw new ArgumentInvalidException(`${props.role} is not a message role`);

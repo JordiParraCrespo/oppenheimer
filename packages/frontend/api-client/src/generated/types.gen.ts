@@ -1890,7 +1890,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -1911,6 +1911,35 @@ export type AutomationResponseDto = {
      * The last six, newest first.
      */
     lastRuns: Array<AutomationRunSummaryResponseDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type BotRoutineResponseDto = {
+    id: string;
+    /**
+     * The bot that runs it.
+     */
+    botId: string;
+    name: string;
+    /**
+     * What the bot is told each time it runs.
+     */
+    prompt: string;
+    /**
+     * `running` while a run is queued or its turn runs, else `active` or `paused`.
+     */
+    status: 'active' | 'paused' | 'running';
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
+    /**
+     * The earliest next slot of its schedules. Null when paused or event-only.
+     */
+    nextRunAt?: string | null;
+    triggers: Array<AutomationTriggerResponseDto>;
+    /**
+     * Its latest run over the listed window; null when it has none.
+     */
+    lastRun?: AutomationRunSummaryResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2173,31 +2202,6 @@ export type UpdateAutomationSettingsRequest = {
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;
-};
-
-export type BotRoutineResponseDto = {
-    id: string;
-    name: string;
-    /**
-     * What the bot is told each time it runs.
-     */
-    prompt: string;
-    /**
-     * `running` while a run is queued or its turn runs, else `active` or `paused`.
-     */
-    status: 'active' | 'paused' | 'running';
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | null;
-    /**
-     * The earliest next slot of its schedules. Null when paused or event-only.
-     */
-    nextRunAt?: string | null;
-    triggers: Array<AutomationTriggerResponseDto>;
-    /**
-     * Its latest run over the listed window; null when it has none.
-     */
-    lastRun?: AutomationRunSummaryResponseDto | null;
-    createdAt: string;
-    updatedAt: string;
 };
 
 export type UpdateBotRoutineRequest = {
@@ -3226,7 +3230,7 @@ export type BotRoutineEventResponseDto = {
      */
     name: string;
     /**
-     * Why, in words, for a pause or a failure.
+     * Why, as a code, for a pause or a failure: the pause reason for `paused`, the skip reason or `expired` for `failed`.
      */
     reason: string | null;
 };
@@ -3285,7 +3289,10 @@ export type BotToolStepResponseDto = {
 
 export type BotMessageResponseDto = {
     id: string;
-    turnId: string;
+    /**
+     * The turn it belongs to; null for an event outside any turn (a routine changed on its tab, paused or failed).
+     */
+    turnId: string | null;
     role: 'user' | 'assistant' | 'activity' | 'event';
     /**
      * The text; empty for an activity line.
@@ -8657,6 +8664,32 @@ export type CreateAutomationResponses = {
 };
 
 export type CreateAutomationResponse = CreateAutomationResponses[keyof CreateAutomationResponses];
+
+export type FindRoutinesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/routines';
+};
+
+export type FindRoutinesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindRoutinesError = FindRoutinesErrors[keyof FindRoutinesErrors];
+
+export type FindRoutinesResponses = {
+    200: Array<BotRoutineResponseDto>;
+};
+
+export type FindRoutinesResponse = FindRoutinesResponses[keyof FindRoutinesResponses];
 
 export type PreviewTriggerData = {
     body: PreviewTriggerRequest;

@@ -28,6 +28,20 @@ export function useSuspenseBotRoutines(id: string) {
   });
 }
 
+/** Every bot's routines in the workspace (`/automations`), polling while one runs. */
+export function useSuspenseAllBotRoutines() {
+  const app = useConsumerApp();
+  return useSuspenseQuery<BotRoutineEntity[], Error>({
+    queryKey: botsKeys.allRoutines(),
+    queryFn: () => app.bots.findAllRoutines(),
+    ...usePollWhile<BotRoutineEntity[]>(
+      'liveRun',
+      botsKeys.allRoutines(),
+      (rows) => rows?.some((routine) => routine.isRunning) ?? false,
+    ),
+  });
+}
+
 export interface BotRoutineVariables {
   id: string;
   routineId: string;
@@ -51,7 +65,10 @@ function useRoutineWrite<TVariables extends BotRoutineVariables>(
   return useMutation({
     mutationFn: write,
     ...withCacheOnSuccess(options, (_data, { id }) =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.routines(id) }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: botsKeys.routines(id) }),
+        queryClient.invalidateQueries({ queryKey: botsKeys.allRoutines() }),
+      ]),
     ),
   });
 }
