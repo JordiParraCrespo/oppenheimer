@@ -1,8 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError, requireFound } from '@oppenheimer/backend-core';
+import { AppError } from '@oppenheimer/backend-core';
 import { type AggregateID, ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
+import { BotRoutineResolver } from '../../application/bot-routine.resolver';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import { AutomationEntity } from '../../domain/automation.entity';
@@ -25,6 +26,7 @@ export class SaveBotRoutineCommandHandler
     @Inject(AUTOMATION_REPOSITORY)
     private readonly automations: AutomationRepositoryPort,
     private readonly plan: AutomationPlanFactory,
+    private readonly routines: BotRoutineResolver,
   ) {}
 
   async execute(command: SaveBotRoutineCommand): Promise<AggregateID> {
@@ -53,11 +55,7 @@ export class SaveBotRoutineCommandHandler
       return routine.id;
     }
 
-    const routine = requireFound(
-      await this.automations.findOneById(scope, command.routineId),
-      AutomationErrors.NOT_FOUND,
-    );
-    if (!routine.isRoutineOf(command.botId)) throw new AppError(AutomationErrors.NOT_FOUND);
+    const routine = await this.routines.require(scope, command.botId, command.routineId);
     const version = routine.version;
     const edits =
       changes.name !== undefined || changes.prompt !== undefined || triggers !== undefined;

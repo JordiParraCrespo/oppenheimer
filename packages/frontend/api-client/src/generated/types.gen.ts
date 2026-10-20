@@ -2175,6 +2175,35 @@ export type UpdateAutomationSettingsRequest = {
     maxRunSeconds?: number | null;
 };
 
+export type BotRoutineResponseDto = {
+    id: string;
+    name: string;
+    /**
+     * What the bot is told each time it runs.
+     */
+    prompt: string;
+    /**
+     * `running` while a run is queued or its turn runs, else `active` or `paused`.
+     */
+    status: 'active' | 'paused' | 'running';
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | null;
+    /**
+     * The earliest next slot of its schedules. Null when paused or event-only.
+     */
+    nextRunAt?: string | null;
+    triggers: Array<AutomationTriggerResponseDto>;
+    /**
+     * Its latest run over the listed window; null when it has none.
+     */
+    lastRun?: AutomationRunSummaryResponseDto | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type UpdateBotRoutineRequest = {
+    enabled: boolean;
+};
+
 export type TaskSessionLinkResponseDto = {
     sessionId: string;
     /**
@@ -9070,6 +9099,137 @@ export type UpdateAutomationSettingsResponses = {
 };
 
 export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses[keyof UpdateAutomationSettingsResponses];
+
+export type FindBotRoutinesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines';
+};
+
+export type FindBotRoutinesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindBotRoutinesError = FindBotRoutinesErrors[keyof FindBotRoutinesErrors];
+
+export type FindBotRoutinesResponses = {
+    200: Array<BotRoutineResponseDto>;
+};
+
+export type FindBotRoutinesResponse = FindBotRoutinesResponses[keyof FindBotRoutinesResponses];
+
+export type DeleteBotRoutineData = {
+    body?: never;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}';
+};
+
+export type DeleteBotRoutineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotRoutineError = DeleteBotRoutineErrors[keyof DeleteBotRoutineErrors];
+
+export type DeleteBotRoutineResponses = {
+    204: void;
+};
+
+export type DeleteBotRoutineResponse = DeleteBotRoutineResponses[keyof DeleteBotRoutineResponses];
+
+export type UpdateBotRoutineData = {
+    body: UpdateBotRoutineRequest;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}';
+};
+
+export type UpdateBotRoutineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateBotRoutineError = UpdateBotRoutineErrors[keyof UpdateBotRoutineErrors];
+
+export type UpdateBotRoutineResponses = {
+    204: void;
+};
+
+export type UpdateBotRoutineResponse = UpdateBotRoutineResponses[keyof UpdateBotRoutineResponses];
+
+export type RunBotRoutineData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried Run now is the same run.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/run';
+};
+
+export type RunBotRoutineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RunBotRoutineError = RunBotRoutineErrors[keyof RunBotRoutineErrors];
+
+export type RunBotRoutineResponses = {
+    202: unknown;
+};
 
 export type StreamWorkspaceEventsData = {
     body?: never;

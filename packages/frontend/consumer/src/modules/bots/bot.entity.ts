@@ -1,5 +1,6 @@
 import type { AppError } from '@oppenheimer/frontend-core';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
+import type { AutomationRunStatus } from '@oppenheimer/shared/automations';
 import type {
   BotAuthor,
   BotAvatarColor,
@@ -7,6 +8,7 @@ import type {
   BotPermission,
   BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
+import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
 /**
  * A bot as the console needs it (`product/versions/mvp/25-bots.md`): who it
@@ -202,4 +204,36 @@ const CHATGPT_LOGIN_EXPIRED = 'BOTS_018';
 /** Whether `error` is the API saying the sign-in being polled is over, and a new one is needed. */
 export function isChatgptLoginExpired(error: unknown): boolean {
   return (error as Partial<AppError> | null)?.code === CHATGPT_LOGIN_EXPIRED;
+}
+
+/** How a routine's latest run went, as its card's "Last" reads it. */
+export interface BotRoutineLastRun {
+  status: AutomationRunStatus;
+  createdAt: Date;
+}
+
+/**
+ * One of a bot's routines (`26-bot-routines.md` §7): what it is told, when it
+ * runs, whether it is on, and how it last went. The bot makes and changes it
+ * in chat; the Routines tab turns it on or off, runs it now or deletes it.
+ */
+export class BotRoutineEntity {
+  constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly prompt: string,
+    /** `running` while a run is going, paused or not: the pause is {@link isPaused}. */
+    public readonly status: AutomationStatus,
+    /** Whether its triggers are paused; a paused routine can still be run now. */
+    public readonly isPaused: boolean,
+    public readonly nextRunAt: Date | null,
+    public readonly triggers: AutomationTrigger[],
+    public readonly lastRun: BotRoutineLastRun | null,
+    public readonly updatedAt: Date,
+  ) {}
+
+  /** A run is queued or its turn is running. */
+  get isRunning(): boolean {
+    return this.status === 'running';
+  }
 }

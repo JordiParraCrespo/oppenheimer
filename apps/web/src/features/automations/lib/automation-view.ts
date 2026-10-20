@@ -1,6 +1,11 @@
 import type { RunState } from '@oppenheimer/design-system-web';
 import type { AutomationEntity, AutomationRunEntity } from '@oppenheimer/frontend-consumer';
-import { formatCountdown, formatShortDuration } from '@oppenheimer/frontend-web';
+import {
+  formatCountdown,
+  formatShortDuration,
+  viewerTimeZone,
+  weekdayDate,
+} from '@oppenheimer/frontend-web';
 import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
 import {
   AUTOMATION_PAUSED_REASONS,
@@ -10,7 +15,7 @@ import {
   type AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
 import type { TFunction } from 'i18next';
-import { clock, dayOffset, viewerTimeZone, weekdayDate } from './time';
+import { clock, dayOffset } from './time';
 
 /**
  * Entities in, what a row prints out. Nothing here renders and nothing here

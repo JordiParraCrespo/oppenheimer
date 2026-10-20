@@ -466,6 +466,14 @@ export const findBotConversationSchema = z.object({
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
 /**
+ * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch
+ * (`26-bot-routines.md` §7). The tab changes whether a routine runs, never
+ * what it is: that is the chat's, through the bot's own tool.
+ */
+export const updateBotRoutineSchema = z.object({ enabled: z.boolean() });
+export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
+
+/**
  * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call of an
  * asking tool, waiting for the owner. `pending` until they decide; `approved`
  * once the call ran on their yes, `failed` when it ran and failed; `denied`;

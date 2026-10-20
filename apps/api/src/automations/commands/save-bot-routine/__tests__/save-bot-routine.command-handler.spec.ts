@@ -1,6 +1,7 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { Some } from 'oxide.ts';
 import type { AutomationPlanFactory } from '../../../application/automation-plan.factory';
+import { BotRoutineResolver } from '../../../application/bot-routine.resolver';
 import type { AutomationRepositoryPort } from '../../../database/automation.repository.port';
 import { AutomationEntity } from '../../../domain/automation.entity';
 import { triggerFromInput } from '../../../domain/trigger-config.policy';
@@ -40,6 +41,7 @@ function setup() {
   const handler = new SaveBotRoutineCommandHandler(
     automations,
     {} as unknown as AutomationPlanFactory,
+    new BotRoutineResolver(automations),
   );
   const saveWith = (
     changes: SaveBotRoutineCommand['changes'],

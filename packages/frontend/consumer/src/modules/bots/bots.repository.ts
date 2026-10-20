@@ -7,6 +7,7 @@ import {
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
   type BotResponseDto,
+  type BotRoutineResponseDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
   heyApiSdk,
@@ -23,12 +24,14 @@ import {
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
+import { triggerOf } from '../automations/automations.repository';
 import {
   BotDocumentEntity,
   BotDocumentRevisionEntity,
   BotEntity,
   BotGroupEntity,
   BotMemoryFactEntity,
+  BotRoutineEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
   ModelProviderEntity,
@@ -111,6 +114,20 @@ function toRevision(dto: BotDocumentRevisionResponseDto): BotDocumentRevisionEnt
     dto.note,
     dto.revertedFrom,
     new Date(dto.createdAt),
+  );
+}
+
+function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
+  return new BotRoutineEntity(
+    dto.id,
+    dto.name,
+    dto.prompt,
+    dto.status,
+    dto.pausedReason != null,
+    dto.nextRunAt ? new Date(dto.nextRunAt) : null,
+    dto.triggers.flatMap((trigger) => triggerOf(trigger) ?? []),
+    dto.lastRun ? { status: dto.lastRun.status, createdAt: new Date(dto.lastRun.createdAt) } : null,
+    new Date(dto.updatedAt),
   );
 }
 
@@ -450,6 +467,45 @@ export class BotsRepository {
       BotsErrors.REVERT_FAILED,
     );
     return toDocument(data);
+  }
+
+  /** A bot's routines, oldest first (`26-bot-routines.md` §7). */
+  @MapApiError(BotsErrors.FETCH_ROUTINES_FAILED)
+  async findRoutines(id: string): Promise<BotRoutineEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotRoutines({ path: { id } }),
+      BotsErrors.FETCH_ROUTINES_FAILED,
+    );
+    return data.map(toRoutine);
+  }
+
+  /** The tab's switch: off pauses the routine's triggers, on resumes them from now. */
+  @MapApiError(BotsErrors.SAVE_ROUTINE_FAILED)
+  async setRoutineEnabled(id: string, routineId: string, enabled: boolean): Promise<void> {
+    await unwrap(
+      heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: { enabled } }),
+      BotsErrors.SAVE_ROUTINE_FAILED,
+    );
+  }
+
+  /** Run now: one run, paused or not. */
+  @MapApiError(BotsErrors.RUN_ROUTINE_FAILED)
+  async runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.runBotRoutine({
+        path: { id, routineId },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      BotsErrors.RUN_ROUTINE_FAILED,
+    );
+  }
+
+  @MapApiError(BotsErrors.DELETE_ROUTINE_FAILED)
+  async deleteRoutine(id: string, routineId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotRoutine({ path: { id, routineId } }),
+      BotsErrors.DELETE_ROUTINE_FAILED,
+    );
   }
 
   @MapApiError(BotsErrors.FETCH_MEMORY_FAILED)
