@@ -20,8 +20,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * No new index: a turnless line is read with the rest of the chat, by
  * `IDX_bot_message_bot`.
  */
-export class AddRoutineActivityLines1791002700000 implements MigrationInterface {
-  name = 'AddRoutineActivityLines1791002700000';
+export class AddRoutineActivityLines1791003100000 implements MigrationInterface {
+  name = 'AddRoutineActivityLines1791003100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE bot_message ALTER COLUMN "turnId" DROP NOT NULL`);

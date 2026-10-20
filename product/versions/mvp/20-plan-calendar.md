@@ -29,6 +29,9 @@ computed in the console (17 "As built").
   muted; all-day events as a filled bar. A personal event opens the
   event dialog and drags to another day. A Google event opens read-only
   with "Open in Google Calendar" and does not drag (17, decided 2).
+  > Since 2026-10-20 a Google event that is a video meeting also offers
+  > **Join meeting** there, the dialog's one primary button, opening the
+  > meeting in a new tab; the layer stays read-only (§5).
 - **Task due**: a check-circle and the title, struck through when Done.
   Click opens the task dialog; drag to another day sets its due date
   (`PATCH /tasks/:id`).
@@ -151,7 +154,12 @@ through `CalendarProviderPort` (`listEvents(connection, from, to)`,
   sealed refresh token and calls `events.list` on the primary calendar
   with `singleEvents=true` and the range, paged. It returns the events
   in the shape the month view draws: title, all-day or start/end, busy,
-  and a link to the event in Google.
+  a link to the event in Google and, since 2026-10-20, where to join it
+  (`meetingUrl`): the event's Meet link, else the video entry point of a
+  conference an add-on attached (Zoom, Teams), else a location that is
+  itself an address, else a Zoom, Meet, Teams or Webex join link written
+  in the location or the description (a pasted invite); only an `https:`
+  address, since the console makes it a link.
 - The console caches the result per month in the query client. It
   refetches on focus and when the cache is older than a couple of
   minutes. The sidebar card shows the account and "Updated *2 min

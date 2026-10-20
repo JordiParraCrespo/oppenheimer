@@ -27,7 +27,7 @@ export class BotMessageOrmEntity {
   @Column({ type: 'uuid' })
   botId!: string;
 
-  /** Null only for an event outside any turn (`1791002700000-AddRoutineActivityLines`). */
+  /** Null only for an event outside any turn (`1791003100000-AddRoutineActivityLines`). */
   @Column({ type: 'uuid', nullable: true })
   turnId!: string | null;
 

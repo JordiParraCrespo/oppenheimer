@@ -66,6 +66,7 @@ export class CalendarEventMapper
     dto.endTime = entity.endTime;
     dto.busy = entity.busy;
     dto.url = null;
+    dto.meetingUrl = null;
     return dto;
   }
 
@@ -99,6 +100,7 @@ export class CalendarEventMapper
     dto.endTime = event.endTime;
     dto.busy = event.busy;
     dto.url = event.url;
+    dto.meetingUrl = event.meetingUrl;
     return dto;
   }
 }

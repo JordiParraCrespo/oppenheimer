@@ -166,7 +166,8 @@ export function documentConflictRevision(error: unknown): number | null {
 
 /**
  * One model provider as the workspace has it: whether a key is stored and its
- * last four characters. The key itself never reaches the console.
+ * last four characters, and whether a new bot starts on it. The key itself
+ * never reaches the console.
  */
 export class ModelProviderEntity {
   constructor(
@@ -174,6 +175,8 @@ export class ModelProviderEntity {
     public readonly configured: boolean,
     public readonly keyHint: string | null,
     public readonly updatedAt: Date | null,
+    /** Exactly one provider is: the one marked, else the key stored first, else Anthropic. */
+    public readonly isDefault: boolean,
   ) {}
 }
 

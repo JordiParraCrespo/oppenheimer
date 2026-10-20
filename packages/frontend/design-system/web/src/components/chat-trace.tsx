@@ -15,7 +15,9 @@ import { cn } from '../lib/utils';
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated), a
  *   mono meta ("14 results", "2 failed"), and, when it has children, the
  *   chevron that opens them. `tone="danger"` sets the line in red (a
- *   failed command). Open, its children hang under the title.
+ *   failed command). Open, its children hang under the title. `action` is
+ *   a control at the end of the line (Open session), outside the fold's
+ *   trigger, so using it never opens the step.
  * - `TraceOutput`: what a step returned, on the card at the 14px radius:
  *   mono 12.5px lines, numbered, scrolling past 256px. `maxLines` cuts a
  *   long one with "Show N more lines" under it; `0` keeps it behind "Show
@@ -38,6 +40,7 @@ function TraceStep({
   meta,
   tone = 'default',
   defaultOpen = false,
+  action,
   className,
   children,
 }: {
@@ -50,6 +53,8 @@ function TraceStep({
   /** `danger`: the step failed, its line in red. */
   tone?: 'default' | 'danger';
   defaultOpen?: boolean;
+  /** A small control after the line (a ghost `xs` Button); never inside the trigger. */
+  action?: React.ReactNode;
   className?: string;
   /** What it returned (`TraceOutput`, `TraceNote`); present, the line opens to it. */
   children?: React.ReactNode;
@@ -72,12 +77,23 @@ function TraceStep({
       ) : null}
     </>
   );
+  const withAction = (head: React.ReactNode) =>
+    action ? (
+      <div className="flex max-w-full items-center gap-1">
+        {head}
+        <span className="flex shrink-0">{action}</span>
+      </div>
+    ) : (
+      head
+    );
   if (!children) {
     return (
       <div data-slot="trace-step" role="listitem" data-tone={tone} className={cn('flex flex-col', className)}>
-        <div data-tone={tone} className={TRACE_LINE}>
-          {line}
-        </div>
+        {withAction(
+          <div data-tone={tone} className={TRACE_LINE}>
+            {line}
+          </div>,
+        )}
       </div>
     );
   }
@@ -89,15 +105,17 @@ function TraceStep({
       defaultOpen={defaultOpen}
       className={cn('flex flex-col', className)}
     >
-      <FoldTrigger
-        data-tone={tone}
-        className={cn(
-          TRACE_LINE,
-          'transition-colors duration-instant data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.75',
-        )}
-      >
-        {line}
-      </FoldTrigger>
+      {withAction(
+        <FoldTrigger
+          data-tone={tone}
+          className={cn(
+            TRACE_LINE,
+            'transition-colors duration-instant data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.75',
+          )}
+        >
+          {line}
+        </FoldTrigger>,
+      )}
       <FoldPanel className="pl-6.5">{children}</FoldPanel>
     </Fold>
   );

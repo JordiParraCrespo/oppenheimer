@@ -427,6 +427,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
+| `PROJECTS_009` <a id="projects_009" /> | That name belongs to the Unassigned project | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -448,6 +449,11 @@ of its own id. It is reported rather than retried.
 `PROJECTS_008` protects the one project every workspace has for sessions that name
 none. Its repositories and defaults can be edited like any project's; its name and
 its place cannot.
+
+`PROJECTS_009` keeps that project's name its own: another project named
+"Unassigned", or the label any locale gives it ("Sin asignar"), in any case,
+would list as a second Unassigned group. A project named so before the rule
+keeps loading and can be renamed to anything else.
 
 `PROJECTS_004` is no longer raised. It answered a session's first repository whose
 auto-created project was archived; projects are no longer created from repositories,
@@ -643,6 +649,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
 | `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
 | `BOTS_022` <a id="bots_022" />       | The bot has a turn queued or running         | 409  |
+| `BOTS_023` <a id="bots_023" />       | That model provider has no key               | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -694,6 +701,9 @@ the refreshed token.
 `BOTS_022` is `DELETE /bots/:id/conversation` while one of the bot's turns is
 queued or running: the turn would go on writing into a conversation that is
 gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
+`BOTS_023` is making a provider the one new bots start on
+(`PUT /model-providers/:provider/default`) when the workspace has no key for
+it. Store the key first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -810,7 +820,7 @@ others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
-for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
+for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything else.
 
 | Code                                   | Title                                        | HTTP |
 | -------------------------------------- | -------------------------------------------- | ---- |
@@ -834,6 +844,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
+| `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
@@ -844,6 +856,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `PAIR_005` <a id="pair_005" />         | The control plane URL is not usable          | 400  |
 | `PAIR_006` <a id="pair_006" />         | The control plane could not be reached       | 502  |
 | `PAIR_007` <a id="pair_007" />         | The control plane is limiting registrations  | 429  |
+| `PAIR_008` <a id="pair_008" />         | The control plane refused to unpair this host | 401  |
+| `PAIR_009` <a id="pair_009" />         | This host was erased here but is still paired at the control plane | 502  |
 | `SVC_001` <a id="svc_001" />           | No service manager for this platform         | 400  |
 | `SVC_002` <a id="svc_002" />           | The runner service could not be installed    | 500  |
 | `SVC_003` <a id="svc_003" />           | The runner service is not installed          | 404  |
@@ -890,6 +904,13 @@ tightened by the runner itself.
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
 open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
+
+`HOST_010` is `runner agents install` or `runner tools install` asked for
+something it does not install: a name in neither catalog, a platform with no
+installer, or `git`/`tmux`, which need root. For those two the detail is the
+exact package-manager command to run. `HOST_011` is an install that ran and
+failed, or finished without the tool appearing on `PATH`; the detail is the
+installer's last line.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

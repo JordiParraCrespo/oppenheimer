@@ -161,7 +161,12 @@
       "routineResumed": "Resumed routine “{{name}}”",
       "routineDeleted": "Deleted routine “{{name}}”",
       "routineFailed": "Routine “{{name}}” did not run: {{reason}}",
-      "openRoutines": "Open routines"
+      "openRoutines": "Open routines",
+      "peerMessage": "From <bot>{{name}}</bot>",
+      "peerAsk": "<bot>{{name}}</bot> asked",
+      "peerAnswered": "<bot>{{name}}</bot> replied",
+      "peerFailed": "<bot>{{name}}</bot> could not answer",
+      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
     },
     "routineReason": {
       "expired": "it waited too long to start",
@@ -172,7 +177,8 @@
       "bot_provider_missing": "the bot’s model provider has no key or sign-in",
       "owner_lost_access": "its owner can no longer run it",
       "unknown": "something went wrong"
-    }
+    },
+    "openSession": "Open session"
   },
   "settings": {
     "back": "Back to the chat",

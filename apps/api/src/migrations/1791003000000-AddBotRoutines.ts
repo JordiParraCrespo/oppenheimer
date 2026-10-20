@@ -41,8 +41,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - the turn a source key already queued: `UQ_bot_turn_source`;
  * - a turn's deletion nulling the run that queued it: `IDX_automation_run_bot_turn`.
  */
-export class AddBotRoutines1791002600000 implements MigrationInterface {
-  name = 'AddBotRoutines1791002600000';
+export class AddBotRoutines1791003000000 implements MigrationInterface {
+  name = 'AddBotRoutines1791003000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

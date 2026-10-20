@@ -74,6 +74,27 @@ already on the wire for it.
   the link with the terminal code is what ends the tmux sessions on a
   runner that is still up. Both ends of unpairing do this — the console's
   remove and the runner's own uninstall — because both raise the event.
+- **Remove can also clean the machine up** (decided 2026-10-18, asked for
+  by the owner while testing: "stop everything and start again"). The
+  dialog has a box, "Also delete everything on this machine", which sends
+  `POST /hosts/{id}/wipe` instead of the `DELETE`: a route of its own
+  because it closes sessions, so it needs `sessions:write` (and delete on
+  Session) as well as `hosts:write`, and a token holding only the latter
+  cannot delete work. The event carries `wipe`; the relay
+  closes the link with the same terminal `4410` and the reason
+  `host-unpaired-wipe` (`RUNNER_LINK_CLOSE_REASONS.WIPE`), and the runner
+  then force-closes every session it holds instead of stopping it: tmux
+  killed, worktree and session folder removed, uncommitted work included,
+  **nothing pushed**. A folder session's folder is the person's and stays.
+  `sessions/` appends `session.closed` (`requestedBy: host.unpaired.wipe`)
+  to every unresolved session on the host, stopped ones too, so none is
+  left offering a restart into a worktree that is gone. The repositories'
+  bare stores under `repos/` stay, as does the runner itself: pairing
+  again is Add host. The request rides the link as it closes, so only a
+  host online now hears it: the box is disabled for an offline host, and
+  a link held by another API instance is closed by its heartbeat check
+  with the plain reason. A runner too old to know the reason reads the
+  code alone and only stops.
 - **Add host polls one route**: `GET /hosts/pairing/{id}` answers with
   the token and, once a runner has spent it, the host it paired as the
   list shows it, status and inventory included. That is the whole of the

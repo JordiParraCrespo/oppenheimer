@@ -2,21 +2,14 @@ import {
   BarList,
   Callout,
   ChartRow,
-  PageHeader,
-  PageHeaderMeta,
-  PageHeaderRow,
   Panel,
   PanelGrid,
   RingChart,
-  SegmentedControl,
-  SegmentedControlItem,
   StatCard,
 } from '@oppenheimer/design-system-web';
 import { Bot, User } from '@oppenheimer/design-system-web/icons';
-import type { PullRequestAnalyticsRange } from '@oppenheimer/frontend-consumer';
 import { useSuspensePullRequestAnalytics } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
-import { PULL_REQUEST_ANALYTICS_RANGES } from '@oppenheimer/shared/schemas/pull-request';
 import { useDeferredValue } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsDelta } from '../components/analytics-figure';
@@ -24,6 +17,7 @@ import { useAnalyticsRange } from '../hooks/use-analytics-range';
 import { useReadNotices } from '../hooks/use-read-notices';
 import { LANE_TONE, rangeLabel, shareOf } from '../lib/analytics-view';
 import { deltaOf, formatHours } from '../lib/view';
+import { AnalyticsHeader } from './analytics-header';
 import { CreatedMergedPanel } from './created-merged-panel';
 
 /**
@@ -40,7 +34,7 @@ import { CreatedMergedPanel } from './created-merged-panel';
 export function AnalyticsOverview() {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { range, setRange } = useAnalyticsRange();
+  const { range } = useAnalyticsRange();
   const settled = useDeferredValue(range);
   const { data, error } = useSuspensePullRequestAnalytics(settled);
   useReadNotices(data.unreadable);
@@ -51,28 +45,8 @@ export function AnalyticsOverview() {
 
   return (
     <>
-      <PageHeader>
-        <PageHeaderRow
-          size="display"
-          title={t('pullRequests.analytics.title', {
-            range: t(`pullRequests.analytics.rangeWord.${range}`),
-          })}
-          actions={
-            <SegmentedControl
-              size="md"
-              value={range}
-              onValueChange={(next) => setRange(next as PullRequestAnalyticsRange)}
-              aria-label={t('pullRequests.analytics.rangeLabel')}
-            >
-              {PULL_REQUEST_ANALYTICS_RANGES.map((value) => (
-                <SegmentedControlItem key={value} value={value}>
-                  {t(`pullRequests.analytics.ranges.${value}`)}
-                </SegmentedControlItem>
-              ))}
-            </SegmentedControl>
-          }
-        />
-        <PageHeaderMeta indent={false}>
+      <AnalyticsHeader
+        meta={
           <span>
             <span className="figures text-fg">{rangeLabel(data, locale)}</span>{' '}
             {t('pullRequests.analytics.compared', {
@@ -81,8 +55,8 @@ export function AnalyticsOverview() {
               ),
             })}
           </span>
-        </PageHeaderMeta>
-      </PageHeader>
+        }
+      />
       <ErrorAlert error={error} fallback={t('pullRequests.analytics.loadFailed')} />
       {data.complete ? null : (
         <Callout>{t('pullRequests.analytics.capped', { range: rangeWord })}</Callout>

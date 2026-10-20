@@ -62,6 +62,11 @@ export class UpdateProjectHttpController {
     description: 'The Unassigned project cannot be renamed or archived',
     code: 'PROJECTS_008',
   })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The name is the Unassigned project’s, in some locale',
+    code: 'PROJECTS_009',
+  })
   async update(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

@@ -4,6 +4,7 @@ import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
+import type { BotToolResult } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
 /** How long an approved call may run inside its job. */
@@ -29,7 +30,7 @@ export class BotApprovedCallResolver {
     approval: BotApprovalEntity,
     granted: readonly Scope[] | null,
     timeZone: string | null,
-  ): Promise<{ content: string; isError: boolean }> {
+  ): Promise<BotToolResult> {
     const owner = await this.owners.resolve(bot.organizationId, bot.createdByUserId);
     if (!owner) {
       return {

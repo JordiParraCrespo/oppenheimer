@@ -5,7 +5,7 @@ import {
   type BotTurnRequest,
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
-import { failed, guardTurn, runTool } from '../turn';
+import { failed, guardTurn, runTool, ToolCallData } from '../turn';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -80,7 +80,8 @@ export class OpenAiBotEngine extends BotEngine {
     // Loaded on the first turn, so importing the package starts nothing.
     const sdk = await import('@openai/agents');
     const failedCalls = new Set<string>();
-    const translator = new OpenAiEventTranslator((callId) => failedCalls.has(callId));
+    const made = new ToolCallData();
+    const translator = new OpenAiEventTranslator((callId) => failedCalls.has(callId), made);
 
     const modelProvider = new sdk.OpenAIProvider({
       apiKey: request.apiKey,
@@ -106,6 +107,7 @@ export class OpenAiBotEngine extends BotEngine {
             });
             const callId = details?.toolCall?.callId;
             if (result.isError && callId) failedCalls.add(callId);
+            made.record(callId, result.data);
             return result.content;
           },
         }),

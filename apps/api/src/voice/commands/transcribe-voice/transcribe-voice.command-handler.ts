@@ -5,13 +5,16 @@ import { VoicePolishResolver } from '../../application/voice-polish.resolver';
 import { VoiceTranscriptionResolver } from '../../application/voice-transcription.resolver';
 import { VoiceErrors } from '../../domain/voice.errors';
 import { isPcmWav } from '../../domain/voice-audio.policy';
+import { speechPrompt } from '../../domain/voice-speech.policy';
 import { VoiceTranscriptionMapper } from '../../voice-transcription.mapper';
 import { TranscribeVoiceCommand } from './transcribe-voice.command';
 
 /**
  * One dictation (`product/next-steps/voice.md`): the clip is judged by its
  * bytes, heard by the workspace's ChatGPT sign-in or the deployment's own
- * speech server, then tidied into writing. Nothing is kept: the audio and the
+ * speech server, then tidied into writing. The vocabulary goes to both: to
+ * the speech model as names to expect, where it fixes a name at the source,
+ * and to the polish, which spells what got through. Nothing is kept: the audio and the
  * transcript live for this request, and what the person sends afterwards is
  * whatever they keep of it.
  *
@@ -36,13 +39,14 @@ export class TranscribeVoiceCommandHandler
       });
     }
 
+    const vocabulary = vocabularyTerms(command.vocabulary);
     const heard = await this.transcription.hear(
       command.organizationId,
-      { data: command.audio, language: command.language },
+      { data: command.audio, language: command.language, prompt: speechPrompt(vocabulary) },
       new Date(),
     );
     const polished = heard.raw
-      ? await this.polish.polish(heard.raw, vocabularyTerms(command.vocabulary), heard.polishOn)
+      ? await this.polish.polish(heard.raw, vocabulary, heard.polishOn)
       : null;
     return VoiceTranscriptionMapper.toResponse(heard, polished);
   }

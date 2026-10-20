@@ -4,7 +4,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
-import { ProjectEntity } from '../../domain/project.entity';
+import { isReservedProjectName, ProjectEntity } from '../../domain/project.entity';
 import { projectSlugCandidates } from '../../domain/project-slug.policy';
 import { ProjectErrors } from '../../domain/projects.errors';
 import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
@@ -32,6 +32,11 @@ export class CreateProjectCommandHandler
   async execute({ scope, input }: CreateProjectCommand): Promise<ProjectEntity> {
     const { organizationId } = scope;
     if (!organizationId) throw new AppError(ProjectErrors.NO_ACTIVE_ORGANIZATION);
+    if (isReservedProjectName(input.name)) {
+      throw new AppError(ProjectErrors.NAME_RESERVED, {
+        detail: `“${input.name}” would list as a second Unassigned project`,
+      });
+    }
 
     await this.settings.assertUsableHost(scope, input.defaultHostId);
     const repositories = await this.settings.repositories(scope, input.repositories);

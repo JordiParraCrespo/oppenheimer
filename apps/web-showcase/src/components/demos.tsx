@@ -827,7 +827,7 @@ export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: stri
 type DemoState = 'running' | 'needs-input' | 'failed' | 'idle' | 'pending';
 
 /** Every session once, by id; the projects and the rail are groups of ids. */
-const SESSIONS: Record<string, { name: string; age: string; state: DemoState }> = {
+const SESSIONS: Record<string, { name: string; age: string; state: DemoState; status?: string }> = {
   peersyst: { name: 'PR #121 porting to peersyst', age: '2m', state: 'running' },
   cleanup: { name: 'XRP Mobile API cleanup', age: '3h', state: 'needs-input' },
   router: { name: 'tool router', age: '1d', state: 'idle' },
@@ -835,6 +835,10 @@ const SESSIONS: Record<string, { name: string; age: string; state: DemoState }> 
   triage: { name: 'invoice triage', age: '1h', state: 'needs-input' },
   retriever: { name: 'retriever eval', age: '5h', state: 'failed' },
   summariser: { name: 'doc summariser', age: '2d', state: 'idle' },
+  // Deleted while its host was offline: the close is owed until it reconnects.
+  teardown: { name: 'old landing page', age: '6d', state: 'pending', status: 'Deleting…' },
+  // Its host refused the close: the branch has work that is not pushed.
+  spike: { name: 'auth spike', age: '3d', state: 'failed', status: 'Not deleted' },
 };
 
 const PROJECTS = ['XRP Mobile', 'Atlas', 'Client sites'];
@@ -850,7 +854,7 @@ const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
 const FIRST_ORDER: SortableGroups = {
   rail: ['sessions', 'pulls', 'automations', 'plan'],
   projects: PROJECTS.map(sortableProjectId),
-  'XRP Mobile': ['peersyst', 'cleanup', 'router'],
+  'XRP Mobile': ['peersyst', 'cleanup', 'router', 'teardown', 'spike'],
   Atlas: ['ingest', 'triage', 'retriever', 'summariser'],
   'Client sites': [],
 };
@@ -918,9 +922,11 @@ function RowMenu({
 /** The rail's items in the reader's order, a group of the shell's one drag. */
 function SortableRail({ items, sessions }: { items: readonly string[]; sessions: number }) {
   const counts: Record<string, number> = { sessions, pulls: 18, automations: 5 };
+  // A specimen in a frame, not the console's chrome: the column at every
+  // width, never the phone's bar along the bottom of the screen.
   return (
-    <Rail>
-      <RailMark>O</RailMark>
+    <Rail className="relative inset-auto h-auto w-14 flex-col justify-start border-t-0 border-r px-0 py-3.5 pb-3.5">
+      <RailMark className="flex">O</RailMark>
       <SortableGroup id="rail" items={items} accepts={['rail-item']}>
         <div className="flex flex-col gap-1.5">
           {items.map((id) => {
@@ -1067,6 +1073,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                                   hidden={term !== '' && !nameOf(id).toLowerCase().includes(term)}
                                   name={nameOf(id)}
                                   age={session.age}
+                                  status={session.status}
                                   state={session.state}
                                   active={id === active}
                                   onClick={() => setActive(id)}
@@ -2003,7 +2010,7 @@ export function RoutineItemsDemo() {
 export function SettingsShellDemo() {
   return (
     <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
-      <SettingsShell className="h-full">
+      <SettingsShell className="h-full flex-col md:flex-row">
         <SettingsNav>
           <SettingsNavBack>Back to console</SettingsNavBack>
           <SettingsNavGroup label="Account">

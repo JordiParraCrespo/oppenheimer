@@ -15,6 +15,8 @@ export interface BotToolStep {
   /** What it answered, cut short; `null` while it runs. */
   output: string | null;
   isError: boolean;
+  /** The session the call started (`start_session`), for the chat to open; `null` for any other. */
+  sessionId: string | null;
 }
 
 /**

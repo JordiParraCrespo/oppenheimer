@@ -29,6 +29,12 @@ tsup.config.ts    # build config
   showcase page with the file name in that `toc.ts` item's `components`.
   `package.json` needs nothing: `./*` maps every file to its subpath.
   `pnpm test` (`scripts/check-exports.mjs`) fails until all of it is there.
+- **A placeholder lives beside what it stands for.** A component that draws
+  a record a list loads (a table row, a list row) exports its loading
+  placeholder from the same file, on the same grid and breakpoints
+  (`PullRequestRowSkeleton` beside `PullRequestRow`), so the shape has one
+  owner. `Skeleton` is `aria-hidden` and pulses only under `motion-safe`; the
+  region around a placeholder says it is loading, once.
 - **A building block** that only other components use goes in
   `src/internal/`, stays out of the barrel and off the showcase, and is
   imported as `../internal/<name>`.

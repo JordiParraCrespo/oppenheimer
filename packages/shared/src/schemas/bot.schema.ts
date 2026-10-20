@@ -80,6 +80,23 @@ export function botSoulFor(name: string): string {
 export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai', 'chatgpt'] as const;
 export type BotProvider = (typeof BOT_PROVIDERS)[number];
 
+/**
+ * The order a bot falls back through when its provider has no key, or a new
+ * bot names none: Anthropic, then ChatGPT and OpenAI, GLM last. It is not the
+ * catalog order, which is how the model button lists them.
+ */
+export const BOT_PROVIDER_PREFERENCE: readonly BotProvider[] = Object.freeze([
+  'anthropic',
+  'chatgpt',
+  'openai',
+  'glm',
+]);
+
+/** The first provider in `BOT_PROVIDER_PREFERENCE` that has a key; undefined when none does. */
+export function preferredKeyedProvider(keyed: readonly BotProvider[]): BotProvider | undefined {
+  return BOT_PROVIDER_PREFERENCE.find((provider) => keyed.includes(provider));
+}
+
 /** One model a bot may run on, as the composer's model chip lists it. */
 export interface BotModel {
   readonly id: string;
@@ -219,7 +236,11 @@ export const createBotSchema = z.object({
   avatarColor: botAvatarColorSchema.optional(),
   groupId: z.string().uuid().nullable().optional(),
   homeHostId: z.string().uuid().nullable().optional(),
-  /** Anthropic unless named; the model is then the provider's default. */
+  /**
+   * Unless named, the workspace's default provider (Settings → Model providers),
+   * else the one it stored a key for first, else Anthropic. The model is then
+   * the provider's default.
+   */
   provider: botProviderSchema.optional(),
 });
 export type CreateBotDto = z.infer<typeof createBotSchema>;
@@ -297,6 +318,14 @@ export type BotMemoryFactDto = z.infer<typeof botMemoryFactSchema>;
 export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled', 'failed'] as const;
 export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
 
+/**
+ * Which of a bot's waiting turns runs first (`25-bots.md` §4.6,
+ * `BotQueueLanes`): yours, then what other bots sent it, then work nobody
+ * waits on. Within a lane, the oldest first.
+ */
+export const BOT_TURN_LANES = ['owner', 'bots', 'background'] as const;
+export type BotTurnLane = (typeof BOT_TURN_LANES)[number];
+
 /** A turn that has not ended: the chat shows it as working, and Stop applies to it. */
 export const BOT_ACTIVE_TURN_STATUSES = [
   'queued',
@@ -317,14 +346,23 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 /**
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
- * and the card's line; or a routine that fired (`26-bot-routines.md` §4).
- * The words stay in the message for the bot.
+ * and the card's line; a routine that changed, ran or failed
+ * (`26-bot-routines.md` §4); or a message from another bot, or its answer
+ * (`25-bots.md` §4.6). The words stay in the message for the bot.
  */
-export const BOT_EVENT_KINDS = ['approval', 'routine'] as const;
-export type BotEventKind = (typeof BOT_EVENT_KINDS)[number];
-
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
+
+export interface BotApprovalEvent {
+  kind: 'approval';
+  outcome: BotEventOutcome;
+  /** The approved or denied call's tool. */
+  tool: string;
+  /** The card's line: what the call does, in words. */
+  summary: string;
+  /** The session the approved call started, for the chat to link to; null when it started none. */
+  sessionId: string | null;
+}
 
 /**
  * What happened to a routine, as one activity whatever path made it
@@ -341,31 +379,63 @@ export const BOT_ROUTINE_ACTIVITIES = [
 ] as const;
 export type BotRoutineActivity = (typeof BOT_ROUTINE_ACTIVITIES)[number];
 
-export type BotMessageEvent =
-  | {
-      kind: 'approval';
-      outcome: BotEventOutcome;
-      /** The approved or denied call's tool. */
-      tool: string;
-      /** The card's line: what the call does, in words. */
-      summary: string;
-    }
-  | {
-      kind: 'routine';
-      activity: BotRoutineActivity;
-      /** The routine: an automation whose run target is the bot. */
-      automationId: string;
-      /** The run, for an activity that has one (`ran`, `failed`). */
-      runId: string | null;
-      /** The routine's name at the time. */
-      name: string;
-      /** Why, as a code, for `paused` (its paused reason) and `failed` (a skip reason, or `expired`). */
-      reason: string | null;
-    };
+export interface BotRoutineEvent {
+  kind: 'routine';
+  activity: BotRoutineActivity;
+  /** The routine: an automation whose run target is the bot. */
+  automationId: string;
+  /** The run, for an activity that has one (`ran`, `failed`). */
+  runId: string | null;
+  /** The routine's name at the time. */
+  name: string;
+  /** Why, as a code, for `paused` (its paused reason) and `failed` (a skip reason, or `expired`). */
+  reason: string | null;
+}
 
-/** Why a bot turn exists: a message of yours, an approval's decision, or a routine's run. */
+/** Why a bot turn exists: a message (yours or another bot's), an approval's decision, or a routine's run. */
 export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine'] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
+
+/**
+ * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`
+ * §4.6): its turn ended with an answer, failed, or was stopped.
+ */
+export const BOT_REPLY_OUTCOMES = ['answered', 'failed', 'cancelled'] as const;
+export type BotReplyOutcome = (typeof BOT_REPLY_OUTCOMES)[number];
+
+/**
+ * A message another bot sent this one through `message_bot` or `ask_bot`
+ * (`25-bots.md` §4.6). The sender is the bot whose turn made the call, as
+ * Oppenheimer recorded it, never a name the message claims; its name is the
+ * one it had when it sent. The words are the message's content.
+ */
+export interface BotPeerMessageEvent {
+  kind: 'bot_message';
+  /** Null once the sending bot is deleted. */
+  fromBotId: string | null;
+  fromBotName: string;
+  /** Sent with `ask_bot`: this bot's answer goes back to the sender. */
+  expectsReply: boolean;
+}
+
+/** The answer to an `ask_bot` call, delivered to the bot that asked. */
+export interface BotPeerReplyEvent {
+  kind: 'bot_reply';
+  /** The bot that answered; null once it is deleted. */
+  fromBotId: string | null;
+  fromBotName: string;
+  outcome: BotReplyOutcome;
+}
+
+export type BotMessageEvent =
+  | BotApprovalEvent
+  | BotRoutineEvent
+  | BotPeerMessageEvent
+  | BotPeerReplyEvent;
+
+/** The kinds of event, for a reader that checks one before trusting its fields. */
+export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'routine', 'bot_message', 'bot_reply'] as const;
+export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
 export const BOT_MESSAGE_MAX = 16_000;

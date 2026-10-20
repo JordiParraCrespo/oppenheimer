@@ -62,7 +62,7 @@ export function routineOpening(firing: RoutineFiring): string {
 }
 
 /**
- * A routine's turn: queued like a message of yours, on the bot's provider,
+ * A routine's turn: queued in the background lane, on the bot's provider,
  * model and effort as they are now, opened by an event line that names the
  * routine, keyed so the run queues it once.
  */
@@ -73,6 +73,8 @@ export function routineTurn(
   const turn = BotTurnEntity.queue({
     ...props,
     origin: 'routine',
+    // Work nobody waits on: after your messages and other bots' (`BotQueueLanes`).
+    lane: 'background',
     sourceKey: routineSourceKey(firing.automationId, firing.runId),
   });
   const opening = BotMessageEntity.createNew({

@@ -164,7 +164,12 @@
       "routineResumed": "Rutina reanudada: “{{name}}”",
       "routineDeleted": "Rutina eliminada: “{{name}}”",
       "routineFailed": "La rutina “{{name}}” no se ejecutó: {{reason}}",
-      "openRoutines": "Abrir rutinas"
+      "openRoutines": "Abrir rutinas",
+      "peerMessage": "De <bot>{{name}}</bot>",
+      "peerAsk": "<bot>{{name}}</bot> preguntó",
+      "peerAnswered": "<bot>{{name}}</bot> respondió",
+      "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
     },
     "routineReason": {
       "expired": "esperó demasiado para empezar",
@@ -175,7 +180,8 @@
       "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
       "owner_lost_access": "su propietario ya no puede ejecutarla",
       "unknown": "algo salió mal"
-    }
+    },
+    "openSession": "Abrir sesión"
   },
   "settings": {
     "back": "Volver al chat",

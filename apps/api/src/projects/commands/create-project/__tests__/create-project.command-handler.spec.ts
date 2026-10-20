@@ -98,6 +98,15 @@ describe('CreateProjectCommandHandler', () => {
     expect(projects.insert).not.toHaveBeenCalled();
   });
 
+  it('refuses the Unassigned project’s name, which would list as a second one', async () => {
+    await expect(
+      handler.execute(
+        new CreateProjectCommand({ scope: scope(), input: { ...INPUT, name: 'unassigned ' } }),
+      ),
+    ).rejects.toMatchObject({ code: 'PROJECTS_009' });
+    expect(projects.insert).not.toHaveBeenCalled();
+  });
+
   it('writes nothing when a repository cannot be resolved', async () => {
     vi.mocked(settings.repositories).mockRejectedValue(new Error('GITHUB_010'));
 

@@ -315,8 +315,8 @@ func TestUnregisterRevokesWithTheHostAssertionAndErasesTheIdentity(t *testing.T)
 		t.Fatal(err)
 	}
 
-	if revoked, err := svc.Unregister(context.Background()); err != nil || !revoked {
-		t.Fatalf("unregister: revoked=%v err=%v", revoked, err)
+	if result, err := svc.Unregister(context.Background()); err != nil || !result.Revoked() {
+		t.Fatalf("unregister: revokeErr=%v err=%v", result.RevokeErr, err)
 	}
 	if len(cp.Revoked) != 1 {
 		t.Fatalf("revoked = %v, want exactly one call", cp.Revoked)
@@ -339,22 +339,44 @@ func TestUnregisterRevokesWithTheHostAssertionAndErasesTheIdentity(t *testing.T)
 	}
 }
 
-func TestUnregisterSaysSoWhenTheControlPlaneDidNotHear(t *testing.T) {
+func TestUnregisterKeepsWhyTheControlPlaneDidNotHear(t *testing.T) {
 	svc, store, cp := newService(t)
-	register(t, svc)
-	cp.RevokeErr = errors.New("connection refused")
+	identity := register(t, svc)
+	refused := domain.ErrRevokeRefused.WithDetail("DELETE https://cp.example.test/api/v1/hosts/self answered 401")
+	cp.RevokeErr = refused
 
-	revoked, err := svc.Unregister(context.Background())
+	result, err := svc.Unregister(context.Background())
 	if err != nil {
 		t.Fatalf("unregister: %v", err)
 	}
 	// The local half still happens — the user asked for it — but the caller
-	// is told the control plane still trusts this key.
-	if revoked {
-		t.Fatal("revoked = true for a control plane that was never reached")
+	// gets the reason, not a bare "no", so it can tell a refused key from a
+	// network that is down, and the identity it erased, to say what to remove.
+	if result.Revoked() || !errors.Is(result.RevokeErr, refused) {
+		t.Fatalf("revokeErr = %v, want the control plane's refusal", result.RevokeErr)
+	}
+	if result.Identity.HostID != identity.HostID || result.Identity.ControlPlaneURL != identity.ControlPlaneURL {
+		t.Fatalf("identity = %+v, want the one that was erased", result.Identity)
 	}
 	if _, err := os.Stat(store.KeyPath()); !os.IsNotExist(err) {
 		t.Fatal("the host key must be gone after unregister")
+	}
+}
+
+func TestAHostErasedWhileStillPairedCanPairAgainWithoutForce(t *testing.T) {
+	svc, _, cp := newService(t)
+	register(t, svc)
+	cp.RevokeErr = domain.ErrUnreachable.WithDetail("connection refused")
+	if _, err := svc.Unregister(context.Background()); err != nil {
+		t.Fatalf("unregister: %v", err)
+	}
+
+	// Once the person removed the old host in the console, the install command
+	// from Add host must work as on a fresh machine.
+	cp.Response.HostID = "host_02"
+	identity := register(t, svc)
+	if identity.HostID != "host_02" {
+		t.Fatalf("host id = %q, want the new pairing", identity.HostID)
 	}
 }
 

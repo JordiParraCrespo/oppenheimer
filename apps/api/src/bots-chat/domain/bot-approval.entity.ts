@@ -26,6 +26,8 @@ export interface BotApprovalProps {
   status: BotApprovalStatus;
   /** The tool's answer once it ran on a yes; null before, and for a no. */
   result: string | null;
+  /** The session the call started when it ran on the yes (`start_session`); null when it started none. */
+  sessionId: string | null;
   /** The person's note with a no. */
   note: string | null;
   /** Who decided; null while pending, once expired, or once that account is gone. */
@@ -75,6 +77,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
         summary: cut(props.summary.trim(), BOT_APPROVAL_SUMMARY_MAX),
         status: 'pending',
         result: null,
+        sessionId: null,
         note: null,
         decidedByUserId: null,
         decidedWithScopes: null,
@@ -111,6 +114,9 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
   }
   get result(): string | null {
     return this.props.result;
+  }
+  get sessionId(): string | null {
+    return this.props.sessionId;
   }
   get note(): string | null {
     return this.props.note;
@@ -156,12 +162,16 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.props.decidedAt = now;
   }
 
-  /** What the call answered when it ran on the yes; an error ends it `failed`. Once. */
-  recordResult(result: string, failed: boolean): void {
+  /**
+   * What the call answered when it ran on the yes, and the session it
+   * started; an error ends it `failed`, having started none. Once.
+   */
+  recordResult(result: string, failed: boolean, sessionId: string | null = null): void {
     if (!this.running) {
       throw new ArgumentInvalidException(`A ${this.props.status} approval has nothing running`);
     }
     this.props.result = cut(result, BOT_APPROVAL_RESULT_MAX);
+    this.props.sessionId = failed ? null : sessionId;
     if (failed) this.props.status = 'failed';
   }
 

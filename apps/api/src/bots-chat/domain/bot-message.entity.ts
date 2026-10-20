@@ -16,6 +16,8 @@ export interface BotToolStep {
   /** What it answered, cut to `BOT_TOOL_OUTPUT_MAX`; null while it runs. */
   output: string | null;
   isError: boolean;
+  /** The session the call started (`start_session`), for the chat to open; null for any other. */
+  sessionId: string | null;
 }
 
 /** How much of a tool's answer a message keeps: enough to read, never a whole page. */

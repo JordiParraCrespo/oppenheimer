@@ -14,14 +14,18 @@ import { SessionScreen } from '@/features/sessions/screens/session';
  * view alike, while the sidebar stays on Pull requests. Each view is a page at
  * its own measure (`pullRequestPane`), read off `?view=`. The Chat view is the
  * pull request's review session; its terminal is the sessions feature's, so
- * the route composes the two.
+ * the route composes the two. The pull request's toolbar is the page's bar
+ * (`bar: 'own'`), led by the sidebar toggle.
  */
 export const Route = createFileRoute(
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number',
 )({
   validateSearch: pullRequestSearchSchema,
   component: PullRequestRoute,
-  staticData: { pane: (search) => pullRequestPane(pullRequestSearchSchema.parse(search).view) },
+  staticData: {
+    pane: (search) => pullRequestPane(pullRequestSearchSchema.parse(search).view),
+    bar: 'own',
+  },
 });
 
 function PullRequestRoute() {

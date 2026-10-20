@@ -62,7 +62,8 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (domain.Identi
 	existing, _, loadErr := s.store.Load()
 	if loadErr == nil && existing.HostID != "" && !existing.Revoked() && !in.Force {
 		return domain.Identity{}, domain.ErrAlreadyRegisted.WithDetail(
-			"this host is already paired as %s; re-run with --force to move it", existing.HostID)
+			"this host is already paired as %s with %s; run `uninstall` first, or `register --force` to replace it",
+			existing.HostID, existing.ControlPlaneURL)
 	}
 
 	pub, priv, err := domain.GenerateKey()
@@ -196,24 +197,39 @@ func (s *Service) MarkRevoked() (domain.Identity, error) {
 	})
 }
 
+// Unregistration is what Unregister did: the identity it erased here, and
+// why the control plane was not told, if it was not.
+type Unregistration struct {
+	Identity domain.Identity
+	// RevokeErr is why the host is still paired at the control plane: it could
+	// not be reached, it refused the key, or no assertion could be signed. Nil
+	// when the control plane unpaired the host (or no longer knew it).
+	RevokeErr error
+}
+
+// Revoked reports whether the control plane let go of the host.
+func (u Unregistration) Revoked() bool { return u.RevokeErr == nil }
+
 // Unregister revokes the host at the control plane and erases the local
 // identity. A control plane that cannot be reached does not stop the local
 // half: the user asked for this machine to stop being a host. What it does do
-// is change the answer — `revoked` is false, and the caller must say so,
-// because the control plane still lists the host and still trusts its key
-// until someone unpairs it at the control plane.
-func (s *Service) Unregister(ctx context.Context) (revoked bool, err error) {
+// is change the answer — RevokeErr says why the control plane still lists the
+// host and still trusts its key, and the caller must not report success.
+func (s *Service) Unregister(ctx context.Context) (Unregistration, error) {
 	identity, err := s.Identity()
 	if err != nil {
-		return false, err
+		return Unregistration{}, err
 	}
-	if assertion, tokenErr := s.BootToken(ctx); tokenErr == nil {
-		revoked = s.cp.Revoke(ctx, identity.ControlPlaneURL, assertion) == nil
+	result := Unregistration{Identity: identity}
+	assertion, err := s.BootToken(ctx)
+	if err == nil {
+		err = s.cp.Revoke(ctx, identity.ControlPlaneURL, assertion)
 	}
+	result.RevokeErr = err
 	if err := s.store.Clear(); err != nil {
-		return revoked, domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
+		return result, domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
 	}
-	return revoked, nil
+	return result, nil
 }
 
 func (s *Service) mutate(apply func(*domain.Identity)) (domain.Identity, error) {
