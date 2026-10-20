@@ -516,25 +516,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // The models codex's own picker lists, in its order, with the slugs
-    // `codex --model` takes: the GPT-6 family first, then the GPT-5.6 rows it
-    // still offers and points at their GPT-6 successors. 6.1 Sol is the
-    // default because it heads that picker ("Latest workhorse model") and is
-    // the `model = "gpt-6.1-sol"` OpenAI's Codex docs set in `config.toml`.
-    // The GPT-6 rows want codex 0.153.0 (Astra, 6.1 Sol) or 0.155.0 (6 Sol,
-    // Luna); the GPT-5.6 rows stay so a host on an older CLI, and every bot
-    // or automation that already names one, keeps a row it can run.
-    //
-    // Same seed argument as Claude Code above, and the same limit: a probe is
-    // still what would tell the console which of these *this* machine's codex
-    // knows (`product/versions/mvp/05-screens.md`, open question 6).
-    //
-    // Each model's levels and default are codex's own (`models.json` in
-    // codex-rs, 0.163.0): 6.1 Sol, Astra and 5.6 Sol think `low` unasked, the
-    // rest `medium`, neither Luna has `ultra`, and none has `minimal`. Codex
-    // forwards a level a model lacks to the API unchanged, so a level listed
-    // here that the model does not take is a failed turn, not a dropped
-    // setting.
+    // What codex's own picker lists, in its order, with the slugs `codex
+    // --model` takes and each model's levels and default as codex reports them;
+    // a seed, with the limit Claude Code's has (`05-screens.md`, question 6).
     models: Object.freeze([
       Object.freeze({
         id: 'gpt-6.1-sol',
