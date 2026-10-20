@@ -25,7 +25,7 @@ export function BotRoutinesSkeleton() {
           name={<Skeleton shape="sm" className={`my-1 h-3.5 ${row.name}`} />}
           trigger={<Skeleton shape="sm" className={`h-3 ${row.trigger}`} />}
           prompt={<Skeleton shape="sm" className={`my-1 h-3 ${row.prompt}`} />}
-          last={<Skeleton shape="sm" className="h-2.5 w-24" />}
+          last={<Skeleton shape="sm" className="inline-block h-2.5 w-24 align-middle" />}
         />
       ))}
     </section>
