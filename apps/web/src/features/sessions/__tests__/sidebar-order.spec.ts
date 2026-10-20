@@ -1,6 +1,7 @@
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  mergeSessionOrder,
   orderProjects,
   orderSessions,
   rememberSidebarOrder,
@@ -61,5 +62,20 @@ describe('orderSessions', () => {
   it('keeps the dragged order, with sessions started since on top in the order they came', () => {
     const sessions = [session('new2'), session('new1'), session('s1'), session('s2')];
     expect(idsOf(orderSessions(sessions, ['s2', 's1']))).toEqual(['new2', 'new1', 's2', 's1']);
+  });
+});
+
+describe('mergeSessionOrder', () => {
+  it('keeps a session the drop did not see (a pinned one) after the one it followed', () => {
+    expect(mergeSessionOrder(['s3', 's1', 's4'], ['s1', 'pinned', 's3', 's4'])).toEqual([
+      's3',
+      's1',
+      'pinned',
+      's4',
+    ]);
+  });
+
+  it('keeps one that led the stored order at the front', () => {
+    expect(mergeSessionOrder(['s2', 's1'], ['pinned', 's1', 's2'])).toEqual(['pinned', 's2', 's1']);
   });
 });
