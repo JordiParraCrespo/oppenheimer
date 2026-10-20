@@ -3,6 +3,7 @@ import {
   ChatSources,
   Trace,
   TraceGroup,
+  TraceGroupRow,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
@@ -16,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
+  groupSummary,
   planItems,
   readableOutput,
   type ToolAction,
@@ -32,8 +34,11 @@ type Kind = ToolAction['kind'];
 /** What a step's line and its fold draw for one kind of call. */
 interface StepView<K extends Kind> {
   icon: ReactNode;
-  /** The line: "Searched the web for “x”", "Updated its plan". */
-  title: (t: TFunction, action: Extract<ToolAction, { kind: K }>) => ReactNode;
+  /** The line: "Searched the web for “x”", "Updated its plan", "Read document" + "notes.md". */
+  title: (
+    t: TFunction,
+    action: Extract<ToolAction, { kind: K }>,
+  ) => { title: string; target?: string };
   /** What it returned, readable first, and the figure for the line's meta. */
   detail: (
     step: BotToolStep,
@@ -60,10 +65,11 @@ function rawDetail(step: BotToolStep, _t: TFunction, labels: TraceOutputLabels) 
 const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   search: {
     icon: <Globe />,
-    title: (t, action) =>
-      action.query
+    title: (t, action) => ({
+      title: action.query
         ? t('bots.chat.activity.searchedFor', { query: action.query })
         : t('bots.chat.activity.searched'),
+    }),
     // The pages the output carries as data, then the raw output behind a button.
     detail: (step, t, labels) => {
       const pages = searchResults(step.output ?? '');
@@ -89,7 +95,7 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   },
   plan: {
     icon: <ListTodo />,
-    title: (t) => t('bots.chat.activity.planned'),
+    title: (t) => ({ title: t('bots.chat.activity.planned') }),
     // The to-do list it wrote, read from its input.
     detail: (step, t, labels) => {
       const items = planItems(step.input);
@@ -105,15 +111,7 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   },
   tool: {
     icon: <Wrench />,
-    // The verb muted, what it was pointed at in full ink: "Read document notes.md".
-    title: (_t, action) =>
-      action.target ? (
-        <>
-          {action.label} <span className="text-fg">{action.target}</span>
-        </>
-      ) : (
-        action.label
-      ),
+    title: (_t, action) => ({ title: action.label, target: action.target }),
     detail: rawDetail,
   },
 };
@@ -121,14 +119,6 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
 /** The view for a call's kind, typed to that kind. */
 function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepView<K> {
   return STEP_VIEWS[action.kind as K] as StepView<K>;
-}
-
-/** The folded line over several calls: "Searched the web 3 times", "Used 5 tools". */
-function groupSummary(t: TFunction, steps: readonly BotToolStep[]): string {
-  const count = steps.length;
-  return steps.every((step) => toolAction(step).kind === 'search')
-    ? t('bots.chat.activity.groupSearched', { count })
-    : t('bots.chat.activity.group', { count });
 }
 
 /**
@@ -149,31 +139,43 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
-  const rows = done.map((step) => {
+  const items = done.map((step) => {
     const action = toolAction(step);
     const view = viewOf(action);
     const { meta, body } = view.detail(step, t, labels);
-    return (
-      <TraceStep
-        key={step.callId}
-        icon={view.icon}
-        title={view.title(t, action)}
-        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
-        tone={step.isError ? 'danger' : 'default'}
-        action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
-      >
-        {body}
-      </TraceStep>
-    );
+    return {
+      step,
+      icon: view.icon,
+      body,
+      props: {
+        ...view.title(t, action),
+        meta: step.isError ? t('bots.chat.activity.stepFailed') : meta,
+        tone: step.isError ? ('danger' as const) : ('default' as const),
+        action: step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined,
+      },
+    };
   });
-  if (rows.length === 1) return <Trace>{rows}</Trace>;
+  const [only] = items;
+  if (items.length === 1 && only) {
+    return (
+      <Trace>
+        <TraceStep icon={only.icon} {...only.props}>
+          {only.body}
+        </TraceStep>
+      </Trace>
+    );
+  }
   const failed = done.filter((step) => step.isError).length;
   return (
     <TraceGroup
-      summary={groupSummary(t, done)}
+      summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
-      {rows}
+      {items.map(({ step, props, body }) => (
+        <TraceGroupRow key={step.callId} {...props}>
+          {body}
+        </TraceGroupRow>
+      ))}
     </TraceGroup>
   );
 }

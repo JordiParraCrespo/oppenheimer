@@ -78,7 +78,7 @@ import {
   StreamingCaret,
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
-import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
+import { Trace, TraceGroup, TraceGroupRow, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
 import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
@@ -257,14 +257,14 @@ function ChatWorkBody() {
         />
       </Trace>
       <TraceGroup summary="Used 4 tools" failed="1 failed" defaultOpen>
-        <TraceStep icon={<TerminalIcon />} title={<>List pull requests <span className="text-fg">mine</span></>}>
+        <TraceGroupRow title="List pull requests" target="mine">
           <TraceOutput>{'#412 Cancel a step mid-run\n#409 Stream the runner log'}</TraceOutput>
-        </TraceStep>
-        <TraceStep icon={<TerminalIcon />} title={<>Get pull request <span className="text-fg">412</span></>} />
-        <TraceStep icon={<TerminalIcon />} title={<>Get pull request <span className="text-fg">409</span></>} meta="failed" tone="danger" />
-        <TraceStep
-          icon={<TerminalIcon />}
-          title={<>Start session <span className="text-fg">build-02</span></>}
+        </TraceGroupRow>
+        <TraceGroupRow title="Get pull request" target="412" />
+        <TraceGroupRow title="Get pull request" target="409" meta="failed" tone="danger" />
+        <TraceGroupRow
+          title="Start session"
+          target="build-02"
           action={
             <Button variant="ghost" size="xs">
               <ExternalLinkIcon />
