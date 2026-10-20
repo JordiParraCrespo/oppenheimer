@@ -516,31 +516,50 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // The four OpenAI ships for Codex, in capability order, with the slugs
-    // `codex --model` takes. Sol is the default because it is the CLI's own
-    // (`model = "gpt-5.6-sol"` in the documented starting `config.toml`), and
-    // Astra is not: it wants Codex 0.153.1 and Trusted Access, so defaulting to
-    // it would hand most hosts a row their CLI refuses.
+    // The models codex's own picker lists, in its order, with the slugs
+    // `codex --model` takes: the GPT-6 family first, then the GPT-5.6 rows it
+    // still offers and points at their GPT-6 successors. 6.1 Sol is the
+    // default because it heads that picker ("Latest workhorse model") and is
+    // the `model = "gpt-6.1-sol"` OpenAI's Codex docs set in `config.toml`.
+    // The GPT-6 rows want codex 0.153.0 (Astra, 6.1 Sol) or 0.155.0 (6 Sol,
+    // Luna); the GPT-5.6 rows stay so a host on an older CLI, and every bot
+    // or automation that already names one, keeps a row it can run.
     //
     // Same seed argument as Claude Code above, and the same limit: a probe is
     // still what would tell the console which of these *this* machine's codex
     // knows (`product/versions/mvp/05-screens.md`, open question 6).
     //
-    // Each model's levels and default are codex's own (`codex debug models`):
-    // Sol and Astra think `low` unasked, Terra and Luna `medium`, Luna has no
-    // `ultra`, and none has `minimal`. Codex forwards a level a model lacks to
-    // the API unchanged, so a level listed here that the model does not take
-    // is a failed turn, not a dropped setting.
+    // Each model's levels and default are codex's own (`models.json` in
+    // codex-rs, 0.163.0): 6.1 Sol, Astra and 5.6 Sol think `low` unasked, the
+    // rest `medium`, neither Luna has `ultra`, and none has `minimal`. Codex
+    // forwards a level a model lacks to the API unchanged, so a level listed
+    // here that the model does not take is a failed turn, not a dropped
+    // setting.
     models: Object.freeze([
+      Object.freeze({
+        id: 'gpt-6.1-sol',
+        label: 'GPT-6.1 Sol',
+        default: true as const,
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
       Object.freeze({
         id: 'gpt-6-astra',
         label: 'GPT-6 Astra',
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
+        id: 'gpt-6-sol',
+        label: 'GPT-6 Sol',
+        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'gpt-6-luna',
+        label: 'GPT-6 Luna',
+        effort: levels(CODEX_LEVELS, 'medium'),
+      }),
+      Object.freeze({
         id: 'gpt-5.6-sol',
         label: 'GPT-5.6 Sol',
-        default: true as const,
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
@@ -652,9 +671,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // Each model's levels are its OpenCode variants (`opencode models
     // --verbose`), and its default is what it runs with none: the API's own
     // `high` for the adaptive Claude models, no thinking for Haiku, whose
-    // variants are only `high` and `max` budgets, and `medium` for Sol. Sol's
-    // `none` variant is left off: "don't think" is not an amount of thinking
-    // anyone picks for a coding session.
+    // variants are only `high` and `max` budgets, and `medium` for 6.1 Sol,
+    // which has no `none` variant to leave off.
     models: Object.freeze([
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
@@ -678,8 +696,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         effort: levels(['none', 'high', 'max'], 'none'),
       }),
       Object.freeze({
-        id: 'openai/gpt-5.6-sol',
-        label: 'GPT-5.6 Sol',
+        id: 'openai/gpt-6.1-sol',
+        label: 'GPT-6.1 Sol',
         effort: levels(CODEX_LEVELS, 'medium'),
       }),
     ]),

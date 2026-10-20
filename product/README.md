@@ -591,3 +591,11 @@ earlier note:
   npm pointed at the prefix the executable lives under; an OpenCode in
   `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
   "Decided").
+- `versions/mvp/05-screens.md` listed Codex's models as GPT-6 Astra and
+  GPT-5.6 Sol, Terra and Luna, with GPT-5.6 Sol the default, and OpenCode's
+  OpenAI row as `openai/gpt-5.6-sol`. On 2026-10-20 the owner asked for the
+  OpenAI and ChatGPT lists to be brought up to date: Codex offers what its
+  own picker lists (codex 0.163.0), GPT-6.1 Sol (the default), GPT-6 Astra,
+  GPT-6 Sol and GPT-6 Luna, then the GPT-5.6 rows it still keeps; the
+  OpenAI and ChatGPT bot providers read the same rows, and OpenCode's
+  OpenAI row is `openai/gpt-6.1-sol`.
