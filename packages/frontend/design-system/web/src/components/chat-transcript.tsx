@@ -30,7 +30,7 @@ function ChatTranscript({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="chat-transcript"
-      className={cn('mx-auto flex w-full max-w-184 flex-col gap-5', className)}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-5', className)}
       {...props}
     />
   );

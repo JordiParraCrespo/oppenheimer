@@ -56,6 +56,16 @@ describe('VoiceTranscriptionResolver', () => {
     expect(off.grantFor).not.toHaveBeenCalled();
   });
 
+  it('drops the subtitle credits a speech model makes up from silence', async () => {
+    const amara = provider('speech_key', {
+      heard: 'Arregla el login. Subtítulos realizados por la comunidad de Amara.org',
+    });
+
+    await expect(resolverOver(amara).hear(ORG, CLIP, NOW)).resolves.toMatchObject({
+      raw: 'Arregla el login.',
+    });
+  });
+
   it('answers VOICE_005 when no provider is available', async () => {
     const off = provider('chatgpt', { available: false });
     await expect(resolverOver(off).hear(ORG, CLIP, NOW)).rejects.toMatchObject({

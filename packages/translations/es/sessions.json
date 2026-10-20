@@ -251,17 +251,23 @@
     "delete": "Eliminar",
     "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
     "loadFailed": "No se han podido cargar tus sesiones.",
-    "share": "Compartir…"
+    "share": "Compartir…",
+    "deleting": "Eliminando…",
+    "deletingHint": "Esperando a que su host la elimine. Si el host está desconectado, se eliminará cuando vuelva.",
+    "notDeleted": "No eliminada",
+    "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué."
   },
   "deleteSession": {
-    "title": "¿Eliminar “{{name}}”?",
-    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+    "title": "¿Eliminar «{{name}}»?",
+    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
     "confirm": "Eliminar sesión",
     "deleting": "Eliminando…",
     "failed": "No se pudo eliminar la sesión.",
     "discard": "Descartar también el trabajo sin enviar",
     "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
-    "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
+    "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+    "refused": "Su host no la eliminó",
+    "refusedUnknown": "El host se negó a eliminar la sesión."
   },
   "filters": {
     "label": "Filtrar sesiones",

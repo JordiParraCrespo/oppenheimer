@@ -1,12 +1,15 @@
-import { type DiffLayout, Skeleton } from '@oppenheimer/design-system-web';
+import type { DiffLayout } from '@oppenheimer/design-system-web';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { PaneBar, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChangesSkeleton } from '../components/changes-skeleton';
+import { DescriptionSkeleton } from '../components/description-skeleton';
 import { type PullRequestView, pullRequestSearch } from '../lib/pull-request-search';
 import { PullRequestChanges } from '../sections/pull-request-changes';
 import { PullRequestChat } from '../sections/pull-request-chat';
+import { PullRequestChatSkeleton } from '../sections/pull-request-chat-skeleton';
 import { PullRequestDescription } from '../sections/pull-request-description';
 import { PullRequestToolbar } from '../sections/pull-request-toolbar';
 import { ReviewPopover } from '../sections/review-popover';
@@ -22,7 +25,8 @@ import { ReviewPopover } from '../sections/review-popover';
  * The bar sits in the shell's slot above the page (`PaneBar`), so it stays put
  * while the view scrolls under it; each view is a page the shell frames at
  * the measure the route reads off `?view=`. Each view reads under Suspense,
- * so its placeholder and a first failure are drawn here, around it.
+ * so its placeholder, the view's own shape, and a first failure are drawn
+ * here, around it.
  */
 export function PullRequestScreen({
   address,
@@ -68,7 +72,7 @@ export function PullRequestScreen({
           description: (
             <QueryState key="description">
               <QueryState.Pending>
-                <Skeleton className="h-96 w-full" />
+                <DescriptionSkeleton />
               </QueryState.Pending>
               <QueryState.Error fallback={t('pullRequests.detail.loadFailed')} />
               <QueryState.Data>
@@ -79,7 +83,7 @@ export function PullRequestScreen({
           changes: (
             <QueryState key="changes">
               <QueryState.Pending>
-                <Skeleton className="min-h-0 w-full flex-1" />
+                <ChangesSkeleton />
               </QueryState.Pending>
               <QueryState.Error fallback={t('pullRequests.changes.loadFailed')} />
               <QueryState.Data>
@@ -98,7 +102,7 @@ export function PullRequestScreen({
           chat: (
             <QueryState key="chat">
               <QueryState.Pending>
-                <Skeleton className="min-h-0 w-full flex-1" />
+                <PullRequestChatSkeleton address={address} />
               </QueryState.Pending>
               <QueryState.Error fallback={t('pullRequests.reviewSession.loadFailed')} />
               <QueryState.Data>

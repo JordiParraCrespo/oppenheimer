@@ -20,6 +20,7 @@ export class BotApprovalMapper
     record.summary = entity.summary;
     record.status = entity.status;
     record.result = entity.result;
+    record.sessionId = entity.sessionId;
     record.note = entity.note;
     record.decidedByUserId = entity.decidedByUserId;
     record.decidedWithScopes = entity.decidedWithScopes ? [...entity.decidedWithScopes] : null;
@@ -41,6 +42,7 @@ export class BotApprovalMapper
         summary: record.summary,
         status: record.status as BotApprovalStatus,
         result: record.result,
+        sessionId: record.sessionId,
         note: record.note,
         decidedByUserId: record.decidedByUserId,
         decidedWithScopes: asScopes(record.decidedWithScopes),

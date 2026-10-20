@@ -141,8 +141,9 @@ describe('botProviderOptions', () => {
 });
 
 describe('keyedProviderFor', () => {
-  it('moves a bot with no key to the first provider, in catalog order, that has one', () => {
-    expect(keyedProviderFor(['openai', 'glm'], 'anthropic')).toBe('glm');
+  it('moves a bot with no key to the first provider, in preference order, that has one', () => {
+    expect(keyedProviderFor(['openai', 'glm'], 'anthropic')).toBe('openai');
+    expect(keyedProviderFor(['glm', 'chatgpt'], 'anthropic')).toBe('chatgpt');
   });
 
   it('leaves a bot whose provider has a key, or when no provider has one', () => {

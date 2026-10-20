@@ -42,7 +42,8 @@ lib/host-card.ts             entity → the card's status and meta parts
   menu's content unmounts when it closes. The dialog owns the mutation and
   shows its error in place. One row's pending state never disables every row:
   each row, or each dialog, has its own mutation.
-- Loading: nothing, or `Skeleton` rows, until the first answer. Empty:
+- Loading: nothing, or the list's shape (its container, rows in the row's
+  frame at the row's height), until the first answer; never one grey block. Empty:
   `EmptyState` or the design's empty card. Failed: an `Alert` *instead of*
   the list. Don't render a paragraph for any of them.
 - Lifecycle state: `Badge variant="active" | "paused" | "ended" | "draft"`,

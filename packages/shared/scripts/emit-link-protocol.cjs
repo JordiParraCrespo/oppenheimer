@@ -95,6 +95,10 @@ const CONSTANT_DOCS = {
     'CloseUnpaired is terminal: its handshake twin is a 410 carrying',
     'RefusalHeader: RefusalUnpaired — see ErrUnpaired.',
   ],
+  closeReasons: [
+    'The reasons a close may carry on top of its code. CloseReasonWipe, on',
+    'CloseUnpaired, asks the runner to close every session too — see ErrWipe.',
+  ],
   refusal: [
     "RefusalHeader and its values mark the control plane's own refusal at the",
     'handshake. A bare 410 is not trusted — any proxy in front of the control',
@@ -340,6 +344,14 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     ...comment(CONSTANT_DOCS.closeCodes),
     ...constGroup(
       Object.entries(constants.closeCodes).map(([key, code]) => [`Close${pascal(key)}`, code]),
+    ),
+    '',
+    ...comment(CONSTANT_DOCS.closeReasons),
+    ...constGroup(
+      Object.entries(constants.closeReasons).map(([key, value]) => [
+        `CloseReason${pascal(key)}`,
+        JSON.stringify(value),
+      ]),
     ),
     '',
     ...comment(CONSTANT_DOCS.refusal),

@@ -21,6 +21,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { queryStateSlotProblems } from './query-state-slots.mjs';
+import { skeletonSlabProblems } from './skeleton-shape.mjs';
+import { SLAB_DEBT } from './skeleton-slab-debt.mjs';
 
 // `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
@@ -587,6 +589,23 @@ for (const file of queryStateFiles) {
   for (const { line, message } of queryStateSlotProblems(readFileSync(file, 'utf8'))) {
     fail(`${relative(root, file)}:${line}: ${message}`);
   }
+}
+
+// A placeholder has the shape of what replaces it; `skeleton-shape.mjs`
+// fails a `QueryState.Pending` that is only a slab. `skeleton-slab-debt.mjs`
+// holds the files that held slabs when the check landed, each to its count.
+for (const file of queryStateFiles) {
+  const name = relative(root, file);
+  const slabs = skeletonSlabProblems(readFileSync(file, 'utf8'));
+  const owed = SLAB_DEBT.get(name) ?? 0;
+  if (slabs.length < owed) {
+    fail(
+      `${name}: holds ${slabs.length} slab${slabs.length === 1 ? '' : 's'}, SLAB_DEBT says ${owed} — lower its count in scripts/skeleton-slab-debt.mjs (remove it at zero)`,
+    );
+    continue;
+  }
+  if (slabs.length === owed) continue;
+  for (const { line, message } of slabs) fail(`${name}:${line}: ${message}`);
 }
 
 // docs: every workspace package documented, frontend surfaces with an ARCHITECTURE.md

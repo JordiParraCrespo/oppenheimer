@@ -230,3 +230,69 @@ test('the calendar: a personal event on a day, and the layers', async ({ page })
   await expect(page.getByRole('button', { name: /Design review/ })).toBeVisible();
   await owner.api.dispose();
 });
+
+test('the calendar: a Google meeting joins from its dialog, an event without one does not offer it', async ({
+  page,
+}) => {
+  const owner = await provisionedUser('plangooglejoin');
+  await signInAs(page, owner.user);
+  // The stack has no Google account behind it, so the two Google reads are
+  // answered here, in the shape the API serves; which link the API picks is
+  // its own unit spec (`google-calendar-event.util.spec.ts`).
+  const connectionId = '11111111-1111-4111-8111-111111111111';
+  const today = new Date().toLocaleDateString('en-CA');
+  const event = (id: string, title: string, meetingUrl: string | null) => ({
+    id,
+    connectionId,
+    source: 'google',
+    title,
+    notes: '',
+    date: today,
+    allDay: false,
+    startTime: '10:00',
+    endTime: '10:30',
+    busy: true,
+    url: `https://calendar.google.com/event?eid=${id}`,
+    meetingUrl,
+  });
+  await page.route('**/v1/calendar/google/connections', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: connectionId,
+          accountEmail: 'ana@example.com',
+          status: 'active',
+          colorIndex: 0,
+          connectedAt: '2026-10-01T09:00:00Z',
+        },
+      ],
+    }),
+  );
+  await page.route('**/v1/calendar/google/events?**', (route) =>
+    route.fulfill({
+      json: {
+        events: [
+          event('standup', 'Team standup', 'https://acme.zoom.us/j/123'),
+          event('focus', 'Focus time', null),
+        ],
+        accounts: [{ id: connectionId, status: 'ok' }],
+      },
+    }),
+  );
+
+  await page.goto('/plan/calendar');
+  await page.getByRole('button', { name: /Team standup/ }).click();
+  const meeting = page.getByRole('dialog', { name: 'Team standup' });
+  const join = meeting.getByRole('link', { name: 'Join meeting' });
+  await expect(join).toHaveAttribute('href', 'https://acme.zoom.us/j/123');
+  await expect(join).toHaveAttribute('target', '_blank');
+  await expect(meeting.getByRole('link', { name: 'Open in Google Calendar' })).toBeVisible();
+  await meeting.getByRole('button', { name: 'Close' }).click();
+  await expect(meeting).toBeHidden();
+
+  await page.getByRole('button', { name: /Focus time/ }).click();
+  const focus = page.getByRole('dialog', { name: 'Focus time' });
+  await expect(focus.getByRole('link', { name: 'Open in Google Calendar' })).toBeVisible();
+  await expect(focus.getByRole('link', { name: 'Join meeting' })).toHaveCount(0);
+  await owner.api.dispose();
+});

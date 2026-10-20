@@ -45,6 +45,12 @@ const (
 // taken back, and redialling it forever would be noise in two logs.
 var ErrUnpaired = errors.New("this host was unpaired by the control plane")
 
+// ErrWipe rides along with ErrUnpaired when the close carried
+// CloseReasonWipe: the owner also asked for everything the sessions made on
+// this machine to be removed. Only a live link carries it — the handshake's
+// 410 says no more than "unpaired".
+var ErrWipe = errors.New("the control plane asked for this host to be cleaned up")
+
 // Handler is what the composition root supplies: what each control-plane
 // message does, and what happens when the link comes and goes.
 type Handler interface {
@@ -85,7 +91,8 @@ type Options struct {
 	Ping time.Duration
 	// OnUnpaired runs once, just before Run returns ErrUnpaired, so the
 	// composition root can record it where `runner status` will read it.
-	OnUnpaired func()
+	// wipe is the close's ErrWipe.
+	OnUnpaired func(wipe bool)
 }
 
 // Client keeps one link open to the control plane for the life of a context.
@@ -170,7 +177,7 @@ func (c *Client) Run(ctx context.Context) error {
 			c.logger.Error("the control plane unpaired this host; the link will not redial",
 				slog.Any("error", err))
 			if c.opts.OnUnpaired != nil {
-				c.opts.OnUnpaired()
+				c.opts.OnUnpaired(errors.Is(err, ErrWipe))
 			}
 			return err
 		}
@@ -203,13 +210,18 @@ func (c *Client) backoff(attempt int) time.Duration {
 }
 
 // dialOnce runs one link from dial to drop. Whatever ended it, a close with
-// CloseUnpaired — at hello or mid-link — comes back as ErrUnpaired.
+// CloseUnpaired — at hello or mid-link — comes back as ErrUnpaired, and with
+// ErrWipe too when its reason is CloseReasonWipe.
 func (c *Client) dialOnce(ctx context.Context) error {
 	err := c.dialAndServe(ctx)
-	if err != nil && websocket.CloseStatus(err) == CloseUnpaired {
-		return fmt.Errorf("%w: %w", ErrUnpaired, err)
+	if err == nil || websocket.CloseStatus(err) != CloseUnpaired {
+		return err
 	}
-	return err
+	var closed websocket.CloseError
+	if errors.As(err, &closed) && closed.Reason == CloseReasonWipe {
+		return fmt.Errorf("%w: %w: %w", ErrUnpaired, ErrWipe, err)
+	}
+	return fmt.Errorf("%w: %w", ErrUnpaired, err)
 }
 
 func (c *Client) dialAndServe(ctx context.Context) error {

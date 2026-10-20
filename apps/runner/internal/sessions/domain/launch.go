@@ -35,6 +35,15 @@ type Launch struct {
 	Prompt string `json:"prompt,omitempty"`
 }
 
+// TrustsFolder reports a launch at a level that runs without approvals
+// (`auto` or `full`): one the person chose so the agent would work on its own,
+// so the folder it starts in is marked trusted rather than left to a question
+// nobody is there to answer. `ask` keeps the agent's own question, since
+// someone is expected at the terminal.
+func (l Launch) TrustsFolder() bool {
+	return l.Permission == "auto" || l.Permission == "full"
+}
+
 // launchMap is one agent's `launch` entry of the catalog
 // (`packages/shared/src/agents/catalog.ts`): argument *vectors* per choice, so
 // the runner concatenates and never parses, and a value needing quoting cannot

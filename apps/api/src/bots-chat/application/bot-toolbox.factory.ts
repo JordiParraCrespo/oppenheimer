@@ -14,6 +14,7 @@ import type {
   BotToolArea,
   BotToolContext,
   BotToolDefinition,
+  BotToolResult,
 } from './bot-tool.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 
@@ -69,7 +70,7 @@ export class BotToolboxFactory {
     granted: readonly Scope[] | null,
     call: { tool: string; input: Record<string, unknown> },
     signal: AbortSignal,
-  ): Promise<{ content: string; isError: boolean }> {
+  ): Promise<BotToolResult> {
     const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
     if (!definition)
       return { content: `Not run: ${call.tool} is no longer a tool.`, isError: true };

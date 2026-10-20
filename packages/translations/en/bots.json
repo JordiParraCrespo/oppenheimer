@@ -31,7 +31,6 @@
     "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
   },
   "chat": {
-    "toggleSidebar": "Toggle sidebar",
     "actions": "Bot options",
     "settings": "Settings",
     "delete": "Delete bot",
@@ -149,10 +148,16 @@
       "cancel": "Cancel",
       "failed": "Could not answer the request."
     },
+    "openSession": "Open session",
     "event": {
       "approved": "You approved: {{summary}}",
       "denied": "You denied: {{summary}}",
-      "failed": "You approved, and it failed: {{summary}}"
+      "failed": "You approved, and it failed: {{summary}}",
+      "peerMessage": "From <bot>{{name}}</bot>",
+      "peerAsk": "<bot>{{name}}</bot> asked",
+      "peerAnswered": "<bot>{{name}}</bot> replied",
+      "peerFailed": "<bot>{{name}}</bot> could not answer",
+      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
     }
   },
   "settings": {
@@ -288,7 +293,7 @@
     }
   },
   "delete": {
-    "title": "Delete {{name}}?",
+    "title": "Delete “{{name}}”?",
     "description": "The bot, its instructions, its memory and its conversation are removed for good.",
     "confirm": "Delete bot",
     "pending": "Deleting…",

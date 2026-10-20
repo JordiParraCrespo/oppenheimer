@@ -54,6 +54,7 @@ const meeting = (id: string) => ({
   endTime: '10:00',
   busy: true,
   url: null,
+  meetingUrl: null,
   dedupeKey: `${id}|2026-10-05T07:00:00.000Z`,
 });
 

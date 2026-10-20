@@ -172,6 +172,7 @@
       "PROJECTS_006": "When a project holds repositories, at least one of them must be offered by default, none twice, each with a base branch.",
       "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
       "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
+      "PROJECTS_009": "Unassigned is the name of the project for unfiled sessions. Choose another name.",
       "PULLS_001": "Choose a workspace before working with pull requests.",
       "PULLS_002": "This pull request comes from a fork, which a session cannot check out yet.",
       "SESSIONS_001": "We could not find that session.",
@@ -213,7 +214,6 @@
       "FLAG_006": "That segment is still used by a flag. Remove it from the flag's rules first.",
       "FLAG_007": "Those segment conditions are not valid.",
       "SESSIONS_012": "That file is over 5 MB. Save a smaller copy, then try again.",
-      "SESSIONS_CLIENT_019": "The host is offline, so the session was not deleted. Try again once it is back.",
       "SESSIONS_013": "A session takes images (PNG, JPEG, GIF, WebP), PDFs and text files. Executables, archives, scripts, SVG and HTML are refused.",
       "SESSIONS_014": "This session is stopped. Restart it to give its prompt a file.",
       "SESSIONS_015": "No file was attached. Paste or drop the file again.",
@@ -261,6 +261,7 @@
       "BOTS_020": "Couldn't reach ChatGPT's sign-in. Try again in a moment.",
       "BOTS_021": "The ChatGPT sign-in is being refreshed. Send your message again in a moment.",
       "BOTS_022": "Stop the running turn first.",
+      "BOTS_023": "Add a key for that provider before making it the default.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -466,7 +467,7 @@
       "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
-      "title": "Delete {{name}}?",
+      "title": "Delete “{{name}}”?",
       "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
       "confirm": "Delete project",
       "deleting": "Deleting…",
@@ -727,17 +728,23 @@
       "delete": "Delete",
       "writeFailed": "That change did not land. Try again.",
       "loadFailed": "Could not load your sessions.",
-      "share": "Share…"
+      "share": "Share…",
+      "deleting": "Deleting…",
+      "deletingHint": "Waiting for its host to remove it. If the host is offline, it is removed when the host is back.",
+      "notDeleted": "Not deleted",
+      "notDeletedHint": "Its host refused to delete it. Delete it again to see why."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
-      "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+      "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote. Deleting stops if the session has work that is not pushed.",
       "confirm": "Delete session",
       "deleting": "Deleting…",
       "failed": "The session could not be deleted.",
       "discard": "Also discard work that is not pushed",
       "keeps": "Deleting stops if the session has work that is not pushed.",
-      "descriptionFolder": "Ends the terminal. The folder stays as it is."
+      "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+      "refused": "Its host did not delete it",
+      "refusedUnknown": "The host refused to remove the session."
     },
     "filters": {
       "label": "Filter sessions",
@@ -929,7 +936,6 @@
       "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
     },
     "chat": {
-      "toggleSidebar": "Toggle sidebar",
       "actions": "Bot options",
       "settings": "Settings",
       "delete": "Delete bot",
@@ -1047,10 +1053,16 @@
         "cancel": "Cancel",
         "failed": "Could not answer the request."
       },
+      "openSession": "Open session",
       "event": {
         "approved": "You approved: {{summary}}",
         "denied": "You denied: {{summary}}",
-        "failed": "You approved, and it failed: {{summary}}"
+        "failed": "You approved, and it failed: {{summary}}",
+        "peerMessage": "From <bot>{{name}}</bot>",
+        "peerAsk": "<bot>{{name}}</bot> asked",
+        "peerAnswered": "<bot>{{name}}</bot> replied",
+        "peerFailed": "<bot>{{name}}</bot> could not answer",
+        "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
       }
     },
     "settings": {
@@ -1186,7 +1198,7 @@
       }
     },
     "delete": {
-      "title": "Delete {{name}}?",
+      "title": "Delete “{{name}}”?",
       "description": "The bot, its instructions, its memory and its conversation are removed for good.",
       "confirm": "Delete bot",
       "pending": "Deleting…",
@@ -1490,7 +1502,7 @@
     "deleteDialog": {
       "title": "Delete “{{name}}”?",
       "description": "Its triggers stop now. Past runs are kept.",
-      "confirm": "Delete",
+      "confirm": "Delete automation",
       "deleting": "Deleting…",
       "failed": "The automation could not be deleted."
     },
@@ -1735,7 +1747,7 @@
       "merged": "PRs merged",
       "from": "from {{value}}",
       "series": "Series",
-      "both": "Created and merged",
+      "both": "Both",
       "perDay": "Pull requests created and merged per day",
       "hover": "Hover a day",
       "reviewedByYou": "Reviewed by you",
@@ -1859,10 +1871,11 @@
       "target": "Target",
       "add": "Add milestone",
       "delete": "Delete milestone",
-      "deleteTitle": "Delete this milestone?",
-      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteDescription": "Its tasks stay on the board without a milestone.",
       "saveFailed": "Couldn’t save the milestone.",
-      "deleteFailed": "Couldn’t delete the milestone."
+      "deleteFailed": "Couldn’t delete the milestone.",
+      "deleting": "Deleting…"
     },
     "dialog": {
       "newTitle": "New task",
@@ -1884,12 +1897,13 @@
       "add": "Add task",
       "save": "Save",
       "delete": "Delete task",
-      "deleteTitle": "Delete this task?",
-      "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteDescription": "Its sessions stay as they are.",
       "saveFailed": "Couldn’t save the task.",
       "deleteFailed": "Couldn’t delete the task.",
       "loadFailed": "Couldn’t load the board.",
-      "gone": "This task no longer exists."
+      "gone": "This task no longer exists.",
+      "deleting": "Deleting…"
     },
     "link": {
       "search": "Search sessions",
@@ -1967,12 +1981,13 @@
       "add": "Add event",
       "save": "Save",
       "delete": "Delete event",
-      "deleteTitle": "Delete this event?",
-      "deleteDescription": "“{{title}}” is deleted.",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteDescription": "It is removed from the calendar.",
       "saveFailed": "Couldn’t save the event.",
       "deleteFailed": "Couldn’t delete the event.",
       "loadFailed": "Couldn’t load the event.",
-      "gone": "This event is not in the month shown, or no longer exists."
+      "gone": "This event is not in the month shown, or no longer exists.",
+      "deleting": "Deleting…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1987,17 +2002,18 @@
       "updated": "Updated {{age}} ago",
       "needsReconnect": "Needs reconnecting",
       "readFailed": "Couldn’t read it just now",
-      "remove": "Remove",
+      "remove": "Remove account",
       "removeLabel": "Remove {{email}}",
-      "removeTitle": "Remove this Google account?",
-      "removeDescription": "{{email}} leaves the calendar, and its events with it. You can connect it again at any time.",
+      "removeTitle": "Remove “{{email}}”?",
+      "removeDescription": "Its events leave the calendar. You can connect it again at any time.",
       "removeFailed": "Couldn’t remove the Google account.",
       "startFailed": "Couldn’t reach Google. Try again.",
       "loadFailed": "Couldn’t check your Google accounts.",
       "connecting": "Connecting Google Calendar…",
       "connectFailed": "Couldn’t connect Google Calendar.",
       "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-      "back": "Back to the calendar"
+      "back": "Back to the calendar",
+      "removing": "Removing…"
     },
     "googleEvent": {
       "untitled": "(No title)",
@@ -2007,6 +2023,7 @@
       "busy": "Busy",
       "free": "Free",
       "readOnly": "Read-only here: change it in Google Calendar.",
+      "join": "Join meeting",
       "open": "Open in Google Calendar"
     }
   },
@@ -2070,8 +2087,8 @@
       "actions": "{{name}} actions",
       "rename": "Rename",
       "updateRunner": "Update runner",
-      "updateTitle": "Update the runner on {{name}}?",
-      "updateDescription": "The runner installs the newest release on its channel and restarts. Sessions on {{name}} keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
+      "updateTitle": "Update the runner on “{{name}}”?",
+      "updateDescription": "The runner installs the newest release on its channel and restarts. Its sessions keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
       "updating": "Updating…",
       "updateFailed": "Could not update the runner on {{name}}.",
       "renameLabel": "Host name",
@@ -2079,12 +2096,14 @@
       "cancel": "Cancel",
       "remove": "Remove host",
       "removing": "Removing…",
-      "removeTitle": "Remove {{name}}?",
-      "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
-      "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "removeTitle": "Remove “{{name}}”?",
+      "removeRunning_one": "{{count}} session is running on it. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_other": "{{count}} sessions are running on it. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeIdle": "No sessions are running on it. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
       "removeFailed": "Could not remove this host. Try again.",
+      "wipe": "Also delete everything on this machine: close every session and remove its worktree, uncommitted work included. Nothing is pushed.",
+      "wipeOffline": "{{name}} is offline, so it can’t be cleaned up from here.",
       "openTerminal": "Open terminal",
       "openTerminalTitle": "Blank terminal in ~ on {{host}}"
     }
@@ -2193,7 +2212,7 @@
     },
     "modelProviders": {
       "title": "Model providers",
-      "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again.",
+      "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again. New bots start on the default provider.",
       "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
       "loadFailed": "Couldn’t load the model providers.",
       "keyEnding": "Key ending in {{hint}}",
@@ -2203,6 +2222,10 @@
       "remove": "Remove",
       "removeLabel": "Remove the {{provider}} key",
       "removeFailed": "Couldn’t remove the key.",
+      "default": "Default",
+      "makeDefault": "Make default",
+      "makeDefaultLabel": "Start new bots on {{provider}}",
+      "makeDefaultFailed": "Couldn’t change the default provider.",
       "providers": {
         "anthropic": "Claude models, through Anthropic’s API.",
         "glm": "GLM models, through z.ai.",
