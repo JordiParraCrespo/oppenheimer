@@ -32,13 +32,16 @@ function asEvents(input: unknown): GoogleEvent[] {
 }
 
 /**
- * `value` when it is one `https:` address and nothing else, else null: it
- * becomes a link in the console.
+ * `value` as an absolute address when it is one `https:` address and nothing
+ * else, else null: it becomes a link in the console.
  */
 function httpsUrl(value: string | undefined): string | null {
   if (!value || /\s/.test(value)) return null;
   try {
-    return new URL(value).protocol === 'https:' ? value : null;
+    const url = new URL(value);
+    // The parsed form: `https:zoom.us/j/4` parses, but as written a browser
+    // would read it as a path on the console's own origin.
+    return url.protocol === 'https:' ? url.href : null;
   } catch {
     return null;
   }
@@ -67,7 +70,8 @@ function meetingLinkIn(text: string | undefined): string | null {
   for (const candidate of candidates) {
     const href = candidate.replace(/[.,;:!?]+$/, '');
     try {
-      if (isMeetingLink(new URL(href))) return href;
+      const url = new URL(href);
+      if (isMeetingLink(url)) return url.href;
     } catch {}
   }
   return null;
