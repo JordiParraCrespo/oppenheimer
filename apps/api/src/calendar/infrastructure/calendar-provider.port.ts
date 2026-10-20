@@ -31,6 +31,8 @@ export interface ProviderCalendarEvent {
   busy: boolean;
   /** Where the event opens in the provider's own calendar. */
   url: string | null;
+  /** Where to join the meeting (Meet, Zoom, Teams…), when it is one. */
+  meetingUrl: string | null;
   /**
    * The same meeting read from another of the person's accounts carries the same
    * key: its `iCalUID`, its occurrence and, for an all-day item, its day.

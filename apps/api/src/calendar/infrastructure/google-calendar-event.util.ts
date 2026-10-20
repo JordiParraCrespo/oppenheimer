@@ -15,6 +15,11 @@ interface GoogleEvent {
   summary?: string;
   transparency?: string;
   htmlLink?: string;
+  /** The event's Google Meet link, when it has one. */
+  hangoutLink?: string;
+  /** A conference attached by Meet or an add-on (Zoom, Teams…). */
+  conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
+  location?: string;
   start?: GoogleEventTime;
   end?: GoogleEventTime;
 }
@@ -22,6 +27,31 @@ interface GoogleEvent {
 function asEvents(input: unknown): GoogleEvent[] {
   const items = (input as { items?: unknown })?.items;
   return Array.isArray(items) ? (items as GoogleEvent[]) : [];
+}
+
+/**
+ * `value` when it is one `https:` address and nothing else, else null: it
+ * becomes a link in the console.
+ */
+function httpsUrl(value: string | undefined): string | null {
+  if (!value || /\s/.test(value)) return null;
+  try {
+    return new URL(value).protocol === 'https:' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where to join the meeting: its Meet link, else the video entry point of a
+ * conference an add-on attached (Zoom, Teams…), else a location that is
+ * itself an address, as an invite pasted by hand often is.
+ */
+function meetingUrlOf(event: GoogleEvent): string | null {
+  const video = event.conferenceData?.entryPoints?.find(
+    (entry) => entry.entryPointType === 'video',
+  );
+  return httpsUrl(event.hangoutLink) ?? httpsUrl(video?.uri) ?? httpsUrl(event.location?.trim());
 }
 
 /** The next calendar day of `YYYY-MM-DD`. */
@@ -69,6 +99,7 @@ export function googleEventsToProvider(
       title: event.summary ?? '',
       busy: event.transparency !== 'transparent',
       url: event.htmlLink ?? null,
+      meetingUrl: meetingUrlOf(event),
     };
     if (event.start.date) {
       const end = event.end?.date ?? nextDay(event.start.date);

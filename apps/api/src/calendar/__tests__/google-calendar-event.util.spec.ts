@@ -7,8 +7,9 @@ import {
 /**
  * Google's events as the month view draws them. What breaks if this regresses:
  * a cancelled meeting still shows, a holiday spanning a week shows on its first
- * day only, or an evening event that runs past midnight is drawn ending before
- * it starts.
+ * day only, an evening event that runs past midnight is drawn ending before
+ * it starts, or a meeting loses its join link (or offers one that is not
+ * `https:`).
  */
 describe('googleEventsToProvider', () => {
   const range = { from: '2026-10-01', to: '2026-10-31' };
@@ -39,6 +40,7 @@ describe('googleEventsToProvider', () => {
         endTime: '16:00',
         busy: true,
         url: 'https://calendar.google.com/a',
+        meetingUrl: null,
         dedupeKey: 'a|2026-10-05T13:00:00.000Z',
       },
     ]);
@@ -79,6 +81,47 @@ describe('googleEventsToProvider', () => {
       range,
     );
     expect([late.startTime, late.endTime, late.title]).toEqual(['22:00', '23:59', '']);
+  });
+
+  it('finds where to join: Meet first, then an add-on’s video link, then a location that is an https address', () => {
+    const at = { start: { dateTime: '2026-10-05T09:00:00Z' } };
+    const events = googleEventsToProvider(
+      {
+        items: [
+          {
+            id: 'meet',
+            ...at,
+            hangoutLink: 'https://meet.google.com/abc-defg-hij',
+            conferenceData: {
+              entryPoints: [{ entryPointType: 'video', uri: 'https://zoom.us/j/1' }],
+            },
+          },
+          {
+            id: 'zoom',
+            ...at,
+            conferenceData: {
+              entryPoints: [
+                { entryPointType: 'phone', uri: 'tel:+34-900' },
+                { entryPointType: 'video', uri: 'https://zoom.us/j/2' },
+              ],
+            },
+          },
+          { id: 'pasted', ...at, location: ' https://teams.microsoft.com/l/meetup/3 ' },
+          { id: 'room', ...at, location: 'Room 4' },
+          { id: 'prose', ...at, location: 'https://zoom.us/j/4 or Room 4' },
+          { id: 'unsafe', ...at, hangoutLink: 'javascript:alert(1)', location: 'http://x.test' },
+        ],
+      },
+      range,
+    );
+    expect(events.map((e) => [e.id, e.meetingUrl])).toEqual([
+      ['meet', 'https://meet.google.com/abc-defg-hij'],
+      ['zoom', 'https://zoom.us/j/2'],
+      ['pasted', 'https://teams.microsoft.com/l/meetup/3'],
+      ['room', null],
+      ['prose', null],
+      ['unsafe', null],
+    ]);
   });
 
   it('keys two accounts’ copies of one meeting the same, whatever offset each answered in', () => {
