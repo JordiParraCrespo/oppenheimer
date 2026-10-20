@@ -14,30 +14,37 @@ import { BotToolboxFactory } from '../bot-toolbox.factory';
  * the owner's own roles do not cover stays offered, and its call is refused
  * before it runs, saying which permission they need.
  */
-const tool = (name: string, scope: Scope) =>
+const startSession = vi.fn(async () => 'ok');
+
+const tool = (name: string, scope: Scope, run = async () => 'ok') =>
   defineBotTool({
     name,
     scope,
     description: `${name}.`,
     input: z.object({}),
-    run: async () => 'ok',
+    asks: true,
+    summarize: () => name,
+    run,
   });
 
 const area: BotToolArea = {
   definitions: () => [
     tool('list_sessions', 'sessions:read'),
-    tool('start_session', 'sessions:write'),
+    tool('start_session', 'sessions:write', startSession),
     tool('create_task', 'tasks:write'),
   ],
 };
 
-// The toolbox takes its eleven areas positionally; one stands in, the rest offer nothing.
-const none: BotToolArea = { definitions: () => [] };
-const toolbox = new (
-  BotToolboxFactory as unknown as new (
-    ...areas: BotToolArea[]
-  ) => BotToolboxFactory
-)(area, none, none, none, none, none, none, none, none, none, none);
+/** The toolbox over the areas given, every other of its positional areas offering nothing. */
+function toolboxOf(...areas: BotToolArea[]): BotToolboxFactory {
+  const none: BotToolArea = { definitions: () => [] };
+  const all = Array.from({ length: BotToolboxFactory.length }, (_, i) => areas[i] ?? none);
+  return new (BotToolboxFactory as unknown as new (...areas: BotToolArea[]) => BotToolboxFactory)(
+    ...all,
+  );
+}
+
+const toolbox = toolboxOf(area);
 
 const context: BotToolContext = {
   owner: emptyScope('owner-1', 'org-1'),
@@ -99,46 +106,24 @@ describe('BotToolboxFactory', () => {
     expect(refused.content).toContain('Not run');
   });
 
-  it('keeps offering a tool the owner’s roles do not cover, and refuses its call saying which permission they need', async () => {
-    const run = vi.fn(async () => 'ok');
-    const watched = new (
-      BotToolboxFactory as unknown as new (
-        ...areas: BotToolArea[]
-      ) => BotToolboxFactory
-    )(
-      {
-        definitions: () => [
-          defineBotTool({
-            name: 'merge_pull_request',
-            scope: 'pulls:write',
-            description: 'Merges.',
-            input: z.object({}),
-            run,
-          }),
-        ],
-      },
-      none,
-      none,
-      none,
-      none,
-      none,
-      none,
-      none,
-      none,
-      none,
-      none,
-    );
-    const readOnly: ReadonlySet<Scope> = new Set<Scope>(['pulls:read']);
+  it('keeps offering a tool the owner’s roles do not cover, and refuses its call before any card, saying which permission they need', async () => {
+    const asking = { ...context, permission: 'auto' as const, approvals: { request: vi.fn() } };
+    const readOnly: ReadonlySet<Scope> = new Set<Scope>(['sessions:read', 'tasks:write']);
 
-    const [bound] = watched.tools({ ...context, permission: 'auto' }, null, readOnly);
-    const result = await bound?.run({}, { signal: new AbortController().signal });
+    const bound = toolbox.tools(asking, null, readOnly);
+    const start = bound.find((candidate) => candidate.name === 'start_session');
+    const result = await start?.run({}, { signal: new AbortController().signal });
 
-    expect(bound?.name).toBe('merge_pull_request');
+    expect(bound.map((candidate) => candidate.name)).toEqual([
+      'list_sessions',
+      'start_session',
+      'create_task',
+    ]);
     expect(result?.isError).toBe(true);
-    expect(result?.content).toContain('"Pull requests: Review" permission (pulls:write)');
+    expect(result?.content).toContain('(sessions:write)');
     expect(result?.content).toContain('granted');
-    expect(run).not.toHaveBeenCalled();
-    expect(context.approvals.request).not.toHaveBeenCalled();
+    expect(startSession).not.toHaveBeenCalled();
+    expect(asking.approvals.request).not.toHaveBeenCalled();
   });
 
   it('runs nothing approved once the owner has lost the role the card needed', async () => {

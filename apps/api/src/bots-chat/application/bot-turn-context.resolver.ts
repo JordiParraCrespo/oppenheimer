@@ -74,7 +74,7 @@ export class BotTurnContextResolver {
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, earlier, hosts] = await Promise.all([
+    const [documents, facts, earlier, hosts, held] = await Promise.all([
       this.documents.findAllForTurn(turn.organizationId, bot.id),
       this.memory.findAllForTurn(turn.organizationId, bot.id),
       this.messages.findHistory(
@@ -85,9 +85,9 @@ export class BotTurnContextResolver {
         BOT_HISTORY_READ_MAX,
       ),
       this.hostsOf(owner, turn.id),
+      owner ? this.permissions.heldScopes(owner) : null,
     ]);
     // An owner who can no longer act leaves the bot nothing to act through.
-    const held = owner ? await this.permissions.heldScopes(owner) : null;
     const tools =
       owner && held
         ? this.toolbox.tools(

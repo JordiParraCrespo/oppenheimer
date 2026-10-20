@@ -84,15 +84,10 @@ export class BotToolboxFactory {
     held: ReadonlySet<Scope>,
   ): BotEngineTool[] {
     return this.definitions(granted).map((definition) => {
+      const refused = refusalFor(definition, held);
       const tool = definition.bind(context);
-      if (held.has(definition.scope)) return tool;
-      return {
-        ...tool,
-        run: async () => ({
-          content: ownerLacksPermission(definition.name, definition.scope),
-          isError: true,
-        }),
-      };
+      // The permission comes before asking: a refused tool raises no card.
+      return refused ? { ...tool, run: async () => refused } : tool;
     });
   }
 
@@ -121,10 +116,7 @@ export class BotToolboxFactory {
         isError: true,
       };
     }
-    if (!held.has(definition.scope)) {
-      return { content: ownerLacksPermission(definition.name, definition.scope), isError: true };
-    }
-    return definition.runApproved(call.input, context, signal);
+    return refusalFor(definition, held) ?? definition.runApproved(call.input, context, signal);
   }
 
   private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {
@@ -133,4 +125,14 @@ export class BotToolboxFactory {
     const covered = expandScopes(granted);
     return all.filter((definition) => covered.has(definition.scope));
   }
+}
+
+/**
+ * The one gate between a tool and its owner's roles, for a live call and an
+ * approved one alike: the refusal when `held` lacks the tool's scope, else
+ * nothing and the tool's own run path decides.
+ */
+function refusalFor(definition: BotToolDefinition, held: ReadonlySet<Scope>): BotToolResult | null {
+  if (held.has(definition.scope)) return null;
+  return { content: ownerLacksPermission(definition.name, definition.scope), isError: true };
 }
