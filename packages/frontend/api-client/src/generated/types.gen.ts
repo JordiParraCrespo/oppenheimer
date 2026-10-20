@@ -2421,6 +2421,10 @@ export type CalendarEventResponseDto = {
      * Where a Google event opens in Google Calendar; null for a personal one.
      */
     url?: string | null;
+    /**
+     * Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one.
+     */
+    meetingUrl?: string | null;
 };
 
 export type CreateCalendarEventRequest = {
@@ -2500,6 +2504,10 @@ export type GoogleCalendarEventResponseDto = {
      * Where a Google event opens in Google Calendar; null for a personal one.
      */
     url?: string | null;
+    /**
+     * Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one.
+     */
+    meetingUrl?: string | null;
     /**
      * The connection it was read from; the first one read when two accounts share it.
      */

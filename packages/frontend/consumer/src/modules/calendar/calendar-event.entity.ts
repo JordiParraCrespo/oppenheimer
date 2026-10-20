@@ -18,6 +18,8 @@ export class CalendarEventEntity {
     public readonly url: string | null,
     /** The Google account a Google event was read from; null for a personal one. */
     public readonly connectionId: string | null = null,
+    /** Where to join a Google event's video meeting (Meet, Zoom, Teams…), when it has one. */
+    public readonly meetingUrl: string | null = null,
   ) {}
 
   get isEditable(): boolean {
