@@ -36,6 +36,20 @@ export class BotMessageRepository
     );
   }
 
+  async insertOnce(message: BotMessageEntity): Promise<boolean> {
+    // At the time it happened, not now; a bot deleted since leaves the line
+    // nowhere to go, and nothing is stored.
+    const stored: { id: string }[] = await this.dataSource.query(
+      `INSERT INTO bot_message (${MESSAGE_COLUMNS}, "createdAt")
+       SELECT ${MESSAGE_VALUES}, $10
+        WHERE EXISTS (SELECT 1 FROM bot WHERE "organizationId" = $2 AND id = $3)
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
+      [...messageParameters(this.mapper.toPersistence(message)), message.createdAt],
+    );
+    return stored.length === 1;
+  }
+
   async saveSteps(message: BotMessageEntity): Promise<void> {
     await this.repository
       .createQueryBuilder()
@@ -130,7 +144,7 @@ export class BotMessageRepository
         organizationId,
         botId,
       })
-      .andWhere('message.turnId <> :turnId', { turnId })
+      .andWhere('(message.turnId IS NULL OR message.turnId <> :turnId)', { turnId })
       .andWhere(`message.role <> 'activity'`)
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
@@ -150,10 +164,11 @@ export class BotMessageRepository
     limit: number,
   ): Promise<SummarizableMessage[]> {
     // IDX_bot_message_bot, read forwards from the cutoff; each message's turn
-    // by its primary key, for whether it has ended.
+    // by its primary key, for whether it has ended. A line outside any turn
+    // has nothing to wait for.
     const query = this.repository
       .createQueryBuilder('message')
-      .innerJoin(
+      .leftJoin(
         BotTurnOrmEntity,
         'turn',
         'turn.organizationId = message.organizationId AND turn.id = message.turnId',
@@ -192,6 +207,24 @@ function after(
   );
 }
 
+/** What a message is written as, by every writer of `bot_message`, in this order. */
+const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event"`;
+const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb';
+
+function messageParameters(record: BotMessageOrmEntity): unknown[] {
+  return [
+    record.id,
+    record.organizationId,
+    record.botId,
+    record.turnId,
+    record.role,
+    record.content,
+    JSON.stringify(record.steps),
+    record.position,
+    record.event ? JSON.stringify(record.event) : null,
+  ];
+}
+
 /**
  * A message, and when it is yours or the bot's text, the bot's last message
  * for the sidebar; in the caller's transaction.
@@ -201,21 +234,9 @@ export async function insertMessageWithin(
   mapper: BotMessageMapper,
   message: BotMessageEntity,
 ): Promise<void> {
-  const record = mapper.toPersistence(message);
   await manager.query(
-    `INSERT INTO bot_message (id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event")
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb)`,
-    [
-      record.id,
-      record.organizationId,
-      record.botId,
-      record.turnId,
-      record.role,
-      record.content,
-      JSON.stringify(record.steps),
-      record.position,
-      record.event ? JSON.stringify(record.event) : null,
-    ],
+    `INSERT INTO bot_message (${MESSAGE_COLUMNS}) VALUES (${MESSAGE_VALUES})`,
+    messageParameters(mapper.toPersistence(message)),
   );
   // The sidebar's line is a conversation's words: an activity line or an event is neither.
   if (message.role === 'activity' || message.role === 'event') return;

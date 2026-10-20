@@ -28,10 +28,14 @@ describe('AutomationRunEntity raises a change per write', () => {
     expect(changes(AutomationRunEntity.fire(props, now))).toHaveLength(1);
     const skipped = AutomationRunEntity.skipped(props, 'paused' as never, now);
     expect(changes(skipped)).toHaveLength(1);
+    // What breaks this: the one event saying `pending`, so a listener of
+    // failed runs (a bot's chat) never hears of a run a guard refused.
     expect(changes(skipped)[0]).toMatchObject({
       aggregateId: skipped.id,
       organizationId: 'org-1',
       automationId: 'auto-1',
+      outcome: 'skipped',
+      skipReason: 'paused',
     });
   });
 

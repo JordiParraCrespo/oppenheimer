@@ -1890,7 +1890,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -1911,6 +1911,35 @@ export type AutomationResponseDto = {
      * The last six, newest first.
      */
     lastRuns: Array<AutomationRunSummaryResponseDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type BotRoutineResponseDto = {
+    id: string;
+    /**
+     * The bot that runs it.
+     */
+    botId: string;
+    name: string;
+    /**
+     * What the bot is told each time it runs.
+     */
+    prompt: string;
+    /**
+     * `running` while a run is queued or its turn runs, else `active` or `paused`.
+     */
+    status: 'active' | 'paused' | 'running';
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
+    /**
+     * The earliest next slot of its schedules. Null when paused or event-only.
+     */
+    nextRunAt?: string | null;
+    triggers: Array<AutomationTriggerResponseDto>;
+    /**
+     * Its latest run over the listed window; null when it has none.
+     */
+    lastRun?: AutomationRunSummaryResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2071,7 +2100,10 @@ export type AutomationRunResponseDto = {
      * The automation was deleted; the list reads “Deleted automation”.
      */
     automationDeleted: boolean;
-    projectId: string;
+    /**
+     * Null for a bot routine’s run, which belongs to no project.
+     */
+    projectId: string | null;
     status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
     /**
      * What became of the firing before a session.
@@ -2087,9 +2119,15 @@ export type AutomationRunResponseDto = {
      */
     branch?: string | null;
     revisionNumber: number;
-    agent: string;
+    /**
+     * Null for a bot routine’s run: the bot’s own provider runs it.
+     */
+    agent: string | null;
     model?: string | null;
-    hostId: string;
+    /**
+     * Null for a bot routine’s run, which starts no session.
+     */
+    hostId: string | null;
     createdAt: string;
     scheduledFor?: string | null;
     dispatchedAt?: string | null;
@@ -2164,6 +2202,10 @@ export type UpdateAutomationSettingsRequest = {
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;
+};
+
+export type UpdateBotRoutineRequest = {
+    enabled: boolean;
 };
 
 export type TaskSessionLinkResponseDto = {
@@ -3159,6 +3201,73 @@ export type ChatgptLoginStatusResponseDto = {
     status: 'pending' | 'connected';
 };
 
+export type BotApprovalEventResponseDto = {
+    kind: 'approval';
+    outcome: 'approved' | 'denied' | 'failed';
+    /**
+     * The tool the decided call was for.
+     */
+    tool: string;
+    /**
+     * The card's line: what the call does, in words.
+     */
+    summary: string;
+    /**
+     * The session the approved call started; null when it started none.
+     */
+    sessionId: string | null;
+};
+
+export type BotRoutineEventResponseDto = {
+    kind: 'routine';
+    activity: 'saved' | 'changed' | 'paused' | 'resumed' | 'deleted' | 'ran' | 'failed';
+    /**
+     * The routine.
+     */
+    automationId: string;
+    /**
+     * The run, for an activity that has one (`ran`, `failed`).
+     */
+    runId: string | null;
+    /**
+     * Its name at the time.
+     */
+    name: string;
+    /**
+     * Why, as a code, for a pause or a failure: the pause reason for `paused`, the skip reason or `expired` for `failed`.
+     */
+    reason: string | null;
+};
+
+export type BotPeerMessageEventResponseDto = {
+    kind: 'bot_message';
+    /**
+     * The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * The sending bot's name when it sent it.
+     */
+    fromBotName: string;
+    /**
+     * Sent with ask_bot, so this bot answers it.
+     */
+    expectsReply: boolean;
+};
+
+export type BotPeerReplyEventResponseDto = {
+    kind: 'bot_reply';
+    /**
+     * The bot that answered; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * The answering bot's name when it answered.
+     */
+    fromBotName: string;
+    outcome: 'answered' | 'failed' | 'cancelled';
+};
+
 export type BotToolStepResponseDto = {
     callId: string;
     /**
@@ -3182,41 +3291,12 @@ export type BotToolStepResponseDto = {
     sessionId: string | null;
 };
 
-export type BotMessageEventResponseDto = {
-    kind: 'approval' | 'bot_message' | 'bot_reply';
-    /**
-     * An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.
-     */
-    outcome: 'approved' | 'denied' | 'failed' | 'answered' | 'cancelled';
-    /**
-     * An approval: the tool the decided call was for.
-     */
-    tool: string | null;
-    /**
-     * An approval: the card's line, what the call does in words.
-     */
-    summary: string | null;
-    /**
-     * A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
-     */
-    fromBotId: string | null;
-    /**
-     * A message or an answer: the sending bot's name when it sent it.
-     */
-    fromBotName: string | null;
-    /**
-     * A message: sent with ask_bot, so this bot answers it.
-     */
-    expectsReply: boolean | null;
-    /**
-     * An approval: the session the approved call started; null when it started none, and on any other kind.
-     */
-    sessionId: string | null;
-};
-
 export type BotMessageResponseDto = {
     id: string;
-    turnId: string;
+    /**
+     * The turn it belongs to; null for an event outside any turn (a routine changed on its tab, paused or failed).
+     */
+    turnId: string | null;
     role: 'user' | 'assistant' | 'activity' | 'event';
     /**
      * The text; empty for an activity line.
@@ -3224,9 +3304,9 @@ export type BotMessageResponseDto = {
     content: string;
     steps: Array<BotToolStepResponseDto>;
     /**
-     * What an event says happened; null on every other role.
+     * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotMessageEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | null;
     createdAt: string;
 };
 
@@ -8589,6 +8669,32 @@ export type CreateAutomationResponses = {
 
 export type CreateAutomationResponse = CreateAutomationResponses[keyof CreateAutomationResponses];
 
+export type FindRoutinesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/routines';
+};
+
+export type FindRoutinesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindRoutinesError = FindRoutinesErrors[keyof FindRoutinesErrors];
+
+export type FindRoutinesResponses = {
+    200: Array<BotRoutineResponseDto>;
+};
+
+export type FindRoutinesResponse = FindRoutinesResponses[keyof FindRoutinesResponses];
+
 export type PreviewTriggerData = {
     body: PreviewTriggerRequest;
     path?: never;
@@ -9030,6 +9136,137 @@ export type UpdateAutomationSettingsResponses = {
 };
 
 export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses[keyof UpdateAutomationSettingsResponses];
+
+export type FindBotRoutinesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines';
+};
+
+export type FindBotRoutinesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindBotRoutinesError = FindBotRoutinesErrors[keyof FindBotRoutinesErrors];
+
+export type FindBotRoutinesResponses = {
+    200: Array<BotRoutineResponseDto>;
+};
+
+export type FindBotRoutinesResponse = FindBotRoutinesResponses[keyof FindBotRoutinesResponses];
+
+export type DeleteBotRoutineData = {
+    body?: never;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}';
+};
+
+export type DeleteBotRoutineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotRoutineError = DeleteBotRoutineErrors[keyof DeleteBotRoutineErrors];
+
+export type DeleteBotRoutineResponses = {
+    204: void;
+};
+
+export type DeleteBotRoutineResponse = DeleteBotRoutineResponses[keyof DeleteBotRoutineResponses];
+
+export type UpdateBotRoutineData = {
+    body: UpdateBotRoutineRequest;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}';
+};
+
+export type UpdateBotRoutineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateBotRoutineError = UpdateBotRoutineErrors[keyof UpdateBotRoutineErrors];
+
+export type UpdateBotRoutineResponses = {
+    204: void;
+};
+
+export type UpdateBotRoutineResponse = UpdateBotRoutineResponses[keyof UpdateBotRoutineResponses];
+
+export type RunBotRoutineData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried Run now is the same run.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/run';
+};
+
+export type RunBotRoutineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RunBotRoutineError = RunBotRoutineErrors[keyof RunBotRoutineErrors];
+
+export type RunBotRoutineResponses = {
+    202: unknown;
+};
 
 export type StreamWorkspaceEventsData = {
     body?: never;

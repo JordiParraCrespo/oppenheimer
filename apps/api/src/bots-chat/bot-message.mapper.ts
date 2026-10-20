@@ -3,6 +3,7 @@ import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_EVENT_OUTCOMES,
   BOT_REPLY_OUTCOMES,
+  BOT_ROUTINE_ACTIVITIES,
   type BotMessageEvent,
   type BotMessageRole,
 } from '@oppenheimer/shared';
@@ -10,7 +11,14 @@ import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
-import { BotMessageEventResponseDto, BotMessageResponseDto } from './dtos/bot-message.response.dto';
+import {
+  BotApprovalEventResponseDto,
+  type BotMessageEventResponseDto,
+  BotMessageResponseDto,
+  BotPeerMessageEventResponseDto,
+  BotPeerReplyEventResponseDto,
+  BotRoutineEventResponseDto,
+} from './dtos/bot-message.response.dto';
 
 @Injectable()
 export class BotMessageMapper
@@ -74,7 +82,10 @@ export class BotMessageMapper
     return dto;
   }
 
-  /** A stored message as the summary weighs it, with whether its turn (in `turnStatus`) has ended. */
+  /**
+   * A stored message as the summary weighs it, with whether its turn (in
+   * `turnStatus`) has ended; a line outside any turn has none to wait for.
+   */
   toSummarizable(record: BotMessageOrmEntity, turnStatus: unknown): SummarizableMessage {
     const message = this.toDomain(record);
     return {
@@ -82,23 +93,10 @@ export class BotMessageMapper
       role: message.role,
       content: message.content,
       createdAt: message.createdAt,
-      turnEnded: ENDED_TURN_STATUSES.some((status) => status === turnStatus),
+      turnEnded:
+        message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
     };
   }
-}
-
-/** An event for the wire: one shape, the fields its kind does not have left null. */
-function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
-  const dto = new BotMessageEventResponseDto();
-  dto.kind = event.kind;
-  dto.outcome = event.kind === 'bot_message' ? null : event.outcome;
-  dto.tool = event.kind === 'approval' ? event.tool : null;
-  dto.summary = event.kind === 'approval' ? event.summary : null;
-  dto.fromBotId = event.kind === 'approval' ? null : event.fromBotId;
-  dto.fromBotName = event.kind === 'approval' ? null : event.fromBotName;
-  dto.expectsReply = event.kind === 'bot_message' ? event.expectsReply : null;
-  dto.sessionId = event.kind === 'approval' ? event.sessionId : null;
-  return dto;
 }
 
 /** A stored step, narrowed once: what the column holds is what the mapper wrote. */
@@ -113,6 +111,20 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
   };
 }
 
+/** An event as the response carries it: the kind it is, with that kind's fields only. */
+function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
+  switch (event.kind) {
+    case 'approval':
+      return Object.assign(new BotApprovalEventResponseDto(), event);
+    case 'routine':
+      return Object.assign(new BotRoutineEventResponseDto(), event);
+    case 'bot_message':
+      return Object.assign(new BotPeerMessageEventResponseDto(), event);
+    case 'bot_reply':
+      return Object.assign(new BotPeerReplyEventResponseDto(), event);
+  }
+}
+
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
   if (!raw) return null;
@@ -125,6 +137,18 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    };
+  }
+  if (raw.kind === 'routine') {
+    const activity = BOT_ROUTINE_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.automationId !== 'string') return null;
+    return {
+      kind: 'routine',
+      activity,
+      automationId: raw.automationId,
+      runId: typeof raw.runId === 'string' ? raw.runId : null,
+      name: String(raw.name ?? ''),
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
   if (raw.kind === 'bot_message') {

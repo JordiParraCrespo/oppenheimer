@@ -597,6 +597,20 @@ earlier note:
   npm pointed at the prefix the executable lives under; an OpenCode in
   `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
   "Decided").
+- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that bot
+  routines had no spend guard: the run budget and the overlap guard held
+  the cost. On 2026-10-18 the owner asked routines to behave as Grok
+  Bot's do, and the guard is back: a nudge, then a pause of every routine
+  of the bot when nobody reads what they say. In the same review the
+  bot's routine tool lost its per-action table for one consent rule
+  (only `list` and `pause` run without a card), and routine changes,
+  runs and failures became one activity event written by one listener
+  (26 §4, §6, "Decided").
+- 2026-10-18, building bot routines' slice C: a routine's activity lines
+  belong to no turn, so a turn's several changes are not folded into one
+  "Routines in this change" group yet, and a routine turn that failed is
+  shown by its turn rather than by a second `failed` notice (26 §4 "In the
+  chat", "Decided").
 - `versions/mvp/25-bots.md` §4.4 (2026-10-15) built the GitHub reads only,
   and a bot told its owner it could not merge a pull request it had
   reported ready. On 2026-10-20 the asking writes of the table were built

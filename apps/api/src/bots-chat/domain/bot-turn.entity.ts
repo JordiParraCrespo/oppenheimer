@@ -10,6 +10,7 @@ import {
   BOT_TURN_STATUSES,
   type BotProvider,
   type BotTurnLane,
+  type BotTurnOrigin,
   type BotTurnStatus,
   type Scope,
 } from '@oppenheimer/shared';
@@ -21,6 +22,10 @@ export interface BotTurnProps {
   /** Who sent the message; null once that account is gone. */
   requestedByUserId: string | null;
   status: BotTurnStatus;
+  /** Why it exists: a message of yours, an approval's decision, or a routine's run. */
+  origin: BotTurnOrigin;
+  /** What makes it happen once (`automation-run:<runId>`); null for a message. */
+  sourceKey: string | null;
   /** The engine and model it runs on, fixed when it is sent, so a later pick never changes it. */
   provider: BotProvider;
   model: string;
@@ -102,6 +107,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     effort: SessionEffort | null;
     timeZone?: string | null;
     credentialScopes?: readonly Scope[] | null;
+    origin?: BotTurnOrigin;
+    sourceKey?: string | null;
     lane?: BotTurnLane;
     chainId?: string | null;
     chainDepth?: number;
@@ -121,6 +128,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         replyRequested: false,
         answersTurnId: null,
         ...props,
+        origin: props.origin ?? 'message',
+        sourceKey: props.sourceKey ?? null,
         timeZone: props.timeZone ?? null,
         credentialScopes: props.credentialScopes ?? null,
         status: 'queued',
@@ -210,6 +219,12 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
   get status(): BotTurnStatus {
     return this.props.status;
+  }
+  get origin(): BotTurnOrigin {
+    return this.props.origin;
+  }
+  get sourceKey(): string | null {
+    return this.props.sourceKey;
   }
   get statusAtLoad(): BotTurnStatus {
     return this.loadedStatus;

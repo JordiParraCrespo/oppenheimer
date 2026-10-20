@@ -9,6 +9,7 @@ import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
+import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import type {
@@ -38,6 +39,7 @@ export class BotToolboxFactory {
     pullRequests: BotPullRequestToolsFactory,
     issues: BotIssueToolsFactory,
     automations: BotAutomationToolsFactory,
+    routines: BotRoutineToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
   ) {
@@ -50,6 +52,7 @@ export class BotToolboxFactory {
       pullRequests,
       issues,
       automations,
+      routines,
       peers,
       web,
     ];

@@ -4,9 +4,15 @@ import type {
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 
-/** One turn as the chat draws it: what you said, then what the bot did with it. */
+/**
+ * One turn as the chat draws it: what you said, then what the bot did with
+ * it. A line that belongs to no turn (a routine changed on its tab, paused or
+ * failed) is a block of its own, with no turn and that one event in `asked`.
+ */
 export interface ChatTurnBlock {
-  turnId: string;
+  /** The turn's id, or the line's for one outside any turn: what React keys it by. */
+  key: string;
+  turnId: string | null;
   /** `undefined` only for a turn older than the page the API answered with. */
   turn: BotTurnEntity | undefined;
   /** What opened it: your message, or an event Oppenheimer told the bot for you. */
@@ -14,23 +20,29 @@ export interface ChatTurnBlock {
   answer: BotMessageEntity[];
 }
 
-/** The conversation as turns, in the order they were sent. */
+/**
+ * The conversation as blocks, in the order they happened: each turn's
+ * messages under it, your message apart from the bot's work, and each line
+ * outside any turn as a block of its own, keyed by its id. An event opens
+ * its block either way.
+ */
 export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] {
   const blocks = new Map<string, ChatTurnBlock>();
-  const blockOf = (turnId: string) => {
-    let block = blocks.get(turnId);
+  const blockOf = (key: string, turnId: string | null) => {
+    let block = blocks.get(key);
     if (!block) {
-      block = { turnId, turn: conversation.turn(turnId), asked: [], answer: [] };
-      blocks.set(turnId, block);
+      const turn = turnId === null ? undefined : conversation.turn(turnId);
+      block = { key, turnId, turn, asked: [], answer: [] };
+      blocks.set(key, block);
     }
     return block;
   };
   for (const message of conversation.messages) {
-    const block = blockOf(message.turnId);
+    const block = blockOf(message.turnId ?? message.id, message.turnId);
     const opens = message.role === 'user' || message.role === 'event';
     (opens ? block.asked : block.answer).push(message);
   }
-  for (const turn of conversation.turns) blockOf(turn.id);
+  for (const turn of conversation.turns) blockOf(turn.id, turn.id);
   return [...blocks.values()];
 }
 
@@ -69,9 +81,17 @@ export function replyText(block: ChatTurnBlock): string {
  * retrying an older one would answer a question the chat has moved past.
  */
 export function retryContent(blocks: readonly ChatTurnBlock[]): string | null {
-  const last = blocks.at(-1);
+  const last = newestTurn(blocks);
   if (!last?.turn || last.turn.isActive) return null;
   return last.asked.at(-1)?.content ?? null;
+}
+
+/** The newest block that is a turn: a routine's line after it does not take Retry away. */
+export function newestTurn(blocks: readonly ChatTurnBlock[]): ChatTurnBlock | undefined {
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    if (blocks[index]?.turnId) return blocks[index];
+  }
+  return undefined;
 }
 
 /** A token count the way the trail prints it: "840", "3.1k", "12k". */

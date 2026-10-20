@@ -35,7 +35,9 @@ export class FindBotConversationQueryHandler
   async execute({ scope, botId, limit }: FindBotConversationQuery): Promise<BotConversation> {
     await this.lookup.bot(scope, botId);
     const messages = await this.messages.findConversation(scope, botId, limit);
-    const turnIds = [...new Set(messages.map((message) => message.turnId))];
+    const turnIds = [
+      ...new Set(messages.flatMap((message) => (message.turnId === null ? [] : [message.turnId]))),
+    ];
     const [turns, messageCount] = await Promise.all([
       this.turns.findForConversation(scope, botId, turnIds),
       this.messages.countConversation(scope, botId),

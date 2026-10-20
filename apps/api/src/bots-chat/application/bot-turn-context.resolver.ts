@@ -96,6 +96,7 @@ export class BotTurnContextResolver {
             timeZone: turn.timeZone ?? 'UTC',
             permission: bot.permission,
             budget: new BotTurnBudget(),
+            credentialScopes: turn.credentialScopes,
             approvals: this.approvals,
           },
           turn.credentialScopes,
