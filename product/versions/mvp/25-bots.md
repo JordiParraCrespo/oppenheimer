@@ -211,8 +211,8 @@ who owns it may do, the rule that already governs API tokens. Tools are
 defined once, as an in-process MCP server both engines use.
 
 That rule is checked, not assumed (built 2026-10-20, from a review of
-§4.4's writes): each turn, and again when an approved call runs, the
-owner's live roles in the bot's workspace are read as the scopes they
+§4.4's writes): at every tool call, and again when an approved call runs,
+the owner's live roles in the bot's workspace are read as the scopes they
 could grant a token (`grantableScopes`, built as an ordinary account, never
 the platform tier). A tool whose scope they lack **stays offered**, and its
 call is refused before it runs or raises a card, in words that name the
@@ -220,7 +220,9 @@ permission ("Pull requests: Review", `pulls:write`) and tell the bot to say
 the person needs it granted. Hiding the tool instead was considered and
 not taken: a bot that does not know a tool exists cannot tell its owner
 why it cannot help. A role removed while a card waits stops the call when
-it runs. The workspace owner's role covers every tool's scope, so a
+it runs, and one removed mid-turn stops the turn's next call. The read
+is the ability's own cache behind the role version counters, so a call
+costs no more than a request's guard. The workspace owner's role covers every tool's scope, so a
 personal workspace's bot loses nothing.
 
 **Default** is the catalog's: *auto* runs, *ask* shows a Needs input card,

@@ -73,21 +73,25 @@ export class BotToolboxFactory {
   }
 
   /**
-   * The same tools, bound to one turn. `held` is what the owner's roles let
-   * them do now (`BotOwnerPermissionsResolver`): a tool outside it stays
-   * offered, and its call is refused before it runs or raises a card, in
-   * words the bot passes on.
+   * The same tools, bound to one turn. `held` reads what the owner's roles
+   * let them do now (`BotOwnerPermissionsResolver`), at every call, so a role
+   * removed mid-turn stops the next call: a tool outside it stays offered,
+   * and its call is refused before it runs or raises a card, in words the
+   * bot passes on.
    */
   tools(
     context: BotToolContext,
     granted: readonly Scope[] | null,
-    held: ReadonlySet<Scope>,
+    held: HeldScopes,
   ): BotEngineTool[] {
     return this.definitions(granted).map((definition) => {
-      const refused = refusalFor(definition, held);
       const tool = definition.bind(context);
       // The permission comes before asking: a refused tool raises no card.
-      return refused ? { ...tool, run: async () => refused } : tool;
+      return {
+        ...tool,
+        run: async (input, options) =>
+          (await refusalFor(definition, held)) ?? tool.run(input, options),
+      };
     });
   }
 
@@ -103,7 +107,7 @@ export class BotToolboxFactory {
   async runApproved(
     context: ApprovedCallContext,
     granted: readonly Scope[] | null,
-    held: ReadonlySet<Scope>,
+    held: HeldScopes,
     call: { tool: string; input: Record<string, unknown> },
     signal: AbortSignal,
   ): Promise<BotToolResult> {
@@ -116,7 +120,9 @@ export class BotToolboxFactory {
         isError: true,
       };
     }
-    return refusalFor(definition, held) ?? definition.runApproved(call.input, context, signal);
+    return (
+      (await refusalFor(definition, held)) ?? definition.runApproved(call.input, context, signal)
+    );
   }
 
   private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {
@@ -127,12 +133,19 @@ export class BotToolboxFactory {
   }
 }
 
+/** Reads the owner's scopes as their roles stand at the moment of the call. */
+export type HeldScopes = () => Promise<ReadonlySet<Scope>>;
+
 /**
  * The one gate between a tool and its owner's roles, for a live call and an
- * approved one alike: the refusal when `held` lacks the tool's scope, else
- * nothing and the tool's own run path decides.
+ * approved one alike, read when the call is made: the refusal when the
+ * owner lacks the tool's scope, else nothing and the tool's own run path
+ * decides.
  */
-function refusalFor(definition: BotToolDefinition, held: ReadonlySet<Scope>): BotToolResult | null {
-  if (held.has(definition.scope)) return null;
+async function refusalFor(
+  definition: BotToolDefinition,
+  held: HeldScopes,
+): Promise<BotToolResult | null> {
+  if ((await held()).has(definition.scope)) return null;
   return { content: ownerLacksPermission(definition.name, definition.scope), isError: true };
 }

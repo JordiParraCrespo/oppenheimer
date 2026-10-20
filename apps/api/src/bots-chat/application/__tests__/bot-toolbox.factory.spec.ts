@@ -3,7 +3,7 @@ import type { Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { type BotToolArea, type BotToolContext, defineBotTool } from '../bot-tool.factory';
-import { BotToolboxFactory } from '../bot-toolbox.factory';
+import { BotToolboxFactory, type HeldScopes } from '../bot-toolbox.factory';
 
 /**
  * What a turn is offered. A bot's tools act as its owner, so a message sent
@@ -59,12 +59,14 @@ const context: BotToolContext = {
   approvals: { request: vi.fn() },
 };
 
+/** The owner's roles, as the toolbox reads them at each call. */
+const holding =
+  (...scopes: Scope[]): HeldScopes =>
+  async () =>
+    new Set(scopes);
+
 /** An owner whose roles cover everything these tools need. */
-const EVERYTHING: ReadonlySet<Scope> = new Set<Scope>([
-  'sessions:read',
-  'sessions:write',
-  'tasks:write',
-]);
+const EVERYTHING = holding('sessions:read', 'sessions:write', 'tasks:write');
 
 const names = (granted: readonly Scope[] | null) =>
   toolbox.tools(context, granted, EVERYTHING).map((bound) => bound.name);
@@ -108,7 +110,7 @@ describe('BotToolboxFactory', () => {
 
   it('keeps offering a tool the owner’s roles do not cover, and refuses its call before any card, saying which permission they need', async () => {
     const asking = { ...context, permission: 'auto' as const, approvals: { request: vi.fn() } };
-    const readOnly: ReadonlySet<Scope> = new Set<Scope>(['sessions:read', 'tasks:write']);
+    const readOnly = holding('sessions:read', 'tasks:write');
 
     const bound = toolbox.tools(asking, null, readOnly);
     const start = bound.find((candidate) => candidate.name === 'start_session');
@@ -126,11 +128,30 @@ describe('BotToolboxFactory', () => {
     expect(asking.approvals.request).not.toHaveBeenCalled();
   });
 
+  it('reads the owner’s roles at each call, so a role removed mid-turn stops the next call', async () => {
+    const roles = [
+      new Set<Scope>(['sessions:read', 'sessions:write']),
+      new Set<Scope>(['sessions:read']),
+    ];
+    const held: HeldScopes = async () => roles.shift() ?? new Set();
+    const [, start] = toolbox.tools(context, null, held);
+    const signal = new AbortController().signal;
+    startSession.mockClear();
+
+    const first = await start?.run({}, { signal });
+    const second = await start?.run({}, { signal });
+
+    expect(first).toEqual({ content: 'ok', isError: false });
+    expect(second?.isError).toBe(true);
+    expect(second?.content).toContain('(sessions:write)');
+    expect(startSession).toHaveBeenCalledTimes(1);
+  });
+
   it('runs nothing approved once the owner has lost the role the card needed', async () => {
     const result = await toolbox.runApproved(
       { ...context, permission: 'auto', approvalId: 'approval-1' },
       null,
-      new Set<Scope>(['sessions:read']),
+      holding('sessions:read'),
       { tool: 'start_session', input: {} },
       new AbortController().signal,
     );

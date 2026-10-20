@@ -54,7 +54,7 @@ export class BotApprovedCallResolver {
         approvalId: approval.id,
       },
       granted,
-      await this.permissions.heldScopes(owner),
+      () => this.permissions.heldScopes(owner),
       { tool: approval.tool, input: approval.input },
       AbortSignal.timeout(APPROVED_CALL_TIMEOUT_MS),
     );
