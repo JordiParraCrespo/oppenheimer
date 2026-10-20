@@ -390,7 +390,12 @@ Then, in order:
    database under `~/.local/share/opencode/`),
    never scraped from the PTY, and sent once as `prompt.first`, at most
    2 KB. The control plane names the session from it (10); the transcript
-   itself never leaves the host.
+   itself never leaves the host. Claude Code's is the transcript read
+   today (`sessions/adapters/transcript`, found as
+   `projects/*/<session id>.jsonl` because the session id is the
+   conversation's name), on each poll until one is reported; the other
+   agents report nothing yet, so their sessions keep the slug until
+   renamed.
 
    **When the launch carried one, the runner reports nothing.** It
    already knows the first message — it put it there — and the control

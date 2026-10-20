@@ -228,3 +228,35 @@ func TestPendingIsBounded(t *testing.T) {
 		}
 	}
 }
+
+// A sender that marks something done once its event landed is told so only
+// by the ack that accounts for it — accepted or rejected — and only once.
+func TestSettledIsCalledByTheAckThatAccountsForTheEvent(t *testing.T) {
+	sender := &fakeSender{}
+	r := link.NewReporter("run", sender, nil)
+	var settled []string
+	r.AppendSettled("s1", "prompt.first", map[string]any{"text": "a"}, func() { settled = append(settled, "a") })
+	r.AppendSettled("s1", "prompt.first", map[string]any{"text": "b"}, func() { settled = append(settled, "b") })
+	if len(settled) != 0 {
+		t.Fatalf("settled %v before any ack", settled)
+	}
+	r.Ack(link.EventsAck{BatchID: sender.sent[0].BatchID, Accepted: []string{"run:1"}})
+	ack := link.EventsAck{BatchID: sender.sent[1].BatchID}
+	ack.Rejected = append(ack.Rejected, link.EventsAckRejected{IdempotencyKey: "run:2", Reason: "payload is over 8192 bytes"})
+	r.Ack(ack)
+	r.Ack(link.EventsAck{BatchID: sender.sent[0].BatchID, Accepted: []string{"run:1"}})
+	if fmt.Sprint(settled) != "[a b]" {
+		t.Fatalf("settled %v, want each event once, on its ack", settled)
+	}
+}
+
+// The control plane caps a payload's length as sent, so markup is not
+// spelled in HTML escapes six characters each.
+func TestAPayloadIsNotHTMLEscaped(t *testing.T) {
+	sender := &fakeSender{}
+	r := link.NewReporter("run", sender, nil)
+	r.Append("s1", "prompt.first", map[string]any{"text": "<Rail> & </Rail>"})
+	if payload := sender.sent[0].Events[0].Payload; payload != `{"text":"<Rail> & </Rail>"}` {
+		t.Fatalf("payload = %s", payload)
+	}
+}
