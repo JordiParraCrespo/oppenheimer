@@ -69,7 +69,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
               variant="secondary"
               size="sm"
               onClick={() => actions.runNow(automation.id)}
-              disabled={actions.running}
+              pending={actions.running}
             >
               <Play />
               {t('automations.detail.runNow')}
