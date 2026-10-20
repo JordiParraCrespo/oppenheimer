@@ -1,6 +1,7 @@
 import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import {
+  groupSummary,
   humaniseToolName,
   planItems,
   readableOutput,
@@ -95,5 +96,17 @@ describe('planItems', () => {
       { text: 'Write it up', state: 'pending' },
     ]);
     expect(planItems({})).toEqual([]);
+  });
+});
+
+describe('groupSummary', () => {
+  const search = { kind: 'search', query: 'x' } as const;
+  const tool = { kind: 'tool', label: 'Read document', target: undefined } as const;
+
+  it('says what a run of searches did, and "used tools" for a mix or any other kind', () => {
+    expect(groupSummary([search, search])).toBe('bots.chat.activity.groupSearched');
+    expect(groupSummary([search, tool])).toBe('bots.chat.activity.group');
+    expect(groupSummary([tool, tool])).toBe('bots.chat.activity.group');
+    expect(groupSummary([{ kind: 'plan' }, { kind: 'plan' }])).toBe('bots.chat.activity.group');
   });
 });

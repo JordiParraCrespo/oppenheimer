@@ -31,6 +31,7 @@
     "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
   },
   "chat": {
+    "toggleSidebar": "Toggle sidebar",
     "actions": "Bot options",
     "settings": "Settings",
     "delete": "Delete bot",
@@ -75,7 +76,13 @@
       "rawOutput": "Show raw output",
       "moreLines_one": "Show {{count}} more line",
       "moreLines_other": "Show {{count}} more lines",
-      "lessOutput": "Show less"
+      "lessOutput": "Show less",
+      "group_one": "Used {{count}} tool",
+      "group_other": "Used {{count}} tools",
+      "groupSearched_one": "Searched the web {{count}} time",
+      "groupSearched_other": "Searched the web {{count}} times",
+      "groupFailed_one": "{{count}} failed",
+      "groupFailed_other": "{{count}} failed"
     },
     "suggest": {
       "task": {
@@ -148,17 +155,36 @@
       "cancel": "Cancel",
       "failed": "Could not answer the request."
     },
-    "openSession": "Open session",
     "event": {
       "approved": "You approved: {{summary}}",
       "denied": "You denied: {{summary}}",
       "failed": "You approved, and it failed: {{summary}}",
+      "routine": "Routine · {{name}}",
+      "routineSaved": "Created routine “{{name}}”",
+      "routineChanged": "Changed routine “{{name}}”",
+      "routinePaused": "Paused routine “{{name}}”",
+      "routinePausedBecause": "Paused routine “{{name}}”: {{reason}}",
+      "routineResumed": "Resumed routine “{{name}}”",
+      "routineDeleted": "Deleted routine “{{name}}”",
+      "routineFailed": "Routine “{{name}}” did not run: {{reason}}",
+      "openRoutines": "Open routines",
       "peerMessage": "From <bot>{{name}}</bot>",
       "peerAsk": "<bot>{{name}}</bot> asked",
       "peerAnswered": "<bot>{{name}}</bot> replied",
       "peerFailed": "<bot>{{name}}</bot> could not answer",
       "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
-    }
+    },
+    "routineReason": {
+      "expired": "it waited too long to start",
+      "automation_rate_limited": "it reached its hourly run limit",
+      "workspace_rate_limited": "the workspace reached its hourly run limit",
+      "missed": "its time passed while it could not run",
+      "agent_unavailable": "the agent could not start",
+      "bot_provider_missing": "the bot’s model provider has no key or sign-in",
+      "owner_lost_access": "its owner can no longer run it",
+      "unknown": "something went wrong"
+    },
+    "openSession": "Open session"
   },
   "settings": {
     "back": "Back to the chat",
@@ -169,6 +195,7 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
+      "routines": "Routines",
       "homeHost": "Home host"
     },
     "profile": {
@@ -272,6 +299,32 @@
       "forget": "Forget “{{fact}}”",
       "forgetFailed": "Could not forget the fact.",
       "loadFailed": "Could not load what the bot remembers."
+    },
+    "routines": {
+      "title": "Routines",
+      "subtitle": "Work the bot does on a schedule or when something happens.",
+      "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+      "askInChat": "Ask in chat",
+      "schedule": "Schedule · {{when}}",
+      "github": "GitHub · {{when}}",
+      "last": "Last",
+      "next": "Next",
+      "never": "Never",
+      "switch": "Run “{{name}}” on its own",
+      "pause": "Pause",
+      "resume": "Resume",
+      "run": "Run now",
+      "running": "Running…",
+      "edit": "Edit in chat",
+      "delete": "Delete routine",
+      "editPrompt": "Edit your routine: {{name}}",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteBody": "This deletes the routine and stops its future runs. This can't be undone.",
+      "deleting": "Deleting…",
+      "deleteFailed": "Could not delete the routine.",
+      "switchFailed": "Could not change the routine.",
+      "runFailed": "Could not run the routine.",
+      "loadFailed": "Could not load the bot's routines."
     },
     "homeHost": {
       "title": "Home host",

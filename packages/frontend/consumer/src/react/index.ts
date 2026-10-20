@@ -36,6 +36,16 @@ export {
   useSuspenseBotConversation,
   useSuspenseBotHistory,
 } from './bot-chat.queries';
+export {
+  type BotRoutineVariables,
+  type RunBotRoutineVariables,
+  type SetBotRoutineEnabledVariables,
+  useDeleteBotRoutine,
+  useRunBotRoutine,
+  useSetBotRoutineEnabled,
+  useSuspenseAllBotRoutines,
+  useSuspenseBotRoutines,
+} from './bot-routines.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,

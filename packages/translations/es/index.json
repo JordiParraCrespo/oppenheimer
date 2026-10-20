@@ -938,6 +938,7 @@
       "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {
+      "toggleSidebar": "Mostrar u ocultar la barra lateral",
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
@@ -985,7 +986,16 @@
         "moreLines_one": "Ver {{count}} línea más",
         "moreLines_many": "Ver {{count}} líneas más",
         "moreLines_other": "Ver {{count}} líneas más",
-        "lessOutput": "Ver menos"
+        "lessOutput": "Ver menos",
+        "group_one": "Usó {{count}} herramienta",
+        "group_many": "Usó {{count}} herramientas",
+        "group_other": "Usó {{count}} herramientas",
+        "groupSearched_one": "Buscó en la web {{count}} vez",
+        "groupSearched_many": "Buscó en la web {{count}} veces",
+        "groupSearched_other": "Buscó en la web {{count}} veces",
+        "groupFailed_one": "{{count}} con error",
+        "groupFailed_many": "{{count}} con error",
+        "groupFailed_other": "{{count}} con error"
       },
       "suggest": {
         "task": {
@@ -1058,17 +1068,36 @@
         "cancel": "Cancelar",
         "failed": "No se pudo responder a la solicitud."
       },
-      "openSession": "Abrir sesión",
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
+        "routine": "Rutina · {{name}}",
+        "routineSaved": "Rutina creada: “{{name}}”",
+        "routineChanged": "Rutina cambiada: “{{name}}”",
+        "routinePaused": "Rutina en pausa: “{{name}}”",
+        "routinePausedBecause": "Rutina en pausa: “{{name}}”, porque {{reason}}",
+        "routineResumed": "Rutina reanudada: “{{name}}”",
+        "routineDeleted": "Rutina eliminada: “{{name}}”",
+        "routineFailed": "La rutina “{{name}}” no se ejecutó: {{reason}}",
+        "openRoutines": "Abrir rutinas",
         "peerMessage": "De <bot>{{name}}</bot>",
         "peerAsk": "<bot>{{name}}</bot> preguntó",
         "peerAnswered": "<bot>{{name}}</bot> respondió",
         "peerFailed": "<bot>{{name}}</bot> no pudo responder",
         "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
-      }
+      },
+      "routineReason": {
+        "expired": "esperó demasiado para empezar",
+        "automation_rate_limited": "alcanzó su límite de ejecuciones por hora",
+        "workspace_rate_limited": "el espacio de trabajo alcanzó su límite de ejecuciones por hora",
+        "missed": "pasó su hora mientras no podía ejecutarse",
+        "agent_unavailable": "el agente no pudo arrancar",
+        "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
+        "owner_lost_access": "su propietario ya no puede ejecutarla",
+        "unknown": "algo salió mal"
+      },
+      "openSession": "Abrir sesión"
     },
     "settings": {
       "back": "Volver al chat",
@@ -1079,6 +1108,7 @@
         "profile": "Perfil",
         "instructions": "Instrucciones",
         "memory": "Memoria",
+        "routines": "Rutinas",
         "homeHost": "Máquina principal"
       },
       "profile": {
@@ -1184,6 +1214,32 @@
         "forgetFailed": "No se ha podido olvidar el dato.",
         "loadFailed": "No se ha podido cargar lo que recuerda el bot."
       },
+      "routines": {
+        "title": "Rutinas",
+        "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
+        "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+        "askInChat": "Pedir en el chat",
+        "schedule": "Horario · {{when}}",
+        "github": "GitHub · {{when}}",
+        "last": "Última",
+        "next": "Próxima",
+        "never": "Nunca",
+        "switch": "Ejecutar «{{name}}» por su cuenta",
+        "pause": "Pausar",
+        "resume": "Reanudar",
+        "run": "Ejecutar ahora",
+        "running": "Ejecutándose…",
+        "edit": "Editar en el chat",
+        "delete": "Eliminar rutina",
+        "editPrompt": "Edita tu rutina: {{name}}",
+        "deleteTitle": "¿Eliminar «{{name}}»?",
+        "deleteBody": "Se elimina la rutina y se detienen sus próximas ejecuciones. No se puede deshacer.",
+        "deleting": "Eliminando…",
+        "deleteFailed": "No se pudo eliminar la rutina.",
+        "switchFailed": "No se pudo cambiar la rutina.",
+        "runFailed": "No se pudo ejecutar la rutina.",
+        "loadFailed": "No se pudieron cargar las rutinas del bot."
+      },
       "homeHost": {
         "title": "Máquina principal",
         "subtitle": "Tu bot siempre se ejecuta en Oppenheimer. Cuando inicia una sesión de código y no has indicado una máquina, la sesión se ejecuta aquí.",
@@ -1269,7 +1325,8 @@
       "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
       "project_archived": "En pausa porque se eliminó su proyecto. Muévela a otro proyecto para reanudarla.",
       "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
-      "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
+      "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
+      "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala."
     },
     "frequency": {
       "once": {
@@ -1521,6 +1578,11 @@
       "open": "Abrir en el terminal",
       "opening": "Abriendo",
       "backToAutomation": "Volver a la automatización"
+    },
+    "routines": {
+      "routine": "Rutina de bot",
+      "runsOn": "La ejecuta {{bot}}",
+      "loadFailed": "No se pudieron cargar las rutinas de los bots."
     }
   },
   "pullRequests": {

@@ -23,11 +23,12 @@ export class AutomationRevisionOrmEntity {
   @Column({ type: 'integer' })
   number!: number;
 
-  @Column({ type: 'uuid' })
-  hostId!: string;
+  /** Null, with `agent`, for a bot routine's revision. */
+  @Column({ type: 'uuid', nullable: true })
+  hostId!: string | null;
 
-  @Column({ type: 'varchar', length: 32 })
-  agent!: string;
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  agent!: string | null;
 
   @Column({ type: 'varchar', length: 128, nullable: true })
   model!: string | null;
@@ -41,7 +42,7 @@ export class AutomationRevisionOrmEntity {
   @Column({ type: 'text' })
   prompt!: string;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
   repositories!: unknown;
 
   @Column({ type: 'uuid', nullable: true })

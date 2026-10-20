@@ -139,3 +139,50 @@ export async function setUserRole(userId: string, role: string): Promise<void> {
     [userId],
   );
 }
+
+/**
+ * A bot's routine written straight into the tables (`26-bot-routines.md`):
+ * a bot makes its routines through its own tool, in a turn of a real model,
+ * so a spec about the Routines tab seeds one instead. A daily schedule at
+ * 09:00 UTC, on. One statement, so the deferred revision key holds.
+ */
+export async function insertBotRoutine(
+  botId: string,
+  name: string,
+  prompt: string,
+): Promise<string> {
+  const rows = await query<{ id: string }>(
+    `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          owner AS (SELECT "userId" FROM member m JOIN bot ON m."organizationId" = bot."organizationId" LIMIT 1),
+          ids AS (SELECT gen_random_uuid() AS automation, gen_random_uuid() AS revision),
+          a AS (
+            INSERT INTO automation (id, "organizationId", "projectId", "runTarget", "botId", "ownerUserId", name, "currentRevisionId")
+            SELECT ids.automation, bot."organizationId", NULL, 'bot', $1, owner."userId", $2, ids.revision
+              FROM bot, owner, ids
+            RETURNING id
+          ),
+          r AS (
+            INSERT INTO automation_revision (id, "organizationId", "automationId", number, permission, prompt, "createdByUserId")
+            SELECT ids.revision, bot."organizationId", ids.automation, 1, 'auto', $3, owner."userId"
+              FROM bot, owner, ids
+          ),
+          t AS (
+            INSERT INTO automation_trigger ("organizationId", "automationId", position, source, "eventType", config, timezone, "nextFireAt")
+            SELECT bot."organizationId", ids.automation, 0, 'schedule', 'schedule',
+                   '{"frequency":"daily","hour":9,"minute":0}'::jsonb, 'UTC',
+                   date_trunc('day', now()) + interval '1 day 9 hours'
+              FROM bot, ids
+          )
+     SELECT id FROM a`,
+    [botId, name, prompt],
+  );
+  return rows[0].id;
+}
+
+export async function routinePausedAt(routineId: string): Promise<Date | null> {
+  const rows = await query<{ pausedAt: Date | null }>(
+    'SELECT "pausedAt" FROM automation WHERE id = $1',
+    [routineId],
+  );
+  return rows[0]?.pausedAt ?? null;
+}

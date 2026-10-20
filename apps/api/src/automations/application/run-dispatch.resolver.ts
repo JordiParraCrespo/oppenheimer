@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { AutomationPausedReason, AutomationSkipReason } from '@oppenheimer/shared/automations';
+import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
+import { INBOUND_EVENT_LOOKUP } from '../../inbound-events/inbound-events.di-tokens';
+import { AutomationRunMapper } from '../automation-run.mapper';
 import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationRunTargetKind, RunDispatchRef } from '../domain/automation.types';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import { firstRefusal, pausedGuard, staleGuard } from '../domain/fire-guard.policy';
+import type { RunEventView } from '../domain/run-launch.policy';
 import type { RunRefusal } from '../domain/run-refusal.policy';
 import { AutomationLimitsResolver } from './automation-limits.resolver';
 import type { AutomationRunTargetPort, RunTargetContext } from './automation-run-target.port';
@@ -36,6 +40,9 @@ export class RunDispatchResolver {
     private readonly limits: AutomationLimitsResolver,
     private readonly owners: OwnerScopeResolver,
     private readonly targets: AutomationRunTargetRegistry,
+    @Inject(INBOUND_EVENT_LOOKUP)
+    private readonly events: InboundEventLookupPort,
+    private readonly mapper: AutomationRunMapper,
   ) {}
 
   async decide(
@@ -56,8 +63,21 @@ export class RunDispatchResolver {
     const scope = await this.owners.resolve(automation.organizationId, automation.ownerUserId);
     if (!scope) return { kind: 'skip', reason: 'not_launchable', pause: 'owner_lost_access' };
 
-    const context: RunTargetContext = { run, automation, scope, limits, now };
+    const event = await this.eventOf(run);
+    // A run started by an event that is gone (retention, a replay that never
+    // landed) does not know why it exists, nor where it should start.
+    if (run.cause === 'event' && !event) {
+      return { kind: 'skip', reason: 'not_launchable', pause: null };
+    }
+
+    const context: RunTargetContext = { run, automation, scope, limits, event, now };
     return decideWith(this.targets.get(automation.runTarget), context);
+  }
+
+  private async eventOf(run: AutomationRunEntity): Promise<RunEventView | null> {
+    if (!run.inboundEventId) return null;
+    const found = await this.events.findOne(run.organizationId, run.inboundEventId);
+    return found.isSome() ? this.mapper.eventViewOf(found.unwrap()) : null;
   }
 }
 

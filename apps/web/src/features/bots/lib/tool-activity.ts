@@ -74,6 +74,25 @@ export function toolAction(step: Pick<BotToolStep, 'name' | 'input'>): ToolActio
   return { kind: 'tool', label: humaniseToolName(step.name), target: toolTarget(step.input) };
 }
 
+/**
+ * The words over calls made together, by kind: a run of one kind says what
+ * it did ("Searched the web 3 times"); a kind with no entry, or a mix, says
+ * "Used 4 tools".
+ */
+const GROUP_SUMMARY = {
+  search: 'bots.chat.activity.groupSearched',
+} as const satisfies Partial<Record<ToolAction['kind'], string>>;
+
+/** The translation key for a group of calls' folded line; its `count` is the number of calls. */
+export function groupSummary(
+  actions: readonly ToolAction[],
+): (typeof GROUP_SUMMARY)[keyof typeof GROUP_SUMMARY] | 'bots.chat.activity.group' {
+  const kinds = new Set(actions.map((action) => action.kind));
+  const [kind] = kinds;
+  const same = kinds.size === 1 && kind !== undefined && kind in GROUP_SUMMARY;
+  return same ? GROUP_SUMMARY[kind as keyof typeof GROUP_SUMMARY] : 'bots.chat.activity.group';
+}
+
 /** The call still running in a turn's work, if one is: the last with no output yet. */
 export function runningStep(answer: readonly BotMessageEntity[]): BotToolStep | undefined {
   const steps = answer.flatMap((message) => (message.role === 'activity' ? message.steps : []));

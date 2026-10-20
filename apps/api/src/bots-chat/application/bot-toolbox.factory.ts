@@ -7,6 +7,7 @@ import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
+import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import type {
@@ -34,10 +35,11 @@ export class BotToolboxFactory {
     plan: BotPlanToolsFactory,
     github: BotGithubToolsFactory,
     automations: BotAutomationToolsFactory,
+    routines: BotRoutineToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
   ) {
-    this.areas = [self, hosts, sessions, plan, github, automations, peers, web];
+    this.areas = [self, hosts, sessions, plan, github, automations, routines, peers, web];
   }
 
   /**
