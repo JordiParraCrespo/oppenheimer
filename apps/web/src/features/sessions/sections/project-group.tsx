@@ -35,6 +35,7 @@ export function ProjectGroup({
   query,
   onNewSessionHere,
   onSettings,
+  onPinChange,
   onShare,
   onDelete,
   onWrite,
@@ -53,6 +54,7 @@ export function ProjectGroup({
   query: string;
   onNewSessionHere: (project: ProjectEntity) => void;
   onSettings: (project: ProjectEntity) => void;
+  onPinChange: (session: SessionEntity, pinned: boolean) => void;
   onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
   onWrite: (error: Error | null) => void;
@@ -128,6 +130,8 @@ export function ProjectGroup({
               key={session.id}
               session={session}
               now={now}
+              pinned={false}
+              onPinChange={onPinChange}
               onShare={onShare}
               dragDisabled={!project || narrowed}
               onDelete={onDelete}

@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
+import { useSessionPins } from '../hooks/use-session-pins';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import {
   ALL,
@@ -28,6 +29,8 @@ import {
   type SessionFilters,
 } from '../lib/session-filters';
 import { matchesQuery } from '../lib/session-groups';
+import { splitPinned } from '../lib/session-pins';
+import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
 
 /**
@@ -37,6 +40,9 @@ import { ProjectGroup } from './project-group';
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
+
+/** The pinned group's key among the folded ones, beside the projects' ids. */
+const PINNED_KEY = 'pinned';
 
 /**
  * The console's sidebar below New session, in `SessionsSidebar`'s
@@ -52,7 +58,9 @@ const DeleteSessionDialog = lazy(() =>
  * session, and a filter must not change which one that is.
  *
  * The projects and their sessions drag into the reader's own order
- * (`useSidebarOrder`), on the sidebar's own `DragProvider`.
+ * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
+ * reader pinned (`useSessionPins`) are drawn above the projects instead of in
+ * them, still filtered and searched like the rest.
  */
 export function SessionsSidebarBody() {
   const { t } = useTranslation();
@@ -88,9 +96,12 @@ export function SessionsSidebarBody() {
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
+  const { pins, setPinned } = useSessionPins();
+  const { pinned, rest } = splitPinned(visible, pins);
+  const onPinChange = (session: SessionEntity, next: boolean) => setPinned(session.id, next);
   const { groups, handlers } = useSidebarOrder({
     projects,
-    sessions: visible,
+    sessions: rest,
     custom: filters.sort === 'custom',
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
@@ -146,6 +157,21 @@ export function SessionsSidebarBody() {
             labels={dragLabels}
             overlay={(active) => <SidebarDragCopy item={active} />}
           >
+            {pinned.length > 0 ? (
+              <PinnedGroup
+                sessions={pinned}
+                open={!closed.includes(PINNED_KEY)}
+                onOpenChange={(next) =>
+                  setClosed((current) =>
+                    next ? current.filter((id) => id !== PINNED_KEY) : [...current, PINNED_KEY],
+                  )
+                }
+                onPinChange={onPinChange}
+                onShare={(target) => dialogs.open({ kind: 'share-session', sessionId: target.id })}
+                onDelete={setDeleting}
+                onWrite={setFailure}
+              />
+            ) : null}
             <SortableGroup
               id={PROJECTS_GROUP}
               items={groups.flatMap(({ project }) =>
@@ -172,6 +198,7 @@ export function SessionsSidebarBody() {
                       navigate({ to: '/sessions/new', search: { project: target.id } })
                     }
                     onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
+                    onPinChange={onPinChange}
                     onShare={(target) =>
                       dialogs.open({ kind: 'share-session', sessionId: target.id })
                     }

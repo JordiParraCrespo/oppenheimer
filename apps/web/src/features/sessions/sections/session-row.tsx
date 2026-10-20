@@ -45,15 +45,17 @@ function dotFor(session: SessionEntity) {
  * The row owns what only it reads (its menu, the half-typed rename, the rename
  * and move writes), so one row's keystroke redraws no other row. What it cannot
  * own goes up as one call each: the delete and share dialogs, which must outlive the row,
- * and a failed write, which the sidebar shows because a menu closes on its pick
- * and the row has no room. It subscribes to one boolean for being the open
- * session, not the route, so a navigation re-renders only the two rows whose
- * highlight moved; `now` is its group's one-minute clock. The row drags, up
+ * the pin, which decides the group it is drawn in, and a failed write, which the
+ * sidebar shows because a menu closes on its pick and the row has no room. It
+ * subscribes to one boolean for being the open session, not the route, so a
+ * navigation re-renders only the two rows whose highlight moved; `now` is its group's one-minute clock. The row drags, up
  * or down its project or into another; the sidebar keeps where it lands.
  */
 export function SessionRow({
   session,
   now,
+  pinned,
+  onPinChange,
   onShare,
   dragDisabled,
   onDelete,
@@ -61,6 +63,9 @@ export function SessionRow({
 }: {
   session: SessionEntity;
   now: number;
+  /** Whether the reader pinned it, so it is drawn under Pinned and its menu offers Unpin. */
+  pinned: boolean;
+  onPinChange: (session: SessionEntity, pinned: boolean) => void;
   onShare: (session: SessionEntity) => void;
   /** Whether the row stays put: while a filter or the search hides some of its neighbours. */
   dragDisabled: boolean;
@@ -150,6 +155,8 @@ export function SessionRow({
         <SessionRowMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
+          pinned={pinned}
+          onPinChange={(next) => onPinChange(session, next)}
           onRename={() => setDraft(session.name)}
           onMove={(projectId) => move.mutate({ id: session.id, projectId })}
           onShare={() => onShare(session)}
