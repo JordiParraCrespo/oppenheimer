@@ -26,8 +26,8 @@
           "alsoFile": ["apps/web/src/features/hosts/sections/host-sessions.tsx"]
         }
       ],
-      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it. `sessions ?? []` also reads a pending or failed list as empty, which is U1's; that reading is fair and counts for nothing either way.",
-      "tolerate": ["U1"]
+      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it. `sessions ?? []` also reads a pending or failed list as empty, which is U1's; that reading is fair, as is R5 on the section filtering the whole list it was handed, and both count for nothing either way.",
+      "tolerate": ["U1", "R5"]
     },
     {
       "id": "context-mixed-rates",
@@ -35,12 +35,12 @@
       "expect": [
         {
           "rule": "R7",
-          "accept": ["R4"],
+          "accept": ["R4", "R6"],
           "file": "apps/web/src/features/hosts/sections/host-board.tsx",
           "alsoFile": ["apps/web/src/features/hosts/hooks/use-host-view.ts"]
         }
       ],
-      "why": "The context value carries the hover id beside the density, so every pointer move re-renders every card."
+      "why": "The context value carries the hover id beside the density, so every pointer move re-renders every card. R6 (each card subscribes to the whole view) names the same mixed-rate context, so it counts as finding it."
     },
     {
       "id": "form-watch-at-top",
