@@ -169,17 +169,23 @@ describe('BotIssueToolsFactory writes', () => {
     expect(result.content).toBe('Opened issue #9: https://github.com/acme/api/issues/9');
   });
 
-  it('raises no comment card for a number that is a pull request', async () => {
-    const { call, approvals, commands } = setup('auto', () => {
-      throw new AppError(GithubErrors.ISSUE_NOT_FOUND, { detail: '#412 is a pull request' });
-    });
+  it.each(['auto', 'full'] as const)(
+    'refuses a number that is a pull request under %s: no card, no comment',
+    async (permission) => {
+      const { call, approvals, commands } = setup(permission, () => {
+        throw new AppError(GithubErrors.ISSUE_NOT_FOUND, { detail: '#412 is a pull request' });
+      });
 
-    const result = await call('comment_on_issue', { ...REPO, number: 412, body: 'Hi' });
+      const result = await call('comment_on_issue', { ...REPO, number: 412, body: 'Hi' });
 
-    expect(result).toMatchObject({ isError: true, content: expect.stringContaining('GITHUB_016') });
-    expect(approvals.request).not.toHaveBeenCalled();
-    expect(commands()).toEqual([]);
-  });
+      expect(result).toMatchObject({
+        isError: true,
+        content: expect.stringContaining('GITHUB_016'),
+      });
+      expect(approvals.request).not.toHaveBeenCalled();
+      expect(commands()).toEqual([]);
+    },
+  );
 
   it('comments in the owner’s scope under Full access', async () => {
     const { call, commands } = setup('full', () => ({ repository: REPOSITORY, issue: issue(3) }));

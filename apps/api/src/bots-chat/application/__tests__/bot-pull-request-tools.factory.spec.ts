@@ -124,17 +124,25 @@ describe('BotPullRequestToolsFactory under Approve for me', () => {
     expect(empty.isError).toBe(true);
   });
 
-  it('refuses a line comment missing its line before any card', async () => {
-    const { call, approvals } = setup('auto');
+  it.each(['auto', 'full'] as const)(
+    'refuses a line comment missing its line under %s, never posting it on the conversation instead',
+    async (permission) => {
+      const { call, approvals, dispatched } = setup(permission);
 
-    const result = await call('comment_on_pull_request', { ...PR, body: 'Nit', path: 'src/a.ts' });
+      const result = await call('comment_on_pull_request', {
+        ...PR,
+        body: 'Nit',
+        path: 'src/a.ts',
+      });
 
-    expect(result).toMatchObject({
-      isError: true,
-      content: expect.stringContaining('path and line'),
-    });
-    expect(approvals.request).not.toHaveBeenCalled();
-  });
+      expect(result).toMatchObject({
+        isError: true,
+        content: expect.stringContaining('path and line'),
+      });
+      expect(approvals.request).not.toHaveBeenCalled();
+      expect(dispatched()).toEqual([]);
+    },
+  );
 });
 
 describe('BotPullRequestToolsFactory carrying out an approved call', () => {

@@ -241,12 +241,16 @@ export interface GithubPullsPort {
     method: 'squash' | 'merge' | 'rebase',
     sha: string,
   ): Promise<boolean>;
-  /** Newest updated first, pull requests left out (GitHub lists them as issues). */
+  /**
+   * Newest updated first, at most `limit`, pull requests left out (GitHub
+   * lists them among the issues, so it reads on until `limit` issues or its
+   * page cap).
+   */
   listIssues(
     credential: GithubCredential,
     fullName: string,
     filter: GithubIssueFilter,
-    maxPages: number,
+    limit: number,
   ): Promise<GithubIssue[]>;
   /** A number that is a pull request is `GITHUB_016`, as one that does not exist. */
   readIssue(credential: GithubCredential, fullName: string, number: number): Promise<GithubIssue>;

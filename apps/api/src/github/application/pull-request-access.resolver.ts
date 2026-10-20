@@ -70,8 +70,6 @@ const REPOSITORIES_TTL_SECONDS = 60;
 const TOKEN_MARGIN_MS = 5 * 60_000;
 /** GitHub's page: Analytics lists one per repository, the newest closed. */
 const PULLS_PER_PAGE = 100;
-/** GitHub's page of issues; a listing reads no more pages than its limit needs. */
-const ISSUES_PER_PAGE = 100;
 
 /**
  * Reads through the installation, cached briefly in Redis as GitHub's own
@@ -369,9 +367,8 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   ): Promise<{ repository: WorkspaceRepository; issues: GithubIssue[] }> {
     const repository = await this.repositoryOf(scope, address);
     const credential = await this.readCredential(scope, address.installationId);
-    const pages = Math.max(1, Math.ceil(limit / ISSUES_PER_PAGE));
-    const issues = await this.pulls.listIssues(credential, repository.fullName, filter, pages);
-    return { repository, issues: issues.slice(0, limit) };
+    const issues = await this.pulls.listIssues(credential, repository.fullName, filter, limit);
+    return { repository, issues };
   }
 
   async issue(

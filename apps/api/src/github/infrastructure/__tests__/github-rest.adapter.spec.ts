@@ -550,6 +550,27 @@ describe('issues', () => {
     expect(url.searchParams.has('creator')).toBe(false);
   });
 
+  it('reads on past a page of pull requests until it has the issues asked for, and no further', async () => {
+    const next = 'https://api.github.com/repos/acme-labs/oppenheimer/issues?page=2';
+    const { pulls, http } = adapterOver([
+      {
+        body: [1, 2, 3].map((number) => ({ ...ISSUE, number, pull_request: {} })),
+        link: `<${next}>; rel="next"`,
+      },
+      { body: [ISSUE, { ...ISSUE, number: 8 }], link: `<${next}3>; rel="next"` },
+    ]);
+
+    const issues = await pulls.listIssues(
+      credential,
+      'acme-labs/oppenheimer',
+      { state: 'open', labels: [], assignee: null, creator: null },
+      2,
+    );
+
+    expect(issues.map((issue) => issue.number)).toEqual([7, 8]);
+    expect(http.calls).toHaveLength(2);
+  });
+
   it('answers a pull request’s number as GITHUB_016, as one that does not exist', async () => {
     const { pulls } = adapterOver([
       { body: { ...ISSUE, pull_request: { url: 'x' } } },

@@ -212,6 +212,8 @@ export class BotIssueToolsFactory implements BotToolArea {
         return `Comment on ${target}: "${cut(input.body, 120)}"`;
       },
       run: async (input, context) => {
+        // Under Full access too: GitHub would take a pull request's number here.
+        await this.issue(context, input);
         const posted = await this.commandBus.execute<AddIssueCommentCommand, { htmlUrl: string }>(
           new AddIssueCommentCommand({
             scope: context.owner,

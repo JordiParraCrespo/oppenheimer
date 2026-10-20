@@ -76,29 +76,34 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       description:
         "Posts a comment on a pull request in the person's name: on its conversation, or on one line of its diff when path and line are given. Use review_pull_request to approve or ask for changes instead.",
-      input: z.object({
-        ...address,
-        body: z.string().trim().min(1).max(REVIEW_COMMENT_MAX).describe('The comment (Markdown).'),
-        path: z
-          .string()
-          .min(1)
-          .max(4096)
-          .optional()
-          .describe('Only for a line comment: the file, as get_pull_request lists it.'),
-        line: z.number().int().positive().optional().describe('With path: the line in the diff.'),
-        side: z
-          .enum(['LEFT', 'RIGHT'])
-          .default('RIGHT')
-          .describe('With path: RIGHT is the new file.'),
-      }),
-      normalize: (input) => {
-        if ((input.path === undefined) !== (input.line === undefined)) {
-          throw new BotToolRefusal(
+      input: z
+        .object({
+          ...address,
+          body: z
+            .string()
+            .trim()
+            .min(1)
+            .max(REVIEW_COMMENT_MAX)
+            .describe('The comment (Markdown).'),
+          path: z
+            .string()
+            .min(1)
+            .max(4096)
+            .optional()
+            .describe('Only for a line comment: the file, as get_pull_request lists it.'),
+          line: z.number().int().positive().optional().describe('With path: the line in the diff.'),
+          side: z
+            .enum(['LEFT', 'RIGHT'])
+            .default('RIGHT')
+            .describe('With path: RIGHT is the new file.'),
+        })
+        // In the schema, so a half line comment is refused in either mode and
+        // never posted on the conversation instead.
+        .refine((value) => (value.path === undefined) === (value.line === undefined), {
+          path: ['line'],
+          message:
             'A line comment needs both path and line; leave both out to comment on the conversation.',
-          );
-        }
-        return input;
-      },
+        }),
       summarize: async (input, context) => {
         const where = input.path ? ` on ${input.path}:${input.line}` : '';
         return `Comment on ${await this.target(context, input)}${where}: "${cut(input.body, 120)}"`;

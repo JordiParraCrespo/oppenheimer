@@ -50,6 +50,14 @@ const ENABLE_AUTO_MERGE = `mutation($id: ID!, $method: PullRequestMergeMethod!, 
   }
 }`;
 
+/**
+ * How many pages of a hundred an issue listing reads at most. GitHub mixes
+ * pull requests into its issues, so a repository busy with pull requests
+ * needs more than one page for a few issues; ten bounds one call at ten
+ * requests of the installation's 5,000 an hour.
+ */
+const ISSUE_PAGES = 10;
+
 /** A conversation's timeline, a hundred entries a page: a thousand covers the longest-lived. */
 const TIMELINE_PAGES = 10;
 
@@ -415,19 +423,28 @@ export class GithubPullsAdapter implements GithubPullsPort {
     credential: GithubCredential,
     fullName: string,
     filter: GithubIssueFilter,
-    maxPages: number,
+    limit: number,
   ): Promise<GithubIssue[]> {
     const query = new URLSearchParams({ state: filter.state, sort: 'updated', direction: 'desc' });
     if (filter.labels.length) query.set('labels', filter.labels.join(','));
     if (filter.assignee) query.set('assignee', filter.assignee);
     if (filter.creator) query.set('creator', filter.creator);
-    const raw = await this.paginate<RawIssue>(
+    const issues = await this.http.paginate<RawIssue>(
       `${this.repo(fullName)}/issues?${query.toString()}`,
-      credential,
-      maxPages,
-      ISSUE_STATUS,
+      {
+        bucket: credential.bucket,
+        token: credential.token,
+        onStatus: ISSUE_STATUS,
+        unauthorized: GithubErrors.USER_NOT_CONNECTED,
+      },
+      (body) =>
+        Array.isArray(body)
+          ? (body as RawIssue[]).filter((issue) => issue.pull_request === undefined)
+          : [],
+      ISSUE_PAGES,
+      limit,
     );
-    return raw.filter((issue) => issue.pull_request === undefined).map(toIssue);
+    return issues.slice(0, limit).map(toIssue);
   }
 
   async readIssue(
