@@ -1,13 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_EVENT_OUTCOMES,
-  BOT_MESSAGE_EVENT_KINDS,
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
+  BOT_ROUTINE_ACTIVITIES,
   type BotEventOutcome,
-  type BotMessageEventKind,
   type BotMessageRole,
   type BotReplyOutcome,
+  type BotRoutineActivity,
 } from '@oppenheimer/shared';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
@@ -41,73 +41,112 @@ export class BotToolStepResponseDto {
   sessionId!: string | null;
 }
 
-/**
- * What an event says happened, one shape for every kind: an approval decided
- * (`outcome`, `tool`, `summary`), a message from another bot (`fromBotId`,
- * `fromBotName`, `expectsReply`), or the answer to an ask (`fromBotId`,
- * `fromBotName`, `outcome`). A field the kind does not have is null.
- */
-export class BotMessageEventResponseDto {
-  @ApiProperty({ enum: BOT_MESSAGE_EVENT_KINDS })
-  kind!: BotMessageEventKind;
+/** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
+export class BotApprovalEventResponseDto {
+  @ApiProperty({ enum: ['approval'] })
+  kind!: 'approval';
 
-  @ApiProperty({
-    enum: [...new Set([...BOT_EVENT_OUTCOMES, ...BOT_REPLY_OUTCOMES])],
-    nullable: true,
-    type: String,
-    description:
-      'An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.',
-  })
-  outcome!: BotEventOutcome | BotReplyOutcome | null;
+  @ApiProperty({ enum: BOT_EVENT_OUTCOMES })
+  outcome!: BotEventOutcome;
 
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    description: 'An approval: the tool the decided call was for.',
-  })
-  tool!: string | null;
+  @ApiProperty({ description: 'The tool the decided call was for.' })
+  tool!: string;
 
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    description: "An approval: the card's line, what the call does in words.",
-  })
-  summary!: string | null;
-
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    format: 'uuid',
-    description:
-      'A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.',
-  })
-  fromBotId!: string | null;
-
-  @ApiProperty({
-    nullable: true,
-    type: String,
-    description: "A message or an answer: the sending bot's name when it sent it.",
-  })
-  fromBotName!: string | null;
-
-  @ApiProperty({
-    nullable: true,
-    type: Boolean,
-    description: 'A message: sent with ask_bot, so this bot answers it.',
-  })
-  expectsReply!: boolean | null;
+  @ApiProperty({ description: "The card's line: what the call does, in words." })
+  summary!: string;
 
   @ApiProperty({
     type: String,
     format: 'uuid',
     nullable: true,
-    description:
-      'An approval: the session the approved call started; null when it started none, and on any other kind.',
+    description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
 }
 
+/** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */
+export class BotRoutineEventResponseDto {
+  @ApiProperty({ enum: ['routine'] })
+  kind!: 'routine';
+
+  @ApiProperty({ enum: BOT_ROUTINE_ACTIVITIES })
+  activity!: BotRoutineActivity;
+
+  @ApiProperty({ format: 'uuid', description: 'The routine.' })
+  automationId!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The run, for an activity that has one (`ran`, `failed`).',
+  })
+  runId!: string | null;
+
+  @ApiProperty({ description: 'Its name at the time.' })
+  name!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'Why, in words, for a pause or a failure.',
+  })
+  reason!: string | null;
+}
+
+/** A message another bot sent this one through `message_bot` or `ask_bot` (`25-bots.md` §4.6). */
+export class BotPeerMessageEventResponseDto {
+  @ApiProperty({ enum: ['bot_message'] })
+  kind!: 'bot_message';
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.',
+  })
+  fromBotId!: string | null;
+
+  @ApiProperty({ description: "The sending bot's name when it sent it." })
+  fromBotName!: string;
+
+  @ApiProperty({ description: 'Sent with ask_bot, so this bot answers it.' })
+  expectsReply!: boolean;
+}
+
+/** The answer to an `ask_bot` call, delivered to the bot that asked. */
+export class BotPeerReplyEventResponseDto {
+  @ApiProperty({ enum: ['bot_reply'] })
+  kind!: 'bot_reply';
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The bot that answered; null once that bot is deleted.',
+  })
+  fromBotId!: string | null;
+
+  @ApiProperty({ description: "The answering bot's name when it answered." })
+  fromBotName!: string;
+
+  @ApiProperty({ enum: BOT_REPLY_OUTCOMES })
+  outcome!: BotReplyOutcome;
+}
+
+export type BotMessageEventResponseDto =
+  | BotApprovalEventResponseDto
+  | BotRoutineEventResponseDto
+  | BotPeerMessageEventResponseDto
+  | BotPeerReplyEventResponseDto;
+
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
+@ApiExtraModels(
+  BotApprovalEventResponseDto,
+  BotRoutineEventResponseDto,
+  BotPeerMessageEventResponseDto,
+  BotPeerReplyEventResponseDto,
+)
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -125,9 +164,14 @@ export class BotMessageResponseDto {
   steps!: BotToolStepResponseDto[];
 
   @ApiProperty({
-    type: BotMessageEventResponseDto,
+    oneOf: [
+      { $ref: getSchemaPath(BotApprovalEventResponseDto) },
+      { $ref: getSchemaPath(BotRoutineEventResponseDto) },
+      { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
+      { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
+    ],
     nullable: true,
-    description: 'What an event says happened; null on every other role.',
+    description: 'What an event says happened, by `kind`; null on every other role.',
   })
   event!: BotMessageEventResponseDto | null;
 

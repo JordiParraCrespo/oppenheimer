@@ -48,13 +48,15 @@ export interface AutomationRunProps {
   availableAt: Date;
   attempts: number;
   sessionId: string | null;
+  /** The bot turn a routine's run queued; never set with `sessionId`. */
+  botTurnId: string | null;
   requestedByUserId: string | null;
   dispatchedAt: Date | null;
 }
 
 export type NewRunProps = Omit<
   AutomationRunProps,
-  'outcome' | 'skipReason' | 'availableAt' | 'attempts' | 'sessionId' | 'dispatchedAt'
+  'outcome' | 'skipReason' | 'availableAt' | 'attempts' | 'sessionId' | 'botTurnId' | 'dispatchedAt'
 >;
 
 /**
@@ -78,6 +80,7 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
         availableAt: now,
         attempts: 0,
         sessionId: null,
+        botTurnId: null,
         dispatchedAt: null,
       },
     });
@@ -134,6 +137,9 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
   get sessionId(): string | null {
     return this.props.sessionId;
   }
+  get botTurnId(): string | null {
+    return this.props.botTurnId;
+  }
   get requestedByUserId(): string | null {
     return this.props.requestedByUserId;
   }
@@ -180,10 +186,15 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
       case 'session':
         this.props.sessionId = ref.sessionId;
         break;
+      case 'bot_turn':
+        this.props.botTurnId = ref.turnId;
+        break;
     }
     this.props.dispatchedAt = at;
     this.setUpdatedAt(new Date());
-    this.changed('the run started its session');
+    this.changed(
+      ref.kind === 'session' ? 'the run started its session' : 'the run queued its turn',
+    );
   }
 
   /** One per write, however many steps it took (`skipped` fires, then skips). */

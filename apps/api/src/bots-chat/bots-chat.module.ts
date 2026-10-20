@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
+import { AutomationsModule } from '../automations/automations.module';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
@@ -14,6 +15,7 @@ import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
+import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
@@ -59,6 +61,7 @@ import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
+import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
@@ -130,6 +133,9 @@ const queryHandlers: Provider[] = [
     // The `bot-turns` queue the outbox stages each due turn on.
     QueueModule,
     BotsModule,
+    // A routine is an automation whose run is a turn of its bot: this module
+    // contributes that run target (`BotRoutineTarget`).
+    AutomationsModule,
     // A turn acts as the bot's owner, who must still be a member.
     OrganizationsModule,
   ],
@@ -154,9 +160,11 @@ const queryHandlers: Provider[] = [
     BotPlanToolsFactory,
     BotGithubToolsFactory,
     BotAutomationToolsFactory,
+    BotRoutineToolsFactory,
     BotPeerToolsFactory,
     BotWebToolsFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
+    ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     BotApprovalsProcessor,

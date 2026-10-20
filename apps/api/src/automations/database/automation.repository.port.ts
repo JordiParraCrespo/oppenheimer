@@ -39,8 +39,15 @@ export interface AutomationRepositoryPort {
    */
   save(entity: AutomationEntity, expectedVersion: number): Promise<'saved' | 'conflict'>;
 
-  /** Live automations the caller can reach, oldest first (the sidebar's order). */
-  findAll(scope: AccessScope, filters: { projectId?: string }): Promise<AutomationEntity[]>;
+  /**
+   * Live automations the caller can reach, oldest first (the sidebar's
+   * order): the session automations the console lists, or, given a bot,
+   * that bot's routines.
+   */
+  findAll(
+    scope: AccessScope,
+    filters: { projectId?: string; botId?: string },
+  ): Promise<AutomationEntity[]>;
 
   /** `None` for a missing, deleted or out-of-scope automation. */
   findOneById(scope: AccessScope, id: string): Promise<Option<AutomationEntity>>;

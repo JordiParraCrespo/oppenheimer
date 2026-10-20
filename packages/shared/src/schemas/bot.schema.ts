@@ -346,8 +346,9 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 /**
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
- * and the card's line; or a message from another bot, or its answer
- * (§4.6). The words stay in the message for the bot.
+ * and the card's line; a routine that changed, ran or failed
+ * (`26-bot-routines.md` §4); or a message from another bot, or its answer
+ * (`25-bots.md` §4.6). The words stay in the message for the bot.
  */
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
@@ -362,6 +363,38 @@ export interface BotApprovalEvent {
   /** The session the approved call started, for the chat to link to; null when it started none. */
   sessionId: string | null;
 }
+
+/**
+ * What happened to a routine, as one activity whatever path made it
+ * (`26-bot-routines.md` §4, "In the chat"): a change, a run, or a failure.
+ */
+export const BOT_ROUTINE_ACTIVITIES = [
+  'saved',
+  'changed',
+  'paused',
+  'resumed',
+  'deleted',
+  'ran',
+  'failed',
+] as const;
+export type BotRoutineActivity = (typeof BOT_ROUTINE_ACTIVITIES)[number];
+
+export interface BotRoutineEvent {
+  kind: 'routine';
+  activity: BotRoutineActivity;
+  /** The routine: an automation whose run target is the bot. */
+  automationId: string;
+  /** The run, for an activity that has one (`ran`, `failed`). */
+  runId: string | null;
+  /** The routine's name at the time. */
+  name: string;
+  /** Why, in words, for `paused` and `failed`. */
+  reason: string | null;
+}
+
+/** Why a bot turn exists: a message (yours or another bot's), an approval's decision, or a routine's run. */
+export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine'] as const;
+export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`
@@ -394,10 +427,14 @@ export interface BotPeerReplyEvent {
   outcome: BotReplyOutcome;
 }
 
-export type BotMessageEvent = BotApprovalEvent | BotPeerMessageEvent | BotPeerReplyEvent;
+export type BotMessageEvent =
+  | BotApprovalEvent
+  | BotRoutineEvent
+  | BotPeerMessageEvent
+  | BotPeerReplyEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
-export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'bot_message', 'bot_reply'] as const;
+export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'routine', 'bot_message', 'bot_reply'] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */

@@ -35,7 +35,7 @@ const toolbox = new (
   BotToolboxFactory as unknown as new (
     ...areas: BotToolArea[]
   ) => BotToolboxFactory
-)(area, none, none, none, none, none, none, none);
+)(area, none, none, none, none, none, none, none, none);
 
 const context: BotToolContext = {
   owner: emptyScope('owner-1', 'org-1'),
@@ -46,6 +46,7 @@ const context: BotToolContext = {
   timeZone: 'UTC',
   permission: 'full',
   budget: new BotTurnBudget(),
+  credentialScopes: null,
   approvals: { request: vi.fn() },
 };
 

@@ -1064,6 +1064,7 @@
         "approved": "You approved: {{summary}}",
         "denied": "You denied: {{summary}}",
         "failed": "You approved, and it failed: {{summary}}",
+        "routine": "Routine · {{name}}",
         "peerMessage": "From <bot>{{name}}</bot>",
         "peerAsk": "<bot>{{name}}</bot> asked",
         "peerAnswered": "<bot>{{name}}</bot> replied",

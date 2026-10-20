@@ -1072,6 +1072,7 @@
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
+        "routine": "Rutina · {{name}}",
         "peerMessage": "De <bot>{{name}}</bot>",
         "peerAsk": "<bot>{{name}}</bot> preguntó",
         "peerAnswered": "<bot>{{name}}</bot> respondió",

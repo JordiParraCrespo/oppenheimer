@@ -23412,7 +23412,9 @@
           },
           "projectId": {
             "type": "string",
-            "format": "uuid"
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null for a bot routine’s run, which belongs to no project."
           },
           "status": {
             "type": "string",
@@ -23464,7 +23466,9 @@
             "type": "number"
           },
           "agent": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a bot routine’s run: the bot’s own provider runs it."
           },
           "model": {
             "type": "string",
@@ -23472,7 +23476,9 @@
           },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null for a bot routine’s run, which starts no session."
           },
           "createdAt": {
             "format": "date-time",
@@ -26123,6 +26129,116 @@
         },
         "required": ["status"]
       },
+      "BotApprovalEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["approval"]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["approved", "denied", "failed"]
+          },
+          "tool": {
+            "type": "string",
+            "description": "The tool the decided call was for."
+          },
+          "summary": {
+            "type": "string",
+            "description": "The card's line: what the call does, in words."
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the approved call started; null when it started none."
+          }
+        },
+        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
+      },
+      "BotRoutineEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["routine"]
+          },
+          "activity": {
+            "type": "string",
+            "enum": ["saved", "changed", "paused", "resumed", "deleted", "ran", "failed"]
+          },
+          "automationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The routine."
+          },
+          "runId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The run, for an activity that has one (`ran`, `failed`)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name at the time."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, in words, for a pause or a failure."
+          }
+        },
+        "required": ["kind", "activity", "automationId", "runId", "name", "reason"]
+      },
+      "BotPeerMessageEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["bot_message"]
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "description": "The sending bot's name when it sent it."
+          },
+          "expectsReply": {
+            "type": "boolean",
+            "description": "Sent with ask_bot, so this bot answers it."
+          }
+        },
+        "required": ["kind", "fromBotId", "fromBotName", "expectsReply"]
+      },
+      "BotPeerReplyEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["bot_reply"]
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that answered; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "description": "The answering bot's name when it answered."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["answered", "failed", "cancelled"]
+          }
+        },
+        "required": ["kind", "fromBotId", "fromBotName", "outcome"]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -26154,63 +26270,6 @@
         },
         "required": ["callId", "name", "input", "output", "isError", "sessionId"]
       },
-      "BotMessageEventResponseDto": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["approval", "bot_message", "bot_reply"]
-          },
-          "outcome": {
-            "type": "string",
-            "enum": ["approved", "denied", "failed", "answered", "cancelled"],
-            "nullable": true,
-            "description": "An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message."
-          },
-          "tool": {
-            "type": "string",
-            "nullable": true,
-            "description": "An approval: the tool the decided call was for."
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true,
-            "description": "An approval: the card's line, what the call does in words."
-          },
-          "fromBotId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid",
-            "description": "A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
-          },
-          "fromBotName": {
-            "type": "string",
-            "nullable": true,
-            "description": "A message or an answer: the sending bot's name when it sent it."
-          },
-          "expectsReply": {
-            "type": "boolean",
-            "nullable": true,
-            "description": "A message: sent with ask_bot, so this bot answers it."
-          },
-          "sessionId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true,
-            "description": "An approval: the session the approved call started; null when it started none, and on any other kind."
-          }
-        },
-        "required": [
-          "kind",
-          "outcome",
-          "tool",
-          "summary",
-          "fromBotId",
-          "fromBotName",
-          "expectsReply",
-          "sessionId"
-        ]
-      },
       "BotMessageResponseDto": {
         "type": "object",
         "properties": {
@@ -26237,14 +26296,23 @@
             }
           },
           "event": {
-            "nullable": true,
-            "description": "What an event says happened; null on every other role.",
             "type": "object",
-            "allOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/BotMessageEventResponseDto"
+                "$ref": "#/components/schemas/BotApprovalEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotRoutineEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPeerMessageEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPeerReplyEventResponseDto"
               }
-            ]
+            ],
+            "nullable": true,
+            "description": "What an event says happened, by `kind`; null on every other role."
           },
           "createdAt": {
             "type": "string",

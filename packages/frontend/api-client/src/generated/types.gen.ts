@@ -2071,7 +2071,10 @@ export type AutomationRunResponseDto = {
      * The automation was deleted; the list reads “Deleted automation”.
      */
     automationDeleted: boolean;
-    projectId: string;
+    /**
+     * Null for a bot routine’s run, which belongs to no project.
+     */
+    projectId: string | null;
     status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
     /**
      * What became of the firing before a session.
@@ -2087,9 +2090,15 @@ export type AutomationRunResponseDto = {
      */
     branch?: string | null;
     revisionNumber: number;
-    agent: string;
+    /**
+     * Null for a bot routine’s run: the bot’s own provider runs it.
+     */
+    agent: string | null;
     model?: string | null;
-    hostId: string;
+    /**
+     * Null for a bot routine’s run, which starts no session.
+     */
+    hostId: string | null;
     createdAt: string;
     scheduledFor?: string | null;
     dispatchedAt?: string | null;
@@ -3155,6 +3164,73 @@ export type ChatgptLoginStatusResponseDto = {
     status: 'pending' | 'connected';
 };
 
+export type BotApprovalEventResponseDto = {
+    kind: 'approval';
+    outcome: 'approved' | 'denied' | 'failed';
+    /**
+     * The tool the decided call was for.
+     */
+    tool: string;
+    /**
+     * The card's line: what the call does, in words.
+     */
+    summary: string;
+    /**
+     * The session the approved call started; null when it started none.
+     */
+    sessionId: string | null;
+};
+
+export type BotRoutineEventResponseDto = {
+    kind: 'routine';
+    activity: 'saved' | 'changed' | 'paused' | 'resumed' | 'deleted' | 'ran' | 'failed';
+    /**
+     * The routine.
+     */
+    automationId: string;
+    /**
+     * The run, for an activity that has one (`ran`, `failed`).
+     */
+    runId: string | null;
+    /**
+     * Its name at the time.
+     */
+    name: string;
+    /**
+     * Why, in words, for a pause or a failure.
+     */
+    reason: string | null;
+};
+
+export type BotPeerMessageEventResponseDto = {
+    kind: 'bot_message';
+    /**
+     * The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * The sending bot's name when it sent it.
+     */
+    fromBotName: string;
+    /**
+     * Sent with ask_bot, so this bot answers it.
+     */
+    expectsReply: boolean;
+};
+
+export type BotPeerReplyEventResponseDto = {
+    kind: 'bot_reply';
+    /**
+     * The bot that answered; null once that bot is deleted.
+     */
+    fromBotId: string | null;
+    /**
+     * The answering bot's name when it answered.
+     */
+    fromBotName: string;
+    outcome: 'answered' | 'failed' | 'cancelled';
+};
+
 export type BotToolStepResponseDto = {
     callId: string;
     /**
@@ -3178,38 +3254,6 @@ export type BotToolStepResponseDto = {
     sessionId: string | null;
 };
 
-export type BotMessageEventResponseDto = {
-    kind: 'approval' | 'bot_message' | 'bot_reply';
-    /**
-     * An approval: approved, denied or failed. An answer: answered, failed or cancelled. Null on a message.
-     */
-    outcome: 'approved' | 'denied' | 'failed' | 'answered' | 'cancelled';
-    /**
-     * An approval: the tool the decided call was for.
-     */
-    tool: string | null;
-    /**
-     * An approval: the card's line, what the call does in words.
-     */
-    summary: string | null;
-    /**
-     * A message or an answer: the bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.
-     */
-    fromBotId: string | null;
-    /**
-     * A message or an answer: the sending bot's name when it sent it.
-     */
-    fromBotName: string | null;
-    /**
-     * A message: sent with ask_bot, so this bot answers it.
-     */
-    expectsReply: boolean | null;
-    /**
-     * An approval: the session the approved call started; null when it started none, and on any other kind.
-     */
-    sessionId: string | null;
-};
-
 export type BotMessageResponseDto = {
     id: string;
     turnId: string;
@@ -3220,9 +3264,9 @@ export type BotMessageResponseDto = {
     content: string;
     steps: Array<BotToolStepResponseDto>;
     /**
-     * What an event says happened; null on every other role.
+     * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotMessageEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | null;
     createdAt: string;
 };
 

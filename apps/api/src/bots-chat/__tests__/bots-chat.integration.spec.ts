@@ -46,6 +46,7 @@ import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
+import { routinePrefix, routineSourceKey, routineTurn } from '../domain/bot-routine.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -278,6 +279,79 @@ describe('bots chat (integration)', () => {
     });
     stale.end('failed', new Date());
     expect(await turns.finish(stale, null)).toBe(false);
+  });
+
+  it("queues a routine's run once, however often it is dispatched, and finds it live by its routine", async () => {
+    await dataSource.query(`DELETE FROM outbox_message`);
+    const bot = await create('Routine Bot');
+    const firing = {
+      automationId: '6a1c4f9e-0000-4000-8000-000000000001',
+      runId: '6a1c4f9e-0000-4000-8000-000000000002',
+      name: 'Morning PR digest',
+      instructions: 'List the open pull requests.',
+    };
+    const props = {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    };
+    const first = routineTurn(props, firing);
+    const again = routineTurn(props, firing);
+    const busy = routinePrefix(firing.automationId);
+    expect(await turns.enqueueOnce(first.turn, first.opening, null, busy)).toEqual({
+      outcome: 'staged',
+      turnId: first.turn.id,
+    });
+    // The same run dispatched again (a retried job) finds the turn it queued,
+    // rather than reading its own turn as the routine being busy.
+    expect(await turns.enqueueOnce(again.turn, again.opening, null, busy)).toEqual({
+      outcome: 'existing',
+      turnId: first.turn.id,
+    });
+    // The routine's next run, while that turn is live, queues nothing.
+    const next = routineTurn(props, { ...firing, runId: '6a1c4f9e-0000-4000-8000-000000000003' });
+    expect(await turns.enqueueOnce(next.turn, next.opening, null, busy)).toEqual({
+      outcome: 'busy',
+      turnId: next.turn.id,
+    });
+    // Another routine of the bot is not held by it; it waits its turn in the queue.
+    const other = routineTurn(props, {
+      ...firing,
+      automationId: '6a1c4f9e-0000-4000-8000-000000000004',
+    });
+    expect(
+      await turns.enqueueOnce(
+        other.turn,
+        other.opening,
+        null,
+        routinePrefix('6a1c4f9e-0000-4000-8000-000000000004'),
+      ),
+    ).toEqual({ outcome: 'waiting', turnId: other.turn.id });
+    expect(await stagedTurns()).toEqual([first.turn.id]);
+
+    const stored = (await turns.findForRun(first.turn.id)).unwrap();
+    expect(stored).toMatchObject({
+      origin: 'routine',
+      sourceKey: routineSourceKey(firing.automationId, firing.runId),
+    });
+    const [opening] = await dataSource.query(
+      `SELECT role, event FROM bot_message WHERE "turnId" = $1`,
+      [first.turn.id],
+    );
+    expect(opening).toEqual({
+      role: 'event',
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: firing.automationId,
+        runId: firing.runId,
+        name: firing.name,
+        reason: null,
+      },
+    });
   });
 
   it('never strands a message sent while the running turn ends: it is staged by one or the other', async () => {

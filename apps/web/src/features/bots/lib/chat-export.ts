@@ -37,7 +37,8 @@ function stepLine(step: BotToolStep, t: TFunction): string {
 /** Who said it: you, the bot, another bot that messaged or answered it, or Oppenheimer. */
 function author(message: BotMessageEntity, botName: string, t: TFunction): string {
   if (message.role === 'user') return t('bots.settings.profile.you');
-  if (message.event && message.event.kind !== 'approval') return message.event.fromBotName;
+  const { event } = message;
+  if (event?.kind === 'bot_message' || event?.kind === 'bot_reply') return event.fromBotName;
   if (message.role === 'event') return t('bots.settings.profile.oppenheimer');
   return botName;
 }
@@ -45,6 +46,9 @@ function author(message: BotMessageEntity, botName: string, t: TFunction): strin
 function body(message: BotMessageEntity, t: TFunction): string {
   if (message.role === 'activity') return message.steps.map((step) => stepLine(step, t)).join('\n');
   const { event } = message;
+  if (message.role === 'event' && event?.kind === 'routine') {
+    return t('bots.chat.event.routine', { name: event.name });
+  }
   if (message.role === 'event' && event?.kind === 'approval') {
     return t(`bots.chat.event.${event.outcome}`, { summary: event.summary });
   }

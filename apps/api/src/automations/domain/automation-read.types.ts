@@ -18,7 +18,8 @@ export interface RunReadModel {
   automationId: string;
   automationName: string;
   automationDeleted: boolean;
-  projectId: string;
+  /** Null for a bot routine's run, which belongs to no project. */
+  projectId: string | null;
   status: AutomationRunStatus;
   outcome: AutomationRunOutcome;
   skipReason: AutomationSkipReason | null;
@@ -29,9 +30,10 @@ export interface RunReadModel {
   sessionNamed: boolean;
   branch: string | null;
   revisionNumber: number;
-  agent: string;
+  /** Null for a bot routine's run, as `projectId` and `hostId` are: its bot runs it. */
+  agent: string | null;
   model: string | null;
-  hostId: string;
+  hostId: string | null;
   createdAt: Date;
   scheduledFor: Date | null;
   dispatchedAt: Date | null;

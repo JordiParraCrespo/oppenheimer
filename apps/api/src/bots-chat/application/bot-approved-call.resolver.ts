@@ -48,6 +48,7 @@ export class BotApprovedCallResolver {
         timeZone: timeZone ?? 'UTC',
         permission: bot.permission,
         budget: new BotTurnBudget(),
+        credentialScopes: granted,
         approvalId: approval.id,
       },
       granted,

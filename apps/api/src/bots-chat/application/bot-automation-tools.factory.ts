@@ -23,6 +23,7 @@ import {
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
@@ -96,11 +97,16 @@ export class BotAutomationToolsFactory implements BotToolArea {
           FindAutomationQuery,
           AutomationDetail
         >(new FindAutomationQuery({ scope: context.owner, automationId: input.automation_id }));
-        const revision = automation.revision;
+        const { target } = automation;
+        // The query answers a session automation or not found; a routine is read with update_routine.
+        if (target.kind !== 'session') {
+          throw new BotToolRefusal(`No automation has the id ${input.automation_id}.`);
+        }
+        const { revision } = target;
         const lines = [
           `Automation ${automation.id} "${automation.name}"`,
           `- state: ${describeState(automation)}`,
-          `- project: ${automation.projectId}`,
+          `- project: ${target.projectId}`,
           `- runs on: host ${revision.hostId}; agent ${revision.agent}${revision.model ? `, model ${revision.model}` : ''}; permission ${revision.permission}${revision.effort ? `; effort ${revision.effort}` : ''}`,
           `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : 'none (it runs in no checkout)'}`,
           `- revision: ${revision.number}, saved ${formatToolTime(revision.createdAt, context.timeZone)}`,
@@ -186,7 +192,7 @@ function describeAutomation(
   const lastRun = digest?.lastRuns[0];
   const parts = [
     describeState(automation),
-    `project ${automation.projectId}`,
+    automation.target.kind === 'session' ? `project ${automation.target.projectId}` : 'a routine',
     `triggers: ${triggers}`,
     digest?.running ? 'a run is live now' : 'nothing running',
     `${digest?.runCount ?? 0} runs in ${RUN_HISTORY_DAYS} days`,
@@ -202,7 +208,11 @@ function describeState(automation: AutomationEntity): string {
   return `paused (${automation.pausedReason ?? 'user'})`;
 }
 
-function describeTrigger(trigger: AutomationTriggerProps, context: BotToolCallContext): string {
+/** One trigger in words: a schedule with its zone and next slot, or the GitHub event it listens for. */
+export function describeTrigger(
+  trigger: AutomationTriggerProps,
+  context: Pick<BotToolCallContext, 'timeZone'>,
+): string {
   if (trigger.source === 'schedule') {
     const { config } = trigger;
     const at = `${String(config.hour).padStart(2, '0')}:${String(config.minute).padStart(2, '0')}`;

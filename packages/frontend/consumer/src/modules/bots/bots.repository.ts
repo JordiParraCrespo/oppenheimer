@@ -5,7 +5,6 @@ import {
   type BotDocumentRevisionResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
-  type BotMessageEventResponseDto,
   type BotMessageResponseDto,
   type BotResponseDto,
   type BotTurnResponseDto,
@@ -139,37 +138,53 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
 }
 
 /**
- * The wire's one-shape event as the union the chat draws from: an approval,
- * a message from another bot, or the answer to an ask. A kind or outcome
- * this client does not know reads as no event, and the chat falls back to
- * the message's first line.
+ * The wire's event as the union the chat draws from, kind by kind: an
+ * approval, a routine's activity, a message from another bot, or the answer
+ * to an ask. An outcome this client does not know reads as no event, and the
+ * chat falls back to the message's first line.
  */
-function toEvent(dto: BotMessageEventResponseDto): BotMessageEvent | null {
-  const { kind, outcome } = dto;
-  if (kind === 'approval') {
-    const known = BOT_EVENT_OUTCOMES.find((candidate) => candidate === outcome);
-    return known
-      ? {
-          kind,
-          outcome: known,
-          tool: dto.tool ?? '',
-          summary: dto.summary ?? '',
-          sessionId: dto.sessionId,
-        }
-      : null;
+function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent | null {
+  switch (dto.kind) {
+    case 'approval': {
+      const outcome = BOT_EVENT_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'approval',
+            outcome,
+            tool: dto.tool,
+            summary: dto.summary,
+            sessionId: dto.sessionId ?? null,
+          }
+        : null;
+    }
+    case 'routine':
+      return {
+        kind: 'routine',
+        activity: dto.activity,
+        automationId: dto.automationId,
+        runId: dto.runId ?? null,
+        name: dto.name,
+        reason: dto.reason ?? null,
+      };
+    case 'bot_message':
+      return {
+        kind: 'bot_message',
+        fromBotId: dto.fromBotId ?? null,
+        fromBotName: dto.fromBotName,
+        expectsReply: dto.expectsReply,
+      };
+    case 'bot_reply': {
+      const outcome = BOT_REPLY_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'bot_reply',
+            fromBotId: dto.fromBotId ?? null,
+            fromBotName: dto.fromBotName,
+            outcome,
+          }
+        : null;
+    }
   }
-  if (kind === 'bot_message') {
-    return {
-      kind,
-      fromBotId: dto.fromBotId,
-      fromBotName: dto.fromBotName ?? '',
-      expectsReply: dto.expectsReply === true,
-    };
-  }
-  const known = BOT_REPLY_OUTCOMES.find((candidate) => candidate === outcome);
-  return known
-    ? { kind, fromBotId: dto.fromBotId, fromBotName: dto.fromBotName ?? '', outcome: known }
-    : null;
 }
 
 function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
