@@ -3,6 +3,7 @@ import type { Scope } from '@oppenheimer/shared';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
+import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import type { BotToolResult } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
@@ -23,6 +24,7 @@ export class BotApprovedCallResolver {
   constructor(
     private readonly owners: BotOwnerScopeResolver,
     private readonly toolbox: BotToolboxFactory,
+    private readonly permissions: BotOwnerPermissionsResolver,
   ) {}
 
   async resolve(
@@ -52,6 +54,7 @@ export class BotApprovedCallResolver {
         approvalId: approval.id,
       },
       granted,
+      await this.permissions.heldScopes(owner),
       { tool: approval.tool, input: approval.input },
       AbortSignal.timeout(APPROVED_CALL_TIMEOUT_MS),
     );

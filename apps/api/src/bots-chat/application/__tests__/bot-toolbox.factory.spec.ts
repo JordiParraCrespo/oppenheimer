@@ -10,7 +10,9 @@ import { BotToolboxFactory } from '../bot-toolbox.factory';
  * through an API token scoped to `bots:write` must not reach, through the
  * bot, sessions or tasks the token itself could not: the turn is offered only
  * the tools its credential's scopes cover. A browser session (no scopes) is
- * offered all of them. The prompt's list and the bound tools agree.
+ * offered all of them. The prompt's list and the bound tools agree. A tool
+ * the owner's own roles do not cover stays offered, and its call is refused
+ * before it runs, saying which permission they need.
  */
 const tool = (name: string, scope: Scope) =>
   defineBotTool({
@@ -50,8 +52,15 @@ const context: BotToolContext = {
   approvals: { request: vi.fn() },
 };
 
+/** An owner whose roles cover everything these tools need. */
+const EVERYTHING: ReadonlySet<Scope> = new Set<Scope>([
+  'sessions:read',
+  'sessions:write',
+  'tasks:write',
+]);
+
 const names = (granted: readonly Scope[] | null) =>
-  toolbox.tools(context, granted).map((bound) => bound.name);
+  toolbox.tools(context, granted, EVERYTHING).map((bound) => bound.name);
 
 describe('BotToolboxFactory', () => {
   it('offers a browser session every tool', () => {
@@ -74,6 +83,7 @@ describe('BotToolboxFactory', () => {
     const ran = await toolbox.runApproved(
       { ...context, permission: 'auto' },
       ['sessions:write'],
+      EVERYTHING,
       call,
       signal,
     );
@@ -81,10 +91,66 @@ describe('BotToolboxFactory', () => {
     const refused = await toolbox.runApproved(
       { ...context, permission: 'auto' },
       ['bots:write'],
+      EVERYTHING,
       call,
       signal,
     );
     expect(refused.isError).toBe(true);
     expect(refused.content).toContain('Not run');
+  });
+
+  it('keeps offering a tool the owner’s roles do not cover, and refuses its call saying which permission they need', async () => {
+    const run = vi.fn(async () => 'ok');
+    const watched = new (
+      BotToolboxFactory as unknown as new (
+        ...areas: BotToolArea[]
+      ) => BotToolboxFactory
+    )(
+      {
+        definitions: () => [
+          defineBotTool({
+            name: 'merge_pull_request',
+            scope: 'pulls:write',
+            description: 'Merges.',
+            input: z.object({}),
+            run,
+          }),
+        ],
+      },
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+    );
+    const readOnly: ReadonlySet<Scope> = new Set<Scope>(['pulls:read']);
+
+    const [bound] = watched.tools({ ...context, permission: 'auto' }, null, readOnly);
+    const result = await bound?.run({}, { signal: new AbortController().signal });
+
+    expect(bound?.name).toBe('merge_pull_request');
+    expect(result?.isError).toBe(true);
+    expect(result?.content).toContain('"Pull requests: Review" permission (pulls:write)');
+    expect(result?.content).toContain('granted');
+    expect(run).not.toHaveBeenCalled();
+    expect(context.approvals.request).not.toHaveBeenCalled();
+  });
+
+  it('runs nothing approved once the owner has lost the role the card needed', async () => {
+    const result = await toolbox.runApproved(
+      { ...context, permission: 'auto', approvalId: 'approval-1' },
+      null,
+      new Set<Scope>(['sessions:read']),
+      { tool: 'start_session', input: {} },
+      new AbortController().signal,
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('(sessions:write)');
   });
 });
