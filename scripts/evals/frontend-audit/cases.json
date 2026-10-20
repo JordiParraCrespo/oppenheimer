@@ -26,8 +26,8 @@
           "alsoFile": ["apps/web/src/features/hosts/sections/host-sessions.tsx"]
         }
       ],
-      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it. `sessions ?? []` also reads a pending or failed list as empty, which is U1's; that reading is fair, as is R5 on the section filtering the whole list it was handed, and both count for nothing either way.",
-      "tolerate": ["U1", "R5"]
+      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it. `sessions ?? []` also reads a pending or failed list as empty, which is U1's, and draws an empty list while it loads, which is U7's; those readings are fair, as is R5 on the section filtering the whole list it was handed, and both count for nothing either way.",
+      "tolerate": ["U1", "R5", "U7"]
     },
     {
       "id": "context-mixed-rates",
