@@ -1,4 +1,5 @@
 import { Card, CardContent, CardFooter, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { CommentersSkeleton } from './commenters-skeleton';
 import { PersonRow } from './person-row';
@@ -19,9 +20,7 @@ export function DescriptionSkeleton() {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-14">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <div aria-hidden className="flex min-w-0 flex-1 flex-col gap-6">
         <div className="flex flex-col gap-2.5 pb-2">
           <div className="flex h-6 items-center gap-2">

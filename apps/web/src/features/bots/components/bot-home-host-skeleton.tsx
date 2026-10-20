@@ -1,4 +1,5 @@
 import { SettingsGroup, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /** Two machines, label and status line, at the widths a host's name and details run to. */
@@ -17,9 +18,7 @@ export function BotHomeHostSkeleton() {
   const { t } = useTranslation();
   return (
     <section aria-busy className="flex flex-col gap-2.5">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <h2 className="eyebrow m-0 px-1">{t('bots.settings.homeHost.machines')}</h2>
       <SettingsGroup aria-hidden>
         <div className="flex flex-col gap-1 p-1.5">

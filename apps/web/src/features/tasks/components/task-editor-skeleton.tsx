@@ -1,4 +1,5 @@
 import { Field, FieldLabel, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import { useTranslation } from 'react-i18next';
 import { ChoiceRowSkeleton } from './choice-row-skeleton';
@@ -15,9 +16,7 @@ export function TaskEditorSkeleton({ existing }: { existing: boolean }) {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-5">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <Field>
         <FieldLabel>{t('tasks.dialog.titleLabel')}</FieldLabel>
         <Skeleton shape="sm" className="h-(--control-h-md) w-full" />
@@ -38,21 +37,15 @@ export function TaskEditorSkeleton({ existing }: { existing: boolean }) {
           widths={['w-26']}
         />
         {existing ? (
-          <div className="grid grid-cols-[96px_1fr] items-start gap-3">
-            <span className="pt-1 text-sm text-fg-muted">{t('tasks.dialog.sessions')}</span>
-            <div aria-hidden className="flex flex-wrap gap-1.5">
-              <Skeleton shape="pill" className="h-(--control-h-sm) w-30" />
-              <Skeleton shape="pill" className="h-(--control-h-sm) w-28" />
-            </div>
-          </div>
+          <ChoiceRowSkeleton label={t('tasks.dialog.sessions')}>
+            <Skeleton shape="pill" className="h-(--control-h-sm) w-30" />
+            <Skeleton shape="pill" className="h-(--control-h-sm) w-28" />
+          </ChoiceRowSkeleton>
         ) : null}
-        <div className="grid grid-cols-[96px_1fr] items-center gap-3">
-          <span className="text-sm text-fg-muted">{t('tasks.dialog.due')}</span>
-          <div aria-hidden className="flex flex-wrap items-center gap-2">
-            <Skeleton shape="sm" className="h-(--control-h-md) w-40" />
-            <Skeleton shape="sm" className="h-(--control-h-md) w-24" />
-          </div>
-        </div>
+        <ChoiceRowSkeleton label={t('tasks.dialog.due')} align="center">
+          <Skeleton shape="sm" className="h-(--control-h-md) w-40" />
+          <Skeleton shape="sm" className="h-(--control-h-md) w-24" />
+        </ChoiceRowSkeleton>
       </div>
       <div aria-hidden className="flex items-center gap-2">
         {existing ? <Skeleton shape="pill" className="h-(--control-h-md) w-20" /> : null}

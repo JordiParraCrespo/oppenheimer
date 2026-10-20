@@ -5,6 +5,7 @@ import {
   SettingsListRow,
   Skeleton,
 } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /** Three facts, a sentence and who wrote it when, at the widths remembered facts run to. */
@@ -24,9 +25,7 @@ export function BotMemorySkeleton() {
   const { t } = useTranslation();
   return (
     <section aria-busy className="flex flex-col gap-2.5">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <div aria-hidden className="flex items-center gap-3 px-1">
         <span className="flex flex-1 items-center">
           <Skeleton shape="sm" className="h-2.5 w-16" />

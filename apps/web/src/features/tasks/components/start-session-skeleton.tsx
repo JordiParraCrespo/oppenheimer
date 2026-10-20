@@ -1,4 +1,5 @@
 import { Field, FieldLabel, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -11,9 +12,7 @@ export function StartSessionSkeleton() {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-4">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <span aria-hidden className="flex h-5 items-center">
         <Skeleton shape="sm" className="h-3 w-64" />
       </span>

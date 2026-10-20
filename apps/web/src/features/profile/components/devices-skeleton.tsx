@@ -1,4 +1,5 @@
 import { Badge, SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -11,9 +12,7 @@ export function DevicesSkeleton() {
   const { t } = useTranslation();
   return (
     <SettingsGroup aria-busy>
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <SettingsRow
         aria-hidden
         label={

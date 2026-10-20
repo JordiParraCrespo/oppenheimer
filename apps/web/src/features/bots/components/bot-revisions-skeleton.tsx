@@ -1,11 +1,12 @@
 import { SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /** Three revisions, as a file's history usually opens: what each did, then its file, number and time. */
 const ROWS = [
-  { note: 'w-40', meta: 'w-56' },
-  { note: 'w-52', meta: 'w-52' },
-  { note: 'w-32', meta: 'w-56' },
+  { note: 'w-40', meta: 'w-56', current: true },
+  { note: 'w-52', meta: 'w-52', current: false },
+  { note: 'w-32', meta: 'w-56', current: false },
 ];
 
 /**
@@ -18,12 +19,10 @@ export function BotRevisionsSkeleton() {
   const { t } = useTranslation();
   return (
     <section aria-busy className="flex flex-col gap-2.5">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <h2 className="eyebrow m-0 px-1">{t('bots.settings.instructions.history')}</h2>
       <SettingsGroup aria-hidden>
-        {ROWS.map(({ note, meta }, index) => (
+        {ROWS.map(({ note, meta, current }) => (
           <SettingsListRow
             key={note}
             align="center"
@@ -34,7 +33,7 @@ export function BotRevisionsSkeleton() {
               </span>
             }
             actions={
-              index === 0 ? (
+              current ? (
                 t('bots.settings.instructions.current')
               ) : (
                 <Skeleton shape="pill" className="h-7 w-17" />

@@ -1,4 +1,5 @@
 import { Field, FieldTitle, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -12,9 +13,7 @@ export function EventFormSkeleton() {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-4">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <Field>
         <FieldTitle>{t('calendar.event.title')}</FieldTitle>
         <Skeleton shape="sm" className="h-(--control-h-md) w-full" />

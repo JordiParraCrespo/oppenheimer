@@ -1,4 +1,5 @@
 import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DOCUMENT_FILE } from '@/features/bots/lib/document-files';
 import { BotRevisionsSkeleton } from './bot-revisions-skeleton';
@@ -16,9 +17,7 @@ export function BotDocumentsSkeleton() {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-7">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <div aria-hidden className="flex flex-col gap-3">
         <div inert className="flex items-center gap-3">
           <SegmentedControl size="md" value="instructions" onValueChange={() => {}}>

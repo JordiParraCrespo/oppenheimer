@@ -348,8 +348,12 @@ is the reference.
   shapes (a terminal or the panel that starts one), choose from what is
   already cached; when nothing tells, draw the quieter one.
 - **Quiet for assistive technology.** `Skeleton` is `aria-hidden` and pulses
-  only under `motion-safe`; the placeholder's root carries `aria-busy` and one
-  `<span role="status" className="sr-only">{t('common.loading')}</span>`.
+  only under `motion-safe`; the placeholder's root carries `aria-busy` and the
+  kit's `<LoadingStatus />`, the one "Loading…" a screen reader hears.
+- **A design-system record owns its placeholder.** When the row or card a list
+  draws is a design-system component, its placeholder sits beside it in the
+  same file on the same frame (`HostCardSkeleton` shares `HostCard`'s
+  `FRAME`; `PullRequestRowSkeleton` its row's grid), so the two cannot drift.
 - **Named and placed.** More than a bar or two is a `<View>Skeleton` in the
   feature's `components/` (or a `sections/` one when it must read a cache to
   pick its shape), one component per file.

@@ -1,5 +1,5 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
-import { useTranslation } from 'react-i18next';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 
 /** Where the month marks fall across the header, as a share of its width. */
 const MONTHS = ['left-[6%]', 'left-[40%]', 'left-[74%]'];
@@ -17,12 +17,9 @@ const TRACKS = [
  * them sit where these did.
  */
 export function MilestonesTimelineSkeleton() {
-  const { t } = useTranslation();
   return (
     <div data-bleed aria-busy className="pb-3">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <div aria-hidden className="relative">
         <div className="relative h-14 border-b border-border-subtle">
           {MONTHS.map((left) => (

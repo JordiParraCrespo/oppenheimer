@@ -1,5 +1,5 @@
 import { CalendarAccountList, Skeleton } from '@oppenheimer/design-system-web';
-import { useTranslation } from 'react-i18next';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 
 /**
  * The Google accounts before they answer: the account list with one row as
@@ -8,12 +8,9 @@ import { useTranslation } from 'react-i18next';
  * accounts land.
  */
 export function GoogleAccountsSkeleton() {
-  const { t } = useTranslation();
   return (
     <CalendarAccountList aria-busy>
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <div aria-hidden className="flex items-start gap-2.5 py-2.5 pr-2 pl-3">
         <Skeleton shape="pill" className="mt-0.75 size-[13px] shrink-0" />
         <span className="flex min-w-0 flex-1 flex-col gap-0.75">

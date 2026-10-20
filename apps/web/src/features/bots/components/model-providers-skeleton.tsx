@@ -1,4 +1,5 @@
 import { SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { BOT_PROVIDER_CATALOG, BOT_PROVIDERS } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 
@@ -24,9 +25,7 @@ export function ModelProvidersSkeleton() {
           {BOT_PROVIDER_CATALOG[provider].label}
         </SettingsListRow>
       ))}
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
     </SettingsGroup>
   );
 }
