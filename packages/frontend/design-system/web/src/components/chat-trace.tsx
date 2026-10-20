@@ -12,6 +12,10 @@ import { cn } from '../lib/utils';
  * own 15px, in muted ink, that opens to what the step returned.
  *
  * - `Trace`: the steps of one run of work, a list.
+ * - `TraceGroup`: several steps a bot ran together, folded into one quiet
+ *   line ("Used 5 tools", "1 failed" in red after it); open, the steps sit
+ *   in a bordered card, a row each between hairlines, their glyphs dropped
+ *   so the title leads.
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated), a
  *   mono meta ("14 results", "2 failed"), and, when it has children, the
  *   chevron that opens them. `tone="danger"` sets the line in red (a
@@ -29,6 +33,41 @@ import { cn } from '../lib/utils';
  */
 function Trace({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="trace" role="list" className={cn('flex flex-col', className)} {...props} />;
+}
+
+/** Whether a step sits in a `TraceGroup`'s card, where it is a full-width row. */
+const TraceGroupContext = React.createContext(false);
+
+function TraceGroup({
+  summary,
+  failed,
+  defaultOpen = false,
+  className,
+  children,
+}: {
+  /** "Used 5 tools", "Searched the web 3 times". */
+  summary: React.ReactNode;
+  /** "1 failed", in red after the summary. */
+  failed?: React.ReactNode;
+  defaultOpen?: boolean;
+  className?: string;
+  /** The `TraceStep`s. */
+  children: React.ReactNode;
+}) {
+  return (
+    <Fold data-slot="trace-group" defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
+      <FoldTrigger className="-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-1.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75">
+        <span className="min-w-0 truncate">{summary}</span>
+        {failed ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{failed}</span> : null}
+      </FoldTrigger>
+      <FoldPanel
+        role="list"
+        className="mt-1 mb-1 flex flex-col divide-y divide-border-subtle overflow-hidden rounded-lg border border-border-subtle"
+      >
+        <TraceGroupContext.Provider value>{children}</TraceGroupContext.Provider>
+      </FoldPanel>
+    </Fold>
+  );
 }
 
 const TRACE_LINE =
@@ -59,11 +98,17 @@ function TraceStep({
   /** What it returned (`TraceOutput`, `TraceNote`); present, the line opens to it. */
   children?: React.ReactNode;
 }) {
+  const grouped = React.useContext(TraceGroupContext);
+  const lineClass = grouped
+    ? 'flex min-h-10 w-full min-w-0 items-center gap-2.5 px-3.5 text-[14px] tracking-[-0.006em] text-fg-muted data-[tone=danger]:text-danger'
+    : TRACE_LINE;
   const line = (
     <>
-      <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
-        {icon}
-      </span>
+      {grouped ? null : (
+        <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
+          {icon}
+        </span>
+      )}
       <span className="min-w-0 truncate">{title}</span>
       {meta ? (
         <span
@@ -79,7 +124,7 @@ function TraceStep({
   );
   const withAction = (head: React.ReactNode) =>
     action ? (
-      <div className="flex max-w-full items-center gap-1">
+      <div className={cn('flex max-w-full items-center gap-1', grouped && 'pr-2')}>
         {head}
         <span className="flex shrink-0">{action}</span>
       </div>
@@ -90,7 +135,7 @@ function TraceStep({
     return (
       <div data-slot="trace-step" role="listitem" data-tone={tone} className={cn('flex flex-col', className)}>
         {withAction(
-          <div data-tone={tone} className={TRACE_LINE}>
+          <div data-tone={tone} className={lineClass}>
             {line}
           </div>,
         )}
@@ -109,14 +154,15 @@ function TraceStep({
         <FoldTrigger
           data-tone={tone}
           className={cn(
-            TRACE_LINE,
+            lineClass,
+            grouped && 'rounded-none hover:bg-hover-surface focus-visible:ring-inset',
             'transition-colors duration-instant data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.75',
           )}
         >
           {line}
         </FoldTrigger>,
       )}
-      <FoldPanel className="pl-6.5">{children}</FoldPanel>
+      <FoldPanel className={grouped ? 'px-3.5' : 'pl-6.5'}>{children}</FoldPanel>
     </Fold>
   );
 }
@@ -219,5 +265,5 @@ function TraceLive({
   );
 }
 
-export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep };
+export { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep };
 export type { TraceOutputLabels };

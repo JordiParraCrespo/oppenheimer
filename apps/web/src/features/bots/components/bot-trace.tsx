@@ -2,6 +2,7 @@ import {
   ChatSource,
   ChatSources,
   Trace,
+  TraceGroup,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
@@ -32,7 +33,7 @@ type Kind = ToolAction['kind'];
 interface StepView<K extends Kind> {
   icon: ReactNode;
   /** The line: "Searched the web for “x”", "Updated its plan". */
-  title: (t: TFunction, action: Extract<ToolAction, { kind: K }>) => string;
+  title: (t: TFunction, action: Extract<ToolAction, { kind: K }>) => ReactNode;
   /** What it returned, readable first, and the figure for the line's meta. */
   detail: (
     step: BotToolStep,
@@ -104,7 +105,15 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   },
   tool: {
     icon: <Wrench />,
-    title: (_t, action) => (action.target ? `${action.label} ${action.target}` : action.label),
+    // The verb muted, what it was pointed at in full ink: "Read document notes.md".
+    title: (_t, action) =>
+      action.target ? (
+        <>
+          {action.label} <span className="text-fg">{action.target}</span>
+        </>
+      ) : (
+        action.label
+      ),
     detail: rawDetail,
   },
 };
@@ -114,12 +123,22 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
   return STEP_VIEWS[action.kind as K] as StepView<K>;
 }
 
+/** The folded line over several calls: "Searched the web 3 times", "Used 5 tools". */
+function groupSummary(t: TFunction, steps: readonly BotToolStep[]): string {
+  const count = steps.length;
+  return steps.every((step) => toolAction(step).kind === 'search')
+    ? t('bots.chat.activity.groupSearched', { count })
+    : t('bots.chat.activity.group', { count });
+}
+
 /**
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
- * returned, drawn by its kind's entry in `STEP_VIEWS`. A call still running
- * is not drawn here: the turn's live line says what it is doing. A call that
- * started a session carries Open session on its own line.
+ * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
+ * fold into one line ("Used 5 tools") that opens to a card with a row
+ * each. A call still running is not drawn here: the turn's live line says
+ * what it is doing. A call that started a session carries Open session on
+ * its own line.
  */
 export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   const { t } = useTranslation();
@@ -130,25 +149,31 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
+  const rows = done.map((step) => {
+    const action = toolAction(step);
+    const view = viewOf(action);
+    const { meta, body } = view.detail(step, t, labels);
+    return (
+      <TraceStep
+        key={step.callId}
+        icon={view.icon}
+        title={view.title(t, action)}
+        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
+        tone={step.isError ? 'danger' : 'default'}
+        action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
+      >
+        {body}
+      </TraceStep>
+    );
+  });
+  if (rows.length === 1) return <Trace>{rows}</Trace>;
+  const failed = done.filter((step) => step.isError).length;
   return (
-    <Trace>
-      {done.map((step) => {
-        const action = toolAction(step);
-        const view = viewOf(action);
-        const { meta, body } = view.detail(step, t, labels);
-        return (
-          <TraceStep
-            key={step.callId}
-            icon={view.icon}
-            title={view.title(t, action)}
-            meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
-            tone={step.isError ? 'danger' : 'default'}
-            action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
-          >
-            {body}
-          </TraceStep>
-        );
-      })}
-    </Trace>
+    <TraceGroup
+      summary={groupSummary(t, done)}
+      failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
+    >
+      {rows}
+    </TraceGroup>
   );
 }

@@ -980,7 +980,13 @@
         "rawOutput": "Show raw output",
         "moreLines_one": "Show {{count}} more line",
         "moreLines_other": "Show {{count}} more lines",
-        "lessOutput": "Show less"
+        "lessOutput": "Show less",
+        "group_one": "Used {{count}} tool",
+        "group_other": "Used {{count}} tools",
+        "groupSearched_one": "Searched the web {{count}} time",
+        "groupSearched_other": "Searched the web {{count}} times",
+        "groupFailed_one": "{{count}} failed",
+        "groupFailed_other": "{{count}} failed"
       },
       "suggest": {
         "task": {
