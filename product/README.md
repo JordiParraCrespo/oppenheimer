@@ -597,3 +597,9 @@ earlier note:
   npm pointed at the prefix the executable lives under; an OpenCode in
   `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
   "Decided").
+- `versions/mvp/02-runner.md` §5 (2026-10-18) marked a session's folder
+  trusted in Claude Code only for a launch at Approve for me or Full
+  access, leaving Ask on "do you trust this folder?". On 2026-10-20 the
+  owner asked for every session to start pre-trusted: the runner marks
+  the folder before every launch and restart, whatever the permission
+  (02, "Every launch starts in a trusted folder").

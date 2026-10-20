@@ -411,7 +411,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// same work twice.
 	launch := session.Launch
 	launch.Resume = true
-	s.trustFolder(session.Agent, launch, session.Cwd())
+	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
 	release()
@@ -788,12 +788,12 @@ func (s *Service) holdLaunch(ctx context.Context, agent domain.Agent) (release f
 	return s.gate.Hold(ctx, command)
 }
 
-// trustFolder marks the folder a launch starts in as trusted when the launch
-// is one nobody is expected to watch, so the agent starts working instead of
-// waiting on a question in an empty terminal. A failure only leaves the
-// question on the screen; the adapter logs it.
-func (s *Service) trustFolder(agent domain.Agent, launch domain.Launch, dir string) {
-	if s.trust == nil || !launch.TrustsFolder() {
+// trustFolder marks the folder a launch starts in as trusted, so the agent
+// starts working instead of waiting on a question about a folder the runner
+// itself made for it. A failure only leaves the question on the screen; the
+// adapter logs it.
+func (s *Service) trustFolder(agent domain.Agent, dir string) {
+	if s.trust == nil {
 		return
 	}
 	_ = s.trust.Trust(agent, dir)
