@@ -10,6 +10,7 @@ import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
 import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
+import { routineActivityEvents } from '../domain/routine-activity.policy';
 import { AutomationOrmEntity } from './automation.orm-entity';
 import type {
   AutomationRepositoryPort,
@@ -52,7 +53,7 @@ export class AutomationRepository
   }
 
   async insert(entity: AutomationEntity): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+    await this.outbox.transaction(async (manager) => {
       // The revision's foreign key to the automation is checked now and the
       // automation's to its current revision at commit (deferred), so the pair
       // goes in automation first.
@@ -62,17 +63,22 @@ export class AutomationRepository
         this.mapper.revisionToRecord(entity) as QueryDeepPartialEntity<AutomationRevisionOrmEntity>,
       );
       await this.writeTriggers(manager, entity);
+      await this.outbox.stageEvents(manager, [
+        ...entity.domainEvents,
+        ...routineActivityEvents(entity),
+      ]);
     });
+    entity.clearEvents();
   }
 
   async save(entity: AutomationEntity, expectedVersion: number): Promise<'saved' | 'conflict'> {
-    return this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       const record = this.mapper.toRecord(entity);
       const [updated]: [{ id: string }[], number] = await manager.query(
         `UPDATE "automation"
             SET "name" = $3, "projectId" = $4, "currentRevisionId" = $5, "pausedAt" = $6,
                 "pausedReason" = $7, "deletedAt" = $8, "overlap" = $9, "maxRunsPerHour" = $10,
-                "version" = "version" + 1, "updatedAt" = now()
+                "credentialScopes" = $11, "version" = "version" + 1, "updatedAt" = now()
           WHERE "id" = $1 AND "version" = $2
           RETURNING "id"`,
         [
@@ -86,6 +92,8 @@ export class AutomationRepository
           record.deletedAt,
           record.overlap,
           record.maxRunsPerHour,
+          // A raw jsonb parameter: the driver would send an array as a Postgres array.
+          record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes),
         ],
       );
       if (updated.length === 0) return 'conflict' as const;
@@ -98,22 +106,48 @@ export class AutomationRepository
         );
       }
       await this.writeTriggers(manager, entity);
+      await this.outbox.stageEvents(manager, [
+        ...entity.domainEvents,
+        ...routineActivityEvents(entity),
+      ]);
       return 'saved' as const;
     });
+    // A lost race staged nothing: the change it describes never happened.
+    if (outcome === 'saved') entity.clearEvents();
+    return outcome;
   }
 
   async saveForSystem(entity: AutomationEntity): Promise<void> {
     await this.save(entity, entity.version);
   }
 
-  async findAll(scope: AccessScope, filters: { projectId?: string }): Promise<AutomationEntity[]> {
-    const query = this.scopedQuery(scope)
-      .andWhere('automation.deletedAt IS NULL')
-      .orderBy('automation.createdAt', 'ASC');
+  async findSessions(
+    scope: AccessScope,
+    filters: { projectId?: string },
+  ): Promise<AutomationEntity[]> {
+    const query = this.live(scope).andWhere(`automation.runTarget = 'session'`);
     if (filters.projectId) {
       query.andWhere('automation.projectId = :projectId', { projectId: filters.projectId });
     }
     return this.assemble(this.dataSource.manager, await query.getMany());
+  }
+
+  async findRoutinesOfBot(scope: AccessScope, botId: string): Promise<AutomationEntity[]> {
+    // IDX_automation_bot.
+    const query = this.live(scope).andWhere('automation.botId = :botId', { botId });
+    return this.assemble(this.dataSource.manager, await query.getMany());
+  }
+
+  async findRoutines(scope: AccessScope): Promise<AutomationEntity[]> {
+    const query = this.live(scope).andWhere(`automation.runTarget = 'bot'`);
+    return this.assemble(this.dataSource.manager, await query.getMany());
+  }
+
+  /** The caller's live automations, oldest first: what every list narrows. */
+  private live(scope: AccessScope) {
+    return this.scopedQuery(scope)
+      .andWhere('automation.deletedAt IS NULL')
+      .orderBy('automation.createdAt', 'ASC');
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<AutomationEntity>> {

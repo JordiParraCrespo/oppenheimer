@@ -31,6 +31,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -160,6 +161,9 @@ func New(version string) (*App, error) {
 		// A session nobody is asked to approve starts in a folder already
 		// trusted, rather than on a question in an empty terminal.
 		Trust: agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)}),
+		// A session launched with no task is named from the first message
+		// typed into its agent, read off the agent's own transcript.
+		Transcripts: transcript.New(transcript.Options{ClaudeProjects: claudeProjectsPath(paths)}),
 	})
 	if err != nil {
 		return nil, err
@@ -391,4 +395,18 @@ func claudeConfigPath(paths Paths) string {
 		return ""
 	}
 	return filepath.Join(paths.UserHome, ".claude.json")
+}
+
+// claudeProjectsPath is where Claude Code keeps its transcripts, one folder
+// per working directory: `projects/` under `$CLAUDE_CONFIG_DIR` when that is
+// set, under `~/.claude` otherwise. Unlike its global state, which sits
+// beside that folder in the home, the transcripts are inside it.
+func claudeProjectsPath(paths Paths) string {
+	if dir := os.Getenv("CLAUDE_CONFIG_DIR"); dir != "" {
+		return filepath.Join(dir, "projects")
+	}
+	if paths.UserHome == "" {
+		return ""
+	}
+	return filepath.Join(paths.UserHome, ".claude", "projects")
 }

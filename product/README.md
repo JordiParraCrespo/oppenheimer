@@ -341,6 +341,12 @@ earlier note:
   frame instead (2026-10-13): Tasks, Milestones (the timeline alone) and
   Calendar, nothing more. The API pieces stay for the agents' Projects
   section (`versions/mvp/23-plan-milestones-stats-accounts.md`, "Settled since").
+- Note 20 had a Google event open read-only with only "Open in Google
+  Calendar". Since 2026-10-20 a Google event that is a video meeting
+  (Meet, or Zoom, Teams or Webex through an add-on or a link pasted
+  in the location or description) also offers
+  Join meeting from the calendar; the layer is still read-only
+  (`versions/mvp/20-plan-calendar.md` §1, §5).
 - Note 15's first version proposed protecting the reviewer and the
   evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
   owner rejected it the same day (2026-09-27): the product is for people
@@ -591,3 +597,24 @@ earlier note:
   npm pointed at the prefix the executable lives under; an OpenCode in
   `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
   "Decided").
+- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that bot
+  routines had no spend guard: the run budget and the overlap guard held
+  the cost. On 2026-10-18 the owner asked routines to behave as Grok
+  Bot's do, and the guard is back: a nudge, then a pause of every routine
+  of the bot when nobody reads what they say. In the same review the
+  bot's routine tool lost its per-action table for one consent rule
+  (only `list` and `pause` run without a card), and routine changes,
+  runs and failures became one activity event written by one listener
+  (26 §4, §6, "Decided").
+- 2026-10-18, building bot routines' slice C: a routine's activity lines
+  belong to no turn, so a turn's several changes are not folded into one
+  "Routines in this change" group yet, and a routine turn that failed is
+  shown by its turn rather than by a second `failed` notice (26 §4 "In the
+  chat", "Decided").
+- `versions/mvp/25-bots.md` §4.4 (2026-10-15) built the GitHub reads only,
+  and a bot told its owner it could not merge a pull request it had
+  reported ready. On 2026-10-20 the asking writes of the table were built
+  (comment, review, merge, review session), and issues were added to the
+  table: `list_issues`, `get_issue`, and the asking `create_issue` and
+  `comment_on_issue`, under the `pulls:*` scopes and the App's new Issues
+  permission. A bot's merge is pinned to the head its card showed.

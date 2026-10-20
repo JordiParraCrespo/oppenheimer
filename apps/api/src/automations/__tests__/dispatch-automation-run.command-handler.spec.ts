@@ -3,6 +3,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { HostErrors } from '../../hosts/domain/hosts.errors';
+import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import type {
   AutomationRunTargetPort,
@@ -11,6 +12,7 @@ import type {
 import { AutomationRunTargetRegistry } from '../application/automation-run-target.registry';
 import type { OwnerScopeResolver } from '../application/owner-scope.resolver';
 import { RunDispatchResolver } from '../application/run-dispatch.resolver';
+import { AutomationRunMapper } from '../automation-run.mapper';
 import { DispatchAutomationRunCommand } from '../commands/dispatch-automation-run/dispatch-automation-run.command';
 import { DispatchAutomationRunCommandHandler } from '../commands/dispatch-automation-run/dispatch-automation-run.command-handler';
 import type { AutomationRepositoryPort } from '../database/automation.repository.port';
@@ -112,7 +114,14 @@ function setup(entity: AutomationEntity, run: AutomationRunEntity, target = stub
   const handler = new DispatchAutomationRunCommandHandler(
     runs,
     automations,
-    new RunDispatchResolver(new AutomationLimitsResolver(settings, config), owners, registry),
+    new RunDispatchResolver(
+      new AutomationLimitsResolver(settings, config),
+      owners,
+      registry,
+      // These runs fire on a schedule, so no event is ever looked up.
+      { findOne: vi.fn() } as unknown as InboundEventLookupPort,
+      new AutomationRunMapper(),
+    ),
   );
   const dispatch = () => handler.execute(new DispatchAutomationRunCommand({ runId: run.id }));
   return { dispatch, target, save, saveForSystem };

@@ -273,7 +273,27 @@ that did not cover the tool never runs.
 | `list_pull_requests` / `get_pull_request` | With files, comments and activity | auto |
 | `comment_on_pull_request` / `review_pull_request` | Post a line comment, or submit a review: approve, request changes or comment | ask |
 | `start_review_session` | Review it in a session | ask |
-| `merge_pull_request` | Merge it, squash by default | ask |
+| `merge_pull_request` | Merge it, squash by default, pinned to the head the card showed | ask |
+| `list_issues` / `get_issue` | A repository's issues, one with its comments | auto |
+| `create_issue` / `comment_on_issue` | Open an issue, or comment on one | ask |
+
+Built 2026-10-20, after a bot told its owner it could not merge a pull
+request it had just reported ready. Every write is made with the owner's
+own GitHub user token through the pull-requests and github modules'
+commands, so GitHub records the person and its branch rules stay the gate.
+`comment_on_pull_request` posts on the conversation, or on a line when
+`path` and `line` are given; `review_pull_request` offers approve, request
+changes and comment, never approve and merge, so every merge goes through
+`merge_pull_request`, whose card stores the head commit it was raised on: a
+push while the card waits is refused (`GITHUB_014`) rather than merged
+unseen. The issue tools read and write live through the installation, and
+take the `pulls:read` / `pulls:write` scopes: a token that may comment on a
+repository's pull requests may comment on its issues. They need the App's
+**Issues** permission; an installation that has not accepted it answers
+`GITHUB_017`, in words the bot passes on. A personal access token was
+considered for this and not taken: it would reach every repository the
+person can, past the installation that is the workspace's access control
+(`09`), and the App's user token already acts in the person's name.
 
 ### 4.5 Automations and calendar
 | Tool | Does | Default |
@@ -485,7 +505,10 @@ limits (§2); the tools that run without asking, as the owner: itself
 `list_sessions`, `get_session`), the plan (`list_projects`,
 `get_project`, `list_tasks`, `get_task`, `plan_summary`, `create_task`,
 `update_task`, `move_task`), GitHub (`list_repositories`,
-`list_pull_requests`, `get_pull_request`), automations
+`list_pull_requests`, `get_pull_request`; since 2026-10-20 also
+`list_issues`, `get_issue`, and the asking `comment_on_pull_request`,
+`review_pull_request`, `merge_pull_request`, `start_review_session`,
+`create_issue`, `comment_on_issue`, §4.4), automations
 (`list_automations`, `get_automation`, `run_history`), other bots
 (`list_bots`, `get_bot`) and `web_fetch`; `start_session`,
 `stop_session` and `create_bot`, which ask; and the Needs input card

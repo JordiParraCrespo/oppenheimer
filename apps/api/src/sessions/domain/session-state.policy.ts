@@ -83,7 +83,7 @@ export const SESSION_EVENT_KINDS = {
   CHECKOUT_REMOVED: 'session.checkout_removed',
   /**
    * The first task: the composer's, written by the API at create, or one a runner
-   * reads off the agent's transcript (no runner sends it yet). Payload `{ text, images? }`.
+   * reads off the agent's transcript (Claude Code's, for now). Payload `{ text, images? }`.
    */
   PROMPT_FIRST: 'prompt.first',
   /** What the screen manifest last observed the agent doing. Payload `{ state }`. */

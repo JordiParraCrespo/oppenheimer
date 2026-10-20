@@ -516,31 +516,34 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // The four OpenAI ships for Codex, in capability order, with the slugs
-    // `codex --model` takes. Sol is the default because it is the CLI's own
-    // (`model = "gpt-5.6-sol"` in the documented starting `config.toml`), and
-    // Astra is not: it wants Codex 0.153.1 and Trusted Access, so defaulting to
-    // it would hand most hosts a row their CLI refuses.
-    //
-    // Same seed argument as Claude Code above, and the same limit: a probe is
-    // still what would tell the console which of these *this* machine's codex
-    // knows (`product/versions/mvp/05-screens.md`, open question 6).
-    //
-    // Each model's levels and default are codex's own (`codex debug models`):
-    // Sol and Astra think `low` unasked, Terra and Luna `medium`, Luna has no
-    // `ultra`, and none has `minimal`. Codex forwards a level a model lacks to
-    // the API unchanged, so a level listed here that the model does not take
-    // is a failed turn, not a dropped setting.
+    // What codex's own picker lists, in its order, with the slugs `codex
+    // --model` takes and each model's levels and default as codex reports them;
+    // a seed, with the limit Claude Code's has (`05-screens.md`, question 6).
     models: Object.freeze([
+      Object.freeze({
+        id: 'gpt-6.1-sol',
+        label: 'GPT-6.1 Sol',
+        default: true as const,
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
       Object.freeze({
         id: 'gpt-6-astra',
         label: 'GPT-6 Astra',
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
+        id: 'gpt-6-sol',
+        label: 'GPT-6 Sol',
+        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'gpt-6-luna',
+        label: 'GPT-6 Luna',
+        effort: levels(CODEX_LEVELS, 'medium'),
+      }),
+      Object.freeze({
         id: 'gpt-5.6-sol',
         label: 'GPT-5.6 Sol',
-        default: true as const,
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
@@ -652,9 +655,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // Each model's levels are its OpenCode variants (`opencode models
     // --verbose`), and its default is what it runs with none: the API's own
     // `high` for the adaptive Claude models, no thinking for Haiku, whose
-    // variants are only `high` and `max` budgets, and `medium` for Sol. Sol's
-    // `none` variant is left off: "don't think" is not an amount of thinking
-    // anyone picks for a coding session.
+    // variants are only `high` and `max` budgets, and `medium` for the Sols.
+    // 5.6 Sol's `none` variant is left off: "don't think" is not an amount of
+    // thinking anyone picks for a coding session.
     models: Object.freeze([
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
@@ -676,6 +679,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         id: 'anthropic/claude-haiku-4-5',
         label: 'Claude Haiku 4.5',
         effort: levels(['none', 'high', 'max'], 'none'),
+      }),
+      Object.freeze({
+        id: 'openai/gpt-6.1-sol',
+        label: 'GPT-6.1 Sol',
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-5.6-sol',

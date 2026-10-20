@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, SettingsTitle } from '@oppenheimer/design-system-web';
+import { Callout, SettingsTitle } from '@oppenheimer/design-system-web';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
@@ -20,9 +20,7 @@ export function ModelProvidersSettingsScreen() {
         description={t('settings.modelProviders.description')}
       />
       {deployment && !deployment.bot_providers ? (
-        <Alert className="mb-4">
-          <AlertDescription>{t('settings.modelProviders.unavailable')}</AlertDescription>
-        </Alert>
+        <Callout className="mb-4">{t('settings.modelProviders.unavailable')}</Callout>
       ) : null}
       <QueryState>
         <QueryState.Pending>

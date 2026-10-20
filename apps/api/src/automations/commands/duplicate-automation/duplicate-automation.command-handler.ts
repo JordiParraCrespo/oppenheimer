@@ -3,6 +3,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { sessionTargetOf } from '../../application/session-target.policy';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import { AutomationEntity } from '../../domain/automation.entity';
@@ -29,10 +30,18 @@ export class DuplicateAutomationCommandHandler
       await this.automations.findOneById(scope, command.automationId),
       AutomationErrors.NOT_FOUND,
     );
-    const { id: _id, number: _number, createdAt: _createdAt, ...revision } = original.revision;
+    // The editor's routes are a session automation's; a bot routine changes through its bot.
+    const target = sessionTargetOf(original);
+    const {
+      id: _id,
+      kind: _kind,
+      number: _number,
+      createdAt: _createdAt,
+      ...revision
+    } = target.revision;
     const copy = AutomationEntity.createNew({
       organizationId: original.organizationId,
-      projectId: original.projectId,
+      projectId: target.projectId,
       ownerUserId: scope.userId,
       name: `${original.name} copy`.slice(0, 200),
       revision: { ...revision, createdByUserId: scope.userId },

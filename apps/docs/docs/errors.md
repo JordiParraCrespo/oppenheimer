@@ -341,6 +341,8 @@ session asks.
 | `GITHUB_013` <a id="github_013" /> | Pull request not found                                         | 404  |
 | `GITHUB_014` <a id="github_014" /> | GitHub would not merge this pull request yet                   | 409  |
 | `GITHUB_015` <a id="github_015" /> | GitHub's rate limit was reached; try again shortly             | 429  |
+| `GITHUB_016` <a id="github_016" /> | Issue not found                                                | 404  |
+| `GITHUB_017` <a id="github_017" /> | GitHub refused access to this repository's issues              | 403  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -377,7 +379,9 @@ App from this console, or GitHub refused to refresh it. Connecting GitHub again
 stores a fresh one.
 
 `GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
-protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
+protection rule, a conflict, a head that moved). A merge a bot's approval card
+carried out is pinned to the head the card showed, so a push while the card
+waited is this code too, without GitHub being asked. Nothing bypasses it: the pull
 request waits. Approve and merge answers `200` with `merged: false` instead of
 this code, because the approval itself landed; it then asks GitHub to merge it
 once the required checks pass (`autoMerge: true`), or leaves it waiting when
@@ -394,6 +398,15 @@ budget on anyone's behalf: the same request answers `GITHUB_015` straight
 away, on every replica. It is also the answer when one server already has too
 many GitHub requests waiting: a page that fans out that far is refused with a
 short `Retry-After` rather than left hanging.
+
+`GITHUB_016` and `GITHUB_017` come from a bot's issue tools (`list_issues`,
+`get_issue`, `create_issue`, `comment_on_issue`), which no route exposes yet.
+`GITHUB_016` is also a number that belongs to a pull request: GitHub numbers
+the two alike, and the pull request tools read those. `GITHUB_017` is GitHub's
+`403` on an issue route: the App was registered before it asked for the
+**Issues** permission, an owner has not accepted that permission on the
+installation yet, or the person cannot write to the repository. Rate limits
+on those routes are still `GITHUB_015`.
 
 ## Pull requests
 

@@ -1,4 +1,4 @@
-import { dateFormatter } from '@oppenheimer/frontend-web';
+import { dateFormatter, viewerTimeZone } from '@oppenheimer/frontend-web';
 import { wallTimeAt } from '@oppenheimer/shared/automations';
 
 /**
@@ -12,20 +12,10 @@ const DAY = 24 * 60 * MINUTE;
 
 const pad2 = (value: number) => String(value).padStart(2, '0');
 
-/** The viewer's IANA zone, which the history chart's days and a new schedule use. */
-export function viewerTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-}
-
 /** "08:30", 24-hour, in the viewer's zone (or the one given). */
 export function clock(at: Date, timeZone = viewerTimeZone()): string {
   const wall = wallTimeAt(at.getTime(), timeZone);
   return `${pad2(wall.hour)}:${pad2(wall.minute)}`;
-}
-
-/** "08:30" from a schedule's own wall fields. */
-export function wallClock(hour: number, minute: number): string {
-  return `${pad2(hour)}:${pad2(minute)}`;
 }
 
 export { pad2 };
@@ -33,16 +23,6 @@ export { pad2 };
 /** "Sep 28": the runs list's date column and the chart's axis. */
 export function monthDay(at: Date, locale: string, timeZone = viewerTimeZone()): string {
   return dateFormatter(locale, { month: 'short', day: 'numeric', timeZone }).format(at);
-}
-
-/** "Mon 28 Sep": a day that is neither today nor tomorrow. */
-export function weekdayDate(at: Date, locale: string, timeZone = viewerTimeZone()): string {
-  return dateFormatter(locale, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    timeZone,
-  }).format(at);
 }
 
 /** The `YYYY-MM-DD` local date of an instant in a zone. */

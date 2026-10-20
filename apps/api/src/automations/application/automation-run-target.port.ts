@@ -4,6 +4,7 @@ import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationRunTargetKind, RunDispatchRef } from '../domain/automation.types';
 import type { AutomationLimits } from '../domain/automation-limits.policy';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
+import type { RunEventView } from '../domain/run-launch.policy';
 import type { RunRefusal } from '../domain/run-refusal.policy';
 
 /** What a target is handed once the shared guards (deleted, paused, stale, the owner) have passed. */
@@ -13,6 +14,8 @@ export interface RunTargetContext {
   /** The owner's access in the workspace, resolved at dispatch (§Q5). */
   scope: AccessScope;
   limits: AutomationLimits;
+  /** The event that fired it, for an event trigger; null for a schedule or Run now. */
+  event: RunEventView | null;
   now: Date;
 }
 

@@ -31,6 +31,12 @@ export interface BotToolCallContext {
   permission: BotPermission;
   /** What this turn may still spend on calls a tool limits per turn. */
   budget: BotTurnBudget;
+  /**
+   * The scopes of the credential the turn was sent with; null for a browser
+   * session. What a tool saves to act later (a routine) keeps them, so a
+   * token reaches no further through the bot than through a message.
+   */
+  credentialScopes: readonly Scope[] | null;
 }
 
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */

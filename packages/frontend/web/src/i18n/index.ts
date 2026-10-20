@@ -17,4 +17,5 @@ export {
 export * from './lib/format-date';
 export * from './lib/format-day';
 export * from './lib/format-duration';
+export * from './lib/format-trigger';
 export { default as i18n, i18nReady } from './lib/i18n';

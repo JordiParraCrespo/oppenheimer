@@ -6,7 +6,10 @@ import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
+import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
+import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
+import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import type {
@@ -33,11 +36,26 @@ export class BotToolboxFactory {
     sessions: BotSessionToolsFactory,
     plan: BotPlanToolsFactory,
     github: BotGithubToolsFactory,
+    pullRequests: BotPullRequestToolsFactory,
+    issues: BotIssueToolsFactory,
     automations: BotAutomationToolsFactory,
+    routines: BotRoutineToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
   ) {
-    this.areas = [self, hosts, sessions, plan, github, automations, peers, web];
+    this.areas = [
+      self,
+      hosts,
+      sessions,
+      plan,
+      github,
+      pullRequests,
+      issues,
+      automations,
+      routines,
+      peers,
+      web,
+    ];
   }
 
   /**

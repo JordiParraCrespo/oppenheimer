@@ -27,7 +27,8 @@ export interface BotToolStep {
 export class BotMessageEntity {
   constructor(
     public readonly id: string,
-    public readonly turnId: string,
+    /** The turn it belongs to; `null` for an event outside any turn (a routine changed, paused or failed). */
+    public readonly turnId: string | null,
     public readonly role: BotMessageRole,
     /** The text; empty for an activity line. */
     public readonly content: string,

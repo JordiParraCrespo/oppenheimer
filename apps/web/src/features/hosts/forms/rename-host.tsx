@@ -62,7 +62,7 @@ export function RenameHostForm({
             if (event.key === 'Escape') onCancel();
           }}
         />
-        <Button type="submit" size="sm" variant="secondary" disabled={pending}>
+        <Button type="submit" size="sm" variant="secondary" pending={pending}>
           {t('hosts.settings.save')}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onCancel}>

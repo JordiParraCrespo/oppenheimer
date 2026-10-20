@@ -132,7 +132,15 @@ export {
   TranscriptDivider,
 } from './components/chat-status';
 export type { TraceOutputLabels } from './components/chat-trace';
-export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from './components/chat-trace';
+export {
+  Trace,
+  TraceGroup,
+  TraceGroupRow,
+  TraceLive,
+  TraceNote,
+  TraceOutput,
+  TraceStep,
+} from './components/chat-trace';
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,
