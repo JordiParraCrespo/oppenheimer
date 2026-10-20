@@ -655,8 +655,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // Each model's levels are its OpenCode variants (`opencode models
     // --verbose`), and its default is what it runs with none: the API's own
     // `high` for the adaptive Claude models, no thinking for Haiku, whose
-    // variants are only `high` and `max` budgets, and `medium` for 6.1 Sol,
-    // which has no `none` variant to leave off.
+    // variants are only `high` and `max` budgets, and `medium` for the Sols.
+    // 5.6 Sol's `none` variant is left off: "don't think" is not an amount of
+    // thinking anyone picks for a coding session.
     models: Object.freeze([
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
@@ -682,6 +683,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       Object.freeze({
         id: 'openai/gpt-6.1-sol',
         label: 'GPT-6.1 Sol',
+        effort: levels(CODEX_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'openai/gpt-5.6-sol',
+        label: 'GPT-5.6 Sol',
         effort: levels(CODEX_LEVELS, 'medium'),
       }),
     ]),

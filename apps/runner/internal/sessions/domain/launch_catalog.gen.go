@@ -68,6 +68,7 @@ var launchCatalog = map[string]launchMap{
 			"anthropic/claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
 			"anthropic/claude-haiku-4-5":  {"none", "high", "max"},
 			"openai/gpt-6.1-sol":          {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-5.6-sol":          {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt:             []string{"--prompt", "<prompt>"},
 		conversationResume: []string{"--continue"},
