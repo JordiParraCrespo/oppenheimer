@@ -2422,7 +2422,7 @@ export type CalendarEventResponseDto = {
      */
     url?: string | null;
     /**
-     * Where to join a Google event’s video meeting (Meet, Zoom, Teams…); null when it has none, and for a personal one.
+     * Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one.
      */
     meetingUrl?: string | null;
 };
@@ -2505,7 +2505,7 @@ export type GoogleCalendarEventResponseDto = {
      */
     url?: string | null;
     /**
-     * Where to join a Google event’s video meeting (Meet, Zoom, Teams…); null when it has none, and for a personal one.
+     * Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one.
      */
     meetingUrl?: string | null;
     /**

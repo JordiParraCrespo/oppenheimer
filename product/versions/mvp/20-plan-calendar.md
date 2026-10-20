@@ -157,8 +157,9 @@ through `CalendarProviderPort` (`listEvents(connection, from, to)`,
   a link to the event in Google and, since 2026-10-20, where to join it
   (`meetingUrl`): the event's Meet link, else the video entry point of a
   conference an add-on attached (Zoom, Teams), else a location that is
-  itself an address; only an `https:` address, since the console makes
-  it a link.
+  itself an address, else a Zoom, Meet, Teams or Webex join link written
+  in the location or the description (a pasted invite); only an `https:`
+  address, since the console makes it a link.
 - The console caches the result per month in the query client. It
   refetches on focus and when the cache is older than a couple of
   minutes. The sidebar card shows the account and "Updated *2 min

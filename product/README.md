@@ -343,7 +343,8 @@ earlier note:
   section (`versions/mvp/23-plan-milestones-stats-accounts.md`, "Settled since").
 - Note 20 had a Google event open read-only with only "Open in Google
   Calendar". Since 2026-10-20 a Google event that is a video meeting
-  (Meet, or Zoom or Teams through an add-on or a pasted link) also offers
+  (Meet, or Zoom, Teams or Webex through an add-on or a link pasted
+  in the location or description) also offers
   Join meeting from the calendar; the layer is still read-only
   (`versions/mvp/20-plan-calendar.md` §1, §5).
 - Note 15's first version proposed protecting the reviewer and the

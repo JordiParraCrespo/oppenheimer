@@ -20,6 +20,8 @@ interface GoogleEvent {
   /** A conference attached by Meet or an add-on (Zoom, Teams…). */
   conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
   location?: string;
+  /** Free text, often HTML: where a pasted invite puts its join link. */
+  description?: string;
   start?: GoogleEventTime;
   end?: GoogleEventTime;
 }
@@ -43,15 +45,52 @@ function httpsUrl(value: string | undefined): string | null {
 }
 
 /**
+ * A join link of a meeting service we recognise: Zoom (a `/j/`, `/my/` or
+ * `/w/` path, so a download or help page does not count), Meet, Teams, Webex.
+ */
+function isMeetingLink(url: URL): boolean {
+  const host = url.hostname.toLowerCase();
+  const on = (domain: string) => host === domain || host.endsWith(`.${domain}`);
+  if (on('zoom.us') || on('zoomgov.com')) return /^\/(j|my|w)\//.test(url.pathname);
+  return (
+    host === 'meet.google.com' ||
+    host === 'teams.microsoft.com' ||
+    host === 'teams.live.com' ||
+    on('webex.com')
+  );
+}
+
+/** The first meeting service's join link written anywhere in `text` (prose or HTML). */
+function meetingLinkIn(text: string | undefined): string | null {
+  if (!text) return null;
+  const candidates = text.replace(/&amp;/g, '&').match(/https:\/\/[^\s<>"'()[\]]+/g) ?? [];
+  for (const candidate of candidates) {
+    const href = candidate.replace(/[.,;:!?]+$/, '');
+    try {
+      if (isMeetingLink(new URL(href))) return href;
+    } catch {}
+  }
+  return null;
+}
+
+/**
  * Where to join the meeting: its Meet link, else the video entry point of a
  * conference an add-on attached (Zoom, Teams…), else a location that is
- * itself an address, as an invite pasted by hand often is.
+ * itself an address, as an invite pasted by hand often is, else a meeting
+ * service's join link written in the location or the description (a Zoom
+ * invite pasted with its text around it).
  */
 function meetingUrlOf(event: GoogleEvent): string | null {
   const video = event.conferenceData?.entryPoints?.find(
     (entry) => entry.entryPointType === 'video',
   );
-  return httpsUrl(event.hangoutLink) ?? httpsUrl(video?.uri) ?? httpsUrl(event.location?.trim());
+  return (
+    httpsUrl(event.hangoutLink) ??
+    httpsUrl(video?.uri) ??
+    httpsUrl(event.location?.trim()) ??
+    meetingLinkIn(event.location) ??
+    meetingLinkIn(event.description)
+  );
 }
 
 /** The next calendar day of `YYYY-MM-DD`. */

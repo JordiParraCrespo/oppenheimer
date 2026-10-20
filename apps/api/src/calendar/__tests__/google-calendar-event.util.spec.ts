@@ -108,7 +108,7 @@ describe('googleEventsToProvider', () => {
           },
           { id: 'pasted', ...at, location: ' https://teams.microsoft.com/l/meetup/3 ' },
           { id: 'room', ...at, location: 'Room 4' },
-          { id: 'prose', ...at, location: 'https://zoom.us/j/4 or Room 4' },
+          { id: 'prose', ...at, location: 'https://example.com/call or Room 4' },
           { id: 'unsafe', ...at, hangoutLink: 'javascript:alert(1)', location: 'http://x.test' },
         ],
       },
@@ -121,6 +121,56 @@ describe('googleEventsToProvider', () => {
       ['room', null],
       ['prose', null],
       ['unsafe', null],
+    ]);
+  });
+
+  it('finds a Zoom, Teams or Webex join link written in the location or the description, and nothing else', () => {
+    const at = { start: { dateTime: '2026-10-05T09:00:00Z' } };
+    const events = googleEventsToProvider(
+      {
+        items: [
+          {
+            id: 'zoom-location',
+            ...at,
+            location: 'Zoom: https://acme.zoom.us/j/123?pwd=x (or Room 4)',
+          },
+          {
+            id: 'zoom-html',
+            ...at,
+            description:
+              'Join: <a href="https://us02web.zoom.us/j/456?pwd=a&amp;from=addon">https://us02web.zoom.us/j/456</a>.',
+          },
+          {
+            id: 'teams',
+            ...at,
+            description:
+              'Agenda https://docs.example.com/x then https://teams.microsoft.com/l/meetup-join/7.',
+          },
+          { id: 'webex', ...at, location: 'https://acme.webex.com/meet/ana, floor 2' },
+          {
+            id: 'location-first',
+            ...at,
+            location: 'Call https://acme.zoom.us/j/1',
+            description: 'https://acme.zoom.us/j/2',
+          },
+          {
+            id: 'not-a-meeting',
+            ...at,
+            description: 'Get the app https://zoom.us/download and https://example.com/j/1',
+          },
+          { id: 'http', ...at, description: 'http://acme.zoom.us/j/9' },
+        ],
+      },
+      range,
+    );
+    expect(events.map((e) => [e.id, e.meetingUrl])).toEqual([
+      ['zoom-location', 'https://acme.zoom.us/j/123?pwd=x'],
+      ['zoom-html', 'https://us02web.zoom.us/j/456?pwd=a&from=addon'],
+      ['teams', 'https://teams.microsoft.com/l/meetup-join/7'],
+      ['webex', 'https://acme.webex.com/meet/ana'],
+      ['location-first', 'https://acme.zoom.us/j/1'],
+      ['not-a-meeting', null],
+      ['http', null],
     ]);
   });
 
