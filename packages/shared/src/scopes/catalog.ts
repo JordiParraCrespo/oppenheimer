@@ -459,19 +459,20 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     resource: 'pulls',
     label: 'Pull requests',
     description:
-      'The pull requests of the workspace’s repositories: the queue, a pull request’s files and comments, and analytics.',
+      'The pull requests and issues of the workspace’s repositories: the queue, a pull request’s files and comments, issues, and analytics.',
     levels: {
       read: {
         scope: 'pulls:read',
         label: 'Read',
-        description: 'Read the queue, a pull request, its files and comments, and the analytics.',
+        description:
+          'Read the queue, a pull request, its files and comments, issues, and the analytics.',
         policies: [{ action: 'read', subject: 'PullRequest' }],
       },
       write: {
         scope: 'pulls:write',
         label: 'Review',
         description:
-          'Comment on, review and merge pull requests in the owner’s name, and choose which repositories to watch.',
+          'Comment on, review and merge pull requests, and open and comment on issues, in the owner’s name, and choose which repositories to watch.',
         policies: [{ action: 'update', subject: 'PullRequest' }],
       },
     },

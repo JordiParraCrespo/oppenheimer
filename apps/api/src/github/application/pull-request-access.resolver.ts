@@ -11,6 +11,10 @@ import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type {
   GithubChecks,
   GithubCredential,
+  GithubIssue,
+  GithubIssueComment,
+  GithubIssueFilter,
+  GithubIssueInput,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestSummary,
@@ -22,6 +26,7 @@ import type {
 import { type GithubActor, GithubUserGrantResolver } from './github-user-grant.resolver';
 import {
   type ClosedPullRequestSnapshot,
+  type IssueAddress,
   type Part,
   type PullRequestAccessPort,
   type PullRequestAddress,
@@ -29,6 +34,7 @@ import {
   type PullRequestSnapshot,
   type ReadBudget,
   type ReadGap,
+  type RepositoryAddress,
   type RepositoryPulls,
   type ReviewSubmission,
   type WorkspaceRepository,
@@ -64,6 +70,8 @@ const REPOSITORIES_TTL_SECONDS = 60;
 const TOKEN_MARGIN_MS = 5 * 60_000;
 /** GitHub's page: Analytics lists one per repository, the newest closed. */
 const PULLS_PER_PAGE = 100;
+/** GitHub's page of issues; a listing reads no more pages than its limit needs. */
+const ISSUES_PER_PAGE = 100;
 
 /**
  * Reads through the installation, cached briefly in Redis as GitHub's own
@@ -323,8 +331,14 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     userId: string,
     address: PullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
+    expectedHead?: string,
   ): Promise<void> {
     const { repository, actor, head } = await this.forWrite(scope, userId, address);
+    if (expectedHead && expectedHead !== head) {
+      throw new AppError(GithubErrors.MERGE_REFUSED, {
+        detail: `New commits were pushed to ${repository.fullName}#${address.number} since it was read (${expectedHead.slice(0, 7)} is now ${head.slice(0, 7)}); nothing was merged.`,
+      });
+    }
     await this.pulls.merge(
       actorCredential(actor),
       repository.fullName,
@@ -347,18 +361,83 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     return enabled;
   }
 
+  async issues(
+    scope: AccessScope,
+    address: RepositoryAddress,
+    filter: GithubIssueFilter,
+    limit: number,
+  ): Promise<{ repository: WorkspaceRepository; issues: GithubIssue[] }> {
+    const repository = await this.repositoryOf(scope, address);
+    const credential = await this.readCredential(scope, address.installationId);
+    const pages = Math.max(1, Math.ceil(limit / ISSUES_PER_PAGE));
+    const issues = await this.pulls.listIssues(credential, repository.fullName, filter, pages);
+    return { repository, issues: issues.slice(0, limit) };
+  }
+
+  async issue(
+    scope: AccessScope,
+    address: IssueAddress,
+  ): Promise<{ repository: WorkspaceRepository; issue: GithubIssue }> {
+    const repository = await this.repositoryOf(scope, address);
+    const credential = await this.readCredential(scope, address.installationId);
+    const issue = await this.pulls.readIssue(credential, repository.fullName, address.number);
+    return { repository, issue };
+  }
+
+  async issueComments(scope: AccessScope, address: IssueAddress): Promise<GithubIssueComment[]> {
+    const repository = await this.repositoryOf(scope, address);
+    const credential = await this.readCredential(scope, address.installationId);
+    return this.pulls.listIssueComments(credential, repository.fullName, address.number);
+  }
+
+  async createIssue(
+    scope: AccessScope,
+    userId: string,
+    address: RepositoryAddress,
+    issue: GithubIssueInput,
+  ): Promise<GithubIssue> {
+    const repository = await this.repositoryOf(scope, address);
+    const actor = await this.actorFor(userId);
+    return this.pulls.createIssue(actorCredential(actor), repository.fullName, issue);
+  }
+
+  async addIssueComment(
+    scope: AccessScope,
+    userId: string,
+    address: IssueAddress,
+    body: string,
+  ): Promise<{ htmlUrl: string }> {
+    const repository = await this.repositoryOf(scope, address);
+    const actor = await this.actorFor(userId);
+    const created = await this.pulls.createIssueComment(
+      actorCredential(actor),
+      repository.fullName,
+      address.number,
+      body,
+    );
+    // So the queue reads the repository afresh, a pull request commented on included.
+    await this.forget(repository);
+    return created;
+  }
+
   /** The repository, the caller's own token and the head commit a write lands on. */
   private async forWrite(scope: AccessScope, userId: string, address: PullRequestAddress) {
     const repository = await this.repositoryOf(scope, address);
-    const actor: GithubActor | null = await this.userGrants.actorFor(userId);
-    if (!actor) {
-      throw new AppError(GithubErrors.USER_NOT_CONNECTED, {
-        detail: 'Connect GitHub from Settings so reviews and merges are made in your name.',
-      });
-    }
+    const actor = await this.actorFor(userId);
     const credential = await this.readCredential(scope, address.installationId);
     const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
     return { repository, actor, head: pull.headSha, nodeId: pull.nodeId };
+  }
+
+  /** The caller's own GitHub token: every write is made in their name, never anyone else's. */
+  private async actorFor(userId: string): Promise<GithubActor> {
+    const actor = await this.userGrants.actorFor(userId);
+    if (!actor) {
+      throw new AppError(GithubErrors.USER_NOT_CONNECTED, {
+        detail: 'Connect GitHub from Settings so reviews, merges and issues are made in your name.',
+      });
+    }
+    return actor;
   }
 
   private async forget(repository: WorkspaceRepository): Promise<void> {
@@ -552,7 +631,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
 
   private async repositoryOf(
     scope: AccessScope,
-    address: PullRequestAddress,
+    address: RepositoryAddress,
   ): Promise<WorkspaceRepository> {
     const installation = await this.usableInstallation(scope, address.installationId);
     const repositories = await this.cache.getOrSet(

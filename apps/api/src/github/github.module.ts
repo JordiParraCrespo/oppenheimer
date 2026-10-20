@@ -7,8 +7,10 @@ import { GithubUserGrantResolver } from './application/github-user-grant.resolve
 import { InstallStateResolver } from './application/install-state.resolver';
 import { PullRequestAccessResolver } from './application/pull-request-access.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
+import { AddIssueCommentCommandHandler } from './commands/add-issue-comment/add-issue-comment.command-handler';
 import { ConnectInstallationCommandHandler } from './commands/connect-installation/connect-installation.command-handler';
 import { ConnectInstallationHttpController } from './commands/connect-installation/connect-installation.http.controller';
+import { CreateIssueCommandHandler } from './commands/create-issue/create-issue.command-handler';
 import { DisconnectInstallationCommandHandler } from './commands/disconnect-installation/disconnect-installation.command-handler';
 import { DisconnectInstallationHttpController } from './commands/disconnect-installation/disconnect-installation.http.controller';
 import { HandleGithubWebhookCommandHandler } from './commands/handle-github-webhook/handle-github-webhook.command-handler';
@@ -38,6 +40,9 @@ import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
 import { FindInstallationsQueryHandler } from './queries/find-installations/find-installations.query-handler';
+import { FindIssueQueryHandler } from './queries/find-issue/find-issue.query-handler';
+import { FindIssueCommentsQueryHandler } from './queries/find-issue-comments/find-issue-comments.query-handler';
+import { FindIssuesQueryHandler } from './queries/find-issues/find-issues.query-handler';
 import { ListInstallationRepositoriesHttpController } from './queries/list-installation-repositories/list-installation-repositories.http.controller';
 import { ListInstallationRepositoriesQueryHandler } from './queries/list-installation-repositories/list-installation-repositories.query-handler';
 import { ListRepositoryBranchesHttpController } from './queries/list-repository-branches/list-repository-branches.http.controller';
@@ -55,7 +60,9 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
+  AddIssueCommentCommandHandler,
   ConnectInstallationCommandHandler,
+  CreateIssueCommandHandler,
   DisconnectInstallationCommandHandler,
   HandleGithubWebhookCommandHandler,
   StartInstallationCommandHandler,
@@ -64,6 +71,9 @@ const commandHandlers: Provider[] = [
 const queryHandlers: Provider[] = [
   FindInstallationQueryHandler,
   FindInstallationsQueryHandler,
+  FindIssueQueryHandler,
+  FindIssueCommentsQueryHandler,
+  FindIssuesQueryHandler,
   ListInstallationRepositoriesQueryHandler,
   ListRepositoryBranchesQueryHandler,
 ];

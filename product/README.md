@@ -597,3 +597,10 @@ earlier note:
   npm pointed at the prefix the executable lives under; an OpenCode in
   `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
   "Decided").
+- `versions/mvp/25-bots.md` §4.4 (2026-10-15) built the GitHub reads only,
+  and a bot told its owner it could not merge a pull request it had
+  reported ready. On 2026-10-20 the asking writes of the table were built
+  (comment, review, merge, review session), and issues were added to the
+  table: `list_issues`, `get_issue`, and the asking `create_issue` and
+  `comment_on_issue`, under the `pulls:*` scopes and the App's new Issues
+  permission. A bot's merge is pinned to the head its card showed.

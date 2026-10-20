@@ -5,6 +5,10 @@ import { GithubHttp, type StatusMap } from './github-http.adapter';
 import type {
   GithubChecks,
   GithubCredential,
+  GithubIssue,
+  GithubIssueComment,
+  GithubIssueFilter,
+  GithubIssueInput,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
@@ -105,6 +109,38 @@ interface RawComment {
   created_at: string;
 }
 
+interface RawIssue {
+  number: number;
+  title: string;
+  html_url: string;
+  state: 'open' | 'closed';
+  state_reason?: string | null;
+  user: RawUser | null;
+  body?: string | null;
+  labels?: (string | { name?: string })[];
+  assignees?: RawUser[] | null;
+  comments?: number;
+  created_at: string;
+  updated_at: string;
+  closed_at: string | null;
+  /** Present when the issue is a pull request. */
+  pull_request?: unknown;
+}
+
+interface RawIssueComment {
+  id: number;
+  user: RawUser | null;
+  body?: string;
+  created_at: string;
+}
+
+/** What an issue route's refusals mean here: no such issue, or no access to the repository's issues. */
+const ISSUE_STATUS: StatusMap = {
+  403: GithubErrors.ISSUES_FORBIDDEN,
+  404: GithubErrors.ISSUE_NOT_FOUND,
+  410: GithubErrors.ISSUE_NOT_FOUND,
+};
+
 interface RawCheckRun {
   status: string;
   conclusion: string | null;
@@ -115,10 +151,11 @@ interface RawCombinedStatus {
 }
 
 /**
- * GitHub's pull request endpoints on the platform `fetch`, like the App adapter
- * beside it. The token is the caller's: an installation token to read, the
- * person's own to comment, review and merge, so what GitHub records is what that
- * person did. Every call goes through {@link GithubHttp}, the one client this
+ * GitHub's pull request and issue endpoints on the platform `fetch`, like the
+ * App adapter beside it. The token is the caller's: an installation token to
+ * read, the person's own to comment, review, merge and open issues, so what
+ * GitHub records is what that person did. Issues need the App's Issues
+ * permission; without it GitHub answers `403`, which is `GITHUB_017`. Every call goes through {@link GithubHttp}, the one client this
  * module has, counted against the budget the caller names on the credential.
  *
  * **Nothing here logs a token or a response body.**
@@ -374,18 +411,110 @@ export class GithubPullsAdapter implements GithubPullsPort {
     return autoMergeEnabled(body.errors ?? []);
   }
 
+  async listIssues(
+    credential: GithubCredential,
+    fullName: string,
+    filter: GithubIssueFilter,
+    maxPages: number,
+  ): Promise<GithubIssue[]> {
+    const query = new URLSearchParams({ state: filter.state, sort: 'updated', direction: 'desc' });
+    if (filter.labels.length) query.set('labels', filter.labels.join(','));
+    if (filter.assignee) query.set('assignee', filter.assignee);
+    if (filter.creator) query.set('creator', filter.creator);
+    const raw = await this.paginate<RawIssue>(
+      `${this.repo(fullName)}/issues?${query.toString()}`,
+      credential,
+      maxPages,
+      ISSUE_STATUS,
+    );
+    return raw.filter((issue) => issue.pull_request === undefined).map(toIssue);
+  }
+
+  async readIssue(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+  ): Promise<GithubIssue> {
+    const { body } = await this.request<RawIssue>(`${this.repo(fullName)}/issues/${number}`, {
+      credential,
+      onStatus: ISSUE_STATUS,
+    });
+    if (body.pull_request !== undefined) {
+      throw new AppError(GithubErrors.ISSUE_NOT_FOUND, {
+        detail: `#${number} in ${fullName} is a pull request, not an issue`,
+      });
+    }
+    return toIssue(body);
+  }
+
+  async listIssueComments(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+  ): Promise<GithubIssueComment[]> {
+    const raw = await this.paginate<RawIssueComment>(
+      `${this.repo(fullName)}/issues/${number}/comments`,
+      credential,
+      MAX_PAGES,
+      ISSUE_STATUS,
+    );
+    return raw.map((comment) => ({
+      id: comment.id,
+      login: comment.user?.login ?? 'ghost',
+      body: comment.body ?? '',
+      createdAt: comment.created_at,
+    }));
+  }
+
+  async createIssue(
+    credential: GithubCredential,
+    fullName: string,
+    issue: GithubIssueInput,
+  ): Promise<GithubIssue> {
+    const { body } = await this.request<RawIssue>(`${this.repo(fullName)}/issues`, {
+      credential,
+      method: 'POST',
+      body: {
+        title: issue.title,
+        ...(issue.body ? { body: issue.body } : {}),
+        ...(issue.labels.length ? { labels: issue.labels } : {}),
+        ...(issue.assignees.length ? { assignees: issue.assignees } : {}),
+      },
+      onStatus: ISSUE_STATUS,
+    });
+    return toIssue(body);
+  }
+
+  async createIssueComment(
+    credential: GithubCredential,
+    fullName: string,
+    number: number,
+    body: string,
+  ): Promise<{ htmlUrl: string }> {
+    const { body: created } = await this.request<{ html_url?: string }>(
+      `${this.repo(fullName)}/issues/${number}/comments`,
+      { credential, method: 'POST', body: { body }, onStatus: ISSUE_STATUS },
+    );
+    return { htmlUrl: created.html_url ?? '' };
+  }
+
   private repo(fullName: string): string {
     const [owner, name] = fullName.split('/');
     return `${this.http.api}/repos/${encodeURIComponent(owner ?? '')}/${encodeURIComponent(name ?? '')}`;
   }
 
-  private paginate<T>(url: string, credential: GithubCredential, maxPages: number): Promise<T[]> {
+  private paginate<T>(
+    url: string,
+    credential: GithubCredential,
+    maxPages: number,
+    onStatus: StatusMap = { 404: GithubErrors.PULL_REQUEST_NOT_FOUND },
+  ): Promise<T[]> {
     return this.http.paginate<T>(
       url,
       {
         bucket: credential.bucket,
         token: credential.token,
-        onStatus: { 404: GithubErrors.PULL_REQUEST_NOT_FOUND },
+        onStatus,
         unauthorized: GithubErrors.USER_NOT_CONNECTED,
       },
       (body) => (Array.isArray(body) ? (body as T[]) : []),
@@ -432,6 +561,26 @@ function toSummary(pull: RawPull): GithubPullRequestSummary {
     closedAt: pull.closed_at,
     mergedAt: pull.merged_at,
     requestedReviewers: (pull.requested_reviewers ?? []).map((user) => user.login),
+  };
+}
+
+function toIssue(issue: RawIssue): GithubIssue {
+  return {
+    number: issue.number,
+    title: issue.title,
+    htmlUrl: issue.html_url,
+    state: issue.state,
+    stateReason: issue.state_reason ?? null,
+    authorLogin: issue.user?.login ?? 'ghost',
+    body: issue.body ?? '',
+    labels: (issue.labels ?? [])
+      .map((label) => (typeof label === 'string' ? label : (label.name ?? '')))
+      .filter(Boolean),
+    assignees: (issue.assignees ?? []).map((user) => user.login),
+    comments: issue.comments ?? 0,
+    createdAt: issue.created_at,
+    updatedAt: issue.updated_at,
+    closedAt: issue.closed_at,
   };
 }
 
