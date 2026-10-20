@@ -8,11 +8,10 @@ import { useTranslation } from 'react-i18next';
  * it, and the list around that, never re-render for it; `now` is passed in
  * rather than read, so the age moves with the clock.
  */
-export function LastSeen({ since }: { since: Date | null }) {
+export function LastSeen({ since }: { since: Date }) {
   const { t } = useTranslation();
   const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
-  const age = since ? compactAge(since, now) : null;
-  if (!since) return null;
+  const age = compactAge(since, now);
 
   return (
     <span className="figures text-fg-muted">

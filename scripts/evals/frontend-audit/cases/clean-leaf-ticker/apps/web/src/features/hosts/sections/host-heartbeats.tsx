@@ -21,7 +21,7 @@ export function HostHeartbeats() {
             <StatusDot state={host.online ? 'running' : 'idle'} className="min-w-0 flex-1">
               {host.name}
             </StatusDot>
-            <LastSeen since={host.lastSeenAt} />
+            {host.lastSeenAt ? <LastSeen since={host.lastSeenAt} /> : null}
           </li>
         ))}
       </ul>

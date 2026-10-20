@@ -26,7 +26,7 @@
           "alsoFile": ["apps/web/src/features/hosts/sections/host-sessions.tsx"]
         }
       ],
-      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it. `sessions ?? []` also reads a pending or failed list as empty, which is U1's, and draws an empty list while it loads, which is U7's; those readings are fair, as is R5 on the section filtering the whole list it was handed; each counts for nothing either way.",
+      "why": "The screen subscribes to useSessions only to hand it to one section; `sessions ?? []` slips past check:structure's regex, so only judgment catches it.",
       "tolerate": ["U1", "R5", "U7"]
     },
     {
@@ -40,7 +40,7 @@
           "alsoFile": ["apps/web/src/features/hosts/hooks/use-host-view.ts"]
         }
       ],
-      "why": "The context value carries the hover id beside the density, so every pointer move re-renders every card. R6 (each card subscribes to the whole view) names the same mixed-rate context, so it counts as finding it."
+      "why": "The context value carries the hover id beside the density, so every pointer move re-renders every card."
     },
     {
       "id": "form-watch-at-top",
@@ -53,7 +53,7 @@
         }
       ],
       "mechanical": ["M-compiler"],
-      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library. The fixture is a second rename form by construction, so P3 (a helper written twice) is fair and counts for nothing either way.",
+      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library.",
       "tolerate": ["P3"]
     },
     {
@@ -119,7 +119,7 @@
         }
       ],
       "mechanical": ["M-arch"],
-      "why": "Imports another feature's component. pnpm arch fails; the audit has to run it and report it, not re-derive it. P1 (placement) names the same import, so it counts as finding it."
+      "why": "Imports another feature's component. pnpm arch fails; the audit has to run it and report it, not re-derive it."
     },
     {
       "id": "config-object-slots",
@@ -178,7 +178,7 @@
       "id": "clean-debounced-search",
       "commit": "feat(web): hosts directory with a name search",
       "expect": [],
-      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask. U1 is tolerated: a hand-built list may fairly draw a design-system finding, which is not what the decoy is for.",
+      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask.",
       "tolerate": ["U1"]
     },
     {
