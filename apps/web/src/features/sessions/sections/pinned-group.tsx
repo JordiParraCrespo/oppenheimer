@@ -4,6 +4,7 @@ import {
   SortableGroup,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRows } from './session-rows';
@@ -28,6 +29,11 @@ export function PinnedGroup({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
+  // A pinned open session is in no project, so this head carries the mark.
+  const current = useRouterState({
+    select: (state) =>
+      sessions.some((session) => state.location.pathname === `/sessions/${session.id}`),
+  });
 
   return (
     <SidebarProjectGroup>
@@ -43,6 +49,7 @@ export function PinnedGroup({
           count={sessions.length}
           open={open}
           onOpenChange={setOpen}
+          current={current}
         />
         {open ? (
           <SessionRows

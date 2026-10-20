@@ -82,3 +82,24 @@ export function orderSessions(
 ): SessionEntity[] {
   return inStoredOrder(sessions, stored, (session) => session.id);
 }
+
+/**
+ * A drop's order of the sessions it saw, with every stored session it did
+ * not see (pinned above the projects, so drawn in none) kept just after the
+ * one it followed, so it comes back in its place.
+ */
+export function mergeSessionOrder(dropped: readonly string[], stored: readonly string[]): string[] {
+  const merged = [...dropped];
+  const seen = new Set(dropped);
+  let after: string | null = null;
+  for (const id of stored) {
+    if (seen.has(id)) {
+      after = id;
+      continue;
+    }
+    merged.splice(after === null ? 0 : merged.indexOf(after) + 1, 0, id);
+    seen.add(id);
+    after = id;
+  }
+  return merged;
+}
