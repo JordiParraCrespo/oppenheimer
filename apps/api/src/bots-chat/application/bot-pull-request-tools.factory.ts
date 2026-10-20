@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { MERGE_METHODS, REVIEW_COMMENT_MAX } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
-import { AddIssueCommentCommand } from '../../github/commands/add-issue-comment/add-issue-comment.command';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import { AddPullRequestCommentCommand } from '../../pull-requests/commands/add-pull-request-comment/add-pull-request-comment.command';
+import { AddPullRequestConversationCommentCommand } from '../../pull-requests/commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command';
 import { MergePullRequestCommand } from '../../pull-requests/commands/merge-pull-request/merge-pull-request.command';
 import { StartReviewSessionCommand } from '../../pull-requests/commands/start-review-session/start-review-session.command';
 import { SubmitPullRequestReviewCommand } from '../../pull-requests/commands/submit-pull-request-review/submit-pull-request-review.command';
@@ -120,8 +120,15 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           );
           return `Commented on ${input.path}:${input.line} of pull request #${input.number}.`;
         }
-        const posted = await this.commandBus.execute<AddIssueCommentCommand, { htmlUrl: string }>(
-          new AddIssueCommentCommand({ scope: context.owner, address: target, body: input.body }),
+        const posted = await this.commandBus.execute<
+          AddPullRequestConversationCommentCommand,
+          { htmlUrl: string }
+        >(
+          new AddPullRequestConversationCommentCommand({
+            scope: context.owner,
+            address: target,
+            body: input.body,
+          }),
         );
         return `Commented on pull request #${input.number}: ${posted.htmlUrl}`;
       },
@@ -185,9 +192,11 @@ export class BotPullRequestToolsFactory implements BotToolArea {
         method: z.enum(MERGE_METHODS).default('squash'),
         head_sha: z
           .string()
-          .regex(/^[0-9a-f]{7,40}$/)
+          .regex(/^[0-9a-f]{40}$/)
           .optional()
-          .describe('The head commit get_pull_request showed; the current one when omitted.'),
+          .describe(
+            'The full head commit get_pull_request showed; the merge is refused if the head has moved since. The current head when omitted.',
+          ),
       }),
       // The card is pinned to the head it was raised on, so a yes merges what the card showed.
       normalize: async (input, context) => {
@@ -197,7 +206,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             `Pull request #${input.number} is ${pull.state}; there is nothing to merge.`,
           );
         }
-        if (input.head_sha && !pull.headSha.startsWith(input.head_sha)) {
+        if (input.head_sha && pull.headSha !== input.head_sha) {
           throw new BotToolRefusal(
             `New commits were pushed to #${input.number} since you read it (head is now ${pull.headSha.slice(0, 7)}). Read it again with get_pull_request before merging.`,
           );
@@ -214,7 +223,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             scope: context.owner,
             address: addressOf(input),
             method: input.method,
-            expectedHeadSha: await this.fullHead(context, input.head_sha, input),
+            expectedHeadSha: input.head_sha,
           }),
         );
         return `Merged pull request #${input.number} (${input.method}).`;
@@ -280,22 +289,6 @@ export class BotPullRequestToolsFactory implements BotToolArea {
     return this.queryBus.execute<FindPullRequestQuery, PullRequestDetailView>(
       new FindPullRequestQuery({ scope: context.owner, address: addressOf(input) }),
     );
-  }
-
-  /**
-   * The head a merge is pinned to, written out in full: a card's is already
-   * (`normalize`); a short one the model passed under Full access is read
-   * against the pull request, and one that no longer matches stays short, so
-   * the merge is refused.
-   */
-  private async fullHead(
-    context: BotToolCallContext,
-    head: string | undefined,
-    input: Address,
-  ): Promise<string | undefined> {
-    if (!head || head.length === 40) return head;
-    const pull = await this.pull(context, input);
-    return pull.headSha.startsWith(head) ? pull.headSha : head;
   }
 
   /** The pull request as a card names it; by number alone when it cannot be read. */

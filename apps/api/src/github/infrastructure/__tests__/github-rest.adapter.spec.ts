@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
 import { type GithubFetch, GithubHttp } from '../github-http.adapter';
+import { GithubIssuesAdapter } from '../github-issues.adapter';
 import { GithubPullsAdapter } from '../github-pulls.adapter';
 import { GithubRestAdapter } from '../github-rest.adapter';
 
@@ -522,7 +523,7 @@ describe('issues', () => {
   };
   const adapterOver = (answers: Answer[]) => {
     const http = fakeFetch(answers);
-    return { pulls: new GithubPullsAdapter(new GithubHttp(configWith(), http.impl)), http };
+    return { pulls: new GithubIssuesAdapter(new GithubHttp(configWith(), http.impl)), http };
   };
 
   it('lists issues with the filter in the query and leaves out the pull requests GitHub lists among them', async () => {

@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { IssueAddress } from '../../application/pull-request-access.port';
+import type { IssueAddress } from '../../application/issue-access.port';
 
 /**
  * No controller: a bot's `comment_on_issue` and `comment_on_pull_request`

@@ -1,7 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { RepositoryAddress } from '../../application/pull-request-access.port';
-import type { GithubIssueInput } from '../../infrastructure/github-pulls.port';
+import type { GithubIssueInput } from '../../infrastructure/github-issues.port';
 
 /** The new issue's number and link: GitHub's id for it, and where to read it. */
 export interface CreatedIssue {

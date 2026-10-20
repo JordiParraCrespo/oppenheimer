@@ -1,7 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { RepositoryAddress } from '../../application/pull-request-access.port';
-import type { GithubIssueFilter } from '../../infrastructure/github-pulls.port';
+import type { GithubIssueFilter } from '../../infrastructure/github-issues.port';
 
 /**
  * It has no controller of its own: the console shows no issues yet, and a

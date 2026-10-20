@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { PullRequestAccessPort } from '../../application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../github.di-tokens';
+import type { IssueAccessPort } from '../../application/issue-access.port';
+import { ISSUE_ACCESS } from '../../github.di-tokens';
 import { type CreatedIssue, CreateIssueCommand } from './create-issue.command';
 
 /** Opens an issue in the caller's own name, through their GitHub user token. */
@@ -10,8 +10,8 @@ export class CreateIssueCommandHandler
   implements ICommandHandler<CreateIssueCommand, CreatedIssue>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(ISSUE_ACCESS)
+    private readonly access: IssueAccessPort,
   ) {}
 
   async execute({ scope, repository, issue }: CreateIssueCommand): Promise<CreatedIssue> {

@@ -1,7 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
-import { AddIssueCommentCommand } from '../../../github/commands/add-issue-comment/add-issue-comment.command';
 import { AddPullRequestCommentCommand } from '../../../pull-requests/commands/add-pull-request-comment/add-pull-request-comment.command';
+import { AddPullRequestConversationCommentCommand } from '../../../pull-requests/commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command';
 import { MergePullRequestCommand } from '../../../pull-requests/commands/merge-pull-request/merge-pull-request.command';
 import { StartReviewSessionCommand } from '../../../pull-requests/commands/start-review-session/start-review-session.command';
 import { SubmitPullRequestReviewCommand } from '../../../pull-requests/commands/submit-pull-request-review/submit-pull-request-review.command';
@@ -100,7 +100,7 @@ describe('BotPullRequestToolsFactory under Approve for me', () => {
     const merged = setup('auto', () => pull({ state: 'merged' }));
     const closed = await merged.call('merge_pull_request', PR);
     const moved = setup('auto');
-    const stale = await moved.call('merge_pull_request', { ...PR, head_sha: 'ffff000' });
+    const stale = await moved.call('merge_pull_request', { ...PR, head_sha: 'f'.repeat(40) });
 
     expect(closed).toMatchObject({ isError: true, content: expect.stringContaining('is merged') });
     expect(stale).toMatchObject({
@@ -190,7 +190,7 @@ describe('BotPullRequestToolsFactory under Full access', () => {
     await call('comment_on_pull_request', { ...PR, body: 'Nit', path: 'src/a.ts', line: 3 });
 
     const [conversation, line] = dispatched();
-    expect(conversation).toBeInstanceOf(AddIssueCommentCommand);
+    expect(conversation).toBeInstanceOf(AddPullRequestConversationCommentCommand);
     expect(conversation).toMatchObject({ scope: owner, body: 'Looks good' });
     expect(line).toBeInstanceOf(AddPullRequestCommentCommand);
     expect(line).toMatchObject({

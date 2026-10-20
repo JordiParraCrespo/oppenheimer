@@ -8,6 +8,7 @@ import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';
 import type { GithubAppPort } from '../../infrastructure/github-app.port';
 import type { GithubPullsPort } from '../../infrastructure/github-pulls.port';
+import { GithubAccessResolver } from '../github-access.resolver';
 import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
 import type { WorkspaceRepository } from '../pull-request-access.port';
 import { PullRequestAccessResolver } from '../pull-request-access.resolver';
@@ -97,27 +98,31 @@ function build(
     getOrSet: vi.fn(async (_key: string, _ttl: number, load: () => Promise<unknown>) => load()),
     del: vi.fn(),
   };
+  const installations = {
+    findOneById: vi.fn().mockResolvedValue(Some(connected)),
+  } as unknown as GithubInstallationRepositoryPort;
+  const app = {
+    mintInstallationToken: vi
+      .fn()
+      .mockResolvedValue({ token: 'ghs_read', expiresAt: new Date(Date.now() + 3_600_000) }),
+    listInstallationRepositories: vi.fn().mockResolvedValue([
+      {
+        githubRepoId: 821374923,
+        name: 'xrp',
+        fullName: 'acme-labs/xrp',
+        defaultBranch: 'main',
+        private: true,
+      },
+    ]),
+  } as unknown as GithubAppPort;
+  const grants = userGrants as GithubUserGrantResolver;
   const resolver = new PullRequestAccessResolver(
-    {
-      findOneById: vi.fn().mockResolvedValue(Some(connected)),
-    } as unknown as GithubInstallationRepositoryPort,
-    {
-      mintInstallationToken: vi
-        .fn()
-        .mockResolvedValue({ token: 'ghs_read', expiresAt: new Date(Date.now() + 3_600_000) }),
-      listInstallationRepositories: vi.fn().mockResolvedValue([
-        {
-          githubRepoId: 821374923,
-          name: 'xrp',
-          fullName: 'acme-labs/xrp',
-          defaultBranch: 'main',
-          private: true,
-        },
-      ]),
-    } as unknown as GithubAppPort,
+    installations,
+    app,
     pulls as unknown as GithubPullsPort,
-    userGrants as GithubUserGrantResolver,
+    grants,
     cache as unknown as CacheService,
+    new GithubAccessResolver(installations, app, grants, cache as unknown as CacheService),
   );
   const repository: WorkspaceRepository = {
     installationId: connected.id,
